@@ -35,7 +35,7 @@ func runClaudeCodeHooksTransformSuites() {
         }
 
         expect(connected.changed, "旧路径 modern 必须触发真实清理写入")
-        expect(connected.removedCount == 5, "五条 stale modern 必须全部移除")
+        expect(connected.removedCount == 6, "六条 stale modern 必须全部移除")
         expect(
             (connected.root["opaque"] as? [String: Any])?["keep"] as? Bool == true,
             "未知顶层数据必须保留")
@@ -43,7 +43,12 @@ func runClaudeCodeHooksTransformSuites() {
         for binding in HostCapabilityCatalog.bindings(for: .claudeCode) {
             let groups = connectedHooks?[binding.nativeEvent!] as? [[String: Any]] ?? []
             expect(
-                groups.compactMap { $0["matcher"] as? String } == ["before", "after"],
+                groups.compactMap { $0["matcher"] as? String }
+                    == ["before", "after"]
+                    + (HostQuestionTrigger.binding(
+                        host: .claudeCode, nativeEvent: binding.nativeEvent!
+                    )
+                    .map { [$0.matcher] } ?? []),
                 "\(binding.nativeEvent!) 第三方 group 相对顺序必须保留")
             let owned = groups.flatMap(claudeTransformCommands).compactMap {
                 matchedHostHookCommand(inHookCommand: $0, claudioRoot: rootPath)
@@ -248,7 +253,7 @@ func runClaudeCodeHooksTransformSuites() {
             "显式升级必须删除当前 root 的旧 play notification；第三方条目与顺序保留")
         expect((disconnected.root["opaque"] as? [String: Any])?["trust"] as? Bool == true,
             "不透明数据必须保留")
-        expect(disconnected.removedCount == 5, "断开必须只删除五条现代 Claude hook")
+        expect(disconnected.removedCount == 6, "断开必须只删除六条现代 Claude hook")
         expect(
             inspectClaudeCodeHooks(
                 root: disconnected.root, claudioRoot: rootPath, claudioBinaryPath: binary)
@@ -304,7 +309,7 @@ func runClaudeCodeHooksTransformSuites() {
             return
         }
         expect(repaired.changed, "旧 prompt notification 必须触发真实写入")
-        expect(repaired.removedCount == 6, "五条 modern 与一条旧 prompt 必须被精确重建")
+        expect(repaired.removedCount == 7, "六条 modern 与一条旧 prompt 必须被精确重建")
         expect(
             inspectClaudeCodeHooks(
                 root: repaired.root, claudioRoot: rootPath, claudioBinaryPath: binary)
@@ -372,7 +377,7 @@ func runClaudeCodeHooksTransformSuites() {
             return
         }
         expect(repaired.changed, "额外 modern callback 必须阻止幂等 no-op")
-        expect(repaired.removedCount == 7, "四条仍在的 canonical、两条错位 modern 与旧 prompt 必须清理")
+        expect(repaired.removedCount == 8, "五条仍在的 canonical、两条错位 modern 与旧 prompt 必须清理")
         expect(
             inspectClaudeCodeHooks(
                 root: repaired.root, claudioRoot: rootPath, claudioBinaryPath: binary)
@@ -401,7 +406,7 @@ func runClaudeCodeHooksTransformSuites() {
             return
         }
         expect(disconnected.changed, "非正式事件的 modern callback 必须触发断开写入")
-        expect(disconnected.removedCount == 6, "disconnect 必须移除正式及非正式的全部 modern")
+        expect(disconnected.removedCount == 7, "disconnect 必须移除正式及非正式的全部 modern")
         let disconnectedHooks = disconnected.root["hooks"] as? [String: Any]
         let disconnectedSession = disconnectedHooks?["SessionStart"] as? [[String: Any]] ?? []
         expect(

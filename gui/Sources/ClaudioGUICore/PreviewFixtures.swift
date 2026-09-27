@@ -1288,6 +1288,7 @@ public enum PreviewFixtures {
             activation
             ?? .observed(
                 HostReceiptEvidence(
+                    bindingID: binding.id,
                     installationID: hostIntegrationInstallationID,
                     nativeEvent: binding.nativeEvent!,
                     event: binding.event,
@@ -1306,6 +1307,21 @@ public enum PreviewFixtures {
             configuration: configuration,
             writability: .writable,
             activation: resolvedActivation,
+            bindingActivations: activation == nil && configuration == .configured
+                ? Dictionary(
+                    uniqueKeysWithValues: HostCapabilityCatalog.bindings(for: host)
+                        .filter(\.isAudibleCapability).map {
+                            (
+                                $0.id,
+                                .observed(
+                                    HostReceiptEvidence(
+                                        bindingID: $0.id,
+                                        installationID: hostIntegrationInstallationID,
+                                        nativeEvent: $0.nativeEvent!, event: $0.event,
+                                        timestamp: Date(timeIntervalSince1970: 1_721_980_800),
+                                        playbackResult: .played))
+                            )
+                        }) : [:],
             latestReceipt: latestReceipt,
             operation: operation,
             installationID: configuration == .notConfigured

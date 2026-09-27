@@ -40,6 +40,7 @@ func integrationDestinationTestSnapshot(
     }
 
     let evidence = HostReceiptEvidence(
+        bindingID: binding.id,
         installationID: integrationDestinationTestInstallationID,
         nativeEvent: binding.nativeEvent!,
         event: binding.event,
@@ -54,6 +55,19 @@ func integrationDestinationTestSnapshot(
             configuration: .configured,
             writability: .writable,
             activation: .observed(evidence),
+            bindingActivations: Dictionary(
+                uniqueKeysWithValues: HostCapabilityCatalog.bindings(for: host)
+                    .filter(\.isAudibleCapability).map {
+                        (
+                            $0.id,
+                            .observed(
+                                HostReceiptEvidence(
+                                    bindingID: $0.id,
+                                    installationID: integrationDestinationTestInstallationID,
+                                    nativeEvent: $0.nativeEvent!, event: $0.event,
+                                    timestamp: evidence.timestamp, playbackResult: .played))
+                        )
+                    }),
             latestReceipt: evidence,
             installationID: integrationDestinationTestInstallationID)
     case .awaitingActivation:

@@ -12,7 +12,7 @@ public enum EventNoticeProjection {
         language: ClaudioAppLanguage
     ) -> String {
         let l10n = ClaudioL10n(language: language)
-        let host = record.notice?.host?.displayName ?? l10n.text(.eventNoticeUnknownSource)
+        let host = record.host?.displayName ?? l10n.text(.eventNoticeUnknownSource)
         let event: String
         if record.isExpired { return l10n.text(.eventNoticeExpired) }
         switch record.kind {
@@ -20,10 +20,14 @@ public enum EventNoticeProjection {
         case .needsInput: event = l10n.text(.eventNoticeNeedsInput)
         case .review: event = l10n.text(.eventNoticeReview)
         case .transient:
-            event =
-                record.event == .notification
-                ? l10n.text(.eventNoticeInformational)
-                : localizedEventName(record.event, language: language)
+            if record.reason == .questionIntent {
+                event = l10n.text(.eventNoticeQuestionIntent)
+            } else {
+                event =
+                    record.event == .notification
+                    ? l10n.text(.eventNoticeInformational)
+                    : localizedEventName(record.event, language: language)
+            }
         case .interrupted: event = localizedEventName(record.event, language: language)
         }
         return "\(host) · \(event)"
@@ -34,8 +38,11 @@ public enum EventNoticeProjection {
         language: ClaudioAppLanguage
     ) -> String {
         let l10n = ClaudioL10n(language: language)
-        guard let source = record.source else { return "" }
         var components: [String] = []
+        if record.provenance == .developmentCodexRollout {
+            components.append(l10n.text(.eventNoticeDevelopmentObservation))
+        }
+        guard let source = record.source else { return components.joined(separator: " · ") }
         if let project = source.projectLabel { components.append(project) }
         if let session = sessionLabel(for: source, language: language) {
             components.append(session)

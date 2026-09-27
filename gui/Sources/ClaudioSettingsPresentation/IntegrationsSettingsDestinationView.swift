@@ -245,13 +245,16 @@ struct IntegrationsSettingsDestinationView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if row.kind == .receiptHistory {
                     ForEach(facts.bindingReceipts) { receipt in
-                        Text(receipt.text(language: languageStore.language))
-                            .font(ClaudioTheme.font(.caption))
-                            .foregroundStyle(ClaudioTheme.secondaryText(colorScheme))
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier(
-                                "integrations.destination.binding-receipt.\(receipt.binding.event.rawValue)"
-                            )
+                        Text(
+                            "\(receipt.text(language: languageStore.language)) · "
+                                + receipt.capabilityText(language: languageStore.language)
+                        )
+                        .font(ClaudioTheme.font(.caption))
+                        .foregroundStyle(ClaudioTheme.secondaryText(colorScheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(
+                            "integrations.destination.binding-receipt.\(receipt.id.rawValue)"
+                        )
                     }
                 }
             }

@@ -38,6 +38,8 @@ public struct HostHookEnvironment: Sendable {
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
     public let scopeFingerprint: @Sendable () -> String?
+    public let questionScopeFingerprint: @Sendable () -> String?
+    public let questionDeduplicationStore: HostQuestionDeduplicationStore
 
     public init(
         host: HostID,
@@ -49,6 +51,10 @@ public struct HostHookEnvironment: Sendable {
         eventNoticeChannel: HostEventNoticeChannel? = nil,
         sourcePayload: Data? = nil,
         scopeFingerprint: @escaping @Sendable () -> String? = HostActivationScope.workBuddy,
+        questionScopeFingerprint: @escaping @Sendable () -> String? = {
+            HostActivationScope.claudeCode()
+        },
+        questionDeduplicationStore: HostQuestionDeduplicationStore? = nil,
         now: @escaping @Sendable () -> Date = { Date() },
         uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     ) {
@@ -64,6 +70,14 @@ public struct HostHookEnvironment: Sendable {
         self.eventNoticeChannel = eventNoticeChannel
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
         self.scopeFingerprint = scopeFingerprint
+        self.questionScopeFingerprint = questionScopeFingerprint
+        self.questionDeduplicationStore =
+            questionDeduplicationStore
+            ?? HostQuestionDeduplicationStore(
+                directory: playEnvironment.debounceStateFile.deletingLastPathComponent()
+                    .appendingPathComponent("question-requests-\(host.rawValue)"),
+                lockFile: playEnvironment.debounceStateFile.deletingLastPathComponent()
+                    .appendingPathComponent("question-requests-\(host.rawValue).lock"))
         self.now = now
         self.uptime = uptime
     }
@@ -75,7 +89,8 @@ public func systemHostHookEnvironment(
     eventNoticeChannel: HostEventNoticeChannel? = nil,
     sourcePayload: Data? = nil
 ) -> HostHookEnvironment {
-    HostHookEnvironment(
+    let questionScope = HookQuestionScopeSnapshot()
+    return HostHookEnvironment(
         host: host,
         playEnvironment: PlayEnvironment(
             surfaceID: host.surfaceID,
@@ -89,7 +104,30 @@ public func systemHostHookEnvironment(
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
         activityStore: .production,
         eventNoticeChannel: eventNoticeChannel,
-        sourcePayload: sourcePayload)
+        sourcePayload: sourcePayload,
+        questionScopeFingerprint: { questionScope.value },
+        questionDeduplicationStore: HostQuestionDeduplicationStore(
+            directory: ClaudioPaths.hostQuestionDeduplicationDirectory(host),
+            lockFile: ClaudioPaths.hostQuestionDeduplicationLockFile(host)))
+}
+
+/// A short-lived hook invocation resolves the installed host version once, on first use. Every
+/// later authorization still re-reads the installation marker, so reconnect/disconnect remains a
+/// live boundary without repeatedly launching `claude --version` during the same callback.
+private final class HookQuestionScopeSnapshot: @unchecked Sendable {
+    private let lock = NSLock()
+    private var hasResolved = false
+    private var stored: String?
+
+    var value: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        if !hasResolved {
+            stored = HostActivationScope.claudeCode()
+            hasResolved = true
+        }
+        return stored
+    }
 }
 
 public struct HostHookHandlingOutcome: Sendable, Equatable {
@@ -130,14 +168,22 @@ public func handleHostHook(
         let event = HostCapabilityCatalog.semanticEvent(host: host, nativeEvent: nativeEvent)
     else { return nil }
 
+    let isQuestion = HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil
+    let questionPayload = HostQuestionHookPayload.parse(
+        host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
+    guard !isQuestion || questionPayload != nil else { return nil }
+
     // This is the single timestamp shared by the activity fact, receipt, and any related
     // diagnostic line. Disconnected or replaced installations are rejected before playback.
     let occurredAt = environment.now()
     let observedUptime = environment.eventNoticeChannel?.observedUptime ?? environment.uptime()
-    let scope = host == .workBuddy ? environment.scopeFingerprint() : nil
+    let currentScope =
+        isQuestion ? environment.questionScopeFingerprint : environment.scopeFingerprint
+    let requiresScope = host == .workBuddy || isQuestion
+    let scope = requiresScope ? currentScope() : nil
     let installationIsCurrent: @Sendable () -> Bool = {
-        if host == .workBuddy {
-            guard let scope, environment.scopeFingerprint() == scope else { return false }
+        if requiresScope {
+            guard let scope, currentScope() == scope else { return false }
         }
         return environment.receiptStore.isCurrentInstallation(
             host: host, installationID: installationID, scopeFingerprint: scope)
@@ -164,7 +210,8 @@ public func handleHostHook(
     let isTaskStart = event == .taskStart
     let observedPlayEnvironment = PlayEnvironment(
         surfaceID: host.surfaceID,
-        workingDirectory: WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
+        workingDirectory: isQuestion
+            ? nil : WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
         playbackAuthorized: {
             base.playbackAuthorized()
                 && installationIsCurrent()
@@ -187,9 +234,29 @@ public func handleHostHook(
         logLockFile: base.logLockFile,
         dynamicQuietEnvironment: base.dynamicQuietEnvironment,
         spawnResultObserver: { succeeded in capture.record(succeeded) })
-    let outcome = playSoundEvent(event.cliName, environment: observedPlayEnvironment)
-    let playbackResult = redactedPlaybackResult(
-        outcome: outcome, spawnSucceeded: capture.value)
+    let playbackResult: HostHookPlaybackResult
+    let shouldSendNotice: Bool
+    if let questionPayload {
+        switch environment.questionDeduplicationStore.consume(
+            host: host, installationID: installationID, payload: questionPayload,
+            now: occurredAt, isCurrent: installationIsCurrent)
+        {
+        case .consumed:
+            let outcome = playConsumedQuestion(environment: observedPlayEnvironment)
+            playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
+            shouldSendNotice = true
+        case .duplicate:
+            playbackResult = .debounced
+            shouldSendNotice = false
+        case .unavailable:
+            playbackResult = .playbackFailed
+            shouldSendNotice = false
+        }
+    } else {
+        let outcome = playSoundEvent(event.cliName, environment: observedPlayEnvironment)
+        playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
+        shouldSendNotice = true
+    }
     let receipt = HostHookReceipt(
         installationID: installationID,
         host: host,
@@ -199,7 +266,7 @@ public func handleHostHook(
         playbackResult: playbackResult)
     let written: Bool
     switch environment.receiptStore.store(
-        receipt, expectedScopeFingerprint: scope, scopeFingerprint: environment.scopeFingerprint)
+        receipt, expectedScopeFingerprint: scope, scopeFingerprint: currentScope)
     {
     case .success:
         written = true
@@ -215,12 +282,12 @@ public func handleHostHook(
             to: base.logFile,
             lockFile: base.logLockFile)
     }
-    if let channel = environment.eventNoticeChannel,
+    if shouldSendNotice, let channel = environment.eventNoticeChannel,
         installationIsCurrent(),
         let binding = HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent)
     {
         let input = HostEventSourceParser.parseInput(
-            host: host, nativeEvent: nativeEvent, data: channel.sourcePayload)
+            host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
         let notice = HostEventNotice(
             id: eventID,
             receiverEpoch: channel.receiverEpoch,
@@ -289,7 +356,7 @@ private func redactedPlaybackResult(
 ) -> HostHookPlaybackResult {
     switch outcome {
     case .played:
-        return spawnSucceeded == false ? .playbackFailed : .played
+        return spawnSucceeded == true ? .played : .playbackFailed
     case .disabled, .dynamicQuiet:
         return .muted
     case .skippedDebounce, .skippedRecentPlay:

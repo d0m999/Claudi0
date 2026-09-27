@@ -558,7 +558,8 @@ private func makeEventNoticeGalleryNotice(
             : HostEventSource(
                 projectLabel: language == .english ? "Orbit Signals" : "Orbit 示例项目",
                 projectKey: "debug-gallery-project",
-                sessionID: "12345678-debug-gallery", mainSessionIsKnown: true))
+                sessionID: "12345678-debug-gallery", mainSessionIsKnown: true),
+        reason: binding.qualification == .questionIntentOnly ? .questionIntent : nil)
 }
 
 @MainActor

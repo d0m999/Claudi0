@@ -301,7 +301,10 @@ public struct HostHookReceiptStore: Sendable {
                     .staleInstallation)
             }
             // WorkBuddy 的版本身份在安装锁内重读；迟到回执不得激活同 UUID 的旧 scope。
-            if receipt.host == .workBuddy {
+            if receipt.host == .workBuddy
+                || HostQuestionTrigger.binding(host: receipt.host, nativeEvent: receipt.nativeEvent)
+                    != nil
+            {
                 guard let scope = scopeFingerprint(), current.scopeFingerprint == scope,
                     expectedScopeFingerprint.map({ $0 == scope }) ?? true
                 else { return .failure(.staleInstallation) }

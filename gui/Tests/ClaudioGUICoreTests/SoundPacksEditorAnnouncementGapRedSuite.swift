@@ -421,9 +421,34 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 .standardizedFileURL
                 .resolvingSymlinksInPath()
                 .deletingLastPathComponent()
-            let modules = buildDirectory.appendingPathComponent("Modules", isDirectory: true)
-            let moduleMap = buildDirectory.appendingPathComponent(
-                "ClaudioVersionC.build/module.modulemap")
+            // SwiftPM's native builder and Swift Build place imported modules differently.
+            // Require a complete known layout so the positive control cannot fail merely
+            // because the harness was built by a different supported build system.
+            let layouts = [
+                (
+                    modules: buildDirectory.appendingPathComponent("Modules", isDirectory: true),
+                    moduleMap: buildDirectory.appendingPathComponent(
+                        "ClaudioVersionC.build/module.modulemap")
+                ),
+                (
+                    modules: buildDirectory,
+                    moduleMap: buildDirectory.deletingLastPathComponent()
+                        .deletingLastPathComponent()
+                        .appendingPathComponent(
+                            "Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap")
+                ),
+            ]
+            guard
+                let layout = layouts.first(where: {
+                    FileManager.default.fileExists(
+                        atPath: $0.modules.appendingPathComponent("ClaudioGUICore.swiftmodule").path
+                    )
+                        && FileManager.default.fileExists(atPath: $0.moduleMap.path)
+                })
+            else {
+                expect(false, "[129-ANN-RED] I-04 必须找到当前 harness 的 Swift/C 模块")
+                return
+            }
             let includeDirectory = guiTestRepositoryRoot()
                 .appendingPathComponent("helper/Sources/ClaudioVersionC/include")
             let positive = root.appendingPathComponent("Positive.swift")
@@ -461,8 +486,8 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 to: negative)
             let commonArguments = [
                 "swiftc", "-swift-version", "6", "-typecheck", "-package-name", "gui",
-                "-I", modules.path,
-                "-Xcc", "-fmodule-map-file=\(moduleMap.path)",
+                "-I", layout.modules.path,
+                "-Xcc", "-fmodule-map-file=\(layout.moduleMap.path)",
                 "-Xcc", "-I", "-Xcc", includeDirectory.path,
             ]
             let positiveResult = runTestProcess(
@@ -470,7 +495,8 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 arguments: commonArguments + [positive.path])
             expect(
                 positiveResult.status == 0,
-                "[129-ANN-RED] I-04 positive sibling probe 必须能命名 package types/kind")
+                "[129-ANN-RED] I-04 positive sibling probe 必须能命名 package types/kind: \(positiveResult.output)"
+            )
 
             let negativeResult = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
@@ -489,7 +515,8 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                         "ClaudioGUICore.SoundPackImportPermit.ID.rawValue")
                     && negativeResult.output.contains(
                         "ClaudioGUICore.SoundPackAdoptionPermit.ID.rawValue"),
-                "[129-ANN-RED] I-04 negative sibling probe 必须拒绝全部 constructor/raw payload")
+                "[129-ANN-RED] I-04 negative sibling probe 必须拒绝全部 constructor/raw payload: \(negativeResult.output)"
+            )
         }
     }
 }

@@ -251,6 +251,15 @@ public enum ClaudioPaths {
         integrationsDirectory.appendingPathComponent("\(host.rawValue)-task-start.state")
     }
 
+    public static func hostQuestionDeduplicationDirectory(_ host: HostID) -> URL {
+        integrationsDirectory.appendingPathComponent(
+            "\(host.rawValue)-questions", isDirectory: true)
+    }
+
+    public static func hostQuestionDeduplicationLockFile(_ host: HostID) -> URL {
+        integrationsDirectory.appendingPathComponent("\(host.rawValue)-questions.lock")
+    }
+
     /// `~/.claudio/packs.lock` — the non-blocking lock serializing the **three** writers of
     /// `~/.claudio/packs/`: the GUI's `mutateManifestJSON(at:lockFile:_:)` (bind/clear,
     /// `manifest.json`, byte level), the GUI's `importAudioFile` (drag-in persist step —

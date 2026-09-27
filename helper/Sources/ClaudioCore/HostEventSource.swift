@@ -199,6 +199,12 @@ public enum HostEventSourceParser {
         guard data.count <= HookInputReader.defaultMaximumBytes else {
             return unavailable(.oversized)
         }
+        if let nativeEvent,
+            HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil,
+            HostQuestionHookPayload.parse(host: host, nativeEvent: nativeEvent, data: data) == nil
+        {
+            return unavailable(.invalidFieldType)
+        }
         guard
             host == .claudeCode || host == .codex
                 || (host == .workBuddy && nativeEvent == "Notification")
@@ -235,6 +241,9 @@ public enum HostEventSourceParser {
             let binding = HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent),
             binding.event == .notification
         else { return nil }
+        if HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil {
+            return dictionary == nil ? nil : .questionIntent
+        }
         if host == .codex, nativeEvent == "PermissionRequest" { return .permission }
         if host == .workBuddy, nativeEvent == "Notification" {
             guard dictionary?["hook_event_name"] as? String == nativeEvent else { return .review }
@@ -496,6 +505,7 @@ public enum HostEventSourceParser {
 /// receipt store or activity summary.
 public enum HostEventNoticeReason: String, Codable, Sendable, Hashable {
     case permission
+    case questionIntent = "question_intent"
     case needsInput = "needs_input"
     case informational
     case review
@@ -582,6 +592,9 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
             return false
         }
         guard event == binding.event, nativeEvent.utf8.count <= 128 else { return false }
+        let isQuestionIntent =
+            HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil
+        guard isQuestionIntent == (reason == .questionIntent) else { return false }
         let expectedCompleteness = source?.completeness ?? .unknown
         guard sourceCompleteness == expectedCompleteness else { return false }
         return source.map {

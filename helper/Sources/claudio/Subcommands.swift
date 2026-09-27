@@ -27,6 +27,10 @@ extension Claudio {
                 && WorkBuddyHookPayloadPolicy.requiresValidation(nativeEvent: nativeEvent)
             let hookInput: HookInputReadResult? = HookInputReader.read()
             guard
+                HostQuestionTrigger.binding(host: parsedHost, nativeEvent: nativeEvent) == nil
+                    || hookInput?.status == .data
+            else { return }
+            guard
                 !needsInput
                     || WorkBuddyHookPayloadPolicy.accepts(
                         nativeEvent: nativeEvent, input: hookInput)
@@ -430,8 +434,10 @@ private func integrationSnapshotText(_ snapshot: HostIntegrationSnapshot) -> Str
     case .configured:
         switch snapshot.activation {
         case .observed:
-            let supported = HostCapabilityCatalog.bindings(for: snapshot.host)
-                .filter(\.isAudibleCapability).count
+            let supported = Set(
+                HostCapabilityCatalog.bindings(for: snapshot.host)
+                    .filter(\.isAudibleCapability).map(\.event)
+            ).count
             return "\(supported)/\(Event.allCases.count) 已就绪"
         case .none, .awaitingReceipt:
             return snapshot.host == .codex

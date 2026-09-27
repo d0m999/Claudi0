@@ -214,4 +214,64 @@ else
   echo "SKIP: WorkBuddy Desktop absent; valid-subtype receipt covered by injectable harness"
 fi
 
-echo "PASS: claudi0 hook 真实子进程 exit/stdout/stderr 与 Debug-only root 契约"
+# Question-intent entry contracts use only isolated machine state and a deterministic version
+# executable. This is CLI evidence, never a Claude Code callback or human audibility claim.
+QUESTION_ROOT="$TEST_ROOT/question"
+QUESTION_TOOLS="$TEST_ROOT/question-tools"
+prepare_root "$QUESTION_ROOT" claude-code muted
+mkdir -p "$QUESTION_TOOLS"
+cat > "$QUESTION_TOOLS/claude" <<'SH'
+#!/bin/sh
+printf '%s\n' 'question-contract-version'
+SH
+chmod 700 "$QUESTION_TOOLS/claude"
+CLAUDIO_CONTRACT_VERSION="$("$DEBUG_BIN" --version)"
+QUESTION_BINDINGS="$(jq -nr '[
+  "claude-code:UserPromptSubmit:task_start:none:v1",
+  "claude-code:Stop:stop:none:v1",
+  "claude-code:StopFailure:stop_failure:none:v1",
+  "claude-code:Notification:notification:none:v1",
+  "claude-code:PreToolUse:notification:question_intent_only:v1",
+  "claude-code:SubagentStop:subagent_stop:none:v1"
+] | sort | join(",")')"
+QUESTION_SCOPE="surface=claude-code;host=question-contract-version;claudio=$CLAUDIO_CONTRACT_VERSION;bindings=$QUESTION_BINDINGS"
+jq --arg scope "$QUESTION_SCOPE" '.scope_fingerprint = $scope' \
+  "$QUESTION_ROOT/integrations/installations/claude-code.json" > "$QUESTION_ROOT/current.json"
+mv "$QUESTION_ROOT/current.json" "$QUESTION_ROOT/integrations/installations/claude-code.json"
+cat > "$QUESTION_ROOT/config.json" <<'JSON'
+{"selected_pack":"minimal-chime","master_volume":0,"events":{"notification":false}}
+JSON
+QUESTION_RECEIPT="$QUESTION_ROOT/integrations/receipts/claude-code/PreToolUse.json"
+for payload in \
+  '{}' \
+  '{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestionExtra","session_id":"s","tool_use_id":"r","tool_input":{}}' \
+  '{"hook_event_name":"PreToolUse","tool_name":"askuserquestion","session_id":"s","tool_use_id":"r","tool_input":{}}' \
+  '{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","tool_input":{}}' \
+  '{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","tool_use_id":"r","tool_input":null}' \
+  '{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","session_id":"s","tool_use_id":"r","tool_input":{}}' \
+  '{"hook_event_name":"Stop","tool_name":"AskUserQuestion","session_id":"s","tool_use_id":"r","tool_input":{}}' \
+  '{broken'; do
+  printf '%s' "$payload" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook question-invalid \
+    "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$INSTALLATION_ID"
+  if [[ -e "$QUESTION_RECEIPT" || -e "$QUESTION_ROOT/integrations/claude-code-questions/consumed.json" ]]; then
+    echo "FAIL: invalid question must have no receipt or consumption side effects" >&2
+    exit 1
+  fi
+done
+QUESTION_PAYLOAD='{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","tool_use_id":"r","tool_input":{}}'
+printf '%s' "$QUESTION_PAYLOAD" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook question-stale \
+  "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$STALE_ID"
+if [[ -e "$QUESTION_RECEIPT" ]]; then
+  echo "FAIL: stale question installation must not write a receipt" >&2
+  exit 1
+fi
+for expected in muted debounced; do
+  printf '%s' "$QUESTION_PAYLOAD" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook "question-$expected" \
+    "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$INSTALLATION_ID"
+  if [[ "$(receipt_result "$QUESTION_RECEIPT")" != "$expected" ]]; then
+    echo "FAIL: question expected $expected receipt" >&2
+    exit 1
+  fi
+done
+
+echo "PASS: claudi0 hook 真实子进程 exit/stdout/stderr、提问入口与 Debug-only root 契约"

@@ -12,6 +12,11 @@ final class EventNoticeRuntime {
     private var receiver: EventNoticeReceiver?
     private let ingress: EventNoticeIngress
     private let receiptStore: HostHookReceiptStore
+    #if DEBUG
+    private let developmentTarget = CodexRolloutObservationTarget.developmentEnvironment(
+        ProcessInfo.processInfo.environment)
+    private var developmentObserver: CodexQuestionObservationSession?
+    #endif
 
     init() {
         let model = EventNoticeModel(receiverEpoch: UUID())
@@ -30,6 +35,17 @@ final class EventNoticeRuntime {
 
     func startReceiver() {
         guard receiver == nil, model.canReceive else { return }
+        #if DEBUG
+        if developmentObserver == nil, let target = developmentTarget {
+            let observer = CodexQuestionObservationSession(target: target) {
+                [weak model] observation in
+                model?.acceptDevelopmentObservation(observation) ?? .ignoredDisabled
+            }
+            model.setDevelopmentObservationRun(observer.runID)
+            developmentObserver = observer
+            observer.start()
+        }
+        #endif
         do {
             let receiptStore = self.receiptStore
             let receiver = try EventNoticeReceiver(
@@ -54,6 +70,11 @@ final class EventNoticeRuntime {
     }
 
     func stopReceiver() {
+        #if DEBUG
+        developmentObserver?.stop()
+        developmentObserver = nil
+        model.setDevelopmentObservationRun(nil)
+        #endif
         receiver?.stop()
         receiver = nil
         ingress.clear()

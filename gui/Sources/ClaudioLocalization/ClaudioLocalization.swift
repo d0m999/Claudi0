@@ -254,6 +254,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "qualification.accessibility-beta-unavailable"
     public static let qualificationNotificationMatchersOnly: Self =
         "qualification.notification-matchers-only"
+    public static let qualificationQuestionIntentOnly: Self =
+        "qualification.question-intent-only"
     public static let eventTaskStart: Self = "event.task-start"
     public static let eventStop: Self = "event.stop"
     public static let eventStopFailure: Self = "event.stop-failure"
@@ -308,6 +310,9 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventNoticeEmpty: Self = "event-notice.empty"
     public static let eventNoticePermission: Self = "event-notice.permission"
     public static let eventNoticeNeedsInput: Self = "event-notice.needs-input"
+    public static let eventNoticeQuestionIntent: Self = "event-notice.question-intent"
+    public static let eventNoticeDevelopmentObservation: Self =
+        "event-notice.development-observation"
     public static let eventNoticeReview: Self = "event-notice.review"
     public static let eventNoticeRemove: Self = "event-notice.remove"
     public static let eventNoticeBack: Self = "event-notice.back"
@@ -1614,7 +1619,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .hostWorkBuddyReadyDetail, .hostWorkBuddyAwaitingDetail,
         .hostWorkBuddyConflictDetail,
         .qualificationAccessibilityBetaUnavailable,
-        .qualificationNotificationMatchersOnly,
+        .qualificationNotificationMatchersOnly, .qualificationQuestionIntentOnly,
         .panelSoundScope, .panelSoundScopeInheritanceCaption, .panelSoundScopeExpandHint,
         .panelSoundScopeCollapseHint, .panelSoundScopeGlobalCoverage,
         .panelSoundScopeStatusDefault, .panelSoundScopeStatusActive,
@@ -1643,7 +1648,9 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventNoticeNewNotices, .eventNoticeOccurredAt, .eventNoticeRecentDisclaimer,
         .eventNoticeRecentOverflow, .eventNoticeSessionShort, .eventNoticeInformational,
         .eventNoticeRefresh,
-        .eventNoticeEmpty, .eventNoticePermission, .eventNoticeNeedsInput, .eventNoticeReview,
+        .eventNoticeEmpty, .eventNoticePermission, .eventNoticeNeedsInput,
+        .eventNoticeQuestionIntent,
+        .eventNoticeDevelopmentObservation, .eventNoticeReview,
         .eventNoticeRemove, .eventNoticeBack, .eventNoticeCopyFailed, .eventNoticeStale,
         .eventNoticeMissingSource, .eventNoticeUnknownReason,
         .settingsNotificationsEventSourceReceiverUnavailable,
@@ -1946,7 +1953,9 @@ public struct ClaudioL10n {
     }
 
     private static func loadEntriesUncached(from bundle: Bundle) -> [String: CatalogEntry] {
-        guard let url = bundle.url(forResource: "Localizable", withExtension: "xcstrings"),
+        guard
+            let url = bundle.url(
+                forResource: "Localizable", withExtension: "xcstrings", subdirectory: "Resources"),
             let data = try? Data(contentsOf: url)
         else {
             return [:]

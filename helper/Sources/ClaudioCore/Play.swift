@@ -215,6 +215,35 @@ public func playSoundEvent(
     environment: PlayEnvironment = PlayEnvironment()
 ) -> PlayOutcome {
     guard let event = Event(cliName: eventName) else { return .unknownEvent }
+    let preparation = preparePlay(event: event, environment: environment)
+
+    if case .silent(let outcome) = preparation,
+        !environment.debounceSilentOutcomes
+    {
+        return outcome
+    }
+
+    return performDebouncedPlay(event: event, preparation: preparation, environment: environment)
+}
+
+/// The caller must validate and consume the question's request identity before calling this
+/// function, including muted requests. Hook callers use the private bounded ledger; a development
+/// session observer uses its single in-process generation owner. Distinct requests do not compete
+/// for the lifecycle playback lock or timestamp. Configuration and quiet-state decisions stay
+/// identical to ordinary automatic sounds. Spawn success is reported through the environment's
+/// observer; `.played` alone retains the legacy meaning of a spawn attempt.
+public func playConsumedQuestion(environment: PlayEnvironment) -> PlayOutcome {
+    guard environment.playbackAuthorized() else { return .notReady }
+    let event = Event.notification
+    switch preparePlay(event: event, environment: environment) {
+    case .silent(let outcome): return outcome
+    case .ready(let volume, let audioFile):
+        return spawnPreparedPlay(
+            event: event, volume: volume, audioFile: audioFile, environment: environment)
+    }
+}
+
+private func preparePlay(event: Event, environment: PlayEnvironment) -> PreparedPlay {
     let preparation: PreparedPlay
     switch dynamicQuietDecision(environment: environment.dynamicQuietEnvironment) {
     case .quiet:
@@ -231,13 +260,7 @@ public func playSoundEvent(
         preparation = prepareConfiguredPlay(event: event, environment: environment)
     }
 
-    if case .silent(let outcome) = preparation,
-        !environment.debounceSilentOutcomes
-    {
-        return outcome
-    }
-
-    return performDebouncedPlay(event: event, preparation: preparation, environment: environment)
+    return preparation
 }
 
 private func prepareConfiguredPlay(
@@ -304,18 +327,8 @@ private func performDebouncedPlay(
         // malformed argument instead of a flag + its value (T9).
         guard environment.playbackAuthorized() else { return .notReady }
         writeLastPlayedTimestamp(now, to: environment.debounceStateFile)
-        let volumeArgument = AfplayVolume.afplayArgument(forMasterVolume: volume)
-        let spawned = environment.spawner.spawn(
-            executablePath: environment.afplayPath,
-            arguments: ["-v", volumeArgument, audioFile.path])
-        environment.spawnResultObserver?(spawned)
-        if !spawned {
-            appendLogLine(
-                event: event.cliName,
-                reason: "afplay 启动失败：\(environment.afplayPath)",
-                timestamp: now, to: environment.logFile, lockFile: environment.logLockFile)
-        }
-        return .played(event: event, filePath: audioFile.path)
+        return spawnPreparedPlay(
+            event: event, volume: volume, audioFile: audioFile, environment: environment)
     }
 
     switch lockResult {
@@ -331,6 +344,25 @@ private func performDebouncedPlay(
         )
         return .lockFailed(errno: code)
     }
+}
+
+private func spawnPreparedPlay(
+    event: Event, volume: Double, audioFile: URL, environment: PlayEnvironment
+) -> PlayOutcome {
+    guard environment.playbackAuthorized() else { return .notReady }
+    let volumeArgument = AfplayVolume.afplayArgument(forMasterVolume: volume)
+    let spawned = environment.spawner.spawn(
+        executablePath: environment.afplayPath,
+        arguments: ["-v", volumeArgument, audioFile.path])
+    environment.spawnResultObserver?(spawned)
+    if !spawned {
+        appendLogLine(
+            event: event.cliName,
+            reason: "afplay 启动失败：\(environment.afplayPath)",
+            timestamp: environment.now(), to: environment.logFile, lockFile: environment.logLockFile
+        )
+    }
+    return .played(event: event, filePath: audioFile.path)
 }
 
 /// Resolves `event`'s audio file inside the currently-selected pack, or `nil` if any step

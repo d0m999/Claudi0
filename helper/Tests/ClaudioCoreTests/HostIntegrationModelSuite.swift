@@ -165,12 +165,17 @@ func runHostIntegrationModelSuites() {
         let codex = HostCapabilityCatalog.bindings(for: .codex)
         let workBuddy = HostCapabilityCatalog.bindings(for: .workBuddy)
 
-        expect(claude.map(\.event) == Event.allCases, "Claude Code 必须按五个语义事件的稳定顺序给出能力")
+        expect(Set(claude.map(\.event)) == Set(Event.allCases), "Claude Code 必须覆盖五个语义事件")
         expect(
             claude.compactMap(\.nativeEvent)
-                == ["UserPromptSubmit", "Stop", "StopFailure", "Notification", "SubagentStop"],
+                == [
+                    "UserPromptSubmit", "Stop", "StopFailure", "Notification", "PreToolUse",
+                    "SubagentStop",
+                ],
             "Claude Code 原生事件名必须来自 adapter 能力目录")
-        expect(claude.allSatisfy { $0.support == .supported }, "Claude Code 必须是 5/5 supported")
+        expect(
+            Set(claude.filter { $0.support == .supported }.map(\.event)).count == 5,
+            "Claude Code 必须是5/5，提问意图仍是有范围限定的独立绑定")
 
         expect(codex.map(\.event) == Event.allCases, "Codex 也必须保留五格，unsupported 不能被隐藏")
         expect(codex.filter(\.isAudibleCapability).count == 4, "Codex 的正常能力事实必须严格是 4/5")
@@ -278,7 +283,10 @@ func runHostIntegrationModelSuites() {
             return HostIntegrationSnapshot(
                 host: host, runtime: .ready, availability: .available,
                 configuration: .configured, writability: .writable,
-                activation: .observed(evidence), latestReceipt: evidence,
+                activation: .observed(evidence),
+                bindingActivations: modelSuiteActivations(
+                    host: host, installationID: installationID),
+                latestReceipt: evidence,
                 installationID: installationID)
         }
         let coverage = Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) })
@@ -493,6 +501,8 @@ func runHostIntegrationModelSuites() {
                         event: .taskStart,
                         timestamp: Date(timeIntervalSince1970: 1),
                         playbackResult: .played)),
+                bindingActivations: modelSuiteActivations(
+                    host: .claudeCode, installationID: installationID),
                 installationID: installationID)
             let matrix = AudibilityMatrix.make(
                 snapshots: [snapshot],
@@ -513,6 +523,24 @@ func runHostIntegrationModelSuites() {
                 "仍有文件的本轮结束格必须保持 audible")
         }
     }
+}
+
+private func modelSuiteActivations(
+    host: HostID, installationID: UUID
+) -> [HostEventBindingID: HostActivationEvidence] {
+    Dictionary(
+        uniqueKeysWithValues: HostCapabilityCatalog.bindings(for: host)
+            .filter(\.isAudibleCapability).map {
+                (
+                    $0.id,
+                    .observed(
+                        HostReceiptEvidence(
+                            bindingID: $0.id,
+                            installationID: installationID, nativeEvent: $0.nativeEvent!,
+                            event: $0.event,
+                            timestamp: Date(timeIntervalSince1970: 1), playbackResult: .played))
+                )
+            })
 }
 
 private final class ActivationScopeCommandRunner: CommandRunning, @unchecked Sendable {

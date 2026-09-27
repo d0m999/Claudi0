@@ -137,6 +137,7 @@ public enum HostCapabilityQualificationID: String, Codable, Sendable, Equatable,
     case codexStopFailureUnavailable = "codex.stop_failure_unavailable"
     case permissionRequestOnly = "permission_request_only"
     case notificationMatchersOnly = "notification_matchers_only"
+    case questionIntentOnly = "question_intent_only"
     case interfaceSupportedNotImplemented = "interface_supported_not_implemented"
     case interfacePartiallySupportedNotImplemented = "interface_partially_supported_not_implemented"
     case undeclaredCapability = "undeclared_capability"
@@ -211,6 +212,7 @@ public enum HostCapabilityCatalog {
                 HostCapabilityBinding(
                     host: host, event: .notification, nativeEvent: "Notification",
                     support: .supported),
+                HostQuestionTrigger.claudeCode.capability,
                 HostCapabilityBinding(
                     host: host, event: .subagentStop, nativeEvent: "SubagentStop",
                     support: .supported),
@@ -277,6 +279,10 @@ public enum HostCapabilityCatalog {
 
     public static func binding(host: HostID, event: Event) -> HostCapabilityBinding? {
         bindings(for: host).first { $0.event == event }
+    }
+
+    public static func bindings(host: HostID, event: Event) -> [HostCapabilityBinding] {
+        bindings(for: host).filter { $0.event == event }
     }
 }
 
@@ -411,7 +417,17 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
     public var descriptor: HostIntegrationDescriptor { host.descriptor }
 
     public func activation(for binding: HostCapabilityBinding) -> HostActivationEvidence {
-        bindingActivations[binding.id] ?? activation
+        guard binding.host == host else { return .none }
+        let candidate = bindingActivations[binding.id] ?? activation
+        if case .observed(let evidence) = candidate,
+            evidence.bindingID == binding.id,
+            evidence.installationID == installationID,
+            evidence.nativeEvent == binding.nativeEvent,
+            evidence.event == binding.event
+        {
+            return candidate
+        }
+        return installationID.map { .awaitingReceipt(installationID: $0) } ?? .none
     }
 
     public static func disconnected(host: HostID) -> HostIntegrationSnapshot {
@@ -426,12 +442,27 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
         let firstNativeEvent = "UserPromptSubmit"
         let event = Event.taskStart
         let evidence = HostReceiptEvidence(
+            bindingID: HostCapabilityCatalog.binding(host: host, nativeEvent: firstNativeEvent)?.id
+                ?? HostEventBindingID(rawValue: "unavailable"),
             installationID: id, nativeEvent: firstNativeEvent, event: event,
             timestamp: Date(timeIntervalSince1970: 1), playbackResult: .played)
         return HostIntegrationSnapshot(
             host: host, runtime: .ready, availability: .available,
             configuration: .configured, writability: .writable,
             activation: .observed(evidence),
+            bindingActivations: Dictionary(
+                uniqueKeysWithValues:
+                    HostCapabilityCatalog.bindings(for: host).filter(\.isAudibleCapability).map {
+                        (
+                            $0.id,
+                            .observed(
+                                HostReceiptEvidence(
+                                    bindingID: $0.id, installationID: id,
+                                    nativeEvent: $0.nativeEvent!,
+                                    event: $0.event, timestamp: Date(timeIntervalSince1970: 1),
+                                    playbackResult: .played))
+                        )
+                    }),
             latestReceipt: evidence,
             installationID: id)
     }
@@ -462,8 +493,21 @@ public struct AudibilityCell: Identifiable, Codable, Sendable, Equatable {
     public let host: HostID
     public let event: Event
     public let binding: HostCapabilityBinding
+    public let bindings: [HostCapabilityBinding]
     public let state: AudibilityCellState
     public let detail: String?
+
+    public init(
+        host: HostID, event: Event, binding: HostCapabilityBinding,
+        bindings: [HostCapabilityBinding]? = nil, state: AudibilityCellState, detail: String?
+    ) {
+        self.host = host
+        self.event = event
+        self.binding = binding
+        self.bindings = bindings ?? [binding]
+        self.state = state
+        self.detail = detail
+    }
 
     public var accessibilityLabel: String {
         let support: String
@@ -553,10 +597,12 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         var summaries: [HostID: HostReadinessSummary] = [:]
         for host in HostID.productVisibleCases {
             let bindings = capabilities[host] ?? []
-            let configuredSupported = bindings.filter(\.isAudibleCapability).count
-            let legacySupported = bindings.filter {
-                $0.isAudibleCapability && Event.legacyLifecycleCases.contains($0.event)
-            }.count
+            let configuredSupported = Set(bindings.filter(\.isAudibleCapability).map(\.event)).count
+            let legacySupported = Set(
+                bindings.filter {
+                    $0.isAudibleCapability && Event.legacyLifecycleCases.contains($0.event)
+                }.map(\.event)
+            ).count
             let supported =
                 snapshotByHost[host]?.configuration == .legacyConnected
                 ? legacySupported
@@ -569,13 +615,16 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
             AudibilityEventRow(
                 event: event,
                 cells: HostID.productVisibleCases.map { host in
+                    let eventBindings = capabilities[host]?.filter { $0.event == event } ?? []
                     let binding =
-                        capabilities[host]?.first(where: { $0.event == event })
+                        eventBindings.first(where: \.isAudibleCapability)
+                        ?? eventBindings.first
                         ?? HostCapabilityBinding(
                             host: host, event: event, nativeEvent: nil, support: .unsupported,
                             qualification: .undeclaredCapability)
-                    let state = cellState(
-                        binding: binding, snapshot: snapshotByHost[host],
+                    let state = aggregateCellState(
+                        bindings: eventBindings.isEmpty ? [binding] : eventBindings,
+                        snapshot: snapshotByHost[host],
                         hasSound: soundCoverageByHost[host]?[event] ?? false,
                         enabled: enabledEventsByHost[host]?[event] ?? true)
                     let detail =
@@ -586,6 +635,7 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
                         : nil
                     return AudibilityCell(
                         host: host, event: event, binding: binding,
+                        bindings: eventBindings.isEmpty ? [binding] : eventBindings,
                         state: state,
                         detail: detail)
                 })
@@ -684,5 +734,26 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         case .incomplete, .unreadable, .conflict:
             return .degraded
         }
+    }
+
+    private static func aggregateCellState(
+        bindings: [HostCapabilityBinding], snapshot: HostIntegrationSnapshot?,
+        hasSound: Bool, enabled: Bool
+    ) -> AudibilityCellState {
+        let implemented = bindings.filter(\.isAudibleCapability)
+        guard !implemented.isEmpty else { return .unsupported }
+        let states = implemented.map {
+            cellState(binding: $0, snapshot: snapshot, hasSound: hasSound, enabled: enabled)
+        }
+        // A newly installed reminder must remain visibly unverified until its own
+        // current binding receipt arrives, even when another reminder already works.
+        for state in [
+            AudibilityCellState.degraded, .notConnected, .awaitingActivation,
+            .muted, .missingSound, .legacy, .audible,
+        ]
+        where states.contains(state) {
+            return state
+        }
+        return .unsupported
     }
 }

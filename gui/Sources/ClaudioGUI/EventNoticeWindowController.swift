@@ -189,6 +189,30 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         case .hidden:
             window.orderOut(nil)
         }
+        #if DEBUG
+        if snapshot.current?.provenance == .developmentCodexRollout,
+            ProcessInfo.processInfo.environment["CLAUDIO_DEV_CODEX_QUESTION_OBSERVER"] == "1"
+        {
+            // Fixed state codes distinguish model acceptance from actual AppKit presentation.
+            // No session, question, path or window contents enter the development log.
+            let state: String
+            switch snapshot.phase {
+            case .entering: state = "entering"
+            case .visible: state = "visible"
+            case .exiting: state = "exiting"
+            case .hidden: state = "hidden"
+            }
+            let ordered = window.isVisible ? "ordered" : "not_ordered"
+            let activeSpace = window.isOnActiveSpace ? "active_space" : "other_space"
+            let occlusion = window.occlusionState.contains(.visible) ? "unoccluded" : "occluded"
+            let key = window.isKeyWindow ? "key" : "not_key"
+            let screens = NSScreen.screens.isEmpty ? "no_screen" : "screen_available"
+            FileHandle.standardError.write(
+                Data(
+                    "claudio.codex-question-window \(state) \(ordered) \(activeSpace) \(occlusion) \(key) \(screens)\n"
+                        .utf8))
+        }
+        #endif
     }
 
     private func repositionIfVisible() {

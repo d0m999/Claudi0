@@ -106,8 +106,10 @@ public func hostSourceRowPresentations(
     from matrix: AudibilityMatrix
 ) -> [HostSourceRowPresentation] {
     hostSurfacePresentationOrder().map { host in
-        let fallbackSupported = HostCapabilityCatalog.bindings(for: host)
-            .filter(\.isAudibleCapability).count
+        let fallbackSupported = Set(
+            HostCapabilityCatalog.bindings(for: host)
+                .filter(\.isAudibleCapability).map(\.event)
+        ).count
         let summary =
             matrix.summary(for: host)
             ?? .notConnected(supported: fallbackSupported, total: Event.allCases.count)
@@ -208,6 +210,7 @@ public struct HostCapabilityCellPresentation: Identifiable, Sendable, Equatable 
     public let support: HostCapabilitySupport
     public let implementation: HostCapabilityImplementation
     public let nativeEventText: String?
+    public let qualifications: [HostCapabilityQualificationID]
     public let qualificationText: String?
     public let statusText: String
     public let detailText: String?
@@ -227,16 +230,24 @@ public struct HostCapabilityCellPresentation: Identifiable, Sendable, Equatable 
         self.muteReason = resolvedMuteReason
         support = cell.binding.support
         implementation = cell.binding.implementation
-        nativeEventText = cell.binding.nativeEvent
-        qualificationText = cell.binding.qualification.map(defaultQualificationText)
+        let nativeEvents = cell.bindings.compactMap(\.nativeEvent)
+        nativeEventText = nativeEvents.isEmpty ? nil : nativeEvents.joined(separator: " · ")
+        qualifications = cell.bindings.compactMap(\.qualification)
+        qualificationText =
+            qualifications.isEmpty
+            ? nil : qualifications.map(defaultQualificationText).joined(separator: "；")
         statusText = hostCapabilityStatusText(cell.state, muteReason: resolvedMuteReason)
         detailText = cell.detail
-        let defaultLabel =
-            cell.binding.qualification.map { qualification in
-                cell.accessibilityLabel.replacingOccurrences(
+        var defaultLabel = cell.accessibilityLabel
+        for qualification in qualifications {
+            if defaultLabel.contains(qualification.rawValue) {
+                defaultLabel = defaultLabel.replacingOccurrences(
                     of: qualification.rawValue,
                     with: defaultQualificationText(qualification))
-            } ?? cell.accessibilityLabel
+            } else {
+                defaultLabel += "，\(defaultQualificationText(qualification))"
+            }
+        }
         accessibilityLabel =
             resolvedMuteReason == .masterVolumeZero
             ? "\(defaultLabel)，原因：主音量为零"
@@ -253,6 +264,7 @@ public struct HostCapabilityCellPresentation: Identifiable, Sendable, Equatable 
         support: HostCapabilitySupport = .supported,
         implementation: HostCapabilityImplementation = .implemented,
         nativeEventText: String? = nil,
+        qualifications: [HostCapabilityQualificationID] = [],
         qualificationText: String? = nil,
         statusText: String? = nil,
         detailText: String? = nil,
@@ -269,6 +281,7 @@ public struct HostCapabilityCellPresentation: Identifiable, Sendable, Equatable 
         self.support = support
         self.implementation = implementation
         self.nativeEventText = nativeEventText
+        self.qualifications = qualifications
         self.qualificationText = qualificationText
         self.statusText =
             statusText
@@ -463,10 +476,11 @@ public func eventHostIndicatorPalette(for host: HostID) -> EventHostIndicatorPal
     }
 }
 
-private func defaultQualificationText(_ qualification: HostCapabilityQualificationID) -> String {
+func defaultQualificationText(_ qualification: HostCapabilityQualificationID) -> String {
     switch qualification {
     case .codexStopFailureUnavailable: "Codex 暂无执行中断事件"
     case .permissionRequestOnly: "仅授权请求"
+    case .questionIntentOnly: "提问前置信号只表示调用意图，不表示已等待回答"
     case .notificationMatchersOnly: "仅授权与空闲提醒（permission_prompt / idle_prompt）"
     case .interfaceSupportedNotImplemented: "接口支持，当前版本尚未实现"
     case .interfacePartiallySupportedNotImplemented: "接口部分支持，当前版本尚未实现"

@@ -524,9 +524,20 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     "helper/Sources/ClaudioCore/Play.swift": ["writePrivateAtomic(", "Process("],
     // Dynamic Quiet snapshot 也经同一私有 staging + rename 函数发布。
     "helper/Sources/ClaudioCore/DynamicQuietState.swift": ["writePrivateAtomic("],
+    // Bounded question consumption stores only digests/timestamps under its own reservation
+    // lock, using private staging plus atomic rename before any sound or notice attempt.
+    "helper/Sources/ClaudioCore/HostQuestionDeduplicationStore.swift": ["writePrivateAtomic("],
     // 有界只读：`open(O_RDONLY | O_NOFOLLOW | O_NONBLOCK)`。它是**读者**，不是写者 ——
     // `O_RDONLY` 刻意不在 ④ 的写意图 flag 里。
     "helper/Sources/ClaudioCore/SafeFileRead.swift": ["open("],
+    // Explicit development target only: O_RDONLY | O_NOFOLLOW | O_NONBLOCK binds a single
+    // rollout descriptor at EOF. The incremental observer has no write path or discovery scan.
+    "gui/Sources/ClaudioGUICore/CodexRolloutObservationReader.swift": ["open("],
+    // DEBUG-only observer diagnostics write fixed status codes to stderr. This is a stream,
+    // not a file replacement; suite ② pins the exact receiver and one-call count. Its child
+    // Process is only the configured local audio player and writes no project data.
+    "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift": [".write(", "Process("],
+    "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift": [".write("],
     // Claude/Codex 配置事务：0600 起步的私有 staging fd 完整写入并 fsync；一次性备份用
     // RENAME_EXCL 发布；卷不支持该 flag 时，同目录 link(2) 仍以 EEXIST 保证不覆盖。
     // 最终配置用同目录 rename 替换，且两者都保留原文件权限。
@@ -671,8 +682,21 @@ private func isAuditedPrivateInitialWrite(path: String, arguments: String) -> Bo
 
 private func unauditedNonContentReplacingWrites(
     path: String,
-    arguments: [String]
+    arguments: [String],
+    source: String
 ) -> [String] {
+    let diagnosticStreams: Set<String> = [
+        "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift",
+        "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift",
+    ]
+    if diagnosticStreams.contains(path), arguments.count == 1,
+        source.contains("FileHandle.standardError.write("),
+        arguments[0].trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("Data(")
+    {
+        // A second write call, a different receiver, or a different argument shape loses this
+        // narrow exemption and must be reviewed by the write-surface audit.
+        return []
+    }
     var consumedAuditedSite = false
     return arguments.filter { candidate in
         guard
@@ -790,7 +814,8 @@ func runAtomicWriteSuites() {
             let nonContentReplacing = argumentsInFile.filter { !isContentReplacingWrite($0) }
             for arguments in unauditedNonContentReplacingWrites(
                 path: path,
-                arguments: nonContentReplacing)
+                arguments: nonContentReplacing,
+                source: source.codeWithoutStringLiterals)
             {
                 expect(
                     false,
@@ -984,9 +1009,34 @@ func runAtomicWriteSuites() {
         expect(
             unauditedNonContentReplacingWrites(
                 path: "gui/Sources/ClaudioGUICore/AICueGenerationEngine.swift",
-                arguments: duplicateArguments
+                arguments: duplicateArguments,
+                source: duplicatePrivateWrites
             ).count == 1,
             "AI 提示音的裸写豁免只能消费一个已审计调用点；同文件复制第二处同形 write(2) 必须变红")
+
+        let diagnosticPath = "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift"
+        let stderrWrite = pipeline("FileHandle.standardError.write(Data(\"fixed\".utf8))")
+        let fileWrite = pipeline("FileHandle(forWritingTo: configFile).write(Data(\"fixed\".utf8))")
+        let diagnosticArguments = writeCallArguments(in: stderrWrite)
+        expect(
+            unauditedNonContentReplacingWrites(
+                path: diagnosticPath, arguments: diagnosticArguments, source: stderrWrite
+            ).isEmpty,
+            "固定诊断仅向标准错误流写一处")
+        expect(
+            unauditedNonContentReplacingWrites(
+                path: diagnosticPath, arguments: writeCallArguments(in: fileWrite),
+                source: fileWrite
+            ).count == 1,
+            "把诊断流改为文件写入时必须失去豁免")
+        let duplicateStderrWrite = stderrWrite + "\n" + stderrWrite
+        expect(
+            unauditedNonContentReplacingWrites(
+                path: diagnosticPath,
+                arguments: writeCallArguments(in: duplicateStderrWrite),
+                source: duplicateStderrWrite
+            ).count == 2,
+            "新增第二处诊断写调用必须重新审计")
 
         let duplicateRawWriters = pipeline(
             """
