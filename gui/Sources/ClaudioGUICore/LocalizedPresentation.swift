@@ -162,7 +162,7 @@ public func localizedCellStatus(
     }
 }
 
-private func localizedQualification(
+func localizedQualification(
     _ value: String?,
     language: ClaudioAppLanguage
 ) -> String? {
@@ -172,6 +172,9 @@ private func localizedQualification(
     }
     if value == "仅授权与空闲提醒（permission_prompt / idle_prompt）" {
         return ClaudioL10n(language: language).text(.qualificationNotificationMatchersOnly)
+    }
+    if value == "提问前置信号只表示调用意图，不表示已等待回答" {
+        return ClaudioL10n(language: language).text(.qualificationQuestionIntentOnly)
     }
     let english: [String: String] = [
         "Codex 暂无执行中断事件": "Codex has no interruption event",
@@ -194,7 +197,12 @@ public func localizedCapabilityCell(
     let host = localizedHostName(cell.host, language: language)
     let event = localizedEventName(cell.event, language: language)
     let status = localizedCellStatus(cell, language: language)
-    let qualification = localizedQualification(cell.qualificationText, language: language)
+    let qualification =
+        cell.qualifications.isEmpty
+        ? localizedQualification(cell.qualificationText, language: language)
+        : cell.qualifications.compactMap {
+            localizedQualification(defaultQualificationText($0), language: language)
+        }.joined(separator: language == .english ? "; " : "；")
     let separator = localizedHostSeparator(language)
     var clauses = [host, event, status]
     if let qualification { clauses.append(qualification) }
@@ -207,6 +215,7 @@ public func localizedCapabilityCell(
         support: cell.support,
         implementation: cell.implementation,
         nativeEventText: cell.nativeEventText,
+        qualifications: cell.qualifications,
         qualificationText: qualification,
         statusText: status,
         detailText: cell.detailText,

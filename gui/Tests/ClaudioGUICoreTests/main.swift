@@ -114,7 +114,28 @@ if CommandLine.arguments.contains("--ai-cue-native-focus") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--question-intent") {
+    runQuestionIntentPresentationSuites()
+    runCodexDevelopmentNoticeSuites()
+    runCodexQuestionObservationSuites()
+    print("Question intent: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--question-integration-contract") {
+    runLocalizationSuites()
+    runHostIntegrationPresentationSuites()
+    runIntegrationDestinationPresentationSuites()
+    runWorkBuddyVisualStateBaselineSuites()
+    await runHostIntegrationManagerBridgeSuites()
+    print("Question integration: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
+    runQuestionIntentPresentationSuites()
+    runCodexDevelopmentNoticeSuites()
+    runCodexQuestionObservationSuites()
     runEventNoticeModelSuites()
     await runSessionNavigationSuites()
     await runEventAttentionStressSuites()
@@ -379,6 +400,9 @@ runActivityOverviewSuites()
 runAICueDescriptionSuites()
 // Keep the native AppKit suite after every async suite; see the targeted ordering above.
 runEventNoticePresentationSuites()
+runQuestionIntentPresentationSuites()
+runCodexDevelopmentNoticeSuites()
+runCodexQuestionObservationSuites()
 
 // MARK: - Summary
 

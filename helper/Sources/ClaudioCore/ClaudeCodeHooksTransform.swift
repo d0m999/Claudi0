@@ -56,6 +56,7 @@ public func inspectClaudeCodeHooks(
         var ownedCount = 0
         var misplacedModern = false
         var hasLegacyPromptNotification = false
+        var invalidQuestionMatcher = false
 
         for (nativeEvent, rawGroups) in hooks {
             guard let groups = rawGroups as? [Any] else { continue }
@@ -75,7 +76,17 @@ public func inspectClaudeCodeHooks(
                         ownedCount += 1
                         modernByNativeEvent[nativeEvent, default: []].append(modern)
                         misplacedModern = misplacedModern || modern.nativeEvent != nativeEvent
+                        if let trigger = HostQuestionTrigger.binding(
+                            host: .claudeCode, nativeEvent: nativeEvent)
+                        {
+                            invalidQuestionMatcher =
+                                invalidQuestionMatcher
+                                || (group as? [String: Any])?["matcher"] as? String
+                                    != trigger.matcher
+                        }
                     } else if let binding = bindingByNativeEvent[nativeEvent],
+                        HostQuestionTrigger.binding(host: .claudeCode, nativeEvent: nativeEvent)
+                            == nil,
                         let event = matchedClaudioEvent(
                             inHookCommand: command, claudioRoot: claudioRoot)
                     {
@@ -92,6 +103,9 @@ public func inspectClaudeCodeHooks(
         guard ownedCount > 0 else { return .success(.notConfigured) }
         if misplacedModern {
             return .success(.conflict(reason: "Claude Code hook 的事件位置与命令不一致"))
+        }
+        if invalidQuestionMatcher {
+            return .success(.conflict(reason: "Claude Code 提问 hook 缺少精确工具 matcher"))
         }
 
         let modern = modernByNativeEvent.values.flatMap { $0 }
@@ -124,7 +138,7 @@ public func inspectClaudeCodeHooks(
 /// 显式连接/升级 Claude Code：若已是完整现代连接且所有事件都没有额外 modern callback，
 /// 则幂等不写；否则清理所有事件中的 modern Claudio 条目，并在显式升级时额外清理五个正式
 /// 宿主事件下可精确识别的 legacy（含旧 `UserPromptSubmit → play notification`），再追加
-/// 同一 installation ID 的五条 canonical command hook。
+/// 同一 installation ID 的 canonical command hooks。提问工具占用精确 matcher 槽位。
 public func connectClaudeCodeHooks(
     root: [String: Any],
     claudioRoot: String,
@@ -170,9 +184,14 @@ public func connectClaudeCodeHooks(
 
     var next = root
     var hooks = (next["hooks"] as? [String: Any]) ?? [:]
+    let entryTemplates = claudeOwnedEntryTemplates(hooks: hooks, claudioRoot: claudioRoot)
     var removed = 0
     let officialNativeEvents = Set(
-        HostCapabilityCatalog.bindings(for: .claudeCode).compactMap(\.nativeEvent))
+        HostCapabilityCatalog.bindings(for: .claudeCode).compactMap(\.nativeEvent).filter {
+            // The legacy installer never owned tool hooks. Adding a modern question binding
+            // must not claim a user-authored `play notification` command in that new event.
+            HostQuestionTrigger.binding(host: .claudeCode, nativeEvent: $0) == nil
+        })
     for nativeEvent in Array(hooks.keys) {
         guard let groups = hooks[nativeEvent] as? [Any] else { continue }
         let filtered = filterClaudeOwnedEntries(
@@ -194,17 +213,34 @@ public func connectClaudeCodeHooks(
         guard let nativeEvent = binding.nativeEvent else { continue }
         let groups = (hooks[nativeEvent] as? [Any]) ?? []
         var newGroups = groups
-        guard let command = hostIntegrationHookCommand(
-            host: .claudeCode,
-            nativeEvent: nativeEvent,
-            installationID: chosenInstallationID,
-            claudioBinaryPath: claudioBinaryPath)
+        guard
+            let command = hostIntegrationHookCommand(
+                host: .claudeCode,
+                nativeEvent: nativeEvent,
+                installationID: chosenInstallationID,
+                claudioBinaryPath: claudioBinaryPath)
         else {
             return .failure(.malformed(reason: "Claude Code 能力目录缺少 \(nativeEvent)"))
         }
-        newGroups.append([
-            "hooks": [["type": "command", "command": command]]
-        ])
+        var entry = entryTemplates[nativeEvent] ?? [:]
+        entry["type"] = "command"
+        entry["command"] = command
+        var newGroup: [String: Any] = ["hooks": [entry]]
+        if let trigger = HostQuestionTrigger.binding(host: .claudeCode, nativeEvent: nativeEvent) {
+            newGroup["matcher"] = trigger.matcher
+        }
+        if let retainedIndex = newGroups.firstIndex(where: { value in
+            guard let group = value as? [String: Any],
+                let entries = group["hooks"] as? [Any], entries.isEmpty
+            else { return false }
+            return !Set(group.keys).subtracting(["hooks", "matcher"]).isEmpty
+        }), var retained = newGroups[retainedIndex] as? [String: Any] {
+            retained["hooks"] = [entry]
+            if let matcher = newGroup["matcher"] { retained["matcher"] = matcher }
+            newGroups[retainedIndex] = retained
+        } else {
+            newGroups.append(newGroup)
+        }
         hooks[nativeEvent] = newGroups
     }
     next["hooks"] = hooks
@@ -289,7 +325,9 @@ private func validatedClaudeHooks(
         return .failure(.malformed(reason: "Claude settings.json 的 hooks 必须是 object"))
     }
     for binding in HostCapabilityCatalog.bindings(for: .claudeCode) {
-        guard let nativeEvent = binding.nativeEvent, let value = hooks[nativeEvent] else { continue }
+        guard let nativeEvent = binding.nativeEvent, let value = hooks[nativeEvent] else {
+            continue
+        }
         guard let groups = value as? [Any] else {
             return .failure(.malformed(reason: "hooks.\(nativeEvent) 必须是 array"))
         }
@@ -322,12 +360,14 @@ private func filterClaudeOwnedEntries(
             guard let command = (value as? [String: Any])?["command"] as? String else {
                 return true
             }
-            let modern = modernBinaryPath.map {
-                matchedCurrentHostHookCommand(
-                    inHookCommand: command, claudioBinaryPath: $0)
-            } ?? matchedHostHookCommand(inHookCommand: command, claudioRoot: claudioRoot)
+            let modern =
+                modernBinaryPath.map {
+                    matchedCurrentHostHookCommand(
+                        inHookCommand: command, claudioBinaryPath: $0)
+                } ?? matchedHostHookCommand(inHookCommand: command, claudioRoot: claudioRoot)
             let isModernClaude = modern?.host == .claudeCode
-            let isLegacy = removeLegacy
+            let isLegacy =
+                removeLegacy
                 && matchedClaudioEvent(
                     inHookCommand: command, claudioRoot: claudioRoot) != nil
             if isModernClaude || isLegacy {
@@ -336,9 +376,35 @@ private func filterClaudeOwnedEntries(
             }
             return true
         }
-        if kept.isEmpty, !entries.isEmpty { continue }
+        if kept.isEmpty, !entries.isEmpty,
+            Set(group.keys).subtracting(["hooks", "matcher"]).isEmpty
+        {
+            continue
+        }
         if kept.count != entries.count { group["hooks"] = kept }
         filteredGroups.append(group)
     }
     return filteredGroups
+}
+
+/// Repairs replace the command identity while preserving opaque handler extensions.
+/// Third-party handlers are never used as templates.
+private func claudeOwnedEntryTemplates(
+    hooks: [String: Any], claudioRoot: String
+) -> [String: [String: Any]] {
+    var templates: [String: [String: Any]] = [:]
+    for (nativeEvent, rawGroups) in hooks {
+        for group in rawGroups as? [[String: Any]] ?? [] {
+            for entry in group["hooks"] as? [[String: Any]] ?? [] {
+                guard templates[nativeEvent] == nil,
+                    let command = entry["command"] as? String,
+                    let owned = matchedHostHookCommand(
+                        inHookCommand: command, claudioRoot: claudioRoot),
+                    owned.host == .claudeCode, owned.nativeEvent == nativeEvent
+                else { continue }
+                templates[nativeEvent] = entry
+            }
+        }
+    }
+    return templates
 }

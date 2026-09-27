@@ -139,6 +139,9 @@ N/3 个可用候选”。partial 不改变单候选试听、命名、采用或�
 详情和错误可滚动，独立移除按钮至少 28×28pt，不再沿用旧 180pt 总高限制。
 
 普通进展只有当前 4 秒瞬时展示，无空位则释放，无普通历史及轮播队列。
+精确提问工具的前置信号同样只瞬时展示「即将提问」，不新增或更新同会话的「需要你」。
+开发期 Codex 会话观察在副行标记「开发观察」，无安装回执或会话操作；只有显式开发开关
+可启动。它复用同一非激活窗口、静默与隐私清空边界，不证明问题已显示或任务已暂停。
 授权、明确输入、已实现中断和未知关注信号进入待接手提醒：最多 50 项、每版本最长 30 分钟。
 完整主会话归并并增加版本；横幅不被新事件替换。悬停、键盘聚焦、展开共同暂停剩余阅读时间。
 列表冻结完整内容与顺序，通过显式新增/更新入口刷新；陈旧版本动作拒绝，TTL 优先擦除来源与时间。
@@ -401,7 +404,7 @@ N 个已发布来源 · 5 个声音事件
 | 任务开始 | `task_start` | `UserPromptSubmit` | `UserPromptSubmit` | `UserPromptSubmit` / 已实现 |
 | 本轮结束 | `stop` | `Stop` | `Stop` | `Stop` / 已实现 |
 | 执行中断 | `stop_failure` | `StopFailure` | 不支持 | `StopFailure` / 未实现 |
-| 待响应 | `notification` | `Notification` | `PermissionRequest`，**仅授权请求** | `Notification` / 已实现，仅 `permission_prompt`、`idle_prompt` |
+| 待响应 | `notification` | `Notification`；`PreToolUse` 精确 `AskUserQuestion` 仅提问意图 | `PermissionRequest`，**仅授权请求** | `Notification` / 已实现，仅 `permission_prompt`、`idle_prompt` |
 | 子任务结束 | `subagent_stop` | `SubagentStop` | `SubagentStop` | `SubagentStop` / 已实现 |
 
 `Stop` 只表示一轮停止；特别是 Codex `Stop` hook 之后仍可能要求 Codex 继续，因此所有可见文案不得写成「任务完成」。`UserPromptSubmit` 只映射稳定语义「任务开始」，不得冒充「待响应」。
@@ -533,8 +536,9 @@ N 个已发布来源 · 5 个声音事件
 - **选中宿主的四行连接组**：严格按「连接状态 → 接入方式 → 默认组／工作区 → 脱敏回执历史」渲染。
   连接状态同时说明配置、当前 installation 回执和 manager 诊断；没有回执时明确显示「暂无当前安装实例
   回执」。接入方式来自 `HostIntegrationDescriptor.mechanism`，只有 manager 提供配置来源时才显示
-  复制路径动作；声音入口标为「默认组／工作区…」并走普通目的页路由，不根据所选 Surface 改变声音作用域；清除回执只在第四行确认。WorkBuddy
-  在第四行内逐项展示四个已实现绑定的待回执／当前回执，只读文字不增加额外 Tab 控件。
+  复制路径动作；声音入口标为「默认组／工作区…」并走普通目的页路由，不根据所选 Surface 改变声音作用域；清除回执只在第四行确认。
+  所有宿主在第四行内逐 binding 展示待验证／当前回执；同一公共事件下的不同提醒类型分别命名，
+  旧授权回执不能点亮提问类型。覆盖率仍按五个公共 Event 计算，只读文字不增加额外 Tab 控件。
 - **五态动作投影**：`ready` 为「已激活」并提供重新检测，Codex 另提供修复连接以处理可执行但版本陈旧的
   helper；`awaitingActivation` 为「待回执」，Codex 额外提供复制 `/hooks` 与修复连接；`legacy` 提供升级连接；
   `notConnected` 关闭 Toggle 且重新检测，开启时调用 connect；`needsAttention` 提供修复连接和重新检测。

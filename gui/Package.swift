@@ -39,7 +39,10 @@ let package = Package(
         .target(
             name: "ClaudioLocalization",
             resources: [
-                .process("Resources")
+                // ClaudioL10n reads the catalog JSON directly for explicit language selection.
+                // Copy the directory so Swift Build neither compiles the catalog nor generates
+                // string symbols with Xcode's xcstringstool.
+                .copy("Resources")
             ]
         ),
         // Pure-Foundation state/view-model layer: shared, testable domain types (no

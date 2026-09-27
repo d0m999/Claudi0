@@ -15,8 +15,9 @@ public struct IntegrationBindingReceiptPresentation: Identifiable, Sendable, Equ
             activation = .none
             return
         }
-        if case .observed(let evidence)? = snapshot.bindingActivations[binding.id],
-            evidence.bindingID == binding.id, evidence.installationID == installationID
+        if case .observed(let evidence) = snapshot.activation(for: binding),
+            evidence.bindingID == binding.id, evidence.installationID == installationID,
+            evidence.event == binding.event, evidence.nativeEvent == binding.nativeEvent
         {
             activation = .observed(evidence)
         } else {
@@ -32,6 +33,26 @@ public struct IntegrationBindingReceiptPresentation: Identifiable, Sendable, Equ
         case .awaitingReceipt: key = .integrationsBindingAwaitingReceipt
         case .observed: key = .integrationsBindingCurrentReceipt
         }
-        return l10n.format(key, binding.nativeEvent ?? binding.event.rawValue)
+        let name =
+            binding.qualification == .questionIntentOnly
+            ? "\(l10n.text(.eventNoticeQuestionIntent)) (\(binding.nativeEvent ?? ""))"
+            : binding.nativeEvent ?? binding.event.rawValue
+        return l10n.format(key, name)
+    }
+
+    public func capabilityText(language: ClaudioAppLanguage) -> String {
+        let l10n = ClaudioL10n(language: language)
+        let supportKey: ClaudioL10nKey
+        switch (binding.support, binding.implementation) {
+        case (.supported, .implemented): supportKey = .panelCapabilitySupported
+        case (.partial, .implemented): supportKey = .panelCapabilityPartial
+        case (.unsupported, .implemented): supportKey = .panelCapabilityUnsupported
+        case (.supported, .notImplemented): supportKey = .panelCapabilitySupportedNotImplemented
+        case (.partial, .notImplemented): supportKey = .panelCapabilityPartialNotImplemented
+        case (.unsupported, .notImplemented): supportKey = .panelCapabilityUnsupportedNotImplemented
+        }
+        let qualification = localizedQualification(
+            binding.qualification.map(defaultQualificationText), language: language)
+        return [l10n.text(supportKey), qualification].compactMap { $0 }.joined(separator: " · ")
     }
 }

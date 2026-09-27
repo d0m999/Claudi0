@@ -53,7 +53,16 @@ func asyncSuite(_ name: String, _ body: @MainActor () async -> Void) async {
     await body()
 }
 
+if CommandLine.arguments.contains("--questions") {
+    runQuestionBindingSuites()
+    runHostQuestionHookSuites()
+    print("Questions: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 runEventSuites()
+runQuestionBindingSuites()
+runHostQuestionHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
 runHostHookRunnerSuites()

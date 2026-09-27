@@ -115,6 +115,7 @@ private actor BridgeAdapter: HostIntegrationAdapter {
             observesReceipt
             ? .observed(
                 HostReceiptEvidence(
+                    bindingID: binding.id,
                     installationID: installationID,
                     nativeEvent: binding.nativeEvent!,
                     event: binding.event,
@@ -128,6 +129,19 @@ private actor BridgeAdapter: HostIntegrationAdapter {
             configuration: .configured,
             writability: .writable,
             activation: activation,
+            bindingActivations: observesReceipt
+                ? Dictionary(
+                    uniqueKeysWithValues: capabilities.filter(\.isAudibleCapability).map {
+                        (
+                            $0.id,
+                            .observed(
+                                HostReceiptEvidence(
+                                    bindingID: $0.id, installationID: installationID,
+                                    nativeEvent: $0.nativeEvent!, event: $0.event,
+                                    timestamp: Date(timeIntervalSince1970: 123),
+                                    playbackResult: .played))
+                        )
+                    }) : [:],
             installationID: installationID)
     }
 }

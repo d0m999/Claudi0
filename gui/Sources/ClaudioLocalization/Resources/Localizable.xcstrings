@@ -1345,6 +1345,22 @@
         }
       }
     },
+    "qualification.question-intent-only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The question signal shows call intent; it does not confirm an input request"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提问前置信号只表示调用意图，不表示已等待回答"
+          }
+        }
+      }
+    },
     "integrations.destination.workbuddy-sounds-caption": {
       "localizations": {
         "en": {
@@ -1382,13 +1398,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@: Awaiting receipt"
+            "value": "%@: Unverified, awaiting a current receipt"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@：待回执"
+            "value": "%@：待验证，等待当前回执"
           }
         }
       }
@@ -13781,6 +13797,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待授权"
+          }
+        }
+      }
+    },
+    "event-notice.development-observation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Development observation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发观察"
+          }
+        }
+      }
+    },
+    "event-notice.question-intent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About to ask"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即将提问"
           }
         }
       }

@@ -50,9 +50,12 @@ func runEventSuites() {
     }
 
     suite("non-core events (v2 / out of scope) are rejected") {
-        for name in ["SessionStart", "SessionEnd", "PreToolUse"] {
+        for name in ["SessionStart", "SessionEnd", "PostToolUse"] {
             expect(Event(settingsName: name) == nil, "reject settingsName: \(name)")
         }
         expect(Event(cliName: "session_start") == nil, "reject cliName: session_start")
+        expect(
+            Event(settingsName: "PreToolUse") == .notification,
+            "提问 binding 复用 notification；实际 payload 必须经 HostQuestionHookPayload 校验")
     }
 }

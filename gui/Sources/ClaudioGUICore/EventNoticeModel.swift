@@ -31,12 +31,59 @@ public enum EventNoticeRecordStatus: String, Codable, Sendable, Equatable {
 /// One immutable source payload per version, shared by live and frozen projections. This is
 /// not another owner or cache: erasing every retained reference releases the source together.
 fileprivate final class EventNoticeContent: Sendable, Equatable {
-    let notice: HostEventNotice
+    private enum Payload: Sendable, Equatable {
+        case hook(HostEventNotice)
+        case developmentObservation(CodexQuestionObservation)
+    }
 
-    init(_ notice: HostEventNotice) { self.notice = notice }
+    private let payload: Payload
+
+    init(_ notice: HostEventNotice) { payload = .hook(notice) }
+    init(_ observation: CodexQuestionObservation) { payload = .developmentObservation(observation) }
+
+    var notice: HostEventNotice? {
+        guard case .hook(let notice) = payload else { return nil }
+        return notice
+    }
+
+    var provenance: EventNoticeProvenance {
+        switch payload {
+        case .hook: .hostHook
+        case .developmentObservation: .developmentCodexRollout
+        }
+    }
+
+    var host: HostID? {
+        switch payload {
+        case .hook(let notice): notice.host
+        case .developmentObservation: .codex
+        }
+    }
+
+    var source: HostEventSource? {
+        switch payload {
+        case .hook(let notice): notice.source
+        case .developmentObservation(let observation):
+            HostEventSource(projectLabel: nil, sessionID: observation.sessionID)
+        }
+    }
+
+    var reason: HostEventNoticeReason? {
+        switch payload {
+        case .hook(let notice): notice.reason
+        case .developmentObservation: .questionIntent
+        }
+    }
+
+    var occurredAt: Date {
+        switch payload {
+        case .hook(let notice): notice.occurredAt
+        case .developmentObservation(let observation): observation.occurredAt
+        }
+    }
 
     static func == (lhs: EventNoticeContent, rhs: EventNoticeContent) -> Bool {
-        lhs === rhs || lhs.notice == rhs.notice
+        lhs === rhs || lhs.payload == rhs.payload
     }
 }
 
@@ -49,6 +96,9 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
     public let occurredAt: Date?
     fileprivate let content: EventNoticeContent?
     public var notice: HostEventNotice? { content?.notice }
+    public var provenance: EventNoticeProvenance? { content?.provenance }
+    public var host: HostID? { content?.host }
+    public var reason: HostEventNoticeReason? { content?.reason }
     public let status: EventNoticeRecordStatus
     public let isExpired: Bool
     public let version: UInt64
@@ -61,7 +111,7 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
             installationID: notice.installationID)
     }
 
-    public var source: HostEventSource? { content?.notice.source }
+    public var source: HostEventSource? { content?.source }
     public var sessionID: String? { source?.sessionID }
 
     public init(
@@ -233,7 +283,7 @@ public enum EventNoticeKind: Sendable, Equatable {
             switch notice.reason {
             case .permission: return .permission
             case .needsInput: return .needsInput
-            case .informational: return .transient
+            case .informational, .questionIntent: return .transient
             case .review, nil: return .review
             }
         }
@@ -363,15 +413,15 @@ public final class EventNoticeModel: ObservableObject {
         }
         var notice: HostEventNotice? { content?.notice }
         var action: EventNoticeAction? {
-            guard let content else { return nil }
+            guard let notice else { return nil }
             return EventNoticeAction(
-                id: id, version: version, epoch: content.notice.receiverEpoch,
-                installationID: content.notice.installationID)
+                id: id, version: version, epoch: notice.receiverEpoch,
+                installationID: notice.installationID)
         }
         func matches(_ action: EventNoticeAction) -> Bool {
-            guard id == action.id, version == action.version, let content else { return false }
-            return content.notice.receiverEpoch == action.epoch
-                && content.notice.installationID == action.installationID
+            guard id == action.id, version == action.version, let notice else { return false }
+            return notice.receiverEpoch == action.epoch
+                && notice.installationID == action.installationID
         }
         func erase() {
             content = nil
@@ -385,6 +435,16 @@ public final class EventNoticeModel: ObservableObject {
         let expiresAt: TimeInterval
     }
 
+    private enum SeenIdentity: Equatable {
+        case hook(UUID)
+        case development(runID: UUID, session: Data, request: Data)
+
+        var isDevelopment: Bool {
+            if case .development = self { return true }
+            return false
+        }
+    }
+
     private let now: @MainActor () -> TimeInterval
     private let scheduler: EventNoticeScheduler
     /// Empty in production. Only adapters with real submission-order evidence may opt in.
@@ -395,8 +455,10 @@ public final class EventNoticeModel: ObservableObject {
     private var transient: Entry?
     private var currentID: UUID?
     private var protectedAction: EventNoticeAction?
-    private var seen: [(id: UUID, expiresAt: TimeInterval)] = []
+    private var seen: [(id: SeenIdentity, expiresAt: TimeInterval)] = []
     private var observations: [Observation] = []
+    private var developmentObservationRun: UUID?
+    private var developmentObservationStartedAt: TimeInterval?
     private var phase: EventNoticePresentationPhase = .hidden
     private var pauseReasons: EventNoticePauseReason = []
     private var isExpanded = false
@@ -446,12 +508,12 @@ public final class EventNoticeModel: ObservableObject {
             HostCapabilityCatalog.binding(host: host, nativeEvent: notice.nativeEvent)?
                 .isAudibleCapability == true
         else { return .invalid }
-        guard !seen.contains(where: { $0.id == notice.id }),
-            !entries.contains(where: { $0.content?.notice.id == notice.id }),
-            !frozen.contains(where: { $0.content?.notice.id == notice.id }),
-            transient?.content?.notice.id != notice.id
+        guard !seen.contains(where: { $0.id == .hook(notice.id) }),
+            !entries.contains(where: { $0.content?.notice?.id == notice.id }),
+            !frozen.contains(where: { $0.content?.notice?.id == notice.id }),
+            transient?.content?.notice?.id != notice.id
         else { return .duplicate }
-        seen.append((notice.id, now() + Self.retentionDuration))
+        seen.append((.hook(notice.id), now() + Self.retentionDuration))
         if seen.count > Self.maximumMetadataCount { seen.removeFirst() }
 
         let identity = Identity(notice)
@@ -533,6 +595,62 @@ public final class EventNoticeModel: ObservableObject {
         entries.append(entry)
         if canAutomaticallyDisplay {
             frozen = [entry]
+            beginDisplaying(entry)
+        }
+        return .accepted
+    }
+
+    /// The explicit development observer registers one run in the current privacy epoch.
+    /// Changing that run clears only development metadata and its transient display.
+    public func setDevelopmentObservationRun(_ runID: UUID?) {
+        guard developmentObservationRun != runID else { return }
+        developmentObservationRun = canReceive ? runID : nil
+        developmentObservationStartedAt = developmentObservationRun == nil ? nil : now()
+        seen.removeAll { $0.id.isDevelopment }
+        if transient?.content?.provenance == .developmentCodexRollout {
+            hideImmediately()
+        }
+        publish()
+    }
+
+    /// In-process development evidence never enters the hook validator, receipts or Attention.
+    @discardableResult
+    public func acceptDevelopmentObservation(_ observation: CodexQuestionObservation)
+        -> EventNoticeAcceptance
+    {
+        expireEntries()
+        defer { publish() }
+        guard canReceive else { return .ignoredDisabled }
+        guard observation.runID == developmentObservationRun,
+            let startedAt = developmentObservationStartedAt
+        else { return .staleEpoch }
+        guard observation.observedUptime.isFinite,
+            observation.observedUptime >= max(startedAt, epochStartedAt),
+            observation.observedUptime <= now(), observation.observedUptime > 0,
+            observation.occurredAt.timeIntervalSince1970.isFinite
+        else { return .staleObservation }
+        let request = Data(observation.requestID.utf8)
+        guard observation.sessionID.utf8.count == 36,
+            UUID(uuidString: observation.sessionID)?.uuidString.lowercased()
+                == observation.sessionID,
+            (1...256).contains(request.count),
+            request.allSatisfy({
+                (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0)
+                    || [45, 46, 58, 95].contains($0)
+            })
+        else { return .invalid }
+        let identity = SeenIdentity.development(
+            runID: observation.runID, session: Data(observation.sessionID.utf8), request: request)
+        guard !seen.contains(where: { $0.id == identity }) else { return .duplicate }
+        seen.append((identity, now() + Self.retentionDuration))
+        if seen.count > Self.maximumMetadataCount { seen.removeFirst() }
+        if canAutomaticallyDisplay {
+            let entry = Entry(
+                id: UUID(), version: 1, event: .notification, kind: .transient,
+                expiresAt: now() + Self.retentionDuration,
+                content: EventNoticeContent(observation), identity: nil)
+            transient = entry
+            frozen.removeAll()
             beginDisplaying(entry)
         }
         return .accepted
@@ -751,6 +869,8 @@ public final class EventNoticeModel: ObservableObject {
         protectedAction = nil
         seen.removeAll()
         observations.removeAll()
+        developmentObservationRun = nil
+        developmentObservationStartedAt = nil
         phase = .hidden
         pauseReasons = []
         isExpanded = false
@@ -935,7 +1055,7 @@ public final class EventNoticeModel: ObservableObject {
 
     private func record(_ entry: Entry) -> EventNoticeRecord {
         EventNoticeRecord(
-            id: entry.id, event: entry.event, occurredAt: entry.content?.notice.occurredAt,
+            id: entry.id, event: entry.event, occurredAt: entry.content?.occurredAt,
             content: entry.content, status: entry.id == currentID ? .displayed : .collapsed,
             isExpired: entry.content == nil, version: entry.version,
             isActionable: entry.action.map(isCurrent) ?? false, kind: entry.kind)

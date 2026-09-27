@@ -22,6 +22,7 @@ private func hostPresentationSnapshot(
             activation: .none)
     }
     let evidence = HostReceiptEvidence(
+        bindingID: binding.id,
         installationID: hostPresentationInstallationID,
         nativeEvent: binding.nativeEvent!,
         event: binding.event,
@@ -41,6 +42,20 @@ private func hostPresentationSnapshot(
         configuration: .configured,
         writability: .writable,
         activation: resolvedActivation,
+        bindingActivations: activation == nil
+            ? Dictionary(
+                uniqueKeysWithValues: HostCapabilityCatalog.bindings(for: host)
+                    .filter(\.isAudibleCapability).map {
+                        (
+                            $0.id,
+                            .observed(
+                                HostReceiptEvidence(
+                                    bindingID: $0.id,
+                                    installationID: hostPresentationInstallationID,
+                                    nativeEvent: $0.nativeEvent!, event: $0.event,
+                                    timestamp: evidence.timestamp, playbackResult: .played))
+                        )
+                    }) : [:],
         latestReceipt: latestReceipt,
         installationID: hostPresentationInstallationID)
 }
