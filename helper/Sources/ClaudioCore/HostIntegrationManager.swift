@@ -92,6 +92,18 @@ func inspectSharedRuntimeHelper(at helper: URL) -> SharedRuntimeHealth {
     return .ready
 }
 
+/// A system-sound selection is understood only by the helper bundled with this app version.
+/// The UI calls this immediately before a new selection so an older installed helper cannot
+/// silently play the selected pack sound for that event instead.
+public func installedHelperMatchesBundledRuntime(
+    bundledHelper: URL?, installedHelper: URL = ClaudioPaths.claudioBinary
+) -> Bool {
+    guard let bundledHelper, inspectSharedRuntimeHelper(at: installedHelper) == .ready else {
+        return false
+    }
+    return identicalRunnableHelperFiles(from: bundledHelper, to: installedHelper)
+}
+
 public struct SystemSharedRuntimeBootstrapper: SharedRuntimeBootstrapping {
     public let environment: SetupEnvironment
 

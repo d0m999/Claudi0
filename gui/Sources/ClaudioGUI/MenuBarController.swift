@@ -125,6 +125,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         preferences: ClaudioPreferences,
         loginItemSettings: LoginItemSettingsModel,
         audioEnvironment: AudioImportEnvironment,
+        bundledHelper: URL?,
         hostIntegrationState: HostIntegrationPresentationState,
         integrationMatrixProvider: HostIntegrationMatrixProvider,
         integrationActionProvider: HostIntegrationActionProvider
@@ -185,6 +186,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             configFile: ClaudioPaths.configFile,
             environment: audioEnvironment,
             soundPackLibrary: soundPackLibrary,
+            bundledHelper: bundledHelper,
             soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
             afterFullReload: { [weak actionRouter] _ in
                 actionRouter?.audibilityInputsChanged()

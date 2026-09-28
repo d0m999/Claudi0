@@ -221,6 +221,7 @@ public func handleHostHook(
         configFile: base.configFile,
         userPacksDirectory: base.userPacksDirectory,
         bundledPacksDirectory: base.bundledPacksDirectory,
+        systemSoundDirectory: base.systemSoundDirectory,
         spawner: base.spawner,
         debounceStateFile: isTaskStart
             ? environment.taskStartDebounceStateFile

@@ -85,6 +85,9 @@ public final class PanelConfigController: ObservableObject {
     @Published public private(set) var configState: PanelConfigState
     /// 读模型（`packCoverage` / `availablePacks`）算什么用的那份 config —— 不是决定哪个顶层视图渲染的。
     @Published public private(set) var config: ClaudioConfig
+    @Published public private(set) var systemSoundNames: [String] = []
+    private let systemSoundCatalog: SystemSoundCatalog
+    private let systemSoundSelectionAllowed: @Sendable () -> Bool
     /// `nil` 是全局默认 profile；非 nil 时 `config` 是该 surface 的 effective 投影。
     @Published public private(set) var selectedSurface: HostSurfaceID?
     @Published public private(set) var selectedWorkspaceID: UUID? = nil
@@ -125,8 +128,66 @@ public final class PanelConfigController: ObservableObject {
             config: config, scope: .fullLibrary, defaultStarredPackIDs: builtinPackIDs)
     }
     public func previewURL(for event: Event) -> URL? {
+        if let name = config.systemSounds[event.cliName] {
+            return systemSoundCatalog.audioURL(named: name)
+        }
         guard let row = eventRows.first(where: { $0.event == event }) else { return nil }
         return eventPreviewFileURL(row: row, packID: config.selectedPack, environment: environment)
+    }
+
+    public func selectSystemSound(_ name: String?, for event: Event) -> Result<
+        Void, SystemSoundSelectionError
+    > {
+        guard soundControlsEnabled else {
+            return .failure(.configFailure(reason: "当前声音作用域不可写。"))
+        }
+        if name != nil && !systemSoundSelectionAllowed() {
+            return .failure(.outdatedHelper)
+        }
+        if let id = selectedWorkspaceID {
+            guard let target = selectedWorkspaceWriteTarget, target.id == id else {
+                workspaceError = .staleRule
+                return .failure(.configFailure(reason: WorkspaceSoundError.staleRule.description))
+            }
+            let result = mutateWorkspaceSound(
+                .systemSound(target, event, name), configFile: configFile,
+                lockFile: lockFile, userPacksDirectory: environment.userPacksDirectory,
+                bundledPacksDirectory: environment.bundledPacksDirectory,
+                systemSoundCatalog: systemSoundCatalog)
+            switch result {
+            case .success:
+                workspaceError = nil
+                reload(origin: .writeAction, refreshSoundPackLibrary: false)
+                soundPacksRefreshCoordinator?.completeConfigFactChange(
+                    .changed, source: configProjectionToken)
+                return .success(())
+            case .failure(let error):
+                if error.isPublishedConflict || error == .staleRule {
+                    reload(origin: .writeAction, refreshSoundPackLibrary: false)
+                }
+                workspaceError = error
+                return .failure(.configFailure(reason: error.description))
+            }
+        }
+        guard selectedSurface == nil else {
+            return .failure(.configFailure(reason: "来源声音入口已退役。"))
+        }
+        let result = setSystemSound(
+            event, name: name, catalog: systemSoundCatalog,
+            configFile: configFile, lockFile: lockFile)
+        switch result {
+        case .success:
+            reload(origin: .writeAction, refreshSoundPackLibrary: false)
+            soundPacksRefreshCoordinator?.completeConfigFactChange(
+                .changed, source: configProjectionToken)
+        case .failure(let error):
+            if error.isPublishedConflict {
+                reload(origin: .writeAction, refreshSoundPackLibrary: false)
+                soundPacksRefreshCoordinator?.completeConfigFactChange(
+                    .changed, source: configProjectionToken)
+            }
+        }
+        return result
     }
 
     /// Rechecks the selected audio at click time and refreshes the shared read projection after
@@ -280,6 +341,8 @@ public final class PanelConfigController: ObservableObject {
         lockFile: URL,
         environment: AudioImportEnvironment,
         soundPackLibrary: SoundPackLibrary,
+        systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog(),
+        systemSoundSelectionAllowed: @escaping @Sendable () -> Bool = { true },
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void = { _ in },
         soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil
     ) {
@@ -288,6 +351,8 @@ public final class PanelConfigController: ObservableObject {
             lockFile: lockFile,
             environment: environment,
             soundPackLibrary: soundPackLibrary,
+            systemSoundCatalog: systemSoundCatalog,
+            systemSoundSelectionAllowed: systemSoundSelectionAllowed,
             readSource: .sharedLibrary,
             afterFullReload: afterFullReload,
             soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
@@ -308,7 +373,9 @@ public final class PanelConfigController: ObservableObject {
         selectedPackMetadata: SelectedPackMetadata? = nil,
         libraryPresentationState: SoundPackLibraryPresentationState = .ready,
         environment: AudioImportEnvironment,
-        previewConfigFile: URL? = nil
+        previewConfigFile: URL? = nil,
+        systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog(),
+        systemSoundSelectionAllowed: @escaping @Sendable () -> Bool = { true }
     ) {
         let baseConfig = previewConfigState.resolvedConfig
         let config = effectiveConfig ?? baseConfig
@@ -321,6 +388,8 @@ public final class PanelConfigController: ObservableObject {
         self.configReadIsInjected = true
         self.lockFile = lockFile
         self.environment = environment
+        self.systemSoundCatalog = systemSoundCatalog
+        self.systemSoundSelectionAllowed = systemSoundSelectionAllowed
         self.soundPackLibrary = SoundPackLibrary(environment: environment)
         self.readSource = .directDiskFixture
         self.builtinPackIDs = builtinPackIDs
@@ -355,6 +424,7 @@ public final class PanelConfigController: ObservableObject {
         self.packSwitchError = nil
         self.muteError = nil
         self.masterVolumeError = nil
+        self.systemSoundNames = systemSoundCatalog.availableNames()
     }
 
     /// Compatibility initializer for the existing synchronous disk-behavior harness. Production
@@ -363,6 +433,8 @@ public final class PanelConfigController: ObservableObject {
         configFile: URL,
         lockFile: URL,
         environment: AudioImportEnvironment,
+        systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog(),
+        systemSoundSelectionAllowed: @escaping @Sendable () -> Bool = { true },
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void = { _ in },
         soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil
     ) {
@@ -371,6 +443,8 @@ public final class PanelConfigController: ObservableObject {
             lockFile: lockFile,
             environment: environment,
             soundPackLibrary: SoundPackLibrary(environment: environment),
+            systemSoundCatalog: systemSoundCatalog,
+            systemSoundSelectionAllowed: systemSoundSelectionAllowed,
             readSource: .directDiskFixture,
             afterFullReload: afterFullReload,
             soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
@@ -382,6 +456,8 @@ public final class PanelConfigController: ObservableObject {
         lockFile: URL,
         environment: AudioImportEnvironment,
         soundPackLibrary: SoundPackLibrary,
+        systemSoundCatalog: SystemSoundCatalog,
+        systemSoundSelectionAllowed: @escaping @Sendable () -> Bool,
         readSource: SoundPackReadSource,
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void,
         soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator?
@@ -390,6 +466,8 @@ public final class PanelConfigController: ObservableObject {
         self.configReadIsInjected = false
         self.lockFile = lockFile
         self.environment = environment
+        self.systemSoundCatalog = systemSoundCatalog
+        self.systemSoundSelectionAllowed = systemSoundSelectionAllowed
         self.soundPackLibrary = soundPackLibrary
         self.readSource = readSource
         self.builtinPackIDs = readSource.readsSharedSnapshot ? [] : environment.builtinPackIDs
@@ -431,6 +509,8 @@ public final class PanelConfigController: ObservableObject {
         self.muteError = nil
         self.masterVolumeError = nil
 
+        refreshSystemSoundNames()
+
         soundPacksRefreshCancellable = soundPacksRefreshCoordinator?.$panelReloadRevision
             .dropFirst()
             .sink { [weak self] _ in
@@ -470,6 +550,14 @@ public final class PanelConfigController: ObservableObject {
 
     deinit {
         libraryObservationTask?.cancel()
+    }
+
+    private func refreshSystemSoundNames() {
+        let catalog = systemSoundCatalog
+        Task.detached(priority: .utility) { [weak self] in
+            let names = catalog.availableNames()
+            await MainActor.run { self?.systemSoundNames = names }
+        }
     }
 
     /// 把 `event` 的静音位翻到当前值的**反面**，经 ``EventMuteController`` 写盘，再按结果路由刷新。
@@ -718,6 +806,7 @@ public final class PanelConfigController: ObservableObject {
             clearWriteFailures()
         }
         reload(using: loadPanelConfig(from: configFile))
+        refreshSystemSoundNames()
         guard readSource.readsSharedSnapshot, refreshSoundPackLibrary else { return }
         Task { await soundPackLibrary.requestRefresh(trigger: .panelPresentation) }
     }
@@ -941,6 +1030,7 @@ public final class PanelConfigController: ObservableObject {
             effective.selectedPack = profile.selectedPack
             effective.eventsEnabled = profile.eventsEnabled
             effective.masterVolume = profile.volume
+            effective.systemSounds = profile.systemSounds
             config = effective
         case .failure(let error):
             workspaceError = error

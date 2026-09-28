@@ -267,6 +267,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventCoverageBroken: Self = "event.coverage.broken"
     public static let eventCoveragePresentFile: Self = "event.coverage.present-file"
     public static let eventCoverageBrokenFile: Self = "event.coverage.broken-file"
+    public static let workspaceSystemSoundFile: Self = "workspace.system-sound.file"
+    public static let workspaceSystemSoundMissing: Self = "workspace.system-sound.missing"
     public static let eventPreviewLabel: Self = "event.preview.label"
     public static let eventPreviewStarted: Self = "event.preview.started"
     public static let eventPreviewAvailableEnabled: Self = "event.preview.available-enabled"
@@ -535,6 +537,13 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "event-settings.automatic-playback-for"
     public static let eventSettingsManageSounds: Self = "event-settings.manage-sounds"
     public static let eventSettingsManageSoundsHint: Self = "event-settings.manage-sounds.hint"
+    public static let eventSettingsSoundChoice: Self = "event-settings.sound-choice"
+    public static let eventSettingsSelectedPackSound: Self = "event-settings.selected-pack-sound"
+    public static let eventSettingsSystemSounds: Self = "event-settings.system-sounds"
+    public static let eventSettingsNoSystemSounds: Self = "event-settings.no-system-sounds"
+    public static let eventSettingsSoundChoiceFailed: Self = "event-settings.sound-choice-failed"
+    public static let eventSettingsCurrentHelperRequired: Self =
+        "event-settings.current-helper-required"
     public static let eventSettingsConflictReadback: Self = "event-settings.conflict-readback"
     public static let eventSettingsRetryTargetChanged: Self =
         "event-settings.retry-target-changed"
@@ -1446,7 +1455,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventSettingsPreviewAllFailure,
         .eventSettingsAutomaticPlayback, .eventSettingsAutomaticPlaybackFor,
         .eventSettingsManageSounds,
-        .eventSettingsManageSoundsHint, .eventSettingsConflictReadback,
+        .eventSettingsManageSoundsHint, .eventSettingsSoundChoice,
+        .eventSettingsSelectedPackSound, .eventSettingsSystemSounds,
+        .eventSettingsNoSystemSounds, .eventSettingsSoundChoiceFailed,
+        .eventSettingsCurrentHelperRequired,
+        .eventSettingsConflictReadback,
         .eventSettingsRetryTargetChanged, .eventSettingsRetryReadbackUnavailable,
         .eventSettingsWindowTitle,
         .eventSettingsUnavailableShortcutScope,
@@ -1649,6 +1662,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventTaskStart, .eventStop, .eventStopFailure, .eventNotification, .eventSubagentStop,
         .eventEditorHint, .eventCoveragePresent, .eventCoverageUnmapped, .eventCoverageBroken,
         .eventCoveragePresentFile, .eventCoverageBrokenFile, .eventPreviewLabel,
+        .workspaceSystemSoundFile, .workspaceSystemSoundMissing,
         .eventPreviewStarted,
         .eventPreviewAvailableEnabled, .eventPreviewAvailableMuted, .eventPreviewUnavailable,
         .eventMuteHint, .eventMute, .eventUnmute, .eventEnabled, .eventMuted, .eventPreviewHint,
