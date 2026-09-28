@@ -117,7 +117,9 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
                 self.model.setKeyboardFocused(false)
                 self.model.dismiss()
             } else if outcome != .cancelled, self.model.viewSource(action) == .applied {
-                if NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID {
+                if self.isInteractive,
+                    NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID
+                {
                     self.becomeInteractive()
                 }
             }
