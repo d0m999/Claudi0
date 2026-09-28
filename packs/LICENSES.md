@@ -206,3 +206,24 @@ CC0（Public Domain Dedication）在法律性质上是**不可撤销**的——�
 - 2026-09-08：`soft-mallet` 升至 0.1.1；统一使用 30ms 末端淡出和 30ms 全零保护区，按标准命令将五个事件尾静音收紧到约 40–76ms。
 
 **本组验收状态**：源授权、源文件哈希、格式、时长、响度、真峰值、末尾全零区和 10 对事件的频谱/时序差异已核验；真人“悦耳度”、随机盲辨和十分钟疲劳测试尚未完成。本组只加入试听页，不自动替换当前默认选择。
+
+## station-chimes（车站提示音，程序化策展候选）：2026-09-28
+
+五条事件音频由项目内确定性合成器从数学振荡器、包络和生成噪声渲染；不读取第三方录音或采样。64 条较长的风格试听文件保留在 `pack-drafts/station-chimes/`，不属于本包。以下五条短事件 WAV 以 `CC0-1.0` 发布。
+
+- manifest：[`station-chimes/manifest.json`](./station-chimes/manifest.json)
+- 源记录：[`station-chimes-source-2026-09-28.html`](./license-snapshots/station-chimes-source-2026-09-28.html)
+- 包级许可声明：[`station-chimes-package-License-2026-09-28.txt`](./license-snapshots/station-chimes-package-License-2026-09-28.txt)
+- 官方 CC0 文本快照：[`cc0-1.0-deed-2026-09-02.png`](./license-snapshots/cc0-1.0-deed-2026-09-02.png)
+- 生成器：[`scripts/generate-station-chimes.mjs`](../scripts/generate-station-chimes.mjs)，SHA256：`a215f164fa7225ae4f24ee1a9d70cdc2ff5e15e26a5788e8f8ae3dd0d223fe1b`
+- 统一处理：44.1 kHz、单声道、16-bit PCM WAV；8 ms 淡入、30 ms 淡出；`task_start` 峰值目标 −7.0 dBFS，其余四音统一采用峰值法，目标 −1.2 dBFS。
+
+| event | 分发文件 | 生成配方 | 时长 | SHA256 |
+|---|---|---|---:|---|
+| `task_start` | `station-chimes/task_start.wav` | G4 → C5 的短确认音 | 0.30 s | `34afc02bf0b15801fbca70094c8260cb77f7061bf62154326dbfa279c7f5a4db` |
+| `stop` | `station-chimes/stop.wav` | 地铁车门铃片段 | 0.75 s | `bd14f3e9606b60a14176cf2b9728880b28a028539bc1577981b9a78858205901` |
+| `stop_failure` | `station-chimes/stop_failure.wav` | 环线下行旋律片段 | 0.88 s | `461c36a5e70919521951542c4f3d7ec939b9bed54512e03bf0390298406c084a` |
+| `notification` | `station-chimes/notification.wav` | 地铁广播提示片段 | 1.20 s | `8fb34571078ba3273159563a456c9103027a5138553c3bbedd5f19eeabfe399a` |
+| `subagent_stop` | `station-chimes/subagent_stop.wav` | 观光线旋律起音 | 0.42 s | `e1f80115cb57040e38f1f51fb181f66291dc46a3b9565d0347a4675e4341cfa5` |
+
+客观测量：五音均 ≤ 2.02 s，真峰值 `task_start` −7.0 dBTP、其余四音 −1.2 dBTP；策展包目录约 318 KB。尚未进行真人听感、疲劳度或正式打包发布验收；当前内置包选择仍只有 `minimal-chime`。

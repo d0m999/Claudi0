@@ -391,6 +391,34 @@
           notification: "柔铃双击 · 730ms",
           subagent_stop: "低位单回应 · 490ms"
         }
+      },
+      {
+        id: "station-chimes",
+        name: "车站提示音",
+        source: "Claudio · 自有确定性合成器",
+        sourceUrl: "scripts/generate-station-chimes.mjs",
+        sourceLinkLabel: "查看生成器源码",
+        licenseEvidence: "无第三方录音或采样 · CC0 声明见 LICENSES.md",
+        processing: "数学振荡器、包络与生成噪声合成；统一输出为 44.1 kHz、16-bit 单声道 WAV。",
+        accent: "#7fd1c1",
+        style: "原创车站铃音",
+        grammar: "短确认 / 车门铃 / 下行旋律 / 广播提示 / 短回应",
+        description: "五事件策展候选；以原创车站提示音的形式区分事件，尚未列入默认分发集合。",
+        audioExtension: "wav",
+        sources: {
+          task_start: "scripts/generate-station-chimes.mjs · G4 → C5",
+          stop: "scripts/generate-station-chimes.mjs · 地铁车门铃片段",
+          stop_failure: "scripts/generate-station-chimes.mjs · 环线下行旋律片段",
+          notification: "scripts/generate-station-chimes.mjs · 地铁广播提示片段",
+          subagent_stop: "scripts/generate-station-chimes.mjs · 观光线旋律起音"
+        },
+        signatures: {
+          task_start: "短确认音 · 300ms",
+          stop: "车门铃片段 · 750ms",
+          stop_failure: "下行旋律片段 · 880ms",
+          notification: "广播提示片段 · 1.20s",
+          subagent_stop: "短回应 · 420ms"
+        }
       }
     ];
 

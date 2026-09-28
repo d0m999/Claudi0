@@ -1,0 +1,14 @@
+STATION CHIMES AUDIO PACKAGE LICENSE DECLARATION
+Recorded: 2026-09-28
+
+The five event WAV files in packs/station-chimes/ are original procedural
+renderings made for Claudio. The generator uses mathematical oscillators,
+envelopes, and generated noise, with no third-party recordings or samples.
+
+The rendered audio files are dedicated to the public domain under Creative
+Commons CC0 1.0 Universal, to the extent permitted by law:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution is required. The source recipe and generator hash are recorded
+in station-chimes-source-2026-09-28.html. The official CC0 deed snapshot is
+cc0-1.0-deed-2026-09-02.png.

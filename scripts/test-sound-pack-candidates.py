@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import math
 import re
+import shutil
 import struct
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import ModuleType
@@ -97,6 +100,29 @@ def decoded_peak_dbfs(path: Path) -> float:
     return float(matches[-1])
 
 
+def true_peak_dbfs(path: Path) -> float:
+    result = subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-i",
+            str(path),
+            "-af",
+            "ebur128=peak=true",
+            "-f",
+            "null",
+            "-",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    matches = re.findall(r"True peak:\s*Peak:\s*(-?[0-9.]+) dBFS", result.stderr)
+    if not matches:
+        raise AssertionError(f"could not measure true peak for {path}")
+    return float(matches[-1])
+
+
 def decoded_lufs(path: Path) -> float:
     result = subprocess.run(
         [
@@ -155,6 +181,125 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
             "generate_claude_default_packs",
             "scripts/generate-claude-default-packs.py",
         )
+
+    def test_station_chimes_curated_pack_has_five_bounded_events(self) -> None:
+        pack = ROOT / "packs/station-chimes"
+        manifest = json.loads((pack / "manifest.json").read_text())
+        self.assertEqual(manifest["schema"], 1)
+        self.assertEqual(manifest["id"], "station-chimes")
+        self.assertTrue(manifest["author"])
+        self.assertEqual(manifest["license"], "CC0-1.0")
+        events = manifest["events"]
+        self.assertEqual(
+            set(events),
+            {"task_start", "stop", "stop_failure", "notification", "subagent_stop"},
+        )
+        self.assertTrue(
+            all(isinstance(filename, str) for filename in events.values())
+        )
+        audio_files = {
+            path.name
+            for path in pack.iterdir()
+            if path.suffix in {".wav", ".mp3", ".aiff", ".m4a"}
+        }
+        self.assertEqual(audio_files, set(events.values()))
+        preview = (ROOT / "station-chimes.html").read_text()
+        for event, filename in events.items():
+            path = pack / filename
+            with self.subTest(event=event):
+                self.assertIn(f"packs/station-chimes/{filename}", preview)
+                self.assertLessEqual(duration_seconds(path), 2.02)
+                self.assertLessEqual(true_peak_dbfs(path), -1.0)
+                peak = decoded_peak_dbfs(path)
+                if event == "task_start":
+                    self.assertLessEqual(peak, -6.0)
+                else:
+                    self.assertGreaterEqual(peak, -1.3)
+                    self.assertLessEqual(peak, -0.7)
+        self.assertLessEqual(
+            sum(path.stat().st_size for path in pack.iterdir() if path.is_file()),
+            1_500_000,
+        )
+
+    def test_magic_chime_stays_out_of_curated_packs(self) -> None:
+        self.assertFalse((ROOT / "packs/magic-chime").exists())
+
+    def test_station_generator_routes_preview_outside_pack_in_spaced_path(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            root = Path(parent) / "repo 空格"
+            script_dir = root / "scripts"
+            script_dir.mkdir(parents=True)
+            script = script_dir / "generate-station-chimes.mjs"
+            shutil.copy2(ROOT / "scripts/generate-station-chimes.mjs", script)
+            subprocess.run(
+                ["node", str(script)],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                timeout=90,
+            )
+            self.assertEqual(
+                len(list((root / "pack-drafts/station-chimes").glob("*.wav"))),
+                64,
+            )
+            self.assertEqual(
+                {path.name for path in (root / "packs/station-chimes").glob("*.wav")},
+                {
+                    f"{event}.wav"
+                    for event in (
+                        "task_start",
+                        "stop",
+                        "stop_failure",
+                        "notification",
+                        "subagent_stop",
+                    )
+                },
+            )
+
+    def test_station_copy_includes_only_five_event_wavs(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            source = Path(parent) / "source"
+            source.mkdir()
+            shutil.copytree(ROOT / "packs/station-chimes", source / "station-chimes")
+            shutil.copy2(ROOT / "packs/LICENSES.md", source / "LICENSES.md")
+            (source / "bundled-pack-selection.json").write_text(
+                json.dumps(
+                    {
+                        "schema": 1,
+                        "purpose": "claudi0 default bundled sound pack selection",
+                        "selected_pack_ids": ["station-chimes"],
+                    }
+                )
+            )
+            destination = Path(parent) / "destination"
+            subprocess.run(
+                [
+                    "bash",
+                    str(ROOT / "scripts/copy-bundled-packs.sh"),
+                    str(source),
+                    str(destination),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                {path.name for path in (destination / "station-chimes").glob("*.wav")},
+                {
+                    f"{event}.wav"
+                    for event in (
+                        "task_start",
+                        "stop",
+                        "stop_failure",
+                        "notification",
+                        "subagent_stop",
+                    )
+                },
+            )
+            self.assertEqual(
+                {path.name for path in destination.iterdir()},
+                {"station-chimes", "LICENSES.md", "bundled-pack-selection.json"},
+            )
 
     def test_resonant_overlapping_tone_boundary_is_continuous(self) -> None:
         event = self.resonant.EVENTS["task_start"]
@@ -265,6 +410,8 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
             ROOT / "scripts/generate-claude-default-packs.py",
             ROOT / "scripts/generate-resonant-bowl.py",
             ROOT / "scripts/generate-soft-mallet.py",
+            *sorted((ROOT / "packs/station-chimes").glob("*.wav")),
+            ROOT / "scripts/generate-station-chimes.mjs",
         ]
         for path in paths:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -289,6 +436,15 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
                 / "packs/license-snapshots/resonant-bowl-package-License-2026-09-02.txt",
                 "final 40 ms",
                 None,
+            ),
+            (
+                ROOT / "scripts/generate-station-chimes.mjs",
+                ROOT / "packs/license-snapshots/station-chimes-source-2026-09-28.html",
+                ROOT
+                / "packs/license-snapshots"
+                / "station-chimes-package-License-2026-09-28.txt",
+                "0.30 s",
+                "station-chimes-source-2026-09-28.html",
             ),
         ]
 
