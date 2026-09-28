@@ -137,6 +137,51 @@ func runHostIntegrationPresentationSuites() {
             "删除 adapter 映射必须暴露 unsupported，而非补写声音能力")
     }
 
+    suite("旧版 Claude 通知：共享矩阵和集成来源说明保留两条绑定的不同事实") {
+        let legacy = HostIntegrationSnapshot(
+            host: .claudeCode,
+            runtime: .ready,
+            availability: .available,
+            configuration: .legacyConnected,
+            writability: .writable,
+            activation: .none)
+        let matrix = hostPresentationMatrix(snapshots: [legacy])
+        guard
+            let cell = hostCapabilityMatrixPresentation(from: matrix)
+                .cell(host: .claudeCode, event: .notification)
+        else {
+            expect(false, "旧版 Claude 必须保留 notification 格")
+            return
+        }
+        let english = localizedCapabilityCell(cell, language: .english)
+        expect(
+            english.detailText
+                == "Notification: audible through the legacy hook without a current receipt; PreToolUse question hook: not installed by the legacy connection, upgrade the connection",
+            "英文矩阵详情必须分别说明仍可听的旧通知和未安装的提问绑定")
+        expect(
+            english.accessibilityLabel.contains("Notification: audible")
+                && english.accessibilityLabel.contains("PreToolUse question hook: not installed")
+                && !english.accessibilityLabel.contains("inaudible"),
+            "英文无障碍文案不得抹掉旧通知可听的事实")
+        guard
+            let row = hostSourceRowPresentations(from: matrix)
+                .first(where: { $0.host == .claudeCode })
+        else {
+            expect(false, "集成页必须保留 Claude Code 来源行")
+            return
+        }
+        expect(
+            row.detailText?.contains("Notification 仍可播放") == true
+                && row.detailText?.contains("PreToolUse 提问入口") == true
+                && row.detailText?.contains("请升级连接") == true,
+            "集成页旧版连接说明必须同时交代旧通知与新增提问入口")
+        let englishRow = localizedHostSourceRow(row, language: .english)
+        expect(
+            englishRow.detailText?.contains("Notification can still play") == true
+                && englishRow.detailText?.contains("PreToolUse question hook") == true,
+            "集成页英文说明必须保留逐绑定事实")
+    }
+
     suite("Accessibility Beta qualification：能力格和事件指示器共享双语限定语") {
         let source = "Accessibility Beta 候选尚未实现"
         let cell = HostCapabilityCellPresentation(

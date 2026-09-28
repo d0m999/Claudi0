@@ -158,7 +158,9 @@ private func hostSourceRowPresentation(
         totalCount = total
         readinessText = "\(supported)/\(total) 旧版连接"
         switch host {
-        case .claudeCode: detailText = "四个旧版事件可听；任务开始需升级"
+        case .claudeCode:
+            detailText =
+                "四个旧版 hook 已接入；Notification 仍可播放；PreToolUse 提问入口和任务开始未安装，请升级连接"
         case .codex, .workBuddy: detailText = "可听，但暂无真实回执"
         case .chatGPTDesktopAX, .claudeDesktopAX: detailText = nil
         }

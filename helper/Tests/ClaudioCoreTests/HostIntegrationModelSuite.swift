@@ -407,6 +407,40 @@ func runHostIntegrationModelSuites() {
         expect(
             matrix.cell(host: .claudeCode, event: .stop)?.state == .legacy,
             "旧安装器实际写入的四个 lifecycle 事件仍应保持 legacy 可听")
+        let notification = matrix.cell(host: .claudeCode, event: .notification)
+        expect(
+            notification?.state == .degraded,
+            "旧 Notification 可听不能把未安装的 PreToolUse 提问绑定也判为 legacy 可听")
+        expect(
+            notification?.detail
+                == "Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接",
+            "聚合格必须逐绑定说明旧通知可听与新增提问入口缺失，并给出升级原因")
+        expect(
+            notification?.accessibilityLabel
+                == "Claude Code，等待介入，完整支持，需要处理，各绑定状态见详情，Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接",
+            "VoiceOver 不得把仍可听的旧 Notification 统称不可听")
+        let mutedNotification = AudibilityMatrix.make(
+            snapshots: [legacy],
+            capabilities: [.claudeCode: HostCapabilityCatalog.bindings(for: .claudeCode)],
+            soundCoverage: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }),
+            enabledEvents: Dictionary(
+                uniqueKeysWithValues: Event.allCases.map { ($0, $0 != .notification) })
+        )
+        .cell(host: .claudeCode, event: .notification)
+        expect(
+            mutedNotification?.detail
+                == "Notification：旧版已安装，当前静音；PreToolUse 提问入口：旧版未安装，请升级连接"
+                && mutedNotification?.accessibilityLabel.contains("旧版可听") == false,
+            "旧通知被静音时仍须逐绑定说明，不能声称当前可听")
+        let legacyNotification = HostCapabilityCatalog.binding(
+            host: .claudeCode, nativeEvent: "Notification")!
+        let notificationOnly = AudibilityMatrix.make(
+            snapshots: [legacy], capabilities: [.claudeCode: [legacyNotification]],
+            soundCoverage: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }),
+            enabledEvents: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }))
+        expect(
+            notificationOnly.cell(host: .claudeCode, event: .notification)?.state == .legacy,
+            "旧安装器实际写入的 Notification binding 仍应保持 legacy 可听")
     }
 
     suite("Shared runtime inspect：helper 必须是非空、可执行、无隔离的普通文件") {

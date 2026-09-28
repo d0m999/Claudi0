@@ -1302,13 +1302,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Four legacy events are audible; task start needs an upgrade"
+            "value": "Four legacy hooks remain installed; Notification can still play; the PreToolUse question hook and task start are not installed, so upgrade the connection"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "四个旧版事件可听；任务开始需升级"
+            "value": "四个旧版 hook 已接入；Notification 仍可播放；PreToolUse 提问入口和任务开始未安装，请升级连接"
           }
         }
       }
@@ -2289,6 +2289,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "需要处理"
+          }
+        }
+      }
+    },
+    "cell.legacy-notification-audible-detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification: audible through the legacy hook without a current receipt; PreToolUse question hook: not installed by the legacy connection, upgrade the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接"
+          }
+        }
+      }
+    },
+    "cell.legacy-notification-muted-detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification: legacy hook installed but currently muted; PreToolUse question hook: not installed by the legacy connection, upgrade the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification：旧版已安装，当前静音；PreToolUse 提问入口：旧版未安装，请升级连接"
+          }
+        }
+      }
+    },
+    "cell.legacy-notification-missing-sound-detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification: legacy hook installed but the sound file is missing; PreToolUse question hook: not installed by the legacy connection, upgrade the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification：旧版已安装，声音文件缺失；PreToolUse 提问入口：旧版未安装，请升级连接"
           }
         }
       }
