@@ -566,24 +566,7 @@ private func parseRewritableConfig(
         }
     }
 
-    if let rawSystemSounds = json["system_sounds"] {
-        guard let sounds = rawSystemSounds as? [String: Any] else {
-            return .failure(
-                .unreadable(
-                    reason:
-                        "\(path) 的 system_sounds 必须是事件到系统音名称的 JSON 对象。"
-                        + "请手工修正该值，\(configRebuildHint)。"))
-        }
-        for (event, rawName) in sounds {
-            guard let name = rawName as? String, SystemSoundCatalog.isValidName(name) else {
-                return .failure(
-                    .unreadable(
-                        reason:
-                            "\(path) 的 system_sounds.\(event) 必须是合法的系统音名称。"
-                            + "请手工修正该值，\(configRebuildHint)。"))
-            }
-        }
-    }
+    // Retired group-level system sound fields are preserved as opaque JSON.
 
     // `starred_packs` is intentionally a shape-only contract: pack-id content is not validated
     // here because this parser decides only whether a config can be safely rewritten. Stale or

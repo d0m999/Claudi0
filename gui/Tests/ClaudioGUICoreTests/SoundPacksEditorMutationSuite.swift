@@ -295,19 +295,20 @@ func runSoundPacksEditorMutationSuites() async {
 
     await suite("Sound editor actions：assign 同栈 accepted/busy，落盘后 exact one refresh") {
         await withTempDirectory { root in
+            writeFixture("spare-audio", to: root.appendingPathComponent("packs/pack-a/spare.mp3"))
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a"])
             let owner = fixture.owner
             _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 11)))
             await waitForSoundEditorReady(owner, library: fixture.library)
             await waitForSoundEditorInventory(owner) { inventory in
-                inventory.contains { $0.fileName == "stop.mp3" }
+                inventory.contains { $0.fileName == "spare.mp3" }
             }
             guard case .sounds(let sounds) = owner.presentation.mode,
                 case .ready(let audioRows) = sounds.inventory,
-                let assignNotification = audioRows.first(where: { $0.fileName == "stop.mp3" })?
+                let assignNotification = audioRows.first(where: { $0.fileName == "spare.mp3" })?
                     .assignments.first(where: { $0.event == .notification })?.action
             else {
-                expect(false, "inventory-backed stop.mp3 必须签发 notification assign capability")
+                expect(false, "inventory-backed spare.mp3 必须签发 notification assign capability")
                 return
             }
             let manifest = root.appendingPathComponent("packs/pack-a/manifest.json")
@@ -345,7 +346,7 @@ func runSoundPacksEditorMutationSuites() async {
                 "assign completion 必须 settle 原 operation ID")
             expect(
                 events?[Event.stop.cliName] == "stop.mp3"
-                    && events?[Event.notification.cliName] == "stop.mp3",
+                    && events?[Event.notification.cliName] == "spare.mp3",
                 "assign 只新增目标 Event，必须保留 sibling binding")
             expect(
                 (object?["future"] as? [String: Bool])?["keep"] == true, "assign 必须保留未知 manifest 字段"
@@ -359,7 +360,7 @@ func runSoundPacksEditorMutationSuites() async {
                 let row = settled.eventRows.first(where: { $0.event == .notification })
             {
                 expect(
-                    row.coverage == .present(fileName: "stop.mp3"),
+                    row.coverage == .present(fileName: "spare.mp3"),
                     "assign shared settle 后 presentation 必须投影 notification binding")
             } else {
                 expect(false, "assign settle 后必须保留 notification presentation row")

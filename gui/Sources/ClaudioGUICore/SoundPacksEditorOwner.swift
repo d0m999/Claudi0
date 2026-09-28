@@ -1180,12 +1180,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         guard let row = seed.selectedEventRows.first(where: { $0.event == event }) else {
             return nil
         }
-        switch row.coverage {
-        case .unmapped:
-            return .unmapped
-        case .present(let fileName), .broken(let fileName):
-            return .mapped(fileName: fileName)
-        }
+        return row.soundSource.map { .mapped(source: $0) } ?? .unmapped
     }
 
     private func eventBindingExpectation(
@@ -1193,14 +1188,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
         in seed: SoundPacksEditorModelSeed,
         packID: String
     ) -> ManifestEventBindingExpectation? {
-        guard let coverage = seed.eventCoverageByPackID[packID] else { return nil }
-        guard let state = coverage[event] else { return .unmapped }
-        switch state {
-        case .unmapped:
-            return .unmapped
-        case .present(let fileName), .broken(let fileName):
-            return .mapped(fileName: fileName)
-        }
+        guard seed.eventCoverageByPackID[packID] != nil else { return nil }
+        return seed.eventSourcesByPackID[packID]?[event].map { .mapped(source: $0) } ?? .unmapped
     }
 
     private func importTargetIsCurrent(
@@ -1420,13 +1409,13 @@ package final class SoundPacksEditorOwner: ObservableObject {
             case .drop:
                 return .importPermit(permit: permit, bindTo: bindTo)
             }
-        case .assign(let packID, let fileName, let event):
+        case .assign(let packID, let source, let event):
             return acceptScheduledOperation(
                 kind: .assign,
                 packID: packID,
                 event: event,
                 binding: binding,
-                work: .assign(packID: packID, fileName: fileName, event: event))
+                work: .assign(packID: packID, source: source, event: event))
         case .clear(let packID, let event):
             return acceptScheduledOperation(
                 kind: .clear,
@@ -1597,6 +1586,51 @@ package final class SoundPacksEditorOwner: ObservableObject {
             work: confirmation.target)
     }
 
+    private func publishDraftSystemSound(
+        _ draft: AICuePackDraft, source: PackEventSoundSource, event: Event
+    ) -> EditorMutationReceipt {
+        guard source.systemSoundName != nil, context.isSounds else {
+            return .rejected(.staleAction)
+        }
+        let stage: AICuePackDraftStage
+        switch makeAICuePackDraftStage(draft, environment: importEnvironment) {
+        case .success(let value): stage = value
+        case .failure:
+            model.reportSoundSourceDraftFailure()
+            return .rejected(.mutationFailed)
+        }
+        defer { discardAICuePackDraftStage(stage) }
+        let result = bindSoundSourceToManifest(
+            event: event, source: source, packID: draft.packID,
+            environment: stagingEnvironment(for: stage, basedOn: importEnvironment),
+            expectedEventBinding: .unmapped)
+        if case .failure(let error) = result {
+            model.reportSoundSourceFailure(error)
+            return .rejected(.mutationFailed)
+        }
+        let mutation = model.beginEditorCompoundMutation(packID: draft.packID)
+        switch publishSoundPackDraft(stage, environment: importEnvironment) {
+        case .failure(let error):
+            model.finishEditorCompoundMutationWithoutChange(mutation)
+            switch error {
+            case .lockBusy: model.reportSoundSourceFailure(.lockBusy)
+            case .lockFailed(let code): model.reportSoundSourceFailure(.lockFailed(errno: code))
+            case .firstBindingInvalid: model.reportSoundSourceFailure(.targetChanged)
+            case .sourceUnavailable(.systemSound(let name)):
+                model.reportSoundSourceFailure(.systemSoundUnavailable(name: name))
+            case .sourceUnavailable(.file(let name)):
+                model.reportSoundSourceFailure(.fileNotFound(fileName: name))
+            case .outdatedHelper: model.reportSoundSourceFailure(.outdatedHelper)
+            default: model.reportSoundSourceDraftFailure()
+            }
+            return .rejected(.mutationFailed)
+        case .success:
+            currentAICueDraft = nil
+            model.finishPublishedDraft(packID: draft.packID, mutation: mutation)
+            return .assign(packID: draft.packID, result: .success(()))
+        }
+    }
+
     private func acceptScheduledOperation(
         kind: SoundPackEditorActivityKind,
         packID: String?,
@@ -1664,20 +1698,27 @@ package final class SoundPacksEditorOwner: ObservableObject {
                     return .rejected(.staleAction)
                 }
                 receipt = .use(model.useSelectedPack())
-            case .assign(let packID, let fileName, let event):
+            case .assign(let packID, let source, let event):
+                if let draft = currentAICueDraft, draft.packID == packID {
+                    return publishDraftSystemSound(draft, source: source, event: event)
+                }
                 guard model.selectedPackID == packID else {
                     return .rejected(.staleAction)
                 }
                 receipt = .assign(
                     packID: packID,
-                    result: model.assignSelectedAudioFile(fileName, to: event))
+                    result: model.assignSelectedSoundSource(
+                        source, to: event,
+                        expectedEventBinding: eventBindingExpectation(for: event, in: current)))
             case .clear(let packID, let event):
                 guard model.selectedPackID == packID else {
                     return .rejected(.staleAction)
                 }
                 receipt = .clear(
                     packID: packID,
-                    result: model.clearSelectedEventBinding(event))
+                    result: model.clearSelectedEventBinding(
+                        event,
+                        expectedEventBinding: eventBindingExpectation(for: event, in: current)))
             case .fork(let packID):
                 guard model.selectedPackID == packID else {
                     return .rejected(.staleAction)
@@ -1922,8 +1963,9 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 event: event,
                 coverage: coverage,
                 enabled: currentAICueDraft == nil ? (sourceRow?.enabled ?? true) : true,
-                audioDisplayName: currentAICueDraft == nil
-                    ? sourceRow?.audioDisplayName : nil)
+                audioDisplayName: currentAICueDraft == nil ? sourceRow?.audioDisplayName : nil,
+                soundSource: currentAICueDraft == nil ? sourceRow?.soundSource : nil,
+                duplicateEvents: currentAICueDraft == nil ? sourceRow?.duplicateEvents ?? [] : [])
             let preview =
                 currentAICueDraft == nil
                 ? makePreviewAccess(
@@ -1943,6 +1985,30 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 coverage: coverage,
                 enabled: row.enabled,
                 audioDisplayName: row.audioDisplayName,
+                soundSource: row.soundSource,
+                duplicateEvents: row.duplicateEvents,
+                systemSoundChoices: seed.systemSoundNames.map { name in
+                    let usedBy =
+                        currentAICueDraft == nil
+                        ? Event.allCases.filter {
+                            seed.eventSourcesByPackID[selectedPack?.id ?? ""]?[$0]
+                                == .systemSound(name)
+                        } : []
+                    let canAssign =
+                        (selectedIsWritable || currentAICueDraft != nil)
+                        && seed.library.isFresh && !hasBusyOperation
+                        && (usedBy.isEmpty || usedBy.contains(event))
+                    return SoundPackEditorSourceChoicePresentation(
+                        source: .systemSound(name), usedByEvents: usedBy,
+                        action: canAssign
+                            ? targetPackID.map { packID in
+                                makeAction(
+                                    .assign,
+                                    binding: .assign(
+                                        packID: packID, source: .systemSound(name), event: event),
+                                    seed: seed)
+                            } : nil)
+                },
                 previewAvailability: preview.availability,
                 importAction: selectedIsWritable
                     ? selectedPack.map {
@@ -2014,9 +2080,10 @@ package final class SoundPacksEditorOwner: ObservableObject {
                             seed: seed)
                         : nil)
             },
-            inventory: makeInventory(
-                seed: seed,
-                writablePackID: writablePackID),
+            inventory: currentAICueDraft == nil
+                ? makeInventory(
+                    seed: seed,
+                    writablePackID: writablePackID) : .ready([]),
             requestImportAction: selectedIsWritable
                 ? selectedPack.map {
                     makeAction(
@@ -2052,7 +2119,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                     case .assign(let fileName, let event):
                         retryAction = makeAction(
                             .assign,
-                            binding: .assign(packID: packID, fileName: fileName, event: event),
+                            binding: .assign(packID: packID, source: .file(fileName), event: event),
                             seed: seed)
                     case .clear(let event):
                         retryAction = makeAction(
@@ -2328,14 +2395,16 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 let assignments: [SoundPackEditorAssignmentPresentation]
                 let deleteAction: SoundPackEditorAction?
                 if canTargetInventory, let writablePackID {
-                    assignments = Event.allCases.map { event in
+                    assignments = Event.allCases.filter {
+                        file.boundEvents.isEmpty || file.boundEvents.contains($0)
+                    }.map { event in
                         SoundPackEditorAssignmentPresentation(
                             event: event,
                             action: makeAction(
                                 .assign,
                                 binding: .assign(
                                     packID: writablePackID,
-                                    fileName: file.fileName,
+                                    source: .file(file.fileName),
                                     event: event),
                                 seed: seed))
                     }
@@ -2353,6 +2422,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 return SoundPackEditorAudioPresentation(
                     fileName: file.fileName,
                     isOrphan: file.isOrphan,
+                    usedByEvents: file.boundEvents,
                     assignments: assignments,
                     deleteAction: deleteAction,
                     revealAction: canTargetInventory
@@ -2882,7 +2952,7 @@ private enum EditorMutationReceipt {
 
 private enum EditorScheduledWork {
     case use(packID: String)
-    case assign(packID: String, fileName: String, event: Event)
+    case assign(packID: String, source: PackEventSoundSource, event: Event)
     case clear(packID: String, event: Event)
     case fork(packID: String)
     case copy(packID: String, applyTarget: PanelSoundScopeID?)
@@ -2930,7 +3000,7 @@ private enum EditorActionIntent {
     case copy(packID: String)
     case copyAndApply(packID: String, applyTarget: PanelSoundScopeID)
     case requestImport(packID: String, bindTo: Event?)
-    case assign(packID: String, fileName: String, event: Event)
+    case assign(packID: String, source: PackEventSoundSource, event: Event)
     case clear(packID: String, event: Event)
     case preview(fileURL: URL)
     case previewForegroundImport(fileURL: URL, packID: String)

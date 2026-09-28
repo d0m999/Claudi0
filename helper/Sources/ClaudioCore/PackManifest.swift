@@ -1,8 +1,7 @@
 import Foundation
 
 /// A minimal, read-only view of a pack's `manifest.json`, sufficient for `doctor`'s
-/// pack-integrity check: does the selected pack exist, and do its declared event audio
-/// files actually exist on disk?
+/// pack-integrity check: does the selected pack exist, and can its event sources resolve locally?
 ///
 /// This intentionally does **not** model `name` / `author` / `license` / `version` /
 /// `schema` — those are validated (SPDX enum for `license`, and the integer `schema`
@@ -13,10 +12,12 @@ import Foundation
 public struct PackManifest: Decodable, Equatable, Sendable {
     /// Pack id (`manifest.json`'s `id` field).
     public let id: String
-    /// Event key (`manifest.json` key, e.g. `"stop"`) → audio filename within the pack
-    /// directory (e.g. `"stop.mp3"`). A missing event key means silent fallback for
+    /// Event key (`manifest.json` key, e.g. `"stop"`) → pack file or system sound name.
+    /// A missing event key means silent fallback for
     /// that event — not a pack error (ENGINEERING.md: "缺失 event → 该事件静默，不报错").
-    public let events: [String: String]
+    public let eventSources: [String: PackEventSoundSource]
+    /// File-only projection for inventory, copying and attribution. Runtime uses eventSources.
+    public var events: [String: String] { eventSources.compactMapValues(\.fileName) }
     /// Optional user-facing names keyed by audio filename. The runtime never uses these values to
     /// resolve or play files; only current event filenames are retained so a third-party manifest
     /// cannot turn this small read model into an unbounded metadata cache.
@@ -24,7 +25,15 @@ public struct PackManifest: Decodable, Equatable, Sendable {
 
     public init(id: String, events: [String: String], audioNames: [String: String] = [:]) {
         self.id = id
-        self.events = events
+        self.eventSources = events.mapValues(PackEventSoundSource.file)
+        self.audioNames = audioNames
+    }
+
+    public init(
+        id: String, eventSources: [String: PackEventSoundSource], audioNames: [String: String] = [:]
+    ) {
+        self.id = id
+        self.eventSources = eventSources
         self.audioNames = audioNames
     }
 
@@ -37,12 +46,14 @@ public struct PackManifest: Decodable, Equatable, Sendable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
-        let decodedEvents = try container.decode([String: String].self, forKey: .events)
-        events = decodedEvents
+        let decodedEvents = try container.decode(
+            [String: PackEventSoundSource].self, forKey: .events)
+        eventSources = decodedEvents
         let decodedNames = try container.decodeIfPresent(
             [String: String].self,
             forKey: .audioNames) ?? [:]
-        let currentFiles = Set(Event.allCases.compactMap { decodedEvents[$0.manifestKey] })
+        let currentFiles = Set(
+            Event.allCases.compactMap { decodedEvents[$0.manifestKey]?.fileName })
         audioNames = decodedNames.filter { fileName, displayName in
             currentFiles.contains(fileName)
                 && fileName.utf8.count <= 1_024

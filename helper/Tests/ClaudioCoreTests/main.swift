@@ -62,6 +62,7 @@ if CommandLine.arguments.contains("--questions") {
 
 if CommandLine.arguments.contains("--system-sounds") {
     runSystemSoundSelectionSuites()
+    runPackEventSoundSourceSuites()
     runWorkspaceSoundRulesSuites()
     runPlaySuites()
     print("System sounds: \(totalChecks) checks, \(failures) failures")
@@ -123,6 +124,7 @@ runMasterVolumeSuites()
 runSurfaceSoundPreferencesSuites()
 runWorkspaceSoundRulesSuites()
 runSystemSoundSelectionSuites()
+runPackEventSoundSourceSuites()
 runWorkspaceDeletionSuites()
 runStarredPacksSuites()
 runConfigConcurrencySuites()

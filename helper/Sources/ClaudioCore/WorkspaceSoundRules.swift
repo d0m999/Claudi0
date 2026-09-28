@@ -123,7 +123,9 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
     public var selectedPack: String
     public var volume: Double
     public var events: [String: Bool]
+    /// Retired selections, retained for compatibility only. Effective profiles ignore them.
     public var systemSounds: [String: String]
+    public var hasLegacySystemSounds = false
     public init(
         selectedPack: String, volume: Double, events: [String: Bool]? = nil,
         systemSounds: [String: String] = [:]
@@ -133,11 +135,11 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
         self.events =
             events ?? Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
         self.systemSounds = systemSounds
+        self.hasLegacySystemSounds = !systemSounds.isEmpty
     }
     public var isValid: Bool {
         isSafePackID(selectedPack) && volume.isFinite && (0...1).contains(volume)
             && Event.allCases.allSatisfy { events[$0.cliName] != nil }
-            && systemSounds.values.allSatisfy(SystemSoundCatalog.isValidName)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -149,7 +151,8 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
         selectedPack = try c.decode(String.self, forKey: .selectedPack)
         volume = try c.decode(Double.self, forKey: .volume)
         events = try c.decode([String: Bool].self, forKey: .events)
-        systemSounds = try c.decodeIfPresent([String: String].self, forKey: .systemSounds) ?? [:]
+        systemSounds = (try? c.decode([String: String].self, forKey: .systemSounds)) ?? [:]
+        hasLegacySystemSounds = c.contains(.systemSounds)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -283,7 +286,7 @@ extension ClaudioConfig {
             ResolvedSoundProfile(
                 selectedPack: profile.selectedPack, eventsEnabled: profile.events,
                 inheritedPack: false, inheritedEvents: [], volume: profile.volume,
-                workspaceID: id, systemSounds: profile.systemSounds))
+                workspaceID: id))
     }
 
     /// One automatic-play resolver. No cwd or inapplicable Surface means the Default Group.
@@ -293,12 +296,11 @@ extension ClaudioConfig {
             WorkspaceDirectoryResolver.resolve
     ) -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
         func defaultProfile() -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
-            guard !systemSoundsMalformed else { return .failure(.invalidRule) }
             return .success(
                 ResolvedSoundProfile(
                     selectedPack: selectedPack, eventsEnabled: eventsEnabled,
                     inheritedPack: false, inheritedEvents: [], volume: masterVolume,
-                    workspaceID: nil, systemSounds: systemSounds))
+                    workspaceID: nil))
         }
         guard let surface, let cwd, WorkspaceDirectory.validPath(cwd) else {
             return defaultProfile()
@@ -423,17 +425,8 @@ public func mutateWorkspaceSound(
                 var events = profile["events"] as? [String: Any] ?? [:]
                 events[event.cliName] = enabled
                 profile["events"] = events
-            case .systemSound(_, let event, let name):
-                if let name, systemSoundCatalog.audioURL(named: name) == nil {
-                    return reject(.invalidRule)
-                }
-                var sounds = profile["systemSounds"] as? [String: Any] ?? [:]
-                sounds[event.cliName] = name
-                if sounds.isEmpty {
-                    profile.removeValue(forKey: "systemSounds")
-                } else {
-                    profile["systemSounds"] = sounds
-                }
+            case .systemSound:
+                return .failure(.mutationRejected)
             case .surfaces(_, let surfaces):
                 guard Set(surfaces).isSubset(of: verifiedSurfaces) else {
                     return reject(.unsupportedSurface)

@@ -710,7 +710,9 @@ func runSoundPacksRefreshSuites() async {
             }
             expect(
                 window.selectedAudioFiles
-                    == [PackAudioFile(fileName: "orphan.mp3", isOrphan: false)],
+                    == [
+                        PackAudioFile(fileName: "orphan.mp3", isOrphan: false, boundEvents: [.stop])
+                    ],
                 "stillReferenced 必须立即重读清单，不能继续把该项显示为可删孤儿")
             expect(
                 window.selectedEventRows.first(where: { $0.event == .stop })?.coverage
@@ -832,7 +834,10 @@ func runSoundPacksRefreshSuites() async {
                 "窗口成功写后 notification 行必须立即转 present")
             expect(
                 window.selectedAudioFiles
-                    == [PackAudioFile(fileName: "spare.mp3", isOrphan: false)],
+                    == [
+                        PackAudioFile(
+                            fileName: "spare.mp3", isOrphan: false, boundEvents: [.notification])
+                    ],
                 "同一次 reload 必须让 spare.mp3 从孤儿转为已引用")
             expect(
                 panel.eventRows.first(where: { $0.event == .notification })?.coverage
@@ -915,7 +920,10 @@ func runSoundPacksRefreshSuites() async {
             coordinator.completePanelPackAudioChange(.changed)
             expect(
                 window.selectedAudioFiles
-                    == [PackAudioFile(fileName: "spare.mp3", isOrphan: false)],
+                    == [
+                        PackAudioFile(
+                            fileName: "spare.mp3", isOrphan: false, boundEvents: [.notification])
+                    ],
                 "面板成功 bind 后的内容 revision 必须让窗口立即重算引用状态")
 
             window.selectPackForInspection("pack-b")
@@ -977,7 +985,7 @@ func runSoundPacksRefreshSuites() async {
             }
             expect(
                 window.selectedAudioFiles
-                    == [PackAudioFile(fileName: "used.mp3", isOrphan: false)],
+                    == [PackAudioFile(fileName: "used.mp3", isOrphan: false, boundEvents: [.stop])],
                 "成功删除后孤儿行必须从窗口读模型消失")
             expect(coordinator.panelReloadRevision == 1, "成功删除必须发布一次面板 full reload")
             expect(window.audioActionError == nil, "后一次成功必须清掉前一次失败")

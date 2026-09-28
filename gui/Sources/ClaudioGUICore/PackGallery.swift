@@ -493,25 +493,30 @@ public func starredPackDisplayIDs(
 public struct PackAudioFile: Sendable, Equatable, Identifiable {
     public let fileName: String
     public let isOrphan: Bool
+    public var boundEvents: [Event] = []
     package let nativeTargetURL: URL?
 
     public var id: String { fileName }
 
-    public init(fileName: String, isOrphan: Bool) {
+    public init(fileName: String, isOrphan: Bool, boundEvents: [Event] = []) {
         self.fileName = fileName
         self.isOrphan = isOrphan
+        self.boundEvents = boundEvents
         nativeTargetURL = nil
     }
 
-    package init(fileName: String, isOrphan: Bool, nativeTargetURL: URL) {
+    package init(fileName: String, isOrphan: Bool, nativeTargetURL: URL, boundEvents: [Event] = [])
+    {
         self.fileName = fileName
         self.isOrphan = isOrphan
         self.nativeTargetURL = nativeTargetURL
+        self.boundEvents = boundEvents
     }
 
     /// The package-only URL is execution metadata, not part of this public inventory row's value.
     public static func == (lhs: PackAudioFile, rhs: PackAudioFile) -> Bool {
         lhs.fileName == rhs.fileName && lhs.isOrphan == rhs.isOrphan
+            && lhs.boundEvents == rhs.boundEvents
     }
 }
 
@@ -628,7 +633,11 @@ func packAudioFiles(
         return PackAudioFile(
             fileName: fileName,
             isOrphan: !referencedPaths.contains(canonicalPath),
-            nativeTargetURL: safeEntry)
+            nativeTargetURL: safeEntry,
+            boundEvents: Event.allCases.filter { event in
+                manifest.eventSources[event.manifestKey]?.identity(in: packDirectory)
+                    == PackEventSoundSource.file(fileName).identity(in: packDirectory)
+            })
     }
     return .success(files.sorted { $0.fileName < $1.fileName })
 }
@@ -859,7 +868,8 @@ private func buildPackCard(
     }
 
     let presentEvents = presentEventSet(
-        manifest: manifest, packDirectory: packDirectory, config: config)
+        manifest: manifest, packDirectory: packDirectory, config: config,
+        catalog: environment.systemSoundCatalog)
     let (name, isCC0) = packMetadata(manifestData: manifestData)
     let integrity = factoryIntegrity(
         packID: id, environment: environment, currentDirectory: packDirectory,
@@ -877,14 +887,17 @@ private func buildPackCard(
 /// independent per-event presence check. （只是换成了不再自己重读一遍 manifest 的那个下层入口；
 /// 逐事件的判定逻辑一个字都没改。）
 private func presentEventSet(
-    manifest: PackManifest, packDirectory: URL, config: ClaudioConfig
+    manifest: PackManifest, packDirectory: URL, config: ClaudioConfig,
+    catalog: SystemSoundCatalog
 ) -> Set<Event> {
     Set(
-        packCoverage(manifest: manifest, packDirectory: packDirectory, config: config)
-            .compactMap { row -> Event? in
-                if case .present = row.coverage { return row.event }
-                return nil
-            })
+        packCoverage(
+            manifest: manifest, packDirectory: packDirectory, config: config, catalog: catalog
+        )
+        .compactMap { row -> Event? in
+            if case .present = row.coverage { return row.event }
+            return nil
+        })
 }
 
 /// `name`/`license` aren't modeled by ``PackManifest`` (it only carries `id`/`events` — see

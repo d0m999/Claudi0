@@ -168,7 +168,7 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
             await waitForSoundEditorInventory(owner) { inventory in
                 inventory.contains { $0.fileName == "stop.mp3" }
             }
-            guard let assign = announcementGapAssignment(owner, event: .notification),
+            guard let assign = announcementGapAssignment(owner, event: .stop),
                 await announcementGapFailUnderLock(
                     owner: owner,
                     action: assign,

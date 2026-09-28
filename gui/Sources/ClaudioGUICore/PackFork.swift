@@ -72,6 +72,9 @@ private func manifestRewriteReason(_ error: ManifestBindError) -> String {
     case .unsafeFileName: return "文件名不安全"
     case .fileNotFound(let fileName): return "文件不存在：\(fileName)"
     case .targetChanged: return "目标事件在操作期间已改变"
+    case .soundAlreadyUsed: return "声音已用于其他事件"
+    case .systemSoundUnavailable(let name): return "系统提示音不可用：\(name)"
+    case .outdatedHelper: return "已安装 helper 需要更新"
     }
 }
 

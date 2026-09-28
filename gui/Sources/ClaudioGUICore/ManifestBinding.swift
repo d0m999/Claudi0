@@ -23,7 +23,7 @@ public enum ManifestBindError: Error, Sendable, Equatable {
     /// row recompute to ``CoverageState/broken(fileName:)`` immediately after a "successful"
     /// bind, which must never happen.
     ///
-    /// 「正规文件」是负重的，判定是 ``regularFileExists(at:)``（`stat(2)` + `S_IFREG`），与
+    /// 「非空正规文件」由 ``nonEmptyRegularFileExists(at:)`` 判定，与
     /// `coverageState`（`CoverageState.swift`）、`doctor`、`play` **逐字同一个谓词**。曾经这里用的是
     /// `FileManager.fileExists(atPath:)`，它对**目录**、FIFO、socket、设备一律回答 `true`：于是把一个
     /// 名叫 `stop.mp3` 的目录绑上去会**返回成功并写进 manifest**，而面板下一次刷新立刻把同一条路径判成
@@ -31,13 +31,12 @@ public enum ManifestBindError: Error, Sendable, Equatable {
     /// （`/codex review` [P2]）。绑定是**写**路径，必须在写进 manifest 之前就挡住，而不是写完再由读路径
     /// 去发现。
     ///
-    /// ⚠️ **同 `.unsafeFileName`，只由 `bindEventToManifest` 自己的文件预检产生** —— 原语本身结构上
-    /// 不产生它，`clearEventBinding` 也永远不会走到这里。
+    /// `LockedManifestTransform` 在包锁内验证待绑定来源；clear 不提供 assignment，不做此检查。
     case fileNotFound(fileName: String)
     /// `manifest.json` couldn't be read at all (see ``PackManifestLoadError``), its
     /// content isn't a top-level JSON *object*, its `events` field is present but isn't
     /// itself a JSON object (e.g. an array or string), its `events` object holds a
-    /// non-string value (e.g. `{"stop": 1}`), it has no valid top-level `id` (missing /
+    /// invalid source value (e.g. `{"stop": 1}`), it has no valid top-level `id` (missing /
     /// not a string / empty), or a scoped writer required that id to match its captured pack
     /// identity and it did not — every shape this read-modify-write requires to safely operate
     /// without silently coercing a malformed manifest into a fabricated one, PLUS every shape
@@ -70,11 +69,9 @@ public enum ManifestBindError: Error, Sendable, Equatable {
     /// The comparison runs under `packs.lock`, before the transform, so no external manifest
     /// update or unknown sibling is overwritten.
     case targetChanged
-}
-
-public enum ManifestEventBindingExpectation: Sendable, Equatable {
-    case unmapped
-    case mapped(fileName: String)
+    case soundAlreadyUsed(event: Event)
+    case systemSoundUnavailable(name: String)
+    case outdatedHelper
 }
 
 /// Carries the optional Event compare-and-set condition through the existing single locked
@@ -83,6 +80,9 @@ public enum ManifestEventBindingExpectation: Sendable, Equatable {
 @MainActor
 private final class LockedManifestTransform {
     private let expectedEventBinding: (event: Event, binding: ManifestEventBindingExpectation)?
+    private let assignment: (event: Event, source: PackEventSoundSource)?
+    private let packDirectory: URL
+    private let systemSoundCatalog: SystemSoundCatalog
     private let body: (inout [String: Any]) -> Void
     fileprivate let testingBeforeRename: (() -> Void)?
     private(set) var failure: ManifestBindError?
@@ -90,9 +90,15 @@ private final class LockedManifestTransform {
     init(
         expectedEventBinding: (event: Event, binding: ManifestEventBindingExpectation)?,
         testingBeforeRename: (() -> Void)?,
+        assignment: (event: Event, source: PackEventSoundSource)?,
+        packDirectory: URL,
+        systemSoundCatalog: SystemSoundCatalog,
         body: @escaping (inout [String: Any]) -> Void
     ) {
         self.expectedEventBinding = expectedEventBinding
+        self.assignment = assignment
+        self.packDirectory = packDirectory
+        self.systemSoundCatalog = systemSoundCatalog
         self.testingBeforeRename = testingBeforeRename
         self.body = body
     }
@@ -100,16 +106,47 @@ private final class LockedManifestTransform {
     fileprivate func callAsFunction(_ json: inout [String: Any]) {
         if let expectedEventBinding {
             let events = (json["events"] as? [String: Any]) ?? [:]
-            let current = events[expectedEventBinding.event.manifestKey] as? String
+            let current = events[expectedEventBinding.event.manifestKey].flatMap(
+                PackEventSoundSource.init(jsonValue:))
             let matches: Bool
             switch expectedEventBinding.binding {
             case .unmapped:
                 matches = current == nil
-            case .mapped(let fileName):
-                matches = current == fileName
+            case .mapped(let source):
+                matches = current == source
             }
             guard matches else {
                 failure = .targetChanged
+                return
+            }
+        }
+        if let assignment {
+            let source = assignment.source
+            if source.audioURL(in: packDirectory, catalog: systemSoundCatalog) == nil {
+                failure =
+                    source.systemSoundName.map { .systemSoundUnavailable(name: $0) }
+                    ?? .fileNotFound(fileName: source.name)
+                return
+            }
+            let events = (json["events"] as? [String: Any]) ?? [:]
+            let current = events[assignment.event.manifestKey].flatMap(
+                PackEventSoundSource.init(jsonValue:))
+            let identity = source.identity(in: packDirectory)
+            if current?.identity(in: packDirectory) != identity {
+                for event in Event.allCases where event != assignment.event {
+                    if let other = events[event.manifestKey].flatMap(
+                        PackEventSoundSource.init(jsonValue:)),
+                        other.identity(in: packDirectory) == identity
+                    {
+                        failure = .soundAlreadyUsed(event: event)
+                        return
+                    }
+                }
+            }
+            if source.systemSoundName != nil, let schema = json["schema"],
+                !(schema is Int) || CFGetTypeID(schema as CFTypeRef) == CFBooleanGetTypeID()
+            {
+                failure = .manifestUnreadable(reason: "manifest.json 的 schema 必须是整数")
                 return
             }
         }
@@ -159,15 +196,14 @@ private final class LockedManifestTransform {
 ///    `Task.detached` 包住那次 write，**Build complete、零警告**（`Data`/`URL` 都是 Sendable、
 ///    `Data.write` 是 nonisolated，strict concurrency 无从报警）。这也只有那条源码绊线看得见。
 ///
-/// **只做目录级的读-改-写**：调用方必须先把 `packID` 解析成一个已经确认过是**用户**包根的
-/// `packDirectory`（见本文件 `resolveUserPackDirectory(packID:environment:)`），本函数不重新
-/// 解析 `packID`，本身也不做任何 `.unsafeFileName`/`.fileNotFound` 那一类文件级校验——那是
-/// `bindEventToManifest` 自己文件预检的职责（见 ``ManifestBindError`` 两个 case 的 doc）。
+/// 调用方先把 `packID` 解析成确认过的用户包目录，本函数不重新解析包身份。
+/// 绑定通过可选 `assignment` 在同一锁内复验来源可用性、去重和完整来源 CAS；clear、复制等
+/// 不提供 assignment 的操作只使用 manifest 校验和原有文件发布边界。
 ///
 /// 保留 `bindEventToManifest` 原有的**全部三道** fail-closed 校验，顺序不变，且都在 `transform`
 /// 运行**之前**跑完（一份不合规的 manifest 被拒时，磁盘上的字节一个都不会变）：
 ///   1. `events` 若存在但不是 JSON 对象 → 拒绝，绝不静默塞进一个新 `{}`；
-///   2. `events` 对象里出现非字符串取值 → 拒绝，绝不写进一份 ``PackManifest`` 解不动的 manifest；
+///   2. `events` 值不是文件字符串或 `{"system_sound":"名称"}` → 拒绝；
 ///   3. 顶层 `id` 缺失 / 非字符串 / 空 → 拒绝。
 ///
 /// `transform` 拿到的是**完整的顶层 JSON 字典**（`inout`），不仅仅是 `events`——`forkPack` 要改的
@@ -185,6 +221,8 @@ public func mutateManifestJSON(
     expectedManifestID: String? = nil,
     expectedEventBinding: (event: Event, binding: ManifestEventBindingExpectation)? = nil,
     testingBeforeRename: (() -> Void)? = nil,
+    assignment: (event: Event, source: PackEventSoundSource)? = nil,
+    systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog(),
     _ transform: (inout [String: Any]) -> Void
 ) -> Result<Void, ManifestBindError> {
     // 整段读-改-写都在锁里。**别把锁收窄到只包最后那次 `write`** —— 那样两个写者仍然可以各自
@@ -201,6 +239,9 @@ public func mutateManifestJSON(
         let transform = LockedManifestTransform(
             expectedEventBinding: expectedEventBinding,
             testingBeforeRename: testingBeforeRename,
+            assignment: assignment,
+            packDirectory: packDirectory,
+            systemSoundCatalog: systemSoundCatalog,
             body: body)
         let outcome = withNonBlockingLock(path: lockFile.path) {
             performManifestMutation(
@@ -252,7 +293,7 @@ private func performManifestMutation(
         return .failure(.manifestUnreadable(reason: "manifest.json 顶层不是 JSON 对象"))
     }
 
-    // Fail CLOSED 校验 1/3 与 2/3：`events` 若存在但不是对象，或对象里出现非字符串取值，一律拒绝
+    // Fail CLOSED 校验 1/3 与 2/3：`events` 若存在但不是对象，或含无效声音来源，一律拒绝
     // ——绝不静默 coerce 成一个新 `{}`，也绝不写进一份 ``PackManifest`` 之后解不动的 manifest。
     // `events` 整个缺失是合法起点：这里不提前造一个 `[:]` 塞回 `json`，创不创建 `events` 是
     // 各自 `transform` 自己的决定（bind 会新建，clear 在 events 整个缺席时无事可做）。
@@ -261,9 +302,9 @@ private func performManifestMutation(
             return .failure(
                 .manifestUnreadable(reason: "manifest.json 的 events 字段不是 JSON 对象"))
         }
-        guard eventsDict.values.allSatisfy({ $0 is String }) else {
+        guard eventsDict.values.allSatisfy({ PackEventSoundSource(jsonValue: $0) != nil }) else {
             return .failure(
-                .manifestUnreadable(reason: "manifest.json 的 events 存在非字符串取值，无法安全改写"))
+                .manifestUnreadable(reason: "manifest.json 的 events 存在无效声音来源，无法安全改写"))
         }
     }
 
@@ -396,30 +437,44 @@ public func bindEventToManifest(
     environment: AudioImportEnvironment,
     expectedEventBinding: ManifestEventBindingExpectation? = nil
 ) -> Result<Void, ManifestBindError> {
+    bindSoundSourceToManifest(
+        event: event, source: .file(fileName), packID: packID, environment: environment,
+        expectedEventBinding: expectedEventBinding)
+}
+
+@MainActor
+public func bindSoundSourceToManifest(
+    event: Event,
+    source: PackEventSoundSource,
+    packID: String,
+    environment: AudioImportEnvironment,
+    expectedEventBinding: ManifestEventBindingExpectation? = nil
+) -> Result<Void, ManifestBindError> {
+    if source.systemSoundName != nil && !environment.systemSoundSelectionAllowed() {
+        return .failure(.outdatedHelper)
+    }
     let userPackDirectory: URL
     switch resolveUserPackDirectory(packID: packID, environment: environment) {
-    case .success(let directory):
-        userPackDirectory = directory
-    case .failure(let error):
-        return .failure(error)
+    case .success(let directory): userPackDirectory = directory
+    case .failure(let error): return .failure(error)
     }
-
-    guard let resolvedFile = safePackFileURL(fileName, in: userPackDirectory) else {
+    if let fileName = source.fileName,
+        safePackFileURL(fileName, in: userPackDirectory) == nil
+    {
         return .failure(.unsafeFileName)
     }
-    guard nonEmptyRegularFileExists(at: resolvedFile) else {
-        return .failure(.fileNotFound(fileName: fileName))
-    }
-
     return mutateManifestJSON(
         at: userPackDirectory,
         lockFile: environment.packsLockFile,
         expectedManifestID: packID,
-        expectedEventBinding: expectedEventBinding.map { (event, $0) }
+        expectedEventBinding: expectedEventBinding.map { (event, $0) },
+        assignment: (event, source),
+        systemSoundCatalog: environment.systemSoundCatalog
     ) { json in
         var events = (json["events"] as? [String: Any]) ?? [:]
-        events[event.manifestKey] = fileName
+        events[event.manifestKey] = source.jsonValue
         json["events"] = events
+        if source.systemSoundName != nil { json["schema"] = max(2, json["schema"] as? Int ?? 1) }
     }
 }
 
@@ -464,7 +519,8 @@ public func bindAICueToManifest(
         at: userPackDirectory,
         lockFile: environment.packsLockFile,
         expectedManifestID: packID,
-        expectedEventBinding: expectedEventBinding.map { (event, $0) }
+        expectedEventBinding: expectedEventBinding.map { (event, $0) },
+        assignment: (event, .file(fileName))
     ) { json in
         var events = (json["events"] as? [String: Any]) ?? [:]
         var audioNames = (json["audio_names"] as? [String: Any]) ?? [:]
@@ -550,7 +606,8 @@ private func uniqueAICueDisplayName(
 public func clearEventBinding(
     event: Event,
     packID: String,
-    environment: AudioImportEnvironment
+    environment: AudioImportEnvironment,
+    expectedEventBinding: ManifestEventBindingExpectation? = nil
 ) -> Result<Void, ManifestBindError> {
     let userPackDirectory: URL
     switch resolveUserPackDirectory(packID: packID, environment: environment) {
@@ -560,7 +617,11 @@ public func clearEventBinding(
         return .failure(error)
     }
 
-    return mutateManifestJSON(at: userPackDirectory, lockFile: environment.packsLockFile) {
+    return mutateManifestJSON(
+        at: userPackDirectory, lockFile: environment.packsLockFile,
+        expectedManifestID: packID,
+        expectedEventBinding: expectedEventBinding.map { (event, $0) }
+    ) {
         json in
         guard var events = json["events"] as? [String: Any] else { return }
         events.removeValue(forKey: event.manifestKey)

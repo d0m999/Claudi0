@@ -23,7 +23,7 @@ func currentEventAudioFileNames(in manifest: PackManifest) -> [String]? {
 }
 
 /// Per-event sound coverage for a pack (ENGINEERING.md 决议① · codex 精修为三态; DESIGN.md
-/// "事件行三态"). Computed purely from a pack's manifest + on-disk file presence —
+/// "事件行三态"). Computed from a pack's manifest and local source availability —
 /// `helper`'s runtime playback behavior is unchanged by this type existing at all (it's a
 /// GUI-only read model, T16).
 ///
@@ -33,17 +33,15 @@ func currentEventAudioFileNames(in manifest: PackManifest) -> [String]? {
 /// would need an audio-lint pass this repo doesn't have; `doctor`/`play` don't have one
 /// either, see `Doctor.swift`'s module-level note).
 public enum CoverageState: Sendable, Equatable {
-    /// The event is mapped in the manifest, and the declared file exists on disk, safely
-    /// inside the pack directory (``safePackFileURL(_:in:)``'s containment check passed).
+    /// The mapped pack file or local system sound is available. `EventRow.soundSource` retains
+    /// the source type; the legacy `fileName` label carries its display name.
     case present(fileName: String)
     /// The manifest has no entry for this event at all — the documented silent-fallback
     /// case (``PackManifest/events``'s doc comment: "缺失 event key 表示...静默"), not a
     /// pack defect.
     case unmapped
-    /// The event IS mapped in the manifest, but the declared file doesn't exist, or its
-    /// resolved path fails containment (``safePackFileURL(_:in:)`` returned `nil`) — a real
-    /// pack defect, distinct from ``unmapped``'s intentional silence (DESIGN.md: "真打包错误
-    /// 不被伪装成正常静默").
+    /// A mapped file is missing/unsafe, or the named system sound is unavailable on this Mac.
+    /// The binding remains visible and can be repaired independently of other events.
     case broken(fileName: String)
 }
 
@@ -72,20 +70,29 @@ public struct EventRow: Sendable, Equatable {
     public let event: Event
     public let coverage: CoverageState
     public let enabled: Bool
-    /// Optional user-facing asset name. Playback and containment continue to use only the
-    /// filename carried by `coverage`; this metadata can never become a path.
+    /// Optional user-facing asset name. Playback resolves `soundSource`; this metadata never
+    /// becomes a file path or a system sound name.
     public let audioDisplayName: String?
+    public let soundSource: PackEventSoundSource?
+    public let duplicateEvents: [Event]
 
     public init(
         event: Event,
         coverage: CoverageState,
         enabled: Bool,
-        audioDisplayName: String? = nil
+        audioDisplayName: String? = nil,
+        soundSource: PackEventSoundSource? = nil,
+        duplicateEvents: [Event] = []
     ) {
         self.event = event
         self.coverage = coverage
         self.enabled = enabled
         self.audioDisplayName = audioDisplayName
+        switch coverage {
+        case .unmapped: self.soundSource = soundSource
+        case .present(let name), .broken(let name): self.soundSource = soundSource ?? .file(name)
+        }
+        self.duplicateEvents = duplicateEvents
     }
 }
 
@@ -148,7 +155,9 @@ public func packCoverage(
         }
     }
 
-    return packCoverage(manifest: manifest, packDirectory: packDirectory, config: config)
+    return packCoverage(
+        manifest: manifest, packDirectory: packDirectory, config: config,
+        catalog: environment.systemSoundCatalog)
 }
 
 /// ``packCoverage(packID:config:environment:)`` 的下层：给一份**已经解析好的** pack 目录 + **已经
@@ -165,7 +174,8 @@ public func packCoverage(
 public func packCoverage(
     manifest: PackManifest,
     packDirectory: URL,
-    config: ClaudioConfig
+    config: ClaudioConfig,
+    catalog: SystemSoundCatalog = SystemSoundCatalog()
 ) -> [EventRow] {
     Event.allCases.map { event in
         let displayName = manifest.events[event.manifestKey]
@@ -173,9 +183,17 @@ public func packCoverage(
             .flatMap { try? AICueDisplayName($0).value }
         return EventRow(
             event: event,
-            coverage: coverageState(for: event, manifest: manifest, packDirectory: packDirectory),
+            coverage: coverageState(
+                for: event, manifest: manifest, packDirectory: packDirectory, catalog: catalog),
             enabled: config.isEnabled(event),
-            audioDisplayName: displayName)
+            audioDisplayName: displayName,
+            soundSource: manifest.eventSources[event.manifestKey],
+            duplicateEvents: Event.allCases.filter { other in
+                guard other != event, let source = manifest.eventSources[event.manifestKey],
+                    let otherSource = manifest.eventSources[other.manifestKey]
+                else { return false }
+                return source.identity(in: packDirectory) == otherSource.identity(in: packDirectory)
+            })
     }
 }
 
@@ -197,11 +215,12 @@ public func packCoverage(
 private func coverageState(
     for event: Event,
     manifest: PackManifest,
-    packDirectory: URL
+    packDirectory: URL,
+    catalog: SystemSoundCatalog
 ) -> CoverageState {
-    guard let fileName = manifest.events[event.manifestKey] else { return .unmapped }
-    guard let resolved = safePackFileURL(fileName, in: packDirectory),
-        nonEmptyRegularFileExists(at: resolved)
+    guard let source = manifest.eventSources[event.manifestKey] else { return .unmapped }
+    let fileName = source.name
+    guard source.audioURL(in: packDirectory, catalog: catalog) != nil
     else {
         return .broken(fileName: fileName)
     }

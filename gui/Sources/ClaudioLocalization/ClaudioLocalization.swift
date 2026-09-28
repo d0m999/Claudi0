@@ -541,6 +541,12 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventSettingsManageSoundsHint: Self = "event-settings.manage-sounds.hint"
     public static let eventSettingsSoundChoice: Self = "event-settings.sound-choice"
     public static let eventSettingsSelectedPackSound: Self = "event-settings.selected-pack-sound"
+    public static let soundPacksSourceUsed: Self = "sound-packs.source.used"
+    public static let soundPacksDuplicateSource: Self = "sound-packs.source.duplicate"
+    public static let soundPacksSourceTargetChanged: Self = "sound-packs.source.target-changed"
+    public static let soundPacksLegacySystemSounds: Self = "sound-packs.legacy-system-sounds"
+    public static let soundPacksDraftPublicationFailed: Self =
+        "sound-packs.draft.publication-failed"
     public static let eventSettingsSystemSounds: Self = "event-settings.system-sounds"
     public static let eventSettingsNoSystemSounds: Self = "event-settings.no-system-sounds"
     public static let eventSettingsSoundChoiceFailed: Self = "event-settings.sound-choice-failed"
@@ -1462,6 +1468,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventSettingsAutomaticPlayback, .eventSettingsAutomaticPlaybackFor,
         .eventSettingsManageSounds,
         .eventSettingsManageSoundsHint, .eventSettingsSoundChoice,
+        .soundPacksSourceUsed,
+        .soundPacksDuplicateSource,
+        .soundPacksSourceTargetChanged,
+        .soundPacksLegacySystemSounds,
+        .soundPacksDraftPublicationFailed,
         .eventSettingsSelectedPackSound, .eventSettingsSystemSounds,
         .eventSettingsNoSystemSounds, .eventSettingsSoundChoiceFailed,
         .eventSettingsSystemSoundUnavailable, .eventSettingsSoundChoiceConflict,

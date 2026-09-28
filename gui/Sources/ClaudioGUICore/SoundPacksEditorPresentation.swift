@@ -185,12 +185,22 @@ package struct SoundPackEditorEventPresentation: Identifiable, Equatable {
     package let coverage: CoverageState
     package let enabled: Bool
     package let audioDisplayName: String?
+    package var soundSource: PackEventSoundSource? = nil
+    package var duplicateEvents: [Event] = []
+    package var systemSoundChoices: [SoundPackEditorSourceChoicePresentation] = []
     package let previewAvailability: EventPreviewAvailability
     package let importAction: SoundPackEditorAction?
     package let previewAction: SoundPackEditorAction?
     package let clearAction: SoundPackEditorAction?
     package let aiCueAdoptionAvailability: SoundPackEditorAdoptionAvailability?
     package let aiCueAdoptionPermit: SoundPackAdoptionPermit?
+}
+
+package struct SoundPackEditorSourceChoicePresentation: Identifiable, Equatable, Sendable {
+    package var id: String { source.name }
+    package let source: PackEventSoundSource
+    package let usedByEvents: [Event]
+    package let action: SoundPackEditorAction?
 }
 
 package struct AICuePackDraftPresentation: Equatable, Sendable {
@@ -228,6 +238,7 @@ package struct SoundPackEditorAudioPresentation: Identifiable, Equatable, Sendab
     package var id: String { fileName }
     package let fileName: String
     package let isOrphan: Bool
+    package var usedByEvents: [Event] = []
     package let assignments: [SoundPackEditorAssignmentPresentation]
     package let deleteAction: SoundPackEditorAction?
     package let revealAction: SoundPackEditorAction?
@@ -548,6 +559,8 @@ struct SoundPacksEditorModelSeed: Equatable {
     let packCards: [PackCard]
     let packUsageByID: [String: AICuePackUsage]
     let eventCoverageByPackID: [String: [Event: CoverageState]]
+    var eventSourcesByPackID: [String: [Event: PackEventSoundSource]] = [:]
+    var systemSoundNames: [String] = []
     let nativeTargetsByPackID: [String: SoundPackNativeTargets]
     let referencedPackIDs: Set<String>
     let soundPackReferencesComplete: Bool

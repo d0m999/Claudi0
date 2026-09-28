@@ -58,7 +58,8 @@ func runPackAudioInventorySuites() {
             expect(
                 files == [
                     PackAudioFile(fileName: "Spare.WAV", isOrphan: true),
-                    PackAudioFile(fileName: "stop.mp3", isOrphan: false),
+                    PackAudioFile(
+                        fileName: "stop.mp3", isOrphan: false, boundEvents: [.stop, .notification]),
                 ],
                 "应只列直属、非隐藏、正规音频；./stop.mp3 与 stop.mp3 必须归一为同一引用，实得 "
                     + "\(String(describing: files))")
@@ -82,7 +83,9 @@ func runPackAudioInventorySuites() {
 
             if regularFileExists(at: lowerCasePath) {
                 expect(
-                    files == [PackAudioFile(fileName: "Ping.MP3", isOrphan: false)],
+                    files == [
+                        PackAudioFile(fileName: "Ping.MP3", isOrphan: false, boundEvents: [.stop])
+                    ],
                     "大小写不敏感卷上 manifest 的 ping.mp3 指到真实 Ping.MP3，不得误报孤儿")
             } else {
                 expect(

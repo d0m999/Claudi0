@@ -97,12 +97,13 @@ public func eventPreviewFileURL(
     packID: String,
     environment: AudioImportEnvironment
 ) -> URL? {
-    guard case .present(let fileName) = row.coverage,
+    guard row.coverage.previewEnabled,
         let packDirectory = resolvePackDirectory(
             id: packID,
             userPacksDirectory: environment.userPacksDirectory,
             bundledPacksDirectory: environment.bundledPacksDirectory),
-        let file = safePackFileURL(fileName, in: packDirectory),
+        let file = row.soundSource?.audioURL(
+            in: packDirectory, catalog: environment.systemSoundCatalog),
         nonEmptyRegularFileExists(at: file)
     else { return nil }
     return file
@@ -580,26 +581,15 @@ public func panelEventPresentations(
     masterVolume: Double,
     language: ClaudioAppLanguage,
     configWritesAllowed: Bool = true,
-    safetyFailures: [Event: EventPreviewSafetyFailure] = [:],
-    systemSounds: [String: String] = [:],
-    availableSystemSoundNames: Set<String> = [],
-    eventsEnabled: [String: Bool] = [:]
+    safetyFailures: [Event: EventPreviewSafetyFailure] = [:]
 ) -> [PanelEventPresentation] {
     let l10n = ClaudioL10n(language: language)
     let separator = language == .english ? ", " : "，"
     let rowsByEvent = Dictionary(uniqueKeysWithValues: rows.map { ($0.event, $0) })
     return Event.allCases.map { event in
         let row = rowsByEvent[event] ?? EventRow(event: event, coverage: .unmapped, enabled: false)
-        let selectedSystemSound = systemSounds[event.cliName]
-        let effectiveCoverage: CoverageState
-        if let selectedSystemSound {
-            effectiveCoverage =
-                availableSystemSoundNames.contains(selectedSystemSound)
-                ? .present(fileName: selectedSystemSound)
-                : .broken(fileName: selectedSystemSound)
-        } else {
-            effectiveCoverage = row.coverage
-        }
+        let selectedSystemSound = row.soundSource?.systemSoundName
+        let effectiveCoverage = row.coverage
         let binding: HostCapabilityBinding?
         switch scope {
         case .global, .workspace:
@@ -665,9 +655,7 @@ public func panelEventPresentations(
                 soundFileText = missingSoundText
             }
         }
-        let enabled =
-            selectedSystemSound == nil
-            ? row.enabled : (eventsEnabled[event.cliName] ?? true)
+        let enabled = row.enabled
         let enabledText =
             enabled
             ? l10n.text(.eventEnabled)

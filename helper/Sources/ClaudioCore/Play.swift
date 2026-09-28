@@ -280,16 +280,9 @@ private func prepareConfiguredPlay(
             if !profile.isEnabled(event) {
                 return .silent(.disabled(event: event))
             }
-            let audioFile: URL?
-            if let name = profile.systemSounds[event.cliName] {
-                audioFile = SystemSoundCatalog(directory: environment.systemSoundDirectory)
-                    .audioURL(
-                        named: name)
-            } else {
-                audioFile = resolveAudioFile(
-                    for: event, packID: profile.selectedPack, environment: environment,
-                    requireHealthyPack: profile.workspaceID != nil)
-            }
+            let audioFile = resolveAudioFile(
+                for: event, packID: profile.selectedPack, environment: environment,
+                requireHealthyPack: profile.workspaceID != nil)
             if let audioFile {
                 return .ready(volume: profile.volume, audioFile: audioFile)
             }
@@ -397,8 +390,10 @@ private func resolveAudioFile(
                 guard let url = safePackFileURL(file, in: packDirectory) else { return false }
                 return nonEmptyRegularFileExists(at: url)
             }),
-        let relativeFile = manifest.events[event.manifestKey],
-        let audioFile = safePackFileURL(relativeFile, in: packDirectory),
+        let source = manifest.eventSources[event.manifestKey],
+        let audioFile = source.audioURL(
+            in: packDirectory,
+            catalog: SystemSoundCatalog(directory: environment.systemSoundDirectory)),
         // 必须是**正规文件**：一个名叫 `stop.mp3` 的目录 / FIFO 会让 `fileExists` 回答 `true`，
         // 于是 `play` 兴高采烈地去 spawn afplay，而事件触发时根本没有声音（`/codex review` [P2]）。
         // 见 ``regularFileExists(at:)``。
