@@ -4,9 +4,9 @@
 >
 > 日期：2026-09-06
 >
-> 范围：把当前分散的集成、事件、声音包与零散偏好收口到一个原生 macOS 统一设置窗口，
-> 完整交付「通用、集成、默认组／工作区、通知、显示、声音、用量、快捷键、关于」九个设置目的页。
-> 完整九页产品验收由 GitHub #85 及其子 tickets 拥有；#103 只拥有本文、ADR、执行计划与原型的
+> 范围：把当前分散的集成、事件、声音包与零散偏好收口到一个原生 macOS 统一设置窗口。
+> 2026-09-28 修订后现行侧栏为「通用、集成、默认组／工作区、通知、声音、活动与诊断、快捷键、关于」八页。
+> 原九页交付计划与已完成里程碑保留为历史；原产品验收由 GitHub #85 及其子 tickets 拥有；#103 只拥有本文、ADR、执行计划与原型的
 > allowlisted 多 Provider SoT 对齐。Swift registry、transport、credentials、adapters 与 production UI
 > 分别由 #104–#109 及 #85 的设置子 tickets 拥有；任何真实凭据或 Provider smoke 仍需单独授权。
 >
@@ -28,18 +28,18 @@
 > 来源级编辑／采用、唯一全局主音量、四档界面文字、可变 Panel 宽度、`Aa` 入口及以每 Surface
 > receipt history 推算用量的文字均为历史计划，不再是生产要求。声音作用域以 `CONTEXT.md`、
 > ADR 0005/0016 及下文 §5.3 现行合同为准；设置窗口与动态静默分别遵循 ADR 0008/0009。
-> Panel 固定 312 pt／紧凑密度，Display 只保留活动状态点；「活动与诊断」消费七日本地活动摘要。
+> Panel 固定 312 pt／紧凑密度；2026-09-28 起 Display 页与活动状态点退役，Orbit Zero 固定无装饰点；「活动与诊断」消费七日本地活动摘要。
 > 旧原型、§1 的原始差距和 §7 的实施任务保留用于追溯，不作为新实施或验收指令。
 
 ## 0. 目标与完成定义
 
-用户从菜单栏面板进入设置后，只看到一个标准 macOS 窗口。左侧固定显示九个设置目的页，右侧在
+用户从菜单栏面板进入设置后，只看到一个标准 macOS 窗口。左侧固定显示八个设置目的页，右侧在
 同一窗口中切换真实、可操作的内容；面板、集成诊断、事件管理和声音映射的深链接都落到同一个
 类型化路由。关闭窗口后，焦点只由这一个窗口 owner 归还，不再在三个 retained window 之间转移。
 
 完成必须同时满足：
 
-- 九个目的页全部存在且可通过键盘、VoiceOver 和鼠标到达；
+- 八个目的页全部存在且可通过键盘、VoiceOver 和鼠标到达；
 - 不保留「后续接入」「原型占位」或只弹 Toast 的假动作；
 - 每个可写控件都有真实事实源、持久化边界、失败呈现、回滚或重试语义；
 - 现有集成、声音配置、声音包、AI 提示音和回执模型继续是唯一事实源，不复制写入路径；
@@ -51,10 +51,10 @@
 
 | 议题 | 决议 |
 |---|---|
-| 窗口形态 | 一个 app-lifetime retained `SettingsWindow`，九个目的页在同一侧栏切换 |
+| 窗口形态 | 一个 app-lifetime retained `SettingsWindow`，八个目的页在同一侧栏切换 |
 | 现有窗口 | 复用模型与视图能力；迁移完成后退役独立的 Integrations/EventSettings/SoundPacks 窗口 |
 | 原型权威 | 原型负责导航、视觉层级和交互形态；领域文档与真实代码负责语义、安全和能力事实 |
-| 完整度 | 九页都必须是真功能；占位、演示常量和无副作用按钮不算完成 |
+| 完整度 | 八页都必须是真功能；占位、演示常量和无副作用按钮不算完成 |
 | 实施方式 | 按依赖拆成可独立验收的纵向 tickets；全部通过后才声明统一设置完成 |
 | 文档归属 | 本计划是总计划；TTS 计划只保留 AI 提示音子域，并与本计划互相引用 |
 | 视觉验收 | 原生视觉合同，不逐像素复制 CSS；覆盖明暗模式、窗口断点、固定紧凑密度和 VoiceOver |
@@ -80,7 +80,7 @@
 
 ## 2. 对原型的必要修正
 
-这些修正不削减九个目的页，而是删除无法诚实落地或与现有领域冲突的演示语义：
+以下是九页原计划时期的原型修正记录；现行八页清单由顶部 2026-09-28 修订确定：
 
 | 原型内容 | 生产决议 | 原因 |
 |---|---|---|
@@ -163,7 +163,7 @@ enum SettingsRoute {
 
 | 数据 | 存储 | 规则 |
 |---|---|---|
-| 语言、状态点、通知偏好、快捷键、上次目的页 | UserDefaults | typed key；非法值回落；旧字号／面板宽度值保留但不再读写 |
+| 语言、通知偏好、快捷键、上次目的页 | UserDefaults | typed key；非法值回落；旧字号、面板宽度与状态点值保留但不再读写；历史 `display` 只投影通用 |
 | 默认组与工作区各自的 pack、音量和五事件开关 | `~/.claudio/config.json` | 继续使用锁与外科式 JSON 更新，保留未知字段和退役覆盖原始字节 |
 | AI provider key | SenseAudio 使用 ADR 0015 的私有本地文件；其他 Provider 使用 macOS Keychain | 掩码表单录入，UI 只投影保存状态，如实披露未加密的本地文件存储；Key 不进入日志或导出 |
 | 动态静默 | 私有、带 schema/revision/expiry 的原子 snapshot | 只包含布尔原因和时间，不包含 Focus 名称、日历标题、参与人或位置 |
@@ -206,7 +206,7 @@ enum SettingsRoute {
 - 新文案必须同时更新 `Localizable.xcstrings` 和 `ClaudioL10nKey.allKnown`；路径、事件 token、
   manifest ID 和版本号才使用等宽字体。
 
-## 5. 九个目的页完整规格
+## 5. 八个目的页现行规格与原显示页存档
 
 ### 5.1 通用
 
@@ -447,7 +447,9 @@ GUI 把授权后的最小事实发布成 ADR 0009 定义的动态静默快照。
 由用户授权，详见 Apple 的
 [EventKit event store](https://developer.apple.com/documentation/eventkit/accessing-the-event-store)。
 
-### 5.5 显示
+### 5.5 显示（2026-09-28 废止，历史规格）
+
+本节仅记录原九页方案，不再作为生产实施或验收要求。现行侧栏无 Display 目的页；`display` 历史值启动时投影到「通用」且不报损坏、不改写原值。`Claudio.MenuBarStatusDot` 的 `true`、`false` 或异常值均保持原样，应用不再读取、写入或以它切换图标。菜单栏始终使用无装饰点的 Orbit Zero，并继续使用本地化 VoiceOver 标签。
 
 用户结果：在显示页确认菜单栏活动状态点，并明确知道 Panel 固定使用紧凑布局；不产生字号或面板宽度
 第二套状态。
@@ -550,10 +552,10 @@ Apple 对全局 `NSEvent` key monitor 的权限说明见
 ## 6. 页面间一致性与刷新
 
 - `SettingsWindowController` 在窗口显示与 app 重新激活时请求各 owner 的适当观察，不把一个页面的刷新
-  复制成九次磁盘扫描。
+  复制成八次磁盘扫描。
 - Sound library 仍只有一个 refresh owner；其他页面订阅 revision 并使用最新 config 重投影。
 - Integrations action 成功后更新共享 store，Events/Notifications 只消费新事实；失败保留旧事实和 action error。
-- Display/General 的 UserDefaults 变化通过 typed store 发布，不依赖每个 view 自己的 `@AppStorage` 字符串。
+- General 的 UserDefaults 变化通过 typed store 发布，不依赖每个 view 自己的 `@AppStorage` 字符串。
 - AI session 在离开 Sounds 或关闭窗口时清理未采用候选；切换包、Event 或 profile 也按现有契约失效。
 - 任何目的页 write 成功后只刷新受影响 owner；write 失败不得发布假 revision 或清空旧成功状态。
 
@@ -743,7 +745,7 @@ S0 文档与契约锁定
 
 ### 8.2 GUI wiring
 
-- 九个 destination 恰好一次、固定顺序、固定 accessibility identifier；
+- 八个 destination 恰好一次、固定顺序、固定 accessibility identifier；
 - 生产 root 挂载 `SettingsShellView`，不存在 `EmptyView`/placeholder copy/Toast-only action；
 - Integrations/Events/Sounds 消费共享 owner，不创建幽灵 model；
 - 所有跨页动作提交 typed route；
@@ -818,10 +820,10 @@ git diff --check
 
 统一设置体验只有在以下条件全部成立时才算完成：
 
-- 九个目的页在同一 retained window 中完整可用，生产导航无占位；
+- 八个目的页在同一 retained window 中完整可用，生产导航无占位；
 - 原型视觉层级在默认窗口明显对齐，并在小窗口、固定紧凑布局、双语和明暗模式下原生适配；
 - Integrations、Events、Sounds 复用原 owner，独立旧窗口不再进入 production composition；
-- General、Notifications、Display、Usage、Shortcuts、About 的真实模型、权限、失败和持久化均落地；
+- General、Notifications、Usage、Shortcuts、About 的真实模型、权限、失败和持久化均落地；
 - AI 提示音维持描述 → route-owned 候选集合与命名 → 显式采用，内部声音方案隐藏，BYOK 边界不退化；
   T9 本地默认提供完整 SenseAudio profile，最终 Bundle 的受影响真实/原生复验与分发状态独立记录；
 - 所有自动命令全绿，`git diff --check` 通过且无新增 format diagnostics；

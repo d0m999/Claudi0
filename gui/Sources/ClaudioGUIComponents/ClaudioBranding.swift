@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// claudi0 的统一横向字标：产品名保持完整可读，末尾 `0` 使用 Orbit Zero 的
-/// 双环、斜轨与信号点。面板与首次启动页只渲染这一份组件，避免品牌字形再次漂移。
+/// 双环与斜轨。面板与首次启动页只渲染这一份组件，避免品牌字形再次漂移。
 public struct ClaudioOrbitWordmark: View {
     public let height: CGFloat
 
@@ -22,7 +22,7 @@ public struct ClaudioOrbitWordmark: View {
         }
         .frame(height: height)
         .fixedSize()
-        // 轨道、光晕与信号点是一个视觉字形，不应在 VoiceOver 中拆成多个装饰节点。
+        // 轨道与光晕是一个视觉字形，不应在 VoiceOver 中拆成多个装饰节点。
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("claudi0")
     }
@@ -54,14 +54,10 @@ public struct ClaudioOrbitZeroMark: View {
             Ellipse()
                 .stroke(
                     ClaudioTheme.text(colorScheme).opacity(colorScheme == .dark ? 0.72 : 0.52),
-                    lineWidth: max(0.75, size * 0.035))
+                    lineWidth: max(0.75, size * 0.035)
+                )
                 .frame(width: size * 1.48, height: size * 0.50)
                 .rotationEffect(.degrees(-16))
-
-            Circle()
-                .fill(ClaudioTheme.clay(colorScheme))
-                .frame(width: max(2, size * 0.12), height: max(2, size * 0.12))
-                .offset(x: size * 0.56, y: -size * 0.34)
         }
         .offset(x: -size * 0.22)
         .frame(width: size * 1.36, height: size)

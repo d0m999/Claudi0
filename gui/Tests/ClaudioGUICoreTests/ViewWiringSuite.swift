@@ -1,3 +1,4 @@
+import AppKit
 import ClaudioGUICore
 import Foundation
 
@@ -479,7 +480,10 @@ func runViewWiringSuites() {
                 && normalizedBranding.contains(
                     "} .offset(x: -size * 0.22) .frame(width: size * 1.36, height: size)")
                 && !normalizedBranding.contains(".offset(x: size * 0.10)"),
-            "Orbit Zero 的光晕、0、斜轨与信号点必须先共享 ZStack 中心，再由整个图形组统一左移；不得恢复旧的斜轨横向偏移")
+            "Orbit Zero 的光晕、0 与斜轨必须共享 ZStack 中心，再由整个图形组统一左移")
+        expect(
+            !branding.contains("Circle()") && !branding.contains("signal dot"),
+            "应用内 Orbit Zero 字标不得绘制装饰点")
 
         expect(
             panel.components(separatedBy: "ClaudioOrbitWordmark(").count - 1 == 1
@@ -489,11 +493,43 @@ func runViewWiringSuites() {
             "运行面板与首次启动共享标题必须各调用同一份 Orbit Zero 字标，不能退回两份手写 Text logo")
 
         expect(
-            menuBarIcon.contains("drawOrbitZero(showsStatusDot: showsStatusDot)")
+            menuBarIcon.contains("static func make() -> NSImage")
+                && menuBarIcon.contains("drawOrbitZero()")
                 && menuBarIcon.contains("rotation.rotate(byDegrees: 16)")
-                && menuBarIcon.contains("if showsStatusDot")
+                && !menuBarIcon.contains("dot.fill()")
                 && menuBarIcon.contains("image.isTemplate = true"),
             "菜单栏必须使用同源 Orbit Zero 减法几何，并保持 template image 自动适配亮暗菜单栏")
+    }
+
+    suite("Orbit Zero 品牌母版与打包位图不含旧装饰点") {
+        guard
+            let mark = source("assets/branding/claudi0-mark.svg"),
+            let appIcon = source("assets/branding/claudi0-app-icon.svg"),
+            let generator = codeOnly("scripts/generate-brand-assets.swift"),
+            let pngData = try? Data(
+                contentsOf: repoRoot().appendingPathComponent(
+                    "assets/branding/claudi0-app-icon.png")),
+            let png = NSBitmapImageRep(data: pngData),
+            let icns = NSImage(
+                contentsOf: repoRoot().appendingPathComponent(
+                    "assets/branding/claudi0.icns")),
+            let icns1024 = icns.representations.first(where: { $0.pixelsWide == 1024 })
+                as? NSBitmapImageRep
+        else {
+            expect(false, "必须能读取 Orbit Zero 母版、生成脚本、PNG 与 .icns")
+            return
+        }
+        expect(
+            !mark.contains("<circle") && !appIcon.contains("<circle")
+                && !generator.contains("dot.fill()"),
+            "两个 SVG 和图标生成脚本不得绘制原偏心装饰点")
+        for (name, bitmap) in [("PNG", png), (".icns", icns1024)] {
+            let oldDot = bitmap.colorAt(x: 755, y: 303)
+            let background = bitmap.colorAt(x: 755, y: 280)
+            expect(
+                oldDot != nil && oldDot?.isEqual(background) == true,
+                "\(name) 的原状态点中心应与周围底色一致")
+        }
     }
 
     suite("扫描器的前提：三个 GUI production targets 没有一处它自己不认识的构造") {
@@ -2790,7 +2826,7 @@ func runViewWiringSuites() {
             "State Gallery 必须保留浅色与深色两个生产渲染入口")
     }
 
-    suite("Display：生产 Panel 与 Settings 只保留固定紧凑布局和状态点") {
+    suite("生产 Panel 固定紧凑布局，Settings 不再挂载 Display") {
         guard
             let panel = codeOnly("gui/Sources/ClaudioPanelPresentation/PanelView.swift"),
             let settings = codeOnly(
@@ -2808,11 +2844,11 @@ func runViewWiringSuites() {
                 && !panel.contains("dynamicTypeSize"),
             "Panel 必须固定使用紧凑宽度，不再读取字号或宽度偏好")
         expect(
-            settings.contains("settingsDisplayFixedLayoutTitle")
-                && settings.contains("settings.display.status-dot")
+            !settings.contains("settings.display.status-dot")
+                && !settings.contains("displaySettings")
                 && !settings.contains("interfaceTextSize")
                 && !settings.contains("panelWidthPreference"),
-            "Display destination 必须只呈现固定布局说明和状态点")
+            "Settings root 不得保留 Display 页面或旧字号、宽度偏好")
         expect(
             !preferences.contains("interfaceTextSize")
                 && !preferences.contains("panelWidthPreference")

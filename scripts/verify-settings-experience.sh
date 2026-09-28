@@ -77,7 +77,6 @@ for suite in \
     runSoundPacksEditorOwnerSuites \
     runSettingsPreferencesSuites \
     runDynamicQuietPolicySuites \
-    runDisplayPreferencesSuites \
     runActivityDiagnosticsSuites \
     runActivityOverviewSuites \
     runGlobalShortcutsSuites \

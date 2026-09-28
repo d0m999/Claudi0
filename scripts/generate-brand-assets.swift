@@ -112,16 +112,6 @@ private func makeIcon(size: Int) throws -> Data {
         centerX: 512, centerY: 512, radiusX: 356, radiusY: 128,
         color: cream, opacity: 0.74, lineWidth: 20, rotationDegrees: 16)
 
-    let dotCenter = point(755, 303)
-    let dotRadius = max(0.75, scaled(22, for: size))
-    let dot = NSBezierPath(ovalIn: NSRect(
-        x: dotCenter.x - dotRadius,
-        y: dotCenter.y - dotRadius,
-        width: dotRadius * 2,
-        height: dotRadius * 2))
-    clay.setFill()
-    dot.fill()
-
     guard let png = bitmap.representation(using: .png, properties: [:]) else {
         throw NSError(domain: "claudi0.branding", code: 2, userInfo: [
             NSLocalizedDescriptionKey: "无法编码 \(size)×\(size) PNG"

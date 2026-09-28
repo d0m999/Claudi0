@@ -10,7 +10,6 @@ public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashab
     case integrations
     case eventsAndSounds = "events-and-sounds"
     case notifications
-    case display
     case sounds
     case usage
     case shortcuts
@@ -24,7 +23,6 @@ public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashab
         case .integrations: .settingsDestinationIntegrations
         case .eventsAndSounds: .settingsDestinationEventsAndSounds
         case .notifications: .settingsDestinationNotifications
-        case .display: .settingsDestinationDisplay
         case .sounds: .settingsDestinationSounds
         case .usage: .settingsDestinationUsage
         case .shortcuts: .settingsDestinationShortcuts
@@ -305,7 +303,7 @@ public func settingsSidebarSections(
         SettingsSidebarSection(
             id: .primary,
             destinations: [
-                .general, .integrations, .eventsAndSounds, .notifications, .display, .sounds,
+                .general, .integrations, .eventsAndSounds, .notifications, .sounds,
                 .usage,
             ].filter(available.contains)),
         SettingsSidebarSection(
@@ -386,7 +384,7 @@ public func settingsWindowRequestedFocusTarget(
     case .sounds:
         if case .sounds(let route) = resolution.route, route.editTarget != nil { return nil }
         return .title(.sounds)
-    case .general, .notifications, .display, .usage, .shortcuts, .about:
+    case .general, .notifications, .usage, .shortcuts, .about:
         return .title(resolution.destination)
     }
 }

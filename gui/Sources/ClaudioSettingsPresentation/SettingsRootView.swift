@@ -274,8 +274,6 @@ package struct SettingsRootView: View {
                     onAnnouncement: onAnnouncement)
             case .notifications:
                 standardDestination { notificationsSettings }
-            case .display:
-                standardDestination { displaySettings }
             case .sounds:
                 VStack(alignment: .leading, spacing: 16) {
                     destinationTitle
@@ -424,38 +422,6 @@ package struct SettingsRootView: View {
         }
         .frame(maxWidth: 560, alignment: .leading)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.general))
-    }
-
-    private var displaySettings: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(l10n.text(.settingsDisplayFixedLayoutTitle))
-                        .font(.headline)
-                    Text(l10n.text(.settingsDisplayFixedLayoutDescription))
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .accessibilityIdentifier("settings.display.fixed-layout")
-            }
-
-            SettingsSectionCard {
-                Toggle(
-                    l10n.text(.settingsDisplay.statusDotTitle),
-                    isOn: menuBarStatusDotBinding
-                )
-                .accessibilityValue(
-                    l10n.text(
-                        preferences.showsMenuBarStatusDot
-                            ? .settingsDisplayStatusDotEnabled
-                            : .settingsDisplayStatusDotDisabled)
-                )
-                .accessibilityHint(l10n.text(.settingsDisplay.statusDotDescription))
-                .accessibilityIdentifier("settings.display.status-dot")
-            }
-        }
-        .frame(maxWidth: 560, alignment: .leading)
-        .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.display))
     }
 
     private var notificationsSettings: some View {
@@ -615,20 +581,6 @@ package struct SettingsRootView: View {
             })
     }
 
-    private var menuBarStatusDotBinding: Binding<Bool> {
-        Binding(
-            get: { preferences.showsMenuBarStatusDot },
-            set: {
-                preferences.setShowsMenuBarStatusDot($0)
-                onAnnouncement(
-                    l10n.text(
-                        $0
-                            ? .settingsDisplayStatusDotEnabled
-                            : .settingsDisplayStatusDotDisabled)
-                )
-            })
-    }
-
     private var calendarQuietBinding: Binding<Bool> {
         Binding(
             get: { dynamicQuietPolicy.presentation.calendarIsEnabled },
@@ -748,7 +700,6 @@ package struct SettingsRootView: View {
         case .integrations: "puzzlepiece.extension"
         case .eventsAndSounds: "waveform"
         case .notifications: "bell"
-        case .display: "display"
         case .sounds: "speaker.wave.2"
         case .usage: "chart.bar"
         case .shortcuts: "command"
