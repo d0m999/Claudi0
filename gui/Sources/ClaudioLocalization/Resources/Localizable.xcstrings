@@ -2353,6 +2353,22 @@
         }
       }
     },
+    "cell.legacy-event-not-installed-detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This event is not installed by the legacy connection; upgrade the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧版连接未安装此事件，请升级连接"
+          }
+        }
+      }
+    },
     "cell.legacy-notification-audible-detail": {
       "localizations": {
         "en": {

@@ -409,15 +409,15 @@ func runHostIntegrationModelSuites() {
             "旧安装器实际写入的四个 lifecycle 事件仍应保持 legacy 可听")
         let notification = matrix.cell(host: .claudeCode, event: .notification)
         expect(
-            notification?.state == .degraded,
-            "旧 Notification 可听不能把未安装的 PreToolUse 提问绑定也判为 legacy 可听")
+            notification?.state == .legacy,
+            "旧 Notification 可听时，聚合格须保留旧版可听状态；未安装绑定仍由详情说明")
         expect(
             notification?.detail
                 == "Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接",
             "聚合格必须逐绑定说明旧通知可听与新增提问入口缺失，并给出升级原因")
         expect(
             notification?.accessibilityLabel
-                == "Claude Code，等待介入，完整支持，需要处理，各绑定状态见详情，Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接",
+                == "Claude Code，等待介入，完整支持，旧版连接，可听，无真实回执，Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接",
             "VoiceOver 不得把仍可听的旧 Notification 统称不可听")
         let mutedNotification = AudibilityMatrix.make(
             snapshots: [legacy],

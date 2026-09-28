@@ -360,6 +360,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let cellLegacy: Self = "cell.legacy"
     public static let cellUnsupported: Self = "cell.unsupported"
     public static let cellDegraded: Self = "cell.degraded"
+    public static let cellLegacyEventNotInstalledDetail: Self =
+        "cell.legacy-event-not-installed-detail"
     public static let cellLegacyNotificationAudibleDetail: Self =
         "cell.legacy-notification-audible-detail"
     public static let cellLegacyNotificationMutedDetail: Self =
@@ -1697,6 +1699,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsNotificationsEventSourceReceiverUnavailable,
         .cellAudible, .cellMuted, .cellMasterVolumeZero, .cellMissingSound, .cellNotConnected,
         .cellAwaitingActivation, .cellLegacy, .cellUnsupported, .cellDegraded,
+        .cellLegacyEventNotInstalledDetail,
         .cellLegacyNotificationAudibleDetail, .cellLegacyNotificationMutedDetail,
         .cellLegacyNotificationMissingSoundDetail,
         .hostPlaybackPlayed, .hostPlaybackMuted, .hostPlaybackDebounced, .hostPlaybackNotReady,

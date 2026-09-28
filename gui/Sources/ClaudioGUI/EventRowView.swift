@@ -324,7 +324,7 @@ public struct EventRowView: View {
             contentsOf: hostIndicators.map { indicator in
                 let host = localizedHostName(indicator.host, language: language)
                 let status = localizedEventHostIndicatorStatus(indicator.state, language: language)
-                return [host, status, indicator.qualificationText]
+                return [host, status, indicator.qualificationText, indicator.detailText]
                     .compactMap { $0 }
                     .joined(separator: language == .english ? ", " : "，")
             })
@@ -345,6 +345,7 @@ public struct EventRowView: View {
             localizedHostName(indicator.host, language: language),
             localizedEventHostIndicatorStatus(indicator.state, language: language),
             indicator.qualificationText,
+            indicator.detailText,
         ]
         .compactMap { $0 }
         .joined(separator: separator)

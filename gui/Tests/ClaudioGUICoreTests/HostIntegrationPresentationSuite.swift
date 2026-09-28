@@ -137,7 +137,7 @@ func runHostIntegrationPresentationSuites() {
             "删除 adapter 映射必须暴露 unsupported，而非补写声音能力")
     }
 
-    suite("旧版 Claude 通知：共享矩阵和集成来源说明保留两条绑定的不同事实") {
+    suite("旧版 Claude 任务开始与通知：共享矩阵和面板详情保留逐绑定事实") {
         let legacy = HostIntegrationSnapshot(
             host: .claudeCode,
             runtime: .ready,
@@ -146,10 +146,35 @@ func runHostIntegrationPresentationSuites() {
             writability: .writable,
             activation: .none)
         let matrix = hostPresentationMatrix(snapshots: [legacy])
-        guard
-            let cell = hostCapabilityMatrixPresentation(from: matrix)
-                .cell(host: .claudeCode, event: .notification)
-        else {
+        let presentation = hostCapabilityMatrixPresentation(from: matrix)
+        guard let taskStart = presentation.cell(host: .claudeCode, event: .taskStart) else {
+            expect(false, "旧版 Claude 必须保留 task_start 格")
+            return
+        }
+        let taskStartEnglish = localizedCapabilityCell(taskStart, language: .english)
+        let missingEventEnglish =
+            "This event is not installed by the legacy connection; "
+            + "upgrade the connection"
+        expect(
+            taskStartEnglish.detailText == missingEventEnglish
+                && taskStartEnglish.accessibilityLabel.contains(missingEventEnglish),
+            "英文能力矩阵与 VoiceOver 须翻译旧版未安装的任务开始事件")
+        let taskStartIndicator = eventHostIndicatorPresentations(
+            event: .taskStart, matrix: presentation
+        ).first(where: { $0.host == .claudeCode })
+        if let taskStartIndicator {
+            let english = localizedEventHostIndicator(taskStartIndicator, language: .english)
+            let chinese = localizedEventHostIndicator(taskStartIndicator, language: .zhHans)
+            expect(
+                english.detailText == missingEventEnglish
+                    && english.helpText.contains(missingEventEnglish)
+                    && english.accessibilityLabel.contains(missingEventEnglish)
+                    && chinese.detailText == "旧版连接未安装此事件，请升级连接",
+                "英文面板详情须翻译并进入帮助与 VoiceOver；中文原文保持不变")
+        } else {
+            expect(false, "旧版 Claude task_start 须有面板宿主指示器")
+        }
+        guard let cell = presentation.cell(host: .claudeCode, event: .notification) else {
             expect(false, "旧版 Claude 必须保留 notification 格")
             return
         }
@@ -163,6 +188,30 @@ func runHostIntegrationPresentationSuites() {
                 && english.accessibilityLabel.contains("PreToolUse question hook: not installed")
                 && !english.accessibilityLabel.contains("inaudible"),
             "英文无障碍文案不得抹掉旧通知可听的事实")
+        let indicator = eventHostIndicatorPresentations(
+            event: .notification,
+            matrix: hostCapabilityMatrixPresentation(from: matrix)
+        ).first(where: { $0.host == .claudeCode })
+        expect(
+            indicator?.state == .legacy
+                && indicator?.state.usesActiveColor == true
+                && indicator?.detailText?.contains("Notification：旧版可听") == true
+                && indicator?.detailText?.contains("PreToolUse 提问入口：旧版未安装") == true
+                && indicator?.helpText.contains("Notification：旧版可听") == true
+                && indicator?.accessibilityLabel.contains("PreToolUse 提问入口：旧版未安装")
+                    == true,
+            "面板 Claude 标签须保持旧版可听颜色，并说明新增提问入口待升级")
+        if let indicator {
+            let localized = localizedEventHostIndicator(indicator, language: .english)
+            let upgradeText = "PreToolUse question hook: not installed"
+            expect(
+                localized.detailText?.contains("Notification: audible") == true
+                    && localized.detailText?.contains(upgradeText) == true
+                    && localized.helpText.contains("Notification: audible")
+                    && localized.accessibilityLabel.contains("Notification: audible")
+                    && localized.accessibilityLabel.contains(upgradeText),
+                "面板英文帮助与 VoiceOver 须同时保留旧绑定可听和新绑定待升级")
+        }
         guard
             let row = hostSourceRowPresentations(from: matrix)
                 .first(where: { $0.host == .claudeCode })

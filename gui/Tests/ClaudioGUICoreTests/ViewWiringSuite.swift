@@ -2525,6 +2525,43 @@ func runViewWiringSuites() {
             "窗口必须把 owner 签发的 clear capability 回送唯一 interface，不得旁路调用 raw model")
     }
 
+    suite("生产面板事件行：旧版绑定详情来自共享矩阵并进入可见文案与 VoiceOver") {
+        guard
+            let panel = codeWithoutStrings(
+                "gui/Sources/ClaudioPanelPresentation/PanelView.swift")
+        else {
+            expect(false, "读不到生产 PanelView.swift")
+            return
+        }
+        let flat = collapsingWhitespace(panel)
+        guard
+            let eventSection = closureBody(after: "private var eventSection: some View", in: flat),
+            let rowBody = closureBody(after: "private struct PanelAgentEventRow: View", in: flat),
+            let identity = closureBody(after: "private var identity: some View", in: rowBody),
+            let accessibility = closureBody(
+                after: "private var identityAccessibilityLabel: String", in: rowBody)
+        else {
+            expect(false, "切不出生产事件区、事件行或身份无障碍文案")
+            return
+        }
+        expect(
+            eventSection.contains("eventHostIndicatorPresentations(")
+                && eventSection.contains(
+                    "event: event.event, matrix: hostIntegrations.content.matrix")
+                && eventSection.contains("localizedEventHostIndicators(")
+                && eventSection.contains("hostIndicators:")
+                && rowBody.contains("let hostIndicators: [EventHostIndicatorPresentation]"),
+            "生产事件区必须用共享矩阵的本事件状态投影，交给实际挂载的 PanelAgentEventRow")
+        expect(
+            identity.contains("ForEach(hostBindingDetails)")
+                && identity.contains("Text(hostBindingDetailLabel(indicator))")
+                && rowBody.contains("indicator.detailText")
+                && rowBody.contains("localizedEventHostIndicatorStatus(")
+                && accessibility.contains(
+                    "parts.append(contentsOf: hostBindingDetails.map(hostBindingDetailLabel))"),
+            "生产行须将逐绑定详情显示出来，并纳入同一身份的 VoiceOver 文案")
+    }
+
     suite("生产面板事件行：复用批准的 24pt 双波纹静音图标，不回退 SF Symbols") {
         guard
             let panel = codeOnly("gui/Sources/ClaudioPanelPresentation/PanelView.swift"),

@@ -395,12 +395,14 @@ public struct EventHostIndicatorPresentation: Identifiable, Sendable, Equatable 
     public let compactDisplayName: String
     public let state: EventHostIndicatorState
     public let qualificationText: String?
+    public let detailText: String?
 
     public init(
         host: HostID,
         state: EventHostIndicatorState,
         compactDisplayName: String? = nil,
-        qualificationText: String? = nil
+        qualificationText: String? = nil,
+        detailText: String? = nil
     ) {
         self.host = host
         self.compactDisplayName =
@@ -408,12 +410,17 @@ public struct EventHostIndicatorPresentation: Identifiable, Sendable, Equatable 
             ?? eventHostIndicatorCompactDisplayName(for: host)
         self.state = state
         self.qualificationText = qualificationText
+        self.detailText = detailText
     }
 
-    public var helpText: String { state.statusText }
+    public var helpText: String {
+        [state.statusText, qualificationText, detailText]
+            .compactMap { $0 }
+            .joined(separator: "，")
+    }
 
     public var accessibilityLabel: String {
-        [host.displayName, state.statusText, qualificationText]
+        [host.displayName, state.statusText, qualificationText, detailText]
             .compactMap { $0 }
             .joined(separator: "，")
     }
@@ -507,7 +514,8 @@ public func eventHostIndicatorPresentations(
         return EventHostIndicatorPresentation(
             host: host,
             state: eventHostIndicatorState(for: cell.state),
-            qualificationText: cell.qualificationText)
+            qualificationText: cell.qualificationText,
+            detailText: cell.detailText)
     }
 }
 

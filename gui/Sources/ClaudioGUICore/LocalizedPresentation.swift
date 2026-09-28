@@ -229,6 +229,8 @@ private func localizedCapabilityDetail(
     guard let detail else { return nil }
     let key: ClaudioL10nKey
     switch detail {
+    case "旧版连接未安装此事件，请升级连接":
+        key = .cellLegacyEventNotInstalledDetail
     case "Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接":
         key = .cellLegacyNotificationAudibleDetail
     case "Notification：旧版已安装，当前静音；PreToolUse 提问入口：旧版未安装，请升级连接":
@@ -263,7 +265,8 @@ public func localizedEventHostIndicator(
         host: indicator.host,
         state: indicator.state,
         compactDisplayName: indicator.compactDisplayName,
-        qualificationText: localizedQualification(indicator.qualificationText, language: language))
+        qualificationText: localizedQualification(indicator.qualificationText, language: language),
+        detailText: localizedCapabilityDetail(indicator.detailText, language: language))
 }
 
 public func localizedEventHostIndicators(

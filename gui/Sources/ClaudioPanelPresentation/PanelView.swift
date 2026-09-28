@@ -704,6 +704,10 @@ public struct PanelView: View {
                         presentation: event,
                         adaptation: layoutAdaptation,
                         language: languageStore.language,
+                        hostIndicators: localizedEventHostIndicators(
+                            eventHostIndicatorPresentations(
+                                event: event.event, matrix: hostIntegrations.content.matrix),
+                            language: languageStore.language),
                         attemptFailure: previewAttemptFailures[event.event],
                         focusedTarget: $focusedTarget,
                         onPreview: {
@@ -1166,6 +1170,7 @@ private struct PanelAgentEventRow: View {
     let presentation: PanelEventPresentation
     let adaptation: PanelLayoutAdaptation
     let language: ClaudioAppLanguage
+    let hostIndicators: [EventHostIndicatorPresentation]
     let attemptFailure: EventPreviewAttemptFailure?
     let onPreview: () -> Bool
     let onRecovery: (EventPreviewRecoveryAction) -> Void
@@ -1181,6 +1186,7 @@ private struct PanelAgentEventRow: View {
         presentation: PanelEventPresentation,
         adaptation: PanelLayoutAdaptation,
         language: ClaudioAppLanguage,
+        hostIndicators: [EventHostIndicatorPresentation],
         attemptFailure: EventPreviewAttemptFailure?,
         focusedTarget: FocusState<PanelFocusTarget?>.Binding,
         onPreview: @escaping () -> Bool,
@@ -1190,6 +1196,7 @@ private struct PanelAgentEventRow: View {
         self.presentation = presentation
         self.adaptation = adaptation
         self.language = language
+        self.hostIndicators = hostIndicators
         self.attemptFailure = attemptFailure
         self.focusedTarget = focusedTarget
         self.onPreview = onPreview
@@ -1286,6 +1293,14 @@ private struct PanelAgentEventRow: View {
                         soundFileText
                     }
                 }
+                ForEach(hostBindingDetails) { indicator in
+                    Text(hostBindingDetailLabel(indicator))
+                        .font(.system(size: 9.5, design: .rounded))
+                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .help(hostBindingDetailLabel(indicator))
+                        .accessibilityHidden(true)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1314,11 +1329,27 @@ private struct PanelAgentEventRow: View {
 
     private var identityAccessibilityLabel: String {
         let separator = language == .english ? ", " : "，"
-        return [
+        var parts = [
             presentation.accessibilityLabel,
             previewUnavailableReason,
             attemptFailure.map { localizedEventPreviewAttemptFailure($0, language: language) },
-        ].compactMap { $0 }.joined(separator: separator)
+        ].compactMap { $0 }
+        parts.append(contentsOf: hostBindingDetails.map(hostBindingDetailLabel))
+        return parts.joined(separator: separator)
+    }
+
+    private var hostBindingDetails: [EventHostIndicatorPresentation] {
+        hostIndicators.filter { $0.detailText != nil }
+    }
+
+    private func hostBindingDetailLabel(_ indicator: EventHostIndicatorPresentation) -> String {
+        [
+            localizedHostName(indicator.host, language: language),
+            localizedEventHostIndicatorStatus(indicator.state, language: language),
+            indicator.detailText,
+        ]
+        .compactMap { $0 }
+        .joined(separator: language == .english ? ", " : "，")
     }
 
     private var controlsUnavailable: Bool {
