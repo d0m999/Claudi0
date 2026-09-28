@@ -25,8 +25,8 @@ public enum SystemSoundSelectionError: Error, Sendable, Equatable, CustomStringC
     }
 }
 
-/// Selects a system-owned sound for one Default Group event. `nil` restores this event's
-/// selected-pack audio. The existing config lock and surgical JSON writer own the mutation.
+/// Retired group-level entry point. Preserve existing config bytes and direct callers to the
+/// pack editor; only pack manifest operations may create system-sound mappings (ADR 0021).
 public func setSystemSound(
     _ event: Event,
     name: String?,
@@ -34,35 +34,5 @@ public func setSystemSound(
     configFile: URL = ClaudioPaths.configFile,
     lockFile: URL = ClaudioPaths.configLockFile
 ) -> Result<Void, SystemSoundSelectionError> {
-    if let name, catalog.audioURL(named: name) == nil {
-        return .failure(.unavailable(name: name))
-    }
-    let locked = withNonBlockingLock(path: lockFile.path) {
-        updateConfigJSON(at: configFile, onMissing: .failClosed) { json in
-            if let name, catalog.audioURL(named: name) == nil {
-                return .failure(.mutationRejected)
-            }
-            var sounds = json["system_sounds"] as? [String: Any] ?? [:]
-            sounds[event.cliName] = name
-            if sounds.isEmpty {
-                json.removeValue(forKey: "system_sounds")
-            } else {
-                json["system_sounds"] = sounds
-            }
-            return .success(())
-        }
-    }
-    switch locked {
-    case .ran(.success): return .success(())
-    case .ran(.failure(.mutationRejected)):
-        return .failure(.unavailable(name: name ?? ""))
-    case .ran(.failure(.postPublishConflict(let path))):
-        return .failure(.publishedConflict(recoveryPath: path))
-    case .ran(.failure(.postPublishPathChanged)):
-        return .failure(.publishedConflict())
-    case .ran(.failure(let error)):
-        return .failure(.configFailure(reason: error.reason))
-    case .skipped: return .failure(.lockBusy)
-    case .failed(let code): return .failure(.lockFailed(errno: code))
-    }
+    .failure(.configFailure(reason: "组级系统提示音选择已停用；请前往声音编辑包映射。"))
 }

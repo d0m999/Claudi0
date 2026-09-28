@@ -1212,6 +1212,18 @@ private struct SoundPacksWindowContentView: View {
                 Text(localizedEventName(row.event, language: languageStore.language))
                     .font(ClaudioTheme.font(.body).weight(.medium))
             }
+            if !row.duplicateEvents.isEmpty {
+                Text(l10n.format(.soundPacksDuplicateSource, eventNames(row.duplicateEvents)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).duplicate")
+            }
+            if row.soundSource?.systemSoundName != nil, !row.coverage.previewEnabled {
+                Text(mappingText(row))
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(row.event.manifestKey)
                 .font(ClaudioTheme.font(.technical))
                 .foregroundStyle(.secondary)
@@ -1244,7 +1256,7 @@ private struct SoundPacksWindowContentView: View {
                     .soundPacksPreviewLabel,
                     localizedEventName(row.event, language: languageStore.language))
             )
-            .accessibilityValue(mappingText(row.coverage))
+            .accessibilityValue(mappingText(row))
             .accessibilityHint(
                 localizedEventPreviewHint(availability, language: languageStore.language)
             )
@@ -1255,7 +1267,7 @@ private struct SoundPacksWindowContentView: View {
 
     @ViewBuilder
     private func eventAudioControl(_ row: SoundPackEditorEventPresentation) -> some View {
-        if canEditSelectedPack {
+        if canEditSelectedPack || activeSounds.draft != nil {
             Menu {
                 Section(l10n.text(.soundPacksExistingFiles)) {
                     if inventoryIsLoading && inventoryFiles.isEmpty {
@@ -1265,24 +1277,40 @@ private struct SoundPacksWindowContentView: View {
                     } else {
                         ForEach(inventoryFiles) { file in
                             Button(
-                                file.isOrphan
-                                    ? l10n.format(.soundPacksOrphanUnused, file.fileName)
-                                    : file.fileName
+                                sourceChoiceTitle(
+                                    file.isOrphan
+                                        ? l10n.format(.soundPacksOrphanUnused, file.fileName)
+                                        : file.fileName, usedBy: file.usedByEvents)
                             ) {
                                 invoke(
                                     file.assignments.first(where: { $0.event == row.event })?
                                         .action)
                             }
+                            .disabled(!file.assignments.contains(where: { $0.event == row.event }))
                             .accessibilityLabel(
                                 l10n.format(
                                     .soundPacksChooseBindLabel,
                                     "\(localizedEventName(row.event, language: languageStore.language))"
                                         + (languageStore.language == .english ? ": " : "：")
-                                        + file.fileName)
+                                        + sourceChoiceTitle(
+                                            file.fileName, usedBy: file.usedByEvents))
                             )
                             .accessibilityIdentifier(
                                 "sound-packs.event.\(row.event.rawValue).existing.\(file.fileName)")
                         }
+                    }
+                }
+                Section(l10n.text(.eventSettingsSystemSounds)) {
+                    if row.systemSoundChoices.isEmpty {
+                        Text(l10n.text(.eventSettingsNoSystemSounds))
+                    }
+                    ForEach(row.systemSoundChoices) { choice in
+                        Button(sourceChoiceTitle(choice.source.name, usedBy: choice.usedByEvents)) {
+                            invoke(choice.action)
+                        }
+                        .disabled(choice.action == nil)
+                        .accessibilityIdentifier(
+                            "sound-packs.event.\(row.event.rawValue).system.\(choice.source.name)")
                     }
                 }
                 Divider()
@@ -1294,6 +1322,7 @@ private struct SoundPacksWindowContentView: View {
                         .soundPacksChooseBindLabel,
                         localizedEventName(row.event, language: languageStore.language))
                 )
+                .disabled(row.importAction == nil)
                 .accessibilityHint(l10n.text(.soundPacksChooseBindHint))
                 .accessibilityIdentifier(
                     "sound-packs.event.\(row.event.rawValue).choose-and-bind")
@@ -1322,7 +1351,7 @@ private struct SoundPacksWindowContentView: View {
                 .accessibilityIdentifier(
                     "sound-packs.event.\(row.event.rawValue).reveal-mapping")
             } label: {
-                Text(mappingText(row.coverage))
+                Text(mappingText(row))
                     .lineLimit(1)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1335,17 +1364,19 @@ private struct SoundPacksWindowContentView: View {
                     .soundPacksMappingLabel,
                     localizedEventName(row.event, language: languageStore.language))
             )
-            .accessibilityValue(mappingText(row.coverage))
+            .accessibilityValue(mappingText(row))
             .accessibilityHint(l10n.text(.soundPacksMappingHint))
             .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).mapping")
         } else {
-            mappingValue(row.coverage)
+            Text(mappingText(row))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(
                     l10n.format(
                         .soundPacksMappingLabel,
                         localizedEventName(row.event, language: languageStore.language))
                 )
-                .accessibilityValue(mappingText(row.coverage))
+                .accessibilityValue(mappingText(row))
                 .focusable(readOnlyDeepLinkEvent == row.event)
                 .focused($focusedTarget, equals: .eventAudio(row.event))
                 .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).readonly-mapping")
@@ -1562,6 +1593,7 @@ private struct SoundPacksWindowContentView: View {
     private func mappedAudio(
         for row: SoundPackEditorEventPresentation
     ) -> SoundPackEditorAudioPresentation? {
+        guard row.soundSource?.systemSoundName == nil else { return nil }
         let fileName: String
         switch row.coverage {
         case .present(let value), .broken(let value):
@@ -1709,6 +1741,25 @@ private struct SoundPacksWindowContentView: View {
         case .modified:
             return "⚠ " + l10n.text(.soundPacksPackModified)
         }
+    }
+
+    private func eventNames(_ events: [Event]) -> String {
+        events.map { localizedEventName($0, language: languageStore.language) }
+            .joined(separator: languageStore.language == .english ? ", " : "、")
+    }
+
+    private func sourceChoiceTitle(_ name: String, usedBy: [Event]) -> String {
+        usedBy.isEmpty
+            ? name : name + " · " + l10n.format(.soundPacksSourceUsed, eventNames(usedBy))
+    }
+
+    private func mappingText(_ row: SoundPackEditorEventPresentation) -> String {
+        if let name = row.soundSource?.systemSoundName {
+            return l10n.format(
+                row.coverage.previewEnabled
+                    ? .workspaceSystemSoundFile : .workspaceSystemSoundMissing, name)
+        }
+        return mappingText(row.coverage)
     }
 
     private func mappingText(_ coverage: CoverageState) -> String {

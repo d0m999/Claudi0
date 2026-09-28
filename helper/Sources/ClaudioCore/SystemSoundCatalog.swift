@@ -1,6 +1,6 @@
 import Foundation
 
-/// macOS-owned alert sounds. Names are stored in user config; audio always stays in the
+/// macOS-owned alert sounds. Names are stored in pack mappings; audio always stays in the
 /// operating system's sound directory. The root is injectable for deterministic tests.
 public struct SystemSoundCatalog: Sendable {
     public static let systemDirectory = URL(

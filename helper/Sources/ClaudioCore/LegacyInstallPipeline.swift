@@ -84,14 +84,13 @@ public func legacyInstallPipelineReport(
     var playable: [Event] = []
     var warnings: [LegacyInstallPipelineWarning] = []
     for event in Event.allCases {
-        guard let fileName = manifest.events[event.manifestKey] else {
+        guard let source = manifest.eventSources[event.manifestKey] else {
             warnings.append(.unmapped(event: event))
             continue
         }
-        guard let file = safePackFileURL(fileName, in: packDirectory),
-            nonEmptyRegularFileExists(at: file)
+        guard source.audioURL(in: packDirectory) != nil
         else {
-            warnings.append(.unplayable(event: event, fileName: fileName))
+            warnings.append(.unplayable(event: event, fileName: source.name))
             continue
         }
         playable.append(event)

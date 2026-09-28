@@ -18,9 +18,6 @@ func makeEventSettingsConfigController(
         lockFile: ClaudioPaths.configLockFile,
         environment: environment,
         soundPackLibrary: soundPackLibrary,
-        systemSoundSelectionAllowed: {
-            installedHelperMatchesBundledRuntime(bundledHelper: bundledHelper)
-        },
         afterFullReload: afterFullReload,
         soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
 }

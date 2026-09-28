@@ -20,9 +20,9 @@ public struct ClaudioConfig: Codable, Equatable, Sendable {
     /// Per-event mute state, keyed by ``Event/cliName``. An event absent from this map
     /// defaults to **enabled** — the control is opt-out ("静音钮"), not opt-in.
     public var eventsEnabled: [String: Bool]
-    /// Per-event macOS sound names. Missing keys continue to use `selected_pack`.
+    /// Retired group-level selections. Playback ignores these; surgical writes preserve raw JSON.
     public var systemSounds: [String: String]
-    public var systemSoundsMalformed = false
+    public var hasLegacySystemSounds = false
     /// The optional star selection's three states are semantically distinct: a missing key is
     /// `nil` (use built-in defaults), while `[]` is the user's explicit zero-row choice. This
     /// lenient `(try? decode) ?? nil` deliberately folds a present malformed value into `nil` only
@@ -48,6 +48,7 @@ public struct ClaudioConfig: Codable, Equatable, Sendable {
         self.masterVolume = masterVolume
         self.eventsEnabled = eventsEnabled
         self.systemSounds = systemSounds
+        self.hasLegacySystemSounds = !systemSounds.isEmpty
         self.starredPacks = starredPacks
         self.surfaceOverrides = surfaceOverrides
         self.invalidSurfaceOverrideKeys = invalidSurfaceOverrideKeys
@@ -94,18 +95,8 @@ public struct ClaudioConfig: Codable, Equatable, Sendable {
             (try? container.decode(Double.self, forKey: .masterVolume))
             ?? ClaudioConfig.defaultMasterVolume
         eventsEnabled = (try? container.decode([String: Bool].self, forKey: .eventsEnabled)) ?? [:]
-        if container.contains(.systemSounds) {
-            if let decoded = try? container.decode([String: String].self, forKey: .systemSounds),
-                decoded.values.allSatisfy(SystemSoundCatalog.isValidName)
-            {
-                systemSounds = decoded
-            } else {
-                systemSounds = [:]
-                systemSoundsMalformed = true
-            }
-        } else {
-            systemSounds = [:]
-        }
+        hasLegacySystemSounds = container.contains(.systemSounds)
+        systemSounds = (try? container.decode([String: String].self, forKey: .systemSounds)) ?? [:]
         starredPacks = (try? container.decode([String].self, forKey: .starredPacks)) ?? nil
         surfaceOverrides = [:]
         invalidSurfaceOverrideKeys = []

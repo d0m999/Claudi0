@@ -29,6 +29,8 @@ public struct SoundPackFacts: Sendable, Equatable {
     public let factoryIntegrity: Bool?
     public let eventCoverage: [Event: CoverageState]
     public let eventAudioDisplayNames: [Event: String]
+    public let eventSources: [Event: PackEventSoundSource]
+    public let duplicateEvents: [Event: [Event]]
     public let cardState: PackCardState
     public let audioInventory: SoundPackAudioInventory
     package let nativeTargets: SoundPackNativeTargets?
@@ -44,6 +46,8 @@ public struct SoundPackFacts: Sendable, Equatable {
         factoryIntegrity: Bool?,
         eventCoverage: [Event: CoverageState],
         eventAudioDisplayNames: [Event: String] = [:],
+        eventSources: [Event: PackEventSoundSource] = [:],
+        duplicateEvents: [Event: [Event]] = [:],
         cardState: PackCardState,
         audioInventory: SoundPackAudioInventory
     ) {
@@ -54,6 +58,8 @@ public struct SoundPackFacts: Sendable, Equatable {
             factoryIntegrity: factoryIntegrity,
             eventCoverage: eventCoverage,
             eventAudioDisplayNames: eventAudioDisplayNames,
+            eventSources: eventSources,
+            duplicateEvents: duplicateEvents,
             cardState: cardState,
             audioInventory: audioInventory,
             nativeTargets: nil,
@@ -69,6 +75,8 @@ public struct SoundPackFacts: Sendable, Equatable {
         factoryIntegrity: Bool?,
         eventCoverage: [Event: CoverageState],
         eventAudioDisplayNames: [Event: String],
+        eventSources: [Event: PackEventSoundSource] = [:],
+        duplicateEvents: [Event: [Event]] = [:],
         cardState: PackCardState,
         audioInventory: SoundPackAudioInventory,
         nativeTargets: SoundPackNativeTargets?,
@@ -81,6 +89,15 @@ public struct SoundPackFacts: Sendable, Equatable {
         self.isCC0 = isCC0
         self.factoryIntegrity = factoryIntegrity
         self.eventCoverage = eventCoverage
+        self.eventSources =
+            eventSources.isEmpty
+            ? eventCoverage.compactMapValues { state in
+                switch state {
+                case .unmapped: nil
+                case .present(let name), .broken(let name): .file(name)
+                }
+            } : eventSources
+        self.duplicateEvents = duplicateEvents
         self.eventAudioDisplayNames = eventAudioDisplayNames
         self.cardState = cardState
         self.audioInventory = audioInventory
@@ -98,6 +115,8 @@ public struct SoundPackFacts: Sendable, Equatable {
             factoryIntegrity: factoryIntegrity,
             eventCoverage: eventCoverage,
             eventAudioDisplayNames: eventAudioDisplayNames,
+            eventSources: eventSources,
+            duplicateEvents: duplicateEvents,
             cardState: cardState,
             audioInventory: audioInventory,
             nativeTargets: nativeTargets,
@@ -118,15 +137,18 @@ public struct SoundPackLibrarySnapshot: Sendable, Equatable {
     public let revision: UInt64
     public let facts: [SoundPackFacts]
     public let factoryPackIDs: Set<String>
+    public let systemSoundNames: [String]
 
     fileprivate init(
         revision: UInt64,
         facts: [SoundPackFacts],
-        factoryPackIDs: Set<String>
+        factoryPackIDs: Set<String>,
+        systemSoundNames: [String] = []
     ) {
         self.revision = revision
         self.facts = facts.sorted { $0.id < $1.id }
         self.factoryPackIDs = factoryPackIDs
+        self.systemSoundNames = systemSoundNames
     }
 
     public func fact(for packID: String) -> SoundPackFacts? {
@@ -182,7 +204,9 @@ public struct SoundPackLibrarySnapshot: Sendable, Equatable {
                 event: event,
                 coverage: coverage[event] ?? .unmapped,
                 enabled: config.isEnabled(event),
-                audioDisplayName: fact(for: packID)?.eventAudioDisplayNames[event])
+                audioDisplayName: fact(for: packID)?.eventAudioDisplayNames[event],
+                soundSource: fact(for: packID)?.eventSources[event],
+                duplicateEvents: fact(for: packID)?.duplicateEvents[event] ?? [])
         }
     }
 
@@ -258,10 +282,14 @@ public struct SoundPackLibraryScanRequest: Sendable {
 public struct SoundPackLibraryScanOutput: Sendable, Equatable {
     public let facts: [SoundPackFacts]
     public let factoryPackIDs: Set<String>
+    public let systemSoundNames: [String]
 
-    public init(facts: [SoundPackFacts], factoryPackIDs: Set<String> = []) {
+    public init(
+        facts: [SoundPackFacts], factoryPackIDs: Set<String> = [], systemSoundNames: [String] = []
+    ) {
         self.facts = facts
         self.factoryPackIDs = factoryPackIDs
+        self.systemSoundNames = systemSoundNames
     }
 }
 
@@ -806,7 +834,10 @@ public actor SoundPackLibrary {
         else { return [:] }
         let invalidationRevision = invalidationMailbox.snapshot().revision
         let failures = await previewSafetyLoader.load(
-            packID: packID, coverage: fact.eventCoverage)
+            packID: packID,
+            coverage: fact.eventCoverage.filter {
+                fact.eventSources[$0.key]?.systemSoundName == nil
+            })
         guard !Task.isCancelled,
             snapshot?.revision == current.revision,
             invalidationMailbox.isCurrent(invalidationRevision)
@@ -888,7 +919,8 @@ public actor SoundPackLibrary {
             let next = SoundPackLibrarySnapshot(
                 revision: candidateSnapshotRevision,
                 facts: output.facts,
-                factoryPackIDs: output.factoryPackIDs)
+                factoryPackIDs: output.factoryPackIDs,
+                systemSoundNames: output.systemSoundNames)
             pruneInventoryCache(for: next)
             #if DEBUG
             beforeReadyPublication()
@@ -1034,6 +1066,7 @@ private func scanSoundPackLibrary(
         if !request.invalidatesAll,
             !request.invalidatedPackIDs.contains(id),
             let previous = previousByID[id],
+            !previous.eventSources.values.contains(where: { $0.systemSoundName != nil }),
             let previousFingerprint = previous.fingerprint,
             currentFingerprint(
                 id: id,
@@ -1054,7 +1087,9 @@ private func scanSoundPackLibrary(
                 afterManifestRead: afterManifestRead))
     }
     return .success(
-        SoundPackLibraryScanOutput(facts: facts, factoryPackIDs: factoryPackIDs))
+        SoundPackLibraryScanOutput(
+            facts: facts, factoryPackIDs: factoryPackIDs,
+            systemSoundNames: environment.systemSoundCatalog.availableNames()))
 }
 
 private func installedPackIDs(
@@ -1258,7 +1293,8 @@ private func readSoundPackFactsOnce(
     let coverageRows = packCoverage(
         manifest: manifest,
         packDirectory: packDirectory,
-        config: ClaudioConfig(selectedPack: ""))
+        config: ClaudioConfig(selectedPack: ""),
+        catalog: environment.systemSoundCatalog)
     let eventCoverage = Dictionary(
         uniqueKeysWithValues: coverageRows.map { ($0.event, $0.coverage) })
     let eventAudioDisplayNames = Dictionary(
@@ -1275,8 +1311,9 @@ private func readSoundPackFactsOnce(
         id: id, environment: environment, factoryPackIDs: factoryPackIDs)
     let eventAudioURLs = Dictionary(
         uniqueKeysWithValues: coverageRows.compactMap { row -> (Event, URL)? in
-            guard case .present(let fileName) = row.coverage,
-                let target = safePackFileURL(fileName, in: packDirectory)
+            guard row.coverage.previewEnabled,
+                let target = row.soundSource?.audioURL(
+                    in: packDirectory, catalog: environment.systemSoundCatalog)
             else { return nil }
             return (row.event, target)
         })
@@ -1292,6 +1329,12 @@ private func readSoundPackFactsOnce(
             builtinPackIDs: factoryPackIDs),
         eventCoverage: eventCoverage,
         eventAudioDisplayNames: eventAudioDisplayNames,
+        eventSources: Dictionary(
+            uniqueKeysWithValues: coverageRows.compactMap { row in
+                row.soundSource.map { (row.event, $0) }
+            }),
+        duplicateEvents: Dictionary(
+            uniqueKeysWithValues: coverageRows.map { ($0.event, $0.duplicateEvents) }),
         cardState: cardState,
         audioInventory: .deferred,
         nativeTargets: SoundPackNativeTargets(

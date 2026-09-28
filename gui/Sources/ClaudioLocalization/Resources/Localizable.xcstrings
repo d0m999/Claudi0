@@ -6756,13 +6756,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose an existing file, bind a new file, clear the binding, or show it in Finder"
+            "value": "Choose a pack file or macOS sound, import audio, clear the binding, or show a file in Finder"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择已有文件、绑定新文件、清除绑定或在访达中显示"
+            "value": "选择包内文件或 macOS 系统音、导入音频、清除绑定，或在访达中显示文件"
           }
         }
       }
@@ -11092,13 +11092,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Generate a cue for an installed pack, or create a private draft that publishes with its first adopted sound."
+            "value": "Create a sound group with a system sound or an AI cue. It becomes available after the first sound is saved."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为已安装声音包生成提示音，或创建一个在首个采纳声音时才发布的私有草稿。"
+            "value": "可用系统提示音或 AI 提示音新建提示音组。首条声音保存成功后才进入声音包库。"
           }
         }
       }
@@ -11156,13 +11156,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Used by more than one sound scope"
+            "value": "Changing this pack updates every group using it."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "多个声音作用域正在使用"
+            "value": "修改此包会同步影响所有使用它的组。"
           }
         }
       }
@@ -15179,6 +15179,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 天前"
+          }
+        }
+      }
+    },
+    "sound-packs.source.used": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already used for %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已用于%@"
+          }
+        }
+      }
+    },
+    "sound-packs.source.duplicate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also used for %@. Choose another sound to remove the duplicate."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "也用于%@。可选择其他声音逐项修正。"
+          }
+        }
+      }
+    },
+    "sound-packs.source.target-changed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This event changed during the operation. Its current binding was preserved."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作期间该事件的声音已改变；已保留当前绑定。"
+          }
+        }
+      }
+    },
+    "sound-packs.draft.publication-failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cue group could not be published. The draft is still available; try choosing the sound again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提示音组未能发布。草稿仍保留，请重新选择声音后重试。"
+          }
+        }
+      }
+    },
+    "sound-packs.legacy-system-sounds": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous group-level system sound choices are inactive. Open Sounds to set them in this pack."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧组级系统音选择已停用。请前往“声音”在包内重新配置。"
           }
         }
       }

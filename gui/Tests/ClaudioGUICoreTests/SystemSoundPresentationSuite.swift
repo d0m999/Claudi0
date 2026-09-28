@@ -37,76 +37,64 @@ func runSystemSoundPresentationSuites() {
         }
     }
 
-    suite("system sound presentation replaces only its event's pack coverage") {
-        let rows = Event.allCases.map { event in
-            EventRow(event: event, coverage: .broken(fileName: "missing.aiff"), enabled: true)
-        }
-        let available = panelEventPresentations(
-            rows: rows, scope: .global, masterVolume: 0.8, language: .english,
-            systemSounds: ["stop": "Basso"], availableSystemSoundNames: ["Basso"],
-            eventsEnabled: ["stop": false])
-        let stop = available.first { $0.event == .stop }!
-        let notification = available.first { $0.event == .notification }!
+    suite("system sound presentation follows typed pack coverage") {
+        let row = EventRow(
+            event: .stop, coverage: .present(fileName: "Basso"), enabled: false,
+            soundSource: .systemSound("Basso"))
+        let stop = panelEventPresentations(
+            rows: [row], scope: .global, masterVolume: 0.8,
+            language: .english
+        ).first { $0.event == .stop }!
         expect(stop.soundFileText == "macOS: Basso", "selected source appears by name")
-        expect(stop.controls.previewEnabled, "system audio is previewable despite broken pack")
-        expect(!stop.enabled, "the event switch stays independent of source selection")
         expect(
-            !notification.controls.previewEnabled,
-            "other events retain their selected-pack coverage")
-
+            stop.controls.previewEnabled && !stop.enabled,
+            "preview is independent of automatic event switch")
+        let missingRow = EventRow(
+            event: .stop, coverage: .broken(fileName: "Basso"), enabled: true,
+            soundSource: .systemSound("Basso"))
         let missing = panelEventPresentations(
-            rows: rows, scope: .global, masterVolume: 0.8, language: .english,
-            systemSounds: ["stop": "Basso"], availableSystemSoundNames: [])
-        let missingStop = missing.first { $0.event == .stop }!
+            rows: [missingRow], scope: .global, masterVolume: 0.8,
+            language: .english
+        ).first { $0.event == .stop }!
         expect(
-            missingStop.soundFileText == "macOS sound unavailable: Basso",
-            "missing current system audio is explicit")
-        expect(
-            !missingStop.controls.previewEnabled,
-            "missing system audio never previews the pack instead")
+            missing.soundFileText == "macOS sound unavailable: Basso"
+                && !missing.controls.previewEnabled,
+            "missing system source has explicit reason without fallback")
     }
 
-    suite("workspace model projects its own system choices and preview URLs") {
+    suite("workspace preview follows its pack and detects retired system choices") {
         withTempDirectory { root in
-            let sounds = root.appendingPathComponent("system", isDirectory: true)
-            let packs = root.appendingPathComponent("packs", isDirectory: true)
+            let sounds = root.appendingPathComponent("system")
+            let packs = root.appendingPathComponent("packs")
             writeFixture("sound", to: sounds.appendingPathComponent("Ping.aiff"))
+            writeFixture(
+                #"{"id":"workspace","schema":2,"events":{"notification":{"system_sound":"Ping"}}}"#,
+                to: packs.appendingPathComponent("workspace/manifest.json"))
             let configFile = root.appendingPathComponent("config.json")
-            var config = ClaudioConfig(
-                selectedPack: "default", systemSounds: ["stop": "Basso"])
+            var config = ClaudioConfig(selectedPack: "default", systemSounds: ["stop": "Basso"])
             let rule = WorkspaceSoundRule(
                 directory: WorkspaceDirectory(kind: .directory, path: root.path),
                 surfaces: [.codex],
                 profile: WorkspaceSoundProfile(
                     selectedPack: "workspace", volume: 0.6,
-                    systemSounds: ["notification": "Ping"]))
+                    systemSounds: ["notification": "Missing"]))
             config.workspaceRules = [rule]
             try! JSONEncoder().encode(config).write(to: configFile)
+            var environment = makeAudioImportEnvironment(userPacksDirectory: packs)
+            environment.systemSoundCatalog = SystemSoundCatalog(directory: sounds)
             let model = PanelConfigController(
                 configFile: configFile, lockFile: root.appendingPathComponent("config.lock"),
-                environment: makeAudioImportEnvironment(userPacksDirectory: packs),
-                systemSoundCatalog: SystemSoundCatalog(directory: sounds))
+                environment: environment)
             model.selectSoundScope(.workspace(rule.id))
-            expect(
-                model.config.systemSounds == ["notification": "Ping"],
-                "workspace projection does not inherit Default Group system choices")
+            expect(model.config.hasLegacySystemSounds, "retired choices detected for notice")
             expect(
                 model.previewURL(for: .notification)?.lastPathComponent == "Ping.aiff",
-                "workspace preview points at installed system sound")
-            let guarded = PanelConfigController(
-                configFile: configFile, lockFile: root.appendingPathComponent("config.lock"),
-                environment: makeAudioImportEnvironment(userPacksDirectory: packs),
-                systemSoundCatalog: SystemSoundCatalog(directory: sounds),
-                systemSoundSelectionAllowed: { false })
-            let rejected = guarded.selectSystemSound("Ping", for: .stop)
-            if case .failure(.outdatedHelper) = rejected {
-                expect(true, "older installed helper rejects a new system selection")
-            } else {
-                expect(false, "older installed helper must reject a new system selection")
-            }
+                "preview uses pack mapping")
+            let before = try! Data(contentsOf: configFile)
             expect(
-                loadClaudioConfig(from: configFile)?.systemSounds == ["stop": "Basso"],
-                "rejected selection does not change Default Group")
+                (try? model.selectSystemSound("Basso", for: .notification).get()) == nil,
+                "retired group writer refuses")
+            expect(try! Data(contentsOf: configFile) == before, "old choices are preserved")
         }
     }
 }

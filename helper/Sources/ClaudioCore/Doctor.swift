@@ -103,9 +103,9 @@ public enum PackIntegrityStatus: Sendable, Equatable {
     case manifestUnreadable(packID: String, reason: String)
     /// Manifest 可读，但没有声明任何当前 runtime 支持的事件键。
     case noSupportedEvents(packID: String)
-    /// The manifest parsed, but one or more declared event audio files are missing.
+    /// The manifest parsed, but event sources are unavailable. System names use `system_sound:`.
     case incomplete(packID: String, missingFiles: [String])
-    /// The manifest parsed and every declared event audio file exists.
+    /// The manifest parsed and every declared event source resolves locally.
     case complete(packID: String, events: [String])
 }
 
@@ -113,7 +113,8 @@ public enum PackIntegrityStatus: Sendable, Equatable {
 public func checkPackIntegrity(
     configFile: URL,
     userPacksDirectory: URL,
-    bundledPacksDirectory: URL?
+    bundledPacksDirectory: URL?,
+    systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog()
 ) -> PackIntegrityStatus {
     let fileManager = FileManager.default
 
@@ -155,30 +156,22 @@ public func checkPackIntegrity(
         return .manifestUnreadable(packID: config.selectedPack, reason: error.reason)
     }
 
-    let supportedMappings = Event.allCases.compactMap { event -> (event: Event, file: String)? in
-        guard let file = manifest.events[event.manifestKey] else { return nil }
-        return (event, file)
+    let supportedMappings = Event.allCases.compactMap {
+        event -> (event: Event, source: PackEventSoundSource)? in
+        guard let source = manifest.eventSources[event.manifestKey] else { return nil }
+        return (event, source)
     }
     guard !supportedMappings.isEmpty else {
         return .noSupportedEvents(packID: config.selectedPack)
     }
 
     let missingFiles = Set(
-        supportedMappings.map(\.file)
-            .filter { eventFile in
-                // An event value must resolve to a file *inside* the pack directory. A
-                // manifest that points at `../shared/stop.mp3` (a third-party pack escaping
-                // its own directory) must be treated as missing, never as a satisfied file —
-                // otherwise `doctor` would falsely report the pack `.complete` off an
-                // out-of-pack file (T1 review P2).
-                guard let resolved = safePackFileURL(eventFile, in: packDirectory) else {
-                    return true
-                }
-                // 必须是**正规文件**，不能只是「路径上有东西」：`fileExists(atPath:)` 对一个名叫
-                // `stop.mp3` 的**目录**（以及 FIFO / socket / 设备）一律回答 `true`，于是 doctor 会把
-                // 一个根本发不出声的包报成 complete（`/codex review` [P2]）。见 ``regularFileExists(at:)``。
-                return !nonEmptyRegularFileExists(at: resolved)
-            }
+        supportedMappings.compactMap { mapping -> String? in
+            guard mapping.source.audioURL(in: packDirectory, catalog: systemSoundCatalog) == nil
+            else { return nil }
+            return mapping.source.systemSoundName.map { "system_sound:\($0)" }
+                ?? mapping.source.name
+        }
     )
     .sorted()
 
@@ -766,10 +759,13 @@ extension PackIntegrityStatus {
                 name: "pack", severity: .warning,
                 message: "⚠ 声音包 `\(terminalSafePackID(packID))` 没有声明任何当前支持的事件声音")
         case .incomplete(let packID, let missingFiles):
+            let reason =
+                missingFiles.contains { $0.hasPrefix("system_sound:") }
+                ? "事件声音不可用" : "缺少音频文件"
             return DoctorCheckResult(
                 name: "pack", severity: .warning,
                 message:
-                    "⚠ 声音包 `\(terminalSafePackID(packID))` 缺少音频文件：\(missingFiles.joined(separator: ", "))"
+                    "⚠ 声音包 `\(terminalSafePackID(packID))` \(reason)：\(missingFiles.joined(separator: ", "))"
             )
         case .complete(let packID, let events):
             let message =

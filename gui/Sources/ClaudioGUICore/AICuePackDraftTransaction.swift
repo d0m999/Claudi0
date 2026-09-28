@@ -6,6 +6,9 @@ package enum AICuePackDraftTransactionError: Error, Sendable, Equatable {
     case stagingFailed(reason: String)
     case destinationAlreadyExists(packID: String)
     case publishFailed(reason: String)
+    case firstBindingInvalid
+    case sourceUnavailable(PackEventSoundSource)
+    case outdatedHelper
     case lockBusy
     case lockFailed(errno: Int32)
 }
@@ -107,10 +110,29 @@ package func publishAICuePackDraft(
     guard importedFile.packID == stage.packDirectoryURL.lastPathComponent else {
         return .failure(.publishFailed(reason: "暂存音频的声音包标识不一致"))
     }
+    switch publishSoundPackDraft(stage, environment: environment) {
+    case .failure(let error): return .failure(error)
+    case .success:
+        discardAICuePackDraftStage(stage)
+        return .success(
+            ImportedAudioFile(
+                packID: importedFile.packID,
+                destinationURL: stage.finalDirectoryURL.appendingPathComponent(
+                    importedFile.fileName),
+                fileName: importedFile.fileName, format: importedFile.format,
+                fileSizeBytes: importedFile.fileSizeBytes, duration: importedFile.duration))
+    }
+}
+
+/// Shared atomic publication for an imported cue or a first system-sound binding.
+@MainActor
+package func publishSoundPackDraft(
+    _ stage: AICuePackDraftStage, environment: AudioImportEnvironment
+) -> Result<Void, AICuePackDraftTransactionError> {
     guard (try? FileManager.default.attributesOfItem(atPath: stage.finalDirectoryURL.path)) == nil
     else {
         return .failure(
-            .destinationAlreadyExists(packID: importedFile.packID))
+            .destinationAlreadyExists(packID: stage.packDirectoryURL.lastPathComponent))
     }
 
     let locked = withNonBlockingLock(path: environment.packsLockFile.path) {
@@ -119,6 +141,21 @@ package func publishAICuePackDraft(
         } catch {
             return Result<Void, AICuePackDraftTransactionError>.failure(
                 .publishFailed(reason: error.localizedDescription))
+        }
+        guard case .success(let manifest) = loadPackManifest(in: stage.packDirectoryURL),
+            manifest.id == stage.packDirectoryURL.lastPathComponent,
+            !manifest.eventSources.isEmpty
+        else { return .failure(.firstBindingInvalid) }
+        for source in manifest.eventSources.values {
+            guard
+                source.audioURL(in: stage.packDirectoryURL, catalog: environment.systemSoundCatalog)
+                    != nil
+            else { return .failure(.sourceUnavailable(source)) }
+        }
+        if manifest.eventSources.values.contains(where: { $0.systemSoundName != nil }),
+            !environment.systemSoundSelectionAllowed()
+        {
+            return .failure(.outdatedHelper)
         }
         let result = renameatx_np(
             AT_FDCWD,
@@ -130,7 +167,7 @@ package func publishAICuePackDraft(
             let renameErrno = errno
             if renameErrno == EEXIST {
                 return .failure(
-                    .destinationAlreadyExists(packID: importedFile.packID))
+                    .destinationAlreadyExists(packID: stage.packDirectoryURL.lastPathComponent))
             }
             return .failure(
                 .publishFailed(
@@ -140,27 +177,9 @@ package func publishAICuePackDraft(
         return .success(())
     }
     switch locked {
-    case .skipped:
-        return .failure(.lockBusy)
-    case .failed(let errno):
-        return .failure(.lockFailed(errno: errno))
-    case .ran(let result):
-        switch result {
-        case .failure(let error): return .failure(error)
-        case .success:
-            let finalFile = stage.finalDirectoryURL.appendingPathComponent(
-                importedFile.fileName,
-                isDirectory: false)
-            discardAICuePackDraftStage(stage)
-            return .success(
-                ImportedAudioFile(
-                    packID: importedFile.packID,
-                    destinationURL: finalFile,
-                    fileName: importedFile.fileName,
-                    format: importedFile.format,
-                    fileSizeBytes: importedFile.fileSizeBytes,
-                    duration: importedFile.duration))
-        }
+    case .skipped: return .failure(.lockBusy)
+    case .failed(let code): return .failure(.lockFailed(errno: code))
+    case .ran(let result): return result
     }
 }
 

@@ -114,7 +114,7 @@ func runSoundPacksEditorMutationImpactGapRedSuites() async {
             guard case .sounds(let sounds) = owner.presentation.mode,
                 case .ready(let files) = sounds.inventory,
                 let assign = files.first(where: { $0.fileName == "stop.mp3" })?
-                    .assignments.first(where: { $0.event == .notification })?.action
+                    .assignments.first(where: { $0.event == .stop })?.action
             else {
                 expect(false, "assign lock failure fixture 必须签发 compiled owner capability")
                 return

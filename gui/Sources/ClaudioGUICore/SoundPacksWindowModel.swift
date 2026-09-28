@@ -4,6 +4,7 @@ import Combine
 import Foundation
 
 public enum SoundPacksWindowAudioActionError: Error, Sendable, Equatable {
+    case draftPublicationFailed
     case writesStopped(statusText: SoundPacksWindowStatusText)
     case noSelectedPack
     case selectionChanged
@@ -19,6 +20,7 @@ public enum SoundPacksWindowAudioActionError: Error, Sendable, Equatable {
     /// preserving whichever language happened to be active when the write failed.
     public var statusText: SoundPacksWindowStatusText {
         switch self {
+        case .draftPublicationFailed: return .localized(.soundPacksDraftPublicationFailed)
         case .writesStopped(let statusText):
             return statusText
         case .noSelectedPack:
@@ -62,10 +64,16 @@ public enum SoundPacksWindowStatusSeverity: Int, Sendable, Equatable {
 /// with the current app language instead of retaining a translated snapshot.
 public enum SoundPacksWindowStatusText: Sendable, Equatable {
     case literal(String)
+    case soundAlreadyUsed(Event, background: Bool = false)
     case localized(key: ClaudioL10nKey, arguments: [String], background: Bool)
 
     public func resolve(language: ClaudioAppLanguage) -> String {
         switch self {
+        case .soundAlreadyUsed(let event, let background):
+            let l10n = ClaudioL10n(language: language)
+            let message = l10n.format(
+                .soundPacksSourceUsed, localizedEventName(event, language: language))
+            return background ? l10n.text(.soundPacksStatusBackground) + message : message
         case .literal(let value):
             return value
         case .localized(let key, let arguments, let background):
@@ -86,6 +94,7 @@ public enum SoundPacksWindowStatusText: Sendable, Equatable {
 
     public func asBackgroundOperation() -> Self {
         switch self {
+        case .soundAlreadyUsed(let event, _): return .soundAlreadyUsed(event, background: true)
         case .literal(let value):
             return .literal("后台操作：" + value)
         case .localized(let key, let arguments, _):
@@ -368,7 +377,13 @@ private func soundPacksWindowBindErrorText(
     case .lockFailed(let errno):
         return .localized(.soundPacksBindErrorLockFailed, "\(errno)")
     case .targetChanged:
-        return .literal("目标事件在操作期间已改变；已保留导入文件，未覆盖现有绑定。")
+        return .localized(.soundPacksSourceTargetChanged)
+    case .soundAlreadyUsed(let event):
+        return .soundAlreadyUsed(event)
+    case .systemSoundUnavailable(let name):
+        return .localized(.eventSettingsSystemSoundUnavailable, name)
+    case .outdatedHelper:
+        return .localized(.eventSettingsCurrentHelperRequired)
     }
 }
 
@@ -1073,6 +1088,19 @@ package final class SoundPacksWindowModel {
                     )
                 }),
             eventCoverageByPackID: eventCoverageByPackIDForEditorSeed(),
+            eventSourcesByPackID: librarySnapshot.map { snapshot in
+                Dictionary(uniqueKeysWithValues: snapshot.facts.map { ($0.id, $0.eventSources) })
+            } ?? selectedPackID.map { id in
+                [
+                    id: Dictionary(
+                        uniqueKeysWithValues: selectedEventRows.compactMap { row in
+                            row.soundSource.map { (row.event, $0) }
+                        })
+                ]
+            } ?? [:],
+            systemSoundNames: librarySnapshot?.systemSoundNames
+                ?? (readSource.readsSharedSnapshot
+                    ? [] : environment.systemSoundCatalog.availableNames()),
             nativeTargetsByPackID: Dictionary(
                 uniqueKeysWithValues: (librarySnapshot?.facts ?? []).compactMap { fact in
                     fact.nativeTargets.map { (fact.id, $0) }
@@ -1492,6 +1520,14 @@ package final class SoundPacksWindowModel {
             changedDespiteFailure ? .changedDespiteFailure : .succeeded,
             invalidatingPackIDs: [packID],
             mutation: mutation)
+    }
+
+    func finishPublishedDraft(packID: String, mutation: SoundPackLibraryMutation?) {
+        pendingFollowActivePack = false
+        if readSource.readsSharedSnapshot { pendingInspectionPackID = packID }
+        finishEditorCompoundMutation(
+            packID: packID, mutation: mutation, changedDespiteFailure: false)
+        if !readSource.readsSharedSnapshot { _ = selectPackForInspection(packID) }
     }
 
     /// Uses the existing lock-time manifest writer without opening or completing a second refresh.
@@ -1949,7 +1985,8 @@ package final class SoundPacksWindowModel {
     @discardableResult
     package func assignSelectedAudioFile(
         _ fileName: String,
-        to event: Event
+        to event: Event,
+        expectedEventBinding: ManifestEventBindingExpectation? = nil
     ) -> Result<Void, SoundPacksWindowAudioActionError> {
         guard writesAllowed else {
             return finishAudioAction(.failure(.writesStopped(statusText: writesStoppedStatusText)))
@@ -1966,7 +2003,50 @@ package final class SoundPacksWindowModel {
         guard selectedAudioFiles.contains(where: { $0.fileName == fileName }) else {
             return finishAudioAction(.failure(.notInInventory(fileName: fileName)))
         }
-        return bindSelectedAudioFile(fileName, to: event, packID: selectedPackID)
+        return bindSelectedAudioFile(
+            fileName, to: event, packID: selectedPackID, expectedEventBinding: expectedEventBinding)
+    }
+
+    package func assignSelectedSoundSource(
+        _ source: PackEventSoundSource, to event: Event,
+        expectedEventBinding: ManifestEventBindingExpectation?
+    ) -> Result<Void, SoundPacksWindowAudioActionError> {
+        if let fileName = source.fileName {
+            return assignSelectedAudioFile(
+                fileName, to: event, expectedEventBinding: expectedEventBinding)
+        }
+        guard writesAllowed else {
+            return finishAudioAction(.failure(.writesStopped(statusText: writesStoppedStatusText)))
+        }
+        guard let selectedPackID else { return finishAudioAction(.failure(.noSelectedPack)) }
+        guard !selectedPackIsMissingPlaceholder else {
+            return finishAudioAction(.failure(.packUnavailable(packID: selectedPackID)))
+        }
+        guard !builtinPackIDs.contains(selectedPackID) else {
+            return finishAudioAction(.failure(.builtinReadOnly(packID: selectedPackID)))
+        }
+        let mutation = beginSoundPackMutation(packIDs: [selectedPackID])
+        let result = bindSoundSourceToManifest(
+            event: event, source: source, packID: selectedPackID, environment: environment,
+            expectedEventBinding: expectedEventBinding)
+        let refreshAfterFailure: Bool
+        switch result {
+        case .success: refreshAfterFailure = false
+        case .failure(let error):
+            refreshAfterFailure = manifestBindFailureInvalidatesWindowReadModel(error)
+        }
+        return finishAudioAction(
+            result.mapError(SoundPacksWindowAudioActionError.bind),
+            invalidatingPackID: selectedPackID, refreshAfterFailure: refreshAfterFailure,
+            mutation: mutation)
+    }
+
+    package func reportSoundSourceFailure(_ error: ManifestBindError) {
+        _ = finishAudioAction(.failure(.bind(error)))
+    }
+
+    package func reportSoundSourceDraftFailure() {
+        _ = finishAudioAction(.failure(.draftPublicationFailed))
     }
 
     package func aiCueAdoptionEligibility(for event: Event) -> AICueAdoptionEligibility {
@@ -2042,7 +2122,8 @@ package final class SoundPacksWindowModel {
     private func bindSelectedAudioFile(
         _ fileName: String,
         to event: Event,
-        packID: String
+        packID: String,
+        expectedEventBinding: ManifestEventBindingExpectation? = nil
     ) -> Result<Void, SoundPacksWindowAudioActionError> {
         let mutation = beginSoundPackMutation(packIDs: [packID])
 
@@ -2050,7 +2131,8 @@ package final class SoundPacksWindowModel {
             event: event,
             fileName: fileName,
             packID: packID,
-            environment: environment)
+            environment: environment,
+            expectedEventBinding: expectedEventBinding)
         {
         case .success:
             return finishAudioAction(
@@ -2072,7 +2154,8 @@ package final class SoundPacksWindowModel {
     /// window-owned read model through ``finishAudioAction(_:)``.
     @discardableResult
     package func clearSelectedEventBinding(
-        _ event: Event
+        _ event: Event,
+        expectedEventBinding: ManifestEventBindingExpectation? = nil
     ) -> Result<Void, SoundPacksWindowAudioActionError> {
         guard writesAllowed else {
             return finishAudioAction(.failure(.writesStopped(statusText: writesStoppedStatusText)))
@@ -2090,7 +2173,8 @@ package final class SoundPacksWindowModel {
         switch clearEventBinding(
             event: event,
             packID: selectedPackID,
-            environment: environment)
+            environment: environment,
+            expectedEventBinding: expectedEventBinding)
         {
         case .success:
             return finishAudioAction(
@@ -2871,9 +2955,9 @@ package final class SoundPacksWindowModel {
     ) -> Bool {
         switch error {
         case .packNotFound, .fileNotFound, .manifestUnreadable, .publishedButFailed,
-            .targetChanged:
+            .targetChanged, .soundAlreadyUsed, .systemSoundUnavailable:
             return true
-        case .unsafeFileName, .writeFailed, .lockBusy, .lockFailed:
+        case .unsafeFileName, .writeFailed, .lockBusy, .lockFailed, .outdatedHelper:
             return false
         }
     }

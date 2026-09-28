@@ -544,7 +544,7 @@ func runHostIntegrationManagerBridgeSuites() async {
             let sound = sounds.appendingPathComponent("Basso.aiff")
             writeFixture("system", to: sound)
             writeFixture(
-                #"{"id":"dual","events":{"stop":"stop.mp3","notification":"notification.mp3"}}"#,
+                #"{"id":"dual","events":{"stop":"stop.mp3","notification":{"system_sound":"Basso"}}}"#,
                 to: fixture.packDirectory.appendingPathComponent("manifest.json"))
             writeFixture("pack", to: fixture.packDirectory.appendingPathComponent("stop.mp3"))
             var config = ClaudioConfig(
@@ -604,7 +604,9 @@ func runHostIntegrationManagerBridgeSuites() async {
                 "source selection does not change host capability")
 
             config.masterVolume = 0.8
-            config.systemSounds = [:]
+            writeFixture(
+                #"{"id":"dual","events":{"stop":"stop.mp3","notification":"notification.mp3"}}"#,
+                to: fixture.packDirectory.appendingPathComponent("manifest.json"))
             try! JSONEncoder().encode(config).write(to: fixture.configFile)
             state = await fixture.bridge.refresh()
             expect(

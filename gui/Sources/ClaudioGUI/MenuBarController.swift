@@ -132,6 +132,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     ) {
         let languageStore = preferences
         let soundPacksRefreshCoordinator = SoundPacksRefreshCoordinator()
+        var audioEnvironment = audioEnvironment
+        audioEnvironment.systemSoundSelectionAllowed = {
+            installedHelperMatchesBundledRuntime(bundledHelper: bundledHelper)
+        }
         let soundPackLibrary = SoundPackLibrary(environment: audioEnvironment)
         let soundPacksEditorOwner = SoundPacksEditorOwner(
             configFile: ClaudioPaths.configFile,

@@ -58,6 +58,9 @@ public func applicationFactoryPacksDirectory(bundleURL: URL) -> URL? {
 /// Darwin; tests must pass concrete fixture `URL`s instead, exactly as every other suite
 /// in this package's test harness does with `withTempDirectory`).
 public struct AudioImportEnvironment: Sendable {
+    public var systemSoundCatalog = SystemSoundCatalog()
+    public var systemSoundSelectionAllowed: @Sendable () -> Bool = { true }
+
     /// `~/.claudio/packs/` — copy destinations are always confined under here, never the
     /// read-only bundled pack root (ENGINEERING.md T8 acceptance criterion 1: "Drag-in =
     /// COPY the file into the user pack... never reference the original path").

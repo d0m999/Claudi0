@@ -34,7 +34,6 @@ struct EventSettingsWindowView: View {
     @State private var player = NSSoundAudioPreviewPlayer()
     @State private var previewPulseTriggers: [Event: Int] = [:]
     @State private var previewSuccessTokens: [Event: UUID] = [:]
-    @State private var systemSoundFailures: [Event: SystemSoundSelectionError] = [:]
     @AppStorage("claudio.workspace-migration-notice-seen") private var migrationSeen = false
 
     init(
@@ -93,10 +92,7 @@ struct EventSettingsWindowView: View {
             rows: model.eventRows, scope: selection.route.scope,
             masterVolume: model.config.masterVolume,
             language: languageStore.language, configWritesAllowed: writable,
-            safetyFailures: model.previewSafetyFailures,
-            systemSounds: model.config.systemSounds,
-            availableSystemSoundNames: Set(model.systemSoundNames),
-            eventsEnabled: model.config.eventsEnabled)
+            safetyFailures: model.previewSafetyFailures)
     }
 
     var body: some View {
@@ -227,6 +223,12 @@ struct EventSettingsWindowView: View {
                             if let rule { workspaceDetails(rule) }
                             if model.libraryPresentationState.hasUsableSnapshot {
                                 soundControls
+                                if model.config.hasLegacySystemSounds {
+                                    Text(l10n.text(.soundPacksLegacySystemSounds))
+                                        .font(.caption)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("workspace.legacy-system-sounds")
+                                }
                                 Text(l10n.text(.workspacePreviewNote)).font(.caption)
                                     .foregroundColor(
                                         .secondary)
@@ -814,7 +816,6 @@ struct EventSettingsWindowView: View {
 
     private func eventRow(_ event: PanelEventPresentation) -> some View {
         let scope = selection.route.scope
-        let selectedSystemSound = model.config.systemSounds[event.event.cliName] != nil
         let recovery = eventPreviewRecoveryAction(for: event.controls.previewAvailability)
         let failure = selection.previewFailure.flatMap {
             $0.scope == scope && $0.packID == model.config.selectedPack
@@ -871,58 +872,15 @@ struct EventSettingsWindowView: View {
                         language: languageStore.language)
                 )
                 .focused($focusedTarget, equals: .preview(event.event))
-                Menu {
-                    Button {
-                        selectSystemSound(nil, for: event.event, scope: scope)
-                    } label: {
-                        if model.config.systemSounds[event.event.cliName] == nil {
-                            Label(
-                                l10n.text(.eventSettingsSelectedPackSound), systemImage: "checkmark"
-                            )
-                        } else {
-                            Text(l10n.text(.eventSettingsSelectedPackSound))
-                        }
-                    }
-                    Menu(l10n.text(.eventSettingsSystemSounds)) {
-                        if model.systemSoundNames.isEmpty {
-                            Button(l10n.text(.eventSettingsNoSystemSounds)) {}
-                                .disabled(true)
-                        } else {
-                            ForEach(model.systemSoundNames, id: \.self) { name in
-                                Button {
-                                    selectSystemSound(name, for: event.event, scope: scope)
-                                } label: {
-                                    if model.config.systemSounds[event.event.cliName] == name {
-                                        Label(name, systemImage: "checkmark")
-                                    } else {
-                                        Text(name)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    Text(
-                        model.config.systemSounds[event.event.cliName]
-                            ?? l10n.text(.eventSettingsSelectedPackSound)
-                    )
-                    .lineLimit(1)
+                Button(
+                    l10n.text(
+                        recovery == .repairSound
+                            ? .eventPreviewRepairSound : .eventSettingsManageSounds)
+                ) {
+                    configureSound(event.event, scope: scope)
                 }
                 .disabled(!writable)
-                .accessibilityLabel(l10n.format(.eventSettingsSoundChoice, event.title))
-                .accessibilityIdentifier("workspace.event.sound-choice.\(event.event.cliName)")
-                .focused($focusedTarget, equals: .soundChoice(event.event))
-                if !selectedSystemSound {
-                    Button(
-                        l10n.text(
-                            recovery == .repairSound
-                                ? .eventPreviewRepairSound : .eventSettingsManageSounds)
-                    ) {
-                        configureSound(event.event, scope: scope)
-                    }
-                    .disabled(!writable)
-                    .focused($focusedTarget, equals: .configure(event.event))
-                }
+                .focused($focusedTarget, equals: .configure(event.event))
                 Toggle(
                     event.title,
                     isOn: Binding(
@@ -980,33 +938,10 @@ struct EventSettingsWindowView: View {
                 )
                 .settingsMountIdentity("workspace.event.preview-failure.\(event.event.cliName)")
             }
-            if let systemSoundFailure = systemSoundFailures[event.event] {
-                FailureRow(
-                    message: localizedSystemSoundSelectionError(
-                        systemSoundFailure, language: languageStore.language)
-                )
-                .settingsMountIdentity(
-                    "workspace.event.sound-choice-failure.\(event.event.cliName)")
-            }
         }.padding(12).background(ClaudioTheme.elevated(colorScheme))
             .cornerRadius(ClaudioTheme.Radius.row)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("workspace.event.\(event.event.cliName)")
-    }
-
-    private func selectSystemSound(_ name: String?, for event: Event, scope: PanelSoundScopeID) {
-        guard model.selectedSoundScope == scope, selection.route.scope == scope else { return }
-        switch model.selectSystemSound(name, for: event) {
-        case .success:
-            systemSoundFailures.removeValue(forKey: event)
-            selection.clearPreviewFailure()
-            onAudibilityInputsChanged()
-        case .failure(let error):
-            let message = localizedSystemSoundSelectionError(
-                error, language: languageStore.language)
-            systemSoundFailures[event] = error
-            onAnnouncement(message)
-        }
     }
 
     private func configureSound(_ event: Event, scope: PanelSoundScopeID) {
