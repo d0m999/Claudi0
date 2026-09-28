@@ -542,6 +542,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventSettingsSystemSounds: Self = "event-settings.system-sounds"
     public static let eventSettingsNoSystemSounds: Self = "event-settings.no-system-sounds"
     public static let eventSettingsSoundChoiceFailed: Self = "event-settings.sound-choice-failed"
+    public static let eventSettingsSystemSoundUnavailable: Self =
+        "event-settings.system-sound-unavailable"
+    public static let eventSettingsSoundChoiceConflict: Self =
+        "event-settings.sound-choice-conflict"
     public static let eventSettingsCurrentHelperRequired: Self =
         "event-settings.current-helper-required"
     public static let eventSettingsConflictReadback: Self = "event-settings.conflict-readback"
@@ -1458,6 +1462,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventSettingsManageSoundsHint, .eventSettingsSoundChoice,
         .eventSettingsSelectedPackSound, .eventSettingsSystemSounds,
         .eventSettingsNoSystemSounds, .eventSettingsSoundChoiceFailed,
+        .eventSettingsSystemSoundUnavailable, .eventSettingsSoundChoiceConflict,
         .eventSettingsCurrentHelperRequired,
         .eventSettingsConflictReadback,
         .eventSettingsRetryTargetChanged, .eventSettingsRetryReadbackUnavailable,

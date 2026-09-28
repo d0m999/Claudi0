@@ -34,7 +34,7 @@ struct EventSettingsWindowView: View {
     @State private var player = NSSoundAudioPreviewPlayer()
     @State private var previewPulseTriggers: [Event: Int] = [:]
     @State private var previewSuccessTokens: [Event: UUID] = [:]
-    @State private var systemSoundFailures: [Event: String] = [:]
+    @State private var systemSoundFailures: [Event: SystemSoundSelectionError] = [:]
     @AppStorage("claudio.workspace-migration-notice-seen") private var migrationSeen = false
 
     init(
@@ -981,9 +981,12 @@ struct EventSettingsWindowView: View {
                 .settingsMountIdentity("workspace.event.preview-failure.\(event.event.cliName)")
             }
             if let systemSoundFailure = systemSoundFailures[event.event] {
-                FailureRow(message: systemSoundFailure)
-                    .settingsMountIdentity(
-                        "workspace.event.sound-choice-failure.\(event.event.cliName)")
+                FailureRow(
+                    message: localizedSystemSoundSelectionError(
+                        systemSoundFailure, language: languageStore.language)
+                )
+                .settingsMountIdentity(
+                    "workspace.event.sound-choice-failure.\(event.event.cliName)")
             }
         }.padding(12).background(ClaudioTheme.elevated(colorScheme))
             .cornerRadius(ClaudioTheme.Radius.row)
@@ -999,11 +1002,9 @@ struct EventSettingsWindowView: View {
             selection.clearPreviewFailure()
             onAudibilityInputsChanged()
         case .failure(let error):
-            let message =
-                error == .outdatedHelper
-                ? l10n.text(.eventSettingsCurrentHelperRequired)
-                : l10n.format(.eventSettingsSoundChoiceFailed, error.description)
-            systemSoundFailures[event] = message
+            let message = localizedSystemSoundSelectionError(
+                error, language: languageStore.language)
+            systemSoundFailures[event] = error
             onAnnouncement(message)
         }
     }

@@ -60,6 +60,14 @@ if CommandLine.arguments.contains("--questions") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--system-sounds") {
+    runSystemSoundSelectionSuites()
+    runWorkspaceSoundRulesSuites()
+    runPlaySuites()
+    print("System sounds: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 runEventSuites()
 runQuestionBindingSuites()
 runHostQuestionHookSuites()

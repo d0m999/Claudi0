@@ -5,6 +5,38 @@ import Foundation
 
 @MainActor
 func runSystemSoundPresentationSuites() {
+    suite("system sound selection errors localize the reason in the current app language") {
+        let cases: [(SystemSoundSelectionError, String, String)] = [
+            (.unavailable(name: "Basso"), "macOS sound Basso is unavailable", "系统提示音 Basso 不可用"),
+            (.outdatedHelper, "repair the installed helper", "修复已安装的 helper"),
+            (
+                .configFailure(reason: "无法写入 /private/fixture-config"),
+                "Could not write settings", "配置或迁移备份写入失败"
+            ),
+            (
+                .publishedConflict(recoveryPath: "/private/fixture-recovery"),
+                "another change was detected", "检测到并发冲突"
+            ),
+            (.lockBusy, "configuration is busy", "声音配置正被占用"),
+            (.lockFailed(errno: 13), "could not be locked", "无法锁定声音配置"),
+        ]
+        for (error, englishReason, chineseReason) in cases {
+            let english = localizedSystemSoundSelectionError(error, language: .english)
+            let chinese = localizedSystemSoundSelectionError(error, language: .zhHans)
+            expect(english.contains(englishReason), "English includes the localized failure reason")
+            expect(chinese.contains(chineseReason), "Chinese includes the localized failure reason")
+            expect(
+                !english.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) },
+                "English errors never append a Chinese diagnostic description")
+            expect(
+                !english.contains("/private/fixture") && !chinese.contains("/private/fixture"),
+                "raw config and recovery diagnostics are not inserted into UI or announcements")
+            expect(
+                !english.contains("%@") && !chinese.contains("%@"),
+                "both languages substitute the error and sound-name placeholders")
+        }
+    }
+
     suite("system sound presentation replaces only its event's pack coverage") {
         let rows = Event.allCases.map { event in
             EventRow(event: event, coverage: .broken(fileName: "missing.aiff"), enabled: true)

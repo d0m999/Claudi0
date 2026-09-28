@@ -151,6 +151,76 @@ func runSystemSoundSelectionSuites() {
         }
     }
 
+    suite("malformed Default Group system choices do not block a valid workspace") {
+        withTempDirectory { root in
+            let workspace = root.appendingPathComponent("workspace", isDirectory: true)
+            try! FileManager.default.createDirectory(
+                at: workspace, withIntermediateDirectories: true)
+            let sounds = root.appendingPathComponent("system", isDirectory: true)
+            let sound = sounds.appendingPathComponent("Ping.aiff")
+            writeFixture("system", to: sound)
+            let rule = WorkspaceSoundRule(
+                directory: WorkspaceDirectory(kind: .directory, path: workspace.path),
+                surfaces: [.codex],
+                profile: WorkspaceSoundProfile(
+                    selectedPack: "workspace", volume: 0.6,
+                    systemSounds: ["notification": "Ping"]))
+            var config = ClaudioConfig(selectedPack: "default")
+            config.workspaceRules = [rule]
+            var json =
+                try! JSONSerialization.jsonObject(with: JSONEncoder().encode(config))
+                as! [String: Any]
+            json["system_sounds"] = ["stop": 7]
+            let configFile = root.appendingPathComponent("config.json")
+            try! JSONSerialization.data(withJSONObject: json).write(to: configFile)
+            let loaded = loadClaudioConfig(from: configFile)!
+            let direct = try? loaded.resolveWorkspaceProfile(id: rule.id).get()
+            let automatic = try? loaded.resolveSoundProfile(
+                for: .codex, cwd: workspace.path
+            ).get()
+            expect(direct?.workspaceID == rule.id, "the workspace profile is independently valid")
+            expect(
+                automatic == direct,
+                "automatic matching must select the same valid workspace despite malformed defaults"
+            )
+
+            let recorder = SystemSoundPlaybackRecorder()
+            let environment = PlayEnvironment(
+                surfaceID: .codex, workingDirectory: workspace.path,
+                lockFile: root.appendingPathComponent("play.lock"), configFile: configFile,
+                userPacksDirectory: root.appendingPathComponent("packs"),
+                systemSoundDirectory: sounds, spawner: recorder,
+                debounceStateFile: root.appendingPathComponent("debounce"), debounceInterval: 0,
+                logFile: root.appendingPathComponent("log"),
+                logLockFile: root.appendingPathComponent("log.lock"))
+            expect(
+                playSoundEvent("notification", environment: environment)
+                    == .played(event: .notification, filePath: sound.path),
+                "a valid matched workspace still plays its selected audio")
+
+            let defaultContexts: [(HostSurfaceID?, String?)] = [
+                (nil, nil), (.codex, nil), (.codex, "relative"),
+                (.workBuddy, workspace.path), (.claudeCode, workspace.path), (.codex, root.path),
+            ]
+            for (surface, cwd) in defaultContexts {
+                if case .failure(.invalidRule) = loaded.resolveSoundProfile(for: surface, cwd: cwd)
+                {
+                    expect(true, "malformed defaults fail closed when that group is selected")
+                } else {
+                    expect(false, "malformed defaults must fail closed when that group is selected")
+                }
+            }
+            if case .failure(.invalidRule) = loaded.resolveSoundProfile(
+                for: .codex, cwd: workspace.path,
+                directoryResolver: { _ in .failure(.invalidDirectory) })
+            {
+                expect(true, "invalid directory fallback still validates the Default Group")
+            } else {
+                expect(false, "invalid directory fallback must validate the Default Group")
+            }
+        }
+    }
+
     suite("system choice plays system-owned file without pack fallback; mute still wins") {
         withTempDirectory { root in
             let sounds = root.appendingPathComponent("system", isDirectory: true)

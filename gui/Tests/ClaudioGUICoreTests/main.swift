@@ -200,6 +200,14 @@ if CommandLine.arguments.contains("--workspace-sounds") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--system-sounds") {
+    runLocalizationSuites()
+    runSystemSoundPresentationSuites()
+    await runHostIntegrationManagerBridgeSuites()
+    print("System sounds: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--settings-lifecycle") {
     runSettingsNavigationSuites()
     await runSettingsPresentationLifecycleSuites()
