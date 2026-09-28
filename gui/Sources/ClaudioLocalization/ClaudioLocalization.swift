@@ -334,6 +334,12 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let cellLegacy: Self = "cell.legacy"
     public static let cellUnsupported: Self = "cell.unsupported"
     public static let cellDegraded: Self = "cell.degraded"
+    public static let cellLegacyNotificationAudibleDetail: Self =
+        "cell.legacy-notification-audible-detail"
+    public static let cellLegacyNotificationMutedDetail: Self =
+        "cell.legacy-notification-muted-detail"
+    public static let cellLegacyNotificationMissingSoundDetail: Self =
+        "cell.legacy-notification-missing-sound-detail"
     public static let hostPlaybackPlayed: Self = "host.playback.played"
     public static let hostPlaybackMuted: Self = "host.playback.muted"
     public static let hostPlaybackDebounced: Self = "host.playback.debounced"
@@ -1656,6 +1662,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsNotificationsEventSourceReceiverUnavailable,
         .cellAudible, .cellMuted, .cellMasterVolumeZero, .cellMissingSound, .cellNotConnected,
         .cellAwaitingActivation, .cellLegacy, .cellUnsupported, .cellDegraded,
+        .cellLegacyNotificationAudibleDetail, .cellLegacyNotificationMutedDetail,
+        .cellLegacyNotificationMissingSoundDetail,
         .hostPlaybackPlayed, .hostPlaybackMuted, .hostPlaybackDebounced, .hostPlaybackNotReady,
         .hostPlaybackUnsupported, .hostPlaybackFailed, .actionCopyHooks, .actionCopyHooksHint,
         .actionRedetect, .actionRedetectHint, .actionConnect, .actionConnectHint,

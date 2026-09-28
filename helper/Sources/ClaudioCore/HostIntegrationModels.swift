@@ -546,7 +546,7 @@ public struct AudibilityCell: Identifiable, Codable, Sendable, Equatable {
             audibility = "不可听"
         case .degraded:
             connection = "需要处理"
-            audibility = "不可听"
+            audibility = bindings.count > 1 && detail != nil ? "各绑定状态见详情" : "不可听"
         }
         let summary =
             "\(host.displayName)，\(event.displayName)\(qualifier)，\(support)，\(connection)，\(audibility)"
@@ -564,6 +564,10 @@ public struct AudibilityEventRow: Identifiable, Codable, Sendable, Equatable {
 public struct AudibilityMatrix: Codable, Sendable, Equatable {
     public let rows: [AudibilityEventRow]
     private let summaries: [HostID: HostReadinessSummary]
+    private static let legacyClaudeCodeBindingIDs = Set(
+        Event.legacyLifecycleCases.compactMap {
+            HostCapabilityCatalog.binding(host: .claudeCode, event: $0)?.id
+        })
 
     private init(rows: [AudibilityEventRow], summaries: [HostID: HostReadinessSummary]) {
         self.rows = rows
@@ -600,7 +604,7 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
             let configuredSupported = Set(bindings.filter(\.isAudibleCapability).map(\.event)).count
             let legacySupported = Set(
                 bindings.filter {
-                    $0.isAudibleCapability && Event.legacyLifecycleCases.contains($0.event)
+                    $0.isAudibleCapability && legacyClaudeCodeBindingIDs.contains($0.id)
                 }.map(\.event)
             ).count
             let supported =
@@ -622,20 +626,24 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
                         ?? HostCapabilityBinding(
                             host: host, event: event, nativeEvent: nil, support: .unsupported,
                             qualification: .undeclaredCapability)
-                    let state = aggregateCellState(
-                        bindings: eventBindings.isEmpty ? [binding] : eventBindings,
-                        snapshot: snapshotByHost[host],
-                        hasSound: soundCoverageByHost[host]?[event] ?? false,
-                        enabled: enabledEventsByHost[host]?[event] ?? true)
+                    let cellBindings = eventBindings.isEmpty ? [binding] : eventBindings
+                    let bindingStates = cellBindings.map {
+                        cellState(
+                            binding: $0, snapshot: snapshotByHost[host],
+                            hasSound: soundCoverageByHost[host]?[event] ?? false,
+                            enabled: enabledEventsByHost[host]?[event] ?? true)
+                    }
+                    let state = aggregateCellState(bindingStates)
                     let detail =
                         state == .degraded
                             && snapshotByHost[host]?.configuration == .legacyConnected
-                            && !Event.legacyLifecycleCases.contains(event)
-                        ? "旧版连接未安装此事件，请升级连接"
+                        ? legacyBindingDetail(bindings: cellBindings, states: bindingStates)
+                            ?? (!Event.legacyLifecycleCases.contains(event)
+                                ? "旧版连接未安装此事件，请升级连接" : nil)
                         : nil
                     return AudibilityCell(
                         host: host, event: event, binding: binding,
-                        bindings: eventBindings.isEmpty ? [binding] : eventBindings,
+                        bindings: cellBindings,
                         state: state,
                         detail: detail)
                 })
@@ -718,9 +726,9 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         case .notConfigured:
             return .notConnected
         case .legacyConnected:
-            // 旧安装器只写 Event.legacyLifecycleCases。通用能力目录里的 taskStart 是现代
-            // UserPromptSubmit 能力，不能因宿主总体是 legacyConnected 就被误报为可听/缺音。
-            guard Event.legacyLifecycleCases.contains(binding.event) else {
+            // 旧安装器只拥有四个原生绑定。现代 UserPromptSubmit 和同属 notification
+            // 的 PreToolUse 都不能因宿主总体是 legacyConnected 被误报为可听/缺音。
+            guard legacyClaudeCodeBindingIDs.contains(binding.id) else {
                 return .degraded
             }
             if !enabled { return .muted }
@@ -736,15 +744,36 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         }
     }
 
-    private static func aggregateCellState(
-        bindings: [HostCapabilityBinding], snapshot: HostIntegrationSnapshot?,
-        hasSound: Bool, enabled: Bool
-    ) -> AudibilityCellState {
-        let implemented = bindings.filter(\.isAudibleCapability)
-        guard !implemented.isEmpty else { return .unsupported }
-        let states = implemented.map {
-            cellState(binding: $0, snapshot: snapshot, hasSound: hasSound, enabled: enabled)
+    private static func legacyBindingDetail(
+        bindings: [HostCapabilityBinding], states: [AudibilityCellState]
+    ) -> String? {
+        let bindingStates = Array(zip(bindings, states))
+        guard
+            let existing = bindingStates.first(where: {
+                legacyClaudeCodeBindingIDs.contains($0.0.id)
+                    && [.legacy, .muted, .missingSound].contains($0.1)
+            }),
+            let missing = bindingStates.first(where: {
+                !legacyClaudeCodeBindingIDs.contains($0.0.id) && $0.1 == .degraded
+            }),
+            let existingNativeEvent = existing.0.nativeEvent,
+            let missingNativeEvent = missing.0.nativeEvent
+        else { return nil }
+        let existingStatus: String
+        switch existing.1 {
+        case .legacy: existingStatus = "旧版可听，无真实回执"
+        case .muted: existingStatus = "旧版已安装，当前静音"
+        case .missingSound: existingStatus = "旧版已安装，声音文件缺失"
+        default: return nil
         }
+        let missingName =
+            missing.0.qualification == .questionIntentOnly
+            ? "\(missingNativeEvent) 提问入口" : missingNativeEvent
+        return "\(existingNativeEvent)：\(existingStatus)；\(missingName)：旧版未安装，请升级连接"
+    }
+
+    private static func aggregateCellState(_ states: [AudibilityCellState]) -> AudibilityCellState {
+        guard states.contains(where: { $0 != .unsupported }) else { return .unsupported }
         // A newly installed reminder must remain visibly unverified until its own
         // current binding receipt arrives, even when another reminder already works.
         for state in [

@@ -349,6 +349,50 @@ func runDualHostDoctorSuites() {
         }
     }
 
+    suite("双宿主 doctor：Claude 当前回执仍只覆盖五个公共事件") {
+        withTempDirectory { root in
+            let fixture = makeDualHostDoctorFixture(under: root)
+            guard
+                case .success(let connected) = connectClaudeCodeHooks(
+                    root: [:],
+                    claudioRoot: fixture.claudioRoot.path,
+                    claudioBinaryPath: fixture.claudioBinary.path,
+                    installationID: dualHostDoctorCurrentID)
+            else {
+                expect(false, "测试前提：必须生成包含提问绑定的 Claude 配置")
+                return
+            }
+            writeDualHostDoctorJSON(connected.root, to: fixture.claudeSettings)
+            guard
+                case .success = fixture.receiptStore.activate(
+                    host: .claudeCode,
+                    installationID: dualHostDoctorCurrentID,
+                    scopeFingerprint: dualHostDoctorScope)
+            else {
+                expect(false, "测试前提：当前 Claude installation 必须发布")
+                return
+            }
+            let receipt = HostHookReceipt(
+                installationID: dualHostDoctorCurrentID,
+                host: .claudeCode,
+                nativeEvent: "UserPromptSubmit",
+                semanticEvent: .taskStart,
+                timestamp: Date(timeIntervalSince1970: 1_800_000_000),
+                playbackResult: .played)
+            expect(
+                fixture.receiptStore.store(receipt) == .success(.written),
+                "测试前提：当前任务开始回执必须成功写入")
+
+            let claude = dualHostDoctorResult(
+                hostIntegrationDoctorResults(environment: fixture.environment),
+                host: .claudeCode)
+            expect(claude?.severity == .ok, "当前回执后 Claude 应为已就绪")
+            expect(
+                claude?.message == "✓ Claude Code 5/5 已就绪",
+                "提问与通知共享公共 Event，doctor 不得报 6/5，got \(String(describing: claude))")
+        }
+    }
+
     suite("双宿主 doctor：Codex hook 缺失与损坏均是 failure") {
         withTempDirectory { root in
             let fixture = makeDualHostDoctorFixture(under: root)

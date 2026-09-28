@@ -206,7 +206,8 @@ public func localizedCapabilityCell(
     let separator = localizedHostSeparator(language)
     var clauses = [host, event, status]
     if let qualification { clauses.append(qualification) }
-    if let detail = cell.detailText, !detail.isEmpty { clauses.append(detail) }
+    let detail = localizedCapabilityDetail(cell.detailText, language: language)
+    if let detail, !detail.isEmpty { clauses.append(detail) }
     return HostCapabilityCellPresentation(
         host: cell.host,
         event: cell.event,
@@ -218,8 +219,26 @@ public func localizedCapabilityCell(
         qualifications: cell.qualifications,
         qualificationText: qualification,
         statusText: status,
-        detailText: cell.detailText,
+        detailText: detail,
         accessibilityLabel: clauses.joined(separator: separator))
+}
+
+private func localizedCapabilityDetail(
+    _ detail: String?, language: ClaudioAppLanguage
+) -> String? {
+    guard let detail else { return nil }
+    let key: ClaudioL10nKey
+    switch detail {
+    case "Notification：旧版可听，无真实回执；PreToolUse 提问入口：旧版未安装，请升级连接":
+        key = .cellLegacyNotificationAudibleDetail
+    case "Notification：旧版已安装，当前静音；PreToolUse 提问入口：旧版未安装，请升级连接":
+        key = .cellLegacyNotificationMutedDetail
+    case "Notification：旧版已安装，声音文件缺失；PreToolUse 提问入口：旧版未安装，请升级连接":
+        key = .cellLegacyNotificationMissingSoundDetail
+    default:
+        return detail
+    }
+    return ClaudioL10n(language: language).text(key)
 }
 
 public func localizedCapabilityMatrix(

@@ -673,8 +673,9 @@ private func doctorHostResult(
                 name: name, severity: .warning,
                 message: pendingMessage)
         }
-        let supported = HostCapabilityCatalog.bindings(for: host).filter(\.isAudibleCapability)
-            .count
+        let supported = Set(
+            HostCapabilityCatalog.bindings(for: host).filter(\.isAudibleCapability).map(\.event)
+        ).count
         let qualifier =
             switch host {
             case .codex: "；执行中断暂无事件，待响应仅授权请求"
