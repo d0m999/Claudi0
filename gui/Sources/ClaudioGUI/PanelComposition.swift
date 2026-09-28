@@ -9,6 +9,7 @@ func makeEventSettingsConfigController(
     configFile: URL,
     environment: AudioImportEnvironment,
     soundPackLibrary: SoundPackLibrary,
+    bundledHelper: URL?,
     soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator,
     afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void
 ) -> PanelConfigController {
@@ -17,6 +18,9 @@ func makeEventSettingsConfigController(
         lockFile: ClaudioPaths.configLockFile,
         environment: environment,
         soundPackLibrary: soundPackLibrary,
+        systemSoundSelectionAllowed: {
+            installedHelperMatchesBundledRuntime(bundledHelper: bundledHelper)
+        },
         afterFullReload: afterFullReload,
         soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
 }

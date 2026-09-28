@@ -139,6 +139,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
             preferences: preferences,
             loginItemSettings: loginItemSettings,
             audioEnvironment: audioEnvironment,
+            bundledHelper: bundledHelper,
             hostIntegrationState: initialIntegrationState,
             integrationMatrixProvider: integrationMatrixProvider,
             integrationActionProvider: integrationActionProvider)
