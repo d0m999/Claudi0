@@ -286,12 +286,11 @@ public func localizedPanelEventHostIndicators(
     let indicators = localizedEventHostIndicators(
         eventHostIndicatorPresentations(event: event, matrix: content.matrix),
         language: language)
-    guard event == .notification,
-        content.sourceRows.contains(where: { $0.host == .claudeCode && $0.status == .legacy })
-    else { return indicators }
+    guard event == .notification else { return indicators }
 
-    // This matrix has Default Group sound inputs, which can differ from the selected Workspace.
-    // Keep only the legacy installation facts in the panel; the selected event row owns sound state.
+    // Core only attaches a Notification detail to the legacy Claude binding. Its source row can
+    // be needsAttention (for example, when the config is read-only), so use that binding detail
+    // instead of the source-row summary to keep Default Group sound out of the Workspace panel.
     let detail = ClaudioL10n(language: language).text(.cellLegacyNotificationBindingDetail)
     return indicators.map { indicator in
         guard indicator.host == .claudeCode, indicator.detailText != nil else {

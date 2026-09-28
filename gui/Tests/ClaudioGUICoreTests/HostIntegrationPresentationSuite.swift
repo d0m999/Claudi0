@@ -306,6 +306,34 @@ func runHostIntegrationPresentationSuites() {
                 && oppositeIndicator?.state == .legacy
                 && oppositeIndicator?.detailText == bindingDetail,
             "默认组静音而工作区开启时，面板也不得借用默认组的静音诊断")
+
+        let readOnlyLegacy = HostIntegrationSnapshot(
+            host: .claudeCode,
+            runtime: .ready,
+            availability: .available,
+            configuration: .legacyConnected,
+            writability: .notWritable(reason: "配置只读"),
+            activation: .none)
+        let readOnlyContent = integrationDestinationContent(
+            state: HostIntegrationPresentationState(
+                snapshots: [readOnlyLegacy],
+                matrix: hostPresentationMatrix(snapshots: [readOnlyLegacy])))
+        let readOnlyCell = readOnlyContent.matrix.rows.first(where: { $0.event == .notification })?
+            .cells.first(where: { $0.host == .claudeCode })
+        let readOnlyIndicator = localizedPanelEventHostIndicators(
+            event: .notification, content: readOnlyContent, language: .english
+        ).first(where: { $0.host == .claudeCode })
+        expect(
+            readOnlyContent.sourceRows.first(where: { $0.host == .claudeCode })?.status
+                == .needsAttention
+                && readOnlyCell?.detailText?.contains("旧版可听") == true,
+            "只读旧版连接的来源汇总会遮住 legacy 状态，但矩阵仍带默认组声音详情")
+        expect(
+            workspaceRow?.enabled == false
+                && readOnlyIndicator?.state == .legacy
+                && readOnlyIndicator?.detailText == bindingDetail
+                && readOnlyIndicator?.accessibilityLabel.contains("旧版可听") == false,
+            "只读旧版连接也不得在静音工作区的面板与 VoiceOver 泄漏默认组可听状态")
     }
 
     suite("旧版事件状态：面板可见文字与 VoiceOver 不显示来源计数占位符") {
