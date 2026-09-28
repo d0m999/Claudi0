@@ -36,3 +36,6 @@ __pycache__/
 
 # WorkBuddy host-local state — never commit
 .workbuddy/
+
+# macOS 截图落在仓库根，永远不进 Git
+/截屏*.png
