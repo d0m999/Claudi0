@@ -633,9 +633,16 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
                             hasSound: soundCoverageByHost[host]?[event] ?? false,
                             enabled: enabledEventsByHost[host]?[event] ?? true)
                     }
-                    let state = aggregateCellState(bindingStates)
+                    // The installed legacy Notification remains playable even while the
+                    // newer question binding needs an upgrade. Preserve that audible fact
+                    // in the aggregate; detail still names the missing PreToolUse hook.
+                    let state =
+                        snapshotByHost[host]?.configuration == .legacyConnected
+                            && bindingStates.contains(.legacy)
+                            && bindingStates.contains(.degraded)
+                        ? AudibilityCellState.legacy : aggregateCellState(bindingStates)
                     let detail =
-                        state == .degraded
+                        (state == .degraded || state == .legacy)
                             && snapshotByHost[host]?.configuration == .legacyConnected
                         ? legacyBindingDetail(bindings: cellBindings, states: bindingStates)
                             ?? (!Event.legacyLifecycleCases.contains(event)
