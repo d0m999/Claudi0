@@ -292,24 +292,27 @@ extension ClaudioConfig {
         directoryResolver: (String) -> Result<WorkspaceDirectory, WorkspaceDirectoryError> =
             WorkspaceDirectoryResolver.resolve
     ) -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
-        let defaults = ResolvedSoundProfile(
-            selectedPack: selectedPack, eventsEnabled: eventsEnabled,
-            inheritedPack: false, inheritedEvents: [], volume: masterVolume,
-            workspaceID: nil, systemSounds: systemSounds)
-        guard !systemSoundsMalformed else { return .failure(.invalidRule) }
+        func defaultProfile() -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
+            guard !systemSoundsMalformed else { return .failure(.invalidRule) }
+            return .success(
+                ResolvedSoundProfile(
+                    selectedPack: selectedPack, eventsEnabled: eventsEnabled,
+                    inheritedPack: false, inheritedEvents: [], volume: masterVolume,
+                    workspaceID: nil, systemSounds: systemSounds))
+        }
         guard let surface, let cwd, WorkspaceDirectory.validPath(cwd) else {
-            return .success(defaults)
+            return defaultProfile()
         }
         guard WorkspaceSurfaceEligibility.verified.contains(surface) else {
-            return .success(defaults)
+            return defaultProfile()
         }
         guard !workspaceRulesMalformed else { return .failure(.invalidRule) }
         let applicable = workspaceRules.filter { $0.surfaces.contains(surface) }
-        guard !applicable.isEmpty else { return .success(defaults) }
+        guard !applicable.isEmpty else { return defaultProfile() }
         let directory: WorkspaceDirectory
         switch directoryResolver(cwd) {
         case .success(let value): directory = value
-        case .failure(.invalidDirectory): return .success(defaults)
+        case .failure(.invalidDirectory): return defaultProfile()
         case .failure(.gitUnavailable): return .failure(.invalidRule)
         }
         // Ordinary rules compare the actual cwd, not the enclosing Git root.
@@ -322,7 +325,7 @@ extension ClaudioConfig {
             if $0.directory.kind != $1.directory.kind { return $0.directory.kind == .git }
             return $0.directory.path.count > $1.directory.path.count
         }
-        guard let rule = matches.first else { return .success(defaults) }
+        guard let rule = matches.first else { return defaultProfile() }
         if matches.dropFirst().contains(where: { $0.directory.identity == rule.directory.identity })
         {
             return .failure(.duplicateDirectory)

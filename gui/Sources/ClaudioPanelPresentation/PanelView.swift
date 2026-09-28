@@ -1319,7 +1319,7 @@ private struct PanelAgentEventRow: View {
 
     private var recoveryAction: EventPreviewRecoveryAction? {
         if presentation.selectedSystemSound { return nil }
-        eventPreviewRecoveryAction(for: presentation.controls.previewAvailability)
+        return eventPreviewRecoveryAction(for: presentation.controls.previewAvailability)
     }
 
     private func recoveryTitle(for action: EventPreviewRecoveryAction) -> String {

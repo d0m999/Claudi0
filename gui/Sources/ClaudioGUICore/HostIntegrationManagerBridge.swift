@@ -70,6 +70,7 @@ public actor HostIntegrationManagerBridge {
     private let configFile: URL
     private let audioEnvironment: AudioImportEnvironment
     private let receiptStore: HostHookReceiptStore
+    private let systemSoundCatalog: SystemSoundCatalog
 
     public init(
         manager: HostIntegrationManager,
@@ -79,12 +80,14 @@ public actor HostIntegrationManagerBridge {
             receiptsRoot: ClaudioPaths.receiptsDirectory,
             locksRoot: ClaudioPaths.receiptLocksDirectory,
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
-            installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory)
+            installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
+        systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog()
     ) {
         self.manager = manager
         self.configFile = configFile
         self.audioEnvironment = audioEnvironment
         self.receiptStore = receiptStore
+        self.systemSoundCatalog = systemSoundCatalog
     }
 
     /// 首启只自举共享 runtime，再 inspect 全部已发布 adapter；绝不隐式调用 `connect`。
@@ -169,7 +172,9 @@ public actor HostIntegrationManagerBridge {
                 coverageByHost[host] = Dictionary(
                     uniqueKeysWithValues: rows.map { row in
                         let hasSound: Bool
-                        if case .present = row.coverage {
+                        if let name = profile.systemSounds[row.event.cliName] {
+                            hasSound = systemSoundCatalog.audioURL(named: name) != nil
+                        } else if case .present = row.coverage {
                             hasSound = true
                         } else {
                             hasSound = false

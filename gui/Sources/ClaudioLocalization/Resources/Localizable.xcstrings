@@ -9533,6 +9533,18 @@
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改声音：%@" } }
       }
     },
+    "event-settings.system-sound-unavailable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The macOS sound %@ is unavailable. The selection was not changed." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统提示音 %@ 不可用；未更改选择。" } }
+      }
+    },
+    "event-settings.sound-choice-conflict": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The configuration was published, but another change was detected. Reload the current selection before retrying." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "配置已发布但检测到并发冲突；请重新读取当前选择后再重试。" } }
+      }
+    },
     "event-settings.current-helper-required": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Update or repair the installed helper before choosing a system sound." } },
