@@ -704,9 +704,8 @@ public struct PanelView: View {
                         presentation: event,
                         adaptation: layoutAdaptation,
                         language: languageStore.language,
-                        hostIndicators: localizedEventHostIndicators(
-                            eventHostIndicatorPresentations(
-                                event: event.event, matrix: hostIntegrations.content.matrix),
+                        hostIndicators: localizedPanelEventHostIndicators(
+                            event: event.event, content: hostIntegrations.content,
                             language: languageStore.language),
                         attemptFailure: previewAttemptFailures[event.event],
                         focusedTarget: $focusedTarget,

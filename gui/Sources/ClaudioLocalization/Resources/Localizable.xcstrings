@@ -2417,6 +2417,22 @@
         }
       }
     },
+    "cell.legacy-notification-binding-detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification: legacy hook installed without a current receipt; PreToolUse question hook: not installed by the legacy connection, upgrade the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification：旧版 hook 已安装，无当前回执；PreToolUse 提问入口：旧版未安装，请升级连接"
+          }
+        }
+      }
+    },
     "host.playback.played": {
       "localizations": {
         "en": {

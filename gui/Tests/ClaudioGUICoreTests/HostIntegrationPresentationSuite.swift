@@ -231,6 +231,94 @@ func runHostIntegrationPresentationSuites() {
             "集成页英文说明必须保留逐绑定事实")
     }
 
+    suite("工作区通知静音：面板旧版绑定详情不借用默认组可听状态") {
+        let legacy = HostIntegrationSnapshot(
+            host: .claudeCode,
+            runtime: .ready,
+            availability: .available,
+            configuration: .legacyConnected,
+            writability: .writable,
+            activation: .none)
+        let content = integrationDestinationContent(
+            state: HostIntegrationPresentationState(
+                snapshots: [legacy],
+                matrix: hostPresentationMatrix(snapshots: [legacy])))
+        let workspaceRow = panelEventPresentations(
+            rows: [
+                EventRow(
+                    event: .notification,
+                    coverage: .present(fileName: "notification.aiff"),
+                    enabled: false)
+            ],
+            scope: .workspace(UUID()),
+            masterVolume: 0.8,
+            language: .english
+        ).first(where: { $0.event == .notification })
+        let indicator = localizedPanelEventHostIndicators(
+            event: .notification, content: content, language: .english
+        ).first(where: { $0.host == .claudeCode })
+        let bindingDetail =
+            "Notification: legacy hook installed without a current receipt; PreToolUse question hook: "
+            + "not installed by the legacy connection, upgrade the connection"
+        expect(workspaceRow?.enabled == false, "工作区事件行必须使用自己的静音配置")
+        expect(
+            indicator?.state == .legacy
+                && indicator?.detailText == bindingDetail
+                && indicator?.helpText.contains(bindingDetail) == true
+                && indicator?.accessibilityLabel.contains(bindingDetail) == true,
+            "面板旧版详情只说明安装事实，帮助与 VoiceOver 不借用默认组可听状态")
+        expect(
+            indicator?.detailText?.contains("audible") == false,
+            "默认组通知可听时，工作区静音行不得宣称旧版可听")
+        let chinese = localizedPanelEventHostIndicators(
+            event: .notification, content: content, language: .zhHans
+        ).first(where: { $0.host == .claudeCode })
+        expect(
+            chinese?.detailText
+                == "Notification：旧版 hook 已安装，无当前回执；PreToolUse 提问入口：旧版未安装，请升级连接"
+                && chinese?.accessibilityLabel.contains("旧版可听") == false,
+            "中文可见详情与 VoiceOver 也须只陈述绑定安装事实")
+
+        let defaultMutedMatrix = AudibilityMatrix.make(
+            snapshots: [legacy],
+            capabilities: [.claudeCode: HostCapabilityCatalog.bindings(for: .claudeCode)],
+            soundCoverage: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }),
+            enabledEvents: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, false) }))
+        let defaultMutedContent = integrationDestinationContent(
+            state: HostIntegrationPresentationState(
+                snapshots: [legacy], matrix: defaultMutedMatrix))
+        let workspaceEnabled = panelEventPresentations(
+            rows: [
+                EventRow(
+                    event: .notification,
+                    coverage: .present(fileName: "notification.aiff"),
+                    enabled: true)
+            ],
+            scope: .workspace(UUID()),
+            masterVolume: 0.8,
+            language: .english
+        ).first(where: { $0.event == .notification })
+        let oppositeIndicator = localizedPanelEventHostIndicators(
+            event: .notification, content: defaultMutedContent, language: .english
+        ).first(where: { $0.host == .claudeCode })
+        expect(
+            workspaceEnabled?.enabled == true
+                && oppositeIndicator?.state == .legacy
+                && oppositeIndicator?.detailText == bindingDetail,
+            "默认组静音而工作区开启时，面板也不得借用默认组的静音诊断")
+    }
+
+    suite("旧版事件状态：面板可见文字与 VoiceOver 不显示来源计数占位符") {
+        for (language, expected) in [
+            (ClaudioAppLanguage.english, "Legacy connection"),
+            (.zhHans, "旧版连接"),
+        ] {
+            let status = localizedEventHostIndicatorStatus(.legacy, language: language)
+            expect(status == expected, "旧版事件状态须使用无需计数的双语文案")
+            expect(!status.contains("%lld"), "面板详情与 VoiceOver 不得读出计数占位符")
+        }
+    }
+
     suite("Accessibility Beta qualification：能力格和事件指示器共享双语限定语") {
         let source = "Accessibility Beta 候选尚未实现"
         let cell = HostCapabilityCellPresentation(
