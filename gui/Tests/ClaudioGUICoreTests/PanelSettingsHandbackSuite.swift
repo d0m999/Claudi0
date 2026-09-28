@@ -30,6 +30,31 @@ func runPanelSettingsHandbackSuites() {
         expect(
             !settingsWindowOwnsKeyFocus(settings, keyWindow: unrelated), "其他窗口不得被误认为 Settings sheet"
         )
+
+        var ownership = SettingsForegroundOwnership()
+        ownership.noteSettingsBecameKey()
+        ownership.noteExternalApplicationActivated()
+        expect(
+            !ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: true),
+            "外部应用激活后应清空旧的 Settings 前台记录")
+        if settingsWindowOwnsKeyFocus(settings, keyWindow: sheet) {
+            ownership.noteSettingsBecameKey()
+        }
+        var handback = PanelSettingsHandback()
+        handback.begin(
+            settingsWasForeground: ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: true))
+        expect(
+            handback.takeSettingsRestoration()
+                && settingsWindowRestorationTarget(settings) === sheet,
+            "sheet 从后台重新成为 key 后，Panel 关闭应归还同一个 sheet")
+        expect(!handback.takeSettingsRestoration(), "Panel 关闭只消费一次 sheet 恢复资格")
+
         settings.endSheet(sheet)
         expect(settingsWindowRestorationTarget(settings) === settings, "sheet 关闭后恢复主窗口")
         expect(settingsWindowOwnsKeyFocus(settings, keyWindow: settings), "主窗口 key 焦点仍属于 Settings")
@@ -96,6 +121,28 @@ func runPanelSettingsHandbackSuites() {
                 isWindowMiniaturized: false,
                 isWindowOnActiveSpace: true),
             "已关闭的 Settings 不能保留前台资格")
+    }
+
+    suite("外部激活通知延迟时，不沿用 Settings 的旧前台记录") {
+        var ownership = SettingsForegroundOwnership()
+        ownership.noteSettingsBecameKey()
+        expect(
+            ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: true),
+            "回归场景须保留尚未收到外部激活通知的旧记录")
+
+        let appIsActive = false
+        var handback = PanelSettingsHandback()
+        handback.begin(
+            settingsWasForeground: appIsActive
+                && ownership.canRestore(
+                    isWindowVisible: true,
+                    isWindowMiniaturized: false,
+                    isWindowOnActiveSpace: true)
+        )
+        expect(!handback.takeSettingsRestoration(), "Claudio 已在后台时不得归还 Settings 焦点")
     }
 
     suite("Panel 与 Settings 的原生窗口焦点记录和归还接入同一决策") {
@@ -171,5 +218,36 @@ func runPanelSettingsHandbackSuites() {
                 && restorationCode.contains("target.isOnActiveSpace")
                 && restorationCode.contains("target.makeKeyAndOrderFront(nil)"),
             "Settings owner 必须将可见且仍活动的 sheet 恢复为 key window")
+
+        guard
+            let ownershipStart = settings.range(of: "var ownsForegroundBeforePanel: Bool"),
+            let restoreStart = settings.range(
+                of: "func restoreVisibleWindowAfterPopoverClose() -> Bool")
+        else {
+            expect(false, "读不到 Settings 在 Panel 打开前的前台所有权取样")
+            return
+        }
+        let ownershipCode = settings[ownershipStart.lowerBound..<restoreStart.lowerBound]
+        let activeGuard = ownershipCode.range(of: "guard NSApp.isActive else { return false }")?
+            .lowerBound
+        let staleFallback = ownershipCode.range(of: "foregroundOwnership.canRestore(")?.lowerBound
+        expect(
+            activeGuard != nil && staleFallback != nil && activeGuard! < staleFallback!,
+            "沿用旧前台记录前必须确认 Claudio 仍在前台")
+
+        guard
+            let sheetKeyObserver = settings.range(
+                of: "publisher(for: NSWindow.didBecomeKeyNotification)"),
+            let presentationObserver = settings.range(of: "settingsPresentationCancellable =")
+        else {
+            expect(false, "Settings owner 必须观察附属 sheet 的原生 key 通知")
+            return
+        }
+        let sheetKeyCode = settings[sheetKeyObserver.lowerBound..<presentationObserver.lowerBound]
+        expect(
+            settings.contains("sheetKeyCancellable = NotificationCenter.default")
+                && sheetKeyCode.contains("settingsWindowOwnsKeyFocus(window, keyWindow: keyWindow)")
+                && sheetKeyCode.contains("foregroundOwnership.noteSettingsBecameKey()"),
+            "附属 sheet 重新成为 key 时必须恢复同一个 Settings 前台所有权记录")
     }
 }
