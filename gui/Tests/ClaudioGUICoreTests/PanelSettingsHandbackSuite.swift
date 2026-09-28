@@ -52,6 +52,52 @@ func runPanelSettingsHandbackSuites() {
         expect(!handback.takeSettingsRestoration(), "新一次打开必须覆盖上次的焦点状态")
     }
 
+    suite("菜单栏点击短暂移走 key 焦点后仍须记住前台 Settings") {
+        var ownership = SettingsForegroundOwnership()
+        ownership.noteSettingsBecameKey()
+        var handback = PanelSettingsHandback()
+        let settingsIsKeyWhenPopoverActionRuns = false
+        handback.begin(
+            settingsWasForeground: settingsIsKeyWhenPopoverActionRuns
+                || ownership.canRestore(
+                    isWindowVisible: true,
+                    isWindowMiniaturized: false,
+                    isWindowOnActiveSpace: true)
+        )
+        expect(
+            handback.takeSettingsRestoration(),
+            "菜单栏按钮接管 key 焦点不应让面板关闭时放弃原本在前台的 Settings")
+
+        ownership.noteExternalApplicationActivated()
+        expect(
+            !ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: true),
+            "其他应用已激活时，后台 Settings 不能借面板关闭抢回前台")
+
+        ownership.noteSettingsBecameKey()
+        expect(
+            !ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: true,
+                isWindowOnActiveSpace: true),
+            "最小化的 Settings 不能借面板关闭恢复")
+        expect(
+            !ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: false),
+            "其他 Space 中的 Settings 不能借面板关闭恢复")
+        ownership.noteSettingsClosed()
+        expect(
+            !ownership.canRestore(
+                isWindowVisible: true,
+                isWindowMiniaturized: false,
+                isWindowOnActiveSpace: true),
+            "已关闭的 Settings 不能保留前台资格")
+    }
+
     suite("Panel 与 Settings 的原生窗口焦点记录和归还接入同一决策") {
         let root = guiTestRepositoryRoot()
         let menuURL = root.appendingPathComponent(
@@ -75,13 +121,13 @@ func runPanelSettingsHandbackSuites() {
         let show = menu[showStart.lowerBound...]
         let capture = show.range(of: "panelSettingsHandback.begin(")?.lowerBound
         let keyWindowInput = show.range(
-            of: "settingsWasForeground: settingsWindowController.hasForegroundKeyWindow")?
+            of: "settingsWasForeground: settingsWindowController.ownsForegroundBeforePanel")?
             .lowerBound
         let presentation = show.range(of: "popover.show(relativeTo:")?.lowerBound
         expect(
             capture != nil && keyWindowInput != nil && presentation != nil
                 && capture! < keyWindowInput! && keyWindowInput! < presentation!,
-            "必须在 Panel 展示前记录 Settings 是否持有前台 key 焦点")
+            "必须在 Panel 展示前记录 Settings 是否原本占据前台")
 
         guard let closeStart = menu.range(of: "func popoverDidClose(_ notification: Notification)")
         else {
@@ -111,9 +157,12 @@ func runPanelSettingsHandbackSuites() {
         }
         let restorationCode = settings[restoration.lowerBound...]
         expect(
-            settings.contains("guard NSApp.isActive, let window else { return false }")
+            settings.contains("foregroundOwnership.noteSettingsBecameKey()")
+                && settings.contains("foregroundOwnership.noteExternalApplicationActivated()")
+                && settings.contains("foregroundOwnership.noteSettingsClosed()")
                 && settings.contains(
                     "settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)")
+                && settings.contains("foregroundOwnership.canRestore(")
                 && settings.contains("settingsWindowRestorationTarget(window)")
                 && restorationCode.contains("window.isVisible")
                 && restorationCode.contains("!window.isMiniaturized")

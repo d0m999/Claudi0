@@ -16,6 +16,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var focusRestoration: (@MainActor (NSRunningApplication?) -> Void)?
     private var handbackTracker = RetainedWindowHandbackTracker<NSRunningApplication>()
+    private var foregroundOwnership = SettingsForegroundOwnership()
     private var externalActivationCancellable: AnyCancellable?
     private var settingsPresentationCancellable: AnyCancellable?
     private var settingsPresentationAnnouncementDeliveryScheduled = false
@@ -39,11 +40,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
                             notification.userInfo?[NSWorkspace.applicationUserInfoKey]
                             as? NSRunningApplication
                     else { return }
+                    let isCurrentApplication =
+                        application.processIdentifier
+                        == ProcessInfo.processInfo.processIdentifier
+                    if !isCurrentApplication {
+                        self.foregroundOwnership.noteExternalApplicationActivated()
+                    }
                     self.handbackTracker.noteExternalActivation(
                         application,
                         isWindowVisible: self.window?.isVisible == true,
-                        isCurrentApplication: application.processIdentifier
-                            == ProcessInfo.processInfo.processIdentifier)
+                        isCurrentApplication: isCurrentApplication)
                 }
             }
 
@@ -77,6 +83,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         }
         NSApp.activate(ignoringOtherApps: true)
         presentedWindow.makeKeyAndOrderFront(nil)
+        if presentedWindow.isKeyWindow {
+            foregroundOwnership.noteSettingsBecameKey()
+        }
         _ = settingsPresentationSession.send(
             .windowPhaseChanged(presentedWindow.isKeyWindow ? .key : .visibleNonKey))
         if !wasVisible {
@@ -85,10 +94,17 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         scheduleSettingsPresentationAnnouncementDelivery()
     }
 
-    /// Capture key focus from the retained window or one of its attached sheets.
-    var hasForegroundKeyWindow: Bool {
-        guard NSApp.isActive, let window else { return false }
-        return settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)
+    /// The last foreground Settings owner survives the status item's temporary key-focus change.
+    var ownsForegroundBeforePanel: Bool {
+        guard let window else { return false }
+        let ownsCurrentKeyFocus =
+            NSApp.isActive
+            && settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)
+        return ownsCurrentKeyFocus
+            || foregroundOwnership.canRestore(
+                isWindowVisible: window.isVisible,
+                isWindowMiniaturized: window.isMiniaturized,
+                isWindowOnActiveSpace: window.isOnActiveSpace)
     }
 
     /// A status-item popover can briefly take key focus while Settings stays open. Closing that
@@ -118,6 +134,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             let keyWindow = notification.object as? NSWindow,
             keyWindow === window
         else { return }
+        foregroundOwnership.noteSettingsBecameKey()
         _ = settingsPresentationSession.send(.windowPhaseChanged(.key))
         scheduleSettingsPresentationAnnouncementDelivery()
     }
@@ -136,6 +153,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             closingWindow === window
         else { return }
 
+        foregroundOwnership.noteSettingsClosed()
         _ = settingsPresentationSession.send(.windowWillClose)
         let restoration = takeFocusRestoration()
         DispatchQueue.main.async {
