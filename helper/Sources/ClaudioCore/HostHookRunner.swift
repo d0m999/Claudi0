@@ -299,7 +299,8 @@ public func handleHostHook(
             occurredAt: occurredAt,
             source: input.source.source,
             reason: input.reason,
-            observedUptime: observedUptime)
+            observedUptime: observedUptime,
+            processAncestors: HostProcessAncestry.capture())
         // The send is best effort, but a known failure still earns one fixed redacted
         // diagnostic code on the existing log path; the payload never leaves this process.
         if case .dropped(let failure) = channel.sender(notice) {

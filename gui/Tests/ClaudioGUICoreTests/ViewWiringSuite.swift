@@ -393,7 +393,7 @@ func runViewWiringSuites() {
         let normalized = collapsingWhitespace(body)
         expect(
             normalized.contains(
-                ".accessibilityLabel( EventNoticeProjection.accessibilityLabel( for: snapshot, language: languageStore.language) )"
+                ".accessibilityLabel( EventNoticeProjection.accessibilityLabel( for: snapshot, language: languageStore.language, now: context.date) )"
             ),
             "根 AX label 必须把当前 snapshot 与语言交给共享投影决策")
         expect(
@@ -442,10 +442,11 @@ func runViewWiringSuites() {
             "notice close 必须消费一次转交动作，并由当前焦点所有权守卫")
         expect(privacy.contains("focusRestoration = nil"), "隐私清空必须释放延迟归还动作")
         expect(
-            closureBody(after: "onOpenAttentionReminders:", in: notice)?
-                .contains("self?.openInteractive()")
-                == true,
-            "数量入口必须接到同一个原生 interactive 焦点移交路径")
+            closureBody(after: "func openInteractive()", in: notice)?
+                .contains("model.openAttentionReminders()") == true
+                && closureBody(after: "onOpenSourceApplication:", in: notice)?
+                    .contains("self?.openSourceApplication(action)") == true,
+            "菜单栏保留列表入口，胶囊主动作接到版本化来源应用打开")
         let render = closureBody(after: "private func render(", in: notice) ?? ""
         expect(
             closureBody(

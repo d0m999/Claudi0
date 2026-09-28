@@ -7,6 +7,9 @@ status: accepted
 全事件历史与消除规则已由 [ADR 0013](0013-separate-transient-notices-from-attention.md)
 部分替代；下述内存、声音独立、非激活窗口及隐私边界继续有效。
 
+来源应用身份、App 级打开与胶囊入口由 [ADR 0019](0019-open-verified-source-applications.md)
+修订；精确会话导航仍须独立验证。
+
 Claudio 将宿主 hook 的最少来源字段投影为独立的不可变 `HostEventNotice`，通过 GUI
 拥有的私有 Unix domain datagram endpoint 传递给当前运行的提示模型。来源提示只在本次
 GUI 生命周期的内存中保留，最多 50 条、最长 30 分钟；它不进入

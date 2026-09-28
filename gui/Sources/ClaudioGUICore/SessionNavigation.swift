@@ -64,6 +64,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
     public static let timeout: TimeInterval = 3
     @Published public private(set) var result: SessionNavigationActionResult = .idle
     @Published public private(set) var action: EventNoticeAction?
+    @Published public private(set) var applicationResult: SourceApplicationOpenResult = .idle
     public private(set) var capabilityGeneration: UUID
 
     private let navigate:
@@ -71,6 +72,12 @@ public final class SessionNavigationCoordinator: ObservableObject {
             SessionNavigationTarget, @escaping @MainActor (SessionNavigationActionResult) -> Void
         ) -> EventNoticeCancellation
     private let scheduler: EventNoticeScheduler
+    private let openApplication:
+        @MainActor (
+            SourceApplicationTarget, @escaping @MainActor () -> Bool,
+            @escaping @MainActor (SourceApplicationOpenResult) -> Void
+        ) -> EventNoticeCancellation
+    private var applicationTarget: SourceApplicationTarget?
     private var requestID: UUID?
     private var operation: EventNoticeCancellation?
     private var timeoutTask: EventNoticeCancellation?
@@ -88,12 +95,21 @@ public final class SessionNavigationCoordinator: ObservableObject {
             ) -> EventNoticeCancellation = { _, complete in
                 complete(.unavailable)
                 return EventNoticeCancellation {}
+            },
+        openApplication:
+            @escaping @MainActor (
+                SourceApplicationTarget, @escaping @MainActor () -> Bool,
+                @escaping @MainActor (SourceApplicationOpenResult) -> Void
+            ) -> EventNoticeCancellation = { _, _, complete in
+                complete(.unavailable)
+                return EventNoticeCancellation {}
             }
     ) {
         self.model = model
         self.scheduler = scheduler
         self.capabilityGeneration = capabilityGeneration
         self.navigate = navigate
+        self.openApplication = openApplication
         observation = model?.$snapshot.sink { [weak self] snapshot in
             guard let self, let action = self.action else { return }
             if snapshot.receiverEpoch != action.epoch || self.model?.isCurrent(action) != true {
@@ -132,11 +148,50 @@ public final class SessionNavigationCoordinator: ObservableObject {
         if requestID == id { operation = cancellation } else { cancellation.cancel() }
     }
 
+    public func openSourceApplication(
+        _ action: EventNoticeAction, generation: UUID,
+        completion: @escaping @MainActor (SourceApplicationOpenResult) -> Void = { _ in }
+    ) {
+        guard requestID == nil else { return }
+        guard generation == capabilityGeneration, let model, model.isCurrent(action),
+            let target = model.sourceApplication(for: action), target.action == action
+        else {
+            self.action = action
+            applicationResult = .unavailable
+            completion(.unavailable)
+            return
+        }
+        let id = UUID()
+        requestID = id
+        self.action = action
+        applicationTarget = target
+        model.protect(action)
+        applicationResult = .started
+        let isCurrent: @MainActor () -> Bool = { [weak self] in
+            guard let self, self.requestID == id, self.capabilityGeneration == generation,
+                let target = self.applicationTarget,
+                self.model?.sourceApplication(for: action) == target
+            else { return false }
+            return true
+        }
+        let finish: @MainActor (SourceApplicationOpenResult) -> Void = { [weak self] outcome in
+            guard let self, isCurrent() else { return }
+            self.cancelRequest()
+            self.applicationResult = outcome
+            completion(outcome)
+        }
+        timeoutTask = scheduler.schedule(after: Self.timeout) { finish(.timedOut) }
+        guard isCurrent() else { reset(); return }
+        let cancellation = openApplication(target, isCurrent, finish)
+        if requestID == id { operation = cancellation } else { cancellation.cancel() }
+    }
+
     /// Explicit copy is synchronous, so both validation and the actual pasteboard result belong
     /// to the captured action. Source browsing and copying never consume an attention version.
     @discardableResult
     public func copy(_ action: EventNoticeAction, write: (String) -> Bool) -> Bool {
         cancelRequest()
+        applicationResult = .idle
         self.action = action
         let success = model?.copySessionID(action, write: write) == true
         result = success ? .copied : .copyFailed
@@ -152,12 +207,14 @@ public final class SessionNavigationCoordinator: ObservableObject {
     public func cancel() {
         cancelRequest()
         result = .cancelled
+        applicationResult = .cancelled
     }
 
     public func reset() {
         cancelRequest()
         action = nil
         result = .idle
+        applicationResult = .idle
     }
 
     private func finish(
@@ -181,6 +238,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
 
     private func cancelRequest() {
         requestID = nil
+        applicationTarget = nil
         operation?.cancel()
         operation = nil
         timeoutTask?.cancel()

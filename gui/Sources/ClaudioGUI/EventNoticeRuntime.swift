@@ -1,4 +1,5 @@
 import ClaudioCore
+import ClaudioGUIComponents
 import ClaudioGUICore
 import Foundation
 
@@ -19,7 +20,8 @@ final class EventNoticeRuntime {
     #endif
 
     init() {
-        let model = EventNoticeModel(receiverEpoch: UUID())
+        let model = EventNoticeModel(
+            receiverEpoch: UUID(), resolveSourceApplication: SourceApplicationAdapter.resolve)
         self.model = model
         health = EventNoticeHealthStore()
         receiptStore = HostHookReceiptStore(

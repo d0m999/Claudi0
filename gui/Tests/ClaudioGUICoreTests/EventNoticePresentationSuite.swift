@@ -59,7 +59,8 @@ func runEventNoticePresentationSuites() {
                             attentionNotice(
                                 epoch: model.receiverEpoch,
                                 source: HostEventSource(
-                                    projectLabel: "project", sessionID: sessionID)))
+                                    projectLabel: "project", sessionID: sessionID),
+                                occurredAt: Date(timeIntervalSinceNow: -120)))
                     }
                     model.openAttentionReminders()
                     let preferences = ClaudioPreferences(previewLanguage: language)
@@ -227,10 +228,10 @@ func runEventNoticePresentationSuites() {
         guard let record = model.snapshot.current else { expect(false, "信息通知应有瞬时投影"); return }
         expect(
             EventNoticeProjection.primaryLine(for: record, language: .zhHans)
-                == "Claude Code · 信息通知", "中文信息性通知不猜测等待介入")
+                == "Claude Code信息通知", "中文信息性通知不猜测等待介入")
         expect(
             EventNoticeProjection.primaryLine(for: record, language: .english)
-                == "Claude Code · Information", "英文与中文含义一致")
+                == "Claude Code Information", "英文与中文含义一致")
     }
 
     suite("EventNoticeProjection：瞬时横幅根标签中性，待接手与展开态保留紧迫语义") {
@@ -320,43 +321,26 @@ func runEventNoticePresentationSuites() {
             "宽屏必须水平居中，实得 \(wideX)")
     }
 
-    suite("EventNoticeProjection：会话短标签由展示层本地化，不随 IPC 硬编码") {
+    suite("EventNoticeProjection：副行仅项目和年龄，会话及父会话留在详情") {
         let record = makePresentationRecord(
             source: HostEventSource(
-                projectLabel: "same-name",
-                projectKey: "project-key",
-                sessionID: "12345678-abcdef"))
+                projectLabel: "same-name", projectKey: "project-key", sessionID: "12345678-abcdef"))
+        let now = record.occurredAt!.addingTimeInterval(120)
         expect(
-            EventNoticeProjection.secondaryLine(for: record, language: .english)
-                == "same-name · Session · 12345678",
-            "英文投影必须生成本地化短会话标签，实得 \(EventNoticeProjection.secondaryLine(for: record, language: .english))"
-        )
+            EventNoticeProjection.secondaryLine(for: record, language: .english, now: now)
+                == "same-name · 2m", "英文项目与年龄")
         expect(
-            EventNoticeProjection.secondaryLine(for: record, language: .zhHans)
-                == "same-name · 会话 · 12345678",
-            "中文投影必须生成中文短会话标签，实得 \(EventNoticeProjection.secondaryLine(for: record, language: .zhHans))"
-        )
-
-        let titled = makePresentationRecord(
-            source: HostEventSource(
-                projectLabel: "same-name",
-                projectKey: "project-key",
-                sessionID: "12345678-abcdef",
-                sessionLabel: "adapter 可信标题"))
-        expect(
-            EventNoticeProjection.secondaryLine(for: titled, language: .zhHans)
-                .contains("adapter 可信标题"),
-            "adapter 显式可信标题必须优先于默认短标签")
-
+            EventNoticeProjection.secondaryLine(for: record, language: .zhHans, now: now)
+                == "same-name · 2分", "中文项目与年龄")
         let parent = makePresentationRecord(
             source: HostEventSource(
-                projectLabel: nil,
-                sessionID: "12345678-abcdef",
-                isParentSession: true))
+                projectLabel: nil, sessionID: "12345678-abcdef", isParentSession: true))
         expect(
-            EventNoticeProjection.secondaryLine(for: parent, language: .zhHans)
-                .contains("父会话"),
-            "父会话标注必须在投影中保留")
+            EventNoticeProjection.secondaryLine(for: parent, language: .zhHans, now: now) == "2分",
+            "没有项目只显示已知年龄，不补会话短ID")
+        expect(
+            parent.source?.isParentSession == true && parent.sessionID == "12345678-abcdef",
+            "父会话身份和完整ID保留在详情模型")
     }
 
     suite("EventNoticeProjection：可见文本与无障碍摘要同源，发生时间可读") {
