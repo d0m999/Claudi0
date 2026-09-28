@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Station Chimes 试听 · CC0</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #10131c 0%, #182030 100%);
+    min-height: 100vh;
+    color: #e6e8ef;
+    padding: 24px 20px 60px;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+  header { text-align: center; padding: 24px 12px 8px; }
+  header h1 { font-size: 1.9rem; letter-spacing: .3px; }
+  header h1 em { font-style: normal; color: #7fd1c1; }
+  header p.sub { color: #8d94a8; margin-top: 8px; font-size: .95rem; }
+  .notice {
+    max-width: 780px; margin: 20px auto 0; padding: 14px 18px;
+    background: rgba(127,209,193,.08); border: 1px solid rgba(127,209,193,.25);
+    border-radius: 10px; color: #a9d8cf; font-size: .85rem; line-height: 1.65;
+  }
+  .notice b { color: #7fd1c1; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin: 26px 0 14px;
+  }
+  .chip {
+    background: rgba(255,255,255,.06); color: #cdd3e0;
+    border: 1px solid rgba(255,255,255,.14);
+    padding: 8px 18px; border-radius: 999px; font-size: .86rem; cursor: pointer;
+    transition: all .18s ease; font-family: inherit;
+  }
+  .chip:hover { border-color: rgba(127,209,193,.6); color: #7fd1c1; }
+  .chip.on { background: rgba(127,209,193,.16); border-color: #7fd1c1; color: #7fd1c1; }
+  .chip.stop { background: rgba(224,120,120,.14); border-color: rgba(224,120,120,.5); color: #e08a8a; }
+  #now { text-align: center; min-height: 20px; color: #7fd1c1; font-size: .9rem; margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .card {
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09);
+    border-radius: 12px; padding: 14px 15px 6px; transition: border-color .18s ease;
+  }
+  .card:hover { border-color: rgba(127,209,193,.4); }
+  .curated { margin: 28px 0 22px; }
+  .curated h2 { font-size: 1.15rem; margin-bottom: 12px; color: #7fd1c1; }
+  .card h3 { font-size: .98rem; color: #e9ecf4; font-weight: 600; }
+  .card .id { font-size: .7rem; color: #5f6678; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 2px; }
+  .card .note { font-size: .8rem; color: #8d94a8; margin: 7px 0 10px; line-height: 1.5; }
+  .seg { margin-bottom: 9px; }
+  .seg .lab { font-size: .72rem; color: #7c8397; letter-spacing: .4px; text-transform: uppercase; margin-bottom: 2px; }
+  .seg .lab::before { content: "▸ "; color: #7fd1c1; }
+  audio { width: 100%; height: 30px; display: block; }
+  footer { text-align: center; margin-top: 44px; color: #5f6678; font-size: .8rem; line-height: 1.7; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #8d94a8; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Station Chimes <em>— CC0 车站提示音</em></h1>
+    <p class="sub">16 种原创风格 × 4 类片段：发车旋律 / 车门提示 / 站台环境 / 广播</p>
+  </header>
+
+  <div class="notice">
+    <b>关于素材来源</b>：本包全部音频由 <code>scripts/generate-station-chimes.mjs</code> 从零合成，不含任何录音或采样。<br>
+    真实的日本各线发车旋律与发车铃是 JR 东日本、各地铁公司和私铁的作品，旋律本身有版权。
+    这里复刻的是<b>形式</b>（音符数量、升降走向、铃音色、四类功能分工），<b>每一个音都是原创</b>，非任何真实旋律的转写。
+    许可：CC0 1.0。
+  </div>
+
+  <section class="curated" aria-label="五事件策展候选试听">
+    <h2>五事件策展候选</h2>
+    <div class="grid">
+      <div class="card"><h3>用户发起 · task_start</h3><audio controls preload="none" src="packs/station-chimes/task_start.wav"></audio></div>
+      <div class="card"><h3>响应结束 · stop</h3><audio controls preload="none" src="packs/station-chimes/stop.wav"></audio></div>
+      <div class="card"><h3>执行中断 · stop_failure</h3><audio controls preload="none" src="packs/station-chimes/stop_failure.wav"></audio></div>
+      <div class="card"><h3>等待介入 · notification</h3><audio controls preload="none" src="packs/station-chimes/notification.wav"></audio></div>
+      <div class="card"><h3>子任务结束 · subagent_stop</h3><audio controls preload="none" src="packs/station-chimes/subagent_stop.wav"></audio></div>
+    </div>
+  </section>
+
+  <div class="notice">以下是 64 条较长的风格试听草稿。它们不属于五事件策展候选。</div>
+
+  <div class="toolbar" id="segFilters">
+    <button class="chip on" data-seg="all">全部片段</button>
+    <button class="chip" data-seg="Melody">发车旋律 Melody</button>
+    <button class="chip" data-seg="Door_Chime">车门提示 Door Chime</button>
+    <button class="chip" data-seg="Ambience">站台环境 Ambience</button>
+    <button class="chip" data-seg="Announcement">广播 Announcement</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="chip" id="playAll">▶ 顺序试听全部发车旋律</button>
+    <button class="chip" id="playAllChimes">▶ 顺序试听全部车门提示音</button>
+    <button class="chip stop" id="stopAll">■ 停止</button>
+  </div>
+  <div id="now"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    格式：16-bit / 44.1 kHz / mono PCM WAV · 试听草稿峰值约 −1.4 dBFS · 生成器固定种子，可复现<br>
+    试听目录 <code>pack-drafts/station-chimes/</code> · 五事件策展候选 <code>packs/station-chimes/</code>
+  </footer>
+</div>
+
+<script>
+const STYLES = [
+  { id: "rapid-5note-ascending",    label: "Rapid 5-Note Ascending",    note: "JR 风格快速线，明亮、上行" },
+  { id: "suburb-3note-descending",  label: "Suburban 3-Note Descending",note: "私铁郊区线，短促、安稳" },
+  { id: "subway-4note-ascending",   label: "Subway 4-Note Ascending",   note: "地铁线，干净、有序" },
+  { id: "subway-7note-flowing",     label: "Subway 7-Note Flowing",     note: "多站式长线，旋律更长" },
+  { id: "loop-5note-descending",    label: "Loop 5-Note Descending",    note: "环线气质，下行收束" },
+  { id: "tram-3note-bright",        label: "Tram 3-Note Bright",        note: "轻轨 / 有轨电车，小巧轻快" },
+  { id: "commuter-4note-descending",label: "Commuter 4-Note Descending",note: "贯通 commuter 线，不疾不徐" },
+  { id: "airport-4note-open",       label: "Airport 4-Note Open",       note: "机场快线，开阔上扬" },
+  { id: "night-3note-low",          label: "Night 3-Note Low",          note: "夜间区间车，更低更暗" },
+  { id: "sleeper-2note-minimal",    label: "Sleeper 2-Note Minimal",    note: "极简提示，几乎只有两音" },
+  { id: "shinkansen-4note-sharp",   label: "Shinkansen 4-Note Sharp",   note: "新干线，起音利落" },
+  { id: "freight-3note-heavy",      label: "Freight 3-Note Heavy",      note: "货物 / 低沉厚重" },
+  { id: "coastal-5note-lydian",     label: "Coastal 5-Note Modal",      note: "海滨观光线，松弛开阔" },
+  { id: "university-6note-playful", label: "University 6-Note Playful", note: "校园接驳，弹跳活泼" },
+  { id: "depot-4note-mechanical",   label: "Depot 4-Note Mechanical",   note: "车辆段 / 调车提示，方正机械感" },
+  { id: "tourist-8note-narrative",  label: "Tourist 8-Note Narrative",  note: "观光线，完整一句乐句" },
+];
+const SEGS = ["Melody", "Door_Chime", "Ambience", "Announcement"];
+const SEG_LABEL = { Melody: "发车旋律", Door_Chime: "车门提示", Ambience: "站台环境", Announcement: "广播" };
+const BASE = "pack-drafts/station-chimes/";
+
+let currentSeg = "all";
+const grid = document.getElementById("grid");
+
+function render() {
+  grid.innerHTML = "";
+  for (const s of STYLES) {
+    const card = document.createElement("div");
+    card.className = "card";
+    const head =
+      "<h3>" + s.label + "</h3>" +
+      "<div class='id'>" + s.id + "</div>" +
+      "<p class='note'>" + s.note + "</p>";
+    let segs = "";
+    for (const seg of SEGS) {
+      if (currentSeg !== "all" && currentSeg !== seg) continue;
+      segs +=
+        "<div class='seg'><div class='lab'>" + SEG_LABEL[seg] + " · " + seg + "</div>" +
+        "<audio controls preload='none' src='" + BASE + s.id + "-" + seg + ".wav'></audio></div>";
+    }
+    card.innerHTML = head + segs;
+    grid.appendChild(card);
+  }
+}
+
+document.querySelectorAll("#segFilters .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#segFilters .chip").forEach((x) => x.classList.remove("on"));
+    b.classList.add("on");
+    currentSeg = b.dataset.seg;
+    render();
+  });
+});
+
+// ---- sequential player ----
+const player = new Audio();
+player.preload = "auto";
+let queue = [];
+const nowEl = document.getElementById("now");
+player.addEventListener("ended", next);
+function next() {
+  if (!queue.length) { nowEl.textContent = ""; return; }
+  const item = queue.shift();
+  nowEl.textContent = "▶ " + item;
+  player.src = BASE + item;
+  player.play().catch(() => { nowEl.textContent = "播放被浏览器阻止，请再点一次"; });
+}
+function playSeq(seg) {
+  stopAll();
+  queue = STYLES.map((s) => s.id + "-" + seg + ".wav");
+  next();
+}
+function stopAll() { queue = []; player.pause(); nowEl.textContent = ""; }
+document.getElementById("playAll").addEventListener("click", () => playSeq("Melody"));
+document.getElementById("playAllChimes").addEventListener("click", () => playSeq("Door_Chime"));
+document.getElementById("stopAll").addEventListener("click", stopAll);
+
+render();
+</script>
+</body>
+</html>

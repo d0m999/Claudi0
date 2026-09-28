@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Station Chimes procedural source record</title>
+<h1>Station Chimes procedural source record</h1>
+<p>Recorded 2026-09-28 for the Claudio sound-pack ledger.</p>
+<p>The five event files in <code>packs/station-chimes/</code> are local renders from
+<code>scripts/generate-station-chimes.mjs</code>. The generator uses deterministic
+mathematical oscillators, envelopes, and generated noise. It reads no recording,
+sample, or external audio file. The 64 full-length audition variants are kept
+in <code>pack-drafts/station-chimes/</code>.</p>
+<p>Generator SHA-256:
+<code>a215f164fa7225ae4f24ee1a9d70cdc2ff5e15e26a5788e8f8ae3dd0d223fe1b</code>.</p>
+<ul>
+  <li><code>task_start</code>: short G4 to C5 confirmation, 0.30 s, -7.0 dBFS peak.</li>
+  <li><code>stop</code>: subway door-chime excerpt, 0.75 s, -1.2 dBFS peak.</li>
+  <li><code>stop_failure</code>: descending loop melody excerpt, 0.88 s, -1.2 dBFS peak.</li>
+  <li><code>notification</code>: subway announcement excerpt, 1.20 s, -1.2 dBFS peak.</li>
+  <li><code>subagent_stop</code>: tourist melody onset, 0.42 s, -1.2 dBFS peak.</li>
+</ul>
+<p>Each final cue is 16-bit, 44.1 kHz mono PCM WAV, with an 8 ms fade-in and a
+30 ms fade-out. The package license declaration is recorded separately in
+<code>station-chimes-package-License-2026-09-28.txt</code>.</p>
+</html>
