@@ -1,4 +1,4 @@
-/// Remembers whether Settings owned key focus before a transient Panel took it.
+/// Remembers whether Settings owned the foreground before a transient Panel took it.
 /// Visibility alone cannot decide the handback: Settings may be behind another app.
 public struct PanelSettingsHandback {
     private var settingsWasForeground = false

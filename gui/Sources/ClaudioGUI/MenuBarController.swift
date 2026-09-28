@@ -527,7 +527,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         // a redundant `show` while already shown would otherwise overwrite this with Claudio.
         if !popover.isShown {
             panelSettingsHandback.begin(
-                settingsWasForeground: settingsWindowController.hasForegroundKeyWindow)
+                settingsWasForeground: settingsWindowController.ownsForegroundBeforePanel)
             let front = NSWorkspace.shared.frontmostApplication
             if front?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
                 previousApp = front
@@ -815,7 +815,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         // `previous` — pulling it back would be us overriding the user's own choice.
         guard NSApp.isActive else { return }
 
-        // Restore Settings only if it owned key focus before the panel opened. A visible
+        // Restore Settings only if it owned the foreground before the panel opened. A visible
         // background Settings window must not take focus from the captured external app.
         if restoreSettings && settingsWindowController.restoreVisibleWindowAfterPopoverClose() {
             return
