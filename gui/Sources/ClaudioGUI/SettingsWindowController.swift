@@ -18,6 +18,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var handbackTracker = RetainedWindowHandbackTracker<NSRunningApplication>()
     private var foregroundOwnership = SettingsForegroundOwnership()
     private var externalActivationCancellable: AnyCancellable?
+    private var sheetKeyCancellable: AnyCancellable?
     private var settingsPresentationCancellable: AnyCancellable?
     private var settingsPresentationAnnouncementDeliveryScheduled = false
 
@@ -50,6 +51,23 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
                         application,
                         isWindowVisible: self.window?.isVisible == true,
                         isCurrentApplication: isCurrentApplication)
+                }
+            }
+
+        // The window delegate sees the parent becoming key, but not an attached sheet returning
+        // from another app. Keep that sheet under the same foreground handback owner.
+        sheetKeyCancellable = NotificationCenter.default
+            .publisher(for: NSWindow.didBecomeKeyNotification)
+            .sink { [weak self] notification in
+                MainActor.assumeIsolated {
+                    guard
+                        let self,
+                        let window = self.window,
+                        let keyWindow = notification.object as? NSWindow,
+                        keyWindow !== window,
+                        settingsWindowOwnsKeyFocus(window, keyWindow: keyWindow)
+                    else { return }
+                    self.foregroundOwnership.noteSettingsBecameKey()
                 }
             }
 
@@ -96,10 +114,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     /// The last foreground Settings owner survives the status item's temporary key-focus change.
     var ownsForegroundBeforePanel: Bool {
+        guard NSApp.isActive else { return false }
         guard let window else { return false }
         let ownsCurrentKeyFocus =
-            NSApp.isActive
-            && settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)
+            settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)
         return ownsCurrentKeyFocus
             || foregroundOwnership.canRestore(
                 isWindowVisible: window.isVisible,
