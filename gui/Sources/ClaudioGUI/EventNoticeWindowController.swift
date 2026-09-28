@@ -17,7 +17,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private let onWillBecomeInteractive: @MainActor () -> (@MainActor () -> Void)?
     private var focusRestoration: (@MainActor () -> Void)?
     private let navigation: SessionNavigationCoordinator
-    private let window: NSPanel
+    private let window: EventNoticePanel
     private var snapshotCancellable: AnyCancellable?
     private var screenCancellable: AnyCancellable?
     private var animationRevision: UInt64 = 0
@@ -31,10 +31,11 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         onWillBecomeInteractive: @escaping @MainActor () -> (@MainActor () -> Void)? = { nil }
     ) {
         self.model = model
-        navigation = SessionNavigationCoordinator(model: model)
+        navigation = SessionNavigationCoordinator(
+            model: model, openApplication: SourceApplicationAdapter.openApplication)
         self.languageStore = languageStore
         self.onWillBecomeInteractive = onWillBecomeInteractive
-        window = NSPanel(
+        window = EventNoticePanel(
             contentRect: NSRect(x: 0, y: 0, width: 440, height: 92),
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
@@ -57,11 +58,12 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             rootView: EventNoticeView(
                 model: model,
                 languageStore: languageStore,
+                navigation: navigation,
                 onViewSource: { [weak self] notice in
                     self?.viewSource(notice)
                 },
-                onOpenAttentionReminders: { [weak self] in
-                    self?.openInteractive()
+                onOpenSourceApplication: { [weak self] action in
+                    self?.openSourceApplication(action)
                 },
                 onCopySessionID: { [weak self] sessionID in
                     self?.copySessionID(sessionID) ?? false
@@ -89,6 +91,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private func becomeInteractive() {
         if !isInteractive { focusRestoration = onWillBecomeInteractive() }
         isInteractive = true
+        window.allowsKeyboardInteraction = true
         positionWindow()
         window.alphaValue = 1
         window.makeKeyAndOrderFront(nil)
@@ -98,6 +101,27 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     func viewSource(_ action: EventNoticeAction) {
         guard model.viewSource(action) == .applied else { return }
         becomeInteractive()
+    }
+
+    func openSourceApplication(_ action: EventNoticeAction) {
+        let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        navigation.openSourceApplication(action, generation: navigation.capabilityGeneration) {
+            [weak self] outcome in
+            guard let self else { return }
+            if outcome == .opened {
+                // An intentional app switch consumes the handback obligation. Closing must not
+                // reactivate the window that was in front before the user chose this app.
+                self.focusRestoration = nil
+                self.isInteractive = false
+                self.window.allowsKeyboardInteraction = false
+                self.model.setKeyboardFocused(false)
+                self.model.dismiss()
+            } else if outcome != .cancelled, self.model.viewSource(action) == .applied {
+                if NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID {
+                    self.becomeInteractive()
+                }
+            }
+        }
     }
 
     @discardableResult
@@ -115,6 +139,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         let restoration = focusRestoration
         focusRestoration = nil
         isInteractive = false
+        window.allowsKeyboardInteraction = false
         navigation.reset()
         model.setKeyboardFocused(false)
         model.dismiss()
@@ -124,6 +149,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     func clearForPrivacy() {
         focusRestoration = nil
         isInteractive = false
+        window.allowsKeyboardInteraction = false
         presentationScreen = nil
         window.orderOut(nil)
         navigation.reset()
@@ -136,7 +162,12 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        if isInteractive {
+        if navigation.applicationResult == .started {
+            focusRestoration = nil
+            isInteractive = false
+            window.allowsKeyboardInteraction = false
+            model.setKeyboardFocused(false)
+        } else if isInteractive {
             close()
         } else {
             model.setKeyboardFocused(false)
@@ -151,6 +182,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             // End the old interaction here so its return target cannot survive into a new epoch.
             focusRestoration = nil
             isInteractive = false
+            window.allowsKeyboardInteraction = false
             if snapshot.phase == .hidden { presentationScreen = nil }
             if window.isVisible { window.orderOut(nil) }
             return
@@ -243,7 +275,18 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             safeAreaTop: screen.safeAreaInsets.top,
             height: height)
         let frame = NSRect(x: x, y: y, width: width, height: height)
-        if window.frame != frame { window.setFrame(frame, display: true) }
+        if window.frame != frame {
+            if window.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                abs(window.frame.height - frame.height) > 1
+            {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.26
+                    window.animator().setFrame(frame, display: true)
+                }
+            } else {
+                window.setFrame(frame, display: true)
+            }
+        }
     }
 
     /// The first notice of a burst pins to the display under the pointer (SPEC 原生呈现:

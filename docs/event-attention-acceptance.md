@@ -1,4 +1,122 @@
-# 瞬时提示与「需要你」：实现与验收台账
+# Event Banner：实现与验收台账
+
+## 2026-09-28：行动优先
+
+本节是当前实施与证据；下方 2026-09-12–13 的记录保留为历史。范围来自用户确认的
+Event Banner 行动优先计划；领域决定见 [ADR 0019](adr/0019-open-verified-source-applications.md)，
+展示合同见 [DESIGN.md](../DESIGN.md)。本节对应本地提交，未 push、发布或替换运行中的正式 app。
+开始时 HEAD 为 `82b1ee7a54c413f073e2d9cae9e52f2c5b858177`，工作树已有并行改动；本轮逐文件保留，
+尤其保留既有本地化条目及已暂存内容。
+
+### 已实现
+
+- 默认 440pt，待接手胶囊 75pt、瞬时胶囊 67pt。主行使用宿主与动词短语，副行只展示已知项目和年龄。
+  会话 ID、绝对日期时间、相对长式进入详情。小屏限宽，列表和详情滚动。
+- 可注入当前时间的共享年龄投影；英中可见文本与 AX 标签使用同一次采样，向下取整。
+  未知 `review` 使用「需要你查看／去查看」；信息通知维持中性；旧版本显示「已更新，请刷新」，
+  来源和时间在真正过期时擦除。
+- 文字进入详情；chip 打开经系统复验的来源 App，未知来源退为「查看详情」。详情展示 App 名称、
+  打开、复制完整有效会话 ID 和独立移除。胶囊无计数入口，列表继续从菜单栏打开。
+  瞬时关闭按钮在悬停／键盘聚焦时显形，始终保留可访问性动作。
+- `EventNoticeModel` 唯一拥有 4 秒阅读预算，悬停／聚焦／展开共同暂停；单调时钟采样只供绘制。
+  每个待接手版本独立保留最多 30 分钟，隐私期限不被暂停或视觉刷新延长。
+- chip 使用固定 panel 底色承接事件色 12% 浅染／15% 交互底，事件色描边与正文色；深色渐变末端仍满足边界对比度。2pt 阅读时间轨、180ms 入退场、
+  260ms 展开收起；字形静态；Reduce Motion 使用静态轨与即时切换。
+- helper 只在有效接收通道分支捕获最多 16 层同用户祖先的 PID 和内核启动时间，schema 1 新增可选字段，
+  旧消息与 8KiB 上限保持兼容。GUI 复验父链／用户／启动时间，选最近可激活 App；解析后不保留原始列表。
+  来源目标绑定提醒版本，仅存在于内存，随移除、过期或隐私清空释放。
+- App 级动作独立于精确会话返回；复用单在途、版本／epoch／代次校验和 3 秒超时。
+  原实例有效则请求激活；已退出时先复验原位置及 bundle 身份，再不激活地启动并校验回调。
+  迟到回调和用户已切走的前台不会触发后续激活。打开成功收起提示、保留提醒，并清除原窗口焦点归还。
+- 原生检查发现无边框 `NSPanel` 默认不能成为 key window，现用 `EventNoticePanel` 仅在显式交互时授予
+  键盘资格；自动展示仍不激活。复制会话 ID 取消在途打开时会清理等待状态，按钮可再次使用。
+
+### 自动化与构建
+
+环境：macOS 27.0（26A428）、arm64、Apple Swift 6.4。默认 MacOSX27 SDK 的 SwiftUI 宏插件缺失，
+最小 `@State` 示例亦无法 typecheck；本轮通过的 Swift 命令均使用已安装的 SDK：
+
+```bash
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --package-path helper claudio-tests
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --package-path gui claudio-gui-tests
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --package-path gui claudio-gui-tests --event-attention
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift build -c debug --package-path gui --product ClaudioGUI
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift build -c release --package-path gui --product ClaudioGUI
+```
+
+本机证据目录 `E`：`/var/folders/1m/2jsf455s4r7dx9t8l233n55c0000gp/T/claudio-event-banner-v30yyjfv`。
+它包含日志、实际挂载截图、初始工作树快照与独立构建源码，未纳入 Git。构建仍有 CLT 搜索路径及
+API 弃用警告，不宣称零警告。
+
+| 检查 | 最终结果 | 日志（相对 E） |
+| --- | --- | --- |
+| helper executable harness | 4,186 checks，通过 | `logs/helper-final.log` |
+| GUI 完整 executable harness | 11,327 checks，1 项既有失败，exit 1 | `logs/gui-full-final.log` |
+| GUI `--event-attention` | 879 checks，0 failures，exit 0 | `logs/attention-final.log` |
+| GUI Debug／Release product | 均通过，exit 0 | `logs/gui-debug-build.log`、`logs/gui-release-build.log` |
+| 当前源码独立开发 bundle、签名、体积门槛 | arm64 ad-hoc，通过，exit 0 | `logs/dev-bundle.log`、`logs/release-size.log`、`logs/dev-bundle-signature.log` |
+| 本轮 30 个 Swift 文件 strict format | 通过，exit 0 | `logs/swift-format.log` |
+| 字符串目录 JSON、英中占位符与注册、diff 空白 | 均通过 | `logs/localization-json.log`、GUI harness、`logs/git-diff-check.log` |
+
+GUI 全量已定位的既有失败是 `ReleaseLayoutSuite.swift:1235`：「App 图标必须保留右上信号点」。
+该测试与 `assets/branding/claudi0-app-icon.svg` 均与开始时 HEAD 字节一致；HEAD 的 SVG 已不含测试要求的
+`<circle cx="755" cy="303" r="22"`。本轮未修改该图标或放宽该断言。日志中 SourceScannerSuite 的
+自变异探针会有预期失败输出，以 harness 最后总计为结果。
+
+专项覆盖：年龄边界、全事件／原因／提问意图双语；4 秒及交叠暂停、版本替代、冻结刷新、30 分钟到期、
+隐私失效；祖先断链／循环／异用户／PID 复用／无 App、旧 wire；App 目标变化、激活／重开替身、失败、
+重复点击、3 秒超时、取消、迟到回调、打开保留提醒；英中 × 浅深 × 0/1/5/7/50 项、长文本、末行滚动、
+300×180pt 详情。实际挂载胶囊覆盖 440pt 与 268pt 宽，鼠标分别命中文字、chip、关闭。
+五种事件色在两种主题的渐变端点及 12%／15% 填充上检查正文 ≥4.5:1、必要图形／按钮边界 ≥3:1；
+chip 最低正文约 11.38:1、最低边界约 3.06:1。
+复制取消在途打开和深色紫色 chip 边界两项先由回归测试复现，再修复通过，见 `logs/attention-copy-regression-red.log`。
+这些证据不证明真实宿主回调、VoiceOver 朗读或系统键盘路由。
+
+### 原生检查与未验证项
+
+使用临时 `ClaudioBannerProbe.app`，链接本轮产品模块和带结果观测的 controller 副本；通知为合成输入，
+来源目标使用本机 Finder 的真实进程身份。它不构成真实 helper 祖先或宿主回调证据，也不是最终 bundle
+验收。探针已退出；未改写正式宿主配置、回执或当前安装。状态日志见 `logs/native-probe.log`、
+`logs/native-probe-action.log`。
+
+| 项目 | 状态与边界 |
+| --- | --- |
+| 自动展示非激活 | 已观察：前台 PID 不变、app 不 active、自动面板无 key 资格 |
+| 显式详情键盘资格 | 已观察：详情面板成为 key window；App 名称、打开、复制、移除可由 AX 获取 |
+| 失败反馈 | 已观察：系统拒绝激活时显示失败；启动身份失配显示无法确认来源应用 |
+| 真实 App 成功前台切换与退出后重开 | **未验证**：当前自动化会话的有效实例激活请求返回失败；替身通过不能替代实测 |
+| Tab／Shift-Tab／Enter／Space／Esc | **未验证**：CUA 按键会切回探针控制窗，无法证明横幅内完整键盘路径 |
+| IME、VoiceOver 实际朗读 | **未验证** |
+| 系统 Reduce Motion、多屏／Spaces | **未验证**；仅有自动化投影与位置约束证据 |
+| 真实宿主回调／真实 helper 祖先贯通、音频 | **未验证** |
+| Intel、最低系统、universal、Developer ID、notarization、发布及正式验收 | **未验证**；本地产物仅 arm64 ad-hoc |
+
+### 最终本地产物
+
+开发 bundle：`E/source/dist/claudi0.app`。独立快照包含当前工作树的全部受跟踪文件与本轮明确新增文件，
+共 656 个；它保留已有受跟踪并行改动。逐文件 SHA-256 见 `E/validation-source-sha256.json`，
+最终回核原工作区与快照字节一致；原工作区 `dist/` 未被覆盖。以下命令在 `E/source` 根目录执行：
+
+```bash
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk bash scripts/dev-bundle.sh
+bash scripts/check-release-size.sh dist/claudi0.app
+bash scripts/verify-dev-bundle-signature.sh dist/claudi0.app
+```
+
+签名完成后再次测量（区别于组装脚本中的签名前检查）：
+
+| 项目 | 最终大小／门槛（B） |
+| --- | --- |
+| GUI arm64 | 6,853,744 / 7,000,000 |
+| helper arm64 | 3,137,712 / 3,250,000 |
+| LoginItem arm64 | 54,144 / 500,000 |
+| 非可执行资源 | 747,707 / 1,500,000 |
+| bundle 正规文件总计 | 10,793,307 / 12,250,000 |
+
+产物用于本机检查；自动化与本地签名不等于原生验收或可分发发布。
+
+## 历史：2026-09-12–13
+
 
 基线：`a33d077`。最终源码范围：`d2059b8`、`497f6fc`、`ed884cf`、`4160baf`（review 修复）、`e41587d`、
 `2987fea`、`3143048`（对账轮）、`f0d99f0`（review 修复轮）、`ebdbed6`（第三轮修复），以及当前

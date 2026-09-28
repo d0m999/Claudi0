@@ -24,11 +24,11 @@ func runQuestionIntentPresentationSuites() {
                 && notices.snapshot.attentionReminders.isEmpty,
             "提问意图必须使用 notification 语义，且不创建需要你")
         for language in [ClaudioAppLanguage.english, .zhHans] {
-            let title = language == .english ? "About to ask" : "即将提问"
+            let title = language == .english ? "about to ask you" : "即将向你提问"
             let record = notices.snapshot.current!
             expect(
                 EventNoticeProjection.primaryLine(for: record, language: language)
-                    == "Claude Code · \(title)",
+                    == (language == .english ? "Claude Code " : "Claude Code") + title,
                 "两种语言必须明确表达调用意图")
             expect(
                 EventNoticeProjection.accessibilityLabel(

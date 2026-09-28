@@ -51,15 +51,17 @@ func attentionNotice(
     source: HostEventSource? = HostEventSource(
         projectLabel: "project", projectKey: "project-key", sessionID: "session-id",
         mainSessionIsKnown: true),
-    reason: HostEventNoticeReason? = .permission, observed: TimeInterval? = nil
+    reason: HostEventNoticeReason? = .permission, observed: TimeInterval? = nil,
+    processAncestors: [HostProcessIdentity]? = nil,
+    occurredAt: Date = Date(timeIntervalSince1970: 1_700_000_000)
 ) -> HostEventNotice {
     let binding = HostCapabilityCatalog.bindings(for: host).first { $0.nativeEvent == native }!
     return HostEventNotice(
         id: id, receiverEpoch: epoch, surface: host.surfaceID,
         bindingID: binding.id, installationID: installation, nativeEvent: native,
-        event: binding.event, occurredAt: Date(timeIntervalSince1970: 1_700_000_000),
+        event: binding.event, occurredAt: occurredAt,
         source: source,
-        reason: reason, observedUptime: observed)
+        reason: reason, observedUptime: observed, processAncestors: processAncestors)
 }
 
 @MainActor

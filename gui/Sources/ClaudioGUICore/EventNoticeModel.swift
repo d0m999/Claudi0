@@ -37,9 +37,16 @@ fileprivate final class EventNoticeContent: Sendable, Equatable {
     }
 
     private let payload: Payload
+    let sourceApplication: SourceApplicationTarget?
 
-    init(_ notice: HostEventNotice) { payload = .hook(notice) }
-    init(_ observation: CodexQuestionObservation) { payload = .developmentObservation(observation) }
+    init(_ notice: HostEventNotice, sourceApplication: SourceApplicationTarget? = nil) {
+        payload = .hook(notice.removingProcessAncestors())
+        self.sourceApplication = sourceApplication
+    }
+    init(_ observation: CodexQuestionObservation) {
+        payload = .developmentObservation(observation)
+        sourceApplication = nil
+    }
 
     var notice: HostEventNotice? {
         guard case .hook(let notice) = payload else { return nil }
@@ -83,7 +90,8 @@ fileprivate final class EventNoticeContent: Sendable, Equatable {
     }
 
     static func == (lhs: EventNoticeContent, rhs: EventNoticeContent) -> Bool {
-        lhs === rhs || lhs.payload == rhs.payload
+        lhs === rhs
+            || (lhs.payload == rhs.payload && lhs.sourceApplication == rhs.sourceApplication)
     }
 }
 
@@ -99,6 +107,7 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
     public var provenance: EventNoticeProvenance? { content?.provenance }
     public var host: HostID? { content?.host }
     public var reason: HostEventNoticeReason? { content?.reason }
+    public var sourceApplication: SourceApplicationTarget? { content?.sourceApplication }
     public let status: EventNoticeRecordStatus
     public let isExpired: Bool
     public let version: UInt64
@@ -123,11 +132,13 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
         isExpired: Bool,
         version: UInt64 = 1,
         isActionable: Bool = true,
-        kind: EventNoticeKind = .transient
+        kind: EventNoticeKind = .transient,
+        sourceApplication: SourceApplicationTarget? = nil
     ) {
         self.init(
             id: id, event: event, occurredAt: occurredAt,
-            content: notice.map { EventNoticeContent($0) }, status: status,
+            content: notice.map { EventNoticeContent($0, sourceApplication: sourceApplication) },
+            status: status,
             isExpired: isExpired, version: version, isActionable: isActionable, kind: kind)
     }
 
@@ -155,6 +166,7 @@ public struct EventNoticeModelSnapshot: Sendable, Equatable {
     public let pendingCount: Int
     public let pauseReasons: EventNoticePauseReason
     public let remainingTime: TimeInterval?
+    public let readingTime: EventNoticeReadingTime?
     public let isExpanded: Bool
     public let isDetail: Bool
     public let totalCount: Int
@@ -175,7 +187,8 @@ public struct EventNoticeModelSnapshot: Sendable, Equatable {
         droppedCount: Int,
         receiverEpoch: UUID,
         isDetail: Bool = false,
-        totalCount: Int = 0
+        totalCount: Int = 0,
+        readingTime: EventNoticeReadingTime? = nil
     ) {
         self.phase = phase
         self.current = current
@@ -183,6 +196,7 @@ public struct EventNoticeModelSnapshot: Sendable, Equatable {
         self.pendingCount = pendingCount
         self.pauseReasons = pauseReasons
         self.remainingTime = remainingTime
+        self.readingTime = readingTime
         self.isExpanded = isExpanded
         self.isDetail = isDetail
         self.totalCount = totalCount
@@ -447,6 +461,8 @@ public final class EventNoticeModel: ObservableObject {
 
     private let now: @MainActor () -> TimeInterval
     private let scheduler: EventNoticeScheduler
+    private let resolveSourceApplication:
+        @MainActor ([HostProcessIdentity], EventNoticeAction) -> SourceApplicationTarget?
     /// Empty in production. Only adapters with real submission-order evidence may opt in.
     private let verifiedSubmissionSurfaces: Set<HostSurfaceID>
     private var epochStartedAt: TimeInterval
@@ -481,11 +497,15 @@ public final class EventNoticeModel: ObservableObject {
         receiverEpoch: UUID,
         now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         scheduler: EventNoticeScheduler = .live,
-        verifiedSubmissionSurfaces: Set<HostSurfaceID> = []
+        verifiedSubmissionSurfaces: Set<HostSurfaceID> = [],
+        resolveSourceApplication:
+            @escaping @MainActor ([HostProcessIdentity], EventNoticeAction) ->
+            SourceApplicationTarget? = { _, _ in nil }
     ) {
         self.receiverEpoch = receiverEpoch
         self.now = now
         self.scheduler = scheduler
+        self.resolveSourceApplication = resolveSourceApplication
         self.verifiedSubmissionSurfaces = verifiedSubmissionSurfaces
         epochStartedAt = now()
         snapshot = EventNoticeModelSnapshot(
@@ -773,6 +793,10 @@ public final class EventNoticeModel: ObservableObject {
         actionableEntry(action)?.notice
     }
 
+    public func sourceApplication(for action: EventNoticeAction) -> SourceApplicationTarget? {
+        actionableEntry(action)?.content?.sourceApplication
+    }
+
     public func protect(_ action: EventNoticeAction?) {
         protectedAction = action.flatMap { isCurrent($0) ? $0 : nil }
     }
@@ -942,9 +966,15 @@ public final class EventNoticeModel: ObservableObject {
         _ notice: HostEventNotice, kind: EventNoticeKind, identity: Identity?,
         id: UUID? = nil, version: UInt64 = 1
     ) -> Entry {
-        Entry(
-            id: id ?? notice.id, version: version, event: notice.event, kind: kind,
-            expiresAt: now() + Self.retentionDuration, content: EventNoticeContent(notice),
+        let action = EventNoticeAction(
+            id: id ?? notice.id, version: version, epoch: notice.receiverEpoch,
+            installationID: notice.installationID)
+        let target = notice.processAncestors.flatMap { resolveSourceApplication($0, action) }
+        return Entry(
+            id: action.id, version: version, event: notice.event, kind: kind,
+            expiresAt: now() + Self.retentionDuration,
+            content: EventNoticeContent(
+                notice, sourceApplication: target?.action == action ? target : nil),
             identity: identity)
     }
 
@@ -1071,13 +1101,20 @@ public final class EventNoticeModel: ObservableObject {
                 pendingRefreshCount += 1
             }
         }
+        let sampledUptime = now()
+        let remaining = currentDeadline.map { max(0, $0 - sampledUptime) } ?? pausedRemaining
+        let readingTime = (remaining ?? (phase == .entering ? Self.displayDuration : nil)).map {
+            EventNoticeReadingTime(
+                sampledUptime: sampledUptime, remaining: $0,
+                isPaused: !pauseReasons.isEmpty || phase != .visible, budget: Self.displayDuration)
+        }
         let updated = EventNoticeModelSnapshot(
             phase: phase, current: currentEntry.map(record),
             attentionReminders: (isExpanded ? frozen : Array(entries.reversed())).map(record),
             pendingCount: pendingRefreshCount, pauseReasons: pauseReasons,
-            remainingTime: currentDeadline.map { max(0, $0 - now()) } ?? pausedRemaining,
+            remainingTime: remaining,
             isExpanded: isExpanded, droppedCount: droppedCount, receiverEpoch: receiverEpoch,
-            isDetail: isDetail, totalCount: entries.count)
+            isDetail: isDetail, totalCount: entries.count, readingTime: readingTime)
         if snapshot != updated { snapshot = updated }
         if owesImmediateBadge {
             badgeRevision &+= 1

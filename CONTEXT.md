@@ -110,6 +110,18 @@ _Avoid_: 自动绑定最新内容、按项目名合并
 “查看会话”成功；默认提供安全来源详情和复制有效会话 ID。
 _Avoid_: 猜 URL、执行任意命令、把打开宿主 app 当作已进入会话
 
+**来源应用（Source Application）**:
+承载一次事件来源、且能由操作系统进程身份确认的可激活应用。打开来源应用只表示切换到该应用，不表示定位到具体会话或处理了提醒。
+_Avoid_: 由宿主名猜测 App、精确会话返回
+
+**阅读时间（Notice Reading Time）**:
+胶囊供用户阅读的可暂停展示预算。悬停、聚焦或展开暂停其消耗，不改变提醒保留期限。
+_Avoid_: 提醒寿命、任务超时
+
+**提醒保留期限（Attention Retention Period）**:
+每个提醒版本允许保留来源信息的最长时间。阅读或打开来源应用不延长该期限。
+_Avoid_: 阅读倒计时、任务完成时间
+
 **本地活动摘要（Local Activity Summary）**:
 由 `LocalActivitySummaryStore` 唯一持有的本地七日事实：只记录已确认 installation 的、能够映射到
 公共 `Event` 的宿主回调，按发生时的本地 Gregorian 日期入桶，并以 `HostID × Event` 饱和计数保存。

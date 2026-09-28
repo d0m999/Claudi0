@@ -43,7 +43,8 @@ func runCodexDevelopmentNoticeSuites() {
                 let l10n = ClaudioL10n(language: language)
                 expect(
                     EventNoticeProjection.primaryLine(for: record, language: language)
-                        == "Codex · \(l10n.text(.eventNoticeQuestionIntent))",
+                        == (language == .english ? "Codex " : "Codex")
+                            + l10n.text(.eventNoticeDemandQuestionIntent),
                     "开发观察标题必须表达即将提问")
                 expect(
                     EventNoticeProjection.secondaryLine(for: record, language: language)

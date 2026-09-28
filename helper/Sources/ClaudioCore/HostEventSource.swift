@@ -528,6 +528,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
     public let reason: HostEventNoticeReason?
     /// Hook-local monotonic observation, never a host transaction timestamp.
     public let observedUptime: TimeInterval?
+    public let processAncestors: [HostProcessIdentity]?
 
     public init(
         schema: Int = HostEventNotice.currentSchema,
@@ -542,7 +543,8 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         source: HostEventSource? = nil,
         sourceCompleteness: HostEventSourceCompleteness? = nil,
         reason: HostEventNoticeReason? = nil,
-        observedUptime: TimeInterval? = nil
+        observedUptime: TimeInterval? = nil,
+        processAncestors: [HostProcessIdentity]? = nil
     ) {
         self.schema = schema
         self.id = id
@@ -557,6 +559,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         self.sourceCompleteness = sourceCompleteness ?? source?.completeness ?? .unknown
         self.reason = reason
         self.observedUptime = observedUptime.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+        self.processAncestors = processAncestors
     }
 
     public init(from decoder: any Decoder) throws {
@@ -577,6 +580,17 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
             HostEventNoticeReason.init(rawValue:))
         let observation = try? values.decode(TimeInterval.self, forKey: .observedUptime)
         observedUptime = observation.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+        // Optional navigation evidence must never suppress an otherwise valid event.
+        let ancestors = try? values.decode([HostProcessIdentity].self, forKey: .processAncestors)
+        processAncestors = ancestors.flatMap { HostProcessAncestry.isValid($0) ? $0 : nil }
+    }
+
+    public func removingProcessAncestors() -> Self {
+        Self(
+            schema: schema, id: id, receiverEpoch: receiverEpoch, surface: surface,
+            bindingID: bindingID, installationID: installationID, nativeEvent: nativeEvent,
+            event: event, occurredAt: occurredAt, source: source,
+            sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime)
     }
 
     public var host: HostID? { HostID(rawValue: surface.rawValue) }
@@ -617,5 +631,6 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         case sourceCompleteness = "source_completeness"
         case reason
         case observedUptime = "observed_uptime"
+        case processAncestors = "process_ancestors"
     }
 }

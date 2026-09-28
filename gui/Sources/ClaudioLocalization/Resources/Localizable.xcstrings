@@ -1811,38 +1811,98 @@
     },
     "event.preview.unsafe-file": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The mapped audio path is unsafe or is not a regular file" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "映射音频路径不安全或目标不是正规文件" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The mapped audio path is unsafe or is not a regular file"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映射音频路径不安全或目标不是正规文件"
+          }
+        }
       }
     },
     "event.preview.unreadable-file": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The mapped file cannot be read" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "映射文件无法读取" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The mapped file cannot be read"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "映射文件无法读取"
+          }
+        }
       }
     },
     "event.preview.asset-changed": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The preview sound changed or disappeared. Sound pack status is refreshing." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "试听声音已变化或消失，正在刷新声音包状态。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The preview sound changed or disappeared. Sound pack status is refreshing."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试听声音已变化或消失，正在刷新声音包状态。"
+          }
+        }
       }
     },
     "event.preview.playback-failed": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Playback could not start. Check the sound on the Sounds page in Settings." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法开始播放，请在设置的「声音」页检查该声音文件。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback could not start. Check the sound on the Sounds page in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法开始播放，请在设置的「声音」页检查该声音文件。"
+          }
+        }
       }
     },
     "event.preview.adjust-group-volume": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Adjust selected group volume" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "调整所选组音量" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust selected group volume"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调整所选组音量"
+          }
+        }
       }
     },
     "event.preview.repair-sound": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Inspect in Settings > Sounds…" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "前往设置的「声音」页检查…" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect in Settings > Sounds…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往设置的「声音」页检查…"
+          }
+        }
       }
     },
     "event-notice.recent": {
@@ -2010,13 +2070,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "View source"
+            "value": "View details"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看来源"
+            "value": "查看详情"
           }
         }
       }
@@ -9433,20 +9493,50 @@
     },
     "event-settings.conflict-readback": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Current configuration was read back. The original write remains uncertain." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已重新读取当前配置；原写入结果仍不确定。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current configuration was read back. The original write remains uncertain."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已重新读取当前配置；原写入结果仍不确定。"
+          }
+        }
       }
     },
     "event-settings.retry-target-changed": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The original target changed after reloading. No retry was sent. Review the current setting and choose again." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "重新载入后原操作目标已变化。没有重试写入；请核对当前设置后重新选择。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original target changed after reloading. No retry was sent. Review the current setting and choose again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新载入后原操作目标已变化。没有重试写入；请核对当前设置后重新选择。"
+          }
+        }
       }
     },
     "event-settings.retry-readback-unavailable": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The current configuration could not be verified. No retry was sent. Repair the configuration, then reload before trying again." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法核实当前配置。没有重试写入；请修复配置并重新载入后再操作。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current configuration could not be verified. No retry was sent. Repair the configuration, then reload before trying again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法核实当前配置。没有重试写入；请修复配置并重新载入后再操作。"
+          }
+        }
       }
     },
     "event-settings.shortcut-scope.unavailable": {
@@ -13726,13 +13816,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for permission"
+            "value": "waiting for approval"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "等待授权"
+            "value": "等你授权"
           }
         }
       }
@@ -13774,13 +13864,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Needs input"
+            "value": "waiting for input"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "需要输入"
+            "value": "等你输入"
           }
         }
       }
@@ -13790,13 +13880,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Needs review"
+            "value": "needs your attention"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "待查看"
+            "value": "需要你查看"
           }
         }
       }
@@ -13854,13 +13944,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This reminder has changed. Refresh the list to act on the new version."
+            "value": "Updated. Refresh to continue."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此提醒已有更新，请刷新列表后操作新版本。"
+            "value": "已更新，请刷新"
           }
         }
       }
@@ -14581,6 +14671,422 @@
           "stringUnit": {
             "state": "translated",
             "value": "配置超过 64 KiB 上限，请减少工作区规则或过大的扩展字段。"
+          }
+        }
+      }
+    },
+    "event-notice.demand.interrupted": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行中断"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run interrupted"
+          }
+        }
+      }
+    },
+    "event-notice.demand.stop": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本轮已结束"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "turn finished"
+          }
+        }
+      }
+    },
+    "event-notice.demand.subagent-stop": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "子任务已结束"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "subagent finished"
+          }
+        }
+      }
+    },
+    "event-notice.demand.question-intent": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即将向你提问"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "about to ask you"
+          }
+        }
+      }
+    },
+    "event-notice.demand.task-start": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始执行"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "run started"
+          }
+        }
+      }
+    },
+    "event-notice.act.permission": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去授权"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review request"
+          }
+        }
+      }
+    },
+    "event-notice.act.needs-input": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去输入"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provide input"
+          }
+        }
+      }
+    },
+    "event-notice.act.review": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去查看"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect"
+          }
+        }
+      }
+    },
+    "event-notice.open-source": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开来源"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open source app"
+          }
+        }
+      }
+    },
+    "event-notice.source-app": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来源应用"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source application"
+          }
+        }
+      }
+    },
+    "event-notice.open-hint": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开%@；提醒会保留"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open %@; keep this reminder"
+          }
+        }
+      }
+    },
+    "event-notice.open-started": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在打开来源应用…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening source app…"
+          }
+        }
+      }
+    },
+    "event-notice.open-failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能打开来源应用。你可以重试或复制会话 ID。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the source app. Try again or copy the session ID."
+          }
+        }
+      }
+    },
+    "event-notice.open-unavailable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确认来源应用，请查看已知信息。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source app could not be verified. Review the available details."
+          }
+        }
+      }
+    },
+    "event-notice.open-timeout": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开来源应用超时，请重试。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the source app timed out. Try again."
+          }
+        }
+      }
+    },
+    "event-notice.age.less-minute": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<1分"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<1m"
+          }
+        }
+      }
+    },
+    "event-notice.age.minutes": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldm"
+          }
+        }
+      }
+    },
+    "event-notice.age.hours": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld时"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldh"
+          }
+        }
+      }
+    },
+    "event-notice.age.days": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldd"
+          }
+        }
+      }
+    },
+    "event-notice.relative.just-now": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刚刚"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "just now"
+          }
+        }
+      }
+    },
+    "event-notice.relative.minutes": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 分钟前"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minutes ago"
+          }
+        }
+      }
+    },
+    "event-notice.relative.hours": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 小时前"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld hours ago"
+          }
+        }
+      }
+    },
+    "event-notice.relative.days": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 天前"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
+          }
+        }
+      }
+    },
+    "event-notice.relative.minute": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minute ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 分钟前"
+          }
+        }
+      }
+    },
+    "event-notice.relative.hour": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld hour ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 小时前"
+          }
+        }
+      }
+    },
+    "event-notice.relative.day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld day ago"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 天前"
           }
         }
       }

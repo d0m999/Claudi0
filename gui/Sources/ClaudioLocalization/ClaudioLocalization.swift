@@ -288,6 +288,32 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventPreviewPlaybackFailed: Self = "event.preview.playback-failed"
     public static let eventPreviewAdjustGroupVolume: Self = "event.preview.adjust-group-volume"
     public static let eventPreviewRepairSound: Self = "event.preview.repair-sound"
+    public static let eventNoticeDemandInterrupted: Self = "event-notice.demand.interrupted"
+    public static let eventNoticeDemandStop: Self = "event-notice.demand.stop"
+    public static let eventNoticeDemandSubagentStop: Self = "event-notice.demand.subagent-stop"
+    public static let eventNoticeDemandQuestionIntent: Self = "event-notice.demand.question-intent"
+    public static let eventNoticeDemandTaskStart: Self = "event-notice.demand.task-start"
+    public static let eventNoticeActPermission: Self = "event-notice.act.permission"
+    public static let eventNoticeActNeedsInput: Self = "event-notice.act.needs-input"
+    public static let eventNoticeActReview: Self = "event-notice.act.review"
+    public static let eventNoticeOpenSource: Self = "event-notice.open-source"
+    public static let eventNoticeSourceApp: Self = "event-notice.source-app"
+    public static let eventNoticeOpenHint: Self = "event-notice.open-hint"
+    public static let eventNoticeOpenStarted: Self = "event-notice.open-started"
+    public static let eventNoticeOpenFailed: Self = "event-notice.open-failed"
+    public static let eventNoticeOpenUnavailable: Self = "event-notice.open-unavailable"
+    public static let eventNoticeOpenTimeout: Self = "event-notice.open-timeout"
+    public static let eventNoticeAgeLessMinute: Self = "event-notice.age.less-minute"
+    public static let eventNoticeAgeMinutes: Self = "event-notice.age.minutes"
+    public static let eventNoticeAgeHours: Self = "event-notice.age.hours"
+    public static let eventNoticeAgeDays: Self = "event-notice.age.days"
+    public static let eventNoticeRelativeJustNow: Self = "event-notice.relative.just-now"
+    public static let eventNoticeRelativeMinutes: Self = "event-notice.relative.minutes"
+    public static let eventNoticeRelativeHours: Self = "event-notice.relative.hours"
+    public static let eventNoticeRelativeDays: Self = "event-notice.relative.days"
+    public static let eventNoticeRelativeMinute: Self = "event-notice.relative.minute"
+    public static let eventNoticeRelativeHour: Self = "event-notice.relative.hour"
+    public static let eventNoticeRelativeDay: Self = "event-notice.relative.day"
     public static let eventNoticeRecent: Self = "event-notice.recent"
     public static let eventNoticeOtherCount: Self = "event-notice.other-count"
     public static let eventNoticeUnknownSource: Self = "event-notice.unknown-source"
@@ -1628,6 +1654,32 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventPreviewUnsafe, .eventPreviewUnsafeFile, .eventPreviewUnreadableFile,
         .eventPreviewAssetChanged, .eventPreviewPlaybackFailed,
         .eventPreviewAdjustGroupVolume, .eventPreviewRepairSound,
+        .eventNoticeDemandInterrupted,
+        .eventNoticeDemandStop,
+        .eventNoticeDemandSubagentStop,
+        .eventNoticeDemandQuestionIntent,
+        .eventNoticeDemandTaskStart,
+        .eventNoticeActPermission,
+        .eventNoticeActNeedsInput,
+        .eventNoticeActReview,
+        .eventNoticeOpenSource,
+        .eventNoticeSourceApp,
+        .eventNoticeOpenHint,
+        .eventNoticeOpenStarted,
+        .eventNoticeOpenFailed,
+        .eventNoticeOpenUnavailable,
+        .eventNoticeOpenTimeout,
+        .eventNoticeAgeLessMinute,
+        .eventNoticeAgeMinutes,
+        .eventNoticeAgeHours,
+        .eventNoticeAgeDays,
+        .eventNoticeRelativeJustNow,
+        .eventNoticeRelativeMinutes,
+        .eventNoticeRelativeHours,
+        .eventNoticeRelativeDays,
+        .eventNoticeRelativeMinute,
+        .eventNoticeRelativeHour,
+        .eventNoticeRelativeDay,
         .eventNoticeRecent, .eventNoticeOtherCount,
         .eventNoticeUnknownSource, .eventNoticeUnknownProject, .eventNoticeUnknownSession,
         .eventNoticeSessionID, .eventNoticeExpired, .eventNoticeParentSession,
