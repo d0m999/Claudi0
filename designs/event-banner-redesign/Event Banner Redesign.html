@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>claudi0 · 事件横幅重设计</title>
+<style>
+  /* ============ 页面基调（浏览器 chrome，非产品） ============ */
+  :root {
+    --page-font: ui-rounded, -apple-system, "SF Pro Rounded", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--page-font);
+    background: var(--backdrop1);
+    color: var(--page-text);
+    min-height: 100vh;
+  }
+
+  /* ============ 产品主题 token（糖果盘 · DESIGN.md） ============ */
+  [data-theme="light"] {
+    --backdrop1: #E9E2D6; --backdrop2: #D8CBB8;
+    --page-text: #2B2620;
+    --panel-a: #FFFDFA; --panel-b: #FBF7F1;
+    --surface: #FFFFFF;
+    --text: #2B2620; --text-2: #75685A; --muted: #AB9E8E;
+    --hairline: rgba(60,44,32,.08); --hairline-strong: rgba(60,44,32,.14);
+    --clay: #C4633C;
+    --ev-blue: #0A72D0; --ev-green: #288B43; --ev-amber: #AC6900;
+    --ev-clay: #C4633C; --ev-indigo: #5B59D6;
+    --shadow: 0 1px 2px rgba(40,30,20,.10), 0 12px 40px rgba(40,30,20,.16);
+    --page-chip: rgba(255,255,255,.72);
+  }
+  [data-theme="dark"] {
+    --backdrop1: #121110; --backdrop2: #1C1916;
+    --page-text: #F4EBDD;
+    --panel-a: #211D19; --panel-b: #171512;
+    --surface: #1C1A17;
+    --text: #F4EBDD; --text-2: #B0AEA5; --muted: #6F665B;
+    --hairline: rgba(245,235,221,.10); --hairline-strong: rgba(245,235,221,.16);
+    --clay: #D97757;
+    --ev-blue: #0A84FF; --ev-green: #34C759; --ev-amber: #FF9F0A;
+    --ev-clay: #D97757; --ev-indigo: #5E5CE6;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 48px rgba(0,0,0,.55);
+    --page-chip: rgba(255,255,255,.06);
+  }
+
+  /* ============ 顶栏 ============ */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 24px;
+    padding: 14px 32px;
+    background: color-mix(in srgb, var(--backdrop1) 82%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--hairline-strong);
+  }
+  .brand { font-size: 14px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
+  .brand em { font-style: normal; color: var(--text-2); font-weight: 500; }
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    font: 600 13px/1 var(--page-font); color: var(--text-2);
+    background: transparent; border: none; border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; transition: all .15s;
+  }
+  .tab:hover { color: var(--text); background: var(--page-chip); }
+  .tab.active { color: #fff; background: var(--clay); }
+  .topbar .spacer { flex: 1; }
+  .theme-btn {
+    font: 600 12px/1 var(--page-font); color: var(--text-2);
+    background: var(--page-chip); border: 1px solid var(--hairline-strong);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  }
+  .theme-btn:hover { color: var(--text); }
+
+  main { max-width: 1660px; margin: 0 auto; padding: 40px 32px 120px; }
+
+  /* ============ 第一性原理规范区 ============ */
+  .spec { margin-bottom: 56px; }
+  .spec h1 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+  .spec .lede { font-size: 14px; color: var(--text-2); line-height: 1.75; max-width: 780px; margin-bottom: 28px; }
+  .spec h2 { font-size: 15px; font-weight: 700; margin: 36px 0 14px; color: var(--text); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+  .p-card {
+    background: color-mix(in srgb, var(--panel-b) 88%, transparent);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 13px; padding: 16px 18px;
+  }
+  .p-card .num {
+    font: 700 11px/1 var(--mono); color: var(--clay);
+    display: block; margin-bottom: 8px; letter-spacing: .08em;
+  }
+  .p-card b { font-size: 13.5px; display: block; margin-bottom: 4px; }
+  .p-card p { font-size: 12.5px; color: var(--text-2); line-height: 1.7; }
+  .p-card p code { font: 600 11px var(--mono); color: var(--text); background: var(--page-chip); padding: 1px 5px; border-radius: 4px; }
+
+  .formula {
+    font: 600 14px/1.6 var(--page-font);
+    background: var(--page-chip); border: 1px solid var(--hairline-strong);
+    border-radius: 13px; padding: 14px 18px; margin-top: 14px;
+  }
+  .formula .sep { color: var(--muted); font-weight: 400; margin: 0 6px; }
+  .formula small { display: block; font-weight: 400; font-size: 12px; color: var(--text-2); margin-top: 6px; }
+
+  table.copy { border-collapse: collapse; width: 100%; max-width: 900px; font-size: 12.5px; }
+  table.copy th, table.copy td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--hairline); }
+  table.copy th { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .05em; }
+  table.copy td.en { color: var(--text-2); font-family: var(--page-font); }
+  table.copy td.zs { font-weight: 600; }
+
+  /* ============ 变体区 ============ */
+  .variant { display: none; }
+  .variant.active { display: block; }
+  .v-head { margin: 8px 0 22px; max-width: 860px; }
+  .v-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .v-head h2 .tag {
+    font: 700 11px/1 var(--mono); color: var(--clay); vertical-align: 3px; margin-right: 10px; letter-spacing: .08em;
+  }
+  .v-head p { font-size: 13px; color: var(--text-2); line-height: 1.75; margin-top: 6px; }
+
+  .states { display: flex; gap: 48px; align-items: flex-start; flex-wrap: wrap; }
+  .state-col { display: flex; flex-direction: column; gap: 10px; }
+  .state-label {
+    font: 600 11px/1 var(--mono); color: var(--muted); letter-spacing: .1em;
+  }
+
+  /* 桌面模拟台 */
+  .desk {
+    background:
+      radial-gradient(120% 90% at 20% 0%, var(--backdrop2), transparent 60%),
+      var(--backdrop1);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 16px;
+    padding: 34px 30px;
+  }
+
+  /* ============ 横幅通用 ============ */
+  .banner {
+    width: 440px;
+    background: linear-gradient(180deg, var(--panel-a), var(--panel-b));
+    border: 1px solid var(--hairline-strong);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    color: var(--text);
+    font-family: var(--page-font);
+    overflow: hidden;
+    position: relative;
+  }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; flex: none;
+    background: transparent; border: none; border-radius: 8px;
+    color: var(--muted); cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--page-chip); color: var(--text); }
+  .icon-btn svg { width: 11px; height: 11px; }
+  .glyph {
+    width: 26px; height: 26px; flex: none; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .glyph svg { width: 14px; height: 14px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  button.chip {
+    flex: none; border: none; cursor: pointer;
+    color: #fff; font: 600 11.5px/1 var(--page-font);
+    padding: 7px 13px; border-radius: 999px;
+  }
+  button.chip:hover { filter: brightness(1.08); }
+
+  /* ---------- 变体 A：行动优先 ---------- */
+  .cap-a { display: flex; align-items: center; gap: 11px; padding: 15px 14px 15px 0; }
+  .cap-a .spine { width: 4px; align-self: stretch; flex: none; }
+  .cap-a.is-info .spine { opacity: .35; }
+  .cap-a .cap-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .cap-a .cap-primary { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+  .cap-a .cap-primary .host { color: var(--text-2); font-weight: 600; margin-right: 7px; }
+  .cap-a .cap-sub { font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
+  .cap-a.is-info .cap-primary { font-weight: 500; }
+  .cap-a.is-info .cap-sub { color: var(--muted); }
+
+  /* ---------- 变体 B：信号仪表 ---------- */
+  .cap-b { display: flex; align-items: center; gap: 12px; padding: 13px 14px; }
+  .cap-b .led { width: 9px; height: 9px; flex: none; border-radius: 50%; position: relative; }
+  .cap-b.is-atn .led::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 50%;
+    border: 1.5px solid var(--led-c); opacity: .4;
+    animation: pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse { 0% { transform: scale(.7); opacity: .5; } 70% { transform: scale(1.25); opacity: 0; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .cap-b.is-atn .led::after { animation: none; } }
+  .cap-b .cap-text { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .cap-b .cap-primary { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .cap-b .cap-primary .host { color: var(--text-2); margin-right: 6px; }
+  .cap-b .cap-sub { font: 500 11px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cap-b .time { font: 500 11px var(--mono); color: var(--text-2); flex: none; }
+
+  /* ---------- 变体 C：静默卡片 ---------- */
+  .cap-c { display: flex; align-items: center; gap: 11px; padding: 13px 12px 13px 16px; }
+  .cap-c .cap-primary { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cap-c .cap-primary .dim { color: var(--muted); font-weight: 400; }
+  .cap-c .icon-btn { opacity: 0; transition: opacity .15s; }
+  .cap-c:hover .icon-btn { opacity: 1; }
+
+  /* ---------- 列表（三变体共享结构，皮肤微调） ---------- */
+  .list-body { padding: 14px 14px 12px; }
+  .list-head { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; }
+  .list-head .title { font-size: 13px; font-weight: 700; }
+  .list-head .count {
+    font: 600 11px/1 var(--mono); color: var(--text-2);
+    background: var(--page-chip); border-radius: 999px; padding: 4px 8px;
+  }
+  .list-head .refresh {
+    margin-left: auto; border: none; background: transparent; cursor: pointer;
+    font: 600 11.5px var(--page-font); color: var(--clay); padding: 4px 6px; border-radius: 6px;
+  }
+  .list-head .refresh:hover { background: color-mix(in srgb, var(--clay) 12%, transparent); }
+  .rows { border-top: 1px solid var(--hairline); }
+  .row {
+    display: flex; align-items: center; gap: 11px;
+    min-height: 54px; padding: 8px 2px;
+    border-bottom: 1px solid var(--hairline);
+    cursor: pointer;
+  }
+  .row:hover { background: color-mix(in srgb, var(--page-chip) 60%, transparent); }
+  .row .cap-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .row .cap-primary { font-size: 12.5px; font-weight: 600; line-height: 1.35; }
+  .row .cap-primary .host { color: var(--text-2); margin-right: 6px; }
+  .row .cap-sub { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+  .row .row-time { font: 500 10.5px var(--mono); color: var(--muted); flex: none; }
+  .row .icon-btn { color: var(--muted); }
+  .v-c .rows .row:hover .icon-btn { opacity: 1; }
+  .v-c .rows .icon-btn { opacity: 0; transition: opacity .15s; }
+  .list-foot { padding: 10px 2px 0; font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- 详情 ---------- */
+  .detail-body { padding: 14px 16px 16px; }
+  .detail-head { display: flex; align-items: center; gap: 8px; padding-bottom: 12px; }
+  .detail-head .back {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: none; background: transparent;
+    border-radius: 8px; color: var(--text-2); cursor: pointer;
+  }
+  .detail-head .back:hover { background: var(--page-chip); color: var(--text); }
+  .detail-head .title { font-size: 13.5px; font-weight: 700; }
+  .facts { border-top: 1px solid var(--hairline); }
+  .fact {
+    display: flex; align-items: baseline; gap: 16px;
+    padding: 9px 2px; border-bottom: 1px solid var(--hairline);
+  }
+  .fact .k { width: 64px; flex: none; font-size: 11px; color: var(--muted); }
+  .fact .v { flex: 1; font-size: 12.5px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+  .fact .v.mono { font: 500 11.5px var(--mono); }
+  .fact .v .rel { color: var(--text-2); font-weight: 400; }
+  .fact .mini {
+    border: 1px solid var(--hairline-strong); background: transparent; cursor: pointer;
+    font: 600 10.5px var(--page-font); color: var(--text-2);
+    border-radius: 6px; padding: 3px 8px; flex: none;
+  }
+  .fact .mini:hover { color: var(--text); background: var(--page-chip); }
+  .detail-actions { display: flex; align-items: center; gap: 10px; padding-top: 14px; }
+  .detail-actions .primary {
+    border: none; cursor: pointer; color: #fff;
+    font: 600 12.5px/1 var(--page-font);
+    padding: 9px 18px; border-radius: 999px;
+  }
+  .detail-actions .primary:hover { filter: brightness(1.08); }
+  .detail-actions .ghost {
+    border: 1px solid var(--hairline-strong); background: transparent; cursor: pointer;
+    font: 600 12px/1 var(--page-font); color: var(--text-2);
+    padding: 8px 14px; border-radius: 999px;
+  }
+  .detail-actions .ghost:hover { color: var(--text); background: var(--page-chip); }
+  .detail-actions .remove {
+    margin-left: auto; border: none; background: transparent; cursor: pointer;
+    font: 500 11.5px var(--page-font); color: var(--muted); padding: 6px;
+    border-radius: 6px;
+  }
+  .detail-actions .remove:hover { color: var(--text-2); background: var(--page-chip); }
+
+  /* 变体间皮肤差异 */
+  .v-a .row .chev { color: var(--muted); flex: none; }
+  .v-b .row { padding-right: 2px; }
+  .v-b .row .cap-sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .v-b .detail-body .title::after {
+    content: "· 14:32"; font: 500 11px var(--mono); color: var(--muted); margin-left: 8px; font-weight: 500;
+  }
+  .v-c .row .cap-primary { font-weight: 500; }
+
+  /* ============ 控制面板 ============ */
+  .controls {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    width: 264px;
+    background: color-mix(in srgb, var(--panel-b) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 13px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+  .controls h3 { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .08em; margin-bottom: 10px; }
+  .controls .ev-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ev-chip {
+    font: 600 11px/1 var(--page-font); cursor: pointer;
+    color: var(--text-2); background: var(--page-chip);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 999px; padding: 6px 11px;
+  }
+  .ev-chip:hover { color: var(--text); }
+  .ev-chip.active { color: #fff; background: var(--clay); border-color: transparent; }
+  .controls .fold {
+    position: absolute; top: -14px; right: 12px;
+    font: 600 10.5px/1 var(--mono); color: var(--text-2); cursor: pointer;
+    background: var(--panel-b); border: 1px solid var(--hairline-strong);
+    border-radius: 999px; padding: 5px 10px;
+  }
+  .controls.collapsed .ev-chips, .controls.collapsed h3 { display: none; }
+
+  .footnote { margin-top: 48px; font-size: 12px; color: var(--muted); line-height: 1.8; max-width: 860px; }
+  .footnote code { font: 600 11px var(--mono); color: var(--text-2); }
+</style>
+</head>
+<body data-theme="light">
+
+<header class="topbar">
+  <div class="brand">claudi0 <em>· 事件横幅重设计</em></div>
+  <nav class="tabs">
+    <button class="tab active" data-v="a">A · 行动优先</button>
+    <button class="tab" data-v="b">B · 信号仪表</button>
+    <button class="tab" data-v="c">C · 静默卡片</button>
+  </nav>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn">切换暗色</button>
+</header>
+
+<main>
+
+  <!-- ============ 第一性原理规范 ============ -->
+  <section class="spec">
+    <h1>横幅只为一瞥存在</h1>
+    <p class="lede">
+      横幅存在的唯一理由：用户没盯着终端时，把「声音事件」转译成一瞥可得的视觉事实，让人决定「要不要现在切过去」。
+      它不是通知中心，不是日志，不承载任何「以后再看」的信息——那些属于列表与详情。
+      由此推导内容与风格；下方三个变体是同一套内容规范的三种视觉表达。
+    </p>
+
+    <h2>现状问题（对照 <code>EventNoticeProjection</code> 与现行视图）</h2>
+    <div class="grid-2">
+      <div class="p-card">
+        <span class="num">问题 1</span>
+        <b>信息优先级倒置</b>
+        <p>主行是「宿主 · 事件类别」——先回答「谁在叫」，再回答「要不要动」。但声音已经承载了宿主身份，视觉是冗余通道，应优先回答行动问题。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">问题 2</span>
+        <b>系统语言，不是用户语言</b>
+        <p>「待响应」「信息性」是事件分类学，不是人的诉求。人需要的是「等你授权」「本轮已结束」——动词短语，可直接转化为动作。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">问题 3</span>
+        <b>副行给了人读不懂的索引</b>
+        <p>8 位 hex 会话短 ID 对人几乎没有辨识度；项目名才是人脑里的索引。发生时间只在详情里，折叠态无法判断「这条还新鲜吗」。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">问题 4</span>
+        <b>紧急度梯度为零</b>
+        <p>阻塞类（授权 / 输入 / 中断）与信息类（本轮结束 / 子任务结束）在折叠态视觉权重几乎相同；「查看来源」按钮对所有事件一个说法，语义模糊。</p>
+      </div>
+    </div>
+
+    <h2>内容规范：从一瞥推导</h2>
+    <div class="grid-2">
+      <div class="p-card">
+        <span class="num">P1</span>
+        <b>先答「要我停下来吗」</b>
+        <p>主行 = 行动句。阻塞类用「等你 × ×」的未完成态；信息类用「已 × ×」的完成态。完成态整体降一级视觉权重——它不需要你做任何事。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">P2</span>
+        <b>宿主降为次要成分</b>
+        <p>宿主名保留但不再是主语重心，以次级色前置；多 agent 并行时它仍是必要信息，但决定「切不切」的是诉求，不是名字。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">P3</span>
+        <b>项目名 + 相对时间进副行</b>
+        <p>副行 = 「项目 · 相对时间」。会话短 ID 从一切一瞥界面移除，只保留在详情（那里有复制按钮，ID 才有用武之地）。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">P4</span>
+        <b>一态一主动作</b>
+        <p>阻塞类折叠态给一个事件色动词 chip（去授权 / 去输入 / 去查看）；信息类零按钮。详情页主按钮统一「打开来源」，复制与移除降为次级。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">P5</span>
+        <b>事件色只上图形与小面积</b>
+        <p>色即语义的纪律不变：事件色用于脊柱 / LED / 字形 tile / chip 等图形与小面积元素，正文对比度由 text / text-2 保证，全部过 <code>ContrastSuite</code> 现行断言口径。</p>
+      </div>
+      <div class="p-card">
+        <span class="num">P6</span>
+        <b>时间用相对，时刻用等宽</b>
+        <p>一瞥界面（折叠 / 列表）用「刚刚 / 3 分钟前」表达新鲜度；绝对时刻（14:32）只出现在详情，用等宽数字。</p>
+      </div>
+    </div>
+    <div class="formula">
+      主行<span class="sep">=</span>宿主<span class="sep">+</span>用户语言动词短语
+      <span class="sep">·</span>副行<span class="sep">=</span>项目名<span class="sep">+</span>相对时间
+      <span class="sep">·</span>会话短 ID<span class="sep">→</span>仅详情
+      <small>折叠态不出现的字段不是丢了，是被正确地降级到了列表与详情——每一瞥界面只保留决定「切不切」所需的最少字段。</small>
+    </div>
+
+    <h2>文案（zh-Hans / English 同占位）</h2>
+    <table class="copy">
+      <tr><th>事件</th><th>主行动词短语（zh-Hans）</th><th>English</th><th>类别</th><th>折叠态动作</th></tr>
+      <tr><td class="zs">permission</td><td class="zs">等你授权</td><td class="en">Waiting for your approval</td><td>待接手</td><td>去授权 / Review request</td></tr>
+      <tr><td class="zs">needsInput</td><td class="zs">等你输入</td><td class="en">Waiting for your input</td><td>待接手</td><td>去输入 / Provide input</td></tr>
+      <tr><td class="zs">review</td><td class="zs">等你审查</td><td class="en">Waiting for your review</td><td>待接手</td><td>去审查 / Review</td></tr>
+      <tr><td class="zs">interrupted</td><td class="zs">执行中断</td><td class="en">Run interrupted</td><td>待接手</td><td>去查看 / Inspect</td></tr>
+      <tr><td class="zs">stop（瞬时）</td><td class="zs">本轮已结束</td><td class="en">Turn finished</td><td>瞬时</td><td>无按钮</td></tr>
+      <tr><td class="zs">subagent_stop（瞬时）</td><td class="zs">子任务已结束</td><td class="en">Subagent finished</td><td>瞬时</td><td>无按钮</td></tr>
+      <tr><td class="zs">questionIntent（瞬时）</td><td class="zs">即将向你提问</td><td class="en">About to ask you</td><td>瞬时</td><td>无按钮</td></tr>
+      <tr><td class="zs">列表标题</td><td class="zs">需要你</td><td class="en">Needs you</td><td>—</td><td>沿用既有术语（ADR 0013）</td></tr>
+      <tr><td class="zs">详情主按钮</td><td class="zs">打开来源</td><td class="en">Open source app</td><td>—</td><td>替下「查看来源」</td></tr>
+    </table>
+  </section>
+
+  <!-- ============ 变体 A ============ -->
+  <section class="variant active v-a" id="variant-a">
+    <div class="v-head">
+      <h2><span class="tag">A</span>行动优先</h2>
+      <p>折叠态是一句完整的行动句：事件色脊柱标出紧急度，阻塞类右侧给一个动词 chip，信息类整体降一级且无按钮。
+         三个状态的信息密度梯度最平缓，适合「横幅经常出现、多数时候不重要」的使用现实。</p>
+    </div>
+    <div class="states">
+      <div class="state-col">
+        <span class="state-label">折叠胶囊</span>
+        <div class="desk"><div class="banner cap-slot" data-cap="a"></div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">待接手列表</span>
+        <div class="desk"><div class="banner list-body">
+          <div class="list-head">
+            <span class="title">需要你</span><span class="count">5</span>
+            <button class="refresh">2 条新 · 刷新</button>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你授权</span><span class="cap-sub">claudi0 · 刚刚</span></span>
+              <span class="row-time">14:32</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">api-gateway · 2 分钟前</span></span>
+              <span class="row-time">14:30</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="amber" data-g="pause"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>执行中断</span><span class="cap-sub">api-gateway · 5 分钟前</span></span>
+              <span class="row-time">14:27</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你审查</span><span class="cap-sub">docs-infra · 12 分钟前</span></span>
+              <span class="row-time">14:20</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">claudi0 · 18 分钟前</span></span>
+              <span class="row-time">14:14</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+          </div>
+          <div class="list-foot">最多保留 50 项 · 每项 30 分钟后过期，来源与时间先于内容被擦除。</div>
+        </div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">详情</span>
+        <div class="desk"><div class="banner detail-body">
+          <div class="detail-head">
+            <button class="back" aria-label="返回">‹</button>
+            <span class="title">Codex 等你授权</span>
+          </div>
+          <div class="facts">
+            <div class="fact"><span class="k">项目</span><span class="v">claudi0</span></div>
+            <div class="fact"><span class="k">会话</span><span class="v mono">a1b2c3d4-9f2e</span><button class="mini">复制</button></div>
+            <div class="fact"><span class="k">发生</span><span class="v">14:32 <span class="rel">· 3 分钟前</span></span></div>
+            <div class="fact"><span class="k">状态</span><span class="v">可操作 · 版本 2</span></div>
+          </div>
+          <div class="detail-actions">
+            <button class="primary" style="background:var(--ev-clay)">打开来源</button>
+            <button class="ghost">复制会话 ID</button>
+            <button class="remove">移除此提醒</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 变体 B ============ -->
+  <section class="variant v-b" id="variant-b">
+    <div class="v-head">
+      <h2><span class="tag">B</span>信号仪表</h2>
+      <p>把横幅当作一行仪表读数：LED 点承担紧急度（待接手带呼吸环），项目名与时间走等宽字体，右对齐时刻列贯穿列表。
+         信息密度最高、纵向最省，最贴「深夜音频硬件」的气质，适合多 agent 并行时的扫读。</p>
+    </div>
+    <div class="states">
+      <div class="state-col">
+        <span class="state-label">折叠胶囊</span>
+        <div class="desk"><div class="banner cap-slot" data-cap="b"></div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">待接手列表</span>
+        <div class="desk"><div class="banner list-body">
+          <div class="list-head">
+            <span class="title">需要你</span><span class="count">5</span>
+            <button class="refresh">2 条新 · 刷新</button>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你授权</span><span class="cap-sub">claudi0</span></span>
+              <span class="row-time">14:32</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">api-gateway</span></span>
+              <span class="row-time">14:30</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="amber" data-g="pause"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>执行中断</span><span class="cap-sub">api-gateway</span></span>
+              <span class="row-time">14:27</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你审查</span><span class="cap-sub">docs-infra</span></span>
+              <span class="row-time">14:20</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">claudi0</span></span>
+              <span class="row-time">14:14</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+          </div>
+          <div class="list-foot">最多保留 50 项 · 每项 30 分钟后过期，来源与时间先于内容被擦除。</div>
+        </div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">详情</span>
+        <div class="desk"><div class="banner detail-body">
+          <div class="detail-head">
+            <button class="back" aria-label="返回">‹</button>
+            <span class="title">Codex 等你授权</span>
+          </div>
+          <div class="facts">
+            <div class="fact"><span class="k">项目</span><span class="v mono">claudi0</span></div>
+            <div class="fact"><span class="k">会话</span><span class="v mono">a1b2c3d4-9f2e</span><button class="mini">复制</button></div>
+            <div class="fact"><span class="k">发生</span><span class="v mono">14:32 <span class="rel">· 3 分钟前</span></span></div>
+            <div class="fact"><span class="k">状态</span><span class="v">可操作 · 版本 2</span></div>
+          </div>
+          <div class="detail-actions">
+            <button class="primary" style="background:var(--ev-clay)">打开来源</button>
+            <button class="ghost">复制会话 ID</button>
+            <button class="remove">移除此提醒</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 变体 C ============ -->
+  <section class="variant v-c" id="variant-c">
+    <div class="v-head">
+      <h2><span class="tag">C</span>静默卡片</h2>
+      <p>把「决定是否切换」所需的信息压到绝对下限：折叠态只有一行——行动句 + 项目名，无 chip、无时间、按钮悬停才出现；
+         点击任意处进入列表。干扰最小，代价是折叠态零操作直达（一切动作在列表层）。</p>
+    </div>
+    <div class="states">
+      <div class="state-col">
+        <span class="state-label">折叠胶囊</span>
+        <div class="desk"><div class="banner cap-slot" data-cap="c"></div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">待接手列表</span>
+        <div class="desk"><div class="banner list-body">
+          <div class="list-head">
+            <span class="title">需要你</span><span class="count">5</span>
+            <button class="refresh">2 条新 · 刷新</button>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你授权</span><span class="cap-sub">claudi0 · 刚刚</span></span>
+              <span class="row-time">14:32</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">api-gateway · 2 分钟前</span></span>
+              <span class="row-time">14:30</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="amber" data-g="pause"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>执行中断</span><span class="cap-sub">api-gateway · 5 分钟前</span></span>
+              <span class="row-time">14:27</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="bell"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Codex</span>等你审查</span><span class="cap-sub">docs-infra · 12 分钟前</span></span>
+              <span class="row-time">14:20</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+            <div class="row">
+              <span class="glyph" data-ev="clay" data-g="input"></span>
+              <span class="cap-text"><span class="cap-primary"><span class="host">Claude Code</span>等你输入</span><span class="cap-sub">claudi0 · 18 分钟前</span></span>
+              <span class="row-time">14:14</span>
+              <button class="icon-btn" aria-label="移除">✕</button>
+            </div>
+          </div>
+          <div class="list-foot">最多保留 50 项 · 每项 30 分钟后过期，来源与时间先于内容被擦除。</div>
+        </div></div>
+      </div>
+      <div class="state-col">
+        <span class="state-label">详情</span>
+        <div class="desk"><div class="banner detail-body">
+          <div class="detail-head">
+            <button class="back" aria-label="返回">‹</button>
+            <span class="title">Codex 等你授权</span>
+          </div>
+          <div class="facts">
+            <div class="fact"><span class="k">项目</span><span class="v">claudi0</span></div>
+            <div class="fact"><span class="k">会话</span><span class="v mono">a1b2c3d4-9f2e</span><button class="mini">复制</button></div>
+            <div class="fact"><span class="k">发生</span><span class="v">14:32 <span class="rel">· 3 分钟前</span></span></div>
+            <div class="fact"><span class="k">状态</span><span class="v">可操作 · 版本 2</span></div>
+          </div>
+          <div class="detail-actions">
+            <button class="primary" style="background:var(--ev-clay)">打开来源</button>
+            <button class="ghost">复制会话 ID</button>
+            <button class="remove">移除此提醒</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footnote">
+    落地约束：横幅为非激活 NSPanel，外宽 440pt、两侧至少 16pt、顶部避让刘海；折叠态高度可随变体收紧（现状 112pt，A 约 88pt / B 约 64pt / C 约 52pt），
+    列表行最小 54pt、五行视口 270pt 不变。所有文案需英中同占位注册进 <code>ClaudioL10nKey.allKnown</code>；
+    事件色全部沿用现行 token（亮色已按 ContrastSuite 复合底口径调深），变体不新增任何色值。
+    瞬时事件 4 秒自动释放、待接手 30 分钟过期的模型合同不变。
+  </div>
+</main>
+
+<!-- ============ 控制面板 ============ -->
+<aside class="controls" id="controls">
+  <button class="fold" id="foldBtn">收起</button>
+  <h3>折叠胶囊 · 事件预览</h3>
+  <div class="ev-chips" id="evChips"></div>
+</aside>
+
+<script>
+  // ---------- 数据 ----------
+  var GLYPHS = {
+    bell: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.2a3.9 3.9 0 0 0-3.9 3.9v2.7L2.8 11h10.4l-1.3-2.2V6.1A3.9 3.9 0 0 0 8 2.2z"/><path d="M6.6 13.2a1.5 1.5 0 0 0 2.8 0"/></svg>',
+    input: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="3" width="12.4" height="10" rx="2.2"/><path d="M4.6 6.6l2.2 1.9-2.2 1.9M8.4 10.6h3"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="2.6" height="10" rx="1.1"/><rect x="9.4" y="3" width="2.6" height="10" rx="1.1"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5A6.5 6.5 0 1 0 8 14.5 6.5 6.5 0 0 0 8 1.5zm3 4.9l-3.9 4a.9.9 0 0 1-1.3 0L4.9 9.5a.9.9 0 0 1 1.3-1.3l1.5 1.6 3.3-3.4a.9.9 0 0 1 1.3 1.3z"/></svg>',
+    checko: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M5.3 8.2l1.9 2 3.5-3.7"/></svg>',
+    plane: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M14 2L1.8 6.7c-.5.2-.5.9 0 1.1l3.5 1.3 1.3 3.5c.2.5.9.5 1.1 0L12.4 3z"/></svg>',
+    ask: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5.6 5.6A2.4 2.4 0 1 1 8 8.6v1.2"/><circle cx="8" cy="12.6" r=".5" fill="currentColor"/></svg>'
+  };
+  var X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
+  var EVENTS = [
+    { id: "permission",  label: "等你授权",   host: "Codex",       project: "claudi0",      time: "刚刚",    kind: "atn", color: "clay",   glyph: "bell",  verb: "去授权" },
+    { id: "needsInput",  label: "等你输入",   host: "Claude Code", project: "api-gateway",  time: "2 分钟前", kind: "atn", color: "clay",   glyph: "input", verb: "去输入" },
+    { id: "interrupted", label: "执行中断",   host: "Claude Code", project: "api-gateway",  time: "5 分钟前", kind: "atn", color: "amber",  glyph: "pause", verb: "去查看" },
+    { id: "stop",        label: "本轮已结束", host: "Codex",       project: "claudi0",      time: "刚刚",    kind: "info", color: "green",  glyph: "check" },
+    { id: "subagent",    label: "子任务已结束", host: "Claude Code", project: "api-gateway", time: "1 分钟前", kind: "info", color: "indigo", glyph: "checko" },
+    { id: "question",    label: "即将向你提问", host: "Claude Code", project: "claudi0",     time: "刚刚",    kind: "info", color: "clay",   glyph: "ask" },
+    { id: "taskStart",   label: "开始执行",   host: "Codex",       project: "mono-site",    time: "刚刚",    kind: "info", color: "blue",   glyph: "plane" }
+  ];
+
+  var state = { event: "permission" };
+
+  function ev() {
+    for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === state.event) return EVENTS[i];
+    return EVENTS[0];
+  }
+  function glyphHTML(e) {
+    return '<span class="glyph" style="color:var(--ev-' + e.color + ');background:color-mix(in srgb, var(--ev-' + e.color + ') 15%, transparent)">' + GLYPHS[e.glyph] + '</span>';
+  }
+  function tint(e, a) { return "color-mix(in srgb, var(--ev-" + e.color + ") " + (a || 14) + "%, transparent)"; }
+
+  // ---------- 变体 A：行动优先 ----------
+  function capA(e) {
+    var atn = e.kind === "atn";
+    return '<div class="cap-a' + (atn ? "" : " is-info") + '" style="--led-c:var(--ev-' + e.color + ')">' +
+      '<span class="spine" style="background:var(--ev-' + e.color + ')"></span>' +
+      glyphHTML(e) +
+      '<span class="cap-text">' +
+        '<span class="cap-primary"><span class="host">' + e.host + '</span>' + e.label + '</span>' +
+        '<span class="cap-sub">' + e.project + ' · ' + e.time + '</span>' +
+      '</span>' +
+      (atn ? '<button class="chip" style="background:var(--ev-' + e.color + ')">' + e.verb + '</button>' : '') +
+      '<button class="icon-btn" aria-label="关闭">' + X + '</button>' +
+    '</div>';
+  }
+  // ---------- 变体 B：信号仪表 ----------
+  function capB(e) {
+    return '<div class="cap-b' + (e.kind === "atn" ? " is-atn" : "") + '" style="--led-c:var(--ev-' + e.color + ')">' +
+      '<span class="led" style="background:var(--ev-' + e.color + ')"></span>' +
+      '<span class="cap-text">' +
+        '<span class="cap-primary"><span class="host">' + e.host + '</span>' + e.label + '</span>' +
+        '<span class="cap-sub">' + e.project + '</span>' +
+      '</span>' +
+      '<span class="time">' + e.time.replace(" 分钟前", "m") + '</span>' +
+      '<button class="icon-btn" aria-label="关闭">' + X + '</button>' +
+    '</div>';
+  }
+  // ---------- 变体 C：静默卡片 ----------
+  function capC(e) {
+    return '<div class="cap-c">' +
+      glyphHTML(e) +
+      '<span class="cap-primary">' + e.host + ' ' + e.label + '<span class="dim"> · ' + e.project + '</span></span>' +
+      '<button class="icon-btn" aria-label="关闭">' + X + '</button>' +
+    '</div>';
+  }
+
+  function renderCapsule() {
+    var e = ev();
+    var fns = { a: capA, b: capB, c: capC };
+    var slots = document.querySelectorAll(".cap-slot");
+    for (var i = 0; i < slots.length; i++) {
+      var v = slots[i].getAttribute("data-cap");
+      slots[i].innerHTML = fns[v](e);
+    }
+  }
+
+  // ---------- 控制面板 ----------
+  var chipsBox = document.getElementById("evChips");
+  EVENTS.forEach(function (e) {
+    var b = document.createElement("button");
+    b.className = "ev-chip" + (e.id === state.event ? " active" : "");
+    b.textContent = e.label;
+    b.setAttribute("data-id", e.id);
+    b.addEventListener("click", function () {
+      state.event = e.id;
+      var all = chipsBox.querySelectorAll(".ev-chip");
+      for (var i = 0; i < all.length; i++) all[i].classList.remove("active");
+      b.classList.add("active");
+      renderCapsule();
+    });
+    chipsBox.appendChild(b);
+  });
+
+  // ---------- 变体切换 ----------
+  var tabs = document.querySelectorAll(".tab");
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.classList.remove("active"); });
+      t.classList.add("active");
+      document.querySelectorAll(".variant").forEach(function (s) { s.classList.remove("active"); });
+      document.getElementById("variant-" + t.getAttribute("data-v")).classList.add("active");
+    });
+  });
+
+  // ---------- 主题 ----------
+  var themeBtn = document.getElementById("themeBtn");
+  themeBtn.addEventListener("click", function () {
+    var root = document.body;
+    var dark = root.getAttribute("data-theme") === "dark";
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+    themeBtn.textContent = dark ? "切换暗色" : "切换亮色";
+  });
+
+  // ---------- 控制面板收起 ----------
+  var foldBtn = document.getElementById("foldBtn");
+  var controls = document.getElementById("controls");
+  foldBtn.addEventListener("click", function () {
+    controls.classList.toggle("collapsed");
+    foldBtn.textContent = controls.classList.contains("collapsed") ? "展开" : "收起";
+  });
+
+  // ---------- 列表静态字形填充 ----------
+  document.querySelectorAll(".glyph[data-g]").forEach(function (g) {
+    var color = g.getAttribute("data-ev");
+    g.style.color = "var(--ev-" + color + ")";
+    g.style.background = "color-mix(in srgb, var(--ev-" + color + ") 15%, transparent)";
+    g.innerHTML = GLYPHS[g.getAttribute("data-g")];
+  });
+  document.querySelectorAll(".icon-btn:not([aria-label='关闭'])").forEach(function (b) {
+    b.innerHTML = X;
+  });
+
+  renderCapsule();
+
+  // ---------- URL 参数直达（复用同一套点击路径，便于深链评审状态） ----------
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var v = qs.get("v");
+    if (v) {
+      var tabs2 = document.querySelectorAll(".tab");
+      for (var i = 0; i < tabs2.length; i++) if (tabs2[i].getAttribute("data-v") === v) tabs2[i].click();
+    }
+    if (qs.get("th") === "dark") document.getElementById("themeBtn").click();
+    var e2 = qs.get("ev");
+    if (e2) {
+      var chips2 = document.querySelectorAll(".ev-chip");
+      for (var j = 0; j < chips2.length; j++) if (chips2[j].getAttribute("data-id") === e2) chips2[j].click();
+    }
+    if (qs.get("clean") === "1") document.getElementById("controls").style.display = "none";
+    if (qs.get("s") === "1") document.querySelector(".spec").style.display = "none";
+  })();
+</script>
+</body>
+</html>
