@@ -33,7 +33,7 @@ func runCodexDevelopmentNoticeSuites() {
                 "观察必须复用 notification 与唯一瞬时展示槽")
             expect(
                 record.notice == nil && record.action == nil && !record.isActionable
-                    && record.provenance == .developmentCodexRollout,
+                    && !record.isSuperseded && record.provenance == .developmentCodexRollout,
                 "观察不能伪装宿主 binding、installation 或可执行来源动作")
             expect(
                 record.source?.sessionID == session && record.source?.projectKey == nil
@@ -50,6 +50,21 @@ func runCodexDevelopmentNoticeSuites() {
                     EventNoticeProjection.secondaryLine(for: record, language: language)
                         .contains(l10n.text(.eventNoticeDevelopmentObservation)),
                     "开发来源必须在可见与无障碍副行中标明")
+                let observedNow = record.occurredAt!.addingTimeInterval(1)
+                let secondary = EventNoticeProjection.secondaryLine(
+                    for: record, language: language, now: observedNow)
+                let expectedSecondary =
+                    l10n.text(.eventNoticeDevelopmentObservation) + " · "
+                    + l10n.text(.eventNoticeAgeLessMinute)
+                expect(
+                    secondary == expectedSecondary,
+                    "新开发观察只显示来源与年龄，不提示无法执行的刷新：\(language)")
+                let summary = EventNoticeProjection.accessibilitySummary(
+                    for: record, language: language, now: observedNow)
+                expect(
+                    summary.contains(expectedSecondary)
+                        && !summary.contains(l10n.text(.eventNoticeStale)),
+                    "开发观察的无障碍摘要与可见副行一致：\(language)")
             }
             clock.advance(
                 EventNoticeModel.displayDuration + EventNoticeModel.fadeDuration * 2 + 0.01)

@@ -112,6 +112,8 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
     public let isExpired: Bool
     public let version: UInt64
     public let isActionable: Bool
+    /// A newer attention revision replaced this record, independent of action availability.
+    public let isSuperseded: Bool
     public let kind: EventNoticeKind
     public var action: EventNoticeAction? {
         guard let notice else { return nil }
@@ -132,6 +134,7 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
         isExpired: Bool,
         version: UInt64 = 1,
         isActionable: Bool = true,
+        isSuperseded: Bool = false,
         kind: EventNoticeKind = .transient,
         sourceApplication: SourceApplicationTarget? = nil
     ) {
@@ -139,13 +142,14 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
             id: id, event: event, occurredAt: occurredAt,
             content: notice.map { EventNoticeContent($0, sourceApplication: sourceApplication) },
             status: status,
-            isExpired: isExpired, version: version, isActionable: isActionable, kind: kind)
+            isExpired: isExpired, version: version, isActionable: isActionable,
+            isSuperseded: isSuperseded, kind: kind)
     }
 
     fileprivate init(
         id: UUID, event: Event, occurredAt: Date?, content: EventNoticeContent?,
         status: EventNoticeRecordStatus, isExpired: Bool, version: UInt64,
-        isActionable: Bool, kind: EventNoticeKind
+        isActionable: Bool, isSuperseded: Bool, kind: EventNoticeKind
     ) {
         self.id = id
         self.event = event
@@ -155,6 +159,7 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
         self.isExpired = isExpired
         self.version = version
         self.isActionable = isActionable
+        self.isSuperseded = isSuperseded
         self.kind = kind
     }
 }
@@ -413,6 +418,7 @@ public final class EventNoticeModel: ObservableObject {
         let expiresAt: TimeInterval
         var content: EventNoticeContent?
         var identity: Identity?
+        var isSuperseded = false
         init(
             id: UUID, version: UInt64, event: Event, kind: EventNoticeKind,
             expiresAt: TimeInterval, content: EventNoticeContent?, identity: Identity?
@@ -592,6 +598,7 @@ public final class EventNoticeModel: ObservableObject {
                 droppedCount = saturatedIncrement(droppedCount)
                 return .droppedCapacity
             }
+            previous.isSuperseded = true
             entry = makeEntry(
                 notice, kind: kind, identity: identity, id: previous.id,
                 version: previous.version + 1)
@@ -1088,7 +1095,8 @@ public final class EventNoticeModel: ObservableObject {
             id: entry.id, event: entry.event, occurredAt: entry.content?.occurredAt,
             content: entry.content, status: entry.id == currentID ? .displayed : .collapsed,
             isExpired: entry.content == nil, version: entry.version,
-            isActionable: entry.action.map(isCurrent) ?? false, kind: entry.kind)
+            isActionable: entry.action.map(isCurrent) ?? false,
+            isSuperseded: entry.isSuperseded, kind: entry.kind)
     }
 
     private func publish(immediateBadge: Bool = false) {
