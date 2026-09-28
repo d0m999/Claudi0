@@ -11,7 +11,7 @@ func runSettingsRootInteractionSuites() {
         let probes: [(SettingsDestination, CGFloat)] = [
             (.integrations, 0.08),
             (.notifications, 0.5),
-            (.display, 0.92),
+            (.sounds, 0.92),
         ]
         for (destination, fraction) in probes {
             let fixture = SettingsPresentationFixtures.generalLogin(

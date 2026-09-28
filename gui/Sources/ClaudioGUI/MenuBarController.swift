@@ -326,10 +326,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         self.statusItem = statusItem
         // Template image, auto light/dark. The 16pt Orbit Zero reduction lives in
         // `MenuBarIcon`; panel/onboarding headers use the matching full wordmark.
-        Self.applyMenuBarIcon(
-            showsStatusDot: languageStore.showsMenuBarStatusDot,
-            language: languageStore.language,
-            to: statusItem)
+        Self.applyMenuBarIcon(language: languageStore.language, to: statusItem)
 
         super.init()
 
@@ -348,10 +345,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             .sink { [weak statusItem, eventNoticeRuntime] snapshot in
                 MainActor.assumeIsolated {
                     guard let statusItem else { return }
-                    Self.applyMenuBarIcon(
-                        showsStatusDot: snapshot.showsMenuBarStatusDot,
-                        language: snapshot.language,
-                        to: statusItem)
+                    Self.applyMenuBarIcon(language: snapshot.language, to: statusItem)
                     eventNoticeRuntime.setEnabled(snapshot.showsEventSourcePrompts)
                 }
             }
@@ -436,13 +430,12 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     }
 
     private static func applyMenuBarIcon(
-        showsStatusDot: Bool,
         language: ClaudioAppLanguage,
         to statusItem: NSStatusItem
     ) {
         let accessibilityLabel = ClaudioL10n(language: language).text(
-            .settingsDisplay.statusRunning)
-        let icon = MenuBarIcon.make(showsStatusDot: showsStatusDot)
+            .menuBarStatusRunning)
+        let icon = MenuBarIcon.make()
         icon.accessibilityDescription = accessibilityLabel
         statusItem.button?.image = icon
         statusItem.button?.setAccessibilityLabel(accessibilityLabel)

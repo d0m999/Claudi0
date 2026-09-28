@@ -86,7 +86,7 @@ func runPreviewFixturesSuites() {
             "panelPack.noPinned", "panelPack.noPacks", "panelPack.readFailed",
             "settingsRoute.general", "settingsRoute.integrations",
             "settingsRoute.events-and-sounds", "settingsRoute.notifications",
-            "settingsRoute.display", "settingsRoute.sounds", "settingsRoute.usage",
+            "settingsRoute.sounds", "settingsRoute.usage",
             "settingsRoute.shortcuts", "settingsRoute.about",
             "settingsRouteFailure.invalid-surface",
             "settingsRouteFailure.stale-surface",
@@ -101,7 +101,6 @@ func runPreviewFixturesSuites() {
             "settingsExperience.notifications.permission-required",
             "settingsExperience.notifications.stale",
             "settingsExperience.notifications.write-failed",
-            "settingsExperience.display.ready",
             "settingsExperience.usage.loading",
             "settingsExperience.usage.ready",
             "settingsExperience.usage.empty",
@@ -464,9 +463,9 @@ func runPreviewFixturesSuites() {
         expect(pinnedCounts == [1, 4], "固定包密度必须覆盖 1 与 4 行，实得 \(pinnedCounts)")
     }
 
-    suite("PreviewFixtures.settingsRouteScenarios pins the fixed nine-slot route gallery") {
+    suite("PreviewFixtures.settingsRouteScenarios pins the fixed eight-slot route gallery") {
         let scenarios = PreviewFixtures.settingsRouteScenarios
-        expect(scenarios.count == 9, "统一设置 gallery 必须恰好有九个 route slot")
+        expect(scenarios.count == 8, "统一设置 gallery 必须恰好有八个 route slot")
         expect(
             scenarios.map(\.destination) == SettingsDestination.allCases,
             "统一设置 gallery 必须按固定 sidebar 顺序覆盖全部目的页")
@@ -483,7 +482,7 @@ func runPreviewFixturesSuites() {
                     availability: PreviewFixtures.settingsRouteAvailability
                 ).failure == nil
             },
-            "九个目的页基础槽位必须全部呈现 ready route")
+            "八个目的页基础槽位必须全部呈现 ready route")
     }
 
     suite("PreviewFixtures.settingsRouteFailureScenarios covers every visible failure case") {
@@ -509,15 +508,15 @@ func runPreviewFixturesSuites() {
         }
     }
 
-    suite("PreviewFixtures.settingsExperienceScenarios pins six production destinations") {
+    suite("PreviewFixtures.settingsExperienceScenarios pins five production destinations") {
         let scenarios = PreviewFixtures.settingsExperienceScenarios
         expect(
             scenarios == PreviewFixtures.SettingsExperienceScenario.allCases,
             "基础设置 gallery 必须由 enum roster 完整驱动")
         expect(
             Set(scenarios.map(\.destination))
-                == [.general, .notifications, .display, .usage, .shortcuts, .about],
-            "基础设置 gallery 必须覆盖通用、通知、显示、用量、快捷键、关于六页")
+                == [.general, .notifications, .usage, .shortcuts, .about],
+            "基础设置 gallery 必须覆盖通用、通知、用量、快捷键、关于五页")
         expect(
             scenarios.map(\.rawValue).contains("usage.loading")
                 && scenarios.map(\.rawValue).contains("usage.empty")

@@ -585,13 +585,12 @@ func runSettingsPresentationSliceSuites() {
     }
 
     #if DEBUG
-    suite("Settings presentation root：九个 destination 都经同一 compiled production root 挂载") {
+    suite("Settings presentation root：八个 destination 都经同一 compiled production root 挂载") {
         let destinationSubtreeIdentifiers: [SettingsDestination: String] = [
             .general: SettingsPresentationAccessibilityID.general,
             .integrations: SettingsPresentationAccessibilityID.destination(.integrations),
             .eventsAndSounds: SettingsPresentationAccessibilityID.destination(.eventsAndSounds),
             .notifications: SettingsPresentationAccessibilityID.destination(.notifications),
-            .display: SettingsPresentationAccessibilityID.destination(.display),
             .sounds: SettingsPresentationAccessibilityID.destination(.sounds),
             .usage: SettingsPresentationAccessibilityID.destination(.usage),
             .shortcuts: SettingsPresentationAccessibilityID.destination(.shortcuts),
@@ -631,7 +630,7 @@ func runSettingsPresentationSliceSuites() {
 
         expect(
             settingsDestinationMountsAreComplete(productionMounts),
-            "固定九个 destination 必须按 sidebar 顺序挂载唯一 compiled production subtree，实得 \(productionMounts.map { ($0.destination.rawValue, $0.mountedIdentifiers) })"
+            "固定八个 destination 必须按 sidebar 顺序挂载唯一 compiled production subtree，实得 \(productionMounts.map { ($0.destination.rawValue, $0.mountedIdentifiers) })"
         )
     }
 

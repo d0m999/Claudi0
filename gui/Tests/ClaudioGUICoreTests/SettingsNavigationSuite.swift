@@ -8,22 +8,21 @@ import Foundation
 func runSettingsNavigationSuites() {
     suite("Settings destinations：固定身份、顺序与双语名称") {
         let expected: [SettingsDestination] = [
-            .general, .integrations, .eventsAndSounds, .notifications, .display, .sounds,
+            .general, .integrations, .eventsAndSounds, .notifications, .sounds,
             .usage, .shortcuts, .about,
         ]
         expect(
             SettingsDestination.allCases == expected,
-            "设置侧栏必须固定为批准的九项目顺序")
+            "设置侧栏必须固定为八项目顺序")
         expect(
-            Set(expected.map(\.rawValue)).count == 9,
-            "九个设置目的页必须有唯一稳定身份")
+            Set(expected.map(\.rawValue)).count == 8,
+            "八个设置目的页必须有唯一稳定身份")
 
         let expectedNames: [(SettingsDestination, String, String)] = [
             (.general, "通用", "General"),
             (.integrations, "集成", "Integrations"),
             (.eventsAndSounds, "默认组／工作区", "Default Group & Workspaces"),
             (.notifications, "通知", "Notifications"),
-            (.display, "显示", "Display"),
             (.sounds, "声音", "Sounds"),
             (.usage, "活动与诊断", "Activity & Diagnostics"),
             (.shortcuts, "快捷键", "Shortcuts"),
@@ -50,12 +49,12 @@ func runSettingsNavigationSuites() {
             soundPackIDs: ["orbit-pack"],
             events: Set(Event.allCases))
 
-        let generic = SettingsRoute.destination(.display)
+        let generic = SettingsRoute.destination(.notifications)
         expect(
             resolveSettingsRoute(generic, availability: availability).failure == nil,
             "generic destination 必须直接解析")
         expect(
-            generic.stableIdentityComponents == ["display"],
+            generic.stableIdentityComponents == ["notifications"],
             "generic route 只能携带稳定 ID")
 
         let integration = SettingsRoute.integrations(surface: .workBuddy)

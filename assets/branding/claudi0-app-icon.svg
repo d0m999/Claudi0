@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
   <title id="title">claudi0 Orbit Zero app icon</title>
-  <desc id="desc">A clay zero with a cream orbit and signal dot on a dark rounded hardware surface.</desc>
+  <desc id="desc">A clay zero with a cream orbit on a dark rounded hardware surface.</desc>
   <rect x="72" y="72" width="880" height="880" rx="210" fill="#2B2620"/>
   <rect x="77" y="77" width="870" height="870" rx="205" fill="none" stroke="#FFFDF4" stroke-opacity=".07" stroke-width="10"/>
   <g fill="none" stroke="#C4633C">
@@ -10,5 +10,4 @@
     <ellipse cx="512" cy="512" rx="170" ry="300" stroke-width="66"/>
   </g>
   <ellipse cx="512" cy="512" rx="356" ry="128" transform="rotate(-16 512 512)" fill="none" stroke="#F1E9DF" stroke-opacity=".74" stroke-width="20"/>
-  <circle cx="755" cy="303" r="22" fill="#C4633C"/>
 </svg>

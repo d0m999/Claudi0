@@ -374,7 +374,6 @@ public enum PreviewFixtures {
         case notificationsPermissionRequired = "notifications.permission-required"
         case notificationsStale = "notifications.stale"
         case notificationsWriteFailed = "notifications.write-failed"
-        case displayReady = "display.ready"
         case usageLoading = "usage.loading"
         case usageReady = "usage.ready"
         case usageEmpty = "usage.empty"
@@ -414,8 +413,6 @@ public enum PreviewFixtures {
                 SettingsExperienceProfile(
                     destination: .notifications,
                     notifications: .writeFailed)
-            case .displayReady:
-                SettingsExperienceProfile(destination: .display)
             case .usageLoading:
                 SettingsExperienceProfile(destination: .usage, usage: .loading)
             case .usageReady:

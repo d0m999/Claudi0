@@ -97,10 +97,10 @@ func runSettingsPreferencesSuites() async {
         expect(
             isolated.availableSettingsDestinations
                 == [
-                    .general, .integrations, .eventsAndSounds, .notifications, .display, .sounds,
+                    .general, .integrations, .eventsAndSounds, .notifications, .sounds,
                     .usage, .shortcuts, .about,
                 ],
-            "production owner 只能暴露已交付真实内容的通用、集成、事件、通知、显示、声音、用量、快捷键与关于 destination")
+            "production owner 只能暴露八个已交付的 destination")
         isolated.setLastSettingsDestination(.usage)
         expect(
             isolated.lastSettingsDestination == .usage
@@ -134,6 +134,31 @@ func runSettingsPreferencesSuites() async {
                     .invalidEventSourcePromptVisibility,
                 ],
             "typed owner 必须发布可见失败态所需的完整恢复原因")
+    }
+
+    suite("Settings preferences：退役 Display 路由与状态点值保持原值") {
+        for legacyValue: Any in [true, false, "broken"] {
+            let suiteName = "SettingsPreferencesSuite.retired.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defaults.removePersistentDomain(forName: suiteName)
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            defaults.set("display", forKey: SettingsDestination.defaultsKey)
+            defaults.set(legacyValue, forKey: "Claudio.MenuBarStatusDot")
+            let original = defaults.persistentDomain(forName: suiteName)!
+
+            let preferences = ClaudioPreferences(
+                defaults: defaults,
+                notificationCenter: NotificationCenter(),
+                preferredLanguageIdentifiers: { ["en-US"] })
+            expect(
+                preferences.lastSettingsDestination == .general
+                    && !preferences.recoveryIssues.contains(.invalidSettingsDestination),
+                "历史 display 必须平稳回到通用，不报告数据损坏")
+            expect(
+                NSDictionary(dictionary: original).isEqual(
+                    to: defaults.persistentDomain(forName: suiteName)!),
+                "读取历史 display 和状态点值不得主动改写原值")
+        }
     }
 
     await suite("Settings preferences：system locale 即时重投影且多消费者一致") {

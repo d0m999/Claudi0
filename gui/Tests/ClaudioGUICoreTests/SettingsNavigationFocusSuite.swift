@@ -32,11 +32,11 @@ func runSettingsNavigationFocusSuites() async {
             probe.sendKey(keyCode: 48, characters: "\t", modifiers: .shift),
             "Shift-Tab must return from the first action to the About title")
         expect(
-            probe.clickSidebar(.display, horizontalFraction: 0.5),
+            probe.clickSidebar(.notifications, horizontalFraction: 0.5),
             "switch destinations through the real sidebar mouse route after keyboard traversal")
         expect(
-            fixture.session.state.routeResolution.destination == .display,
-            "the click must select Display")
+            fixture.session.state.routeResolution.destination == .notifications,
+            "the click must select Notifications")
         expect(probe.isActiveKeyWindow, "navigation must retain the native key window")
         expect(
             fixture.session.state.windowPhase == .key,
@@ -46,17 +46,21 @@ func runSettingsNavigationFocusSuites() async {
         await Task.yield()
 
         let preferences = fixture.session.dependencies.preferences
-        let previousStatusDot = preferences.showsMenuBarStatusDot
-        expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must leave the new Display title")
+        let previousPrompts = preferences.showsEventSourcePrompts
+        expect(
+            probe.sendKey(keyCode: 48, characters: "\t"), "Tab must leave the Notifications title")
+        expect(
+            probe.sendKey(keyCode: 48, characters: "\t"),
+            "the next Tab must reach Event Source Prompts")
         expect(
             probe.sendKey(keyCode: 49, characters: " "),
-            "Space must activate the first Display control")
+            "Space must activate the Event Source Prompts control")
         let activated = await settingsNavigationFocusWait {
-            preferences.showsMenuBarStatusDot != previousStatusDot
+            preferences.showsEventSourcePrompts != previousPrompts
         }
         expect(
-            activated && fixture.session.state.routeResolution.destination == .display,
-            "after Tab/Shift-Tab then navigation, Tab/Space must toggle Display instead of a sidebar row"
+            activated && fixture.session.state.routeResolution.destination == .notifications,
+            "after Tab/Shift-Tab then navigation, keyboard traversal must toggle Event Source Prompts instead of a sidebar row"
         )
     }
 

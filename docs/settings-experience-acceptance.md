@@ -1,6 +1,6 @@
 # 统一设置集成验收与证据交接
 
-本清单是九个设置目的页的维护门禁与人工交接入口。它不替代
+本清单是八个设置目的页的维护门禁与人工交接入口（2026-09-28 起，原「显示」页退役）。它不替代
 `plan/PLAN-SETTINGS-EXPERIENCE.md`、`CONTEXT.md`、ADR 0005–0009 或 release 流程，也不把
 fixture、源代码扫描、构建或 ad-hoc bundle 升格为原生 UI、真实系统、真实 Provider 或发布证据。
 
@@ -32,7 +32,7 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 
 | 合同 | 主要 executable suite |
 |---|---|
-| 九个 destination 恰好一次、production root 可挂载、nonoptional dependencies 与 target DAG | `SettingsPresentationTargetSuite`、`SettingsNavigationSuite` |
+| 八个 destination 恰好一次、production root 可挂载、nonoptional dependencies 与 target DAG | `SettingsPresentationTargetSuite`、`SettingsNavigationSuite` |
 | production root 的 sidebar 整行/行外 mouse route、真实 sidebar `Button`、Login `Toggle`、mounted child identity 与 AI credential sheet | `SettingsRootInteractionSuite`、`SettingsPresentationTargetSuite` |
 | typed route/failure、focus debt、window phase、destination lifecycle、announcement post/ack 与 gallery 共用 production root | `SettingsPresentationLifecycleSuite`、`EventSettingsWindowSelectionSuite` |
 | 唯一 retained window、controller→`SettingsRootView(session:)` composition、系统 adapter 与声音写入 owner 唯一 | `SettingsPresentationLifecycleSuite`、`SoundPacksEditorOwnerSuite`、`IntegrationDestinationPresentationSuite`、`IntegrationDestinationModelSuite`、`IntegrationDestinationWiringSuite` |
@@ -44,7 +44,8 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 | Dynamic Quiet State、receipt retention 与手工试听正交 | `DynamicQuietStateSuite`、`DynamicQuietPolicySuite`、`HostHookRunnerSuite` |
 | 七日本地活动摘要、事件覆盖、诊断脱敏、独立清理与失败保留旧事实 | `ActivityOverviewSuite`、`LocalActivitySummarySuite`、`ActivityDiagnosticsSuite` |
 | Carbon shortcut 注册、替换事务、冲突回滚与损坏持久化 fail closed | `GlobalShortcutsSuite` |
-| 登录项状态、显示偏好、关于页脱敏摘要与双语 catalog | `LoginItemManagementSuite`、`DisplayPreferencesSuite`、`AboutInformationSuite`、`LocalizationSuite` |
+| 登录项状态、退役 Display 值的平稳回退、关于页脱敏摘要与双语 catalog | `LoginItemManagementSuite`、`SettingsPreferencesSuite`、`AboutInformationSuite`、`LocalizationSuite` |
+| Orbit Zero 无装饰点，菜单栏 VoiceOver 标签保留 | `ViewWiringSuite`、品牌资产检查 |
 
 这些 suite 使用受控 fixture，不会读取真实 API key、请求真实 Provider、修改真实 host、注册真实登录项，
 或证明声音质量。若 suite 文件存在但从 `main.swift` 移除，总门禁会先在注册检查失败。
@@ -56,7 +57,7 @@ Events coordinator suites 已删除。长期 source audit 只保留 compiled sea
 形状当作行为证据。
 
 其中，真实 `NSWindow` + `NSHostingView` fixture 会用 AppKit mouse event 命中 sidebar 行、sidebar
-`Button` 与 Login `Toggle`，并观察 session/model 结果；九页实际 child 自身挂载的同一 SwiftUI
+`Button` 与 Login `Toggle`，并观察 session/model 结果；八页实际 child 自身挂载的同一 SwiftUI
 modifier 同时设置稳定 accessibility identifier，并在 DEBUG compiled harness 报告 mounted subtree。
 AI credential 场景还观察真实 attached sheet。方向键与 Escape 会先尝试 raw `NSEvent`，在无 Full
 Keyboard Access 的 harness 环境中则调用该 mounted production modifier 注册的同一 handler。这些是
@@ -93,9 +94,10 @@ swift run --package-path gui claudio-gui-tests --workspace-deletion-native-focus
 
 | 项目 | 状态 | 必须记录 |
 |---|---|---|
-| 单一窗口与九页导航 | NOT VERIFIED | panel/deep link/页间路由、重复打开、关闭后 handback |
+| 单一窗口与八页导航 | NOT VERIFIED | panel/deep link/页间路由、重复打开、关闭后 handback；旧 `display` 回到通用 |
 | 键盘与焦点 | NOT VERIFIED | Tab/Shift-Tab、方向键、Return/Space、Escape、焦点顺序 |
-| VoiceOver | NOT VERIFIED | 九页标题、状态、错误、帮助、状态点关闭后的完整语义 |
+| VoiceOver | NOT VERIFIED | 八页标题、状态、错误、帮助、菜单栏既有本地化标签 |
+| 品牌图形 | NOT VERIFIED | 菜单栏亮暗外观、App/Dock 图标与应用内字标均无装饰点；真实宿主状态指示仍可见 |
 | 固定紧凑布局与窗口尺寸 | NOT VERIFIED | 中文/英文 × 固定紧凑布局，1240×820、960×640、系统辅助功能缩放，无水平裁切 |
 | 外观与动画 | NOT VERIFIED | light/dark、Increase Contrast、Reduce Transparency、Reduce Motion |
 | profile 选择与披露 | NOT VERIFIED | 四 profile 各自供应商、地区、费用/配额、留存/模型改进边界 |

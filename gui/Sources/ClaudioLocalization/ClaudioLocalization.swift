@@ -524,7 +524,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "settings.destination.events-and-sounds"
     public static let settingsDestinationNotifications: Self =
         "settings.destination.notifications"
-    public static let settingsDestinationDisplay: Self = "settings.destination.display"
     public static let settingsDestinationSounds: Self = "settings.destination.sounds"
     public static let settingsSoundsAICueTitle: Self = "settings.sounds.ai-cue.title"
     public static let settingsSoundsAICueDescription: Self = "settings.sounds.ai-cue.description"
@@ -589,17 +588,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "settings.integrations.manage-events"
     public static let settingsIntegrationsManageEventsHint: Self =
         "settings.integrations.manage-events.hint"
-    /// One exported namespace avoids a separate public global for every Display leaf in the
-    /// size-constrained menu-bar executable.
-    public static let settingsDisplay = (
-        statusDotTitle: Self("settings.display.status-dot.title"),
-        statusDotDescription: Self("settings.display.status-dot.description"),
-        statusRunning: Self("menu-bar.status.running")
-    )
-    public static let settingsDisplayStatusDotEnabled: Self =
-        "settings.display.status-dot.enabled"
-    public static let settingsDisplayStatusDotDisabled: Self =
-        "settings.display.status-dot.disabled"
+    public static let menuBarStatusRunning: Self = "menu-bar.status.running"
     public static let settingsGeneralLanguageTitle: Self = "settings.general.language.title"
     public static let settingsGeneralLanguageDescription: Self =
         "settings.general.language.description"
@@ -779,10 +768,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "settings.activity.connection.not-connected"
     public static let settingsActivityConnectionUnavailable: Self =
         "settings.activity.connection.unavailable"
-    public static let settingsDisplayFixedLayoutTitle: Self =
-        "settings.display.fixed-layout.title"
-    public static let settingsDisplayFixedLayoutDescription: Self =
-        "settings.display.fixed-layout.description"
     public static let settingsShortcutsDescription: Self = "settings.shortcuts.description"
     public static let settingsShortcutsRequirement: Self = "settings.shortcuts.requirement"
     public static let settingsShortcutsActionTogglePanel: Self =
@@ -1440,7 +1425,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .integrationsWindowTitle,
         .settingsWindowTitle, .settingsDestinationGeneral, .settingsDestinationIntegrations,
         .settingsDestinationEventsAndSounds, .settingsDestinationNotifications,
-        .settingsDestinationDisplay, .settingsDestinationSounds, .settingsSoundsAICueTitle,
+        .settingsDestinationSounds, .settingsSoundsAICueTitle,
         .settingsSoundsAICueDescription, .settingsSoundsAICueNewPack, .settingsSoundsAICueDraft,
         .settingsSoundsAICuePackName, .settingsSoundsAICueSaveName,
         .settingsSoundsAICueSaveNameBeforeAdopting,
@@ -1465,9 +1450,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsAboutCopyDiagnosticsHint, .settingsAboutVersionCopied,
         .settingsAboutDiagnosticsCopied, .settingsAboutClipboardFailed,
         .settingsAboutOpenFailed,
-        settingsDisplay.statusDotTitle,
-        settingsDisplay.statusDotDescription, settingsDisplay.statusRunning,
-        .settingsDisplayStatusDotEnabled, .settingsDisplayStatusDotDisabled,
+        .menuBarStatusRunning,
         .settingsGeneralLanguageTitle,
         .settingsGeneralLanguageDescription, .settingsGeneralLanguageSystem,
         .settingsGeneralLanguageChinese, .settingsGeneralLanguageEnglish,
@@ -1745,7 +1728,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsActivityActionCleared, .settingsActivityConnectionConnected,
         .settingsActivityConnectionAwaiting, .settingsActivityConnectionNotConnected,
         .settingsActivityConnectionUnavailable,
-        .settingsDisplayFixedLayoutTitle, .settingsDisplayFixedLayoutDescription,
     ]
 }
 

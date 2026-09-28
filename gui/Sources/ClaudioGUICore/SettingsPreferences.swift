@@ -9,7 +9,7 @@ extension SettingsDestination {
     /// Top-level destinations with production content today. Later destination migrations extend
     /// this list when their real views ship; DEBUG galleries inject `allCases` explicitly.
     public static let availableCases: [SettingsDestination] = [
-        .general, .integrations, .eventsAndSounds, .notifications, .display, .sounds, .usage,
+        .general, .integrations, .eventsAndSounds, .notifications, .sounds, .usage,
         .shortcuts, .about,
     ]
 }
@@ -17,20 +17,17 @@ extension SettingsDestination {
 public enum ClaudioPreferenceRecoveryIssue: String, Sendable, Hashable {
     case invalidLanguageMode
     case invalidSettingsDestination
-    case invalidMenuBarStatusDot
     case invalidIntegrationSurface
     case invalidEventSourcePromptVisibility
 }
 
 /// One atomic projection of the Settings preferences currently owned by Claudio. New preference
-/// fields belong here only when their destination ships; language, navigation, and Display
-/// consumers all observe this single coherent value.
+/// fields belong here only when their destination ships; consumers observe one coherent value.
 public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
     public fileprivate(set) var languageMode: ClaudioLanguageMode
     public fileprivate(set) var language: ClaudioAppLanguage
     public fileprivate(set) var lastSettingsDestination: SettingsDestination
     public fileprivate(set) var lastIntegrationSurface: HostSurfaceID
-    public fileprivate(set) var showsMenuBarStatusDot: Bool
     public fileprivate(set) var showsEventSourcePrompts: Bool
     public fileprivate(set) var recoveryIssues: Set<ClaudioPreferenceRecoveryIssue>
 
@@ -39,7 +36,6 @@ public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
         language: ClaudioAppLanguage,
         lastSettingsDestination: SettingsDestination,
         lastIntegrationSurface: HostSurfaceID = .claudeCode,
-        showsMenuBarStatusDot: Bool,
         showsEventSourcePrompts: Bool = true,
         recoveryIssues: Set<ClaudioPreferenceRecoveryIssue> = []
     ) {
@@ -47,7 +43,6 @@ public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
         self.language = language
         self.lastSettingsDestination = lastSettingsDestination
         self.lastIntegrationSurface = lastIntegrationSurface
-        self.showsMenuBarStatusDot = showsMenuBarStatusDot
         self.showsEventSourcePrompts = showsEventSourcePrompts
         self.recoveryIssues = recoveryIssues
     }
@@ -67,7 +62,6 @@ public final class ClaudioPreferences: ObservableObject {
         snapshot.lastSettingsDestination
     }
     public var lastIntegrationSurface: HostSurfaceID { snapshot.lastIntegrationSurface }
-    public var showsMenuBarStatusDot: Bool { snapshot.showsMenuBarStatusDot }
     public var showsEventSourcePrompts: Bool { snapshot.showsEventSourcePrompts }
     public var recoveryIssues: Set<ClaudioPreferenceRecoveryIssue> {
         snapshot.recoveryIssues
@@ -112,8 +106,6 @@ public final class ClaudioPreferences: ObservableObject {
             parsedIntegrationSurface.flatMap {
                 legalIntegrationSurfaces.contains($0) ? $0 : nil
             } ?? .claudeCode
-        let statusDotObject = defaults.object(forKey: Self.menuBarStatusDotDefaultsKey)
-        let showsMenuBarStatusDot = statusDotObject as? Bool ?? true
         let eventSourcePromptObject = defaults.object(
             forKey: Self.eventSourcePromptsDefaultsKey)
         let showsEventSourcePrompts =
@@ -130,17 +122,17 @@ public final class ClaudioPreferences: ObservableObject {
         }
         if destinationObject != nil {
             if let destinationRawValue {
-                if SettingsDestination(rawValue: destinationRawValue).map(
-                    legalDestinations.contains) != true
+                // The retired Display route is a valid historical value. Keep it on disk while
+                // projecting General; only unknown or damaged values need a recovery notice.
+                if destinationRawValue != "display",
+                    SettingsDestination(rawValue: destinationRawValue).map(
+                        legalDestinations.contains) != true
                 {
                     recoveryIssues.insert(.invalidSettingsDestination)
                 }
             } else {
                 recoveryIssues.insert(.invalidSettingsDestination)
             }
-        }
-        if statusDotObject != nil, statusDotObject is Bool == false {
-            recoveryIssues.insert(.invalidMenuBarStatusDot)
         }
         if eventSourcePromptObject != nil, eventSourcePromptObject is Bool == false {
             recoveryIssues.insert(.invalidEventSourcePromptVisibility)
@@ -161,7 +153,6 @@ public final class ClaudioPreferences: ObservableObject {
                 preferredLanguageIdentifiers: preferredLanguageIdentifiers()),
             lastSettingsDestination: destination,
             lastIntegrationSurface: integrationSurface,
-            showsMenuBarStatusDot: showsMenuBarStatusDot,
             showsEventSourcePrompts: showsEventSourcePrompts,
             recoveryIssues: recoveryIssues)
 
@@ -237,15 +228,6 @@ public final class ClaudioPreferences: ObservableObject {
         snapshot = next
     }
 
-    public func setShowsMenuBarStatusDot(_ showsStatusDot: Bool) {
-        var next = snapshot
-        next.showsMenuBarStatusDot = showsStatusDot
-        next.recoveryIssues.remove(.invalidMenuBarStatusDot)
-        guard next != snapshot else { return }
-        defaults.set(showsStatusDot, forKey: Self.menuBarStatusDotDefaultsKey)
-        snapshot = next
-    }
-
     public func setShowsEventSourcePrompts(_ showsPrompts: Bool) {
         var next = snapshot
         next.showsEventSourcePrompts = showsPrompts
@@ -265,7 +247,6 @@ public final class ClaudioPreferences: ObservableObject {
         snapshot = next
     }
 
-    public static let menuBarStatusDotDefaultsKey = "Claudio.MenuBarStatusDot"
     public static let integrationSurfaceDefaultsKey = "Claudio.Settings.LastIntegrationSurface"
     public static let eventSourcePromptsDefaultsKey = "Claudio.Notifications.EventSourcePrompts"
 }

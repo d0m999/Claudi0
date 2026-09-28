@@ -460,7 +460,7 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.soundPacksEditorOwner.updateAICueComposer(
                 session: dependencies.aiCueViewModel.session,
                 generation: dependencies.aiCueViewModel.generation)
-        case .general, .notifications, .display, .usage, .shortcuts, .about:
+        case .general, .notifications, .usage, .shortcuts, .about:
             break
         }
     }
@@ -528,7 +528,7 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.soundPacksEditorOwner.updateAICueComposer(
                 session: nil,
                 generation: nil)
-        case .general, .notifications, .display, .usage, .shortcuts, .about:
+        case .general, .notifications, .usage, .shortcuts, .about:
             break
         }
     }
