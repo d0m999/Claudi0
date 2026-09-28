@@ -276,6 +276,36 @@ public func localizedEventHostIndicators(
     indicators.map { localizedEventHostIndicator($0, language: language) }
 }
 
+/// The panel can show a selected Workspace while the shared matrix describes Default Group
+/// sound. Keep its host binding detail independent of either sound profile.
+public func localizedPanelEventHostIndicators(
+    event: Event,
+    content: IntegrationDestinationContent,
+    language: ClaudioAppLanguage
+) -> [EventHostIndicatorPresentation] {
+    let indicators = localizedEventHostIndicators(
+        eventHostIndicatorPresentations(event: event, matrix: content.matrix),
+        language: language)
+    guard event == .notification,
+        content.sourceRows.contains(where: { $0.host == .claudeCode && $0.status == .legacy })
+    else { return indicators }
+
+    // This matrix has Default Group sound inputs, which can differ from the selected Workspace.
+    // Keep only the legacy installation facts in the panel; the selected event row owns sound state.
+    let detail = ClaudioL10n(language: language).text(.cellLegacyNotificationBindingDetail)
+    return indicators.map { indicator in
+        guard indicator.host == .claudeCode, indicator.detailText != nil else {
+            return indicator
+        }
+        return EventHostIndicatorPresentation(
+            host: indicator.host,
+            state: .legacy,
+            compactDisplayName: indicator.compactDisplayName,
+            qualificationText: indicator.qualificationText,
+            detailText: detail)
+    }
+}
+
 public func localizedEventHostIndicatorStatus(
     _ state: EventHostIndicatorState,
     language: ClaudioAppLanguage
@@ -283,7 +313,7 @@ public func localizedEventHostIndicatorStatus(
     let l10n = ClaudioL10n(language: language)
     switch state {
     case .connected: return l10n.text(.cellAudible)
-    case .legacy: return l10n.text(.hostLegacy)
+    case .legacy: return l10n.text(.cellLegacy)
     case .awaitingActivation: return l10n.text(.cellAwaitingActivation)
     case .notConnected: return l10n.text(.hostNotConnected)
     case .needsAttention: return l10n.text(.cellDegraded)

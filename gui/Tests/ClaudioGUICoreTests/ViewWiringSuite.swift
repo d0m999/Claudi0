@@ -2545,13 +2545,11 @@ func runViewWiringSuites() {
             return
         }
         expect(
-            eventSection.contains("eventHostIndicatorPresentations(")
-                && eventSection.contains(
-                    "event: event.event, matrix: hostIntegrations.content.matrix")
-                && eventSection.contains("localizedEventHostIndicators(")
+            eventSection.contains("localizedPanelEventHostIndicators(")
+                && eventSection.contains("event: event.event, content: hostIntegrations.content")
                 && eventSection.contains("hostIndicators:")
                 && rowBody.contains("let hostIndicators: [EventHostIndicatorPresentation]"),
-            "生产事件区必须用共享矩阵的本事件状态投影，交给实际挂载的 PanelAgentEventRow")
+            "生产事件区必须用当前面板适用的绑定详情投影，交给实际挂载的 PanelAgentEventRow")
         expect(
             identity.contains("ForEach(hostBindingDetails)")
                 && identity.contains("Text(hostBindingDetailLabel(indicator))")
