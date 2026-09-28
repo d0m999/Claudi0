@@ -51,7 +51,7 @@ public enum EventNoticeProjection {
         }
         if let project = record.source?.projectLabel { components.append(project) }
         if let age = age(for: record, language: language, now: now) { components.append(age) }
-        if !record.isActionable { components.append(l10n.text(.eventNoticeStale)) }
+        if record.isSuperseded { components.append(l10n.text(.eventNoticeStale)) }
         return components.joined(separator: " · ")
     }
 

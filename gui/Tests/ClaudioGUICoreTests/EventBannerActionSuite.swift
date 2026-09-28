@@ -115,6 +115,7 @@ func runEventBannerActionSuites() {
         let m = model(clock)
         let installation = UUID()
         let action = accept(m, installation: installation)
+        expect(!m.snapshot.current!.isSuperseded, "当前提醒版本不提示刷新")
         expect(m.sourceNotice(for: action)?.processAncestors == nil, "模型不保留原始进程列表")
         expect(m.sourceApplication(for: action)?.action == action, "来源绑定版本")
         clock.advance(0.18)
@@ -135,7 +136,8 @@ func runEventBannerActionSuites() {
         _ = accept(m, installation: installation)
         let stale = m.snapshot.current!
         expect(
-            !stale.isExpired && !stale.isActionable && stale.sourceApplication != nil,
+            !stale.isExpired && !stale.isActionable && stale.isSuperseded
+                && stale.sourceApplication != nil,
             "新版本替代保留旧详情，禁用旧动作")
         expect(
             EventNoticeProjection.secondaryLine(for: stale, language: .zhHans).contains("已更新，请刷新"),
