@@ -123,15 +123,41 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
     public var selectedPack: String
     public var volume: Double
     public var events: [String: Bool]
-    public init(selectedPack: String, volume: Double, events: [String: Bool]? = nil) {
+    public var systemSounds: [String: String]
+    public init(
+        selectedPack: String, volume: Double, events: [String: Bool]? = nil,
+        systemSounds: [String: String] = [:]
+    ) {
         self.selectedPack = selectedPack
         self.volume = volume
         self.events =
             events ?? Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
+        self.systemSounds = systemSounds
     }
     public var isValid: Bool {
         isSafePackID(selectedPack) && volume.isFinite && (0...1).contains(volume)
             && Event.allCases.allSatisfy { events[$0.cliName] != nil }
+            && systemSounds.values.allSatisfy(SystemSoundCatalog.isValidName)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case selectedPack, volume, events, systemSounds
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        selectedPack = try c.decode(String.self, forKey: .selectedPack)
+        volume = try c.decode(Double.self, forKey: .volume)
+        events = try c.decode([String: Bool].self, forKey: .events)
+        systemSounds = try c.decodeIfPresent([String: String].self, forKey: .systemSounds) ?? [:]
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(selectedPack, forKey: .selectedPack)
+        try c.encode(volume, forKey: .volume)
+        try c.encode(events, forKey: .events)
+        if !systemSounds.isEmpty { try c.encode(systemSounds, forKey: .systemSounds) }
     }
 }
 
@@ -256,7 +282,8 @@ extension ClaudioConfig {
         return .success(
             ResolvedSoundProfile(
                 selectedPack: profile.selectedPack, eventsEnabled: profile.events,
-                inheritedPack: false, inheritedEvents: [], volume: profile.volume, workspaceID: id))
+                inheritedPack: false, inheritedEvents: [], volume: profile.volume,
+                workspaceID: id, systemSounds: profile.systemSounds))
     }
 
     /// One automatic-play resolver. No cwd or inapplicable Surface means the Default Group.
@@ -265,22 +292,27 @@ extension ClaudioConfig {
         directoryResolver: (String) -> Result<WorkspaceDirectory, WorkspaceDirectoryError> =
             WorkspaceDirectoryResolver.resolve
     ) -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
-        let defaults = ResolvedSoundProfile(
-            selectedPack: selectedPack, eventsEnabled: eventsEnabled,
-            inheritedPack: false, inheritedEvents: [], volume: masterVolume, workspaceID: nil)
+        func defaultProfile() -> Result<ResolvedSoundProfile, WorkspaceSoundError> {
+            guard !systemSoundsMalformed else { return .failure(.invalidRule) }
+            return .success(
+                ResolvedSoundProfile(
+                    selectedPack: selectedPack, eventsEnabled: eventsEnabled,
+                    inheritedPack: false, inheritedEvents: [], volume: masterVolume,
+                    workspaceID: nil, systemSounds: systemSounds))
+        }
         guard let surface, let cwd, WorkspaceDirectory.validPath(cwd) else {
-            return .success(defaults)
+            return defaultProfile()
         }
         guard WorkspaceSurfaceEligibility.verified.contains(surface) else {
-            return .success(defaults)
+            return defaultProfile()
         }
         guard !workspaceRulesMalformed else { return .failure(.invalidRule) }
         let applicable = workspaceRules.filter { $0.surfaces.contains(surface) }
-        guard !applicable.isEmpty else { return .success(defaults) }
+        guard !applicable.isEmpty else { return defaultProfile() }
         let directory: WorkspaceDirectory
         switch directoryResolver(cwd) {
         case .success(let value): directory = value
-        case .failure(.invalidDirectory): return .success(defaults)
+        case .failure(.invalidDirectory): return defaultProfile()
         case .failure(.gitUnavailable): return .failure(.invalidRule)
         }
         // Ordinary rules compare the actual cwd, not the enclosing Git root.
@@ -293,7 +325,7 @@ extension ClaudioConfig {
             if $0.directory.kind != $1.directory.kind { return $0.directory.kind == .git }
             return $0.directory.path.count > $1.directory.path.count
         }
-        guard let rule = matches.first else { return .success(defaults) }
+        guard let rule = matches.first else { return defaultProfile() }
         if matches.dropFirst().contains(where: { $0.directory.identity == rule.directory.identity })
         {
             return .failure(.duplicateDirectory)
@@ -308,6 +340,7 @@ public enum WorkspaceSoundMutation: Sendable {
     case pack(WorkspaceSoundWriteTarget, String)
     case volume(WorkspaceSoundWriteTarget, Double)
     case event(WorkspaceSoundWriteTarget, Event, Bool)
+    case systemSound(WorkspaceSoundWriteTarget, Event, String?)
     case surfaces(WorkspaceSoundWriteTarget, [HostSurfaceID])
 }
 
@@ -318,6 +351,7 @@ public func mutateWorkspaceSound(
     userPacksDirectory: URL = ClaudioPaths.packsDirectory,
     bundledPacksDirectory: URL? = nil,
     verifiedSurfaces: Set<HostSurfaceID> = WorkspaceSurfaceEligibility.verified,
+    systemSoundCatalog: SystemSoundCatalog = SystemSoundCatalog(),
     testingBeforeRename: (() -> Void)? = nil
 ) -> Result<Void, WorkspaceSoundError> {
     var rejection: WorkspaceSoundError?
@@ -366,7 +400,7 @@ public func mutateWorkspaceSound(
                 json["workspace_rules"] = rules
                 return .success(())
             case .pack(let target, _), .volume(let target, _), .event(let target, _, _),
-                .surfaces(let target, _):
+                .systemSound(let target, _, _), .surfaces(let target, _):
                 guard
                     config.workspaceRules.first(where: { $0.id == target.id })?.directory
                         == target.directory
@@ -389,6 +423,17 @@ public func mutateWorkspaceSound(
                 var events = profile["events"] as? [String: Any] ?? [:]
                 events[event.cliName] = enabled
                 profile["events"] = events
+            case .systemSound(_, let event, let name):
+                if let name, systemSoundCatalog.audioURL(named: name) == nil {
+                    return reject(.invalidRule)
+                }
+                var sounds = profile["systemSounds"] as? [String: Any] ?? [:]
+                sounds[event.cliName] = name
+                if sounds.isEmpty {
+                    profile.removeValue(forKey: "systemSounds")
+                } else {
+                    profile["systemSounds"] = sounds
+                }
             case .surfaces(_, let surfaces):
                 guard Set(surfaces).isSubset(of: verifiedSurfaces) else {
                     return reject(.unsupportedSurface)

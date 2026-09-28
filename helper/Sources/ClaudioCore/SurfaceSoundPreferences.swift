@@ -45,6 +45,7 @@ public struct ResolvedSoundProfile: Sendable, Equatable {
     public let inheritedEvents: Set<Event>
     public var volume: Double = ClaudioConfig.defaultMasterVolume
     public var workspaceID: UUID? = nil
+    public var systemSounds: [String: String] = [:]
 
     public func isEnabled(_ event: Event) -> Bool {
         eventsEnabled[event.cliName] ?? true

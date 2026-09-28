@@ -125,6 +125,7 @@ public enum EventSettingsFocusTarget: Sendable, Equatable, Hashable {
     case retryLibrary
     case manageSoundPacks
     case generateAICue(Event)
+    case soundChoice(Event)
     case configure(Event)
     case preview(Event)
     case mute(Event)
@@ -565,6 +566,7 @@ public struct PanelEventPresentation: Sendable, Equatable, Identifiable {
     public let nativeEventText: String
     public let capabilityText: String
     public let soundFileText: String
+    public let selectedSystemSound: Bool
     public let enabled: Bool
     public let support: HostCapabilitySupport?
     public let implementation: HostCapabilityImplementation?
@@ -578,13 +580,26 @@ public func panelEventPresentations(
     masterVolume: Double,
     language: ClaudioAppLanguage,
     configWritesAllowed: Bool = true,
-    safetyFailures: [Event: EventPreviewSafetyFailure] = [:]
+    safetyFailures: [Event: EventPreviewSafetyFailure] = [:],
+    systemSounds: [String: String] = [:],
+    availableSystemSoundNames: Set<String> = [],
+    eventsEnabled: [String: Bool] = [:]
 ) -> [PanelEventPresentation] {
     let l10n = ClaudioL10n(language: language)
     let separator = language == .english ? ", " : "，"
     let rowsByEvent = Dictionary(uniqueKeysWithValues: rows.map { ($0.event, $0) })
     return Event.allCases.map { event in
         let row = rowsByEvent[event] ?? EventRow(event: event, coverage: .unmapped, enabled: false)
+        let selectedSystemSound = systemSounds[event.cliName]
+        let effectiveCoverage: CoverageState
+        if let selectedSystemSound {
+            effectiveCoverage =
+                availableSystemSoundNames.contains(selectedSystemSound)
+                ? .present(fileName: selectedSystemSound)
+                : .broken(fileName: selectedSystemSound)
+        } else {
+            effectiveCoverage = row.coverage
+        }
         let binding: HostCapabilityBinding?
         switch scope {
         case .global, .workspace:
@@ -605,9 +620,9 @@ public func panelEventPresentations(
                 } ?? false
         }
         let previewAvailability = eventPreviewAvailability(
-            coverage: row.coverage,
+            coverage: effectiveCoverage,
             masterVolume: masterVolume,
-            safetyFailureReason: safetyFailures[event].map {
+            safetyFailureReason: (selectedSystemSound == nil ? safetyFailures[event] : nil).map {
                 localizedEventPreviewSafetyFailure($0, language: language)
             })
         let controls = PanelEventControlAvailability(
@@ -628,15 +643,21 @@ public func panelEventPresentations(
                 scope.workspaceID == nil ? .panelGlobalDefaults : .workspaceLabel)
         }
         let soundFileText: String
-        switch row.coverage {
+        switch effectiveCoverage {
         case .present(let fileName):
-            if let displayName = row.audioDisplayName {
+            if selectedSystemSound != nil {
+                soundFileText = l10n.format(.workspaceSystemSoundFile, fileName)
+            } else if let displayName = row.audioDisplayName {
                 soundFileText = "\(fileName) · \(displayName)"
             } else {
                 soundFileText = fileName
             }
         case .unmapped: soundFileText = l10n.text(.panelNoSoundAssigned)
         case .broken(let fileName):
+            if selectedSystemSound != nil {
+                soundFileText = l10n.format(.workspaceSystemSoundMissing, fileName)
+                break
+            }
             let missingSoundText = l10n.format(.panelMissingSound, fileName)
             if let displayName = row.audioDisplayName {
                 soundFileText = "\(missingSoundText) · \(displayName)"
@@ -644,8 +665,11 @@ public func panelEventPresentations(
                 soundFileText = missingSoundText
             }
         }
+        let enabled =
+            selectedSystemSound == nil
+            ? row.enabled : (eventsEnabled[event.cliName] ?? true)
         let enabledText =
-            row.enabled
+            enabled
             ? l10n.text(.eventEnabled)
             : l10n.text(.eventMuted)
         let clauses = [
@@ -658,7 +682,8 @@ public func panelEventPresentations(
             nativeEventText: nativeEventText,
             capabilityText: capabilityText,
             soundFileText: soundFileText,
-            enabled: row.enabled,
+            selectedSystemSound: selectedSystemSound != nil,
+            enabled: enabled,
             support: binding?.support,
             implementation: binding?.implementation,
             controls: controls,

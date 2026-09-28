@@ -683,7 +683,10 @@ public struct PanelView: View {
             masterVolume: panelModel.config.masterVolume,
             language: languageStore.language,
             configWritesAllowed: panelModel.soundControlsEnabled,
-            safetyFailures: panelModel.previewSafetyFailures)
+            safetyFailures: panelModel.previewSafetyFailures,
+            systemSounds: panelModel.config.systemSounds,
+            availableSystemSoundNames: Set(panelModel.systemSoundNames),
+            eventsEnabled: panelModel.config.eventsEnabled)
     }
 
     private var eventSection: some View {
@@ -1314,7 +1317,8 @@ private struct PanelAgentEventRow: View {
     }
 
     private var recoveryAction: EventPreviewRecoveryAction? {
-        eventPreviewRecoveryAction(for: presentation.controls.previewAvailability)
+        if presentation.selectedSystemSound { return nil }
+        return eventPreviewRecoveryAction(for: presentation.controls.previewAvailability)
     }
 
     private func recoveryTitle(for action: EventPreviewRecoveryAction) -> String {

@@ -1665,6 +1665,18 @@
         }
       }
     },
+    "workspace.system-sound.file": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "macOS: %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS：%@" } }
+      }
+    },
+    "workspace.system-sound.missing": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "macOS sound unavailable: %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 提示音不可用：%@" } }
+      }
+    },
     "event.preview.started": {
       "localizations": {
         "en": {
@@ -9505,6 +9517,54 @@
             "value": "管理声音"
           }
         }
+      }
+    },
+    "event-settings.sound-choice": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sound for %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ 的声音" } }
+      }
+    },
+    "event-settings.selected-pack-sound": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Selected sound pack" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "所选声音包" } }
+      }
+    },
+    "event-settings.system-sounds": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "macOS system sounds" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 系统提示音" } }
+      }
+    },
+    "event-settings.no-system-sounds": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No system sounds available" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有可用的系统提示音" } }
+      }
+    },
+    "event-settings.sound-choice-failed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not change sound: %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改声音：%@" } }
+      }
+    },
+    "event-settings.system-sound-unavailable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The macOS sound %@ is unavailable. The selection was not changed." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统提示音 %@ 不可用；未更改选择。" } }
+      }
+    },
+    "event-settings.sound-choice-conflict": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The configuration was published, but another change was detected. Reload the current selection before retrying." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "配置已发布但检测到并发冲突；请重新读取当前选择后再重试。" } }
+      }
+    },
+    "event-settings.current-helper-required": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Update or repair the installed helper before choosing a system sound." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请先更新或修复已安装的 helper，再选择系统提示音。" } }
       }
     },
     "event-settings.manage-sounds.hint": {
