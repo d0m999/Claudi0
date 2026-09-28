@@ -72,6 +72,7 @@ public struct PlayEnvironment: Sendable {
     public let configFile: URL
     public let userPacksDirectory: URL
     public let bundledPacksDirectory: URL?
+    public let systemSoundDirectory: URL
     public let spawner: any ProcessSpawning
     /// Where the single shared "last played" timestamp lives (ENGINEERING.md 决议 5: "一把
     /// 锁 + 一个共享时间戳" — deliberately one event-agnostic timestamp, not a per-event
@@ -118,6 +119,7 @@ public struct PlayEnvironment: Sendable {
         configFile: URL = ClaudioPaths.configFile,
         userPacksDirectory: URL = ClaudioPaths.packsDirectory,
         bundledPacksDirectory: URL? = nil,
+        systemSoundDirectory: URL = SystemSoundCatalog.systemDirectory,
         spawner: any ProcessSpawning = SystemProcessSpawner(),
         debounceStateFile: URL = ClaudioPaths.debounceStateFile,
         debounceInterval: TimeInterval = 1.5,
@@ -136,6 +138,7 @@ public struct PlayEnvironment: Sendable {
         self.configFile = configFile
         self.userPacksDirectory = userPacksDirectory
         self.bundledPacksDirectory = bundledPacksDirectory
+        self.systemSoundDirectory = systemSoundDirectory
         self.spawner = spawner
         self.debounceStateFile = debounceStateFile
         self.debounceInterval = debounceInterval
@@ -276,14 +279,21 @@ private func prepareConfiguredPlay(
         case .success(let profile):
             if !profile.isEnabled(event) {
                 return .silent(.disabled(event: event))
-            } else if let audioFile = resolveAudioFile(
-                for: event, packID: profile.selectedPack, environment: environment,
-                requireHealthyPack: profile.workspaceID != nil)
-            {
-                return .ready(volume: profile.volume, audioFile: audioFile)
-            } else {
-                return .silent(.notReady)
             }
+            let audioFile: URL?
+            if let name = profile.systemSounds[event.cliName] {
+                audioFile = SystemSoundCatalog(directory: environment.systemSoundDirectory)
+                    .audioURL(
+                        named: name)
+            } else {
+                audioFile = resolveAudioFile(
+                    for: event, packID: profile.selectedPack, environment: environment,
+                    requireHealthyPack: profile.workspaceID != nil)
+            }
+            if let audioFile {
+                return .ready(volume: profile.volume, audioFile: audioFile)
+            }
+            return .silent(.notReady)
         }
     }
     return .silent(.notReady)

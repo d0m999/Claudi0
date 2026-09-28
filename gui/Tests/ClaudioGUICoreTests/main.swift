@@ -191,12 +191,21 @@ if CommandLine.arguments.contains("--workspace-sounds") {
     await runPanelPresentationSuites()
     runPanelConfigControllerSuites()
     runWorkspaceSoundPresentationSuites()
+    runSystemSoundPresentationSuites()
     runSoundPacksEditorOwnerSuites()
     runSurfaceSoundIssueLifecycleSuites()
     runSettingsNavigationSuites()
     runAICuePackScopedSuites()
     await runAICuePackScopedAsyncSuites()
     print("Workspace sounds: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--system-sounds") {
+    runLocalizationSuites()
+    runSystemSoundPresentationSuites()
+    await runHostIntegrationManagerBridgeSuites()
+    print("System sounds: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -381,6 +390,7 @@ runSoundPacksEditorAccessibilityPostingSuites()
 runSoundPacksWindowStarredPacksSuites()
 runPanelConfigControllerSuites()
 runWorkspaceSoundPresentationSuites()
+runSystemSoundPresentationSuites()
 runPanelConfigFailureLifecycleSuites()
 runSurfaceSoundIssueLifecycleSuites()
 runPanelFocusCoordinatorSuites()

@@ -2,6 +2,10 @@ import ClaudioCore
 import ClaudioGUICore
 import Foundation
 
+private struct BridgeSoundSpawner: ProcessSpawning {
+    func spawn(executablePath: String, arguments: [String]) -> Bool { true }
+}
+
 private final class BridgeBootstrapper: SharedRuntimeBootstrapping, @unchecked Sendable {
     private let lock = NSLock()
     private var bootstrapCalls = 0
@@ -193,7 +197,8 @@ private func bridgeFixture(
         manager: manager,
         configFile: config,
         audioEnvironment: audioEnvironment,
-        receiptStore: receiptStore)
+        receiptStore: receiptStore,
+        systemSoundCatalog: SystemSoundCatalog(directory: root.appendingPathComponent("system")))
     return (bridge, bootstrapper, claude, codex, workBuddy, receiptStore, config, pack)
 }
 
@@ -529,6 +534,82 @@ func runHostIntegrationManagerBridgeSuites() async {
             expect(
                 state.matrix.cell(host: .codex, event: .stopFailure)?.state == .unsupported,
                 "全局静音不得把 Codex 不支持的 StopFailure 误画成 muted")
+        }
+    }
+
+    await suite("HostIntegrationManagerBridge uses the selected system sound for audibility") {
+        await withTempDirectory { root in
+            let fixture = bridgeFixture(root: root, initiallyConnected: true)
+            let sounds = root.appendingPathComponent("system", isDirectory: true)
+            let sound = sounds.appendingPathComponent("Basso.aiff")
+            writeFixture("system", to: sound)
+            writeFixture(
+                #"{"id":"dual","events":{"stop":"stop.mp3","notification":"notification.mp3"}}"#,
+                to: fixture.packDirectory.appendingPathComponent("manifest.json"))
+            writeFixture("pack", to: fixture.packDirectory.appendingPathComponent("stop.mp3"))
+            var config = ClaudioConfig(
+                selectedPack: "dual", systemSounds: ["notification": "Basso"])
+            try! JSONEncoder().encode(config).write(to: fixture.configFile)
+            let environment = PlayEnvironment(
+                lockFile: root.appendingPathComponent("play.lock"), configFile: fixture.configFile,
+                userPacksDirectory: fixture.packDirectory.deletingLastPathComponent(),
+                systemSoundDirectory: sounds, spawner: BridgeSoundSpawner(),
+                debounceStateFile: root.appendingPathComponent("debounce"), debounceInterval: 0,
+                logFile: root.appendingPathComponent("log"),
+                logLockFile: root.appendingPathComponent("log.lock"))
+
+            expect(
+                playSoundEvent("notification", environment: environment)
+                    == .played(event: .notification, filePath: sound.path),
+                "the selected system sound plays while its pack event file is missing")
+            var state = await fixture.bridge.refresh()
+            for host in [HostID.claudeCode, .codex] {
+                expect(
+                    state.matrix.cell(host: host, event: .notification)?.state == .audible,
+                    "\(host) must report the available system sound as audible")
+                expect(
+                    state.matrix.cell(host: host, event: .stop)?.state == .audible,
+                    "events without a system choice retain pack coverage")
+            }
+
+            writeFixture(
+                "pack", to: fixture.packDirectory.appendingPathComponent("notification.mp3"))
+            try! FileManager.default.removeItem(at: sound)
+            expect(
+                playSoundEvent("notification", environment: environment) == .notReady,
+                "missing selected system sound fails closed despite available pack audio")
+            state = await fixture.bridge.refresh()
+            for host in [HostID.claudeCode, .codex] {
+                expect(
+                    state.matrix.cell(host: host, event: .notification)?.state == .missingSound,
+                    "\(host) must refresh system availability without falling back to pack coverage"
+                )
+            }
+
+            config.eventsEnabled["notification"] = false
+            try! JSONEncoder().encode(config).write(to: fixture.configFile)
+            state = await fixture.bridge.refresh()
+            expect(
+                state.matrix.cell(host: .codex, event: .notification)?.state == .muted,
+                "the event switch still takes priority over source availability")
+            config.eventsEnabled["notification"] = true
+            config.masterVolume = 0
+            try! JSONEncoder().encode(config).write(to: fixture.configFile)
+            state = await fixture.bridge.refresh()
+            expect(
+                state.matrix.cell(host: .codex, event: .notification)?.state == .muted,
+                "zero group volume still mutes the selected system sound")
+            expect(
+                state.matrix.cell(host: .codex, event: .stopFailure)?.state == .unsupported,
+                "source selection does not change host capability")
+
+            config.masterVolume = 0.8
+            config.systemSounds = [:]
+            try! JSONEncoder().encode(config).write(to: fixture.configFile)
+            state = await fixture.bridge.refresh()
+            expect(
+                state.matrix.cell(host: .codex, event: .notification)?.state == .audible,
+                "clearing the selection explicitly restores available pack audio")
         }
     }
 
