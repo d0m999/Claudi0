@@ -10,4 +10,7 @@ claudi0 使用一个由 AppKit controller 持有并在 app 生命周期内复用
 
 ## 修订：2026-09-28
 
+窗口焦点采用 [ADR 0022](0022-separate-panel-and-settings-window-focus.md) 的非激活窗口机制。
+这一变更保留本 ADR 的唯一 retained owner、统一设置内容与类型化路由。
+
 统一设置窗口与类型化路由的决定继续有效。顶层目的页改为「通用、集成、默认组／工作区、通知、声音、活动与诊断、快捷键、关于」八页；上方原九页清单中的「显示」已被本修订取代。固定紧凑布局不需要独立目的页，Orbit Zero 的装饰点也不再作为可调偏好。历史 `display` 路由值在启动时投影到「通用」，不报配置损坏且不主动改写保存值；历史 `Claudio.MenuBarStatusDot` 值保留但不再读取或影响图标。

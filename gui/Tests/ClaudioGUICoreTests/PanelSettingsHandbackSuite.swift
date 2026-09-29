@@ -4,250 +4,257 @@ import ClaudioGUICore
 import Foundation
 
 @MainActor
-func runPanelSettingsHandbackSuites() {
-    suite("Settings 活动 sheet 持有焦点时，Panel 关闭应还给该 sheet") {
+func runPanelSettingsHandbackSuites() async {
+    suite("菜单与 Settings 从创建起就是非激活窗口") {
         _ = NSApplication.shared
-        let settings = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 240),
-            styleMask: [.titled], backing: .buffered, defer: false)
+        let settings = focusTestSettingsWindow()
+        let panel = MenuBarPanel()
+        defer { settings.close(); panel.close() }
+        expect(settings.styleMask.contains(.nonactivatingPanel), "Settings 必须从初始化就具有非激活样式")
+        expect(panel.styleMask.contains(.nonactivatingPanel), "菜单必须从初始化就具有非激活样式")
+        expect(settings.canBecomeKey && panel.canBecomeKey, "两个窗口都必须能独立接收键盘")
+        expect(!settings.canBecomeMain && !panel.canBecomeMain, "窗口不能被应用 main-window 激活联动")
+        expect(!settings.hidesOnDeactivate && !panel.hidesOnDeactivate, "应用退激活不能隐式隐藏设置或菜单")
+        expect(settings.level == .normal, "设置维持普通窗口层级，不能变成置顶窗口")
+        settings.defersAutomaticFocusForPanel = true
+        expect(!settings.canBecomeKey, "后台设置不参与菜单关闭后的自动 key 选择")
+        settings.defersAutomaticFocusForPanel = false
+        expect(settings.canBecomeKey, "菜单交互结束后恢复设置的键盘资格")
+    }
+
+    await suite("真实 NSPanel 打开和取消保持普通窗口顺序") {
+        _ = NSApplication.shared
+        let settings = focusTestSettingsWindow()
+        let other = focusTestSettingsWindow()
+        let anchorWindow = NSWindow(
+            contentRect: NSRect(x: 200, y: 700, width: 28, height: 24),
+            styleMask: .borderless, backing: .buffered, defer: false)
+        anchorWindow.isReleasedWhenClosed = false
+        let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 24))
+        anchorWindow.contentView = anchor
+        let panel = MenuBarPanel()
+        panel.contentSize = NSSize(width: 120, height: 100)
+        var shows = 0
+        var closes: [MenuBarPanel.Dismissal] = []
+        panel.onShow = { shows += 1 }
+        panel.onClose = { closes.append($0) }
+        defer {
+            panel.onClose = nil
+            panel.close()
+            settings.close()
+            other.close()
+            anchorWindow.close()
+        }
+
+        for settingsIsFront in [true, false] {
+            other.presentForUserRequest()
+            settings.presentForUserRequest()
+            if !settingsIsFront { other.presentForUserRequest() }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            let ownedKey = settingsWindowOwnsKeyFocus(settings, keyWindow: NSApp.keyWindow)
+            expect(ownedKey == settingsIsFront, "夹具必须分别建立前台和后台设置")
+            settings.defersAutomaticFocusForPanel = !ownedKey
+            var handback = PanelSettingsHandback()
+            handback.begin(settingsWasForeground: ownedKey)
+            let before = focusTestNormalWindowOrder()
+            let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
+            panel.show(relativeTo: anchor.bounds, of: anchor)
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            expect(panel.isShown && panel.isKeyWindow, "真实非激活菜单必须可见且持有 key")
+            NotificationCenter.default.post(
+                name: NSApplication.didResignActiveNotification, object: NSApp)
+            expect(panel.isShown, "应用退激活不等于非激活菜单失去键盘")
+            expect(
+                NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmost,
+                "菜单取得键盘不能切换前台应用")
+            expect(
+                focusTestSameWindowOrder(before, focusTestNormalWindowOrder()),
+                "菜单打开后普通窗口必须保留原顺序")
+            panel.cancelOperation(nil)
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            expect(!panel.isShown, "Esc responder 路径必须收起菜单")
+            expect(
+                focusTestSameWindowOrder(before, focusTestNormalWindowOrder()),
+                "菜单关闭后普通窗口顺序必须保持不变")
+            settings.defersAutomaticFocusForPanel = false
+            if handback.takeSettingsRestoration() { settings.makeKey() }
+            expect(
+                focusTestSameWindowOrder(before, focusTestNormalWindowOrder()),
+                "设置的键盘归还不能改变窗口顺序")
+            expect(
+                NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmost,
+                "收起菜单后不能激活其他应用")
+        }
+        expect(shows == 2 && closes == [.explicit, .explicit], "每次展示和关闭只发出一次生命周期信号")
+        panel.close()
+        expect(closes.count == 2, "重复关闭不能重复归还焦点")
+        panel.show(relativeTo: anchor.bounds, of: anchor)
+        expect(panel.accessibilityPerformCancel(), "菜单必须暴露可访问性取消动作")
+        expect(closes.last == .explicit, "可访问性取消与 Esc 使用同一关闭路径")
+        panel.show(relativeTo: anchor.bounds, of: anchor)
+        panel.dismiss(.outsideInteraction)
+        expect(closes.last == .outsideInteraction, "主动点击外部窗口必须与 Esc 区分")
+        panel.show(relativeTo: anchor.bounds, of: anchor)
+        let child = focusTestSettingsWindow()
+        panel.addChildWindow(child, ordered: .above)
+        child.makeKeyAndOrderFront(nil)
+        try? await Task.sleep(nanoseconds: 20_000_000)
+        expect(panel.isShown, "菜单子窗口借用 key 不得关闭菜单")
+        panel.makeKey()
+        panel.removeChildWindow(child)
+        child.close()
+        other.makeKey()
+        let focusDeadline = Date().addingTimeInterval(0.5)
+        while panel.isShown && Date() < focusDeadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        expect(!panel.isShown && closes.last == .outsideInteraction, "键盘真正离开菜单树时收起菜单")
+        settings.presentForUserRequest()
+        let beforeOutsideClick = focusTestNormalWindowOrder()
+        panel.show(relativeTo: anchor.bounds, of: anchor)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = NSEvent.mouseEvent(
+                with: type, location: NSPoint(x: 50, y: 50), modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: settings.windowNumber, context: nil,
+                eventNumber: 1, clickCount: 1, pressure: 1)!
+            NSApp.sendEvent(event)
+        }
+        expect(!panel.isShown && closes.last == .outsideInteraction, "真实点外鼠标事件必须经本地监视器收起菜单")
+        expect(
+            focusTestSameWindowOrder(beforeOutsideClick, focusTestNormalWindowOrder()),
+            "点击前台设置的空白处收起菜单时保持原有普通窗口顺序")
+        expect(settings.accessibilityPerformRaise(), "显式辅助功能 Raise 必须前置设置")
+        expect(settings.isKeyWindow, "主动前置设置后必须拥有键盘焦点")
+    }
+
+    suite("菜单关闭只消费一次原来的 Settings key 所有权") {
+        var handback = PanelSettingsHandback()
+        handback.begin(settingsWasForeground: true)
+        expect(handback.takeSettingsRestoration(), "前台设置在显式关闭菜单后取回 key")
+        expect(!handback.takeSettingsRestoration(), "同一次关闭只消费一次 Settings 焦点")
+        handback.begin(settingsWasForeground: false)
+        expect(!handback.takeSettingsRestoration(), "后台设置不能借菜单关闭抢键盘")
+        handback.begin(settingsWasForeground: true)
+        handback.begin(settingsWasForeground: false)
+        expect(!handback.takeSettingsRestoration(), "新一次打开必须覆盖旧决策")
+    }
+
+    suite("Settings 与真实活动 sheet 仍是同一个 key owner") {
+        let settings = focusTestSettingsWindow()
         let sheet = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 220, height: 120),
-            styleMask: [.titled], backing: .buffered, defer: false)
-        let unrelated = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 100),
-            styleMask: [.titled], backing: .buffered, defer: false)
-        settings.isReleasedWhenClosed = false
+            styleMask: .titled, backing: .buffered, defer: false)
         sheet.isReleasedWhenClosed = false
-        unrelated.isReleasedWhenClosed = false
+        defer { settings.endSheet(sheet); sheet.close(); settings.close() }
         settings.orderFront(nil)
         settings.beginSheet(sheet)
         RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        expect(sheet.sheetParent === settings, "测试必须使用真实附属 sheet")
+        expect(settingsWindowOwnsKeyFocus(settings, keyWindow: sheet), "sheet key 仍属于 Settings")
+        expect(settingsWindowRestorationTarget(settings) === sheet, "键盘归还必须指向当前 sheet")
+        expect(!settingsWindowOwnsKeyFocus(settings, keyWindow: nil), "没有 key 不等于 Settings 在前台")
+    }
 
-        expect(sheet.sheetParent === settings, "回归场景必须是真实附属于 Settings 的 sheet")
-        expect(settingsWindowOwnsKeyFocus(settings, keyWindow: sheet), "sheet key 焦点属于 Settings")
-        expect(settingsWindowRestorationTarget(settings) === sheet, "关闭 Panel 应恢复当前 sheet")
-        expect(!settingsWindowOwnsKeyFocus(settings, keyWindow: nil), "无 key window 时不得恢复 Settings")
-        expect(
-            !settingsWindowOwnsKeyFocus(settings, keyWindow: unrelated), "其他窗口不得被误认为 Settings sheet"
-        )
-
-        var ownership = SettingsForegroundOwnership()
-        ownership.noteSettingsBecameKey()
-        ownership.noteExternalApplicationActivated()
-        expect(
-            !ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: true),
-            "外部应用激活后应清空旧的 Settings 前台记录")
-        if settingsWindowOwnsKeyFocus(settings, keyWindow: sheet) {
-            ownership.noteSettingsBecameKey()
+    suite("菜单栏命中使用原始事件坐标") {
+        let window = NSWindow(
+            contentRect: NSRect(x: 200, y: 200, width: 200, height: 80),
+            styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let button = NSView(frame: NSRect(x: 20, y: 20, width: 24, height: 24))
+        window.contentView?.addSubview(button)
+        defer { window.close() }
+        for (location, expected) in [(NSPoint(x: 30, y: 30), true), (NSPoint(x: 90, y: 30), false)]
+        {
+            let local = NSEvent.mouseEvent(
+                with: .leftMouseDown, location: location,
+                modifierFlags: [], timestamp: 10, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+            expect(statusItemContainsMouseEvent(local, button: button) == expected, "本地事件按所属窗口坐标命中")
+            let screen = window.convertPoint(toScreen: location)
+            let quartz = CGPoint(x: screen.x, y: NSScreen.screens[0].frame.maxY - screen.y)
+            let global = NSEvent(
+                cgEvent: CGEvent(
+                    mouseEventSource: nil, mouseType: .leftMouseDown,
+                    mouseCursorPosition: quartz, mouseButton: .left)!)!
+            expect(
+                statusItemContainsMouseEvent(global, button: button) == expected, "全局事件按发生时的屏幕坐标命中")
         }
-        var handback = PanelSettingsHandback()
-        handback.begin(
-            settingsWasForeground: ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: true))
-        expect(
-            handback.takeSettingsRestoration()
-                && settingsWindowRestorationTarget(settings) === sheet,
-            "sheet 从后台重新成为 key 后，Panel 关闭应归还同一个 sheet")
-        expect(!handback.takeSettingsRestoration(), "Panel 关闭只消费一次 sheet 恢复资格")
-
-        settings.endSheet(sheet)
-        expect(settingsWindowRestorationTarget(settings) === settings, "sheet 关闭后恢复主窗口")
-        expect(settingsWindowOwnsKeyFocus(settings, keyWindow: settings), "主窗口 key 焦点仍属于 Settings")
-        sheet.close()
-        settings.close()
-        unrelated.close()
     }
 
-    suite("Panel 关闭只恢复打开前占据焦点的 Settings") {
-        var handback = PanelSettingsHandback()
-        handback.begin(settingsWasForeground: true)
-        expect(handback.takeSettingsRestoration(), "从前台 Settings 打开 Panel 应恢复 Settings")
-        expect(!handback.takeSettingsRestoration(), "一次关闭只消费一次 Settings 恢复资格")
-
-        handback.begin(settingsWasForeground: false)
-        expect(!handback.takeSettingsRestoration(), "后台可见 Settings 不得抢走原 app 焦点")
-
-        handback.begin(settingsWasForeground: true)
-        handback.begin(settingsWasForeground: false)
-        expect(!handback.takeSettingsRestoration(), "新一次打开必须覆盖上次的焦点状态")
-    }
-
-    suite("菜单栏点击短暂移走 key 焦点后仍须记住前台 Settings") {
-        var ownership = SettingsForegroundOwnership()
-        ownership.noteSettingsBecameKey()
-        var handback = PanelSettingsHandback()
-        let settingsIsKeyWhenPopoverActionRuns = false
-        handback.begin(
-            settingsWasForeground: settingsIsKeyWhenPopoverActionRuns
-                || ownership.canRestore(
-                    isWindowVisible: true,
-                    isWindowMiniaturized: false,
-                    isWindowOnActiveSpace: true)
-        )
-        expect(
-            handback.takeSettingsRestoration(),
-            "菜单栏按钮接管 key 焦点不应让面板关闭时放弃原本在前台的 Settings")
-
-        ownership.noteExternalApplicationActivated()
-        expect(
-            !ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: true),
-            "其他应用已激活时，后台 Settings 不能借面板关闭抢回前台")
-
-        ownership.noteSettingsBecameKey()
-        expect(
-            !ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: true,
-                isWindowOnActiveSpace: true),
-            "最小化的 Settings 不能借面板关闭恢复")
-        expect(
-            !ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: false),
-            "其他 Space 中的 Settings 不能借面板关闭恢复")
-        ownership.noteSettingsClosed()
-        expect(
-            !ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: true),
-            "已关闭的 Settings 不能保留前台资格")
-    }
-
-    suite("外部激活通知延迟时，不沿用 Settings 的旧前台记录") {
-        var ownership = SettingsForegroundOwnership()
-        ownership.noteSettingsBecameKey()
-        expect(
-            ownership.canRestore(
-                isWindowVisible: true,
-                isWindowMiniaturized: false,
-                isWindowOnActiveSpace: true),
-            "回归场景须保留尚未收到外部激活通知的旧记录")
-
-        let appIsActive = false
-        var handback = PanelSettingsHandback()
-        handback.begin(
-            settingsWasForeground: appIsActive
-                && ownership.canRestore(
-                    isWindowVisible: true,
-                    isWindowMiniaturized: false,
-                    isWindowOnActiveSpace: true)
-        )
-        expect(!handback.takeSettingsRestoration(), "Claudio 已在后台时不得归还 Settings 焦点")
-    }
-
-    suite("Panel 与 Settings 的原生窗口焦点记录和归还接入同一决策") {
+    suite("生产窗口 owner 接入非激活呈现与状态项激活保护") {
         let root = guiTestRepositoryRoot()
-        let menuURL = root.appendingPathComponent(
-            "gui/Sources/ClaudioGUI/MenuBarController.swift")
-        let settingsURL = root.appendingPathComponent(
-            "gui/Sources/ClaudioGUI/SettingsWindowController.swift")
-        guard
-            let menuSource = try? String(contentsOf: menuURL, encoding: .utf8),
-            let settingsSource = try? String(contentsOf: settingsURL, encoding: .utf8)
-        else {
-            expect(false, "读不到 Panel 与 Settings 的原生窗口 owner")
-            return
-        }
-
-        let menu = strippingComments(menuSource).codeWithoutStringLiterals
-        let settings = strippingComments(settingsSource).codeWithoutStringLiterals
-        guard let showStart = menu.range(of: "private func showPopover()") else {
-            expect(false, "读不到 Panel 打开路径")
-            return
-        }
-        let show = menu[showStart.lowerBound...]
-        let capture = show.range(of: "panelSettingsHandback.begin(")?.lowerBound
-        let keyWindowInput = show.range(
-            of: "settingsWasForeground: settingsWindowController.ownsForegroundBeforePanel")?
-            .lowerBound
-        let presentation = show.range(of: "popover.show(relativeTo:")?.lowerBound
+        let menu = try! String(
+            contentsOf: root.appendingPathComponent(
+                "gui/Sources/ClaudioGUI/MenuBarController.swift"), encoding: .utf8)
+        let settings = try! String(
+            contentsOf: root.appendingPathComponent(
+                "gui/Sources/ClaudioGUI/SettingsWindowController.swift"), encoding: .utf8)
+        let menuCode = strippingComments(menu).codeWithoutStringLiterals
+        let settingsCode = strippingComments(settings).codeWithoutStringLiterals
+        expect(menuCode.contains("let panelWindow = MenuBarPanel()"), "真实菜单必须使用非激活窗口组件")
         expect(
-            capture != nil && keyWindowInput != nil && presentation != nil
-                && capture! < keyWindowInput! && keyWindowInput! < presentation!,
-            "必须在 Panel 展示前记录 Settings 是否原本占据前台")
-
-        guard let closeStart = menu.range(of: "func popoverDidClose(_ notification: Notification)")
-        else {
-            expect(false, "读不到 Panel 关闭回调")
-            return
-        }
-        let close = menu[closeStart.lowerBound...]
-        let active = close.range(of: "guard NSApp.isActive")?.lowerBound
-        let decision = close.range(of: "panelSettingsHandback.takeSettingsRestoration()")?
-            .lowerBound
-        let restorationGuard = close.range(of: "if restoreSettings &&")?.lowerBound
-        let restore = close.range(
-            of: "settingsWindowController.restoreVisibleWindowAfterPopoverClose()")?.lowerBound
-        let external = close.range(of: "activateHandbackApplication(previous)")?.lowerBound
+            menuCode.contains("panelWindow.onShow =") && menuCode.contains("panelWindow.onClose ="),
+            "真实 owner 必须收到可靠的显示和关闭事件")
         expect(
-            active != nil && decision != nil && restorationGuard != nil && restore != nil
-                && external != nil && decision! < active! && active! < restorationGuard!
-                && restorationGuard! < restore! && restore! < external!,
-            "Panel 主动关闭时，只在打开前 Settings 占据焦点且仍可恢复时归还它；否则交还原 app")
-
-        guard
-            let restoration = settings.range(
-                of: "func restoreVisibleWindowAfterPopoverClose() -> Bool")
-        else {
-            expect(false, "Settings owner 必须提供可见窗口的原生焦点恢复")
-            return
-        }
-        let restorationCode = settings[restoration.lowerBound...]
+            !menuCode.contains("NSApp.activate(") && !settingsCode.contains("NSApp.activate("),
+            "菜单与设置的显示不能通过激活整个应用获得键盘")
+        expect(!settingsCode.contains("orderFrontRegardless"), "设置 owner 不直接执行排序补偿，瞬时交接由独立原生组件提交")
         expect(
-            settings.contains("foregroundOwnership.noteSettingsBecameKey()")
-                && settings.contains("foregroundOwnership.noteExternalApplicationActivated()")
-                && settings.contains("foregroundOwnership.noteSettingsClosed()")
-                && settings.contains(
-                    "settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)")
-                && settings.contains("foregroundOwnership.canRestore(")
-                && settings.contains("settingsWindowRestorationTarget(window)")
-                && restorationCode.contains("window.isVisible")
-                && restorationCode.contains("!window.isMiniaturized")
-                && restorationCode.contains("window.isOnActiveSpace")
-                && restorationCode.contains("target.isVisible")
-                && restorationCode.contains("target.isOnActiveSpace")
-                && restorationCode.contains("target.makeKeyAndOrderFront(nil)"),
-            "Settings owner 必须将可见且仍活动的 sheet 恢复为 key window")
-
-        guard
-            let ownershipStart = settings.range(of: "var ownsForegroundBeforePanel: Bool"),
-            let restoreStart = settings.range(
-                of: "func restoreVisibleWindowAfterPopoverClose() -> Bool")
-        else {
-            expect(false, "读不到 Settings 在 Panel 打开前的前台所有权取样")
-            return
-        }
-        let ownershipCode = settings[ownershipStart.lowerBound..<restoreStart.lowerBound]
-        let activeGuard = ownershipCode.range(of: "guard NSApp.isActive else { return false }")?
-            .lowerBound
-        let staleFallback = ownershipCode.range(of: "foregroundOwnership.canRestore(")?.lowerBound
+            menuCode.contains("NSApplication.willResignActiveNotification")
+                && menuCode.contains("protectSettingsDuringStatusActivation("),
+            "必须在系统转发状态项回调之前保护当前设置")
         expect(
-            activeGuard != nil && staleFallback != nil && activeGuard! < staleFallback!,
-            "沿用旧前台记录前必须确认 Claudio 仍在前台")
-
-        guard
-            let sheetKeyObserver = settings.range(
-                of: "publisher(for: NSWindow.didBecomeKeyNotification)"),
-            let presentationObserver = settings.range(of: "settingsPresentationCancellable =")
-        else {
-            expect(false, "Settings owner 必须观察附属 sheet 的原生 key 通知")
-            return
-        }
-        let sheetKeyCode = settings[sheetKeyObserver.lowerBound..<presentationObserver.lowerBound]
+            menuCode.range(of: "panelWindow.show(relativeTo:")!.lowerBound
+                < menuCode.range(of: "settingsWindowController.finishStatusActivation()")!
+                .lowerBound,
+            "菜单取得焦点后才提交原层级恢复")
         expect(
-            settings.contains("sheetKeyCancellable = NotificationCenter.default")
-                && sheetKeyCode.contains("settingsWindowOwnsKeyFocus(window, keyWindow: keyWindow)")
-                && sheetKeyCode.contains("foregroundOwnership.noteSettingsBecameKey()"),
-            "附属 sheet 重新成为 key 时必须恢复同一个 Settings 前台所有权记录")
+            settingsCode.contains("CGEventSource.buttonState(.combinedSessionState, button: .left)")
+                && settingsCode.contains(
+                    "statusItemContainsScreenPoint(NSEvent.mouseLocation, button: button)"),
+            "普通切换应用和其他状态项不能进入保护路径")
+        expect(
+            settingsCode.contains("statusActivationGuard.finish(restoringOrder: false)"),
+            "关闭设置必须取消保护而不重新前置")
+        expect(
+            settingsCode.contains("presentedWindow.presentForUserRequest()"),
+            "只有主动请求 Settings 的路径可以前置设置")
+        expect(settingsCode.contains("let window = RetainedSettingsWindow("), "设置保留单一非激活窗口")
+        expect(
+            settingsCode.contains("settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow)"),
+            "原生 key window 与 sheet 决定当前所有权")
+        expect(settingsCode.contains("target.makeKey()"), "设置恢复只取回键盘，不重新排序")
+        expect(
+            menuCode.contains("if reason == .explicit, restoreSettings"),
+            "外部点击或应用切换不得归还旧 Settings 焦点")
+        expect(
+            menuCode.contains("defer { settingsWindowController.finishPanelPresentation() }"),
+            "所有关闭路径都必须恢复正常键盘资格")
+        expect(
+            menuCode.contains("pendingSettingsPresentation = presentation")
+                && menuCode.contains("presentSettings(settingsPresentation)"),
+            "保留统一 Settings 路由与关闭后展示")
     }
+}
+
+@MainActor
+private func focusTestSettingsWindow() -> RetainedSettingsWindow {
+    let window = RetainedSettingsWindow(
+        contentRect: NSRect(x: 200, y: 200, width: 320, height: 240),
+        styleMask: [.titled, .closable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    return window
+}
+
+private func focusTestNormalWindowOrder() -> [Int] {
+    (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+        as? [[String: Any]] ?? [])
+        .filter { ($0[kCGWindowLayer as String] as? Int) == 0 }
+        .compactMap { $0[kCGWindowNumber as String] as? Int }
+}
+
+private func focusTestSameWindowOrder(_ before: [Int], _ after: [Int]) -> Bool {
+    let common = Set(before).intersection(after)
+    return before.filter { common.contains($0) } == after.filter { common.contains($0) }
 }

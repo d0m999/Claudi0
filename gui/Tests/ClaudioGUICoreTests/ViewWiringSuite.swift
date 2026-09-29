@@ -781,8 +781,8 @@ func runViewWiringSuites() {
             "面板播报必须消费当前摘要、合并调度器，并在异步 post 前复核面板可见性")
 
         guard
-            let didShowStart = menu.range(of: "func popoverDidShow")?.lowerBound,
-            let didCloseStart = menu.range(of: "func popoverDidClose")?.lowerBound,
+            let didShowStart = menu.range(of: "func panelDidShow")?.lowerBound,
+            let didCloseStart = menu.range(of: "func panelDidClose")?.lowerBound,
             didShowStart < didCloseStart
         else {
             expect(false, "无法定位 MenuBarController popover show/close 生命周期")
@@ -1994,29 +1994,23 @@ func runViewWiringSuites() {
                 + "测试再怎么注入也拦不住它去碰真实 `~/.claudio`。锁只有一个来源：`environment`。")
     }
 
-    suite("MenuBarController：popover 关闭必须在早返前发出隐藏信号，保证主音量冲刷") {
-        guard let controller = codeOnly("gui/Sources/ClaudioGUI/MenuBarController.swift") else {
-            expect(false, "读不到 MenuBarController.swift")
-            return
-        }
-        expect(
-            controller.contains("focusCoordinator.notePanelHidden()"),
-            "popoverDidClose 必须告诉 coordinator 面板已隐藏；MasterVolumeRow 的拖动"
-                + "本身不写盘，popover 关闭是 pending 值必须冲刷的边界")
-
-        // 这不是普通的存在性绊线，它钉的是**顺序**：`guard NSApp.isActive`
-        // 在用户切到别的 app 导致 popover 关闭时会提前 return。若隐藏信号在它之后，
-        // `MasterVolumeRow` 便收不到冲刷边界；所以光有 `notePanelHidden()` 字面命中还不够。
-        guard let hidden = controller.range(of: "focusCoordinator.notePanelHidden()"),
-            let guardIsActive = controller.range(of: "guard NSApp.isActive")
+    suite("MenuBarController：Panel 关闭必须先发出隐藏信号，保证主音量冲刷") {
+        guard
+            let controller = codeWithoutStrings("gui/Sources/ClaudioGUI/MenuBarController.swift"),
+            let close = closureBody(
+                after: "private func panelDidClose(_ reason: MenuBarPanel.Dismissal)",
+                in: controller)
         else {
-            expect(false, "在 MenuBarController 里找不到 notePanelHidden() 或 guard NSApp.isActive")
+            expect(false, "读不到 MenuBarController.panelDidClose 的关闭路径")
             return
         }
+        // 任何关闭原因都必须先冲刷主音量。设置路由和外部点击各有后续处理，
+        // 不能让它们的条件分支或早返绕过隐藏信号。
         expect(
-            hidden.lowerBound < guardIsActive.lowerBound,
-            "notePanelHidden() 必须出现在 `guard NSApp.isActive` **之前**。放在之后 = 切换 app 关闭"
-                + "面板时 guard 提前 return，主音量 pending 拖动值永久丢失（D22/D37）")
+            close.trimmingCharacters(in: .whitespacesAndNewlines)
+                .hasPrefix("focusCoordinator.notePanelHidden()"),
+            "panelDidClose 的首个操作必须是 notePanelHidden()；MasterVolumeRow 的 pending"
+                + "拖动值必须在设置路由、焦点恢复或任何早返前冲刷（D22/D37）")
     }
 
     suite("OnboardingView 渲染任何失败，而不是只渲染接管的失败（T17c）") {
@@ -2376,7 +2370,7 @@ func runViewWiringSuites() {
         expect(
             !flat.contains("closeCount") && !wrapper.contains("closeCount"),
             "不许新增 closeCount —— PanelFocusCoordinator 今天已经有 hideCount 且 "
-                + "MenuBarController.popoverDidClose 的第一条语句已经是 notePanelHidden()（T17d），语义"
+                + "MenuBarController.panelDidClose 的第一条语句已经是 notePanelHidden()（T17d），语义"
                 + "与这里要的冲刷信号完全一致，复用它")
         expect(
             collapsingWhitespace(wrapper).contains(
@@ -2388,7 +2382,7 @@ func runViewWiringSuites() {
                 false,
                 "MasterVolumeRow 必须有 .onChange(of: focusCoordinator.hideCount) { … } —— 切不出它的闭包体。"
                     + "没有它，用户拖到新值后点面板外面关闭 popover，值会静默丢失（D22：popover 关闭是 "
-                    + "NSPopover 的可靠信号，`.onDisappear` 不是）")
+                    + "MenuBarPanel 的可靠信号，`.onDisappear` 不是）")
             return
         }
         expect(
@@ -2777,7 +2771,7 @@ func runViewWiringSuites() {
             collapsingWhitespace(quitBody) == "NSApp.terminate(nil)",
             "composition root 的退出闭包必须且只能调用 NSApp.terminate(nil)，实际：\(quitBody)")
         for forbidden in [
-            "popover.close()", "performClose", "notePanelHidden()", "exit(", "_exit(", "abort(",
+            "panelWindow.close()", "performClose", "notePanelHidden()", "exit(", "_exit(", "abort(",
             "killall",
         ] {
             expect(
