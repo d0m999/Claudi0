@@ -2254,7 +2254,7 @@ func runSoundPacksRefreshSuites() async {
             let sharedRequestBody = soundPacksFunctionBody(
                 after: "private func requestSettingsPresentation(", in: menu),
             let closeBody = soundPacksFunctionBody(
-                after: "func popoverDidClose(_ notification: Notification)", in: menu)
+                after: "func panelDidClose(_ reason: MenuBarPanel.Dismissal)", in: menu)
         else {
             expect(false, "读不到 PanelView/MenuBarController 或切不出窗口 presentation 函数体")
             return
@@ -2278,16 +2278,15 @@ func runSoundPacksRefreshSuites() async {
                 "request: .eventShortcut(route)")
                 && requestBody.contains("returnFocusTo: target")
                 && sharedRequestBody.contains("pendingSettingsPresentation = presentation")
-                && sharedRequestBody.contains("popover.close()"),
-            "管理入口必须提交 typed route 并先记单一 pending，再强制关闭 transient popover；performClose 可能因 nested "
-                + "popover/child window 失败并留下幽灵 pending")
+                && sharedRequestBody.contains("panelWindow.close()"),
+            "管理入口必须提交 typed route 并先记单一 pending，再关闭菜单及其 child window")
         expect(
-            !sharedRequestBody.contains("popover.performClose"),
+            !sharedRequestBody.contains("panelWindow.performClose"),
             "自家窗口导航不得用可拒绝的 performClose；失败后没有 didClose 可消费 pending")
         if let pendingAt = sharedRequestBody.range(
             of: "pendingSettingsPresentation = presentation"
         )?.lowerBound,
-            let closeAt = sharedRequestBody.range(of: "popover.close()")?.lowerBound
+            let closeAt = sharedRequestBody.range(of: "panelWindow.close()")?.lowerBound
         {
             expect(
                 pendingAt < closeAt,
@@ -2298,20 +2297,24 @@ func runSoundPacksRefreshSuites() async {
         expect(
             closeBody.contains("if let settingsPresentation")
                 && closeBody.contains("presentSettings(settingsPresentation)"),
-            "popover 关闭后必须只展示统一 Settings；其关闭回调恢复精确触发控件")
+            "Panel 关闭后必须只展示统一 Settings；其关闭回调恢复精确触发控件")
         if let showAt = closeBody.range(
             of: "presentSettings(settingsPresentation)"
         )?.lowerBound,
             let returnAt = closeBody[showAt...].range(of: "return")?.lowerBound,
-            let handbackGuardAt = closeBody.range(of: "guard NSApp.isActive")?.lowerBound
+            let keyRestorationAt = closeBody.range(
+                of: "if reason == .explicit, restoreSettings")?.lowerBound
         {
             expect(
-                showAt < returnAt && returnAt < handbackGuardAt,
-                "Settings presentation 必须先于 previous-app handback guard 并直接 return")
+                showAt < returnAt && returnAt < keyRestorationAt,
+                "主动 Settings presentation 必须在普通关闭的 key 恢复之前完成并直接 return")
         } else {
             expect(
                 false,
-                "didClose 必须同时包含窗口 presentation、直接 return 与 previous-app handback guard")
+                "didClose 必须同时包含窗口 presentation、直接 return 与普通关闭的 key 恢复分支")
         }
+        expect(
+            !closeBody.contains("activateHandbackApplication("),
+            "Panel 普通关闭和设置导航都不能激活外部应用来补偿窗口顺序")
     }
 }

@@ -374,6 +374,12 @@ Claude Code 的 `hooks.<Event>` 是数组，用户或别的工具可能已挂 ho
 
 - **VoiceOver 逐控件 label**：事件行→「{事件名}，声音 {文件名}，{已启用/已静音}」；试听键→「试听 {事件名} 的声音」；静音钮→切换按钮「{事件名} 声音」+ on/off；切包 pill→「当前声音包 {包名}，点按切换」；drop-zone→「拖入或点按添加你自己的声音」；**主音量滑块**→ label「主音量」+ `accessibilityValue`「{0–100}%」（阶段 D）。
   - ⚠️ **主音量的 `accessibilityValue` 不是装饰，它是那个数字唯一的交付通道**：D15 把百分比读数从**屏幕上**拿掉了（照抄 macOS 系统音量滑块，行内无「80%」文字）。删掉 `.accessibilityValue`，VO 用户从此听不到任何音量值，而屏幕上也没有 —— 这个值对他们**彻底不存在**。它读的必须是拖动中的**草稿值**（`session.draft`），不是磁盘值：拖动期间不写盘，念磁盘值 = VO 用户拖着滑块却始终听到旧数字。行内那个可视 `Text("主音量")` 必须 `.accessibilityHidden(true)`，否则 VO 在这一行会停两次、把同一个词念两遍。（`ViewWiringSuite` 现有四条断言钉死这一段 —— 此前它一条都没有。）
+- **当前窗口焦点修订（2026-09-29）**：实际 Settings 前后跳动与短暂闪动触发
+  [ADR 0022](docs/adr/0022-separate-panel-and-settings-window-focus.md)。菜单和唯一 retained Settings
+  使用非激活原生窗口，应用始终无 Dock 图标。状态项鼠标按下导致退激活时，仅保护当前拥有 key
+  的 Settings，菜单显示后立即恢复普通层级；关闭菜单只归还 key，不激活应用或重排窗口。
+  Esc／点外关闭、锚定、key 与 first responder 由原生 adapter 持有。下面 T15 的 NSPopover
+  激活代价与尖角说明保留为历史记录。
 - **键盘导航 + NSPopover 焦点 owner（codex 精修；2026-07-11 真机走查后按实际行为改写）**：先定"谁拥有 popover + first responder"。这是 AppKit 焦点桥接，非仅设 label。**全部条款的前置条件是 popover 的 window 拿到 key —— 见下条决议**。分两档，别混：
   - **无条件成立**（与系统设置无关）：**Esc 关闭**；VoiceOver 可达面板内每个控件；**VoiceOver 进入先播报面板标题 + 当前包**（靠 `PanelView.announcePanel()` 主动 `NSAccessibility.post(.announcementRequested)` —— 光有 label 不会被播报，VO 只读它光标落上的元素）；鼠标可达。
   - **仅当用户开启了系统「键盘导航 / Full Keyboard Access」时成立**：打开焦点落首个可操作项；Tab / Shift+Tab 遍历；空格 / 回车触发。**这不是可以靠代码兜底的事**：面板里可聚焦控件**绝大多数**是 SwiftUI `Button`（activate-focusable），而 macOS 默认不把键盘焦点给 Button，Apple 明说「唯一能用 Tab 够到它们的办法是全局打开键盘导航」。`.focusable()` 是 no-op（默认 interactions 就是 `.activate`）。原文把这两档写成一档，等于对默认设置下的用户撒谎。

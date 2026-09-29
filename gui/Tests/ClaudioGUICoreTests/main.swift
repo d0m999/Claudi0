@@ -150,7 +150,8 @@ if CommandLine.arguments.contains("--event-attention") {
 }
 
 if CommandLine.arguments.contains("--panel-settings-handback") {
-    runPanelSettingsHandbackSuites()
+    await runPanelSettingsHandbackSuites()
+    await runStatusItemWindowOrderGuardSuites()
     print("Panel settings handback: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -381,7 +382,8 @@ runWorkBuddyKeyboardAccessibilitySuites()
 await runHostIntegrationManagerBridgeSuites()
 runIntegrationDestinationWiringSuites()
 runRetainedWindowHandbackTrackerSuites()
-runPanelSettingsHandbackSuites()
+await runPanelSettingsHandbackSuites()
+await runStatusItemWindowOrderGuardSuites()
 runPanelConfigSuites()
 runPanelRefreshRouteSuites()
 await runSoundPacksRefreshSuites()

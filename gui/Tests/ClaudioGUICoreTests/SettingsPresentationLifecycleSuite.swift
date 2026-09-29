@@ -1121,7 +1121,7 @@ private func settingsNativeAnnouncementAdapterIsSound(_ source: String) -> Bool 
 
     return didBecomeKey.contains(".windowPhaseChanged(.key)")
         && didBecomeKey.contains("scheduleSettingsPresentationAnnouncementDelivery()")
-        && showWindow.contains("makeKeyAndOrderFront")
+        && showWindow.contains("presentedWindow.presentForUserRequest()")
         && showWindow.contains("scheduleSettingsPresentationAnnouncementDelivery()")
 }
 

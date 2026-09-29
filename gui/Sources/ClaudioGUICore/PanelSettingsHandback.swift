@@ -1,5 +1,5 @@
-/// Remembers whether Settings owned the foreground before a transient Panel took it.
-/// Visibility alone cannot decide the handback: Settings may be behind another app.
+/// Captures the Settings key owner once before a nonactivating Panel borrows keyboard focus.
+/// A visible background Settings window must not receive the Panel's automatic key handoff.
 public struct PanelSettingsHandback {
     private var settingsWasForeground = false
 
