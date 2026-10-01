@@ -17,6 +17,7 @@ struct ActivityDiagnosticsView: View {
     var eventNoticeModel: EventNoticeModel? = nil
     var noticeNavigation: SessionNavigationCoordinator? = nil
     @State private var recordsExpanded = false
+    @State private var readingEpoch: UUID?
     @State private var selectedNotice: EventNoticeAction?
     @State private var confirmation: ActivityDiagnosticsConfirmation?
 
@@ -136,7 +137,17 @@ struct ActivityDiagnosticsView: View {
                     eventNoticeModel.closeReading(.diagnostics); selectedNotice = nil
                 }
             }
-            .onDisappear { eventNoticeModel.closeReading(.diagnostics) }
+            .onReceive(eventNoticeModel.$readingSnapshot) { snapshot in
+                guard readingEpoch != snapshot.receiverEpoch else { return }
+                readingEpoch = snapshot.receiverEpoch
+                recordsExpanded = false
+                selectedNotice = nil
+            }
+            .onDisappear {
+                recordsExpanded = false
+                selectedNotice = nil
+                eventNoticeModel.closeReading(.diagnostics)
+            }
         }
     }
 
