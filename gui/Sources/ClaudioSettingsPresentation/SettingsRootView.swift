@@ -268,16 +268,21 @@ package struct SettingsRootView: View {
                     soundPacksEditorOwner: soundPacksEditorOwner,
                     soundPacksEditorNativeEffects: soundPacksEditorNativeEffects,
                     onConfigureSound: {
-                        settingsPresentationSession.send(.route(.sounds($0)))
+                        settingsPresentationSession.editScopeSound($0)
                     },
                     onAudibilityInputsChanged: onEventAudibilityInputsChanged,
                     onAnnouncement: onAnnouncement)
             case .notifications:
                 standardDestination { notificationsSettings }
             case .sounds:
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 36) {
                     destinationTitle
-
+                    if settingsPresentationSession.soundReturnContext != nil {
+                        Button(l10n.text(.settingsReturnToSoundScope)) {
+                            _ = settingsPresentationSession.returnToSoundScope()
+                        }
+                        .accessibilityIdentifier("settings.sounds.return-to-scope")
+                    }
                     SettingsSoundsDestinationView(
                         aiCueViewModel: aiCueViewModel,
                         editorOwner: soundPacksEditorOwner,
@@ -291,9 +296,9 @@ package struct SettingsRootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .soundPacksLayoutProbe("settings.sounds.editor-slot")
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.horizontal, 28)
-                .padding(.top, 28)
+                .frame(maxWidth: 820, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.horizontal, 36)
+                .padding(.top, 36)
                 .padding(.bottom, 20)
             case .usage:
                 standardDestination {
@@ -301,7 +306,9 @@ package struct SettingsRootView: View {
                         model: activityDiagnostics,
                         preferences: preferences,
                         focusedTarget: $focusedTarget,
-                        onAnnouncement: onAnnouncement)
+                        onAnnouncement: onAnnouncement,
+                        eventNoticeModel: settingsPresentationSession.dependencies.eventNoticeModel,
+                        noticeNavigation: settingsPresentationSession.dependencies.noticeNavigation)
                 }
             case .shortcuts:
                 standardDestination {
@@ -327,7 +334,7 @@ package struct SettingsRootView: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 36) {
                 destinationTitle
                 content()
             }
@@ -420,32 +427,16 @@ package struct SettingsRootView: View {
                 .accessibilityIdentifier("settings.general.preference-recovery")
             }
         }
-        .frame(maxWidth: 560, alignment: .leading)
+        .frame(maxWidth: 820, alignment: .leading)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.general))
     }
 
     private var notificationsSettings: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 36) {
             SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 18) {
-                    Toggle(isOn: focusQuietBinding) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(l10n.text(.settingsNotificationsFocusTitle))
-                                .font(.headline)
-                            Text(l10n.text(.settingsNotificationsFocusDescription))
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .toggleStyle(.switch)
-                    .focused(
-                        $focusedTarget,
-                        equals: SettingsWindowFocusTarget.firstAction(.notifications)
-                    )
-                    .accessibilityIdentifier("settings.notifications.focus-toggle")
-
-                    Divider()
-
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(l10n.text(.settingsNotificationsBannerSection)).font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Toggle(isOn: eventSourcePromptBinding) {
                         VStack(alignment: .leading, spacing: 5) {
                             Text(l10n.text(.settingsNotificationsEventSourcePromptsTitle))
@@ -456,6 +447,7 @@ package struct SettingsRootView: View {
                         }
                     }
                     .toggleStyle(.switch)
+                    .frame(minHeight: 64)
                     .accessibilityValue(
                         l10n.text(
                             preferences.showsEventSourcePrompts
@@ -480,8 +472,33 @@ package struct SettingsRootView: View {
                             "settings.notifications.event-source-receiver-unavailable")
                     }
 
-                    Divider()
+                }
+            }
+            SettingsSectionCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(l10n.text(.settingsNotificationsQuietSection)).font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Toggle(isOn: focusQuietBinding) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(l10n.text(.settingsNotificationsFocusTitle))
+                                .font(.headline)
+                            Text(l10n.text(.settingsNotificationsFocusDescription))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .frame(minHeight: 64)
+                    .focused(
+                        $focusedTarget,
+                        equals: SettingsWindowFocusTarget.firstAction(.notifications)
+                    )
+                    .accessibilityIdentifier("settings.notifications.focus-toggle")
 
+                    settingsStatusRow(
+                        title: l10n.text(.settingsNotificationsPermissionTitle),
+                        value: focusAuthorizationText)
+                    Divider()
                     Toggle(isOn: calendarQuietBinding) {
                         VStack(alignment: .leading, spacing: 5) {
                             Text(l10n.text(.settingsNotificationsCalendarTitle))
@@ -492,15 +509,8 @@ package struct SettingsRootView: View {
                         }
                     }
                     .toggleStyle(.switch)
+                    .frame(minHeight: 64)
                     .accessibilityIdentifier("settings.notifications.calendar-toggle")
-                }
-            }
-
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    settingsStatusRow(
-                        title: l10n.text(.settingsNotificationsPermissionTitle),
-                        value: focusAuthorizationText)
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCalendarPermissionTitle),
                         value: calendarAuthorizationText)
@@ -510,9 +520,15 @@ package struct SettingsRootView: View {
                         Button(l10n.text(.settingsNotificationsOpenCalendarPrivacy)) {
                             settingsPresentationSession.send(
                                 .performPlatformAction(.openCalendarPrivacySettings))
-                        }
-                        .accessibilityIdentifier("settings.notifications.calendar-privacy")
+                        }.accessibilityIdentifier("settings.notifications.calendar-privacy")
                     }
+                }
+            }
+
+            SettingsSectionCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(l10n.text(.settingsNotificationsCurrentSection)).font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCurrentReasonTitle),
                         value: dynamicQuietCurrentReasonText)
@@ -636,7 +652,7 @@ package struct SettingsRootView: View {
     }
 
     private func settingsStatusRow(title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
+        HStack(alignment: .firstTextBaseline, spacing: 36) {
             Text(title)
                 .foregroundColor(.secondary)
             Spacer(minLength: 20)

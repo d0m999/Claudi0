@@ -45,32 +45,32 @@ func runSettingsRootInteractionSuites() {
         SettingsMountRecorder.reset()
         let probe = SettingsRootNativeProbe(session: fixture.session)
         expect(
-            probe.clickSidebar(.general, horizontalFraction: 0.5),
+            probe.clickSidebar(.eventsAndSounds, horizontalFraction: 0.5),
             "必须先通过真实 mouse event 聚焦当前 sidebar row")
         let deliveredDown = probe.sendKey(keyCode: 125, characters: "\u{F701}")
         let rawDownWasHandled =
-            fixture.session.state.routeResolution.destination == .integrations
+            fixture.session.state.routeResolution.destination == .sounds
         if !rawDownWasHandled {
             expect(
-                SettingsRootInteractionRecorder.invokeMove(.next, from: .general),
+                SettingsRootInteractionRecorder.invokeMove(.next, from: .eventsAndSounds),
                 "无 Full Keyboard Access 时必须调用 mounted modifier 注册的同一 move handler")
         }
         expect(
             deliveredDown
-                && fixture.session.state.routeResolution.destination == .integrations
+                && fixture.session.state.routeResolution.destination == .sounds
                 && SettingsMountRecorder.identifiers.contains(
-                    "settings.interaction.sidebar.general"),
+                    "settings.interaction.sidebar.\(SettingsDestination.eventsAndSounds.rawValue)"),
             "Down raw event 必须可投递；无 Full Keyboard Access 时同一 mounted modifier driver 仍切 typed destination"
         )
         let deliveredUp = probe.sendKey(keyCode: 126, characters: "\u{F700}")
-        let rawUpWasHandled = fixture.session.state.routeResolution.destination == .general
+        let rawUpWasHandled = fixture.session.state.routeResolution.destination == .eventsAndSounds
         if !rawUpWasHandled {
             expect(
-                SettingsRootInteractionRecorder.invokeMove(.previous, from: .integrations),
+                SettingsRootInteractionRecorder.invokeMove(.previous, from: .sounds),
                 "Up fallback 必须调用 mounted modifier 注册的同一 move handler")
         }
         expect(
-            deliveredUp && fixture.session.state.routeResolution.destination == .general,
+            deliveredUp && fixture.session.state.routeResolution.destination == .eventsAndSounds,
             "Up raw event 必须可投递；compiled modifier driver 必须回到上一个 typed destination")
 
         expect(probe.clickContent(x: 360, yFromTop: 190), "必须先通过真实 mouse event 聚焦 content")
@@ -82,7 +82,7 @@ func runSettingsRootInteractionSuites() {
         }
         expect(
             deliveredEscape
-                && SettingsRootInteractionRecorder.lastExitTarget == .sidebar(.general)
+                && SettingsRootInteractionRecorder.lastExitTarget == .sidebar(.eventsAndSounds)
                 && SettingsMountRecorder.identifiers.contains("settings.interaction.exit"),
             "Escape raw event 必须可投递，且 mounted exit handler 必须把当前 destination 映射回 sidebar focus")
         probe.close()

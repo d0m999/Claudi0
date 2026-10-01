@@ -97,8 +97,8 @@ func runSettingsPreferencesSuites() async {
         expect(
             isolated.availableSettingsDestinations
                 == [
-                    .general, .integrations, .eventsAndSounds, .notifications, .sounds,
-                    .usage, .shortcuts, .about,
+                    .eventsAndSounds, .sounds, .integrations, .notifications, .general,
+                    .shortcuts, .usage, .about,
                 ],
             "production owner 只能暴露八个已交付的 destination")
         isolated.setLastSettingsDestination(.usage)

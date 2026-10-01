@@ -102,8 +102,7 @@ func runEventBannerLayoutSuites() {
                             to: output.appendingPathComponent(
                                 "capsule-\(appearance.rawValue)-\(language.rawValue)-\(kind).png"))
                     }
-                    @MainActor func click(_ x: CGFloat) {
-                        let point = NSPoint(x: x, y: height / 2)
+                    @MainActor func click(_ point: NSPoint) {
                         let time = ProcessInfo.processInfo.systemUptime
                         let down = NSEvent.mouseEvent(
                             with: .leftMouseDown, location: point, modifierFlags: [],
@@ -122,14 +121,19 @@ func runEventBannerLayoutSuites() {
                             window.sendEvent(pending)
                         }
                     }
-                    click(width - 30)
+                    let previousDetails = details
+                    click(NSPoint(x: 100, y: height * 0.7))
+                    expect(details == previousDetails, "静态正文不进入详情")
+                    if kind == "transient" {
+                        click(NSPoint(x: width - 28, y: height / 2))
+                    } else {
+                        click(NSPoint(x: width - (kind == "unknown" ? 90 : 76), y: height / 2))
+                    }
                     expect(
                         kind == "transient"
                             ? closes == 1 : kind == "unknown" ? details == 1 : opens == 1,
-                        "右侧动作实际点击按能力分流：\(kind)")
-                    let previousDetails = details
-                    click(100)
-                    expect(details == previousDetails + 1, "文字区域独立进入详情")
+                        "语义动作实际点击按能力分流：\(kind)")
+
                 }
             }
         }

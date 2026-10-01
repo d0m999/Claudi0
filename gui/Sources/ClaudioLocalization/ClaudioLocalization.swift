@@ -1341,7 +1341,28 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let workspaceDuplicate: Self = "workspace.duplicate"
     public static let workspaceSaveFailed: Self = "workspace.save-failed"
     public static let workspaceLockBusy: Self = "workspace.lock-busy"
+    public static let eventPreviewNoAvailableEvents: Self = "event-preview.no-available-events"
+    public static let settingsReturnToSoundScope: Self = "settings.sounds.return-to-scope"
+    public static let eventNoticeViewInPanel: Self = "event-notice.view-in-panel"
+    public static let eventNoticePendingRecords: Self = "event-notice.pending-records"
+    public static let eventNoticeRetryAtNeedsYou: Self = "event-notice.retry-at-needs-you"
+    public static let settingsNotificationsBannerSection: Self =
+        "settings.notifications.banner-section"
+    public static let settingsNotificationsQuietSection: Self =
+        "settings.notifications.quiet-section"
+    public static let settingsNotificationsCurrentSection: Self =
+        "settings.notifications.current-section"
+
     public static let allKnown: [Self] = [
+        .eventPreviewNoAvailableEvents,
+        .settingsReturnToSoundScope,
+        .eventNoticeViewInPanel,
+        .eventNoticePendingRecords,
+        .eventNoticeRetryAtNeedsYou,
+        .settingsNotificationsBannerSection,
+        .settingsNotificationsQuietSection,
+        .settingsNotificationsCurrentSection,
+
         .workspaceTooLarge,
         .workspaceInvalidRule,
         .workspaceDuplicate,

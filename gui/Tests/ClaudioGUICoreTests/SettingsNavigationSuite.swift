@@ -8,8 +8,8 @@ import Foundation
 func runSettingsNavigationSuites() {
     suite("Settings destinations：固定身份、顺序与双语名称") {
         let expected: [SettingsDestination] = [
-            .general, .integrations, .eventsAndSounds, .notifications, .sounds,
-            .usage, .shortcuts, .about,
+            .eventsAndSounds, .sounds, .integrations, .notifications, .general,
+            .shortcuts, .usage, .about,
         ]
         expect(
             SettingsDestination.allCases == expected,
@@ -535,18 +535,18 @@ func runSettingsNavigationSuites() {
         let sidebarSections = settingsSidebarSections(
             availableDestinations: SettingsDestination.allCases)
         expect(
-            sidebarSections.map(\.id) == [.primary, .advanced, .product]
+            sidebarSections.map(\.id) == [.primary]
                 && sidebarSections.flatMap(\.destinations) == SettingsDestination.allCases,
             "侧栏必须按主区、高级、claudi0 分组且保持固定目的页顺序")
         expect(
             settingsSidebarDestination(
                 moving: .next,
                 from: .usage,
-                availableDestinations: SettingsDestination.allCases) == .shortcuts
+                availableDestinations: SettingsDestination.allCases) == .about
                 && settingsSidebarDestination(
                     moving: .previous,
-                    from: .general,
-                    availableDestinations: SettingsDestination.allCases) == .general,
+                    from: .eventsAndSounds,
+                    availableDestinations: SettingsDestination.allCases) == .eventsAndSounds,
             "方向键导航必须跨分组连续，并在首尾停住")
         expect(
             settingsWindowFocusOrder(selectedDestination: .sounds)

@@ -596,7 +596,7 @@ func runSoundPacksWindowAccessibilitySuites() {
             !view.contains("languageStore.interfaceTextSize")
                 && !view.contains("@AppStorage(ClaudioInterfaceTextSize.defaultsKey)")
                 && !view.contains("interfaceTextSize.dynamicTypeSize")
-                && view.contains("layoutAdaptation.detailMinimumWidth")
+                && view.contains("private var packSelector: some View")
                 && view.contains("layoutAdaptation.packNameLineLimit")
                 && view.contains("soundPacksWindowDetailUsesStackedLayout(")
                 && view.contains("detailHeader(card, stacks: stacksDetail)")

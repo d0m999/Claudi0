@@ -43,15 +43,15 @@ func runSettingsSoundsLayoutSuites() {
                 "\(name) 侧栏须贴顶且标题在包编辑器上方：\(frames)")
             expect(
                 editor.minY >= title.maxY - 2 && editor.maxY <= size.height + 2
-                    && list.width > 120 && list.height > 100
+                    && list.width > 120 && list.height >= 64
                     && list.maxY <= size.height + 2,
-                "\(name) 包列表须在窗口内独立保留可滚动空间：\(frames)")
+                "\(name) 顶部完整库选择器须在窗口内可达：\(frames)")
             expect(
                 scroll.width > 200 && scroll.height > 100
-                    && scroll.minX > list.maxX - 2
+                    && list.maxY <= scroll.minY + 2
                     && service.minY >= scroll.minY - 2
-                    && service.maxY <= scroll.maxY + 2,
-                "\(name) 服务卡须位于右侧详情滚动区：\(frames)")
+                    && service.width <= scroll.width + 2,
+                "\(name) 服务卡须复用同一个详情滚动区，窄窗口允许移到卡片后：\(frames)")
             expect(
                 action.minY >= scroll.maxY - 3 && action.maxY <= size.height + 2,
                 "\(name) 包操作栏须固定在详情滚动区下方且保持可见：\(frames)")
@@ -112,16 +112,18 @@ func runSettingsSoundsLayoutSuites() {
         let readonlyProbe = SettingsSoundsNativeLayoutProbe(
             session: readonlyFixture.session,
             size: NSSize(width: 1_240, height: 820))
+        expect(readonlyFixture.aiCueViewModel.session == nil, "只读编辑深链不启动 AI 会话")
+        if case .sounds(let presentation) = readonlyFixture.soundPacksEditor.presentation.mode {
+            expect(presentation.route.editTarget?.event == .stop, "只读深链定位真实编辑事件")
+        } else {
+            expect(false, "必须进入同一声音编辑 owner")
+        }
         expect(
-            readonlyFixture.aiCueViewModel.session
-                == AICueComposerSession(packID: "gallery-pack", event: .stop),
-            "只读包缺声深链必须定位目标事件")
-        expect(
-            SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.stop"] != nil
-                && SoundPacksLayoutRecorder.frames[
-                    "settings.sounds.ai-cue.readonly-guidance"] != nil
-                && SoundPacksLayoutRecorder.frames["sound-packs.action-bar"] != nil,
-            "只读目标事件引导与包操作栏必须同时留在详情区：\(SoundPacksLayoutRecorder.frames.keys.sorted())")
+            Event.allCases.allSatisfy {
+                SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.\($0.rawValue)"]
+                    == nil
+            } && SoundPacksLayoutRecorder.frames["sound-packs.action-bar"] != nil,
+            "只读包隐藏生成入口并保留复制操作栏")
         readonlyProbe.close()
     }
 
@@ -263,6 +265,8 @@ private final class SettingsSoundsNativeLayoutProbe {
     func recognizedText() -> [String]? {
         guard let image = renderedBitmap()?.cgImage else { return nil }
         let request = VNRecognizeTextRequest()
+        // Deterministic inspection must not wait on the system Neural Engine service.
+        request.usesCPUOnly = true
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
         guard

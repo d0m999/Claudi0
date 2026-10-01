@@ -9,6 +9,7 @@ package final class MenuBarPanel: NSPanel {
         case outsideInteraction
     }
 
+    package var onEscape: (() -> Bool)?
     package var onShow: (() -> Void)?
     package var onClose: ((Dismissal) -> Void)?
     private weak var anchor: NSView?
@@ -70,11 +71,13 @@ package final class MenuBarPanel: NSPanel {
     }
 
     package override func cancelOperation(_ sender: Any?) {
+        if onEscape?() == true { return }
         dismiss(.explicit)
     }
 
     package override func accessibilityPerformCancel() -> Bool {
         guard isShown else { return false }
+        if onEscape?() == true { return true }
         dismiss(.explicit)
         return true
     }

@@ -1,3 +1,4 @@
+import AppKit
 import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
@@ -24,6 +25,7 @@ public struct PanelView: View {
     @ObservedObject private var hostIntegrations: HostIntegrationPresentationStore
     @ObservedObject private var languageStore: ClaudioPreferences
     @ObservedObject private var activityDiagnostics: ActivityDiagnosticsModel
+    @ObservedObject private var noticeNavigation: SessionNavigationCoordinator
     @ObservedObject private var eventNoticeModel: EventNoticeModel
 
     @Environment(\.colorScheme) private var colorScheme
@@ -56,6 +58,7 @@ public struct PanelView: View {
         soundPackLibrary: SoundPackLibrary,
         soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator,
         eventNoticeModel: EventNoticeModel,
+        noticeNavigation: SessionNavigationCoordinator? = nil,
         onAudibilityInputsChanged: @escaping @MainActor () -> Void,
         onOpenSettings: @escaping @MainActor () -> Void,
         onEditSoundScope: @escaping @MainActor (EventSettingsWindowRoute) -> Void = { _ in },
@@ -73,6 +76,8 @@ public struct PanelView: View {
         self.languageStore = languageStore
         self.activityDiagnostics = activityDiagnostics
         self.eventNoticeModel = eventNoticeModel
+        self.noticeNavigation =
+            noticeNavigation ?? SessionNavigationCoordinator(model: eventNoticeModel)
         self.onAudibilityInputsChanged = onAudibilityInputsChanged
         self.onOpenSettings = onOpenSettings
         self.onEditSoundScope = onEditSoundScope
@@ -131,6 +136,7 @@ public struct PanelView: View {
         self.hostIntegrations = hostIntegrations
         self.languageStore = languageStore
         self.eventNoticeModel = eventNoticeModel
+        self.noticeNavigation = SessionNavigationCoordinator(model: eventNoticeModel)
         self.activityDiagnostics = ActivityDiagnosticsModel(
             previewPresentation: previewActivityPresentation)
         self.previewPlayer = previewPlayer ?? NSSoundAudioPreviewPlayer()
@@ -156,6 +162,7 @@ public struct PanelView: View {
                 .frame(height: ClaudioTheme.Metrics.hairline)
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 12) {
+                    noticeSection
                     soundScopePicker(
                         availableMenuHeight: max(
                             0,
@@ -170,12 +177,12 @@ public struct PanelView: View {
                                 ).maxY)
                         }
                     )
-                    activityOverview
                     if showsRefreshFailedNotice {
                         refreshFailedNotice
                     }
                     mainContent
                     writeFailures
+                    activityOverview
                 }
                 .padding(13)
             }
@@ -282,31 +289,62 @@ public struct PanelView: View {
             .focused($focusedTarget, equals: .headerSettings)
             .accessibilityLabel(l10n.text(.panelOpenSettings))
             .accessibilityIdentifier("panel.settings")
-            Button(action: onOpenRecentNotices) {
-                HStack(spacing: 3) {
-                    Image(systemName: "bell.badge")
-                    if eventNoticeModel.badgeCount > 0 {
-                        Text(String(eventNoticeModel.badgeCount))
-                            .monospacedDigit()
-                    }
-                }
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 7)
-                .frame(minHeight: ClaudioTheme.Metrics.compactControlHeight)
-                .contentShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control))
-            }
-            .buttonStyle(ClaudioIconButtonStyle())
-            .focused($focusedTarget, equals: .recentNotices)
-            .accessibilityLabel(l10n.text(.eventNoticeRecent))
-            .accessibilityValue(
-                eventNoticeModel.badgeCount > 0
-                    ? String(eventNoticeModel.badgeCount)
-                    : "0"
-            )
-            .accessibilityHint(l10n.text(.eventNoticeExpandHint))
-            .accessibilityIdentifier("panel.recent-notices")
+
         }
-        .accessibilityLabel(headerAccessibilityLabel)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var noticeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                focusCoordinator.noticeIsExpanded.toggle()
+                if focusCoordinator.noticeIsExpanded {
+                    eventNoticeModel.openReading(.panel)
+                } else {
+                    eventNoticeModel.closeReading(.panel)
+                }
+            } label: {
+                HStack {
+                    Text(l10n.text(.eventNoticeRecent)).font(.headline)
+                    Text(String(eventNoticeModel.badgeCount)).monospacedDigit()
+                    Spacer()
+                    Image(
+                        systemName: focusCoordinator.noticeIsExpanded
+                            ? "chevron.up" : "chevron.down")
+                }
+            }
+            .buttonStyle(.plain)
+            .focused($focusedTarget, equals: .recentNotices)
+            .accessibilityIdentifier("panel.recent-notices")
+            if focusCoordinator.noticeIsExpanded {
+                EventNoticeReadingView(
+                    model: eventNoticeModel, preferences: languageStore,
+                    navigation: noticeNavigation, selected: $focusCoordinator.noticeSelection,
+                    openSource: { action in
+                        noticeNavigation.openSourceApplication(
+                            action, generation: noticeNavigation.capabilityGeneration)
+                    },
+                    copySession: { action in
+                        noticeNavigation.copy(action) { session in
+                            NSPasteboard.general.clearContents()
+                            return NSPasteboard.general.setString(session, forType: .string)
+                        }
+                    })
+            } else if let latest = eventNoticeModel.readingSnapshot.latest {
+                Text(
+                    EventNoticeProjection.primaryLine(for: latest, language: languageStore.language)
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .onChange(of: focusCoordinator.noticeIsExpanded) { expanded in
+            if expanded {
+                eventNoticeModel.openReading(.panel)
+            } else {
+                eventNoticeModel.closeReading(.panel)
+            }
+        }
+        .onChange(of: focusCoordinator.hideCount) { _ in eventNoticeModel.closeReading(.panel) }
     }
 
     private var headerAccessibilityLabel: String {
@@ -418,116 +456,21 @@ public struct PanelView: View {
     }
 
     private var activityOverview: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(l10n.text(.settingsActivityTitle) + " · " + l10n.text(.workspaceAllSources))
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                Spacer(minLength: 4)
-                Picker(
-                    l10n.text(.settingsActivityTitle),
-                    selection: $activityRange
-                ) {
-                    Text(l10n.text(.settingsActivityRangeToday)).tag(LocalActivityRange.today)
-                    Text(l10n.text(.settingsActivityRangeSevenDays)).tag(
-                        LocalActivityRange.sevenDays)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 132)
-                .focused($focusedTarget, equals: .activityRange)
-                .accessibilityLabel(l10n.text(.settingsActivityTitle))
-                .accessibilityIdentifier("panel.activity.range")
+        VStack(alignment: .leading, spacing: 6) {
+            Text(l10n.text(.workspaceAllSources)).font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Text(l10n.text(.settingsActivityRangeToday))
+                Text(activityCountText(activityPresentation.todayEventTotal)).monospacedDigit()
+                Spacer()
+                Text(l10n.text(.settingsActivityRangeSevenDays))
+                Text(activityCountText(activityPresentation.sevenDayEventTotal)).monospacedDigit()
             }
-
-            HStack(spacing: 8) {
-                activityMetric(
-                    title: localizedEventName(.taskStart, language: languageStore.language),
-                    value: activityRange == .today
-                        ? activityPresentation.event(.taskStart)?.todayCount
-                        : activityPresentation.event(.taskStart)?.sevenDayCount,
-                    identifier: "panel.activity.task-start")
-                activityMetric(
-                    title: localizedEventName(.stop, language: languageStore.language),
-                    value: activityRange == .today
-                        ? activityPresentation.event(.stop)?.todayCount
-                        : activityPresentation.event(.stop)?.sevenDayCount,
-                    identifier: "panel.activity.stop")
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(l10n.text(.settingsActivityMessages))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                Text(
-                    activityCountText(
-                        activityRange == .today
-                            ? activityPresentation.todayMessages
-                            : activityPresentation.sevenDayMessages)
-                )
-                .fontWeight(.semibold)
-                .monospacedDigit()
-                Spacer(minLength: 4)
-                Text(
-                    activityStatusText(
-                        activityRange == .today
-                            ? activityPresentation.todayStatus
-                            : activityPresentation.sevenDayStatus)
-                )
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .multilineTextAlignment(.trailing)
-            }
-            .font(.system(size: 10.5, weight: .medium, design: .rounded))
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("panel.activity.messages")
-
-            GeometryReader { proxy in
-                let layouts = ActivityOverviewBarLayout.resolve(
-                    segments: activityPresentation.barSegments,
-                    range: activityRange,
-                    availableWidth: proxy.size.width)
-                HStack(spacing: 3) {
-                    ForEach(layouts) { segment in
-                        activitySegment(segment)
-                            .frame(width: segment.width)
-                            .frame(minHeight: 29)
-                    }
-                }
-            }
-            .frame(height: 29)
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("panel.activity.bar")
-
-            if let failure = activityPresentation.event(.stopFailure),
-                let count = activityRange == .today ? failure.todayCount : failure.sevenDayCount,
-                count > 0
-            {
-                HStack(spacing: 6) {
-                    Image(systemName: claudioEventGlyphName(.stopFailure))
-                        .foregroundColor(ClaudioTheme.event(.stopFailure, colorScheme))
-                        .accessibilityHidden(true)
-                    Text(localizedEventName(.stopFailure, language: languageStore.language))
-                    Spacer(minLength: 4)
-                    Text(String(count)).monospacedDigit()
-                }
-                .font(.system(size: 10, weight: .medium, design: .rounded))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("panel.activity.stop-failure")
-            }
+            .font(.caption)
+            Text(activityStatusText(activityPresentation.sevenDayStatus)).font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .padding(10)
-        .background(ClaudioTheme.surface(colorScheme))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                .strokeBorder(
-                    ClaudioTheme.hairline(colorScheme),
-                    lineWidth: ClaudioTheme.Metrics.hairline)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("panel.activity-overview")
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("panel.activity.totals")
     }
 
     private func activityMetric(title: String, value: UInt64?, identifier: String) -> some View {
@@ -1277,29 +1220,7 @@ private struct PanelAgentEventRow: View {
                         controlsUnavailable
                             ? ClaudioTheme.secondaryText(colorScheme)
                             : ClaudioTheme.text(colorScheme))
-                Text(presentation.nativeEventText)
-                    .font(.system(size: 9.5, design: .monospaced))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                    .textSelection(.enabled)
-                if adaptation.rowWrapsToTwoLines {
-                    VStack(alignment: .leading, spacing: 3) {
-                        capabilityBadge
-                        soundFileText
-                    }
-                } else {
-                    HStack(spacing: 5) {
-                        capabilityBadge
-                        soundFileText
-                    }
-                }
-                ForEach(hostBindingDetails) { indicator in
-                    Text(hostBindingDetailLabel(indicator))
-                        .font(.system(size: 9.5, design: .rounded))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .help(hostBindingDetailLabel(indicator))
-                        .accessibilityHidden(true)
-                }
+
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1328,12 +1249,11 @@ private struct PanelAgentEventRow: View {
 
     private var identityAccessibilityLabel: String {
         let separator = language == .english ? ", " : "，"
-        var parts = [
-            presentation.accessibilityLabel,
+        let parts = [
+            presentation.title,
             previewUnavailableReason,
             attemptFailure.map { localizedEventPreviewAttemptFailure($0, language: language) },
         ].compactMap { $0 }
-        parts.append(contentsOf: hostBindingDetails.map(hostBindingDetailLabel))
         return parts.joined(separator: separator)
     }
 

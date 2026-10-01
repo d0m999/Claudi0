@@ -16,9 +16,11 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private let languageStore: ClaudioPreferences
     private let onWillBecomeInteractive: @MainActor () -> (@MainActor () -> Void)?
     private var focusRestoration: (@MainActor () -> Void)?
+    private let onViewInPanel: @MainActor (EventNoticeAction?) -> Void
     private let navigation: SessionNavigationCoordinator
     private let window: EventNoticePanel
     private var snapshotCancellable: AnyCancellable?
+    private var navigationCancellable: AnyCancellable?
     private var screenCancellable: AnyCancellable?
     private var animationRevision: UInt64 = 0
     private var presentationScreen: NSScreen?
@@ -28,11 +30,13 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     init(
         model: EventNoticeModel,
         languageStore: ClaudioPreferences,
+        navigation: SessionNavigationCoordinator,
+        onViewInPanel: @escaping @MainActor (EventNoticeAction?) -> Void,
         onWillBecomeInteractive: @escaping @MainActor () -> (@MainActor () -> Void)? = { nil }
     ) {
         self.model = model
-        navigation = SessionNavigationCoordinator(
-            model: model, openApplication: SourceApplicationAdapter.openApplication)
+        self.navigation = navigation
+        self.onViewInPanel = onViewInPanel
         self.languageStore = languageStore
         self.onWillBecomeInteractive = onWillBecomeInteractive
         window = EventNoticePanel(
@@ -72,8 +76,11 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
                     self?.close()
                 }))
 
-        snapshotCancellable = model.$snapshot.sink { [weak self] snapshot in
+        snapshotCancellable = model.$bannerSnapshot.sink { [weak self] snapshot in
             self?.render(snapshot)
+        }
+        navigationCancellable = navigation.$applicationResult.sink { [weak self] _ in
+            DispatchQueue.main.async { self?.repositionIfVisible() }
         }
         screenCancellable = NotificationCenter.default
             .publisher(for: NSApplication.didChangeScreenParametersNotification)
@@ -82,11 +89,12 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             }
     }
 
-    func openInteractive() {
-        model.openAttentionReminders()
-        guard model.snapshot.isExpanded else { return }
-        becomeInteractive()
-    }
+    func openInteractive() { onViewInPanel(nil) }
+
+    #if DEBUG && CLAUDIO_UI_REGRESSION
+    /// Fixed fixture action: focus the real banner without invoking its source action.
+    func focusForRegression() { becomeInteractive() }
+    #endif
 
     private func becomeInteractive() {
         if !isInteractive { focusRestoration = onWillBecomeInteractive() }
@@ -99,29 +107,22 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func viewSource(_ action: EventNoticeAction) {
-        guard model.viewSource(action) == .applied else { return }
-        becomeInteractive()
+        guard model.isCurrent(action) else { return }
+        onViewInPanel(action)
     }
 
     func openSourceApplication(_ action: EventNoticeAction) {
-        let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        guard model.isCurrent(action) else { return }
+        becomeInteractive()
         navigation.openSourceApplication(action, generation: navigation.capabilityGeneration) {
             [weak self] outcome in
             guard let self else { return }
             if outcome == .opened {
-                // An intentional app switch consumes the handback obligation. Closing must not
-                // reactivate the window that was in front before the user chose this app.
                 self.focusRestoration = nil
                 self.isInteractive = false
                 self.window.allowsKeyboardInteraction = false
                 self.model.setKeyboardFocused(false)
-                self.model.dismiss()
-            } else if outcome != .cancelled, self.model.viewSource(action) == .applied {
-                if self.isInteractive,
-                    NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID
-                {
-                    self.becomeInteractive()
-                }
+                if self.model.bannerSnapshot.current?.action == action { self.model.dismiss() }
             }
         }
     }
@@ -142,7 +143,6 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         focusRestoration = nil
         isInteractive = false
         window.allowsKeyboardInteraction = false
-        navigation.reset()
         model.setKeyboardFocused(false)
         model.dismiss()
         if owesHandback { restoration?() }
@@ -265,7 +265,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         if presentationScreen == nil { presentationScreen = screen }
         let visible = screen.visibleFrame
         let width = EventNoticePlacement.clampedWidth(visibleFrame: visible)
-        let preferredHeight = EventNoticeView.preferredHeight(for: snapshot ?? model.snapshot)
+        let preferredHeight = EventNoticeView.preferredHeight(for: snapshot ?? model.bannerSnapshot)
         let availableHeight = EventNoticePlacement.availableHeight(
             screenFrame: screen.frame, visibleFrame: visible, safeAreaTop: screen.safeAreaInsets.top
         )

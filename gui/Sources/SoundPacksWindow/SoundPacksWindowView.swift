@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 @MainActor
 package struct SoundPacksEditorSupplement {
     package let sidebarHeader: AnyView
+    package let auxiliary: AnyView
     package let detailHeader: AnyView
     package let eventContent: (Event) -> AnyView
     package let isEmpty: Bool
@@ -18,9 +19,11 @@ package struct SoundPacksEditorSupplement {
     package init(
         sidebarHeader: AnyView,
         detailHeader: AnyView,
+        auxiliary: AnyView = AnyView(EmptyView()),
         eventContent: @escaping (Event) -> AnyView
     ) {
         self.sidebarHeader = sidebarHeader
+        self.auxiliary = auxiliary
         self.detailHeader = detailHeader
         self.eventContent = eventContent
         isEmpty = false
@@ -41,6 +44,7 @@ package struct SoundPacksEditorSupplement {
         isEmpty: Bool
     ) {
         self.sidebarHeader = sidebarHeader
+        self.auxiliary = AnyView(EmptyView())
         self.detailHeader = detailHeader
         self.eventContent = eventContent
         self.isEmpty = isEmpty
@@ -94,7 +98,6 @@ public struct EmbeddedSoundPacksEditorView: View {
         .onChange(of: focusProjection) { _ in
             applyFocusFromPresentation(requestsInitialFocus: false)
         }
-        .accessibilityIdentifier("settings.sounds.editor")
     }
 
     private func applyFocusFromPresentation(requestsInitialFocus: Bool) {
@@ -202,7 +205,7 @@ package struct SoundPacksWindowView: View {
                     supplement: supplement)
             } else {
                 ProgressView()
-                    .frame(minWidth: 640, minHeight: 480)
+                    .frame(minWidth: 0, minHeight: 0)
                     .accessibilityLabel(
                         ClaudioL10n(language: languageStore.language).text(
                             .soundPacksLibraryLoading))
@@ -254,37 +257,11 @@ private struct SoundPacksWindowContentView: View {
         VStack(spacing: 0) {
             managedScopeBar
             libraryStatusBar
-            Group {
-                if layoutAdaptation.stacksPrimaryRegions {
-                    VSplitView {
-                        sidebar
-                            .frame(
-                                minHeight: layoutAdaptation.sidebarMinimumHeight,
-                                idealHeight: 180)
-                        detail
-                            .frame(
-                                minWidth: 0,
-                                maxWidth: .infinity,
-                                minHeight: 200,
-                                maxHeight: .infinity)
-                    }
-                } else {
-                    HSplitView {
-                        sidebar
-                            .frame(
-                                minWidth: layoutAdaptation.sidebarMinimumWidth,
-                                idealWidth: layoutAdaptation.sidebarIdealWidth,
-                                maxWidth: layoutAdaptation.sidebarMaximumWidth)
-                        detail
-                            .frame(
-                                minWidth: layoutAdaptation.detailMinimumWidth,
-                                maxWidth: .infinity,
-                                maxHeight: .infinity)
-                    }
-                }
-            }
+            packSelector
+            detail
+
         }
-        .frame(minWidth: 640, minHeight: 480)
+        .frame(minWidth: 0, minHeight: 0)
         .soundPacksLayoutProbe("sound-packs.editor")
         .background(ClaudioTheme.panel(colorScheme))
         .onReceive(focusCoordinator.$requestRevision) { revision in
@@ -527,6 +504,24 @@ private struct SoundPacksWindowContentView: View {
         }
     }
 
+    private var packSelector: some View {
+        HStack(spacing: 12) {
+            Picker(l10n.text(.panelSoundPackLabel), selection: selection) {
+                Text(l10n.text(.soundPacksSidebarNone)).tag(Optional<String>.none)
+                ForEach(activeSounds.packs) { card in
+                    Text(SelectedPackMetadata(id: card.id, name: card.name).displayName)
+                        .tag(Optional(card.id))
+                }
+            }
+            .focused($focusedTarget, equals: .packList)
+            .accessibilityIdentifier("sound-packs.pack-list")
+            supplement.sidebarHeader
+        }
+        .padding(.vertical, 12)
+        .frame(minHeight: 64)
+        .soundPacksLayoutProbe("sound-packs.pack-list")
+    }
+
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(l10n.text(.soundPacksSidebarTitle))
@@ -601,112 +596,108 @@ private struct SoundPacksWindowContentView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
                             Color.clear.frame(height: 0).id("detail-top")
-                            supplement.detailHeader
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 20)
-                                .padding(.top, supplement.isEmpty ? 0 : 20)
-                            if !activeSounds.windowStatuses.isEmpty {
-                                windowStatusRegion
-                                    .padding(.horizontal, 20)
-                                    .padding(.top, 20)
-                            }
-
-                            if let card = selectedCard {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    detailHeader(card, stacks: stacksDetail)
-
-                                    if card.isBuiltinReadOnly {
-                                        builtinCopyExplanation(card)
-                                    }
-
-                                    if activeSounds.route.isCopyAndApply {
-                                        Text(
-                                            l10n.format(
-                                                .settingsSoundsAICueCopyAndApply,
-                                                copyAndApplyScopeName as NSString)
-                                        )
-                                        .font(.callout)
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier(
-                                            "sound-packs.copy-and-apply-explanation")
-                                    }
-
-                                    Divider()
-
-                                    eventRowsSection(stacks: stacksDetail)
-
-                                    if inventoryIsLoading {
-                                        HStack(spacing: 8) {
-                                            ProgressView()
-                                                .controlSize(.small)
-                                            Text(l10n.text(.soundPacksAudioLoading))
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .accessibilityElement(children: .combine)
-                                        .accessibilityLabel(l10n.text(.soundPacksAudioLoadingLabel))
-                                    }
-
-                                    if let error = inventoryFailure {
-                                        windowFailureRow(
-                                            action: l10n.text(.soundPacksAudioLoadingLabel),
-                                            reason: inventoryErrorMessage(error))
-                                    }
-
-                                    orphanAudioSection
+                            if geometry.size.width >= 760 {
+                                HStack(alignment: .top, spacing: 24) {
+                                    mappingContent(stacksDetail: stacksDetail)
+                                    supplement.auxiliary.frame(width: 260)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(20)
-                            } else if activeSounds.draft != nil {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    eventRowsSection(stacks: stacksDetail)
-                                }
-                                .padding(20)
                             } else {
-                                emptyState
+                                mappingContent(stacksDetail: stacksDetail)
+                                supplement.auxiliary.padding(20)
                             }
                         }
-                        .frame(
-                            maxWidth: .infinity,
-                            minHeight: selectedCard == nil ? geometry.size.height : nil,
-                            alignment: .topLeading)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
                     .onChange(of: activeSounds.selectedPack?.id) { _ in
-                        withAnimation(.easeOut(duration: 0.14)) {
-                            proxy.scrollTo("detail-top", anchor: .top)
-                        }
+                        proxy.scrollTo("detail-top", anchor: .top)
                     }
                     .onChange(of: handledFocusRequestRevision) { _ in
                         guard let event = requestedRoute.editTarget?.event else { return }
                         DispatchQueue.main.async {
-                            withAnimation(.easeOut(duration: 0.14)) {
-                                proxy.scrollTo("event-\(event.rawValue)", anchor: .center)
-                            }
+                            proxy.scrollTo("event-\(event.rawValue)", anchor: .center)
                         }
                     }
                     .soundPacksLayoutProbe("sound-packs.detail-scroll")
                 }
                 if let card = selectedCard {
                     Divider()
-                    VStack(alignment: .leading, spacing: 6) {
-                        if card.copyAction != nil || card.copyAndApplyAction != nil
-                            || card.forkAction != nil
-                        {
-                            Text(l10n.text(.settingsSoundsAICueCopyAttribution))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        packActionBar(card, stacks: stacksDetail)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .soundPacksLayoutProbe("sound-packs.action-bar")
+                    packActionBar(card, stacks: stacksDetail).padding(12)
+                        .soundPacksLayoutProbe("sound-packs.action-bar")
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func mappingContent(stacksDetail: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 36) {
+            supplement.detailHeader
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, supplement.isEmpty ? 0 : 20)
+            if !activeSounds.windowStatuses.isEmpty {
+                windowStatusRegion
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+            }
+
+            if let card = selectedCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    detailHeader(card, stacks: stacksDetail)
+
+                    if card.isBuiltinReadOnly {
+                        builtinCopyExplanation(card)
+                    }
+
+                    if activeSounds.route.isCopyAndApply {
+                        Text(
+                            l10n.format(
+                                .settingsSoundsAICueCopyAndApply,
+                                copyAndApplyScopeName as NSString)
+                        )
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(
+                            "sound-packs.copy-and-apply-explanation")
+                    }
+
+                    Divider()
+
+                    eventRowsSection(stacks: stacksDetail)
+
+                    if inventoryIsLoading {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(l10n.text(.soundPacksAudioLoading))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(l10n.text(.soundPacksAudioLoadingLabel))
+                    }
+
+                    if let error = inventoryFailure {
+                        windowFailureRow(
+                            action: l10n.text(.soundPacksAudioLoadingLabel),
+                            reason: inventoryErrorMessage(error))
+                    }
+
+                    orphanAudioSection
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20)
+            } else if activeSounds.draft != nil {
+                VStack(alignment: .leading, spacing: 10) {
+                    eventRowsSection(stacks: stacksDetail)
+                }
+                .padding(20)
+            } else {
+                emptyState
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func eventRowsSection(stacks: Bool) -> some View {
@@ -1167,7 +1158,7 @@ private struct SoundPacksWindowContentView: View {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
                 .fill(

@@ -1,4 +1,6 @@
+import AppKit
 import ClaudioCore
+import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
 import SwiftUI
@@ -12,6 +14,10 @@ struct ActivityDiagnosticsView: View {
     let focusedTarget: FocusState<SettingsWindowFocusTarget?>.Binding
     let onAnnouncement: (@MainActor (String) -> Void)?
 
+    var eventNoticeModel: EventNoticeModel? = nil
+    var noticeNavigation: SessionNavigationCoordinator? = nil
+    @State private var recordsExpanded = false
+    @State private var selectedNotice: EventNoticeAction?
     @State private var confirmation: ActivityDiagnosticsConfirmation?
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
@@ -43,6 +49,7 @@ struct ActivityDiagnosticsView: View {
             summaryCards
             sourcesSection
             eventSection
+            pendingRecords
             logSection
             privacySection
 
@@ -99,7 +106,38 @@ struct ActivityDiagnosticsView: View {
                     secondaryButton: .cancel(Text(l10n.text(.commonCancel))))
             }
         }
+        .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.usage))
+    }
+
+    @ViewBuilder
+    private var pendingRecords: some View {
+        if let eventNoticeModel, let noticeNavigation {
+            DisclosureGroup(l10n.text(.eventNoticePendingRecords), isExpanded: $recordsExpanded) {
+                EventNoticeReadingView(
+                    model: eventNoticeModel, preferences: preferences,
+                    navigation: noticeNavigation, selected: $selectedNotice,
+                    openSource: { action in
+                        noticeNavigation.openSourceApplication(
+                            action, generation: noticeNavigation.capabilityGeneration)
+                    },
+                    copySession: { action in
+                        noticeNavigation.copy(action) { session in
+                            NSPasteboard.general.clearContents()
+                            return NSPasteboard.general.setString(session, forType: .string)
+                        }
+                    }, showsRecordMetadata: true)
+            }
+            .accessibilityIdentifier("settings.activity.pending-records")
+            .onChange(of: recordsExpanded) { expanded in
+                if expanded {
+                    eventNoticeModel.openReading(.diagnostics)
+                } else {
+                    eventNoticeModel.closeReading(.diagnostics); selectedNotice = nil
+                }
+            }
+            .onDisappear { eventNoticeModel.closeReading(.diagnostics) }
+        }
     }
 
     private var summaryCards: some View {
@@ -218,7 +256,7 @@ struct ActivityDiagnosticsView: View {
                     .frame(width: 52, alignment: .trailing)
                 Text(l10n.text(.settingsActivityRangeSevenDays))
                     .frame(width: 52, alignment: .trailing)
-                Text(l10n.text(.settingsActivityCoverage))
+                Text(l10n.text(.integrationsCoverage))
                     .frame(width: 42, alignment: .trailing)
             }
             .font(.caption2)

@@ -200,6 +200,20 @@ public struct ActivityOverviewPresentation: Sendable, Equatable {
     public let eventRows: [ActivityOverviewEventPresentation]
     public let barSegments: [ActivityOverviewBarSegment]
 
+    public var todayEventTotal: UInt64? { total(\.todayCount) }
+    public var sevenDayEventTotal: UInt64? { total(\.sevenDayCount) }
+
+    private func total(_ keyPath: KeyPath<ActivityOverviewEventPresentation, UInt64?>) -> UInt64? {
+        guard eventRows.count == Event.allCases.count else { return nil }
+        var total: UInt64 = 0
+        for row in eventRows {
+            guard let count = row[keyPath: keyPath] else { return nil }
+            let sum = total.addingReportingOverflow(count)
+            total = sum.overflow ? UInt64.max : sum.partialValue
+        }
+        return total
+    }
+
     public init(
         scope: PanelSoundScopeID,
         integrationStatus: ActivityIntegrationStatus?,

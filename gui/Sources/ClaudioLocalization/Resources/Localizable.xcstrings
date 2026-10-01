@@ -1667,14 +1667,34 @@
     },
     "workspace.system-sound.file": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "macOS: %@" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS：%@" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS：%@"
+          }
+        }
       }
     },
     "workspace.system-sound.missing": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "macOS sound unavailable: %@" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 提示音不可用：%@" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS sound unavailable: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 提示音不可用：%@"
+          }
+        }
       }
     },
     "event.preview.started": {
@@ -9521,50 +9541,130 @@
     },
     "event-settings.sound-choice": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Sound for %@" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ 的声音" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound for %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 的声音"
+          }
+        }
       }
     },
     "event-settings.selected-pack-sound": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Selected sound pack" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "所选声音包" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected sound pack"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选声音包"
+          }
+        }
       }
     },
     "event-settings.system-sounds": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "macOS system sounds" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 系统提示音" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS system sounds"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 系统提示音"
+          }
+        }
       }
     },
     "event-settings.no-system-sounds": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "No system sounds available" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有可用的系统提示音" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No system sounds available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可用的系统提示音"
+          }
+        }
       }
     },
     "event-settings.sound-choice-failed": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Could not change sound: %@" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改声音：%@" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not change sound: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法更改声音：%@"
+          }
+        }
       }
     },
     "event-settings.system-sound-unavailable": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The macOS sound %@ is unavailable. The selection was not changed." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统提示音 %@ 不可用；未更改选择。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The macOS sound %@ is unavailable. The selection was not changed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统提示音 %@ 不可用；未更改选择。"
+          }
+        }
       }
     },
     "event-settings.sound-choice-conflict": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The configuration was published, but another change was detected. Reload the current selection before retrying." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "配置已发布但检测到并发冲突；请重新读取当前选择后再重试。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The configuration was published, but another change was detected. Reload the current selection before retrying."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置已发布但检测到并发冲突；请重新读取当前选择后再重试。"
+          }
+        }
       }
     },
     "event-settings.current-helper-required": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Update or repair the installed helper before choosing a system sound." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请先更新或修复已安装的 helper，再选择系统提示音。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update or repair the installed helper before choosing a system sound."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先更新或修复已安装的 helper，再选择系统提示音。"
+          }
+        }
       }
     },
     "event-settings.manage-sounds.hint": {
@@ -10996,13 +11096,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cue pack name"
+            "value": "Sound pack name"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提示音组名称"
+            "value": "声音包名称"
           }
         }
       }
@@ -11028,13 +11128,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save the cue pack name before adopting this sound."
+            "value": "Save the sound pack name before adopting this sound."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "采纳此声音前请先保存提示音组名称。"
+            "value": "采纳此声音前请先保存声音包名称。"
           }
         }
       }
@@ -11098,7 +11198,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "可用系统提示音或 AI 提示音新建提示音组。首条声音保存成功后才进入声音包库。"
+            "value": "可用系统提示音或 AI 提示音新建声音包。首条声音保存成功后才进入声音包库。"
           }
         }
       }
@@ -11124,13 +11224,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New cue pack"
+            "value": "New sound pack"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "新建提示音组"
+            "value": "新建声音包"
           }
         }
       }
@@ -11668,13 +11768,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show a short-lived top prompt with the host, project, session identity, and event meaning. Source details stay in memory only; Focus or meeting quiet hides automatic prompts without replaying them later."
+            "value": "Show short event banners. Needs You reminders remain available in the panel for up to 30 minutes."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在屏幕顶部显示短暂的来源提示，包含宿主、项目、会话标识和事件语义。来源详情只保留在内存中；专注或会议静默会收起自动提示，恢复后不会集中补播。"
+            "value": "显示简短事件横幅。「需要你」提醒最多保留 30 分钟，可在面板内查看。"
           }
         }
       }
@@ -15242,7 +15342,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提示音组未能发布。草稿仍保留，请重新选择声音后重试。"
+            "value": "声音包未能发布。草稿仍保留，请重新选择声音后重试。"
           }
         }
       }
@@ -15259,6 +15359,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "旧组级系统音选择已停用。请前往“声音”在包内重新配置。"
+          }
+        }
+      }
+    },
+    "event-preview.no-available-events": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No events can be previewed. Check the volume and sound mappings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可试听事件。请检查音量与提示音映射。"
+          }
+        }
+      }
+    },
+    "settings.sounds.return-to-scope": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to Default Group & Workspaces"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回默认组／工作区"
+          }
+        }
+      }
+    },
+    "event-notice.view-in-panel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View in panel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在面板查看"
+          }
+        }
+      }
+    },
+    "event-notice.pending-records": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending event records"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待处理事件记录"
+          }
+        }
+      }
+    },
+    "event-notice.retry-at-needs-you": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View the latest content in Needs You."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请到「需要你」查看最新内容。"
+          }
+        }
+      }
+    },
+    "settings.notifications.banner-section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event banners"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "事件横幅"
+          }
+        }
+      }
+    },
+    "settings.notifications.quiet-section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic quiet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动静默"
+          }
+        }
+      }
+    },
+    "settings.notifications.current-section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前状态"
           }
         }
       }

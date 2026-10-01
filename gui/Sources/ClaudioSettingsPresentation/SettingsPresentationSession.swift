@@ -13,6 +13,8 @@ package final class SettingsPresentationSession: ObservableObject {
     @Published
     package private(set) var state: SettingsPresentationState
 
+    @Published package private(set) var soundReturnContext: SettingsSoundReturnContext?
+
     let dependencies: SettingsPresentationDependencies
     let actions: SettingsPresentationActions
     let eventSettingsSelection: EventSettingsWindowSelection
@@ -214,6 +216,42 @@ package final class SettingsPresentationSession: ObservableObject {
         }
     }
 
+    package func editScopeSound(_ route: SoundPacksWindowRoute) {
+        guard route.scope == eventSettingsSelection.route.scope else { return }
+        soundReturnContext = SettingsSoundReturnContext(
+            route: EventSettingsWindowRoute(
+                scope: route.scope, event: route.editTarget?.event,
+                workspaceTarget: route.workspaceTarget))
+        _ = send(.route(.sounds(route)))
+    }
+
+    @discardableResult
+    package func returnToSoundScope() -> SettingsPresentationResult {
+        guard let context = soundReturnContext else { return .unchanged }
+        soundReturnContext = nil
+        let route = context.route
+        dependencies.eventSettingsModel.reloadConfigForPinnedRoute()
+        guard
+            route.workspaceTargetIsCurrent(
+                in: dependencies.eventSettingsModel.configState.resolvedConfig),
+            availability.eventScopes.contains(route.scope)
+        else {
+            if let lifecycleDestination { deactivate(lifecycleDestination) }
+            lifecycleDestination = nil
+            activeDestination = .eventsAndSounds
+            eventSettingsSelection.select(route)
+            eventSettingsSelection.markCurrentScopeUnavailable()
+            routeResolution = SettingsRouteResolution(
+                route: .events(scope: route.scope, event: route.event),
+                failure: .staleSoundScope(route.scope))
+            publishProjection()
+            return .rejected(.staleSoundScope(route.scope))
+        }
+        let result = send(.present(.eventShortcut(route)))
+        if let event = route.event { eventSettingsSelection.restoreSoundControlFocus(event) }
+        return result
+    }
+
     private func refreshLoginItem() {
         let previousProjection = loginProjection
         dependencies.loginItemSettings.refresh()
@@ -308,6 +346,7 @@ package final class SettingsPresentationSession: ObservableObject {
             eventShortcut = route
         }
 
+        if requestedRoute.destination != .sounds { soundReturnContext = nil }
         let resolved = resolveSettingsRoute(requestedRoute, availability: availability)
         isPerformingTransaction = true
         defer {
@@ -460,7 +499,9 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.soundPacksEditorOwner.updateAICueComposer(
                 session: dependencies.aiCueViewModel.session,
                 generation: dependencies.aiCueViewModel.generation)
-        case .general, .notifications, .usage, .shortcuts, .about:
+        case .usage:
+            dependencies.eventNoticeModel.closeReading(.diagnostics)
+        case .general, .notifications, .shortcuts, .about:
             break
         }
     }
@@ -557,6 +598,7 @@ package final class SettingsPresentationSession: ObservableObject {
         if let lifecycleDestination {
             deactivate(lifecycleDestination, windowIsClosing: true)
         }
+        soundReturnContext = nil
         activeDestination = nil
         lifecycleDestination = nil
         isPresented = false

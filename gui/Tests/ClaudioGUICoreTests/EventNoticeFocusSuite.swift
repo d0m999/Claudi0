@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 func runEventNoticeFocusSuites() {
-    suite("Event Notice：来源 App 打开失败先进入详情，原交互有效时才恢复焦点") {
+    suite("Event Notice：来源 App 失败就地反馈，成功不抢回焦点") {
         let path = guiTestRepositoryRoot().appendingPathComponent(
             "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift")
         // The native controller belongs to the app executable, which this harness cannot import.
@@ -21,25 +21,12 @@ func runEventNoticeFocusSuites() {
             return
         }
         let callback = String(controller[openStart.lowerBound..<openEnd.lowerBound])
-        guard
-            let failed = callback.range(of: "else if outcome != .cancelled"),
-            let action = callback.range(
-                of: "self.model.viewSource(action)", range: failed.upperBound..<callback.endIndex),
-            let reclaim = callback.range(
-                of: "self.becomeInteractive()", range: action.upperBound..<callback.endIndex)
-        else {
-            expect(false, "失败回调必须保留明确的交互恢复路径")
-            return
-        }
-        let failureBranch = callback[failed.lowerBound..<reclaim.lowerBound]
-            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
         expect(
-            failureBranch.contains(
-                "else if outcome != .cancelled, self.model.viewSource(action) == .applied")
-                && failureBranch.contains(
-                    "if self.isInteractive, NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID"
-                ),
-            "自动非激活胶囊打开失败也须进入详情；只有原交互仍有效且前台未变化时才接管键盘")
+            !callback.contains("self.model.viewSource(action)")
+                && !callback.contains("self.becomeInteractive()"), "失败在横幅就地反馈，不抢回键盘或进入详情")
+        expect(
+            callback.contains("self.focusRestoration = nil")
+                && callback.contains("outcome == .opened"), "成功消费焦点归还责任")
         guard
             let resign = controller.range(of: "func windowDidResignKey("),
             let render = controller.range(

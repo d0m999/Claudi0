@@ -292,6 +292,7 @@ private func guiSources() -> [ScannedSource] {
 /// 那条相等判定里被单独减掉 —— 减的是**它一个**，不是「随便谁都能豁免」。
 private let lockCensusExemptedFiles = [
     "PanelView.swift", "PanelComposition.swift", "ClaudioGUIApp.swift", "StateGalleryView.swift",
+    "NativeUIRegressionController.swift",
 ]
 
 /// 面板 view 与 GUI composition 各自有一条专属接线断言，不能混进包锁的 environment 普查。
@@ -320,6 +321,10 @@ private let expectedProductionLocks:
             "组装根是全 app 唯一该说出真实路径的地方。它若变成别的，两个 manifest.json 写者"
                 + "（接管发布内置包走 helper 的 `performFirstRunSetup`、绑定/解绑走 "
                 + "`mutateManifestJSON`）就不再是同一把 `flock`，跨进程互斥当场断开"
+        ),
+        (
+            "NativeUIRegressionController.swift", "root.appendingPathComponent(\"\")", "packs.lock",
+            "专用 DEBUG bundle 的所有声音写者使用同一隔离临时根的包锁；启动身份及无生产路径由 Native migration suite 另行检查"
         ),
         (
             "StateGalleryView.swift",
@@ -392,8 +397,8 @@ func runViewWiringSuites() {
         }
         let normalized = collapsingWhitespace(body)
         expect(
-            normalized.contains(
-                ".accessibilityLabel( EventNoticeProjection.accessibilityLabel( for: snapshot, language: languageStore.language, now: context.date) )"
+            normalized.replacingOccurrences(of: " ", with: "").contains(
+                ".accessibilityLabel(EventNoticeProjection.accessibilityLabel(for:snapshot,language:languageStore.language,now:context.date))"
             ),
             "根 AX label 必须把当前 snapshot 与语言交给共享投影决策")
         expect(
@@ -443,7 +448,7 @@ func runViewWiringSuites() {
         expect(privacy.contains("focusRestoration = nil"), "隐私清空必须释放延迟归还动作")
         expect(
             closureBody(after: "func openInteractive()", in: notice)?
-                .contains("model.openAttentionReminders()") == true
+                .contains("onViewInPanel(nil)") == true
                 && closureBody(after: "onOpenSourceApplication:", in: notice)?
                     .contains("self?.openSourceApplication(action)") == true,
             "菜单栏保留列表入口，胶囊主动作接到版本化来源应用打开")
@@ -719,6 +724,7 @@ func runViewWiringSuites() {
         let body = panel[bodyStart..<headerStart]
         guard
             let headerAt = body.range(of: "header")?.lowerBound,
+            let noticeAt = body.range(of: "noticeSection")?.lowerBound,
             let scopeAt = body.range(of: "soundScopePicker")?.lowerBound,
             let activityAt = body.range(of: "activityOverview")?.lowerBound,
             let contentAt = body.range(of: "mainContent")?.lowerBound
@@ -729,8 +735,9 @@ func runViewWiringSuites() {
             return
         }
         expect(
-            headerAt < scopeAt && scopeAt < activityAt && activityAt < contentAt,
-            "Panel 必须恒按 header → 声音作用域 → 活动概览 → 当前来源内容渲染")
+            headerAt < noticeAt && noticeAt < scopeAt && scopeAt < contentAt
+                && contentAt < activityAt,
+            "Panel 必须按 header → 需要你 → 作用域 → 内容 → 静态活动摘要渲染")
         expect(
             panel.contains("panelSoundScopePresentations(")
                 && panel.contains("hostIntegrations.content.sourceRows")
@@ -991,7 +998,10 @@ func runViewWiringSuites() {
             if count > 0 { constructionSites[file.path] = count }
         }
         expect(
-            constructionSites == ["MenuBarController.swift": 1, "StateGalleryView.swift": 1],
+            constructionSites == [
+                "MenuBarController.swift": 1, "StateGalleryView.swift": 1,
+                "NativeUIRegressionController.swift": 1,
+            ],
             "ClaudioGUI 只许一处生产 PanelView 构造点和一处 DEBUG State Gallery 构造点，实得 "
                 + "\(constructionSites)；新增入口必须重新证明 config.lock 来源")
         if let gallery = sources.first(where: { $0.path == "StateGalleryView.swift" })?.code {
@@ -1386,7 +1396,31 @@ func runViewWiringSuites() {
                         - 1
                 }
                 .reduce(0, +)
-            let accounted = packageLocksAccounted
+            var accounted = packageLocksAccounted
+            if expected.file == "NativeUIRegressionController.swift" {
+                for (constructor, label, literal) in [
+                    ("PanelView", "lockFile", "config.lock"),
+                    ("PanelConfigController", "lockFile", "config.lock"),
+                    ("SoundPacksEditorOwner", "lockFile", "config.lock"),
+                    ("LocalActivitySummaryStore", "lockFile", "activity.lock"),
+                    ("ActivityDiagnosticLogStore", "logLockFile", "log.lock"),
+                ] {
+                    let sites = callArguments(of: constructor, in: code)
+                    expect(
+                        sites.count == 1
+                            && sites.allSatisfy {
+                                argumentValue(label, in: $0) == "root.appendingPathComponent(\"\")"
+                            }, "验收构造点必须锚定同一隔离根：\(constructor)")
+                    expect(
+                        (try? String(
+                            contentsOf: guiTestRepositoryRoot().appendingPathComponent(
+                                "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift"),
+                            encoding: .utf8))?.contains(
+                                "\(label): root.appendingPathComponent(\"\(literal)\")") == true,
+                        "验收锁字面量与本地写入链一致：\(constructor)")
+                    accounted += sites.count
+                }
+            }
             let actual = code.lowercased().components(separatedBy: "lockfile").count - 1
             expect(
                 actual == accounted,
@@ -2246,10 +2280,9 @@ func runViewWiringSuites() {
         expect(
             focusCollapsed.contains(
                 "var order: [PanelFocusTarget] = [.headerSettings, .recentNotices, .soundScope]")
-                && focusCollapsed.contains("if hasActivityOverview")
-                && focusCollapsed.contains("order.append(.activityRange)")
+                && !focusCollapsed.contains("order.append(.activityRange)")
                 && focusCollapsed.contains("order.append(.quitApplication)"),
-            "当前 Panel 焦点模型必须按 header → 作用域 → 活动概览 → 内容 → 退出收尾")
+            "当前 Panel 焦点模型不为静态活动摘要添加交互焦点")
         expect(
             !panelCollapsed.contains("PanelPackSectionView(")
                 && !panelCollapsed.contains("manageSoundsRow")
@@ -2545,13 +2578,12 @@ func runViewWiringSuites() {
                 && rowBody.contains("let hostIndicators: [EventHostIndicatorPresentation]"),
             "生产事件区必须用当前面板适用的绑定详情投影，交给实际挂载的 PanelAgentEventRow")
         expect(
-            identity.contains("ForEach(hostBindingDetails)")
-                && identity.contains("Text(hostBindingDetailLabel(indicator))")
-                && rowBody.contains("indicator.detailText")
-                && rowBody.contains("localizedEventHostIndicatorStatus(")
-                && accessibility.contains(
-                    "parts.append(contentsOf: hostBindingDetails.map(hostBindingDetailLabel))"),
-            "生产行须将逐绑定详情显示出来，并纳入同一身份的 VoiceOver 文案")
+            identity.contains("Text(presentation.title)")
+                && !identity.contains("presentation.nativeEventText")
+                && !identity.contains("presentation.soundFileText")
+                && accessibility.contains("presentation.title")
+                && !accessibility.contains("hostBindingDetails.map"),
+            "正常事件行及 VoiceOver 身份只显示用户名称，异常原因保持独立可见")
     }
 
     suite("生产面板事件行：复用批准的 24pt 双波纹静音图标，不回退 SF Symbols") {
@@ -2952,7 +2984,8 @@ func runViewWiringSuites() {
         let fullWidthLeadingFrame = ".frame(maxWidth: .infinity, alignment: .leading)"
         expect(
             rowBody.contains(
-                ".padding(.horizontal, 8) " + fullWidthLeadingFrame + " .background"),
+                ".padding(.horizontal, 8) .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading) .background"
+            ),
             "每张提示音卡片必须在绘制背景与描边前撑满详情列，不能随文件名产生不同外框宽度")
         expect(
             controlsBody.contains(
@@ -3002,7 +3035,7 @@ func runViewWiringSuites() {
             "只有 owner confirmation 签发的 destructive capability 才能触发永久删除")
         guard
             let detailBody = closureBody(
-                after: "private var detail: some View",
+                after: "private func mappingContent(stacksDetail: Bool)",
                 in: collapsingWhitespace(
                     codeWithoutStrings(
                         "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
@@ -3462,9 +3495,11 @@ func runViewWiringSuites() {
                 in: collapsingWhitespace(
                     codeWithoutStrings(
                         "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
-            let scrollBody = closureBody(after: "ScrollView", in: detailBody),
+            let actualScrollBody = closureBody(after: "ScrollView", in: detailBody),
+            let scrollBody = closureBody(
+                after: "private func mappingContent(stacksDetail: Bool)", in: flat),
             let scrollContentBody = closureBody(
-                after: "VStack(alignment: .leading, spacing: 0)", in: scrollBody),
+                after: "VStack(alignment: .leading, spacing: 36)", in: scrollBody),
             let statusRegionAt = scrollBody.range(of: "windowStatusRegion")?.lowerBound,
             let selectedBranchAt = scrollBody.range(
                 of: "if let card = selectedCard")?.lowerBound,
@@ -3478,7 +3513,8 @@ func runViewWiringSuites() {
             return
         }
         expect(
-            statusRegionAt < selectedBranchAt
+            actualScrollBody.contains("mappingContent(stacksDetail: stacksDetail)")
+                && statusRegionAt < selectedBranchAt
                 && scrollBody.contains("emptyState")
                 && statusRegionBody.contains("ForEach(activeSounds.windowStatuses)")
                 && statusRegionBody.contains("windowStatusRow(status)"),

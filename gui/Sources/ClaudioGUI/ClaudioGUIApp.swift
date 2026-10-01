@@ -27,9 +27,12 @@ enum ClaudioGUIApp {
 /// constructs, and no implicit SwiftUI window participates in their lifecycle.
 @MainActor
 final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
-    let preferences = ClaudioPreferences()
+    lazy var preferences = ClaudioPreferences()
     private var menuBarController: MenuBarController?
     private var hostIntegrationBridge: HostIntegrationManagerBridge?
+    #if DEBUG && CLAUDIO_UI_REGRESSION
+    private var nativeRegression: NativeUIRegressionController?
+    #endif
     #if DEBUG
     private var chatAXTracer: ChatAXTracerSession?
     #endif
@@ -38,6 +41,17 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         // `.accessory`: no Dock icon, no menu bar application menu — the correct activation
         // policy for a menu-bar-only utility (DESIGN.md「空间 / 同类」: menubar 工具类 app).
         NSApp.setActivationPolicy(.accessory)
+        #if DEBUG && CLAUDIO_UI_REGRESSION
+        guard Bundle.main.bundleIdentifier == "com.claudio.app.ui-regression",
+            Bundle.main.object(forInfoDictionaryKey: "ClaudioUIRegressionFixture") as? String
+                == "v1"
+        else { NSApp.terminate(nil); return }
+        do {
+            nativeRegression = try NativeUIRegressionController(isolated: ());
+            nativeRegression?.start()
+        } catch { NSLog("Native UI regression isolation failed"); NSApp.terminate(nil) }
+        return
+        #endif
 
         // Bundled packs stay out of the runtime lookup order (`bundledPacksDirectory == nil`).
         // The panel is always renderable now, including before either host is connected; the
@@ -150,6 +164,9 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        #if DEBUG && CLAUDIO_UI_REGRESSION
+        nativeRegression?.finish()
+        #endif
         menuBarController?.applicationWillTerminate()
         #if DEBUG
         chatAXTracer?.guiWillTerminate()

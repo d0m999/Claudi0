@@ -204,9 +204,16 @@ final class MenuBarController: NSObject {
             providerPreferences: aiCueRuntime.providerPreferences)
         let dynamicQuietObserver = DynamicQuietSystemObserver()
         let eventNoticeRuntime = EventNoticeRuntime()
+        let noticeNavigation = SessionNavigationCoordinator(
+            model: eventNoticeRuntime.model,
+            openApplication: SourceApplicationAdapter.openApplication)
         let eventNoticeWindowController = EventNoticeWindowController(
             model: eventNoticeRuntime.model,
             languageStore: languageStore,
+            navigation: noticeNavigation,
+            onViewInPanel: { [weak actionRouter] action in
+                actionRouter?.owner?.openNoticeInPanel(action)
+            },
             onWillBecomeInteractive: { [weak actionRouter] in
                 actionRouter?.closeSettingsForEventNoticeInteraction()
             })
@@ -228,7 +235,9 @@ final class MenuBarController: NSObject {
                 hostIntegrations: hostIntegrations,
                 integrationsModel: integrationsModel,
                 aiCueViewModel: aiCueViewModel,
-                eventNoticeHealth: eventNoticeRuntime.health),
+                eventNoticeHealth: eventNoticeRuntime.health,
+                eventNoticeModel: eventNoticeRuntime.model,
+                noticeNavigation: noticeNavigation),
             actions: makeSystemSettingsPresentationActions(
                 onEventAudibilityInputsChanged: { [weak actionRouter] in
                     actionRouter?.audibilityInputsChanged()
@@ -255,6 +264,7 @@ final class MenuBarController: NSObject {
             soundPackLibrary: soundPackLibrary,
             soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
             eventNoticeModel: eventNoticeRuntime.model,
+            noticeNavigation: noticeNavigation,
             onAudibilityInputsChanged: { [weak actionRouter] in
                 actionRouter?.audibilityInputsChanged()
             },
@@ -326,6 +336,9 @@ final class MenuBarController: NSObject {
 
         actionRouter.owner = self
         panelWindow.onShow = { [weak self] in self?.panelDidShow() }
+        panelWindow.onEscape = { [weak focusCoordinator] in
+            focusCoordinator?.consumeNoticeEscape() ?? false
+        }
         panelWindow.onClose = { [weak self] reason in self?.panelDidClose(reason) }
         statusItem.button?.target = self
         statusItem.button?.action = #selector(togglePanel)
@@ -506,6 +519,17 @@ final class MenuBarController: NSObject {
         } else {
             showPanel()
         }
+    }
+
+    fileprivate func openNoticeInPanel(_ action: EventNoticeAction?) {
+        let model = eventNoticeRuntime.model
+        if let action, !model.isCurrent(action) { return }
+        model.openReading(.panel)
+        if let action, !model.readingSnapshot.records.contains(where: { $0.action == action }) {
+            model.refreshReading()
+        }
+        showPanel()
+        focusCoordinator.requestNotice(action)
     }
 
     private func showPanel() {

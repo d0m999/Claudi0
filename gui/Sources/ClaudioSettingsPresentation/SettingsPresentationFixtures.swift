@@ -71,6 +71,10 @@ package final class SettingsPresentationFixture: ObservableObject {
         try? FileManager.default.removeItem(at: temporaryRoot)
     }
 
+    package var hostIntegrations: HostIntegrationPresentationStore {
+        session.dependencies.hostIntegrations
+    }
+
     package var lastSettingsDestination: SettingsDestination {
         session.dependencies.preferences.lastSettingsDestination
     }
@@ -129,7 +133,11 @@ package enum SettingsPresentationFixtures {
         aiCueViewModel injectedAICueViewModel: AICueGenerationViewModel? = nil,
         aiCueScenario: PreviewFixtures.AICueGalleryScenario? = nil,
         integrationScenario: PreviewFixtures.HostIntegrationScenario? = nil,
-        integrationInFlightAction: HostIntegrationUserAction? = nil
+        integrationInFlightAction: HostIntegrationUserAction? = nil,
+        preferences injectedPreferences: ClaudioPreferences? = nil,
+        eventNoticeModel: EventNoticeModel? = nil,
+        noticeNavigation: SessionNavigationCoordinator? = nil,
+        activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil
     ) -> SettingsPresentationFixture {
         let temporaryRoot = temporaryParent.appendingPathComponent(
             "claudio-settings-presentation-fixture-\(UUID().uuidString)",
@@ -149,7 +157,7 @@ package enum SettingsPresentationFixtures {
         let aiCuePreviewState = resolvedAICueScenario.previewState(
             candidateAssets: aiCueAudioFixture?.assets ?? [:])
         let actionRecorder = SettingsPresentationActionRecorder(result: platformActionResult)
-        let preferences = ClaudioPreferences(previewLanguage: language)
+        let preferences = injectedPreferences ?? ClaudioPreferences(previewLanguage: language)
         preferences.setCompactPreviewDensity(textSize)
         let generalState = experienceProfile?.general
         let projectedLoginItemRegistration: LoginItemRegistrationState =
@@ -229,7 +237,9 @@ package enum SettingsPresentationFixtures {
             ])
         let dynamicQuietPolicy = makeSettingsFixtureDynamicQuietPolicy(
             for: experienceProfile)
-        let activityDiagnostics = makeSettingsFixtureActivityDiagnostics(for: experienceProfile)
+        let activityDiagnostics =
+            injectedActivityDiagnostics
+            ?? makeSettingsFixtureActivityDiagnostics(for: experienceProfile)
         let globalShortcutSettings = makeSettingsFixtureShortcutSettings(
             for: experienceProfile)
         let aboutSettings = makeSettingsFixtureAboutSettings(for: experienceProfile)
@@ -282,7 +292,9 @@ package enum SettingsPresentationFixtures {
                 eventSettingsModel: eventSettingsModel,
                 hostIntegrations: hostIntegrations,
                 integrationsModel: integrationsModel,
-                aiCueViewModel: aiCueViewModel),
+                aiCueViewModel: aiCueViewModel,
+                eventNoticeModel: eventNoticeModel,
+                noticeNavigation: noticeNavigation),
             actions: SettingsPresentationActions(
                 handler: { actionRecorder.perform($0) },
                 onEventAudibilityInputsChanged: {
