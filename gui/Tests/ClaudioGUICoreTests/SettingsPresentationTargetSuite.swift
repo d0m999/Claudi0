@@ -93,7 +93,7 @@ func runSettingsPresentationTargetSuites() {
         )
     }
 
-    suite("Events & Sounds scope sidebar：视觉隐藏 Product 标题但保留真实 AXHeading") {
+    suite("Events & Sounds scope selector：完整真实作用域且不按 Product 分类") {
         let root = guiTestRepositoryRoot()
         let url = root.appendingPathComponent(
             "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift")
@@ -108,8 +108,9 @@ func runSettingsPresentationTargetSuites() {
         }
         let code = scanned.codeWithoutStringLiterals
         expect(
-            code.contains("ForEach(scopes)") && code.contains("model.selectSoundScope(scope.scope)")
-                && !code.contains("hostSourceProductGroups"), "声音侧栏必须由默认组与工作区组成，不再按 Product 分类")
+            code.contains("ForEach(scopes)") && code.contains("set: selectScope")
+                && code.contains("model.selectSoundScope(scope, rebindSelectedWorkspace: true)")
+                && !code.contains("hostSourceProductGroups"), "声音选择器必须由默认组与工作区组成，不再按 Product 分类")
     }
 
     suite("Settings presentation target：Release view tree 不携带 DEBUG recorder modifier") {
@@ -459,7 +460,7 @@ func runSettingsPresentationSliceSuites() {
                 .acknowledgeAnnouncement(id: failureAnnouncement.id, didPost: true))
         }
 
-        _ = session.send(.present(.route(nil)))
+        _ = session.send(.present(.route(.destination(.general))))
         _ = session.send(.windowPhaseChanged(.key))
         expect(
             session.state.loginItemRegistration == .disabled

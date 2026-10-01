@@ -94,7 +94,7 @@ public enum EventNoticeProjection {
         -> String
     {
         let l10n = ClaudioL10n(language: language)
-        guard record.sourceApplication != nil else { return l10n.text(.eventNoticeViewSource) }
+        guard record.sourceApplication != nil else { return l10n.text(.eventNoticeViewInPanel) }
         switch record.kind {
         case .permission: return l10n.text(.eventNoticeActPermission)
         case .needsInput: return l10n.text(.eventNoticeActNeedsInput)

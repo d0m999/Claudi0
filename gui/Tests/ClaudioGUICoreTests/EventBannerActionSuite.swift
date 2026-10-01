@@ -107,7 +107,7 @@ func runEventBannerActionSuites() {
         _ = unknown.accept(attentionNotice(epoch: unknown.receiverEpoch, source: nil))
         expect(
             EventNoticeProjection.actionTitle(for: unknown.snapshot.current!, language: .zhHans)
-                == "查看详情", "无法识别应用时不承诺打开")
+                == "在面板查看", "无法识别应用时提供面板入口")
     }
 
     suite("Event Banner：4秒采样、交叠暂停、版本替代与隐私期限") {
@@ -132,7 +132,7 @@ func runEventBannerActionSuites() {
         expect(m.snapshot.readingTime?.isPaused == true, "剩余聚焦继续暂停")
         _ = m.viewSource(action)
         m.setKeyboardFocused(false)
-        expect(m.snapshot.readingTime?.isPaused == true, "展开独立暂停")
+        expect(m.bannerSnapshot.readingTime?.isPaused == false, "阅读展开不暂停横幅")
         _ = accept(m, installation: installation)
         let stale = m.snapshot.current!
         expect(

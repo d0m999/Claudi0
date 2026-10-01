@@ -2059,7 +2059,8 @@ func runManifestBindingSuites() async {
                 userPacksDirectory: userPacks, packsLockFile: packsLock)
 
             let child = Process()
-            child.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+            child.executableURL =
+                Bundle.main.executableURL ?? URL(fileURLWithPath: CommandLine.arguments[0])
             child.arguments = ["--manifest-lock-holder", packsLock.path]
             let childInput = Pipe()
             child.standardInput = childInput

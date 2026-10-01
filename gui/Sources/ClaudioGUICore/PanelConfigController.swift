@@ -137,6 +137,10 @@ public final class PanelConfigController: ObservableObject {
 
     /// Rechecks the selected audio at click time and refreshes the shared read projection after
     /// either failure. A retry is always a new user action, never a replay of a config write.
+    package func previewDuration(for event: Event) -> TimeInterval? {
+        previewURL(for: event).flatMap { environment.durationProbe.probeDuration(of: $0) }
+    }
+
     public func attemptPreview(
         _ event: Event, using player: AudioPreviewPlaying
     ) -> EventPreviewAttemptOutcome {

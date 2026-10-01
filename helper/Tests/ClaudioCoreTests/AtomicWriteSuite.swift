@@ -538,6 +538,10 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Process is only the configured local audio player and writes no project data.
     "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift": [".write(", "Process("],
     "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift": [".write("],
+    // Dedicated DEBUG fixture only: atomic writes under one random private temporary root.
+    // Launch identity and exclusion from normal/Release builds are checked by the GUI suite.
+    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": [".write("],
+    "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift": [".write("],
     // Claude/Codex 配置事务：0600 起步的私有 staging fd 完整写入并 fsync；一次性备份用
     // RENAME_EXCL 发布；卷不支持该 flag 时，同目录 link(2) 仍以 EEXIST 保证不覆盖。
     // 最终配置用同目录 rename 替换，且两者都保留原文件权限。
@@ -644,6 +648,8 @@ private let contentReplacingWriteSites: [String: Int] = [
     "gui/Sources/ClaudioGUICore/AudioImport.swift": 1,
     "gui/Sources/ClaudioGUICore/AICuePackDraftTransaction.swift": 1,
     "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationFixtures.swift": 1,
+    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": 7,
+    "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift": 1,
 ]
 
 /// 写意图的 `open(2)` flag。`O_RDONLY` 刻意不在里面 —— `SafeFileRead` / `AudioImport` 的有界只读走的

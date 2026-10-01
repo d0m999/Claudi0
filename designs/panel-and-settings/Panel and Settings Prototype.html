@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>claudi0 · 面板与设置 · 可点击原型</title>
+<title>claudi0 · 完整交互原型</title>
 <style>
   :root {
     --page-font: ui-rounded, -apple-system, "SF Pro Rounded", "PingFang SC", "Hiragino Sans GB", sans-serif;
     --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --prototype-nav-height: 60px;
     --motion-micro: 100ms; --motion-short: 180ms; --motion-medium: 260ms; --motion-long: 400ms;
     --motion-pulse-leg: 110ms;
     --ease-enter: cubic-bezier(.2,.7,.2,1); --ease-exit: cubic-bezier(.4,0,1,1); --ease-move: cubic-bezier(.4,0,.2,1);
@@ -20,14 +21,14 @@
   button { font-family: var(--page-font); }
   .action-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
   .mapping-name { overflow-wrap:anywhere; min-width:0; }
-  .mapping-menu { padding:12px; border:1px solid var(--hairline-strong); border-radius:12px; margin-bottom:8px; }
-  .mapping-menu h3 { margin:8px 0; font-size:12px; }
   .sheet label { display:block; margin:10px 0 5px; }
   .sheet .field { width:100%; }
   button:disabled { cursor:not-allowed; opacity:.5; }
 
   /* ========== 糖果盘 token（与横幅定稿同源，未新增色值） ========== */
   [data-theme="light"] {
+    color-scheme: light;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 4.5 3.5 3 3.5-3' fill='none' stroke='%2375685A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --backdrop1: #E9E2D6; --backdrop2: #D8CBB8;
     --page-text: #2B2620; --page-text-2: var(--text-2, #75685A);
     --panel-a: #FFFDFA; --panel-b: #FBF7F1; --surface: #FFFFFF;
@@ -42,6 +43,8 @@
     --shadow-win: 0 30px 80px rgba(40,30,20,.22), 0 2px 12px rgba(40,30,20,.10);
   }
   [data-theme="dark"] {
+    color-scheme: dark;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 4.5 3.5 3 3.5-3' fill='none' stroke='%23B0AEA5' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --backdrop1: #121110; --backdrop2: #1C1916;
     --page-text: #F4EBDD;
     --panel-a: #211D19; --panel-b: #171512; --surface: #1C1A17;
@@ -59,7 +62,7 @@
   /* ========== 舞台：模拟桌面 ========== */
   .stage {
     position: relative;
-    min-height: 100vh;
+    min-height: calc(100dvh - var(--prototype-nav-height));
     background: radial-gradient(120% 90% at 20% 0%, var(--backdrop2), transparent 62%), var(--backdrop1);
   }
   .menubar {
@@ -130,10 +133,13 @@
   .p-head .word { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
   .p-head .src { font-size: 11px; color: var(--muted); }
   .p-head .gear {
-    margin-left: auto; width: 28px; height: 28px; border: none; background: transparent;
-    border-radius: 8px; color: var(--text-2); cursor: pointer; font-size: 14px; line-height: 1;
+    margin-left: auto; width: 36px; height: 36px; flex: 0 0 36px; padding: 0;
+    display: grid; place-items: center; border: none; background: transparent;
+    border-radius: 11px; color: var(--text-2); cursor: pointer;
   }
+  .p-head .gear svg { width: 20px; height: 20px; }
   .p-head .gear:hover { background: var(--hover); color: var(--text); }
+  .p-head .gear:active { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
   .p-body { max-height: 470px; overflow-y: auto; padding: 0 13px 4px; }
   .p-foot {
     display: flex; align-items: center; padding: 2px 13px 10px; border-top: 1px solid var(--hairline);
@@ -198,7 +204,7 @@
   .mini-btn svg { width: 13px; height: 13px; }
   .mini-btn.off { color: var(--clay); }
   .ev-row.disabled .t { color: var(--text-2); font-weight: 500; }
-  .ev-reason { font-size: 10.5px; color: var(--muted); padding: 0 8px 6px 44px; margin-top: -4px; }
+  .ev-row .ev-reason { font: 500 10.5px/1.5 var(--page-font); color: var(--text-2); overflow-wrap: anywhere; }
 
   /* 音量行 */
   .vol-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px 6px; }
@@ -206,22 +212,9 @@
   .vol-row input[type=range] { flex: 1; accent-color: var(--clay); }
   .vol-row .pct { font: 600 11.5px var(--mono); color: var(--text-2); width: 38px; text-align: right; }
 
-  /* 活动概览（默认折叠） */
-  .act-toggle {
-    display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 8px;
-    border: none; background: transparent; border-radius: 11px; cursor: pointer;
-    color: var(--text); text-align: left; margin-top: 6px;
-  }
-  .act-toggle:hover { background: var(--hover); }
-  .act-toggle .lbl { font-size: 12px; font-weight: 600; }
-  .act-toggle .num { margin-left: auto; font: 600 11.5px var(--mono); color: var(--text-2); }
-  .act-toggle .chev { color: var(--muted); font-size: 11px; transition: transform var(--motion-medium) var(--ease-enter); }
-  .act-toggle.open .chev { transform: rotate(90deg); }
-  .act-bar { display: flex; height: 13px; border-radius: 999px; overflow: hidden; margin: 8px 8px 4px; }
-  .act-bar span { height: 100%; }
-  .act-bar span.empty { min-width: 8px; border: 1px solid currentColor; }
-  .act-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 8px 2px; font-size: 10.5px; color: var(--text-2); }
-  .act-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+  /* 面板只保留静态活动摘要，详细统计位于设置。 */
+  .activity-summary { padding: 10px 8px 4px; margin-top: 6px; border-top: 1px solid var(--hairline);
+    font-size: 11.5px; line-height: 1.5; color: var(--text-2); font-variant-numeric: tabular-nums; }
 
   /* ========== 设置窗口 1240×820 ========== */
   .window {
@@ -249,6 +242,7 @@
     color: var(--text); font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
   }
   .w-item:hover { background: var(--hover); }
+  .w-item.section-start { margin-top: 14px; }
   .w-item.active { background: var(--clay-soft); color: var(--clay); font-weight: 700; }
   .w-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .w-item .ic { width: 18px; text-align: center; color: var(--text-2); font-size: 12px; }
@@ -273,8 +267,22 @@
   .form-row > .field { flex: 1 1 180px; width: auto; min-width: 0; max-width: 100%; }
   .range-control { display: flex; align-items: center; gap: 12px; flex: 0 1 180px; margin-left: auto; }
   .range-control input { min-width: 100px; width: 100%; accent-color: var(--clay); }
-  .mapping-row > .mapping-name { flex: 1 1 140px; }
+  .mapping-row { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(160px, 1.6fr) auto; gap: 12px; padding: 14px 0; }
+  .mapping-row > .field { width: 100%; max-width: 100%; }
   .mapping-actions { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+  .group-event-row { padding: 14px 0; min-height: 66px; gap: 10px 14px; }
+  .group-event-row > .k { flex: 1 1 130px; min-width: 0; }
+  .group-event-row .s { overflow-wrap: anywhere; }
+  .group-event-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: none; }
+  .group-event-actions > .mini-btn { width: 28px; height: 32px; }
+  .group-sound-edit { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 32px; padding: 0 10px; border-radius: 11px; border: 1px solid transparent;
+    background: var(--hover); color: var(--text-2); cursor: pointer; white-space: nowrap;
+    font: 500 12px/1 var(--page-font); transition: background-color var(--motion-micro), color var(--motion-micro); }
+  .group-sound-edit svg { width: 13px; height: 13px; flex: none; }
+  .group-sound-edit:hover, .group-sound-edit:active { background: var(--clay-soft); color: var(--clay); }
+  .group-sound-edit:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .group-event-row > .err-line { flex-basis: 100%; margin: 0; }
   .switch {
     width: 38px; height: 22px; border-radius: 999px; border: none; cursor: pointer; position: relative;
     background: color-mix(in srgb, var(--text) 22%, transparent); flex: none;
@@ -392,6 +400,14 @@
     background: var(--panel-a); color: var(--text); font: 500 12px var(--page-font);
   }
   .field[readonly] { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-2); cursor: default; }
+  select.field {
+    appearance: none; min-height: 34px; padding: 7px 32px 7px 11px; border-radius: 10px; cursor: pointer;
+    background-image: var(--select-arrow); background-repeat: no-repeat; background-position: right 11px center; background-size: 12px;
+    text-overflow: ellipsis; transition: border-color var(--motion-micro), background-color var(--motion-micro);
+  }
+  select.field:hover:not(:disabled) { border-color: color-mix(in srgb, var(--clay) 50%, var(--hairline-strong)); background-color: var(--surface); }
+  select.field:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  select.field:disabled { cursor: default; color: var(--text-2); }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .meta-line { font-size: 10.5px; color: var(--muted); line-height: 1.65; margin-top: 6px; }
   .err-line {
@@ -409,9 +425,6 @@
   .cand.playing { border-color: var(--clay); }
   .cand .cn { font-size: 12px; font-weight: 700; }
   .cand .cf { font: 500 10.5px var(--mono); color: var(--muted); }
-  .wave { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
-  .wave i { flex: 1; background: color-mix(in srgb, var(--text) 16%, transparent); border-radius: 2px; }
-  .cand.playing .wave i { background: var(--clay); }
   .sheet-overlay {
     position: absolute; inset: 0; z-index: 40; padding: 24px;
     background: color-mix(in srgb, var(--backdrop1) 45%, transparent);
@@ -451,12 +464,16 @@
   .preview-mark { display: inline-flex; vertical-align: middle; transform-origin: center; }
   .preview-mark svg { width: 12px; height: 12px; }
   .banner { z-index: 35; max-width: calc(100vw - 32px); }
-  .banner .cap-text { border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; padding: 3px; border-radius: 7px; }
+  .banner .cap-text { border: 0; background: transparent; text-align: left; color: inherit; padding: 3px; }
   .banner .chip { color: var(--text); background: var(--clay-soft); border: 1px solid var(--ev-clay); }
-  .banner-detail { padding: 12px 17px 16px; max-height: min(360px, calc(100dvh - 150px)); overflow-y: auto; border-top: 1px solid var(--hairline); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+  .banner-error { margin:0 17px 12px; padding:10px 12px; border-radius:9px; background:var(--clay-soft); color:var(--text); font-size:11.5px; line-height:1.6; }
+  .event-diagnostics { margin-top:20px; font-size:12px; }
+  .event-diagnostics summary { cursor:pointer; color:var(--text); font-weight:500; }
+  .event-diagnostics .kv .s { overflow-wrap:anywhere; }
+
   .banner .track { margin-bottom: 2px; }
-  .window { height: min(820px, calc(100dvh - 86px)); }
-  .p-body { max-height: min(470px, calc(100dvh - 130px)); overflow-anchor: none; }
+  .window { height: min(820px, calc(100dvh - var(--prototype-nav-height) - 86px)); }
+  .p-body { max-height: min(470px, calc(100dvh - var(--prototype-nav-height) - 130px)); overflow-anchor: none; }
   .w-main { min-width: 0; overflow-anchor: none; }
   .w-grid > * { min-width: 0; }
   .kv .k, .kv .field { min-width: 0; }
@@ -477,13 +494,15 @@
     .w-grid { grid-template-columns: minmax(0,1fr); gap: 16px; }
     .w-item { font-size: 12px; }
     .popover-wrap { right: 16px; }
+    .mapping-row { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 540px) {
     .menubar > span:not(:first-child) { display: none; }
-    .window { top: 38px; height: calc(100dvh - 50px); grid-template-columns: minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); }
+    .window { top: 38px; height: calc(100dvh - var(--prototype-nav-height) - 50px); grid-template-columns: minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); }
     .w-side { padding: 8px 8px 8px 34px; display: flex; gap: 4px; border-right: 0; border-bottom: 1px solid var(--hairline); }
     .w-side .brand { display: none; }
     .w-item { width: auto; flex: none; white-space: nowrap; }
+    .w-item.section-start { margin-top: 0; margin-left: 14px; }
     .w-main { padding: 18px 12px; }
     .popover { width: min(312px, calc(100vw - 32px)); }
     .kv { flex-wrap: wrap; gap: 8px; }
@@ -504,12 +523,229 @@
   }
   body[data-reduced-motion="true"] #scopeBtn:active, body[data-reduced-motion="true"] [data-scope]:active,
   body[data-reduced-motion="true"] .toast { transform: none; }
+  /* 统一原型入口始终可见；场景控制可以收起。 */
+  .prototype-nav { position: sticky; top: 0; z-index: 65; min-height: var(--prototype-nav-height);
+    display: flex; align-items: center; gap: 18px; padding: 12px 20px;
+    background: var(--panel-b); border-bottom: 1px solid var(--hairline-strong); }
+  .prototype-nav strong { font-size: 14px; white-space: nowrap; }
+  .prototype-nav .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .prototype-nav .fold { position: static; margin-left: auto; flex: none; font-family: var(--page-font); }
+  .demo-bar { max-height: calc(100dvh - var(--prototype-nav-height) - 40px); overflow-y: auto; }
+  .demo-bar.collapsed { display: none; }
+  .demo-bar label { display: block; font-size: 11px; margin: 10px 0 6px; color: var(--text-2); }
+  .demo-bar select { width: 100%; font-size: 12px; }
+  .reminder-rows { max-height: 270px; overflow-y: auto; }
+  .banner .chip { background: color-mix(in srgb, var(--banner-color) 12%, var(--panel-b)); border-color: var(--banner-color); }
+  .banner .chip:hover { background: color-mix(in srgb, var(--banner-color) 15%, var(--panel-b)); }
+  @media (max-width: 540px) {
+    :root { --prototype-nav-height: 100px; }
+    .prototype-nav { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+    .prototype-nav .chips { order: 3; width: 100%; }
+  }
+</style>
+<style>
+/* Shared chosen C presentation; state remains owned by the original prototype. */
+.sound-layout { display:grid; gap:24px; align-items:start; min-width:0; }
+.editor-area { min-width:0; }
+.editor-area>.card { padding:20px; margin:0; }
+.editor-area>.card>h3:first-child { font-size:18px; letter-spacing:-.015em; margin-bottom:5px; }
+.editor-area>.card>p:not(.err-line) { font-size:11px; color:var(--text-2); }
+.editor-area .mapping-row { display:grid; grid-template-columns:minmax(100px,.9fr) minmax(140px,1.8fr) auto; gap:12px; padding:15px 0; align-items:center; }
+.editor-area .mapping-row .k { display:flex; align-items:center; gap:10px; min-width:0; font-size:12px; }
+.event-icon { width:30px; height:30px; border-radius:10px; flex:none; display:grid; place-items:center; color:var(--event-ink); background:color-mix(in srgb,var(--event-ink) 12%,transparent); }
+.event-icon svg { width:16px; height:16px; }
+.editor-area .field { min-height:36px; font-size:12px; padding:8px 30px 8px 11px; border-radius:9px; }
+.editor-area .mapping-actions { gap:4px; }
+.editor-area .mapping-actions .mini-btn { width:32px; height:32px; }
+.editor-area .mapping-actions .sel-btn { font-size:11px; min-height:32px; padding:7px 10px; white-space:nowrap; border-radius:9px; }
+.editor-area .action-row { padding:0 3px; gap:8px; margin:14px 0 0; }
+.editor-area .action-row button { font-size:11px; }
+.editor-area>.note-line { padding:0 3px; }
+.editor-area .ai-form { margin:4px 0 12px; }
+.editor-area .stage-bar { flex-wrap:wrap; gap:8px; }
+.editor-area .cands { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+.library-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:17px; }
+.library-actions button { font-size:11px; padding:7px 10px; min-height:32px; border-radius:8px; }
+.library-actions #newPackBtn { color:var(--clay); border-color:color-mix(in srgb,var(--clay) 30%,var(--hairline)); }
+.provider-card { padding:15px 18px; border:1px solid var(--hairline); border-radius:13px; background:var(--panel-a); min-width:0; }
+.provider-card h2 { font-size:12px; margin:0 0 10px; }
+.service-controls { display:grid; grid-template-columns:minmax(200px,1.2fr) minmax(200px,1fr); gap:20px; align-items:center; }
+.provider-card .ai-row { padding:0; border:0; gap:8px; min-width:0; }
+.provider-card .ai-row.form-row { flex-wrap:nowrap; }
+.provider-card .lbl { flex:0 0 auto; font-size:10.5px; color:var(--text-2); }
+.provider-card .field { width:100%; min-width:0; min-height:33px; font-size:11.5px; border-radius:8px; padding:7px 28px 7px 10px; }
+.provider-card .ai-status { white-space:nowrap; font-size:10.5px; }
+.provider-card .sel-btn,.provider-card .ghost-btn { font-size:10.5px; padding:6px 9px; min-height:30px; border-radius:8px; }
+.provider-card .service-key .val { flex:1 1 auto; }
+.service-foot { display:flex; align-items:baseline; gap:12px; margin-top:10px; }
+.service-capabilities { font-size:10px; color:var(--text-2); flex:1; line-height:1.6; }
+.service-disclosure { font-size:10px; color:var(--text-2); }
+.service-disclosure summary { cursor:pointer; width:max-content; }
+.service-disclosure[open] { width:100%; }
+.service-disclosure .meta-line { color:var(--text-2); font-size:10.5px; }
+.service-foot:has(.service-disclosure[open]) { flex-wrap:wrap; }
+.sounds-design .catalog-select { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.sounds-design .catalog-select label { font-size:12px; }
+.sounds-design .catalog-select .field { width:225px; min-height:38px; font-size:13px; }
+.sounds-design .catalog-select .library-actions { margin:0 0 0 auto; }
+.sounds-design .sound-layout { grid-template-columns:minmax(0,1fr) 245px; gap:22px; }
+.sounds-design .editor-area>.card { padding:0; border:0; background:transparent; }
+.sounds-design .event-tiles { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; margin-top:17px; }
+.sounds-design .event-tile { padding:12px 14px; border:1px solid var(--hairline); background:var(--panel-a); border-radius:11px; min-width:0; }
+.sounds-design .event-tile .mapping-row { display:grid; grid-template-columns:minmax(120px,.85fr) minmax(150px,1.7fr) auto; align-items:center; gap:10px; padding:0; border:0; }
+.sounds-design .event-tile .mapping-row .k { font-weight:600; flex:none; }
+.sounds-design .event-tile .mapping-actions { justify-content:flex-end; margin:0; width:auto; }
+.sounds-design .event-tile>.err-line { margin:9px 0 0; padding:8px 10px; font-size:11px; }
+.sounds-design .event-tile:has(.reveal[data-open="true"]) { grid-column:1/-1; }
+.sounds-design .event-tile .ai-form { border:0; padding:15px 0 0; }
+.sounds-design .event-tile .field { width:100%; }
+.sounds-design .provider-card { padding:18px; }
+.sounds-design .provider-card h2 { font-size:13px; margin-bottom:18px; }
+.sounds-design .service-controls { display:flex; flex-direction:column; gap:18px; align-items:stretch; }
+.sounds-design .provider-card .ai-row { flex-wrap:wrap; gap:9px; }
+.sounds-design .service-selector .lbl { flex-basis:100%; }
+.sounds-design .provider-card .service-selector select { flex-basis:100%; }
+.sounds-design .service-key .lbl { flex-basis:100%; }
+.sounds-design .service-foot { flex-direction:column; margin-top:16px; }
+/* Workspace counterpart to C: same selection header, stacked event cards, and side settings. */
+.workspace-design .catalog-select { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.workspace-design .catalog-select label { font-size:12px; }
+.workspace-design .catalog-select .field { width:270px; min-height:38px; font-size:13px; }
+.workspace-design .catalog-select .library-actions { margin:0 0 0 auto; }
+.workspace-design .sound-layout { grid-template-columns:minmax(0,1fr) 245px; gap:22px; }
+.workspace-design .scope-title { font-size:18px; margin:0 0 16px; }
+.workspace-design .scope-controls { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:16px; margin-bottom:20px; }
+.workspace-design .scope-controls .kv { border:0; padding:0; display:flex; flex-direction:column; align-items:stretch; gap:8px; }
+.workspace-design .scope-controls .k { flex:none; font-size:11px; color:var(--text-2); }
+.workspace-design .scope-controls .range-control { flex:none; width:100%; margin:0; min-height:36px; gap:10px; }
+.workspace-design .scope-controls .field { flex:none; width:100%; }
+.workspace-design .event-tiles { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+.workspace-design .event-tile { padding:12px 14px; border:1px solid var(--hairline); border-radius:11px; background:var(--panel-a); min-width:0; }
+.workspace-design .scope-event-row { display:grid; grid-template-columns:minmax(120px,.85fr) minmax(150px,1.7fr) auto; gap:10px; align-items:center; }
+.workspace-design .scope-event-row>.k { display:flex; align-items:center; gap:10px; min-width:0; font-size:12px; font-weight:600; }
+.workspace-design .scope-sound-link { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-width:0; font-weight:500; text-align:left; padding:8px 11px; cursor:pointer; }
+.workspace-design .scope-sound-link .source-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workspace-design .scope-sound-link .edit-label { display:flex; align-items:center; gap:5px; color:var(--text-2); font-size:10px; white-space:nowrap; }
+.workspace-design .scope-sound-link svg { width:13px; height:13px; flex:none; }
+.workspace-design .scope-event-actions { display:flex; align-items:center; gap:10px; }
+.workspace-design .event-tile>.err-line { margin:9px 0 0; padding:8px 10px; font-size:11px; }
+.workspace-design .provider-card { padding:18px; }
+.workspace-design .provider-card h2 { font-size:13px; margin:0 0 16px; }
+.workspace-design .scope-directory { margin:0 0 22px; }
+.workspace-design .scope-directory .scope-path { color:var(--text); font-size:12px; overflow-wrap:anywhere; margin:0 0 7px; }
+.workspace-design .scope-directory .scope-match { font-size:10.5px; color:var(--text-2); line-height:1.6; margin:0; }
+.workspace-design .provider-card .kv { padding:11px 0; gap:10px; }
+.workspace-design .provider-card .kv .k { flex:1; font-size:11px; }
+.workspace-design .provider-card .kv .s { font-size:10px; }
+.workspace-design .provider-card .note-line { margin:16px 0 0; font-size:10.5px; line-height:1.7; }
+.workspace-design .scope-footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.workspace-design .scope-footer button { font-size:11px; }
+.workspace-design #delWsBtn { margin-top:18px; font-size:11px; }
+
+#backToWorkspace { margin-bottom:15px; padding:6px 0; border:0; background:transparent; color:var(--clay); font-size:11px; cursor:pointer; }
+@media(max-width:1150px) {
+ .workspace-design .sound-layout { grid-template-columns:minmax(0,1fr) 220px; gap:16px; }
+ .workspace-design .scope-event-row { grid-template-columns:minmax(0,1fr) auto; }
+ .workspace-design .scope-event-row>.k { grid-column:1/-1; }
+ .workspace-design .scope-sound-link { grid-column:1; grid-row:2; }
+ .workspace-design .scope-event-actions { grid-column:2; grid-row:2; }
+ .workspace-design .scope-sound-link .edit-label span { display:none; }
+}
+@media(max-width:850px) {
+ .workspace-design .sound-layout { grid-template-columns:minmax(0,1fr); }
+ .workspace-design .catalog-select { flex-wrap:wrap; }
+ .workspace-design .catalog-select .field { flex:1; min-width:150px; width:auto; }
+ .workspace-design .catalog-select .library-actions { margin:0; }
+ .workspace-design .provider-card { order:2; }
+}
+@media(max-width:580px) {
+ .workspace-design .scope-controls { grid-template-columns:minmax(0,1fr); }
+ .workspace-design .scope-sound-link .edit-label { display:none; }
+}
+
+@media(max-width:1150px) {
+ .sounds-design .sound-layout { grid-template-columns:minmax(0,1fr) 220px; gap:16px; }
+ .sounds-design .event-tile .mapping-row { grid-template-columns:minmax(0,1fr) auto; }
+ .sounds-design .event-tile .mapping-row>.k { grid-column:1/-1; }
+ .sounds-design .event-tile .mapping-row>.field { grid-column:1; grid-row:2; }
+ .sounds-design .event-tile .mapping-actions { grid-column:2; grid-row:2; }
+}
+@media(max-width:850px) {
+ .sounds-design .sound-layout { grid-template-columns:minmax(0,1fr); }
+ .sounds-design .catalog-select { flex-wrap:wrap; }
+ .sounds-design .catalog-select .field { flex:1; min-width:150px; width:auto; }
+ .sounds-design .catalog-select .library-actions { margin:0; }
+ .sounds-design .service-controls { display:grid; grid-template-columns:1fr 1fr; }
+}
+@media(max-width:580px) { .sounds-design .service-controls { display:flex; } }
+</style>
+<style>
+
+/* Settings rhythm: page > section > row. Shared by all eight destinations. */
+:root { --settings-header-gap:36px; --settings-section-gap:36px; --settings-row-height:64px; }
+.w-main { padding-top:36px; padding-bottom:48px; }
+.settings-header { margin-bottom:var(--settings-header-gap); }
+.w-main .settings-header h1 { width:fit-content; max-width:100%; font-size:26px; line-height:1.25; font-weight:650; letter-spacing:-.025em; }
+.w-main .settings-header .sub { margin-top:10px; font-size:13px; line-height:1.65; }
+.settings-page { max-width:820px; }
+.settings-page .card { padding:6px 20px; margin-bottom:24px; border-radius:16px; box-shadow:none; }
+.settings-page .kv { min-height:var(--settings-row-height); padding:17px 0; gap:16px; font-size:13px; }
+.settings-page .kv .k { line-height:1.55; font-weight:500; }
+.settings-page .kv .k .s { margin-top:5px; font-size:12px; line-height:1.65; font-weight:400; color:var(--text-2); max-width:58ch; }
+.settings-row-actions { display:flex; align-items:center; gap:16px; flex:none; margin-left:auto; }
+.settings-section + .settings-section { margin-top:var(--settings-section-gap); }
+.settings-section h2 { font-size:14px; font-weight:600; line-height:1.4; margin-bottom:14px; }
+.settings-section .card { margin:0; }
+.settings-page .note-line { font-size:12px; line-height:1.7; max-width:68ch; margin-top:16px; }
+.settings-page[data-settings-pane="integrations"] .card,
+.settings-page[data-settings-pane="activity"] .card { padding:20px; }
+.settings-page .card h3 { font-size:14px; margin-bottom:12px; }
+.settings-page[data-settings-pane="integrations"] .card>.reveal .reveal-inner { padding-top:14px; }
+.settings-page .action-row { margin-top:18px; gap:10px; }
+.w-side .brand { padding-bottom:24px; }
+.w-item { min-height:38px; padding-top:8px; padding-bottom:8px; }
+.w-item + .w-item:not(.section-start) { margin-top:3px; }
+.sounds-design .catalog-select,.workspace-design .catalog-select { margin-bottom:28px; }
+.sounds-design .event-tiles,.workspace-design .event-tiles { gap:12px; }
+.sounds-design .event-tile,.workspace-design .event-tile { padding:16px; border-radius:13px; }
+.sounds-design .event-tile .mapping-row,.workspace-design .scope-event-row { min-height:38px; }
+.workspace-design .scope-controls { margin-bottom:26px; gap:22px; }
+.sounds-design .sound-layout,.workspace-design .sound-layout { gap:26px; }
+@media(max-width:1150px) {
+ .sounds-design .sound-layout,.workspace-design .sound-layout { gap:20px; }
+ .sounds-design .event-tile,.workspace-design .event-tile { padding:14px; }
+}
+@media(max-width:900px) {
+ .w-main { padding-top:28px; padding-bottom:36px; }
+ .settings-header { margin-bottom:28px; }
+ .settings-page .card { padding-left:16px; padding-right:16px; }
+ .settings-page .kv { gap:12px; }
+ .settings-section + .settings-section { margin-top:28px; }
+ .settings-row-actions { gap:12px; }
+}
+@media(max-width:580px) {
+ .w-main { padding:24px 16px 32px; }
+ .w-main .settings-header h1 { font-size:24px; }
+ .settings-page .kv .k { flex-basis:180px; }
+ .settings-row-actions { gap:10px; }
+ .w-item + .w-item:not(.section-start) { margin-top:0; }
+}
 </style>
 </head>
 <body data-theme="light">
 
 
 
+<nav class="prototype-nav" id="prototypeNav" aria-label="原型界面">
+  <strong>claudi0</strong>
+  <div class="chips">
+    <button class="ctl" id="viewDesktop">桌面</button>
+    <button class="ctl on" id="viewPanel">菜单栏面板</button>
+    <button class="ctl" id="viewWindow">设置窗口</button>
+    <button class="ctl" id="viewBanner">事件横幅</button>
+  </div>
+  <button class="fold" id="foldBtn" aria-controls="demoBar" aria-expanded="false">场景控制</button>
+</nav>
 <div class="stage">
   <div class="menubar">
     <span>Finder</span><span>文件</span><span>编辑</span><span>显示</span><span>前往</span><span>窗口</span>
@@ -532,29 +768,33 @@
 </div>
 
 <section class="principles">
-  <h1>面板与设置 · 与横幅同源</h1>
+  <h1>claudi0 · 完整交互原型</h1>
   <p class="lede">
-    同一套规范贯穿三个界面：内容规范（主行 = 宿主 + 用户语言动词短语，一瞥轨 = 年龄短码，详情轨 = 绝对时刻 + 长式）、
+    同一套规范贯穿三个界面：内容规范（主行 = 宿主 + 用户语言动词短语，副行 = 工作区与年龄短码，诊断记录 = 绝对时刻与会话 ID）、
     事件色只上图形与小面积、糖果盘 token、100 / 180 / 260 / 400ms 动效节奏。
-    试听仅模拟反馈；横幅共享 4 秒阅读预算，悬停、聚焦与展开暂停。动效减弱时即时切换。
+    本页为交互原型：操作只在本页演示，不写盘、不联网；请使用演示 Key。试听提供视觉反馈。
+    横幅共享 4 秒阅读预算，悬停与键盘聚焦暂停。动效减弱时即时切换。
     下表是本次对面板与设置窗口做的第一性原理改动，可逐条对照。
   </p>
   <table>
     <tr><th>改动</th><th>第一性原理理由</th><th>依据 / 约束</th></tr>
+<tr><td><b>横幅只承担一眼阅读与快速跳转</b></td><td>正文静态，不展开详情。保留语义动作、关闭和 4 秒阅读轨；悬停与聚焦暂停，重绘和失败重试不重置预算。成功打开来源或到期只收起横幅，不移除“需要你”中的提醒。失败就地显示原因和重试，技术记录归入活动与诊断。</td><td>2026-09-30 用户确认；本 HTML 呈现覆盖 DESIGN.md 与 ADR 0019 的横幅详情入口，原生实现另行处理</td></tr>
+<tr><td><b>设置窗口按页面、区块、控件行分层</b></td><td>页头与内容间隔 36px，区块间隔 36px，控件行最小 64px；通知按横幅、自动静音和当前状态分组，权限与隐私说明归到对应控件。声音与工作区保留统一纵向事件卡片。</td><td>2026-09-30 用户提供 ChatGPT 设置页留白参考；本轮仅修改 HTML 呈现</td></tr>
+<tr><td><b>声音和工作区采用统一的纵向事件卡片</b></td><td>顶部选择声音包或作用域，左侧集中五个事件，右侧保留服务或来源设置；工作区编辑声音时进入对应声音包，返回保留作用域、音量和开关。内置声音包不显示生成提示音入口。</td><td>2026-09-30 用户确认新版 C；容器统一称“声音包”，单个声音称“提示音”；覆盖 ADR 0016 的旧界面称呼</td></tr>
     <tr>
       <td><b>面板顶部加入「需要你」条</b>（与横幅同源内容）</td>
       <td>面板的第一问题不是「我听的是哪套声音」，而是「有没有人在等我」。横幅是推送，面板是兜底入口，两者必须共用同一份内容投影，否则用户会读到两套说法</td>
       <td>横幅定稿内容规范 P1–P4</td>
     </tr>
     <tr>
-      <td><b>活动概览默认折叠</b>，仅留一行摘要</td>
-      <td>面板是「瞥一眼、按一下、关掉」的瞬时面；活动概览是回头看的统计，不是动作区。沉到底部并默认收起，首屏让给动作</td>
-      <td>DESIGN.md 面板职责（固定头 / 滚动区 / footer）</td>
+      <td><b>活动区保留静态摘要</b>，删除展开入口</td>
+      <td>面板仅显示今日与近七日总数；各事件和来源的详细统计集中在设置的「活动与诊断」，避免重复层级</td>
+      <td>2026-09-30 用户修订；保留共享活动计数</td>
     </tr>
     <tr>
-      <td><b>事件行改用人话标题</b>，原生事件名降为等宽次要行</td>
-      <td>与横幅动词短语同源：人记的是「等你处理 / 本轮结束」，不是 <code>Notification</code> / <code>Stop</code>；原生名保留供对照，但不再当主语</td>
-      <td>横幅定稿主行动词化；DESIGN.md 事件行结构</td>
+      <td><b>事件行只显示用户语言名称</b>，异常时显示原因</td>
+      <td>正常事件省去事件 ID 和音频文件名；未映射、文件不可用等失败原因仍在事件行显示，文件信息留在声音设置</td>
+      <td>2026-09-30 用户修订；试听仍校验实际声音</td>
     </tr>
     <tr>
       <td><b>五事件开关与宿主能力分开</b></td>
@@ -562,9 +802,14 @@
       <td>ADR 0005 / 0021、EventPreviewAvailability</td>
     </tr>
     <tr>
-      <td><b>试听后给出「仅验证所选包音频」说明</b></td>
-      <td>试听不证明宿主已接入；不留这句话就是把验证当成事实</td>
-      <td>DESIGN.md 试听与静音正交</td>
+      <td><b>所见即所得：动作与结果直接对应</b></td>
+      <td>试听反馈对应当前声音；连接状态在集成页呈现。失败显示具体原因和恢复入口</td>
+      <td>2026-09-30 用户修订；试听与静音保持正交</td>
+    </tr>
+    <tr>
+      <td><b>产品界面省去开发说明与重复提示</b></td>
+      <td>删除技术实现说明、重复的状态解释和不对应音频的装饰波形；保留实际结果、异常、权限、费用隐私与操作后果</td>
+      <td>2026-09-30 用户修订；中英文同步</td>
     </tr>
     <tr>
       <td><b>设置窗口按入口归还</b>：从面板打开才返回面板</td>
@@ -577,7 +822,7 @@
     服务卡换成五个已注册固定 profile 的真投影（能力与候选身份都按 **route** 取，不按 profile 猜：Qwen 的 speech 也是 styledComplete，只有 SenseAudio 的 animal / soundEffect 是 numberedPartial），
     凭据换成真实七态 + 四个 activity + 逐 profile 披露与秘钥 sheet；生成换成真实两阶段
     「1 描述 → 2 候选与命名」，含描述锁定、1000 字符上限、引号台词校验、能力/语言 fail closed、
-    partial 数量提示、改名不重生成、采纳后移除整包声明、未发布草稿与「复制并应用」。
+    partial 数量提示、改名不重生成、采纳后移除整包声明、未发布草稿与声音包副本。
     依据：ADR 0006/0011/0014/0015/0016、`PLAN-SETTINGS-EXPERIENCE.md` §5.3、`DESIGN.md` AI 提示音候选与生产资格。
   </p>
   <table>
@@ -610,20 +855,29 @@
   </table>
 </section>
 
-<aside class="demo-bar" id="demoBar">
-  <button class="fold" id="foldBtn">收起</button>
-  <h3>视图</h3>
-  <div class="chips">
-    <button class="ctl" id="viewDesktop">仅桌面</button>
-    <button class="ctl on" id="viewPanel">面板</button>
-    <button class="ctl" id="viewWindow">设置窗口</button>
-    <button class="ctl" id="collapsePanel">收起面板</button>
+<aside class="demo-bar collapsed" id="demoBar" aria-label="场景控制">
+  <h3>界面操作</h3>
+  <div class="chips"><button class="ctl" id="collapsePanel">收起面板</button></div>
+  <h3>事件横幅</h3>
+  <label for="bannerEvent">事件</label>
+  <select class="field" id="bannerEvent">
+    <option value="permission">等你授权</option><option value="needsInput">等你输入</option>
+    <option value="interrupted">执行中断</option><option value="review">需要你查看</option>
+    <option value="stop">本轮已结束</option><option value="subagent">子任务已结束</option>
+    <option value="question">即将向你提问</option><option value="taskStart">开始执行</option>
+  </select>
+  <div class="chips" style="margin-top:8px">
+    <button class="ctl" id="btnBannerAtn">待接手事件</button>
+    <button class="ctl" id="btnBannerInfo">瞬时事件</button>
+    <button class="ctl" id="bannerFailureBtn">下次跳转失败：off</button>
   </div>
-  <h3>场景</h3>
-  <div class="chips">
-    <button class="ctl" id="btnBannerAtn">模拟待接手事件</button>
-    <button class="ctl" id="btnBannerInfo">模拟瞬时事件</button>
-  </div>
+  <label for="reminderScene">待接手列表与详情</label>
+  <select class="field" id="reminderScene">
+    <option value="list">列表 · 五项</option><option value="detail">详情 · 可操作</option>
+    <option value="empty">列表 · 空态</option><option value="overflow">列表 · 容量溢出</option>
+    <option value="updated">详情 · 已更新</option><option value="expired">详情 · 已过期</option>
+  </select>
+  <div class="chips" style="margin-top:8px"><button class="ctl" id="showReminderScene">查看所选状态</button></div>
   <h3>音频生成</h3>
   <div class="chips">
     <button class="ctl" id="aiCredBtn">凭据：—</button>
@@ -690,7 +944,6 @@ var L = {
       if (m < 1440) return Math.floor(m / 60) + "时";
       return Math.floor(m / 1440) + "天";
     },
-    listenHint: "试听只验证该事件当前所选音频，不代表宿主事件已接入。",
     notImplemented: "此宿主尚未实现该事件",
     limited: "接口仅覆盖授权请求与空闲提示",
     evNames: { taskStart: "任务开始", stop: "本轮已结束", stopFailure: "执行中断", notification: "等你处理", subagentStop: "子任务结束" },
@@ -724,7 +977,7 @@ var L = {
         "qwen-beijing": "声音描述、台词和生成元数据会由本机直接发送给北京地区的 DashScope，并适用该地区的数据处理、留存及模型改进条款。保存不发模型请求且不消耗生成配额；下一次显式生成可能消耗配额，并验证此地区的独立 Key。",
         "senseaudio-cn": "声音描述、台词和生成元数据会由本机通过固定 .cn API 路由直接发送给 SenseAudio；该路由不构成数据驻留承诺。生成可能消耗配额，数据处理、留存及是否用于模型改进以 SenseAudio 条款为准。保存前会通过音色列表只读检查确认当前账户可使用固定音色 female_0033_b；该检查不生成音频。如果该音色不可用，已有的已保存 API Key 保持不变。"
       },
-      demoKeyNote: "原型不接收真实 API Key：输入框只演示掩码输入与保存/替换动作，不会访问网络。",
+      demoKeyNote: "仅使用演示 Key。",
       stage1: "1  描述", stage2: "2  候选与命名",
       descLabel: "声音描述",
       descHelp: "可以描述语音、动物叫声、简单音效或混合声音；需要说出的原文请放在引号中。",
@@ -751,8 +1004,7 @@ var L = {
       close: "关闭", cancel: "取消",
       composerClosed: "已关闭 AI 提示音编辑器。",
       composerClosedCleared: "已关闭 AI 提示音编辑器，并清理未采用候选。",
-      eligibilityBuiltin: "请先把内置声音包复制为自己的声音包，再生成。",
-      eligibilityUnavailable: "当前声音来源或声音包暂不能使用 AI 生成。",
+      eligibilityUnavailable: "当前声音来源或声音包不支持 AI 生成。",
       errors: {
         descriptionRequired: "请先描述你想听到的声音。",
         descriptionTooLong: "声音描述请控制在 1000 个字符以内。",
@@ -776,25 +1028,23 @@ var L = {
         adoptionPartial: "文件已导入但未能分配给事件；旧提示音仍有效，可在声音包中管理这个未分配文件。",
         adoption: "未能采用这个候选；当前提示音保持不变。"
       },
-      newPack: "新建提示音组", draft: "未发布草稿", packName: "提示音组名称",
-      saveName: "保存名称", saveNameBeforeAdopting: "采纳此声音前请先保存提示音组名称。",
+      newPack: "新建声音包", draft: "未发布草稿", packName: "声音包名称",
+      saveName: "保存名称", saveNameBeforeAdopting: "采纳此声音前请先保存声音包名称。",
       invalidName: "请输入 1–64 个字符且不含控制字符的名称。",
-      draftNote: "可用系统提示音或 AI 提示音新建提示音组。首条声音保存成功后才进入声音包库。",
+      draftNote: "可用系统提示音或 AI 提示音新建声音包。首条声音保存成功后才进入声音包库。",
       usage: "正在使用此包的声音作用域：",
       inheritedUsage: function (n) { return n + "（继承全局默认）"; },
-      scopeIncomplete: "声音作用域配置已损坏，无法完整判断此包的使用范围。",
+      scopeIncomplete: "声音配置不完整。请检查默认组／工作区设置。",
       shared: "修改此包会同步影响所有使用它的组。",
       copyAttribution: "若此包带有整包许可或作者声明，副本将不保留这些声明；原包及独立归属文件不变。",
       adoptAttribution: "采纳此提示音会移除目标包现有的整包许可和作者声明；独立归属文件不变。",
-      copyAndApply: function (n) { return "复制此包并应用到 " + n; },
-      entryAction: "描述生成",
+      entryAction: "生成提示音",
       generateHint: "为当前事件描述并生成语音、动物叫声、音效或混合提示音",
       orphanTitle: "未被使用的音频", orphanUnused: "未被使用", orphanAssign: "分配…",
       packDelete: "移到废纸篓", packDeleteHint: "会先显示确认；当前使用或内置声音包不能移除",
       packDeleteActive: "当前正在使用；请先改用其他声音包",
-      emptyDraftDiscarded: "空提示音组草稿已取消，声音包库没有新增条目。",
-      published: "首音采纳成功，提示音组已发布。",
-      noWrite: "原型不写盘、不联网、不接收真实 Key；所有状态只存在于本页。",
+      emptyDraftDiscarded: "空声音包草稿已取消，声音包库没有新增条目。",
+      published: "首音采纳成功，声音包已发布。",
       missingAudio: "未配置"
     },
     panes: { general: "通用", integrations: "集成", groups: "默认组／工作区", notifications: "通知", sounds: "声音", activity: "活动与诊断", shortcuts: "快捷键", about: "关于" },
@@ -811,7 +1061,7 @@ var L = {
     pack: "声音包", packName: "minimal-chime", coverage: "覆盖", of5: "n/5",
     addWorkspace: "添加工作区", deleteWorkspace: "删除工作区",
     deleteConfirm: function (n) { return "删除工作区「" + n + "」？只删除声音规则，项目文件与声音包保留。"; },
-    cancel: "取消", confirmDelete: "删除", generate: "描述生成", adopt: "采纳",
+    cancel: "取消", confirmDelete: "删除", generate: "生成提示音", adopt: "采纳",
     notExpanded: "本原型只把「默认组／工作区」与「声音」两页做到可交互深度，其余页面给出真实导航与真实骨架，未展开的部分不填占位内容。"
   },
   en: {
@@ -832,7 +1082,6 @@ var L = {
       if (m < 1440) return Math.floor(m / 60) + "h";
       return Math.floor(m / 1440) + "d";
     },
-    listenHint: "Preview only verifies the audio currently selected for this event. It does not prove the host event is wired.",
     notImplemented: "This host has not implemented this event",
     limited: "Interface covers approval requests and idle prompts only",
     evNames: { taskStart: "Run started", stop: "Turn finished", stopFailure: "Run interrupted", notification: "Waiting for you", subagentStop: "Subagent finished" },
@@ -866,7 +1115,7 @@ var L = {
         "qwen-beijing": "Your sound description, speech, and generation metadata are sent directly to DashScope in Beijing under that region's data-processing, retention, and model-improvement terms. Saving makes no model request and costs no generation quota; the next explicit generation may consume quota and validates this region's separate key.",
         "senseaudio-cn": "Your sound description, speech, and generation metadata are sent directly to SenseAudio through its fixed .cn API route; this route is not a data-residency promise. Generation may consume quota, and processing, retention, and model-improvement use follow SenseAudio's terms. Saving uses a read-only voice-list probe to confirm that your account can access the fixed female_0033_b voice; it does not generate audio. If that voice is unavailable, an existing saved API Key remains unchanged."
       },
-      demoKeyNote: "This prototype never accepts a real API key: the field only demonstrates masked input and the save/replace actions.",
+      demoKeyNote: "Use a demo key only.",
       stage1: "1  Description", stage2: "2  Candidates & name",
       descLabel: "Sound description",
       descHelp: "Describe a voice, animal call, simple sound effect, or a mix. Put exact spoken words in quotation marks.",
@@ -893,7 +1142,6 @@ var L = {
       close: "Close", cancel: "Cancel",
       composerClosed: "AI Cue composer closed.",
       composerClosedCleared: "AI Cue composer closed; unadopted candidates were cleared.",
-      eligibilityBuiltin: "Copy this built-in sound pack to your own pack before generating.",
       eligibilityUnavailable: "AI generation is unavailable for the current sound source or pack.",
       errors: {
         descriptionRequired: "Describe the sound you want first.",
@@ -918,25 +1166,23 @@ var L = {
         adoptionPartial: "The file was imported but could not be assigned to the event. The previous sound remains active; you can manage the unassigned file in Sound Packs.",
         adoption: "The candidate could not be applied. The previous sound was kept."
       },
-      newPack: "New cue pack", draft: "Unpublished draft", packName: "Cue pack name",
-      saveName: "Save name", saveNameBeforeAdopting: "Save the cue pack name before adopting this sound.",
+      newPack: "New sound pack", draft: "Unpublished draft", packName: "Sound pack name",
+      saveName: "Save name", saveNameBeforeAdopting: "Save the sound pack name before adopting this sound.",
       invalidName: "Enter a name of 1–64 characters without control characters.",
       draftNote: "Create a sound group with a system sound or an AI cue. It becomes available after the first sound is saved.",
       usage: "Sound scopes using this pack:",
       inheritedUsage: function (n) { return n + " (inherits Global)"; },
-      scopeIncomplete: "Some sound-scope usage could not be determined because configuration is damaged.",
+      scopeIncomplete: "Sound profiles are incomplete. Check Default Group & Workspaces settings.",
       shared: "Changing this pack updates every group using it.",
       copyAttribution: "If this pack has whole-pack license or author claims, the copy will omit them. The original pack and separate attribution files remain unchanged.",
       adoptAttribution: "Adopting this cue will remove any whole-pack license and author claims from the edited pack. Separate attribution files remain unchanged.",
-      copyAndApply: function (n) { return "Copy this pack and apply it to " + n; },
-      entryAction: "Describe & Generate",
+      entryAction: "Generate cue",
       generateHint: "Describe a voice, animal call, sound effect, or mixed cue for this event",
       orphanTitle: "Unused Audio", orphanUnused: "Unused", orphanAssign: "Assign…",
       packDelete: "Move to Trash", packDeleteHint: "A confirmation appears first; the active or built-in pack cannot be removed",
       packDeleteActive: "Currently in use; select another pack first",
       emptyDraftDiscarded: "The empty cue-pack draft was discarded; nothing was added to the pack library.",
-      published: "The first sound was adopted, so the cue pack is now published.",
-      noWrite: "This prototype writes nothing, never goes online, and never accepts a real key; every state exists only on this page.",
+      published: "The first sound was adopted, so the sound pack is now published.",
       missingAudio: "Not configured"
     },
     panes: { general: "General", integrations: "Integrations", groups: "Default Group & Workspaces", notifications: "Notifications", sounds: "Sounds", activity: "Activity & Diagnostics", shortcuts: "Shortcuts", about: "About" },
@@ -953,7 +1199,7 @@ var L = {
     pack: "Sound pack", packName: "minimal-chime", coverage: "Coverage", of5: "n/5",
     addWorkspace: "Add workspace", deleteWorkspace: "Delete workspace",
     deleteConfirm: function (n) { return "Delete workspace “" + n + "”? Only the sound rule is removed; project files and sound packs are kept."; },
-    cancel: "Cancel", confirmDelete: "Delete", generate: "Generate", adopt: "Adopt",
+    cancel: "Cancel", confirmDelete: "Delete", generate: "Generate cue", adopt: "Adopt",
     notExpanded: "This prototype implements only “Default Group & Workspaces” and “Sounds” at interactive depth. Other panes ship real navigation and a real skeleton — no filler content."
   }
 };
@@ -1001,10 +1247,11 @@ function reminderEvent(r) {
 function reminderDemand(r) { return r.demand[S.lang]; }
 
 var S = {
-  popover: true, bannerAtn: false, bannerInfo: false, bannerExpanded: false, bannerSerial: 0,
-  needs: "collapsed", reminder: null, activity: false,
+  bannerEvent: "permission", bannerReminderID: null, reminderScene: "list", reminderOverflow: 0,
+  popover: true, bannerAtn: false, bannerInfo: false, bannerFailure: null, bannerInjectFailure: false, bannerSerial: 0,
+  needs: "collapsed", reminder: null,
   scope: "default", scopeMenu: false,
-  window: false, pane: "general", ws: "default", applyScope: "default",
+  window: false, pane: "general", ws: "default",
   returnToPanel: false, confirmation: null, workspaceForm: null, deleteWorkspaceID: null,
   library: { status: "ready", referencesComplete: true, revision: 1 },
   system: { focusActive: false, calendarBusy: false },
@@ -1032,7 +1279,7 @@ var S = {
   srcCounts: { claude: { today: 7, week: 46 }, codex: { today: 4, week: 27 }, wb: { today: 1, week: 9 }
   },
   hostOpen: null,
-  soundPack: "minimal-chime", mapMenu: null, aiEvent: null,
+  soundPack: "minimal-chime", aiEvent: null,
   /* AI 提示音生成：唯一事实源。阶段、候选、逐 profile 凭据与未发布草稿都只存这一份。 */
   ai: {
     profile: "elevenlabs-global",
@@ -1072,7 +1319,18 @@ function referencesComplete() {
   return S.library.referencesComplete && GROUPS.every(function (g) { return !!g.pack && !!g.events; });
 }
 function canDeletePack(pk) {
-  return packWritable(pk) && !pk.draft && referencesComplete() && !aiPackUsageNames(pk.id).length;
+  return !packDeleteReason(pk);
+}
+function packDeleteReason(pk) {
+  if (!pk) return tr("声音包已不可用，请重新选择。", "Pack unavailable. Choose another pack.");
+  if (pk.builtin) return tr("内置声音包不能删除。", "Factory packs cannot be deleted.");
+  if (pk.draft) return tr("请取消草稿。", "Discard the draft instead.");
+  if (pk.broken) return tr("声音包损坏。请检查内容后刷新。", "Pack damaged. Inspect its contents and refresh.");
+  if (S.library.status === "refreshing") return tr("声音包库正在刷新。", "The sound pack library is refreshing.");
+  if (S.library.status !== "ready") return tr("声音包库读取失败，请重试刷新。", "The sound pack library could not be read. Retry refresh.");
+  if (!referencesComplete()) return t().ai.scopeIncomplete;
+  if (aiPackUsageNames(pk.id).length) return tr("请先让所有使用者改用其他声音包，再删除此包。", "Choose another pack for every scope using this pack before deleting it.");
+  return "";
 }
 function syncPackFacts(pk) {
   pk.audio = pk.audio || [];
@@ -1099,12 +1357,16 @@ function bindPackSource(packID, eventID, source) {
   return true;
 }
 function previewReason(pk, eventID, group) {
+  if (!eventById(eventID)) return tr("事件已不可用，请重新选择。", "Event unavailable. Select again.");
   if (S.library.status === "unavailable") return tr("声音包库不可用，请重试刷新", "Library unavailable. Retry refresh.");
-  if (!pk || pk.broken) return tr("声音包损坏或不可用，请修复", "Pack damaged or unavailable. Repair it first.");
+  if (!pk) return tr("声音包已不可用，请重新选择", "Pack unavailable. Choose another pack.");
+  if (pk.broken) return tr("声音包损坏，请检查内容后刷新", "Pack damaged. Inspect its contents and refresh.");
   var source = pk.files[eventID];
   if (!source) return tr("未映射，请设置声音", "No mapping. Choose a sound.");
   if (isSystemBinding(source) ? SYSTEM_SOUNDS.indexOf(sysName(source)) < 0 : pk.audio.indexOf(source) < 0)
     return tr("音频不可用，请检查映射", "Audio unavailable. Check the mapping.");
+  if (group && (!Number.isFinite(group.volume) || group.volume < 0 || group.volume > 100))
+    return tr("该组音量无效，请重新设置音量", "Group volume is invalid. Set its volume again.");
   if (group && group.volume === 0) return tr("该组音量为零，请调整音量", "Group volume is zero. Adjust it first.");
   return "";
 }
@@ -1116,7 +1378,6 @@ function usePackForScope(packID, scopeID) {
   if (g.pack !== pk.id) {
     if (S.scope === scopeID) Motion.result("#panelPack");
     if (S.ws === scopeID) Motion.result("#groupPack");
-    if (S.soundPack === packID && S.applyScope === scopeID) Motion.result("#packApplicationStatus");
   }
   g.pack = pk.id;
   toast(tr("已用于「", "Applied to “") + gName(g) + tr("」", "”")); return true;
@@ -1125,13 +1386,12 @@ function endSoundsSession() {
   var draftID = S.ai.draft;
   S.ai.draft = null; S.ai.draftPack = null; S.ai.draftName = null;
   if (S.soundPack === draftID) S.soundPack = PACKS.length ? PACKS[0].id : null;
-  S.mapMenu = null; aiCloseComposer();
+  aiCloseComposer();
 }
 function navigatePane(pane) {
   if (S.pane === pane) { focusPageTitle(); return; }
   if (S.pane === "shortcuts") S.prefs.recording = null;
-  if (S.pane === "groups" && pane === "sounds") S.applyScope = S.ws;
-  if (S.pane === "sounds" && pane !== "sounds") endSoundsSession();
+  if (S.pane === "sounds" && pane !== "sounds") { endSoundsSession(); workspaceSoundReturn = null; }
   S.pane = pane; S.deleting = false; S.deleteWorkspaceID = null;
   S.workspaceForm = null; S.confirmation = null; render(); focusPageTitle();
 }
@@ -1143,8 +1403,32 @@ function openGroupSounds(scopeID, eventID) {
   var g = groupById(scopeID);
   if (!g) { toast(tr("工作区已失效，请重新选择。", "Workspace unavailable. Select it again.")); return; }
   if (S.pane === "sounds") endSoundsSession();
-  S.applyScope = scopeID; S.soundPack = g.pack; S.aiEvent = eventID || null;
+  S.soundPack = g.pack; S.aiEvent = packWritable(packById(g.pack)) && eventById(eventID) ? eventID : null;
   S.pane = "sounds"; setView("window");
+}
+var workspaceSoundReturn = null;
+function selectSoundPack(nextID) {
+  if (nextID === S.soundPack || !packById(nextID)) return;
+  endSoundsSession(); S.soundPack = nextID; render();
+}
+function selectWorkspace(nextID) {
+  if (nextID === S.ws || !groupById(nextID)) return;
+  S.ws = nextID; S.confirmation = null; render();
+}
+function openWorkspaceSound(scopeID, eventID) {
+  if (!groupById(scopeID)) return;
+  workspaceSoundReturn = { scopeID: scopeID, eventID: eventID };
+  openGroupSounds(scopeID, null);
+  var target = document.getElementById("eventSound-" + eventID);
+  if (target && target.disabled) { target = document.getElementById("mapping-row-" + eventID); if (target) target.tabIndex = -1; }
+  if (eventID && target) { target.focus({ preventScroll: true }); if (target.scrollIntoView) target.scrollIntoView({ block: "nearest" }); }
+}
+function returnToWorkspace() {
+  var origin = workspaceSoundReturn; workspaceSoundReturn = null;
+  if (origin && groupById(origin.scopeID)) S.ws = origin.scopeID;
+  navigatePane("groups");
+  var target = origin && document.querySelector('[data-group-edit-sound="' + origin.eventID + '"]');
+  if (target) target.focus({ preventScroll: true });
 }
 function hostName(id) { return { claude: "Claude Code", codex: "Codex", wb: "WorkBuddy" }[id] || id; }
 function surfaceNames(ids) { return (ids || []).map(hostName).join(tr("、", ", ")) || tr("未选择", "None"); }
@@ -1171,15 +1455,15 @@ var DIRECTORY_CHOICES = [
 ];
 GROUPS.forEach(function (g) { if (g.kind === "ws") g.directoryKey = g.id === "ws1" ? "git:api-gateway" : "directory:claudi0"; });
 function beginWorkspaceForm() {
-  S.workspaceForm = { directory: "", pack: "", volume: 70, confirmed: false, surfaces: ["claude", "codex"], error: "" };
+  S.workspaceForm = { directory: "", pack: "", volume: 70, surfaces: ["claude", "codex"], error: "" };
   render();
 }
 function createWorkspaceFromForm() {
   var f = S.workspaceForm;
   if (!f) return false;
   var dir = DIRECTORY_CHOICES.find(function (x) { return x.id === f.directory; }), pk = packById(f.pack);
-  if (!dir || !pk || pk.draft || pk.broken || !f.confirmed || S.library.status !== "ready") {
-    f.error = tr("请选择目录和可用声音包，并确认音量。", "Choose a directory and an available pack, then confirm the volume."); render(); return false;
+  if (!dir || !pk || pk.draft || pk.broken || S.library.status !== "ready") {
+    f.error = tr("请选择目录和可用声音包。", "Choose a directory and an available pack."); render(); return false;
   }
   if (GROUPS.some(function (g) { return g.directoryKey === dir.key; })) {
     f.error = tr("此仓库（含关联 worktree）或目录已有声音规则。", "This repository (including linked worktrees) or directory already has a rule."); render(); return false;
@@ -1189,7 +1473,7 @@ function createWorkspaceFromForm() {
   GROUPS.push({ id: id, kind: "ws", directoryKind: dir.kind, directoryKey: dir.key,
     zh: { name: "工作区 · " + name, dir: dir.root }, en: { name: "Workspace · " + name, dir: dir.root },
     pack: pk.id, volume: f.volume, surfaces: f.surfaces.slice(), events: events });
-  S.ws = id; S.applyScope = id; S.workspaceForm = null;
+  S.ws = id; S.workspaceForm = null;
   Motion.result("#groupDetail");
   toast(tr("工作区已创建，五个事件初始全开。", "Workspace created with all five events enabled.")); render(); return true;
 }
@@ -1203,26 +1487,23 @@ function prototypeSheetHTML() {
     h += '</select>' + (dir ? '<p class="note-line">' + esc(dir.root) + ' · ' + (dir.kind === "git" ? tr("覆盖同仓库和关联 worktree", "Includes the repository and linked worktrees") : tr("覆盖目录和子目录", "Includes this directory and descendants")) + '</p>' : '') +
       '<label for="workspacePack">' + tr("声音包", "Sound pack") + '</label><select class="field" id="workspacePack">' + packOptions(f.pack) + '</select>' +
       '<label for="workspaceVolume">' + tr("音量", "Volume") + ' · ' + f.volume + '%</label><input id="workspaceVolume" type="range" min="0" max="100" value="' + f.volume + '">' +
-      '<label><input type="checkbox" id="workspaceConfirmVolume"' + (f.confirmed ? ' checked' : '') + '> ' + tr("确认使用这个音量", "Confirm this volume") + '</label><h3>' + tr("适用来源", "Applies to") + '</h3>';
+      '<h3 style="margin-top:14px">' + tr("适用来源", "Applies to") + '</h3>';
     ["claude", "codex"].forEach(function (id) {
       var on = f.surfaces.indexOf(id) >= 0;
-      h += '<div class="kv"><span class="k">' + hostName(id) +
-        '<span class="s">' + (on
-          ? tr("创建后此来源的回调使用该工作区", "Callbacks from this source will use this workspace")
-          : tr("未勾选：此来源的回调不使用该工作区", "Not selected: callbacks from this source will ignore this workspace")) + '</span></span>' +
+      h += '<div class="kv"><span class="k">' + hostName(id) + '</span>' +
         '<button class="switch' + (on ? " on" : "") + '" role="switch" aria-checked="' + on + '" data-create-surface="' + id + '" aria-label="' +
           hostName(id) + (on ? tr("，已适用", ", applied") : tr("，未适用", ", not applied")) + '"></button></div>';
     });
     h += '<div class="kv"><span class="k">WorkBuddy' +
-      '<span class="s">' + tr("目录证据未齐，暂不支持工作区", "Directory evidence incomplete; workspace support unavailable") + '</span></span>' +
+      '<span class="s">' + tr("不支持工作区", "Workspaces are not supported") + '</span></span>' +
       '<span class="pill">' + tr("不可用", "Unavailable") + '</span></div>';
-    h += '<p class="note-line">WorkBuddy · ' + tr("目录证据未齐，暂不可选。五个事件初始全开。", "Directory evidence incomplete; unavailable. All five events start enabled.") + '</p>' +
+    h += '<p class="note-line">' + tr("五个事件初始全开。", "All five events start enabled.") + '</p>' +
       (f.error ? '<p class="err-line" role="alert">' + esc(f.error) + '</p>' : '') +
-      '<div class="action-row"><button class="ghost-btn" id="prototypeSheetCancel" autofocus>' + t().cancel + '</button><button class="primary-btn" id="createWorkspace"' + (!dir || !f.pack || !f.confirmed ? ' disabled' : '') + '>' + tr("创建", "Create") + '</button></div>';
+      '<div class="action-row"><button class="ghost-btn" id="prototypeSheetCancel" autofocus>' + t().cancel + '</button><button class="primary-btn" id="createWorkspace"' + (!dir || !f.pack ? ' disabled' : '') + '>' + tr("创建", "Create") + '</button></div>';
   } else {
     var title = c.kind === "restore" ? tr("恢复出厂声音？", "Restore factory sounds?")
       : c.kind === "importAudio" ? tr("选择演示音频", "Choose demo audio")
-      : c.kind === "importPack" ? tr("导入演示声音包？", "Import a demo pack?") : tr("确认删除？", "Confirm deletion?");
+      : tr("确认删除？", "Confirm deletion?");
     var note = c.kind === "workspace" ? tr("只删除声音规则，项目文件与声音包保留；之后按剩余规则与默认组匹配。", "Only the sound rule is deleted. Project files and packs remain; callbacks match remaining rules or the default group.")
       : c.kind === "deletePack" ? tr("将移到废纸篓。确认时会再次检查所有组的引用。", "Move to Trash. Every scope’s references are checked again at confirmation.")
       : c.kind === "orphan" ? tr("只删除仍未被任何事件使用的音频。", "Only audio still unused by every event can be deleted.")
@@ -1234,16 +1515,14 @@ function prototypeSheetHTML() {
   }
   return '<div class="sheet-overlay" id="modalOverlay"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="prototypeSheetTitle">' + h + '</div></div>';
 }
-function copyPack(packID, scopeID) {
+function copyPack(packID) {
   var original = packById(packID);
-  if (!original || original.draft || original.broken || S.library.status !== "ready") return false;
+  if (!original || original.builtin || original.draft || original.broken || S.library.status !== "ready") return false;
   var copy = JSON.parse(JSON.stringify(original));
   copy.id = "my-copy-" + (++aiSerial); copy.name = packName(original) + tr(" · 副本 ", " · Copy ") + aiSerial;
   copy.builtin = false; copy.license = null; copy.author = null; copy.lic = "user";
   endSoundsSession(); PACKS.push(copy); S.soundPack = copy.id; S.library.revision++;
-  if (scopeID != null) {
-    if (!usePackForScope(copy.id, scopeID)) toast(tr("副本已创建，但未应用：原目标不可用。", "Copy created but not applied: the original target is unavailable."));
-  } else toast(tr("已创建可编辑副本；可在下方选择使用。", "Editable copy created. Apply it below when ready."));
+  toast(tr("已创建可编辑副本；可在默认组／工作区设置中选择使用。", "Editable copy created. Choose it in Default Group & Workspaces settings."));
   Motion.result("#packDetail");
   render(); return true;
 }
@@ -1262,7 +1541,6 @@ function confirmPrototypeAction() {
     if (g && g.kind === "ws" && g.directoryKey === c.directoryKey) {
       GROUPS = GROUPS.filter(function (x) { return x.id !== c.scopeID; });
       S.ws = "default"; if (S.scope === c.scopeID) S.scope = "default";
-      // 保留失效应用目标，要求用户明确重新选择，不能悄悄改到默认组。
       ok = true;
     }
   } else if (c.kind === "restore" && pk && pk.builtin && S.library.status === "ready") {
@@ -1272,41 +1550,101 @@ function confirmPrototypeAction() {
     var file = "imported-" + (++aiSerial) + ".wav";
     pk.audio.push(file); syncPackFacts(pk);
     ok = !c.eventID || bindPackSource(pk.id, c.eventID, file);
-  } else if (c.kind === "importPack" && S.library.status === "ready") {
-    var importedID = "imported-pack-" + (++aiSerial);
-    endSoundsSession();
-    var imported = { id: importedID, name: tr("导入声音包 ", "Imported pack ") + aiSerial, builtin: false, lic: "user", license: null, author: null,
-      files: { stop: "imported-stop.wav" }, audio: ["imported-stop.wav"], names: {}, cov: [], orphans: [] };
-    syncPackFacts(imported); PACKS.push(imported); S.soundPack = importedID; ok = true;
+
   }
-  if (!ok) { c.error = tr("目标状态已变化，操作未执行。请取消后重新检查。", "The target changed. Nothing was applied. Cancel and check again."); render(); return; }
+  if (!ok) { c.error = c.kind === "deletePack" ? packDeleteReason(pk) : tr("目标状态已变化，操作未执行。请取消后重新检查。", "The target changed. Nothing was applied. Cancel and check again."); render(); return; }
   S.confirmation = null; S.library.revision++;
-  toast(tr("操作已在原型中完成。", "Action completed in the prototype.")); render();
+  var messages = {
+    deletePack: tr("声音包已移除。", "Sound pack removed."),
+    orphan: tr("音频已删除。", "Audio deleted."),
+    workspace: tr("工作区规则已删除。", "Workspace rule deleted."),
+    restore: tr("出厂声音已恢复。", "Factory sounds restored."),
+    importAudio: c.eventID ? tr("音频已导入并绑定。", "Audio imported and assigned.") : tr("音频已导入。", "Audio imported.")
+  };
+  toast(messages[c.kind]); render();
 }
 function glyph(c, g) {
   return '<span class="glyph" style="color:var(--ev-' + c + ');background:color-mix(in srgb, var(--ev-' + c + ') 15%, transparent)">' + G[g] + '</span>';
 }
 
+/* 统一入口的事件场景：沿用五事件 token 与同一份提醒事实。 */
+var NOTICE_SCENARIOS = {
+  permission: { event: "notification", glyph: "bell", zh: "等你授权", en: "waiting for approval", actionZh: "去授权", actionEn: "Review request" },
+  needsInput: { event: "notification", glyph: "input", zh: "等你输入", en: "waiting for input", actionZh: "去输入", actionEn: "Provide input" },
+  interrupted: { event: "stopFailure", glyph: "pause", zh: "执行中断", en: "run interrupted", actionZh: "去查看", actionEn: "Inspect" },
+  review: { event: "notification", glyph: "bell", zh: "需要你查看", en: "needs your attention", actionZh: "去查看", actionEn: "Inspect" },
+  stop: { event: "stop", glyph: "check", zh: "本轮已结束", en: "turn finished" },
+  subagent: { event: "subagentStop", glyph: "checko", zh: "子任务已结束", en: "subagent finished" },
+  question: { event: "notification", glyph: "input", zh: "即将向你提问", en: "about to ask you" },
+  taskStart: { event: "taskStart", glyph: "plane", zh: "开始执行", en: "run started" }
+};
+function demoReminder(kind, id, mins) {
+  var e = NOTICE_SCENARIOS[kind];
+  return { id: id, kind: kind, host: kind === "needsInput" || kind === "interrupted" ? "Claude Code" : "Codex",
+    event: e.event, demand: { zh: e.zh, en: e.en }, proj: "claudi0", mins: mins || 0,
+    clock: "14:32", session: "demo-session-" + id };
+}
+function showNoticeScene(kind) {
+  var e = NOTICE_SCENARIOS[kind];
+  if (!e) return;
+  S.bannerEvent = kind;
+  document.getElementById("bannerEvent").value = kind;
+  if (e.actionZh) {
+    var id = "demo-" + kind;
+    var r = REMINDERS.find(function (x) { return x.id === id; });
+    if (!r) { r = demoReminder(kind, id, 0); REMINDERS.unshift(r); }
+    S.bannerReminderID = r.id;
+  } else S.bannerReminderID = null;
+  showBanner(!!e.actionZh);
+}
+function showReminderScene(scene) {
+  if (["list", "detail", "empty", "overflow", "updated", "expired"].indexOf(scene) < 0) return;
+  closeBanner();
+  document.getElementById("reminderScene").value = scene;
+  S.reminderScene = scene; S.reminderOverflow = scene === "overflow" ? 3 : 0;
+  REMINDERS = scene === "empty" || scene === "expired" ? [] :
+    ["permission", "needsInput", "interrupted", "review", "needsInput"].map(function (kind, i) { return demoReminder(kind, "demo-row-" + i, i * 2); });
+  if (scene === "updated") REMINDERS[0].updated = true;
+  S.reminder = REMINDERS.length ? REMINDERS[0].id : null;
+  S.needs = scene === "detail" || scene === "updated" || scene === "expired" ? "detail" : "list";
+  setView("panel");
+}
+function refreshReminder(id) {
+  var r = REMINDERS.find(function (x) { return x.id === id; });
+  if (!r) return;
+  r.updated = false; r.mins = 0; render();
+}
 /* ============ 横幅 ============ */
+function bannerFailureText(key) {
+  return key === "unavailable" ? tr("来源应用未能打开，请重试。", "The source app could not be opened. Try again.")
+    : tr("此提醒已更新或过期，请在面板的“需要你”查看最新事项。", "This reminder changed or expired. Check “Needs you” in the panel for the latest item.");
+}
 function bannerHTML() {
   if (!S.bannerAtn && !S.bannerInfo) return "";
-  var r = S.bannerAtn ? REMINDERS[0] : null, color = r ? "clay" : "green";
-  var host = r ? r.host : "Codex", demand = r ? reminderDemand(r) : tr("本轮已结束", "turn finished");
-  var detail = '<div class="banner-detail"><button class="ghost-btn" id="bannerBack">' + tr("收起详情", "Collapse details") + '</button>' +
-    '<p style="margin-top:10px">' + esc(host + " · " + demand) + '</p>';
-  if (r) detail += '<p>' + esc(r.proj) + '</p><p>' + esc(r.clock + " · " + t().mins(r.mins)) + '</p>' +
-    '<p>' + esc(r.session) + '</p><button class="ghost-btn" id="bannerSource">' + tr("打开来源（模拟）", "Open source (simulation)") + '</button>';
-  else detail += '<p>' + tr("原型瞬时事件；不加入待接手提醒。", "Simulated transient event; no attention reminder is added.") + '</p>';
-  detail += '</div>';
-  return '<div class="banner" id="banner" aria-label="' + tr("事件横幅", "Event banner") + '"><div class="cap' + (r ? '' : ' is-info') + '">' +
-    '<span class="spine" style="background:var(--ev-' + color + ')"></span>' + glyph(color, r ? "bell" : "check") +
-    '<button class="cap-text" id="bannerDetailsToggle" aria-controls="bannerDetails" aria-expanded="' + S.bannerExpanded + '">' +
-    '<span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
-    '<span class="s">' + esc(r ? r.proj + ' · ' + t().age(r.mins) : 'claudi0 · ' + tr('<1分', '<1m')) + '</span></button>' +
-    (r ? '<button class="chip" id="bannerAct">' + tr("去授权", "Review request") + '</button>' : '') +
+  var r = S.bannerAtn ? REMINDERS.find(function (x) { return x.id === S.bannerReminderID; }) : null;
+  var scene = NOTICE_SCENARIOS[S.bannerEvent] || NOTICE_SCENARIOS.permission;
+  var e = eventById(r ? r.event : scene.event), color = e.color;
+  var host = r ? r.host : "Codex", demand = r ? reminderDemand(r) : tr(scene.zh, scene.en);
+  var action = r && NOTICE_SCENARIOS[r.kind] || scene;
+  var failure = S.bannerAtn && (!r || r.updated) ? "stale" : S.bannerFailure;
+  return '<div class="banner" id="banner" style="--banner-color:var(--ev-' + color + ')" aria-label="' + tr("事件横幅", "Event banner") + '"><div class="cap' + (S.bannerAtn ? '' : ' is-info') + '">' +
+    '<span class="spine" style="background:var(--ev-' + color + ')"></span>' + glyph(color, scene.glyph) +
+    '<div class="cap-text"><span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
+    '<span class="s">' + esc(r ? r.proj + ' · ' + t().age(r.mins) : 'claudi0 · ' + tr('<1分', '<1m')) + '</span></div>' +
+    (r ? '<button class="chip" id="bannerAct"' + (r.updated ? ' disabled' : '') + '>' + (failure === "unavailable" ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
     '<button class="icon-btn" id="bannerClose" aria-label="' + tr("收起横幅", "Dismiss banner") + '">' + G.x + '</button></div>' +
-    '<div class="track" aria-hidden="true" style="--ev-clay:var(--ev-' + color + ')"><i></i></div>' +
-    disclosure("bannerDetails", S.bannerExpanded, detail, "bannerDetailsToggle") + '</div>';
+    (failure ? '<p class="banner-error" role="alert">' + bannerFailureText(failure) + '</p>' : '') +
+    '<div class="track" aria-hidden="true" style="--ev-clay:var(--ev-' + color + ')"><i></i></div></div>';
+}
+function openBannerSource() {
+  if (!S.bannerAtn) return;
+  var r = REMINDERS.find(function (x) { return x.id === S.bannerReminderID; });
+  if (!r || r.updated) { S.bannerFailure = "stale"; render(); return; }
+  // The prototype simulates this action. The drawer can fail one attempt for recovery review.
+  if (S.bannerInjectFailure) {
+    S.bannerInjectFailure = false; S.bannerFailure = "unavailable"; render(); return;
+  }
+  closeBanner(); toast(tr("已打开来源应用：", "Opened source app: ") + r.host);
 }
 
 /* ============ 面板 ============ */
@@ -1315,7 +1653,10 @@ function panelHTML() {
   h += '<div class="p-head">' +
     '<span class="word">' + T.brand + '</span>' +
     '<span class="src">' + T.sources + '</span>' +
-    '<button class="gear" id="gearBtn" aria-label="' + T.settings + '" title="' + T.settings + '">⚙</button>' +
+    '<button class="gear" id="gearBtn" aria-label="' + T.settings + '" title="' + T.settings + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M10 3h4l.5 2 1.5.9 2-.6 2 3.4-1.5 1.5v3.6l1.5 1.5-2 3.4-2-.6-1.5.9-.5 2h-4l-.5-2-1.5-.9-2 .6-2-3.4 1.5-1.5v-3.6L4 8.7l2-3.4 2 .6 1.5-.9z"/>' +
+        '<circle cx="12" cy="12" r="3"/></svg></button>' +
   '</div>';
 
   h += '<div class="p-body">';
@@ -1377,49 +1718,26 @@ function panelHTML() {
   h += '<div class="sec-title">' + T.events + '<span class="cnt">5</span></div>';
   EVENTS.forEach(function (e) {
     var muted = !cur.events[e.id], reason = previewReason(pk, e.id, cur);
+    var unmapped = pk && !pk.broken && S.library.status !== "unavailable" && !pk.files[e.id];
+    var detailReason = unmapped ? tr("未映射", "Not mapped") : reason;
+    var description = detailReason ? "preview-reason-" + e.id : "";
     h += '<div class="ev-row" id="evrow-' + e.id + '">' + glyph(e.color, e.glyph) +
       '<span class="rt"><span class="t">' + evName(e) + '</span>' +
-      '<span class="s">' + e.token + ' · ' + esc(sourceName(pk && pk.files[e.id])) + '</span></span>' +
+      (detailReason ? '<span class="ev-reason" id="preview-reason-' + e.id + '">' + esc(detailReason) + '</span>' : '') + '</span>' +
       '<span class="acts"><button class="mini-btn" data-listen="' + e.id + '"' + (reason ? ' disabled' : '') +
-      ' aria-describedby="preview-reason-' + e.id + '" aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
+      (description ? ' aria-describedby="' + description + '"' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
       '<button class="mini-btn' + (muted ? ' off' : '') + '" data-mute="' + e.id + '" aria-pressed="' + muted +
       '" aria-label="' + evName(e) + (muted ? tr("：已静音", ": muted") : tr("：已开启", ": on")) + '">' + (muted ? G.muted : G.mute) + '</button></span></div>';
-    h += '<div class="ev-reason" id="preview-reason-' + e.id + '">' + esc(reason) +
-      (reason && cur.volume !== 0 ? ' <button class="ghost-btn" data-edit-sound="' + e.id + '">' + tr("设置声音…", "Configure sound…") + '</button>' : '') + '</div>';
   });
   h += '<div class="vol-row"><label class="lbl" for="volRange">' + T.volume + '</label>' +
     '<input type="range" id="volRange" min="0" max="100" value="' + cur.volume + '" aria-label="' + T.volume + '">' +
-    '<span class="pct" id="volPct">' + cur.volume + '%</span></div>' +
-    '<div class="note-line">' + T.listenHint + '</div>';
+    '<span class="pct" id="volPct">' + cur.volume + '%</span></div>';
 
-  /* 活动概览（默认折叠） */
+  /* 今日与近七日沿用共享计数，摘要没有展开或跳转动作。 */
   var todayTotal = EVENTS.reduce(function (n, e) { return n + S.usage.today[e.id]; }, 0);
   var weekTotal = EVENTS.reduce(function (n, e) { return n + S.usage.week[e.id]; }, 0);
-  h += '<button class="act-toggle' + (S.activity ? " open" : "") + '" id="actBtn" aria-controls="activityContent" aria-expanded="' + S.activity + '">' +
-    '<span class="chev">›</span><span class="lbl">' + T.activity + '</span>' +
-    '<span class="num">' + tr("今日 " + todayTotal + " 次 · 近 7 日 " + weekTotal + " 次", todayTotal + " today · " + weekTotal + " last 7 days") + '</span></button>';
-  var activityContent = "";
-  if (S.activity) {
-    var activityEvents = EVENTS.filter(function (e) { return e.id !== "stopFailure"; });
-    var activityLabels = { taskStart: T.started, stop: T.ended, notification: T.waiting, subagentStop: T.subagent };
-    var activityTotal = activityEvents.reduce(function (n, e) { return n + S.usage.today[e.id]; }, 0);
-    activityContent += '<div class="act-bar">';
-    activityEvents.forEach(function (e) {
-      var empty = S.usage.today[e.id] === 0;
-      var width = activityTotal ? S.usage.today[e.id] / activityTotal * 100 : 25;
-      activityContent += '<span' + (empty ? ' class="empty"' : '') + ' style="width:' + width + '%;color:var(--ev-' + e.color + ');background:' + (empty ? 'transparent' : 'var(--ev-' + e.color + ')') + '"></span>';
-    });
-    activityContent += '</div><div class="act-legend">';
-    activityEvents.forEach(function (e) {
-      activityContent += '<span><i style="background:var(--ev-' + e.color + ')"></i>' + activityLabels[e.id] + ' ' + S.usage.today[e.id] + '</span>';
-    });
-    activityContent += '</div><div class="note-line">' + T.interrupted + ' ' + S.usage.today.stopFailure + '</div>';
-    activityContent += '<div class="note-line">' + (S.lang === "zh"
-      ? "数字只来自当前安装确认并成功映射到公共事件的真实宿主回调；静音、播放失败与所选组音量为零都不减少计数。"
-      : "Counts come only from real host callbacks that the current installation confirmed and mapped to a public event.") + '</div>';
-  }
-
-  h += disclosure("activityContent", S.activity, activityContent, "actBtn");
+  h += '<div class="activity-summary" id="activitySummary">' +
+    tr("今日 " + todayTotal + " 次 · 近 7 日 " + weekTotal + " 次", todayTotal + " today · " + weekTotal + " last 7 days") + '</div>';
 
   h += '</div>';
   h += '<div class="p-foot"><button id="quitBtn">' + T.quit + '</button></div>';
@@ -1432,6 +1750,7 @@ function rowsHTML() {
     h += '<div class="ev-row"><span class="rt"><span class="s">' + T.empty + '</span></span></div>';
     return h;
   }
+  h += '<div class="reminder-rows">';
   REMINDERS.forEach(function (r) {
     var e = reminderEvent(r);
     h += '<button class="ev-row" data-reminder="' + r.id + '" data-focus-key="reminder-' + r.id + '" style="width:100%;background:transparent;border:none;text-align:left">' +
@@ -1440,38 +1759,38 @@ function rowsHTML() {
         reminderDemand(r) + '</span><span class="s">' + r.proj + '</span></span>' +
       '<span style="font:500 10.5px var(--mono);color:var(--muted)">' + t().age(r.mins) + '</span></button>';
   });
+  h += '</div>';
+  if (S.reminderOverflow) h += '<p class="note-line">' + tr("另有 " + S.reminderOverflow + " 项因容量被丢弃", S.reminderOverflow + " more discarded at capacity") + '</p>';
   return h;
 }
 
 /* 面板内提醒详情：与横幅详情同构 */
+function reminderFactsHTML(r) {
+  var disabled = r.updated ? ' disabled' : '';
+  return '<div class="kv"><span class="k">' + esc(r.proj) + '</span></div>' +
+    '<div class="kv"><span class="k">' + t().session + '<span class="s" style="font-family:var(--mono)">' + esc(r.session) + '</span></span>' +
+    '<button class="mini-btn" data-copysession="' + esc(r.id) + '"' + disabled + ' aria-label="' + tr("复制会话 ID", "Copy session ID") + '">⧉</button></div>' +
+    '<div class="kv"><span class="k">' + t().occurred + '<span class="s">' + esc(r.clock + ' · ' + t().mins(r.mins)) + '</span></span></div>' +
+    (r.updated ? '<p class="err-line">' + tr("已更新，请刷新", "Updated. Refresh to continue.") + '</p><button class="ghost-btn" data-refresh-reminder="' + esc(r.id) + '">' + tr("刷新", "Refresh") + '</button>' : '') +
+    '<div class="action-row"><button class="primary-btn" data-opensource="' + esc(r.id) + '"' + disabled + '>' + tr("打开来源", "Open source app") + '</button>' +
+    '<button class="mini-btn" data-dismiss="' + esc(r.id) + '"' + disabled + ' aria-label="' + tr("移除此提醒", "Remove reminder") + '">−</button></div>';
+}
 function reminderDetailHTML() {
-  var T = t(), zh = S.lang === "zh";
-  var r = REMINDERS.filter(function (x) { return x.id === S.reminder; })[0];
-  if (!r) return "";
-  var e = reminderEvent(r);
-  return '<div style="border:1px solid var(--hairline-strong);border-radius:13px;margin-bottom:8px;padding:10px 12px">' +
-    '<div style="display:flex;align-items:center;gap:8px;padding-bottom:8px">' +
-      '<button class="mini-btn" id="remBackBtn" data-focus-key="remBackBtn" aria-label="' + (zh ? "返回列表" : "Back to list") + '">‹</button>' +
-      '<span style="font-size:12.5px;font-weight:700">' + r.host + (zh ? "" : " ") + reminderDemand(r) + '</span></div>' +
-    '<div class="kv" style="padding:6px 0"><span class="k">' + esc(r.proj) + '</span></div>' +
-    '<div class="kv" style="padding:6px 0"><span class="k">' + T.session + '<span class="s" style="font-family:var(--mono)">' + r.session + '</span></span>' +
-      '<button class="mini-btn" data-copysession="' + r.id + '" aria-label="' + (zh ? "复制会话 ID" : "Copy session ID") + '">⧉</button></div>' +
-    '<div class="kv" style="padding:6px 0"><span class="k">' + T.occurred + '<span class="s">' + r.clock + ' · ' + (zh ? "": "") + t().mins(r.mins) + '</span></span></div>' +
-    '<div style="display:flex;gap:8px;margin-top:8px">' +
-      '<button class="primary-btn" style="background:var(--ev-' + e.color + ')" data-opensource="' + r.id + '" data-focus-key="opensource">' +
-        (zh ? "打开来源" : "Open source app") + '</button>' +
-      '<button class="mini-btn" data-dismiss="' + r.id + '" aria-label="' + (zh ? "移除此提醒" : "Remove reminder") + '">−</button>' +
-    '</div></div>';
+  var r = REMINDERS.find(function (x) { return x.id === S.reminder; });
+  return '<div style="padding:10px 12px"><div class="action-row">' +
+    '<button class="mini-btn" id="remBackBtn" data-focus-key="remBackBtn" aria-label="' + tr("返回列表", "Back to list") + '">‹</button>' +
+    '<b>' + (r ? esc(r.host + " · " + reminderDemand(r)) : tr("提醒已过期", "Reminder expired")) + '</b></div>' +
+    (r ? reminderFactsHTML(r) : '<p class="note-line">' + tr("来源与发生时间已清除。", "Source and occurrence time cleared.") + '</p>') + '</div>';
 }
 
 /* ============ 设置窗口 ============ */
-var PANES = ["general", "integrations", "groups", "notifications", "sounds", "activity", "shortcuts", "about"];
+var PANES = ["groups", "sounds", "integrations", "notifications", "general", "shortcuts", "activity", "about"];
 var PANE_ICON = { general: "⚙", integrations: "⇄", groups: "◫", notifications: "◔", sounds: "♪", activity: "▤", shortcuts: "⌘", about: "i" };
 
 function sideHTML() {
   var T = t(), h = '<div class="brand"><span class="mark"></span><span class="nm">' + T.brand + '</span></div>';
   PANES.forEach(function (p) {
-    h += '<button class="w-item' + (S.pane === p ? " active" : "") + '" data-pane="' + p + '">' +
+    h += '<button class="w-item' + (p === "general" || p === "activity" ? " section-start" : "") + (S.pane === p ? " active" : "") + '" data-pane="' + p + '">' +
       '<span class="ic">' + PANE_ICON[p] + '</span>' + T.panes[p] + '</button>';
   });
   return h;
@@ -1479,67 +1798,48 @@ function sideHTML() {
 
 function mainHTML() {
   var T = t();
-  var head = '<h1 id="pageTitle" tabindex="-1" data-focus-key="pageTitle">' + T.panes[S.pane] + '</h1><p class="sub">' + T.paneSubs[S.pane] + '</p>';
+  var head = '<header class="settings-header"><h1 id="pageTitle" tabindex="-1" data-focus-key="pageTitle">' + T.panes[S.pane] + '</h1>' + (['sounds', 'groups'].indexOf(S.pane) >= 0 ? '' : '<p class="sub">' + T.paneSubs[S.pane] + '</p>');
   var body = "";
   var map = { general: paneGeneral, integrations: paneIntegrations, groups: paneGroups,
     notifications: paneNotifications, sounds: paneSounds,
     activity: paneActivity, shortcuts: paneShortcuts, about: paneAbout };
   body = map[S.pane]();
-  return head + body;
+  return head + '</header>' + (['sounds', 'groups'].indexOf(S.pane) >= 0 ? body : '<div class="settings-page" data-settings-pane="' + S.pane + '">' + body + '</div>');
 }
 
 function paneGroups() {
   var T = t(), cur = groupById(S.ws);
-  var h = '<div class="w-grid"><div><div class="card"><h3>' + tr("默认组与工作区", "Default group & workspaces") + '</h3><p>' +
-    tr("选择要编辑的声音配置。自动播放按回调的目录与来源匹配。", "Choose a profile to edit. Automatic playback matches each callback’s directory and source.") + '</p></div>';
-  GROUPS.forEach(function (g) {
-    h += '<button class="list-row' + (S.ws === g.id ? ' active' : '') + '" data-ws="' + g.id + '"><span><span class="t">' + esc(gName(g)) +
-      '</span><span class="s" style="display:block">' + esc(gDir(g)) + '</span></span></button>';
+  var h = '<div class="workspace-design"><div class="catalog-select"><label for="redesignWorkspace">' + tr("声音作用域", "Sound scope") + '</label><select class="field" id="redesignWorkspace">' +
+    (cur ? '' : '<option value="">' + tr("请选择声音作用域", "Choose a sound scope") + '</option>') +
+    GROUPS.map(function (g) { return '<option value="' + esc(g.id) + '"' + (S.ws === g.id ? ' selected' : '') + '>' + esc(gName(g)) + '</option>'; }).join('') +
+    '</select><div class="library-actions"><button class="sel-btn" id="addWsBtn">' + T.addWorkspace + '</button></div></div>' + libraryStatusHTML();
+  if (!cur) return h + '<div class="err-line">' + tr("所选工作区已不可用，请重新选择。", "This workspace is unavailable. Select a scope again.") + '</div></div>';
+  var pk = packById(cur.pack);
+  h += '<div class="sound-layout"><section class="editor-area" id="groupDetail"><h3 class="scope-title">' + esc(gName(cur)) + '</h3><div class="scope-controls">' +
+    '<div class="kv form-row"><label class="k" for="groupPack">' + T.pack + '</label><select class="field" id="groupPack"' + (S.library.status !== "ready" ? ' disabled' : '') + '>' + packOptions(cur.pack) + '</select></div>' +
+    '<div class="kv form-row"><label class="k" for="grpVol">' + tr("音量", "Volume") + '</label><span class="range-control"><input type="range" id="grpVol" min="0" max="100" value="' + cur.volume + '" aria-label="' + T.volume + '"><span id="grpVolPct">' + cur.volume + '%</span></span></div></div><div class="event-tiles">';
+  EVENTS.forEach(function (e) {
+    var reason = previewReason(pk, e.id, cur), on = !!cur.events[e.id], binding = pk && pk.files[e.id];
+    var name = binding && typeof binding === "string" && pk.names[binding] ? pk.names[binding] + ' · ' + binding : sourceName(binding);
+    var editLabel = pk && pk.builtin ? tr("查看声音", "View sound") : tr("编辑声音", "Edit sound");
+    var icon = pk && pk.builtin ? '<path d="M3 8h10m-4-4 4 4-4 4"/>' : '<path d="m10.8 2.2 3 3-7.7 7.7-3.7.7.7-3.7zM9.1 3.9l3 3"/>';
+    h += '<div class="event-tile" id="scope-event-' + e.id + '"><div class="scope-event-row"><span class="k"><span class="event-icon" aria-hidden="true" style="--event-ink:var(--ev-' + e.color + ')">' + G[e.glyph] + '</span>' + evName(e) + '</span>' +
+      '<button class="field scope-sound-link" data-group-edit-sound="' + e.id + '" title="' + esc(name) + '" aria-label="' + esc(evName(e) + tr("：", ": ") + name + tr("，", ", ") + editLabel) + '"><span class="source-name">' + esc(name) + '</span><span class="edit-label"><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' + icon + '</svg><span>' + editLabel + '</span></span></button>' +
+      '<span class="scope-event-actions"><button class="mini-btn" data-group-preview="' + e.id + '"' + (reason ? ' disabled' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
+      '<button class="switch' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" data-ev-toggle="' + e.id + '" aria-label="' + evName(e) + tr("：自动播放", ": automatic playback") + '"></button></span></div>' + (reason ? '<p class="err-line">' + esc(reason) + '</p>' : '') + '</div>';
   });
-  h += '<button class="sel-btn" id="addWsBtn">' + T.addWorkspace + '</button></div><div id="groupDetail">';
-  if (!cur) return h + '<div class="err-line">' + tr("所选工作区已不可用，请重新选择。", "This workspace is unavailable. Select a scope again.") + '</div></div></div>';
-  h += libraryStatusHTML() + '<div class="card"><h3>' + esc(gName(cur)) + '</h3>' +
-    '<div class="kv form-row"><label class="k" for="groupPack">' + T.pack + '</label><select class="field" id="groupPack"' +
-    (S.library.status !== "ready" ? ' disabled' : '') + '>' + packOptions(cur.pack) + '</select></div>' +
-    '<div class="kv form-row"><label class="k" for="grpVol">' + T.volume + '</label><span class="range-control"><input type="range" id="grpVol" min="0" max="100" value="' + cur.volume +
-    '" aria-label="' + T.volume + '"><span id="grpVolPct">' + cur.volume + '%</span></span></div>' +
-    '<div class="kv"><span class="k">' + T.coverage + '</span><span class="coverage">' + coverageForGroup(cur) + '</span></div>';
+  h += '</div><div class="scope-footer"><button class="sel-btn" id="listenPackBtn"><span class="preview-mark" aria-hidden="true">' + G.play + '</span> ' + tr("试听可用事件", "Preview available events") + '</button><button class="sel-btn" id="manageGroupSounds">' + tr("管理声音…", "Manage sounds…") + '</button></div></section><aside class="provider-card">';
   if (cur.kind === "ws") {
-    h += '<div class="kv"><span class="k">' + tr("目录范围", "Directory scope") + '<span class="s">' + esc(gDir(cur)) + ' · ' +
-      (cur.directoryKind === "git" ? tr("仓库与关联 worktree", "Repository and linked worktrees") : tr("目录与子目录", "Directory and descendants")) + '</span></span></div>';
-    h += '<h3>' + tr("适用来源", "Applies to") + '</h3>';
+    h += '<h2>' + tr("目录范围", "Directory scope") + '</h2><div class="scope-directory"><p class="scope-path">' + esc(gDir(cur)) + '</p><p class="scope-match">' + (cur.directoryKind === "git" ? tr("仓库与关联 worktree", "Repository and linked worktrees") : tr("目录与子目录", "Directory and descendants")) + '</p></div><h2>' + tr("适用来源", "Applies to") + '</h2>';
     ["claude", "codex"].forEach(function (id) {
       var on = cur.surfaces.indexOf(id) >= 0;
-      h += '<div class="kv"><span class="k">' + hostName(id) +
-        '<span class="s">' + (on
-          ? tr("此来源的回调使用该工作区规则", "Callbacks from this source use this workspace")
-          : tr("未勾选：此来源的回调不使用该工作区", "Not selected: callbacks from this source ignore this workspace")) + '</span></span>' +
-        '<button class="switch' + (on ? " on" : "") + '" role="switch" aria-checked="' + on + '" data-ws-surface="' + id + '" aria-label="' +
-          hostName(id) + (on ? tr("，已适用", ", applied") : tr("，未适用", ", not applied")) + '"></button></div>';
+      h += '<div class="kv"><span class="k">' + hostName(id) + '</span><button class="switch' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" data-ws-surface="' + id + '" aria-label="' + hostName(id) + (on ? tr("，已适用", ", applied") : tr("，未适用", ", not applied")) + '"></button></div>';
     });
-    h += '<div class="kv"><span class="k">WorkBuddy' +
-      '<span class="s">' + tr("目录证据未齐，暂不支持工作区", "Directory evidence incomplete; workspace support unavailable") + '</span></span>' +
-      '<span class="pill">' + tr("不可用", "Unavailable") + '</span></div>';
-  }
-  h += '<p class="note-line">' + (cur.kind === "ws"
-    ? (cur.surfaces.length ? tr("匹配该目录范围且来自已勾选来源的回调使用此配置。", "This profile applies when the callback matches both the directory and a selected source.")
-      : tr("未选择适用来源；当前没有回调会使用此规则。", "No sources selected; no callbacks use this rule."))
-    : tr("回调没有匹配的工作区时使用默认组。", "Used when no workspace matches a callback.")) + '</p></div>';
-  var pk = packById(cur.pack);
-  h += '<div class="card"><h3>' + tr("五个事件", "Five events") + '</h3>';
-  EVENTS.forEach(function (e) {
-    var reason = previewReason(pk, e.id, cur), on = !!cur.events[e.id];
-    h += '<div class="kv"><span class="k">' + evName(e) + '<span class="s">' + esc(sourceName(pk && pk.files[e.id])) + '</span></span>' +
-      '<button class="mini-btn" data-group-preview="' + e.id + '"' + (reason ? ' disabled' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
-      '<button class="switch' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" data-ev-toggle="' + e.id + '" aria-label="' + evName(e) + '"></button></div>' +
-      (reason ? '<p class="err-line">' + esc(reason) + '</p>' : '') +
-      '<button class="ghost-btn" data-group-edit-sound="' + e.id + '">' + tr("编辑此事件声音…", "Edit this event sound…") + '</button>';
-  });
-  h += '</div><p class="note-line">' + T.listenHint + '</p><div class="action-row">' +
-    '<button class="sel-btn" id="listenPackBtn"><span class="preview-mark" aria-hidden="true">' + G.play + '</span> ' + tr("试听可用事件", "Preview available events") + '</button>' +
-    '<button class="sel-btn" id="manageGroupSounds">' + tr("管理声音…", "Manage sounds…") + '</button>' +
-    (cur.kind === "ws" ? '<button class="danger-btn" id="delWsBtn">' + T.deleteWorkspace + '</button>' : '') + '</div></div></div>';
-  return h;
+    h += '<div class="kv"><span class="k">WorkBuddy<span class="s">' + tr("不支持工作区", "Workspaces are not supported") + '</span></span><span class="pill">' + tr("不可用", "Unavailable") + '</span></div>';
+    if (!cur.surfaces.length) h += '<p class="note-line">' + tr("未选择适用来源；当前没有回调会使用此规则。", "No sources selected; no callbacks use this rule.") + '</p>';
+    h += '<button class="danger-btn" id="delWsBtn">' + T.deleteWorkspace + '</button>';
+  } else h += '<h2>' + tr("默认组", "Default group") + '</h2><p class="note-line">' + tr("回调没有匹配的工作区时使用默认组。", "Used when no workspace matches a callback.") + '</p>';
+  return h + '</aside></div></div>';
 }
 
 /* 覆盖轨读真实事实：包已映射该事件 **且** 组未静音才实心，否则空壳 + 斜杠 */
@@ -1754,60 +2054,87 @@ function packCoverageHTML(p) {
   return h;
 }
 
-function paneSounds() {
-  var T = t(), A = T.ai, pk = packById(S.soundPack), target = groupById(S.applyScope);
-  var h = '<h2 style="font-size:16px;margin:2px 0 10px">' + A.sectionTitle + '</h2>' + aiServiceCard() + libraryStatusHTML();
-  h += '<div class="card"><div class="kv form-row"><label for="applyScope">' + tr("选包应用目标", "Apply a pack to") + '</label><select class="field" id="applyScope">';
-  if (!target) h += '<option value="' + esc(S.applyScope) + '">' + tr("原目标不可用，请重新选择", "Original target unavailable; select again") + '</option>';
-  GROUPS.forEach(function (g) { h += '<option value="' + g.id + '"' + (g.id === S.applyScope ? ' selected' : '') + '>' + esc(gName(g)) + '</option>'; });
-  h += '</select></div><p>' + tr("只有“用于…”与“复制并用于…”会更改这个组的选包。编辑声音会影响所有使用该包的组。", "Only Apply and Copy and Apply change this scope’s pack. Editing a pack affects every scope using it.") + '</p></div>';
-  h += '<div class="w-grid"><div><div class="card"><h3>' + tr("声音包", "Sound packs") + '</h3><div class="action-row">' +
-    '<button class="sel-btn" id="newPackBtn"' + (S.ai.draft || S.library.status !== "ready" ? ' disabled' : '') + '>' + A.newPack + '</button>' +
-    '<button class="ghost-btn" id="importPackBtn"' + (S.library.status !== "ready" ? ' disabled' : '') + '>' + tr("导入声音包…", "Import pack…") + '</button>' +
-    '<button class="ghost-btn" data-library-retry>' + tr("刷新", "Refresh") + '</button></div></div>';
-  var inspectedPacks = PACKS.concat(S.ai.draftPack ? [S.ai.draftPack] : []);
-  inspectedPacks.forEach(function (p) {
-    var usage = aiPackUsageNames(p.id);
-    h += '<button class="list-row' + (S.soundPack === p.id ? ' active' : '') + '" data-soundpack="' + p.id + '"><span style="flex:1;min-width:0"><span class="t" style="display:block">' + esc(packName(p)) +
-      '</span><span class="s">' + (p.draft ? A.draft : (p.builtin ? tr("内置 · 只读", "Factory · read-only") : tr("自有包", "User pack"))) + ' · ' + p.cov.length + '/5' +
-      (p.broken ? ' · ' + tr("损坏", "Damaged") : '') + '</span></span><span class="coverage">' + packCoverageHTML(p) + '</span>' +
-      (usage.length ? '<span class="pill">' + usage.length + tr(" 组使用", " scopes") + '</span>' : '') + '</button>';
+function sourceOptionValue(source) {
+  return source ? (isSystemBinding(source) ? "system:" + sysName(source) : "file:" + source) : "";
+}
+function packSourceOptions(pk, eventID) {
+  var source = pk.files[eventID], current = sourceOptionValue(source);
+  function option(value, label, disabled) {
+    return '<option value="' + esc(value) + '"' + (value === current ? ' selected' : '') + (disabled ? ' disabled' : '') + '>' + esc(label) + '</option>';
+  }
+  var h = option("", tr("不播放", "No sound"));
+  var available = source && (isSystemBinding(source) ? SYSTEM_SOUNDS.indexOf(sysName(source)) >= 0 : pk.audio.indexOf(source) >= 0);
+  if (source && !available) h += option(current, sourceName(source) + tr("（不可用）", " (unavailable)"), true);
+  function soundOption(binding, label) {
+    var owner = sourceOwner(pk, binding, eventID), blocked = owner && binding !== source;
+    return option(sourceOptionValue(binding), label + (owner ? tr(" · 已用于", " · Used by ") + evName(owner) : ""), blocked);
+  }
+  h += '<optgroup label="' + tr("包内音频", "Audio in this pack") + '">';
+  pk.audio.forEach(function (file) {
+    var label = pk.names[file] ? pk.names[file] + " · " + file : file;
+    h += soundOption(file, label);
   });
-  h += '</div><div id="packDetail">';
-  if (!pk) return h + '<div class="err-line">' + tr("原声音包已不可用，请重新选择。", "The original pack is unavailable. Choose another pack.") + '</div></div></div>';
-  h += '<div class="card"><h3>' + esc(packName(pk)) + '</h3><p>' + (pk.builtin ? tr("内置包只读。请先复制为自己的声音包。", "Factory pack is read-only. Make your own copy before editing.") : (pk.draft ? A.draftNote : tr("编辑映射会立即影响下列使用者。", "Mapping changes immediately affect the scopes below."))) + '</p>';
+  h += '</optgroup><optgroup label="' + tr("macOS 系统提示音", "macOS system sounds") + '">';
+  SYSTEM_SOUNDS.forEach(function (name) { h += soundOption("system:" + name, name); });
+  h += '</optgroup>';
+  if (packWritable(pk)) h += '<optgroup label="' + tr("添加声音", "Add sound") + '"><option value="action:import">' + tr("导入音频…", "Import audio…") + '</option></optgroup>';
+  return h;
+}
+function choosePackSource(packID, eventID, choice, expected) {
+  var pk = packById(packID);
+  if (!pk || S.soundPack !== packID || !eventById(eventID) || !packWritable(pk)) {
+    toast(tr("声音包不可编辑，请重新选择。", "Pack cannot be edited. Select again.")); render(); return false;
+  }
+  if (sourceOptionValue(pk.files[eventID]) !== expected) {
+    toast(tr("该事件的声音已更新，请重新选择。", "This event’s sound changed. Select again.")); render(); return false;
+  }
+  if (choice === expected) return true;
+  if (choice === "action:import") { requestDemoAudio(eventID); return true; }
+  var source = choice === "" ? null : choice.indexOf("file:") === 0 ? choice.slice(5) : choice.indexOf("system:") === 0 ? choice : undefined;
+  if (source === undefined || source !== null && (!source || (isSystemBinding(source) ? SYSTEM_SOUNDS.indexOf(sysName(source)) < 0 : pk.audio.indexOf(source) < 0))) {
+    toast(tr("声音已不可用，请重新选择。", "Sound unavailable. Select again.")); render(); return false;
+  }
+  var owner = source && sourceOwner(pk, source, eventID);
+  if (owner && source !== pk.files[eventID]) {
+    toast(tr("这个声音已用于", "This sound is already used by ") + evName(owner)); render(); return false;
+  }
+  if (!bindPackSource(packID, eventID, source)) { render(); return false; }
+  toast(source ? tr("声音已更新：", "Sound updated: ") + sourceName(source) : tr("已设为不播放。", "Set to no sound."));
+  render(); return true;
+}
+function paneSounds() {
+  var T = t(), A = T.ai, pk = packById(S.soundPack);
+  var inspectedPacks = PACKS.concat(S.ai.draftPack ? [S.ai.draftPack] : []);
+  var h = '<div class="sounds-design">' + libraryStatusHTML();
+  if (workspaceSoundReturn && groupById(workspaceSoundReturn.scopeID)) h += '<button id="backToWorkspace">‹ ' + tr("返回", "Back to") + ' ' + esc(gName(groupById(workspaceSoundReturn.scopeID))) + '</button>';
+  h += '<div class="catalog-select"><label for="redesignPack">' + tr("声音包", "Sound pack") + '</label><select class="field" id="redesignPack">' +
+    (pk ? '' : '<option value="">' + tr("请选择声音包", "Choose a sound pack") + '</option>') +
+    inspectedPacks.map(function (p) { return '<option value="' + esc(p.id) + '"' + (S.soundPack === p.id ? ' selected' : '') + '>' + esc(packName(p)) + (p.draft ? ' · ' + A.draft : p.builtin ? tr(" · 内置", " · Factory") : '') + (p.broken ? tr(" · 损坏", " · Damaged") : '') + '</option>'; }).join('') +
+    '</select><div class="library-actions"><button class="sel-btn" id="newPackBtn"' + (S.ai.draft || S.library.status !== "ready" ? ' disabled' : '') + '>' + A.newPack + '</button><button class="ghost-btn" data-library-retry>' + tr("刷新", "Refresh") + '</button></div></div><div class="sound-layout"><section class="editor-area" id="packDetail">';
+  if (!pk) return h + '<div class="err-line">' + tr("原声音包已不可用，请重新选择。", "The original pack is unavailable. Choose another pack.") + '</div></section>' + aiServiceCard() + '</div></div>';
+  h += '<div class="card"><h3>' + esc(packName(pk)) + '</h3>';
+  if (pk.draft) h += '<p>' + A.draftNote + '</p>';
   if (pk.draft) h += '<div class="ai-row form-row"><label for="draftNameInput">' + A.packName + '</label><input class="field" id="draftNameInput" value="' + esc(S.ai.draftName == null ? pk.name : S.ai.draftName) + '"><button class="sel-btn" id="draftNameSave">' + A.saveName + '</button></div>';
   var users = aiPackUsageNames(pk.id);
-  h += '<p class="note-line">' + A.usage + ' ' + (users.length ? esc(users.join(tr("、", ", "))) : tr("暂无", "None")) +
-    (referencesComplete() ? '' : ' · ' + tr("引用范围不完整，暂不可删除", "References incomplete; deletion unavailable")) + '</p>';
+  h += '<p class="note-line">' + (referencesComplete()
+    ? A.usage + ' ' + (users.length ? esc(users.join(tr("、", ", "))) : tr("暂无", "None"))
+    : A.scopeIncomplete + ' <button class="ghost-btn" data-goto-groups>' + tr("检查配置…", "Check profiles…") + '</button>') + '</p>';
   if (pk.broken) h += '<p class="err-line">' + tr("声音包损坏。请在 Finder 检查内容后刷新；内置包也可恢复出厂。", "Pack damaged. Inspect it in Finder and refresh, or restore a factory pack.") + '</p>';
+  h += '<div class="event-tiles">';
   EVENTS.forEach(function (e) {
     var source = pk.files[e.id], reason = previewReason(pk, e.id), owner = source && sourceOwner(pk, source, e.id);
-    h += '<div class="kv mapping-row" id="mapping-row-' + e.id + '"><span class="k">' + evName(e) + '<span class="s">' + e.token + (source && pk.names[source] ? ' · ' + esc(pk.names[source]) : '') + '</span></span><span class="s mapping-name">' + esc(sourceName(source)) + '</span><span class="mapping-actions">' +
-      (packWritable(pk) ? '<button class="mini-btn" data-mapmenu="' + e.id + '" data-focus-key="mapping-' + e.id + '" aria-expanded="' + (S.mapMenu === e.id) + '" aria-label="' + evName(e) + tr("：更改映射", ": change mapping") + '" aria-controls="mapping-' + e.id + '"><span class="chevron" aria-hidden="true">›</span></button>' : '') +
-      '<button class="mini-btn" data-packlisten="' + e.id + '"' + (reason ? ' disabled' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
-      '<button class="sel-btn" data-aiev="' + e.id + '"' + (pk.broken || S.library.status !== "ready" ? ' disabled' : '') + ' aria-label="' + evName(e) + '：' + A.entryAction + '" aria-expanded="' + (S.aiEvent === e.id) + '" aria-controls="composer-' + e.id + '">' + A.entryAction + '</button></span></div>';
+    var composerOpen = packWritable(pk) && S.aiEvent === e.id;
+    h += '<div class="event-tile"><div class="kv mapping-row" id="mapping-row-' + e.id + '"><label class="k" for="eventSound-' + e.id + '">' + '<span class="event-icon" aria-hidden="true" style="--event-ink:var(--ev-' + e.color + ')">' + G[e.glyph] + '</span>' + evName(e) + '</label>' +
+      '<select class="field" id="eventSound-' + e.id + '" data-pack-source="' + e.id + '" data-pack-id="' + esc(pk.id) + '" data-source="' + esc(sourceOptionValue(source)) + '"' +
+      (!packWritable(pk) ? ' disabled' : '') + ' aria-label="' + evName(e) + tr("：声音", ": sound") + '">' + packSourceOptions(pk, e.id) + '</select>' +
+      '<span class="mapping-actions"><button class="mini-btn" data-packlisten="' + e.id + '"' + (reason ? ' disabled' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
+      (pk.builtin ? '' : '<button class="sel-btn" data-aiev="' + e.id + '"' + (!packWritable(pk) ? ' disabled' : '') + ' aria-label="' + evName(e) + '：' + A.entryAction + '" aria-expanded="' + composerOpen + '" aria-controls="composer-' + e.id + '">' + A.entryAction + '</button>') + '</span></div>';
     if (reason) h += '<p class="err-line">' + esc(reason) + '</p>';
     if (owner) h += '<p class="err-line">' + tr("已有重复绑定：", "Existing duplicate: ") + evName(owner) + tr("也使用这个声音；可逐项修正。", " also uses this sound; you can repair each mapping.") + '</p>';
-    var menuContent = "";
-    if (S.mapMenu === e.id && packWritable(pk)) {
-      menuContent += '<div class="mapping-menu"><h3>' + tr("包内音频", "Audio in this pack") + '</h3>';
-      pk.audio.forEach(function (f) {
-        var used = sourceOwner(pk, f, e.id), blocked = used && source !== f;
-        menuContent += '<button class="list-row" data-setfile="' + e.id + '" data-val="' + esc(f) + '"' + (blocked ? ' disabled' : '') + '><span class="t mapping-name">' + esc(f) + '</span><span class="s">' + (used ? tr("已用于", "Used by ") + evName(used) : (pk.orphans.indexOf(f) >= 0 ? A.orphanUnused : '')) + '</span></button>';
-      });
-      menuContent += '<h3>' + tr("macOS 系统提示音", "macOS system sounds") + '</h3>';
-      SYSTEM_SOUNDS.forEach(function (n) {
-        var used = sourceOwner(pk, "system:" + n, e.id), blocked = used && source !== "system:" + n;
-        menuContent += '<button class="list-row" data-sysfile="' + e.id + '" data-val="' + n + '"' + (blocked ? ' disabled' : '') + '><span>' + n + '</span><span class="s">' + (used ? tr("已用于", "Used by ") + evName(used) : '') + '</span></button>';
-      });
-      menuContent += '<div class="action-row"><button class="ghost-btn" data-import-event="' + e.id + '">' + tr("导入音频并绑定…", "Import and bind audio…") + '</button>' +
-        '<button class="ghost-btn" data-clearmap="' + e.id + '"' + (!source ? ' disabled' : '') + '>' + tr("清除绑定", "Clear binding") + '</button>' +
-        (source && !isSystemBinding(source) ? '<button class="ghost-btn" data-reveal="' + esc(source) + '">' + tr("在 Finder 显示", "Show in Finder") + '</button>' : '') + '</div></div>';
-    }
-    h += disclosure("mapping-" + e.id, S.mapMenu === e.id && packWritable(pk), menuContent, "[data-mapmenu='" + e.id + "']");
-    h += disclosure("composer-" + e.id, S.aiEvent === e.id, S.aiEvent === e.id ? aiComposerHTML(pk, e) : "", "[data-aiev='" + e.id + "']");
+    if (!pk.builtin) h += disclosure("composer-" + e.id, composerOpen, composerOpen ? aiComposerHTML(pk, e) : "", "[data-aiev='" + e.id + "']");
+    h += '</div>';
   });
+  h += '</div>';
   if (pk.orphans.length) {
     h += '<h3>' + A.orphanTitle + '</h3>';
     pk.orphans.forEach(function (f) {
@@ -1818,17 +2145,15 @@ function paneSounds() {
   h += '</div><div class="action-row">';
   if (pk.draft) h += '<button class="primary-btn" id="addAudioBtn">' + tr("添加音频…", "Add audio…") + '</button><button class="ghost-btn" id="discardDraftBtn">' + A.cancel + '</button>';
   else {
-    h += '<button class="sel-btn" id="dupPackBtn"' + (pk.broken || S.library.status !== "ready" ? ' disabled' : '') + '>' + tr("复制为我的包", "Copy as My Pack") + '</button>';
+    if (!pk.builtin) h += '<button class="sel-btn" id="dupPackBtn"' + (pk.broken || S.library.status !== "ready" ? ' disabled' : '') + '>' + tr("复制声音包", "Copy sound pack") + '</button>';
     if (pk.builtin) h += '<button class="ghost-btn" id="restorePackBtn"' + (S.library.status !== "ready" ? ' disabled' : '') + '>' + tr("恢复出厂声音…", "Restore factory sounds…") + '</button>';
     else h += '<button class="sel-btn" id="addAudioBtn"' + (!packWritable(pk) ? ' disabled' : '') + '>' + tr("添加音频…", "Add audio…") + '</button><button class="danger-btn" id="trashPackBtn"' + (!canDeletePack(pk) ? ' disabled' : '') + '>' + A.packDelete + '</button>';
     h += '<button class="ghost-btn" data-reveal="">' + tr("在 Finder 显示", "Show in Finder") + '</button>';
-    if (target && target.pack === pk.id) h += '<span class="pill" id="packApplicationStatus">' + tr("已用于", "Used by ") + esc(gName(target)) + '</span>';
-    else h += '<button class="primary-btn" id="usePackBtn"' + (!target || pk.broken || S.library.status !== "ready" ? ' disabled' : '') + '>' + tr("用于「", "Apply to “") + esc(gName(target)) + tr("」", "”") + '</button>';
-    if (pk.builtin && target) h += '<button class="ghost-btn" id="copyApplyBtn"' + (pk.broken || S.library.status !== "ready" ? ' disabled' : '') + '>' + A.copyAndApply(gName(target)) + '</button>';
   }
-  h += '</div><p class="note-line">' + (pk.builtin ? A.copyAttribution : A.adoptAttribution) + '</p>';
-  if (!pk.builtin && !pk.draft && !canDeletePack(pk)) h += '<p class="note-line">' + (users.length ? tr("请先让所有使用者改用其他声音包，再删除此包。", "Choose another pack for every scope using this pack before deleting it.") : tr("声音包或引用状态尚不可确认，暂不可删除。", "Pack or reference status is unconfirmed; deletion unavailable.")) + '</p>';
-  return h + '</div></div>';
+  h += '</div>';
+  if (!pk.builtin) h += '<p class="note-line">' + A.adoptAttribution + '</p>';
+  if (!pk.builtin && !pk.draft && !canDeletePack(pk)) h += '<p class="note-line">' + esc(packDeleteReason(pk)) + '</p>';
+  return h + '</section>' + aiServiceCard() + '</div></div>';
 }
 
 /* ============ AI 提示音：服务卡 / 凭据 sheet / 两阶段 composer (ADR 0016 · PLAN §5.3) ============ */
@@ -1850,38 +2175,30 @@ function aiCredentialStatusHTML(p) {
 }
 function aiServiceCard() {
   var A = t().ai, p = aiProfile(), zh = S.lang === "zh";
-  /* 能力与候选身份都从 routes 投影：styledComplete 的 profile 预览 A/B/C，
-     numberedComplete 预览「候选 1-3」，numberedPartial 额外标注路线允许 1–2/3。 */
-  var kinds = {}, partialRoutes = [];
+  /* 服务卡只展示路线能力；候选身份在生成后的候选卡上展示。
+     numberedPartial 仍说明路线允许少于三个候选。 */
+  var partialRoutes = [];
   AI_MODALITY_ORDER.forEach(function (m) {
     if (!aiRoute(p, m)) return;
-    kinds[aiRoutePolicy(p, m).kind] = true;
     if (aiRoutePolicy(p, m).minimum < 3) partialRoutes.push(m);
   });
-  var styled = kinds.styled === true;
-  var preview = styled
-    ? [A.candClear, A.candBrisk, A.candRestrained].join(' · ')
-    : [A.candNumbered(1), A.candNumbered(2), A.candNumbered(3)].join(' · ');
   var configured = aiCredential(p) !== "missing" && aiCredential(p) !== "unavailable";
-  return '<div class="card ai-card"><h3>' + A.serviceTitle + '</h3>' +
-    '<p>' + A.serviceSub(aiProfileName(p)) + '</p>' +
-    '<div class="ai-row form-row"><span class="lbl">' + A.providerLabel + '</span>' +
+  return '<aside class="provider-card ai-card"><h2>' + A.serviceTitle + '</h2>' +
+    '<div class="service-controls"><div class="ai-row form-row service-selector"><span class="lbl">' + A.providerLabel + '</span>' +
       '<select class="field" id="aiProfileSelect" aria-label="' + A.providerLabel + '">' +
         AI_PROFILES.map(function (q) {
           return '<option value="' + q.id + '"' + (q.id === p.id ? ' selected' : '') + '>' + esc(aiProfileName(q)) + '</option>';
         }).join('') + '</select></div>' +
-    '<div class="ai-row"><span class="val">' + A.caps(aiCapabilities(p)) + '</span></div>' +
-    '<div class="ai-row"><span class="val" style="font-family:var(--mono);font-size:11px">' + esc(preview) +
-      (partialRoutes.length ? A.polPartial(partialRoutes.map(aiModalityLabel).join(zh ? "、" : ", ")) : '') + '</span></div>' +
-    '<div class="ai-row"><span class="lbl">' + A.keyLabel + '</span>' +
+    '<div class="ai-row service-key"><span class="lbl">' + A.keyLabel + '</span>' +
       '<span class="val">' + aiCredentialStatusHTML(p) + '</span>' +
       '<button class="sel-btn" id="aiManageKey">' + (configured ? A.manageKey : A.configureKey) + '</button>' +
       (S.ai.pendingReplacement[p.id] ? '<button class="ghost-btn" id="aiCancelReplacement">' + A.cancelReplacement + '</button>' : '') +
-      '</div>' +
+      '</div></div>' +
     (S.ai.credentialFailure[p.id] ? '<p class="err-line" role="alert">' + esc(aiErrorText(S.ai.credentialFailure[p.id])) + '</p>' : '') +
+    '<div class="service-foot"><span class="service-capabilities">' + A.caps(aiCapabilities(p)) + '</span><details class="service-disclosure" id="serviceDisclosure"><summary>' + tr("数据与费用", "Data & fees") + '</summary>' +
+    (partialRoutes.length ? '<div class="meta-line">' + A.polPartial(partialRoutes.map(aiModalityLabel).join(zh ? "、" : ", ")) + '</div>' : '') +
     '<div class="meta-line">' + (p.storage === "local-file" ? A.localFile : A.keychain) + '</div>' +
-    '<div class="meta-line">' + A.privacy[p.id] + '</div>' +
-    '<div class="meta-line">' + A.noWrite + '</div></div>';
+    '<div class="meta-line">' + A.privacy[p.id] + '</div></details></div></aside>';
 }
 /* 凭据 sheet：逐 profile 披露 + 掩码输入 + 验证并保存 / 替换 / 删除确认（ADR 0015、0006）。 */
 function aiCredentialSheetHTML() {
@@ -1915,15 +2232,8 @@ function aiCredentialSheetHTML() {
 }
 /* 两阶段 composer：定位事件后出现在该事件行下方（ADR 0016 按包执行）。 */
 function aiComposerHTML(pk, e) {
+  if (!packWritable(pk)) return "";
   var A = t().ai;
-  if (pk.builtin) {
-    /* 只读内置包：资格说明 + 复制归属披露 + 复制动作（:281-299）；不提供生成。 */
-    return '<div class="ai-form"><p style="font-size:11.5px;color:var(--text-2)">' + A.eligibilityBuiltin + '</p>' +
-      '<div class="meta-line">' + A.copyAttribution + '</div>' +
-      '<div style="display:flex;gap:8px;margin-top:10px">' +
-        '<button class="primary-btn" id="composerCopyApply">' + A.copyAndApply(gName(groupById(S.applyScope))) + '</button>' +
-        '<button class="ghost-btn" id="composerClose">' + A.close + '</button></div></div>';
-  }
   var stage = S.ai.stage;
   var hi = stage === "candidates" || stage === "applied";
   var h = '<div class="ai-form"><div class="stage-bar">' +
@@ -1945,7 +2255,7 @@ function aiDescriptionStage() {
   if (locked) {
     /* 生成中：编辑器被同外观只读区替代，不接受键盘/粘贴/输入法修改（DESIGN.md 2026-09-15）。 */
     h += '<div class="field" readonly tabindex="-1" aria-readonly="true" style="min-height:34px;white-space:pre-wrap">' + esc(desc) + '</div>' +
-      '<div class="meta-line" role="status"><span class="busy" aria-hidden="true"></span>' + tr("正在生成候选（模拟）…", "Generating candidates (simulation)…") + ' ' + A.descLocked + '</div>' +
+      '<div class="meta-line" role="status"><span class="busy" aria-hidden="true"></span>' + tr("正在生成候选…", "Generating candidates…") + ' ' + A.descLocked + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:10px">' +
         '<button class="ghost-btn" id="aiCancelBtn">' + A.cancel + '</button></div>';
     return h;
@@ -1976,11 +2286,8 @@ function aiCandidatesStage() {
   h += '<div class="cands" id="candidateGroup">';
   S.ai.cands.forEach(function (c, i) {
     var playing = S.ai.playing === i;
-    var bars = "";
-    for (var k = 0; k < 20; k++) bars += '<i style="height:' + (18 + ((k * 17 + i * 13) % 62)) + '%"></i>';
     h += '<div class="cand' + (playing ? ' playing' : '') + '">' +
       '<span class="cn">' + esc(c.label) + (n < 3 ? ' <span class="tagline">' + A.candPartialBadge + '</span>' : '') + '</span>' +
-      '<div class="wave" aria-hidden="true">' + bars + '</div>' +
       '<span class="cf">' + A.candDuration((c.ms / 1000).toFixed(1)) + '</span>' +
       '<div class="cand-actions" style="display:flex;gap:6px">' +
         '<button class="sel-btn" data-candplay="' + i + '" aria-label="' +
@@ -1997,12 +2304,9 @@ function aiCandidatesStage() {
   return h;
 }
 function aiAppliedStage() {
-  var A = t().ai, zh = S.lang === "zh";
+  var A = t().ai;
   return '<p style="font-size:12.5px;font-weight:700;margin-bottom:4px">' + A.appliedTitle + '</p>' +
     '<div class="meta-line">' + A.appliedMessage(S.ai.name) + '</div>' +
-    '<div class="meta-line">' + (zh
-      ? "包内新增 " + esc(S.ai.lastFile || "—") + "，并写入 audio_names 显示名。"
-      : "The pack gained " + esc(S.ai.lastFile || "—") + " and an audio_names display name.") + '</div>' +
     '<div style="display:flex;gap:8px;margin-top:10px">' +
       '<button class="primary-btn" id="composerClose">' + A.close + '</button></div>';
 }
@@ -2017,8 +2321,8 @@ function paneIntegrations() {
       '<button class="switch' + (st.on ? ' on' : '') + '" role="switch" aria-checked="' + st.on + '" data-hosttoggle="' + id + '" aria-label="' + hostName(id) + '"></button></div>';
     var hostContent = "";
     if (open) {
-      hostContent += '<div class="kv"><span class="k">' + tr("连接状态", "Connection") + '<span class="s">' + (st.on ? tr("接入已配置；各事件回执见下方。", "Integration configured; event receipts are listed below.") : tr("已断开连接", "Disconnected")) + '</span></span></div>' +
-        '<div class="kv"><span class="k">' + tr("接入方式", "Mechanism") + '<span class="s">hooks' + (id === "codex" ? ' · ' + tr("会话观察证据独立判断", "session observation evaluated separately") : '') + '</span></span><button class="mini-btn" data-copyhook="' + id + '" aria-label="' + tr("复制接入路径", "Copy integration path") + '">⧉</button></div>' +
+      hostContent += '<div class="kv"><span class="k">' + tr("连接状态", "Connection") + '<span class="s">' + (st.on ? tr("已配置", "Configured") : tr("已断开连接", "Disconnected")) + '</span></span></div>' +
+        '<div class="kv"><span class="k">' + tr("接入方式", "Mechanism") + '<span class="s">hooks</span></span><button class="mini-btn" data-copyhook="' + id + '" aria-label="' + tr("复制接入路径", "Copy integration path") + '">⧉</button></div>' +
         '<div class="kv"><span class="k">' + tr("声音配置", "Sound profiles") + '</span><button class="sel-btn" data-goto-groups>' + tr("默认组／工作区…", "Default Group & Workspaces…") + '</button></div>' +
         '<h3>' + tr("当前代次逐事件回执", "Per-binding receipts for this generation") + ' · ' + st.generation + '</h3>';
       var bindings = EVENTS.map(function (e) { return { id: e.id, label: evName(e), native: id === "codex" && e.id === "notification" ? "PermissionRequest" : t().natives[e.id], event: e.id }; });
@@ -2031,14 +2335,13 @@ function paneIntegrations() {
           : b.event === "notification" && id === "codex" ? tr("仅授权请求", "Permission requests only") : "";
         hostContent += '<div class="kv"><span class="k">' + b.label + '<span class="s">' + b.native + (qualification ? ' · ' + qualification : '') + '</span></span><span class="pill">' + receipt + '</span></div>';
       });
-      hostContent += '<p class="note-line">' + tr("宿主激活依据任务开始回执，不代表所有事件已有回执。", "Host activation uses the task-start receipt; it does not imply receipts for every binding.") + '</p>';
-      if (id === "wb") hostContent += '<p class="note-line">' + tr("通知仅覆盖授权与空闲提醒，使用默认组；WorkBuddy 工作区尚未开放。", "Notifications cover permission and idle prompts using the default group. WorkBuddy workspaces are unavailable.") + '</p>';
+      if (id === "wb") hostContent += '<p class="note-line">' + tr("通知包含授权与空闲提醒，使用默认组。", "Permission and idle notifications use the default group.") + '</p>';
       if (st.on) hostContent += '<div class="action-row">' + (id === "codex" ? '<button class="ghost-btn" data-hostact="codex" data-act="0">' + tr("复制 /hooks", "Copy /hooks") + '</button><button class="ghost-btn" data-hostact="codex" data-act="1">' + tr("修复连接", "Repair") + '</button>' : '') + '<button class="ghost-btn" data-hostact="' + id + '" data-act="2">' + tr("重新检测", "Re-check") + '</button></div>';
     }
     h += disclosure("host-" + id, open, hostContent, "[data-host='" + id + "']");
     h += '</div>';
   });
-  return h + '<p class="note-line">' + tr("能力覆盖、配置写入与真实回执分别判断。", "Capabilities, configuration and real receipts are separate facts.") + '</p></div>';
+  return h + '</div>';
 }
 
 function paneGeneral() {
@@ -2050,8 +2353,7 @@ function paneGeneral() {
         : (zh ? "未启用 · 未注册登录项" : "Not enabled · no login item registered")) + '</span></span>' +
       '<button class="switch' + (P.launchLogin ? " on" : "") + '" data-pref="launchLogin" aria-label="' +
         (zh ? "登录时启动，" : "Launch at login, ") + (P.launchLogin ? (zh ? "已开启" : "on") : (zh ? "已关闭" : "off")) + '"></button></div>' +
-    '<div class="kv"><span class="k">' + (zh ? "语言" : "Language") + '<span class="s">' +
-      (zh ? "跟随系统或手动选择" : "Follow the system or choose manually") + '</span></span>' +
+    '<div class="kv"><span class="k">' + (zh ? "语言" : "Language") + '</span>' +
       '<span style="display:flex;gap:6px">' +
       '<button class="ctl' + (P.langMode === "system" ? " on" : "") + '" data-langmode="system">' + (zh ? "跟随系统" : "System") + '</button>' +
       '<button class="ctl' + (P.langMode === "manual" ? " on" : "") + '" data-langmode="manual">' + (zh ? "手动选择" : "Manual") + '</button></span></div>' +
@@ -2060,25 +2362,25 @@ function paneGeneral() {
         '<span style="display:flex;gap:6px">' +
         '<button class="ctl' + (S.lang === "zh" ? " on" : "") + '" data-lang-set="zh">简体中文</button>' +
         '<button class="ctl' + (S.lang === "en" ? " on" : "") + '" data-lang-set="en">English</button></span></div>'
-      : '<div class="kv"><span class="k">' + (zh ? "系统投影" : "System projection") +
-        '<span class="s">' + (zh ? "当前系统语言：简体中文（只读投影）" : "Current system language: Simplified Chinese (read-only projection)") + '</span></span></div>') +
-    '</div><div class="note-line">' + (zh
-      ? "语言模式与手动选择都立即生效，英中同占位注册于 ClaudioL10nKey。原「显示」页与外观偏好已于 2026-09-28 退役：固定紧凑布局、外观跟随系统，不提供独立开关。"
-      : "Both the mode and the manual choice apply immediately; locales share identical placeholders. The Display pane and appearance preference retired on 2026-09-28 — fixed compact layout, system appearance, no separate toggle.") + '</div></div>';
+      : '<div class="kv"><span class="k">' + (zh ? "当前语言" : "Current language") + '</span><span class="tagline">' +
+        (zh ? "简体中文" : "Simplified Chinese") + '</span></div>') +
+    '</div></div>';
 }
 function paneNotifications() {
   var P = S.prefs;
   updateQuietState();
   var reason = { focusActive: tr("专注模式", "Focus"), calendarBusy: tr("日历忙碌", "Calendar busy"), focusAndCalendarBusy: tr("专注模式与日历忙碌", "Focus and calendar busy") }[P.quiet.reasonKey];
-  return '<div style="max-width:820px"><div class="card">' +
-    kvToggle(tr("显示事件横幅", "Show event banners"), P.bannerOn, "bannerOn") +
+  var focusPermission = P.focusAuth === "granted" ? tr("已授权读取专注状态", "Focus access granted") : tr("未授权读取专注状态", "Focus access not granted");
+  return '<section class="settings-section" aria-labelledby="bannerSectionTitle"><h2 id="bannerSectionTitle">' + tr("事件横幅", "Event banners") + '</h2><div class="card">' +
+    kvToggle(tr("显示事件横幅", "Show event banners"), P.bannerOn, "bannerOn") + '</div></section>' +
+    '<section class="settings-section" aria-labelledby="quietSectionTitle"><h2 id="quietSectionTitle">' + tr("自动静音", "Automatic muting") + '</h2><div class="card">' +
     kvToggle(tr("锁屏与睡眠时保持安静", "Stay quiet on lock and sleep"), P.quietOnLock, "quietOnLock") +
-    kvToggle(tr("专注模式中静音", "Mute during Focus"), P.focusEnabled, "focusEnabled") +
-    '<div class="kv"><span class="k">' + tr("Focus 读取权限", "Focus permission") + '<span class="s">' + (P.focusAuth === "granted" ? tr("已授权；自动静音由上方开关控制。", "Granted; automatic muting is controlled by the preference above.") : tr("未授权，当前不会依据 Focus 静音。", "Not granted; Focus cannot currently suppress audio.")) + '</span></span><button class="ghost-btn" id="focusBtn">' + tr("系统设置…", "System Settings…") + '</button></div>' +
-    kvToggle(tr("日历忙碌时静音", "Mute when calendar is busy"), P.calendar === "on", "calendar") +
-    '<p class="note-line">' + tr("只判断当前非全天的忙碌事件，不保存日程内容。启用时需要日历读取权限。", "Uses current non-all-day busy events without storing their contents. Enabling requires calendar read permission.") + '</p>' +
-    '<div class="kv"><span class="k">' + tr("当前静默状态", "Current quiet state") + '</span><span class="pill">' + (P.quiet.on ? esc(reason) : tr("未静默", "Not quiet")) + '</span></div>' +
-    '<p class="note-line">' + tr("自动静默不修改组音量或事件开关，也不影响手工试听。系统状态恢复后不补播。", "Quiet state does not change group volume or event switches, and does not suppress manual previews. Sounds are not replayed after recovery.") + '</p></div></div>';
+    kvToggle(tr("专注模式中静音", "Mute during Focus"), P.focusEnabled, "focusEnabled", focusPermission,
+      '<button class="ghost-btn" id="focusBtn">' + tr("系统设置…", "System Settings…") + '</button>') +
+    kvToggle(tr("日历忙碌时静音", "Mute when calendar is busy"), P.calendar === "on", "calendar",
+      tr("仅使用当前非全天的忙碌事件，不保存日程内容。启用时需授权读取日历。", "Uses current non-all-day busy events without saving their contents. Calendar access is required when enabled.")) + '</div></section>' +
+    '<section class="settings-section" aria-labelledby="quietStateTitle"><h2 id="quietStateTitle">' + tr("当前状态", "Current state") + '</h2><div class="card"><div class="kv"><span class="k">' + tr("自动静音", "Automatic muting") +
+      '<span class="s">' + tr("手动试听不受影响；恢复后不补播。", "Manual previews stay available. Sounds are not replayed after recovery.") + '</span></span><span class="pill">' + (P.quiet.on ? esc(reason) : tr("未静音", "Not muted")) + '</span></div></div></section>';
 }
 
 function paneActivity() {
@@ -2087,7 +2389,7 @@ function paneActivity() {
   var h = '<div style="max-width:820px">' +
     '<div class="card"><h3>' + (zh ? "所有来源" : "All sources") + '</h3>';
   h += '<div class="kv"><span class="k">' + (zh ? "今日消息往来" : "Message exchanges today") + '<span class="s">' +
-      (zh ? "严格由 task_start + stop 得出" : "Derived strictly from task_start + stop") + '</span></span>' +
+      (zh ? "任务开始与本轮结束的事件总数" : "Total task starts and turn completions") + '</span></span>' +
     '<span style="font:600 12px var(--mono);color:var(--text-2)">' + (U.today.taskStart + U.today.stop) + '</span></div>' +
     '<div class="kv"><span class="k">' + (zh ? "近七日消息往来" : "Last 7 days") + '</span>' +
       '<span style="font:600 12px var(--mono);color:var(--text-2)">' + (U.week.taskStart + U.week.stop) + '</span></div>' +
@@ -2112,19 +2414,28 @@ function paneActivity() {
 
   h += '<div class="card"><h3>' + (zh ? "诊断日志" : "Diagnostics log") + '</h3>';
   if (!S.diagLogs.length) {
-    h += '<p>' + (zh ? "本机暂无诊断记录。" : "No diagnostics records on this Mac.") + '</p>';
+    h += '<p>' + (zh ? "本机暂无诊断日志。" : "No diagnostics log entries on this Mac.") + '</p>';
   } else {
     S.diagLogs.forEach(function (l) {
       h += '<div style="font:500 10.5px var(--mono);color:var(--text-2);line-height:1.9">' + l + '</div>';
     });
+  }
+  if (REMINDERS.length) {
+    h += '<details class="event-diagnostics"><summary>' + tr("待处理事件记录", "Pending event records") + ' · ' + REMINDERS.length + '</summary>';
+    REMINDERS.forEach(function (r) {
+      h += '<div class="kv"><span class="k">' + esc(r.host + ' · ' + reminderDemand(r)) + '<span class="s">' + esc(r.proj + ' · ' + r.clock + ' · ' + t().mins(r.mins)) + '</span>' +
+        (r.session ? '<span class="s">' + tr("会话 ID：", "Session ID: ") + esc(r.session) + '</span>' : '') + '</span>' +
+        (r.session ? '<button class="mini-btn" data-copysession="' + esc(r.id) + '"' + (r.updated ? ' disabled' : '') + ' aria-label="' + tr("复制会话 ID", "Copy session ID") + '">⧉</button>' : '') + '</div>';
+    });
+    h += '</details>';
   }
   h += '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">' +
     '<button class="ghost-btn" id="clearActBtn">' + (zh ? "清除活动计数" : "Clear activity counts") + '</button>' +
     '<button class="ghost-btn" id="clearDiagBtn">' + (zh ? "清除诊断日志" : "Clear diagnostics log") + '</button></div></div>';
 
   h += '<div class="note-line">' + (zh
-    ? "计数只来自当前安装确认、成功映射到公共事件的真实宿主回调；播放成功、静音、动态静默、去抖、所选组音量为零、音频缺失与播放失败都不减少回调计数。活动清除与诊断日志清除互不触碰对方事实。数字只保留在本机。"
-    : "Counts come only from confirmed real host callbacks mapped to a public event; playback, muting, quiet state, debounce, zero volume, missing audio and failures never reduce them. Clearing activity and clearing the log never touch each other's facts.") + '</div></div>';
+    ? "统计宿主事件，与提示音是否播放无关。数据保存在本机。"
+    : "Counts track host events, whether or not a sound plays. Data stays on your Mac.") + '</div></div>';
   return h;
 }
 
@@ -2139,8 +2450,7 @@ function paneShortcuts() {
   var h = '<div style="max-width:820px"><div class="card">';
   acts.forEach(function (a) {
     var rec = P.recording === a.id;
-    h += '<div class="kv"><span class="k">' + (zh ? a.zh : a.en) +
-      '<span class="s">' + (zh ? "Carbon 热键 · 稳定注册 ID" : "Carbon hotkey · stable registration ID") + '</span></span>' +
+    h += '<div class="kv"><span class="k">' + (zh ? a.zh : a.en) + '</span>' +
       '<span class="tagline" style="font-size:12px">' + (a.key || (zh ? "未设置" : "not set")) + '</span>' +
       '<button class="sel-btn" data-rec="' + a.id + '"' + (P.recording && P.recording !== a.id ? ' disabled style="opacity:.45"' : '') + '>' +
         (rec ? (zh ? "按下组合键…（Esc 取消）" : "Press keys… (Esc to cancel)") : (zh ? "录制" : "Record")) + '</button></div>';
@@ -2154,20 +2464,19 @@ function paneShortcuts() {
 function paneAbout() {
   var zh = S.lang === "zh";
   return '<div style="max-width:820px"><div class="card">' +
-    '<div class="kv"><span class="k">' + (zh ? "版本" : "Version") + '<span class="s">' +
-      (zh ? "构建版本，非演示常量" : "Build version, not a demo constant") + '</span></span><span class="tagline">0.0.0-dev</span></div>' +
+    '<div class="kv"><span class="k">' + (zh ? "版本" : "Version") + '</span><span class="tagline">0.0.0-dev</span></div>' +
     '<div class="kv"><span class="k">' + (zh ? "声音包许可" : "Sound pack license") + '</span><span class="tagline">CC0</span></div>' +
     '<div class="kv"><span class="k">' + (zh ? "更新通道" : "Update channel") + '<span class="s">' +
-      (zh ? "appcast.xml · 开发构建未配置发布通道" : "appcast.xml · dev build has no release channel") + '</span></span>' +
+      (zh ? "未配置更新通道" : "No update channel configured") + '</span></span>' +
       '<button class="sel-btn" id="updBtn">' + (zh ? "检查更新" : "Check for updates") + '</button></div>' +
     '</div><div class="note-line">' + (zh
       ? "配置与活动记录保存在本机，诊断日志不会自动上传。AI 生成会将声音描述和必要生成指令发送至你选择的服务，可能产生费用；数据处理规则见服务说明。提示词、响应、项目路径与会话内容不进入普通日志。"
       : "Configuration and activity records stay on your Mac; diagnostics are not uploaded automatically. AI generation sends your sound description and required instructions to your selected service and may incur charges. See that service’s data policy. Prompts, responses, project paths and session contents do not enter ordinary logs.") + '</div></div>';
 }
 
-function kvToggle(label, on, key) {
-  return '<div class="kv"><span class="k">' + label + '</span>' +
-    '<button class="switch' + (on ? " on" : "") + '" role="switch" aria-checked="' + on + '" data-pref="' + key + '" aria-label="' + esc(label) + '"></button></div>';
+function kvToggle(label, on, key, detail, action) {
+  return '<div class="kv"><span class="k">' + label + (detail ? '<span class="s">' + detail + '</span>' : '') + '</span><span class="settings-row-actions">' + (action || '') +
+    '<button class="switch' + (on ? " on" : "") + '" role="switch" aria-checked="' + on + '" data-pref="' + key + '" aria-label="' + esc(label) + '"></button></span></div>';
 }
 
 /* ============ AI 生成：动作层（原型不联网、不写盘、不接收真实 Key） ============ */
@@ -2190,6 +2499,7 @@ function aiCloseComposer() {
 }
 /* 阶段 1 → 阶段 2：描述先经隐藏编译，再走凭据门；任何本地失败都保留描述。 */
 function aiGenerate() {
+  if (!packWritable(packById(S.soundPack)) || !eventById(S.aiEvent)) return;
   var A = t().ai, zh = S.lang === "zh";
   var interpreted = aiInterpret(S.ai.description);
   if (interpreted.error) { S.ai.failure = interpreted.error; render(); return; }
@@ -2296,7 +2606,7 @@ function aiPreviewCandidate(index) {
     S.ai.playing = -1; toast(A.stopped(c.label)); render(); return;
   }
   S.ai.playing = index;
-  toast(tr("模拟试听：", "Simulated preview: ") + c.label);
+  toast(tr("试听：", "Preview: ") + c.label);
   render();
   Motion.pulse(document.querySelector('[data-candplay="' + index + '"] .preview-mark'));
   setTimeout(function () {
@@ -2311,7 +2621,7 @@ function aiCreateDraft() {
   if (S.ai.draft) return;
   var id = "ai-cue-" + (++aiSerial);
   /* nextAICuePackDraftName：前缀 + 递增序号，跳过与现有包名冲突的候选（:42-64）。 */
-  var prefix = zh ? "我的提示音组" : "My Cue Pack";
+  var prefix = zh ? "我的声音包" : "My Sound Pack";
   var taken = PACKS.map(function (p) { return String(p.name || "").trim().toLowerCase(); });
   var name = "", ordinal = 1;
   while (true) {
@@ -2606,7 +2916,6 @@ var NoticeClock = {
     this.node = node;
     this.pause("hover", node.matches(":hover"));
     this.pause("focus", node.contains(document.activeElement));
-    this.pause("expanded", S.bannerExpanded);
     node.onpointerenter = function () { NoticeClock.pause("hover", true); };
     node.onpointerleave = function () { NoticeClock.pause("hover", false); };
     if (!node._readingEvents) {
@@ -2651,12 +2960,15 @@ var NoticeClock = {
   }
 };
 function closeBanner() {
-  S.bannerAtn = false; S.bannerInfo = false; S.bannerExpanded = false;
+  S.bannerAtn = false; S.bannerInfo = false; S.bannerFailure = null;
   setMenuState(REMINDERS.length ? "waiting" : "idle"); render();
 }
 function showBanner(attention) {
+  var scene = NOTICE_SCENARIOS[S.bannerEvent];
+  if (!scene || !!scene.actionZh !== attention) S.bannerEvent = attention ? "permission" : "stop";
+  if (attention && !REMINDERS.some(function (r) { return r.id === S.bannerReminderID; })) S.bannerReminderID = REMINDERS.length ? REMINDERS[0].id : null;
   if (!S.prefs.bannerOn) { toast(tr("横幅已关闭；提醒仍保留在面板。", "Banners are off; reminders remain in the panel.")); return; }
-  S.bannerSerial++; S.bannerExpanded = false; S.bannerAtn = attention; S.bannerInfo = !attention;
+  S.bannerSerial++; S.bannerFailure = null; S.bannerAtn = attention; S.bannerInfo = !attention;
   setMenuState(attention ? "waiting" : "transient"); render();
 }
 
@@ -2669,7 +2981,7 @@ function render() {
   Motion.init();
   var ae = document.activeElement, old = rendered, before = revealFrames();
   var aeReveal = ae.closest && ae.closest(".reveal"), aeKey = nodeKey(ae);
-  var scroll = Array.from(document.querySelectorAll(".p-body, .w-main, .w-side, .sheet, .banner-detail")).map(function (el) { return [el, el.scrollTop, el.scrollLeft]; });
+  var scroll = Array.from(document.querySelectorAll(".p-body, .w-main, .w-side, .sheet")).map(function (el) { return [el, el.scrollTop, el.scrollLeft]; });
   var modalOpen = !!(S.window && (S.confirmation || S.workspaceForm || (S.pane === "sounds" && S.ai.sheet)));
   var modalLayer = document.getElementById("modalLayer"), oldOverlay = modalLayer.firstElementChild;
   if (modalOpen && !modalWasOpen) modalFocusTarget = ae;
@@ -2692,7 +3004,7 @@ function render() {
     patchRegion(document.getElementById("wMain"), '<div id="pageContent" data-key="pane-' + S.pane + '">' + mainHTML() + '</div>');
   }
   patchRegion(modalLayer, modalOpen ? ((S.pane === "sounds" ? aiCredentialSheetHTML() : "") + prototypeSheetHTML()) : "");
-  ["wSide", "wMain", "winClose", "demoBar"].forEach(function (id) { document.getElementById(id).inert = modalOpen; });
+  ["wSide", "wMain", "winClose", "demoBar", "prototypeNav"].forEach(function (id) { document.getElementById(id).inert = modalOpen; });
   document.querySelector(".menubar").inert = modalOpen;
   document.querySelector(".principles").inert = modalOpen;
   document.querySelectorAll("[data-pane]").forEach(function (el) { el.setAttribute("aria-selected", String(el.getAttribute("data-pane") === S.pane)); });
@@ -2770,7 +3082,7 @@ function toast(msg) {
 function previewGroupEvent(scopeID, eventID, button) {
   var g = groupById(scopeID), pk = g && packById(g.pack);
   var reason = g ? previewReason(pk, eventID, g) : tr("目标已不可用，请重新选择。", "Target unavailable. Select again.");
-  toast(reason || tr("模拟试听：", "Simulated preview: ") + sourceName(pk.files[eventID]) + " · " + t().listenHint);
+  toast(reason || tr("试听：", "Preview: ") + sourceName(pk.files[eventID]));
   if (!reason) Motion.pulse(button && button.querySelector("svg"));
 }
 function requestDemoAudio(eventID) {
@@ -2783,20 +3095,18 @@ function updateQuietState() {
   S.prefs.quiet = { on: focus || calendar, reasonKey: focus && calendar ? "focusAndCalendarBusy" : focus ? "focusActive" : calendar ? "calendarBusy" : "" };
 }
 function bindPrototypeControls() {
-  ["panelPack", "groupPack", "applyScope"].forEach(function (id) {
+  ["panelPack", "groupPack"].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.onchange = function () {
-      if (id === "applyScope") { if (groupById(el.value)) S.applyScope = el.value; }
-      else usePackForScope(el.value, id === "panelPack" ? S.scope : S.ws);
+      usePackForScope(el.value, id === "panelPack" ? S.scope : S.ws);
       render();
     };
   });
   var edit = document.getElementById("editWorkspaceBtn");
   if (edit) edit.onclick = function () { S.returnToPanel = true; S.ws = S.scope; navigatePane("groups"); setView("window"); };
   var manage = document.getElementById("manageGroupSounds");
-  if (manage) manage.onclick = function () { openGroupSounds(S.ws, null); };
-  document.querySelectorAll("[data-edit-sound]").forEach(function (b) { b.onclick = function () { S.returnToPanel = true; openGroupSounds(S.scope, b.getAttribute("data-edit-sound")); }; });
-  document.querySelectorAll("[data-group-edit-sound]").forEach(function (b) { b.onclick = function () { openGroupSounds(S.ws, b.getAttribute("data-group-edit-sound")); }; });
+  if (manage) manage.onclick = function () { openWorkspaceSound(S.ws, null); };
+  document.querySelectorAll("[data-group-edit-sound]").forEach(function (b) { b.onclick = function () { openWorkspaceSound(S.ws, b.getAttribute("data-group-edit-sound")); }; });
   document.querySelectorAll("[data-group-preview]").forEach(function (b) { b.onclick = function () { previewGroupEvent(S.ws, b.getAttribute("data-group-preview"), b); }; });
   document.querySelectorAll("[data-ws-surface]").forEach(function (b) {
     b.onclick = function () {
@@ -2818,19 +3128,16 @@ function bindPrototypeControls() {
       setTimeout(function () { if (S.library.refreshID !== request) return; S.library.status = "ready"; S.library.revision++; render(); }, 450);
     };
   });
-  var ip = document.getElementById("importPackBtn");
-  if (ip) ip.onclick = function () { S.confirmation = { kind: "importPack", name: tr("示例声音包", "Example sound pack") }; render(); };
   var cancel = document.getElementById("prototypeSheetCancel");
   if (cancel) cancel.onclick = function () { S.confirmation = null; S.workspaceForm = null; render(); };
   var confirm = document.getElementById("prototypeSheetConfirm");
   if (confirm) confirm.onclick = confirmPrototypeAction;
   var create = document.getElementById("createWorkspace");
   if (create) create.onclick = createWorkspaceFromForm;
-  var dir = document.getElementById("workspaceDirectory"), pack = document.getElementById("workspacePack"), vol = document.getElementById("workspaceVolume"), checked = document.getElementById("workspaceConfirmVolume");
+  var dir = document.getElementById("workspaceDirectory"), pack = document.getElementById("workspacePack"), vol = document.getElementById("workspaceVolume");
   if (dir) dir.onchange = function () { if (S.workspaceForm) { S.workspaceForm.directory = dir.value; S.workspaceForm.error = ""; render(); } };
   if (pack) pack.onchange = function () { if (S.workspaceForm) { S.workspaceForm.pack = pack.value; render(); } };
-  if (vol) vol.oninput = function () { if (S.workspaceForm) { S.workspaceForm.volume = Number(vol.value); S.workspaceForm.confirmed = false; render(); } };
-  if (checked) checked.onchange = function () { if (S.workspaceForm) { S.workspaceForm.confirmed = checked.checked; render(); } };
+  if (vol) vol.oninput = function () { if (S.workspaceForm) { S.workspaceForm.volume = Number(vol.value); render(); } };
   document.querySelectorAll("[data-create-surface]").forEach(function (b) {
     b.onclick = function () {
       var f = S.workspaceForm, id = b.getAttribute("data-create-surface");
@@ -2916,8 +3223,6 @@ function bindAIGeneration() {
     var label = S.ai.cands.length ? A.composerClosedCleared : A.composerClosed;
     aiCloseComposer(); toast(label); render();
   };
-  var cca = document.getElementById("composerCopyApply");
-  if (cca) cca.onclick = function () { copyPack(S.soundPack, S.applyScope); };
   var cc = document.getElementById("composerClose");
   if (cc) cc.onclick = function () {
     var label = S.ai.cands.length ? A.composerClosedCleared : A.composerClosed;
@@ -2948,12 +3253,11 @@ function bindAIGeneration() {
   if (dni) dni.oninput = function () { S.ai.draftName = dni.value; };
   var dd = document.getElementById("discardDraftBtn");
   if (dd) dd.onclick = aiDiscardDraft;
-  var ca = document.getElementById("copyApplyBtn");
-  if (ca) ca.onclick = function () { copyPack(S.soundPack, S.applyScope); };
   var tp = document.getElementById("trashPackBtn");
   if (tp) tp.onclick = function () {
     var pk = packById(S.soundPack);
-    if (!canDeletePack(pk)) { toast(tr("这个包仍被引用或状态不可确认，不能删除。", "Pack still referenced or unconfirmed; deletion unavailable.")); return; }
+    var reason = packDeleteReason(pk);
+    if (reason) { toast(reason); return; }
     S.confirmation = { kind: "deletePack", packID: pk.id, name: packName(pk) }; render();
   };
 
@@ -2968,16 +3272,8 @@ function bind() {
 
   var bc = document.getElementById("bannerClose");
   if (bc) bc.onclick = closeBanner;
-  var detailToggle = document.getElementById("bannerDetailsToggle"), detailBack = document.getElementById("bannerBack");
-  if (detailToggle) detailToggle.onclick = function () { S.bannerExpanded = !S.bannerExpanded; render(); };
-  if (detailBack) detailBack.onclick = function () { S.bannerExpanded = false; render(); };
   var ba = document.getElementById("bannerAct");
-  if (ba) ba.onclick = function () {
-    toast(tr("模拟打开来源应用；已收起横幅并保留提醒。", "Simulated opening the source app; banner dismissed and reminder retained."));
-    closeBanner();
-  };
-  var source = document.getElementById("bannerSource");
-  if (source && ba) source.onclick = ba.onclick;
+  if (ba) ba.onclick = openBannerSource;
 
   var nb = document.getElementById("needsBtn");
   if (nb) nb.onclick = function () {
@@ -2990,17 +3286,19 @@ function bind() {
   });
   var rbb = document.getElementById("remBackBtn");
   if (rbb) rbb.onclick = function () { S.needs = "list"; S.reminder = null; render(); };
+  document.querySelectorAll("[data-refresh-reminder]").forEach(function (b) { b.onclick = function () { refreshReminder(b.getAttribute("data-refresh-reminder")); }; });
   document.querySelectorAll("[data-opensource]").forEach(function (b) {
     b.onclick = function () {
       var r = REMINDERS.filter(function (x) { return x.id === b.getAttribute("data-opensource"); })[0];
-      toast(S.lang === "zh"
-        ? "已打开来源应用（" + (r ? r.host : "—") + "）：只收起提示并保留提醒，不定位到具体标签页或会话（ADR 0019）。"
-        : "Opened the source app (" + (r ? r.host : "—") + "): collapses the notice and keeps the reminder; says nothing about the tab or session (ADR 0019).");
+      if (!r || r.updated) return;
+      closeBanner();
+      toast(tr("已打开来源应用：", "Opened source app: ") + r.host);
     };
   });
   document.querySelectorAll("[data-copysession]").forEach(function (b) {
     b.onclick = function () {
       var r = REMINDERS.filter(function (x) { return x.id === b.getAttribute("data-copysession"); })[0];
+      if (!r || r.updated || !r.session) return;
       toast(S.lang === "zh" ? "已复制会话 ID：" + (r ? r.session : "—") : "Copied session ID: " + (r ? r.session : "—"));
     };
   });
@@ -3008,12 +3306,12 @@ function bind() {
     b.onclick = function () {
       var id = b.getAttribute("data-dismiss");
       var r = REMINDERS.filter(function (x) { return x.id === id; })[0];
+      if (!r || r.updated) return;
+      if (S.bannerReminderID === id) { S.bannerAtn = false; S.bannerFailure = null; }
       REMINDERS = REMINDERS.filter(function (x) { return x.id !== id; });
       S.needs = "list"; S.reminder = null;
       if (!REMINDERS.length) { S.bannerAtn = false; setMenuState("idle"); }
-      toast(S.lang === "zh"
-        ? "已移除提醒：" + (r ? r.host + " · " + r.proj : "—") + "；查看、复制与收起都不会移除提醒，只有这个动作会。"
-        : "Removed: " + (r ? r.host + " · " + r.proj : "—") + "; viewing, copying and collapsing never remove a reminder.");
+      toast(tr("已移除提醒：", "Reminder removed: ") + r.host + " · " + r.proj);
       render();
     };
   });
@@ -3044,9 +3342,6 @@ function bind() {
   }
   bindPrototypeControls();
 
-  var ab = document.getElementById("actBtn");
-  if (ab) ab.onclick = function () { S.activity = !S.activity; render(); };
-
   var gear = document.getElementById("gearBtn");
   if (gear) gear.onclick = function () {
     S.returnToPanel = true; navigatePane("general"); setView("window");
@@ -3061,40 +3356,26 @@ function bind() {
   document.querySelectorAll("[data-pane]").forEach(function (b) {
     b.onclick = function () { navigatePane(b.getAttribute("data-pane")); };
   });
-  document.querySelectorAll("[data-ws]").forEach(function (b) {
-    b.onclick = function () { if (S.ws === b.getAttribute("data-ws")) return; S.ws = b.getAttribute("data-ws"); S.applyScope = S.ws; S.confirmation = null; render(); };
-  });
-  document.querySelectorAll("[data-soundpack]").forEach(function (b) {
-    b.onclick = function () {
-      var nextID = b.getAttribute("data-soundpack");
-      if (nextID === S.soundPack) return;
-      endSoundsSession();
-      S.soundPack = nextID;
-      render();
+  document.querySelectorAll("[data-ws]").forEach(function (b) { b.onclick = function () { selectWorkspace(b.getAttribute("data-ws")); }; });
+  document.querySelectorAll("[data-soundpack]").forEach(function (b) { b.onclick = function () { selectSoundPack(b.getAttribute("data-soundpack")); }; });
+  var workspaceSelect = document.getElementById("redesignWorkspace");
+  if (workspaceSelect) workspaceSelect.onchange = function () { selectWorkspace(workspaceSelect.value); };
+  var packSelect = document.getElementById("redesignPack");
+  if (packSelect) packSelect.onchange = function () { selectSoundPack(packSelect.value); };
+  var back = document.getElementById("backToWorkspace");
+  if (back) back.onclick = returnToWorkspace;
+  document.querySelectorAll("[data-pack-source]").forEach(function (select) {
+    select.onchange = function () {
+      var choice = select.value, expected = select.getAttribute("data-source");
+      select.value = expected;
+      choosePackSource(select.getAttribute("data-pack-id"), select.getAttribute("data-pack-source"), choice, expected);
     };
-  });
-  document.querySelectorAll("[data-mapmenu]").forEach(function (b) {
-    b.onclick = function () {
-      var id = b.getAttribute("data-mapmenu");
-      S.mapMenu = S.mapMenu === id ? null : id;
-      render();
-    };
-  });
-  ["data-setfile", "data-sysfile", "data-clearmap"].forEach(function (key) {
-    document.querySelectorAll("[" + key + "]").forEach(function (b) {
-      b.onclick = function () {
-        var id = b.getAttribute(key), source = key === "data-clearmap" ? null : b.getAttribute("data-val");
-        if (key === "data-sysfile") source = "system:" + source;
-        if (!bindPackSource(S.soundPack, id, source)) { toast(tr("映射未更改：请检查包的编辑资格、声音可用性与占用情况。", "Mapping unchanged. Check pack access, audio availability and existing assignments.")); return; }
-        S.mapMenu = null; toast(source ? tr("声音映射已更新。", "Sound mapping updated.") : tr("绑定已清除，该事件将静默。", "Binding cleared; this event stays silent.")); render();
-      };
-    });
   });
 
   document.querySelectorAll("[data-aiev]").forEach(function (b) {
     b.onclick = function () {
       var id = b.getAttribute("data-aiev"), pk = packById(S.soundPack);
-      if (!pk || pk.broken || S.library.status !== "ready") return;
+      if (!packWritable(pk) || !eventById(id)) return;
       if (S.aiEvent === id) { aiCloseComposer(); render(); return; }
       S.aiEvent = id;                 /* 定位事件：生成表单出现在该事件行下方 */
       S.ai.sheet = null;
@@ -3105,13 +3386,13 @@ function bind() {
   document.querySelectorAll("[data-packlisten]").forEach(function (b) {
     b.onclick = function () {
       var pk = packById(S.soundPack), id = b.getAttribute("data-packlisten"), reason = previewReason(pk, id);
-      toast(reason || tr("模拟试听：", "Simulated preview: ") + sourceName(pk.files[id]) + " · " + t().listenHint);
+      toast(reason || tr("试听：", "Preview: ") + sourceName(pk.files[id]));
       if (!reason) Motion.pulse(b.querySelector("svg"));
     };
   });
   bindAIGeneration();
   var dupP = document.getElementById("dupPackBtn");
-  if (dupP) dupP.onclick = function () { copyPack(S.soundPack, null); };
+  if (dupP) dupP.onclick = function () { copyPack(S.soundPack); };
   var restP = document.getElementById("restorePackBtn");
   if (restP) restP.onclick = function () {
     var pk = packById(S.soundPack);
@@ -3120,9 +3401,6 @@ function bind() {
   };
   var addA = document.getElementById("addAudioBtn");
   if (addA) addA.onclick = function () { requestDemoAudio(null); };
-  var useP = document.getElementById("usePackBtn");
-  if (useP) useP.onclick = function () { usePackForScope(S.soundPack, S.applyScope); render(); };
-
   document.querySelectorAll("[data-toggle]").forEach(function (b) {
     b.onclick = function () { b.classList.toggle("on"); };
   });
@@ -3174,8 +3452,8 @@ function bind() {
       var name = id === "claude" ? "Claude Code" : (id === "codex" ? "Codex" : "WorkBuddy");
       st.on = !st.on;
       st.generation++; st.receipts = []; st.status = st.on ? "awaiting" : "off";
-      toast(st.on ? tr("连接已配置，等待当前代次的真实回执（演示）。", "Connection configured; awaiting current-generation receipts (demo).")
-        : tr("接入已断开（演示）。", "Integration disconnected (demo)."));
+      toast(st.on ? tr("连接已配置。", "Connection configured.")
+        : tr("连接已断开。", "Disconnected."));
 
       render();
     };
@@ -3190,8 +3468,8 @@ function bind() {
       }
       if (act === "1" && id === "codex") {
         st.generation++; st.receipts = []; st.status = "awaiting";
-        toast(tr("修复完成，等待新代次回执（演示）。", "Repair complete; awaiting new-generation receipts (demo)."));
-      } else toast(tr("重新检测完成；当前回执没有变化（演示）。", "Re-check complete; current receipts unchanged (demo)."));
+        toast(tr("连接配置已修复。", "Connection configuration repaired."));
+      } else toast(tr("检测完成。", "Check complete."));
       render();
     };
   });
@@ -3257,7 +3535,7 @@ function bind() {
     var g = groupById(S.ws), pk = g && packById(g.pack);
     var available = EVENTS.filter(function (e) { return g && !previewReason(pk, e.id, g); });
     if (available.length) Motion.pulse(lp.querySelector(".preview-mark"));
-    toast(available.length ? tr("模拟试听：", "Simulated preview: ") + available.map(evName).join(tr("、", ", ")) + " · " + t().listenHint : tr("当前没有可试听的事件，请查看各行原因。", "No events can be previewed. Check each row’s reason."));
+    toast(available.length ? tr("试听：", "Preview: ") + available.map(evName).join(tr("、", ", ")) : tr("当前没有可试听的事件，请查看各行原因。", "No events can be previewed. Check each row’s reason."));
   };
 
 
@@ -3283,15 +3561,34 @@ function syncAIGenerationControls() {
   }
 }
 function syncViewButtons() {
-  var v = S.window ? "window" : (S.popover ? "panel" : "desktop");
+  var v = S.window ? "window" : (S.popover ? "panel" : (S.bannerAtn || S.bannerInfo) ? "banner" : "desktop");
   document.getElementById("viewDesktop").classList.toggle("on", v === "desktop");
   document.getElementById("viewPanel").classList.toggle("on", v === "panel");
   document.getElementById("viewWindow").classList.toggle("on", v === "window");
+  document.getElementById("viewBanner").classList.toggle("on", v === "banner");
+  ["viewDesktop", "viewPanel", "viewWindow", "viewBanner"].forEach(function (id) {
+    document.getElementById(id).setAttribute("aria-pressed", String(id === "view" + v.charAt(0).toUpperCase() + v.slice(1)));
+  });
+  document.getElementById("prototypeNav").setAttribute("aria-label", tr("原型界面", "Prototype views"));
+  document.getElementById("demoBar").setAttribute("aria-label", tr("场景控制", "Scene controls"));
+  var scenes = { list: ["列表 · 五项", "List · five items"], detail: ["详情 · 可操作", "Details · current"], empty: ["列表 · 空态", "List · empty"], overflow: ["列表 · 容量溢出", "List · overflow"], updated: ["详情 · 已更新", "Details · updated"], expired: ["详情 · 已过期", "Details · expired"] };
+  document.querySelectorAll("#reminderScene option").forEach(function (o) { var labels = scenes[o.value]; if (labels) o.textContent = tr(labels[0], labels[1]); });
+  document.getElementById("btnBannerAtn").textContent = tr("待接手事件", "Attention event");
+  document.getElementById("btnBannerInfo").textContent = tr("瞬时事件", "Transient event");
+  document.getElementById("bannerFailureBtn").textContent = tr("下次跳转失败：", "Fail next jump: ") + (S.bannerInjectFailure ? "on" : "off");
+  document.getElementById("showReminderScene").textContent = tr("查看所选状态", "Show selected state");
+  document.getElementById("viewDesktop").textContent = tr("桌面", "Desktop");
+  document.getElementById("viewPanel").textContent = tr("菜单栏面板", "Menu bar panel");
+  document.getElementById("viewWindow").textContent = tr("设置窗口", "Settings");
+  document.getElementById("viewBanner").textContent = tr("事件横幅", "Event banner");
+  document.getElementById("foldBtn").textContent = tr("场景控制", "Scene controls");
+  document.querySelectorAll("#bannerEvent option").forEach(function (o) { var e = NOTICE_SCENARIOS[o.value]; if (e) o.textContent = tr(e.zh, e.en); });
   var cp = document.getElementById("collapsePanel");
   if (cp) cp.style.display = S.popover ? "" : "none";
 }
 function setView(v) {
   if (S.window && v !== "window") { S.prefs.recording = null; endSoundsSession(); S.confirmation = null; S.workspaceForm = null; }
+  if (v !== "window") S.returnToPanel = false;
   S.popover = v === "panel"; S.window = v === "window";
   render();
 }
@@ -3304,7 +3601,10 @@ function collapsePanel() {
 }
 document.getElementById("viewDesktop").onclick = function () { setView("desktop"); };
 document.getElementById("viewPanel").onclick = function () { setView("panel"); };
-document.getElementById("viewWindow").onclick = function () { setView("window"); };
+document.getElementById("viewWindow").onclick = function () { S.returnToPanel = false; setView("window"); };
+document.getElementById("viewBanner").onclick = function () { setView("desktop"); showNoticeScene(document.getElementById("bannerEvent").value || "permission"); };
+document.getElementById("bannerEvent").onchange = function () { setView("desktop"); showNoticeScene(this.value); };
+document.getElementById("showReminderScene").onclick = function () { showReminderScene(document.getElementById("reminderScene").value || "list"); };
 document.getElementById("collapsePanel").onclick = function () { collapsePanel(); };
 
 /* 点击面板外部即收起 —— transient popover 的真实行为 */
@@ -3315,14 +3615,15 @@ document.addEventListener("click", function (e) {
   if (el.nodeType === 1 && el.isConnected === false) return;
   if (el.closest && (
     el.closest("#popover") || el.closest(".mb-wrap") ||
-    el.closest("#demoBar") || el.closest(".window"))) return;
+    el.closest("#demoBar") || el.closest("#prototypeNav") || el.closest(".window"))) return;
   collapsePanel();
 });
 /* 状态供面板与横幅消费；图标不再承载状态（装饰点已退役） */
 function setMenuState(st) { S.menuState = st; }
 
-document.getElementById("btnBannerAtn").onclick = function () { showBanner(true); };
-document.getElementById("btnBannerInfo").onclick = function () { showBanner(false); };
+document.getElementById("btnBannerAtn").onclick = function () { showNoticeScene("permission"); };
+document.getElementById("btnBannerInfo").onclick = function () { showNoticeScene("stop"); };
+document.getElementById("bannerFailureBtn").onclick = function () { S.bannerInjectFailure = !S.bannerInjectFailure; render(); };
 /* 音频生成演示控制（只改投影状态：凭据、pending 替换、SFX partial、失败注入、场景） */
 document.getElementById("aiCredBtn").onclick = aiCycleCredential;
 document.getElementById("aiPendingBtn").onclick = function () {
@@ -3361,7 +3662,7 @@ document.getElementById("langBtn").onclick = function () {
 var foldBtn = document.getElementById("foldBtn"), demoBar = document.getElementById("demoBar");
 foldBtn.onclick = function () {
   demoBar.classList.toggle("collapsed");
-  foldBtn.textContent = demoBar.classList.contains("collapsed") ? "展开" : "收起";
+  foldBtn.setAttribute("aria-expanded", String(!demoBar.classList.contains("collapsed")));
 };
 document.addEventListener("keydown", function (e) {
   if (e.key === "Tab" && modalWasOpen) {
@@ -3409,7 +3710,6 @@ document.addEventListener("keydown", function (e) {
     }
     if (S.confirmation || S.workspaceForm) { S.confirmation = null; S.workspaceForm = null; render(); return; }
     if (S.ai.sheet) { S.ai.sheet = null; render(); return; }
-    if (S.bannerExpanded && document.activeElement.closest("#banner")) { S.bannerExpanded = false; render(); return; }
     if ((S.bannerAtn || S.bannerInfo) && document.activeElement.closest("#banner")) { closeBanner(); return; }
     if (S.window) { closeWindowWithHandback(); }
     else if (S.bannerAtn || S.bannerInfo) { closeBanner(); }
@@ -3446,7 +3746,7 @@ function closeWindowWithHandback() {
     var p = qs.get("pane");
     if (p) { var b = document.querySelector('[data-pane="' + p + '"]'); if (b) { b.focus({ preventScroll: true }); b.click(); } }
   }
-  if (qs.get("clean") === "1") document.getElementById("demoBar").style.display = "none";
+  // 旧 clean 参数仅收起场景控制；统一导航始终保留。
   /* AI 生成深链：aiProfile=… · aiFail=… · aiPartial=1 · ai=credential|candidates|generating|applied */
   var aiProfileParam = qs.get("aiProfile");
   if (aiProfileParam && AI_PROFILES.some(function (x) { return x.id === aiProfileParam; })) {

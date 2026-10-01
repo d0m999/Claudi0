@@ -31,6 +31,9 @@ func runActivityOverviewSuites() {
             capabilities: capabilities)
 
         expect(
+            projection.global.todayEventTotal == 15 && projection.global.sevenDayEventTotal == 15,
+            "面板五事件总数由详细统计的同一投影计算")
+        expect(
             projection.global.todayMessages == 10,
             "Global messages must equal task_start + stop across supported hosts")
         expect(

@@ -360,6 +360,8 @@ public final class EventNoticeModel: ObservableObject {
     public static let maximumMetadataCount = 256
 
     @Published public private(set) var snapshot: EventNoticeModelSnapshot
+    @Published public private(set) var bannerSnapshot: EventNoticeModelSnapshot
+    @Published public private(set) var readingSnapshot: EventNoticeReadingSnapshot
     @Published public private(set) var badgeCount = 0
     public private(set) var receiverEpoch: UUID
     public private(set) var isEnabled = true
@@ -475,6 +477,9 @@ public final class EventNoticeModel: ObservableObject {
     private var entries: [Entry] = []  // oldest update first
     private var frozen: [Entry] = []  // complete reading versions, newest first
     private var transient: Entry?
+    private var bannerEntry: Entry?
+    private var readingConsumers: Set<EventNoticeReadingConsumer> = []
+    private var readingSelection: EventNoticeAction?
     private var currentID: UUID?
     private var protectedAction: EventNoticeAction?
     private var seen: [(id: SeenIdentity, expiresAt: TimeInterval)] = []
@@ -514,10 +519,15 @@ public final class EventNoticeModel: ObservableObject {
         self.resolveSourceApplication = resolveSourceApplication
         self.verifiedSubmissionSurfaces = verifiedSubmissionSurfaces
         epochStartedAt = now()
-        snapshot = EventNoticeModelSnapshot(
+        let initialSnapshot = EventNoticeModelSnapshot(
             phase: .hidden, current: nil, attentionReminders: [], pendingCount: 0,
             pauseReasons: [],
             remainingTime: nil, isExpanded: false, droppedCount: 0, receiverEpoch: receiverEpoch)
+        snapshot = initialSnapshot
+        bannerSnapshot = initialSnapshot
+        readingSnapshot = EventNoticeReadingSnapshot(
+            records: [], pendingCount: 0, droppedCount: 0,
+            receiverEpoch: receiverEpoch, isOpen: false)
     }
 
     private func isVerifiedSubmissionStart(_ notice: HostEventNotice) -> Bool {
@@ -584,7 +594,6 @@ public final class EventNoticeModel: ObservableObject {
             if canAutomaticallyDisplay {
                 let entry = makeEntry(notice, kind: kind, identity: identity)
                 transient = entry
-                frozen.removeAll()
                 beginDisplaying(entry)
             }
             return .accepted
@@ -621,7 +630,6 @@ public final class EventNoticeModel: ObservableObject {
         }
         entries.append(entry)
         if canAutomaticallyDisplay {
-            frozen = [entry]
             beginDisplaying(entry)
         }
         return .accepted
@@ -677,7 +685,6 @@ public final class EventNoticeModel: ObservableObject {
                 expiresAt: now() + Self.retentionDuration,
                 content: EventNoticeContent(observation), identity: nil)
             transient = entry
-            frozen.removeAll()
             beginDisplaying(entry)
         }
         return .accepted
@@ -724,63 +731,65 @@ public final class EventNoticeModel: ObservableObject {
         value ? openAttentionReminders() : closeAttentionReminders()
     }
 
-    public func openAttentionReminders() {
+    public func openReading(_ consumer: EventNoticeReadingConsumer) {
         guard canReceive else { return }
         expireEntries()
-        invalidatePresentationTimer()
-        if !isExpanded {
-            frozen = entries.reversed()
-            currentID = nil
-            transient = nil
-        }
-        isExpanded = true
-        isDetail = false
-        phase = .visible
-        setPauseReason(.expanded, active: true)
+        if readingConsumers.isEmpty { frozen = entries.reversed() }
+        readingConsumers.insert(consumer)
         publish(immediateBadge: true)
     }
 
-    /// Esc from list collapses it; it never removes reminders or starts a replay queue.
-    public func closeAttentionReminders() { dismiss() }
+    public func closeReading(_ consumer: EventNoticeReadingConsumer) {
+        readingConsumers.remove(consumer)
+        if readingConsumers.isEmpty { frozen.removeAll(); readingSelection = nil }
+        publish()
+    }
 
-    public func refreshAttentionReminders() {
-        guard isExpanded else { return }
+    public func refreshReading() {
+        guard !readingConsumers.isEmpty else { return }
         expireEntries()
         frozen = entries.reversed()
-        currentID = nil
-        transient = nil
-        isDetail = false
+        readingSelection = nil
         publish()
+    }
+
+    public func openAttentionReminders() {
+        isExpanded = true
+        isDetail = false
+        openReading(.legacy)
+    }
+
+    public func closeAttentionReminders() {
+        isExpanded = false
+        isDetail = false
+        readingSelection = nil
+        closeReading(.legacy)
+    }
+
+    public func refreshAttentionReminders() {
+        isDetail = false
+        refreshReading()
     }
 
     @discardableResult
     public func viewSource(_ action: EventNoticeAction) -> EventNoticeActionOutcome {
         expireEntries()
-        guard let entry = actionableEntry(action) else { publish(); return .stale }
-        invalidatePresentationTimer()
-        if !isExpanded { frozen = entries.reversed() }
-        if entry.kind == .transient { transient = entry }
-        currentID = entry.id
-        isExpanded = true
+        guard actionableEntry(action) != nil else { publish(); return .stale }
+        openAttentionReminders()
+        readingSelection = action
         isDetail = true
-        phase = .visible
-        setPauseReason(.expanded, active: true)
         publish()
         return .applied
     }
 
     public func closeDetail() {
-        guard isDetail else { return }
         isDetail = false
-        currentID = nil
-        transient = nil
+        readingSelection = nil
         publish()
     }
 
-    /// Selects a visible reminder without resolving a stale row to its latest version.
     public func selectAttentionReminder(id: UUID) {
-        guard
-            let record = snapshot.attentionReminders.first(where: { $0.id == id }),
+        guard let record = readingSnapshot.records.first(where: { $0.id == id }),
             let action = record.action
         else { return }
         _ = viewSource(action)
@@ -838,8 +847,6 @@ public final class EventNoticeModel: ObservableObject {
 
     public func dismiss(animated: Bool = true) {
         guard phase != .hidden else { return }
-        isExpanded = false
-        isDetail = false
         pauseReasons = []
         currentDeadline = nil
         pausedRemaining = nil
@@ -862,7 +869,7 @@ public final class EventNoticeModel: ObservableObject {
     public func setAutomaticallySuppressed(_ value: Bool) {
         guard isAutomaticallySuppressed != value else { return }
         isAutomaticallySuppressed = value
-        if value && !isExpanded { hideImmediately() }
+        if value { hideImmediately() }
         publish()
     }
 
@@ -896,6 +903,9 @@ public final class EventNoticeModel: ObservableObject {
         entries.removeAll()
         frozen.removeAll()
         transient = nil
+        bannerEntry = nil
+        readingConsumers.removeAll()
+        readingSelection = nil
         currentID = nil
         protectedAction = nil
         seen.removeAll()
@@ -918,6 +928,7 @@ public final class EventNoticeModel: ObservableObject {
     }
 
     public func setPauseReason(_ reason: EventNoticePauseReason, active: Bool) {
+        guard reason != .expanded else { return }
         let wasPaused = !pauseReasons.isEmpty
         if active { pauseReasons.formUnion(reason) } else { pauseReasons.subtract(reason) }
         expireEntries()
@@ -931,17 +942,15 @@ public final class EventNoticeModel: ObservableObject {
         publish()
     }
 
+    package var presentationUptime: TimeInterval { now() }
+
     public func expireNow() { expireEntries(); publish(immediateBadge: true) }
 
     private var canAutomaticallyDisplay: Bool {
-        !isAutomaticallySuppressed && !isExpanded && (phase == .hidden || phase == .exiting)
+        !isAutomaticallySuppressed && (phase == .hidden || phase == .exiting)
     }
 
-    private var currentEntry: Entry? {
-        guard let currentID else { return nil }
-        if transient?.id == currentID { return transient }
-        return frozen.first { $0.id == currentID }
-    }
+    private var currentEntry: Entry? { bannerEntry }
 
     /// Resolve the complete identity once per arrival, before any transition mutates entries.
     private func index(for identity: Identity) -> Int? {
@@ -987,6 +996,7 @@ public final class EventNoticeModel: ObservableObject {
 
     private func beginDisplaying(_ entry: Entry) {
         currentID = entry.id
+        bannerEntry = entry
         phase = .entering
         currentDeadline = nil
         pausedRemaining = nil
@@ -1009,7 +1019,7 @@ public final class EventNoticeModel: ObservableObject {
     }
 
     private func resumeReading() {
-        guard phase == .visible, pauseReasons.isEmpty, currentEntry?.content != nil else { return }
+        guard phase == .visible, pauseReasons.isEmpty, currentEntry != nil else { return }
         currentDeadline = now() + (pausedRemaining ?? Self.displayDuration)
         pausedRemaining = nil
         invalidatePresentationTimer()
@@ -1024,10 +1034,8 @@ public final class EventNoticeModel: ObservableObject {
     private func finishDismissal() {
         presentationTimer = nil
         currentID = nil
+        bannerEntry = nil
         transient = nil
-        frozen.removeAll()
-        isExpanded = false
-        isDetail = false
         phase = .hidden
         pauseReasons = []
         currentDeadline = nil
@@ -1037,6 +1045,7 @@ public final class EventNoticeModel: ObservableObject {
 
     private func eraseReadingVersion(id: UUID) {
         for index in frozen.indices where frozen[index].id == id { frozen[index].erase() }
+        if bannerEntry?.id == id { bannerEntry?.erase() }
     }
 
     private func expireEntries() {
@@ -1047,15 +1056,10 @@ public final class EventNoticeModel: ObservableObject {
         // Each reading version has its own deadline, even if a newer version extended the row.
         for index in frozen.indices where frozen[index].expiresAt <= time { frozen[index].erase() }
         if let value = transient, value.expiresAt <= time { transient?.erase() }
+        if let value = bannerEntry, value.expiresAt <= time { bannerEntry?.erase() }
         seen.removeAll { $0.expiresAt <= time }
         observations.removeAll { $0.expiresAt <= time }
         if let action = protectedAction, !isCurrent(action) { protectedAction = nil }
-        if currentEntry?.content == nil, currentID != nil {
-            currentDeadline = nil
-            pausedRemaining = nil
-            invalidatePresentationTimer()
-            if phase != .hidden { phase = .visible }
-        }
     }
 
     private func scheduleExpiry() {
@@ -1064,6 +1068,9 @@ public final class EventNoticeModel: ObservableObject {
         var earliest = TimeInterval.infinity
         for entry in entries { earliest = min(earliest, entry.expiresAt) }
         for entry in frozen where entry.content != nil { earliest = min(earliest, entry.expiresAt) }
+        if let bannerEntry, bannerEntry.content != nil {
+            earliest = min(earliest, bannerEntry.expiresAt)
+        }
         if let transient, transient.content != nil { earliest = min(earliest, transient.expiresAt) }
         for item in seen { earliest = min(earliest, item.expiresAt) }
         for item in observations { earliest = min(earliest, item.expiresAt) }
@@ -1104,7 +1111,7 @@ public final class EventNoticeModel: ObservableObject {
         guard !isReducingBatch else { return }
         scheduleExpiry()
         var pendingRefreshCount = 0
-        if isExpanded {
+        if !readingConsumers.isEmpty {
             for entry in entries where !frozen.contains(where: { $0.action == entry.action }) {
                 pendingRefreshCount += 1
             }
@@ -1116,13 +1123,28 @@ public final class EventNoticeModel: ObservableObject {
                 sampledUptime: sampledUptime, remaining: $0,
                 isPaused: !pauseReasons.isEmpty || phase != .visible, budget: Self.displayDuration)
         }
+        let banner = EventNoticeModelSnapshot(
+            phase: phase, current: currentEntry.map(record), attentionReminders: [],
+            pendingCount: 0, pauseReasons: pauseReasons, remainingTime: remaining,
+            isExpanded: false, droppedCount: droppedCount, receiverEpoch: receiverEpoch,
+            totalCount: entries.count, readingTime: readingTime)
+        let reading = EventNoticeReadingSnapshot(
+            records: (!readingConsumers.isEmpty ? frozen : Array(entries.reversed())).map(record),
+            pendingCount: pendingRefreshCount, droppedCount: droppedCount,
+            receiverEpoch: receiverEpoch, isOpen: !readingConsumers.isEmpty,
+            latest: entries.last.map(record))
+        if readingSnapshot != reading { readingSnapshot = reading }
+        if bannerSnapshot != banner { bannerSnapshot = banner }
+        let selected = readingSelection.flatMap { action in
+            (frozen.first(where: { $0.id == action.id && $0.version == action.version })
+                ?? (transient?.id == action.id ? transient : nil)).map(record)
+        }
         let updated = EventNoticeModelSnapshot(
-            phase: phase, current: currentEntry.map(record),
-            attentionReminders: (isExpanded ? frozen : Array(entries.reversed())).map(record),
-            pendingCount: pendingRefreshCount, pauseReasons: pauseReasons,
-            remainingTime: remaining,
-            isExpanded: isExpanded, droppedCount: droppedCount, receiverEpoch: receiverEpoch,
-            isDetail: isDetail, totalCount: entries.count, readingTime: readingTime)
+            phase: isExpanded ? .visible : phase, current: isDetail ? selected : banner.current,
+            attentionReminders: reading.records, pendingCount: reading.pendingCount,
+            pauseReasons: pauseReasons, remainingTime: remaining, isExpanded: isExpanded,
+            droppedCount: droppedCount, receiverEpoch: receiverEpoch, isDetail: isDetail,
+            totalCount: entries.count, readingTime: readingTime)
         if snapshot != updated { snapshot = updated }
         if owesImmediateBadge {
             badgeRevision &+= 1

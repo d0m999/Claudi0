@@ -122,10 +122,6 @@ public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
         let hasSoundPackPicker,
         let hasWorkspaceDetails):
         var order: [PanelFocusTarget] = [.headerSettings, .recentNotices, .soundScope]
-        if hasActivityOverview {
-            order.append(.activityRange)
-            order.append(contentsOf: ActivityOverviewBarLayout.events.map { .activityMetric($0) })
-        }
         if hasRefreshFailedNotice { order.append(.libraryRefreshRetry) }
         if hasConfigFailureNotice { order.append(.configReveal) }
         for event in events {

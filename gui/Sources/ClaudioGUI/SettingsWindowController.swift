@@ -181,6 +181,27 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         return handbackTracker.consumeOnClose(restoringWith: restoration)
     }
 
+    #if DEBUG && CLAUDIO_UI_REGRESSION
+    var regressionGeometry: [String: Any] {
+        guard let window else { return [:] }
+        return [
+            "width": window.contentLayoutRect.width, "height": window.contentLayoutRect.height,
+            "frameWidth": window.frame.width, "frameHeight": window.frame.height,
+            "backingScale": window.backingScaleFactor,
+            "appearance": window.effectiveAppearance.name.rawValue,
+        ]
+    }
+
+    func applyRegressionGeometry(minimum: Bool, dark: Bool) {
+        guard let window else { return }
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        window.setContentSize(NSSize(width: minimum ? 960 : 1240, height: minimum ? 640 : 820))
+        window.center()
+    }
+
+    func focusForRegression() { window?.presentForUserRequest() }
+    #endif
+
     private func makeWindow() -> RetainedSettingsWindow {
         let content = SettingsRootView(session: settingsPresentationSession)
         let window = RetainedSettingsWindow(

@@ -82,13 +82,13 @@ struct SettingsSoundsAICueView: View {
             nativeEffects: nativeEffects,
             supplement: SoundPacksEditorSupplement(
                 sidebarHeader: AnyView(newPackButton),
-                detailHeader: AnyView(detailIntroduction),
+                detailHeader: AnyView(packContext),
+                auxiliary: AnyView(serviceCard),
                 eventContent: { event in AnyView(eventGenerationContent(event)) })
         )
         .onAppear {
             pendingRouteSession = routeSession
             draftNameInput = sounds?.draft?.name ?? ""
-            beginRouteSessionIfNeeded()
             syncOwnerComposer()
             Task { await viewModel.refreshCredentialStatus() }
         }
@@ -97,9 +97,7 @@ struct SettingsSoundsAICueView: View {
             viewModel.endSession()
             editorOwner.updateAICueComposer(session: nil, generation: nil)
             pendingRouteSession = routeSession
-            beginRouteSessionIfNeeded()
         }
-        .onChange(of: sounds?.routeState) { _ in beginRouteSessionIfNeeded() }
         .onChange(of: selectedPack?.id) { selectedID in
             if let session = viewModel.session, session.packID != activePackID {
                 stopCandidatePreview()
@@ -107,7 +105,6 @@ struct SettingsSoundsAICueView: View {
                 syncOwnerComposer()
                 focusedEvent = nil
             }
-            if selectedID != nil { beginRouteSessionIfNeeded() }
         }
         .onChange(of: sounds?.draft?.name) { name in
             draftNameInput = name ?? ""
@@ -122,8 +119,12 @@ struct SettingsSoundsAICueView: View {
                 viewModel: viewModel,
                 languageStore: languageStore)
         }
+        .onDisappear {
+            stopCandidatePreview()
+            viewModel.endSession()
+            editorOwner.updateAICueComposer(session: nil, generation: nil)
+        }
         .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("settings.sounds.ai-cue")
     }
 
     private var detailIntroduction: some View {
@@ -250,23 +251,26 @@ struct SettingsSoundsAICueView: View {
     private func eventGenerationContent(_ event: Event) -> some View {
         let row = sounds?.eventRows.first(where: { $0.event == event })
         return VStack(alignment: .leading, spacing: 8) {
-            Button(l10n.text(.aiCueGenerateAction)) {
-                beginSession(for: event)
+            if selectedPack?.isBuiltinReadOnly != true {
+                Button(l10n.text(.aiCueGenerateAction)) {
+                    beginSession(for: event)
+                }
+                .buttonStyle(.bordered)
+                .disabled(activePackID == nil || row == nil)
+                .focused($focusedEvent, equals: event)
+                .accessibilityLabel(
+                    l10n.text(.aiCueGenerateAction) + " "
+                        + localizedEventName(event, language: languageStore.language)
+                )
+                .accessibilityHint(
+                    adoptionHint(
+                        row?.aiCueAdoptionAvailability
+                            ?? .ineligible(.configurationUnavailable))
+                )
+                .accessibilityIdentifier("settings.sounds.ai-cue.event.\(event.rawValue)")
+                .soundPacksLayoutProbe("settings.sounds.ai-cue.event.\(event.rawValue)")
+
             }
-            .buttonStyle(.bordered)
-            .disabled(activePackID == nil || row == nil)
-            .focused($focusedEvent, equals: event)
-            .accessibilityLabel(
-                l10n.text(.aiCueGenerateAction) + " "
-                    + localizedEventName(event, language: languageStore.language)
-            )
-            .accessibilityHint(
-                adoptionHint(
-                    row?.aiCueAdoptionAvailability
-                        ?? .ineligible(.configurationUnavailable))
-            )
-            .accessibilityIdentifier("settings.sounds.ai-cue.event.\(event.rawValue)")
-            .soundPacksLayoutProbe("settings.sounds.ai-cue.event.\(event.rawValue)")
 
             if activeEvent == event {
                 if selectedPack?.isBuiltinReadOnly == true {

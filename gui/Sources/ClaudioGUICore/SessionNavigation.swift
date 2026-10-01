@@ -178,6 +178,9 @@ public final class SessionNavigationCoordinator: ObservableObject {
             guard let self, isCurrent() else { return }
             self.cancelRequest()
             self.applicationResult = outcome
+            if outcome == .opened, self.model?.bannerSnapshot.current?.action == action {
+                self.model?.dismiss()
+            }
             completion(outcome)
         }
         timeoutTask = scheduler.schedule(after: Self.timeout) { finish(.timedOut) }

@@ -6,13 +6,13 @@ import Foundation
 /// The fixed top-level identity and order of Claudio's unified Settings navigation.
 /// Raw values are stable route tokens; user-visible and accessibility names stay localized.
 public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashable, Identifiable {
-    case general
-    case integrations
     case eventsAndSounds = "events-and-sounds"
-    case notifications
     case sounds
-    case usage
+    case integrations
+    case notifications
+    case general
     case shortcuts
+    case usage
     case about
 
     public var id: String { rawValue }
@@ -302,17 +302,9 @@ public func settingsSidebarSections(
     return [
         SettingsSidebarSection(
             id: .primary,
-            destinations: [
-                .general, .integrations, .eventsAndSounds, .notifications, .sounds,
-                .usage,
-            ].filter(available.contains)),
-        SettingsSidebarSection(
-            id: .advanced,
-            destinations: [SettingsDestination.shortcuts].filter(available.contains)),
-        SettingsSidebarSection(
-            id: .product,
-            destinations: [SettingsDestination.about].filter(available.contains)),
-    ].filter { !$0.destinations.isEmpty }
+            destinations: SettingsDestination.allCases.filter(available.contains))
+    ]
+
 }
 
 public enum SettingsSidebarMoveDirection: Sendable {

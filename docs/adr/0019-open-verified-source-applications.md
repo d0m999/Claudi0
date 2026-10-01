@@ -15,3 +15,9 @@ helper 仅在有效接收通道存在时捕获最多 16 层祖先的 PID 与操�
 本决定修订 [ADR 0012](0012-use-ephemeral-event-source-notices.md) 的默认来源动作与胶囊入口，以及 [ADR 0013](0013-separate-transient-notices-from-attention.md) 的展示合同；两者的隐私、容量、冻结、声音独立与非激活窗口边界继续有效。原型中待接手使用 30 分钟进度、未知原因称为审查、瞬时无关闭按钮和声音触发字形脉冲的表述由本次计划覆盖。布局与文案见 [DESIGN.md](../../DESIGN.md)，证据见[验收台账](../event-attention-acceptance.md)。
 
 结构参考：[Open Island 固定源码](https://github.com/Octane0411/open-vibe-island/blob/b50f87aa7d58af1478837d48909eb68baa37f9b9/Sources/OpenIslandApp/TerminalJumpService.swift#L351) 分开应用激活和会话定位；实际系统调用采用 Apple 的 [NSRunningApplication](https://developer.apple.com/documentation/appkit/nsrunningapplication/activate(options:)) 与 [NSWorkspace.openApplication](https://developer.apple.com/documentation/appkit/nsworkspace/openapplication(at:configuration:completionhandler:))。
+
+## 整合原型修订（现行 · 2026-10-01）
+
+本次呈现基线为 `designs/panel-and-settings/Panel and Settings Prototype.html`，完整合同见 [原生迁移规格](../../plan/PLAN-NATIVE-PROTOTYPE-MIGRATION.md)。它覆盖历史提示音组称呼、内层列表布局与横幅详情合同；包级事务和安全边界继续有效。容器统一称「声音包」，单个声音称「提示音」。八页顺序为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于，raw values 不变。
+
+横幅正文静态，无展开或详情。未确认来源提供「在面板查看」；跳转失败就地呈现原因/重试，剩余 4 秒预算不重置。仅横幅自身悬停/聚焦暂停；面板与诊断共享独立冻结阅读集合，首个消费者冻结，显式刷新，末个关闭释放。来源激活仍保留提醒且不产生 exactReturnConfirmed。

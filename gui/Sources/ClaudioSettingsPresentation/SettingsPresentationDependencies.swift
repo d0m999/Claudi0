@@ -1,4 +1,5 @@
 import ClaudioGUICore
+import Foundation
 import SoundPacksWindow
 
 /// The complete, nonoptional owner set consumed by the unified Settings presentation tree.
@@ -18,9 +19,11 @@ package struct SettingsPresentationDependencies {
     package let aiCueViewModel: AICueGenerationViewModel
     /// Receiver health for the event-source prompts toggle row. Defaults to a detached store
     /// so fixtures and harness targets stay unchanged; production injects the runtime's store.
+    package let eventNoticeModel: EventNoticeModel
+    package let noticeNavigation: SessionNavigationCoordinator
     package let eventNoticeHealth: EventNoticeHealthStore
 
-    package init(
+    @MainActor package init(
         preferences: ClaudioPreferences,
         loginItemSettings: LoginItemSettingsModel,
         dynamicQuietPolicy: DynamicQuietPolicyController,
@@ -33,7 +36,9 @@ package struct SettingsPresentationDependencies {
         hostIntegrations: HostIntegrationPresentationStore,
         integrationsModel: IntegrationDestinationModel,
         aiCueViewModel: AICueGenerationViewModel,
-        eventNoticeHealth: EventNoticeHealthStore? = nil
+        eventNoticeHealth: EventNoticeHealthStore? = nil,
+        eventNoticeModel: EventNoticeModel? = nil,
+        noticeNavigation: SessionNavigationCoordinator? = nil
     ) {
         self.preferences = preferences
         self.loginItemSettings = loginItemSettings
@@ -47,6 +52,9 @@ package struct SettingsPresentationDependencies {
         self.hostIntegrations = hostIntegrations
         self.integrationsModel = integrationsModel
         self.aiCueViewModel = aiCueViewModel
+        let notices = eventNoticeModel ?? EventNoticeModel(receiverEpoch: UUID())
+        self.eventNoticeModel = notices
+        self.noticeNavigation = noticeNavigation ?? SessionNavigationCoordinator(model: notices)
         self.eventNoticeHealth = eventNoticeHealth ?? EventNoticeHealthStore()
     }
 }

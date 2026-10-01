@@ -33,23 +33,12 @@ private func makePresentationRecord(
 
 @MainActor
 func runEventNoticePresentationSuites() {
-    suite("EventNoticeView：五行列表及小屏长详情实际挂载可滚动到达") {
+    suite("EventNoticeReadingView：面板和诊断共用的阅读内容在小窗口可滚动到达") {
         _ = NSApplication.shared
-        let diagnosticsEnabled =
-            ProcessInfo.processInfo.environment["CLAUDIO_HANG_DIAGNOSTICS"] == "1"
-        func diagnostic(_ message: String) {
-            guard diagnosticsEnabled else { return }
-            FileHandle.standardError.write(Data("  EVENT_NOTICE_DIAGNOSTIC \(message)\n".utf8))
-        }
-        @MainActor func descendants(_ view: NSView) -> [NSView] {
-            [view] + view.subviews.flatMap { descendants($0) }
-        }
+        func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for language in [ClaudioAppLanguage.english, .zhHans] {
                 for count in [0, 1, 5, 7, 50] {
-                    let diagnosticContext =
-                        "appearance=\(appearance.rawValue) language=\(language.rawValue) count=\(count)"
-                    diagnostic("iteration-start \(diagnosticContext)")
                     let clock = ManualEventNoticeScheduler()
                     let model = EventNoticeModel(
                         receiverEpoch: UUID(), now: { clock.time }, scheduler: clock.scheduler())
@@ -62,156 +51,57 @@ func runEventNoticePresentationSuites() {
                                     projectLabel: "project", sessionID: sessionID),
                                 occurredAt: Date(timeIntervalSinceNow: -120)))
                     }
-                    model.openAttentionReminders()
+                    model.openReading(.panel)
                     let preferences = ClaudioPreferences(previewLanguage: language)
-                    var copyCalls = 0
-                    let hosting = EventNoticeHostingView(
-                        rootView: EventNoticeView(
-                            model: model, languageStore: preferences,
-                            onViewSource: { _ = model.viewSource($0) },
-                            onCopySessionID: { action in
-                                copyCalls += 1
-                                return model.copySessionID(action) { _ in false }
-                            }, onClose: { model.dismiss(animated: false) }))
-                    let height = EventNoticeView.preferredHeight(for: model.snapshot)
+                    let selection = Binding<EventNoticeAction?>(
+                        get: { model.snapshot.isDetail ? model.snapshot.current?.action : nil },
+                        set: {
+                            if let action = $0 {
+                                _ = model.viewSource(action)
+                            } else {
+                                model.closeDetail()
+                            }
+                        })
+                    let reader = EventNoticeReadingView(
+                        model: model, preferences: preferences,
+                        navigation: SessionNavigationCoordinator(model: model), selected: selection)
+                    let hosting = NSHostingView(rootView: ScrollView { reader.padding(12) })
+                    if #available(macOS 13, *) { hosting.sizingOptions = [] }
                     let window = NSWindow(
-                        contentRect: NSRect(x: 0, y: 0, width: 440, height: height),
-                        styleMask: [.borderless], backing: .buffered,
-                        defer: false)
+                        contentRect: NSRect(x: 0, y: 0, width: 312, height: 360),
+                        styleMask: [.borderless], backing: .buffered, defer: false)
                     window.isReleasedWhenClosed = false
                     window.appearance = NSAppearance(named: appearance)
                     window.contentView = hosting
-                    window.setFrame(NSRect(x: 0, y: 0, width: 440, height: height), display: true)
                     window.orderFrontRegardless()
                     defer { window.orderOut(nil); window.close() }
-                    expect(!(window is NSPanel), "命令行 harness 不使用需要特殊激活语义的 NSPanel")
-                    diagnostic("before-list-layout \(diagnosticContext)")
-                    hosting.layoutSubtreeIfNeeded()
                     RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
-                    diagnostic("after-list-layout \(diagnosticContext)")
-                    expect(
-                        abs(hosting.frame.height - height) <= 1,
-                        "窗口遵循模型布局高度：count=\(count) actual=\(hosting.frame.height) expected=\(height)"
-                    )
+                    hosting.layoutSubtreeIfNeeded()
                     let scrolls = descendants(hosting).compactMap { $0 as? NSScrollView }
-                    expect(scrolls.count == 1, "列表单个滚动区域：\(count)")
-                    if count >= 5, let scroll = scrolls.first {
-                        expect(
-                            scroll.contentView.bounds.height >= 270,
-                            "标准五行视口至少270pt：\(scroll.contentView.bounds.height)")
-                        if count > 5, let document = scroll.documentView {
-                            expect(
-                                document.bounds.height > scroll.contentView.bounds.height,
-                                "第六行起存在可滚动内容，count=\(count) document=\(document.bounds.height) viewport=\(scroll.contentView.bounds.height)"
-                            )
-                            document.scrollToVisible(
-                                NSRect(x: 0, y: document.bounds.maxY - 30, width: 100, height: 28))
-                            expect(
-                                scroll.contentView.bounds.maxY >= document.bounds.maxY - 32,
-                                "末行可滚动到达")
-                        }
+                    expect(scrolls.count == 1, "阅读只借用消费者的一个滚动区域")
+                    if count >= 7, let scroll = scrolls.first, let document = scroll.documentView {
+                        expect(document.bounds.height > scroll.contentView.bounds.height, "长列表可滚动")
+                        document.scrollToVisible(
+                            NSRect(x: 0, y: document.bounds.maxY - 20, width: 100, height: 20))
+                        expect(scroll.contentView.bounds.maxY >= document.bounds.maxY - 22, "末项可达")
                     }
-                    if let directory = ProcessInfo.processInfo.environment[
-                        "CLAUDIO_ATTENTION_SCREENSHOT_DIR"], count == 0 || count == 7
-                    {
-                        let output = URL(fileURLWithPath: directory, isDirectory: true)
-                        try? FileManager.default.createDirectory(
-                            at: output, withIntermediateDirectories: true)
-                        if let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds)
-                        {
-                            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
-                            try? bitmap.representation(using: .png, properties: [:])?.write(
-                                to: output.appendingPathComponent(
-                                    "list-\(appearance.rawValue)-\(language.rawValue)-\(count).png")
-                            )
-                        }
-                    }
-                    guard
-                        count > 0,
-                        let action = model.snapshot.attentionReminders.first?.action
-                    else {
-                        diagnostic("iteration-complete \(diagnosticContext)")
-                        continue
-                    }
-                    diagnostic("before-open-detail \(diagnosticContext)")
+                    guard let action = model.readingSnapshot.records.first?.action else { continue }
                     _ = model.viewSource(action)
-                    window.setFrame(NSRect(x: 0, y: 0, width: 300, height: 180), display: true)
-                    hosting.layoutSubtreeIfNeeded()
+                    window.setContentSize(NSSize(width: 312, height: 180))
                     RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
-                    diagnostic("after-detail-layout \(diagnosticContext)")
-                    let views = descendants(hosting)
-                    guard let scroll = views.compactMap({ $0 as? NSScrollView }).first,
+                    hosting.layoutSubtreeIfNeeded()
+                    guard
+                        let scroll = descendants(hosting).compactMap({ $0 as? NSScrollView }).first,
                         let document = scroll.documentView,
-                        let session = views.compactMap({ $0 as? NSTextField }).first(where: {
-                            $0.stringValue == sessionID
-                        })
-                    else { expect(false, "详情必须实际挂载完整 session ID 与滚动文档"); continue }
-                    expect(session.isDescendant(of: document), "完整 ID 在可滚动区域内")
+                        let session = descendants(hosting).compactMap({ $0 as? NSTextField }).first(
+                            where: { $0.stringValue == sessionID })
+                    else {
+                        expect(false, "详情实际挂载完整有效会话 ID"); continue
+                    }
                     let frame = session.convert(session.bounds, to: document)
                     document.scrollToVisible(frame)
-                    expect(scroll.contentView.bounds.intersects(frame), "小屏完整 ID 可滚动到达")
-                    expect(
-                        hosting.frame.height <= 180 && scroll.contentView.bounds.height >= 28,
-                        "小屏不溢出且动作区域可达")
-                    // The last row is remove (28pt); the preceding row is copy (28pt), with
-                    // a 10pt gap. Exercise native mouse delivery, as in the pre-existing detail test.
-                    let originalDetailHeight = document.bounds.height
-                    let copyRect = NSRect(
-                        x: 0, y: document.bounds.maxY - 66, width: 110, height: 28)
-                    document.scrollToVisible(copyRect)
-                    hosting.layoutSubtreeIfNeeded()
-                    let point = document.convert(NSPoint(x: 45, y: copyRect.midY), to: nil)
-                    let eventTimestamp = ProcessInfo.processInfo.systemUptime
-                    let mouseDown = NSEvent.mouseEvent(
-                        with: .leftMouseDown, location: point,
-                        modifierFlags: [], timestamp: eventTimestamp,
-                        windowNumber: window.windowNumber,
-                        context: nil, eventNumber: 1, clickCount: 1, pressure: 1)
-                    let mouseUp = NSEvent.mouseEvent(
-                        with: .leftMouseUp, location: point,
-                        modifierFlags: [], timestamp: eventTimestamp + 0.001,
-                        windowNumber: window.windowNumber,
-                        context: nil, eventNumber: 2, clickCount: 1, pressure: 1)
-                    if let mouseDown, let mouseUp {
-                        diagnostic("before-queue-mouse-up \(diagnosticContext)")
-                        NSApplication.shared.postEvent(mouseUp, atStart: true)
-                        diagnostic("before-send-mouse-down \(diagnosticContext)")
-                        window.sendEvent(mouseDown)
-                        diagnostic("after-send-mouse-down \(diagnosticContext)")
-                        if let pendingMouseUp = NSApplication.shared.nextEvent(
-                            matching: .leftMouseUp,
-                            until: .distantPast,
-                            inMode: .default,
-                            dequeue: true)
-                        {
-                            diagnostic("before-send-pending-mouse-up \(diagnosticContext)")
-                            window.sendEvent(pendingMouseUp)
-                            diagnostic("after-send-pending-mouse-up \(diagnosticContext)")
-                        }
-                    }
-                    expect(copyCalls == 1, "滚动后的真实复制按钮回送捕获版本")
-                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
-                    hosting.layoutSubtreeIfNeeded()
-                    expect(
-                        document.bounds.height > originalDetailHeight,
-                        "复制失败反馈增加实际滚动内容：\(language.rawValue) \(appearance.rawValue)")
-                    document.scrollToVisible(
-                        NSRect(x: 0, y: document.bounds.maxY - 28, width: 110, height: 28))
-                    expect(
-                        scroll.contentView.bounds.maxY >= document.bounds.maxY - 1,
-                        "错误反馈出现后末尾动作仍可滚动到达")
-                    if count == 1,
-                        let directory = ProcessInfo.processInfo.environment[
-                            "CLAUDIO_ATTENTION_SCREENSHOT_DIR"],
-                        let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds)
-                    {
-                        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
-                        try? bitmap.representation(using: .png, properties: [:])?.write(
-                            to: URL(fileURLWithPath: directory, isDirectory: true)
-                                .appendingPathComponent(
-                                    "copy-failed-\(appearance.rawValue)-\(language.rawValue).png"))
-                    }
-                    diagnostic("iteration-complete \(diagnosticContext)")
+                    expect(scroll.contentView.bounds.intersects(frame), "最小窗口会话 ID 可滚动到达")
+                    expect(model.readingSnapshot.records.count == count, "布局不改变冻结集合")
                 }
             }
         }

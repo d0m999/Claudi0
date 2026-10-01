@@ -1233,8 +1233,8 @@ func runReleaseLayoutSuites() {
             svgText.contains("rx=\"356\" ry=\"128\" transform=\"rotate(-16 512 512)\""),
             "App 图标必须保留穿过 0 的斜轨几何")
         expect(
-            svgText.contains("<circle cx=\"755\" cy=\"303\" r=\"22\""),
-            "App 图标必须保留右上信号点")
+            !svgText.contains("<circle"),
+            "App 图标遵循现行 DESIGN，不带历史装饰点")
         expect(icnsData?.prefix(4) == Data("icns".utf8), "claudi0.icns 必须是有效的 icns 容器")
     }
 

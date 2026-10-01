@@ -151,7 +151,7 @@ func runPanelFocusOrderSuites() {
             "needsPack 焦点顺序错误：\(order)")
     }
 
-    suite("刷新失败重试：焦点位于活动概览之后、事件之前；消失时回到作用域") {
+    suite("刷新失败重试：焦点位于作用域之后、事件之前；消失时回到作用域") {
         let events = focusEventPresentations()
         let failedOrder = panelFocusOrder(
             .activityOperational(
@@ -164,13 +164,12 @@ func runPanelFocusOrderSuites() {
                 events: events,
                 hasActivityOverview: true,
                 hasMasterVolume: true))
-        let lastActivityEvent = ActivityOverviewBarLayout.events.last!
-        let activityEnd = failedOrder.lastIndex(of: .activityMetric(lastActivityEvent))!
+        let activityEnd = failedOrder.lastIndex(of: .soundScope)!
         let retryIndex = failedOrder.firstIndex(of: .libraryRefreshRetry)!
         let firstEventIndex = failedOrder.firstIndex(of: .eventPreview(Event.allCases[0]))!
         expect(
             activityEnd < retryIndex && retryIndex < firstEventIndex,
-            "重试按钮必须按视觉顺序插在活动控件与事件控件之间")
+            "重试按钮按视觉顺序插在作用域与事件之间")
         expect(!readyOrder.contains(.libraryRefreshRetry), "提示消失后不得保留幽灵焦点")
         expect(
             panelFocusAfterTopContentChange(

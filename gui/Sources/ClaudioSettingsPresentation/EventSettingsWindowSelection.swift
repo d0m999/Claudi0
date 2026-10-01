@@ -3,6 +3,13 @@ import ClaudioGUICore
 import Combine
 import Foundation
 
+/// Uses the shared library card fact, including a malformed manifest whose event rows are unmapped.
+package func eventSettingsPackNeedsRepair(selectedPackID: String, cards: [PackCard]) -> Bool {
+    guard let selected = cards.first(where: { $0.id == selectedPackID }) else { return true }
+    if case .broken = selected.state { return true }
+    return false
+}
+
 package struct EventSettingsPreviewFailure: Equatable {
     package let scope: PanelSoundScopeID
     package let packID: String
@@ -434,6 +441,8 @@ package final class EventSettingsWindowSelection: ObservableObject {
     package func clearConflictReadback() {
         conflictReadbackState = .idle
     }
+
+    package func restoreSoundControlFocus(_ event: Event) { requestFocus(.configure(event)) }
 
     private func requestFocus(_ target: EventSettingsFocusTarget) {
         storage.focusTarget = target

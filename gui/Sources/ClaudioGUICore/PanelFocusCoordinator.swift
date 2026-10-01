@@ -45,6 +45,21 @@ public final class PanelFocusCoordinator: ObservableObject {
     /// reliable visibility test for deferred announcements.
     @Published public private(set) var isPanelVisible = false
 
+    @Published public var noticeIsExpanded = false
+    @Published public var noticeSelection: EventNoticeAction?
+
+    public func requestNotice(_ action: EventNoticeAction?) {
+        noticeSelection = action
+        noticeIsExpanded = true
+    }
+
+    /// Detail → list → collapsed reading → native panel dismissal.
+    public func consumeNoticeEscape() -> Bool {
+        if noticeSelection != nil { noticeSelection = nil; return true }
+        if noticeIsExpanded { noticeIsExpanded = false; return true }
+        return false
+    }
+
     public init() {}
 
     /// Records one more "the popover just showed" event.
@@ -61,6 +76,8 @@ public final class PanelFocusCoordinator: ObservableObject {
     /// 这条路径上会提前 return，而那恰恰是本信号最需要覆盖的一条路径。
     public func notePanelHidden() {
         if isPanelVisible { isPanelVisible = false }
+        noticeIsExpanded = false
+        noticeSelection = nil
         hideCount += 1
     }
 }

@@ -1940,14 +1940,15 @@ func waitForSoundEditorInventory(
     _ owner: SoundPacksEditorOwner,
     satisfying predicate: ([SoundPackEditorAudioPresentation]) -> Bool
 ) async -> Bool {
-    for _ in 0..<512 {
+    let deadline = ProcessInfo.processInfo.systemUptime + 3
+    while ProcessInfo.processInfo.systemUptime < deadline {
         if case .sounds(let sounds) = owner.presentation.mode,
             case .ready(let inventory) = sounds.inventory,
             predicate(inventory)
         {
             return true
         }
-        await Task.yield()
+        try? await Task.sleep(nanoseconds: 2_000_000)
     }
     expect(false, "等待 sound editor inventory 收敛到精确事实超时")
     return false
