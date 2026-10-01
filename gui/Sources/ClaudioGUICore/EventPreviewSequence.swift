@@ -35,6 +35,7 @@ public final class EventPreviewSequenceCoordinator {
     /// sequence owner keeps ordering/cancellation; neither layer exposes or derives pack paths.
     public func run(
         events: [Event],
+        isCurrent: @escaping @MainActor @Sendable () -> Bool = { true },
         onPlay: @escaping @MainActor @Sendable (Event) -> TimeInterval?
     ) async -> EventPreviewSequenceRunResult {
         generation &+= 1
@@ -42,7 +43,9 @@ public final class EventPreviewSequenceCoordinator {
         guard !events.isEmpty else { return .empty }
 
         for event in events {
-            guard generation == runGeneration, !Task.isCancelled else { return .cancelled }
+            guard generation == runGeneration, !Task.isCancelled, isCurrent() else {
+                return .cancelled
+            }
             guard let probedDuration = onPlay(event) else { return .failed(event) }
             let duration = probedDuration.isFinite ? probedDuration : 3
             let boundedDuration = min(3, max(0.1, duration))
@@ -53,7 +56,7 @@ public final class EventPreviewSequenceCoordinator {
                 return .cancelled
             }
         }
-        guard generation == runGeneration else { return .cancelled }
+        guard generation == runGeneration, isCurrent() else { return .cancelled }
         return .completed
     }
 }

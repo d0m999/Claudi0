@@ -79,6 +79,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         ) -> EventNoticeCancellation
     private var applicationTarget: SourceApplicationTarget?
     private var requestID: UUID?
+    private var applicationRequestOwner: UUID?
     private var operation: EventNoticeCancellation?
     private var timeoutTask: EventNoticeCancellation?
     private weak var model: EventNoticeModel?
@@ -149,7 +150,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
     }
 
     public func openSourceApplication(
-        _ action: EventNoticeAction, generation: UUID,
+        _ action: EventNoticeAction, generation: UUID, owner: UUID? = nil,
         completion: @escaping @MainActor (SourceApplicationOpenResult) -> Void = { _ in }
     ) {
         guard requestID == nil else { return }
@@ -165,6 +166,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         requestID = id
         self.action = action
         applicationTarget = target
+        applicationRequestOwner = owner
         model.protect(action)
         applicationResult = .started
         let isCurrent: @MainActor () -> Bool = { [weak self] in
@@ -207,6 +209,12 @@ public final class SessionNavigationCoordinator: ObservableObject {
         reset()
     }
 
+    /// A presentation surface may cancel only the application request it dispatched.
+    public func cancelSourceApplication(owner: UUID) {
+        guard requestID != nil, applicationRequestOwner == owner else { return }
+        cancel()
+    }
+
     public func cancel() {
         cancelRequest()
         result = .cancelled
@@ -242,6 +250,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
     private func cancelRequest() {
         requestID = nil
         applicationTarget = nil
+        applicationRequestOwner = nil
         operation?.cancel()
         operation = nil
         timeoutTask?.cancel()

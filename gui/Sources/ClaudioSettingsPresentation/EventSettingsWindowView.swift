@@ -146,6 +146,11 @@ struct EventSettingsWindowView: View {
             deletionCancelFocusID = nil
             synchronize()
         }
+        .onChange(of: model.config.selectedPack) { _ in
+            previewSequence.cancel()
+            player.stop()
+            previewSuccessTokens.removeAll()
+        }
         .onChange(of: model.configState) { _ in
             if !selection.route.workspaceTargetIsCurrent(in: model.configState.resolvedConfig) {
                 selection.markCurrentScopeUnavailable()
@@ -449,6 +454,9 @@ struct EventSettingsWindowView: View {
                     get: { model.config.selectedPack },
                     set: {
                         guard model.selectedSoundScope == scope else { return }
+                        previewSequence.cancel()
+                        player.stop()
+                        previewSuccessTokens.removeAll()
                         let retry = EventSettingsWriteRetry(
                             scope: scope, workspaceDirectory: workspaceTarget?.directory,
                             operation: .pack(before: model.config.selectedPack, requested: $0))
@@ -504,13 +512,17 @@ struct EventSettingsWindowView: View {
     private func previewAvailableEvents() {
         let scope = selection.route.scope
         let target = model.selectedWorkspaceTarget
+        let packID = model.config.selectedPack
         let available = events.filter { $0.controls.previewEnabled }.map(\.event)
         let generation = selection.beginPreviewSequence()
         Task { @MainActor in
-            _ = await previewSequence.run(events: available) { event in
-                guard selection.route.scope == scope, model.selectedWorkspaceTarget == target else {
-                    return nil
+            _ = await previewSequence.run(
+                events: available,
+                isCurrent: {
+                    selection.route.scope == scope && model.selectedWorkspaceTarget == target
+                        && model.config.selectedPack == packID
                 }
+            ) { event in
                 switch model.attemptPreview(event, using: player) {
                 case .started:
                     selection.clearPreviewFailure()

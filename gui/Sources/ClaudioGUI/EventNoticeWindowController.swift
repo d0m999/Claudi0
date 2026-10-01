@@ -17,6 +17,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private let onWillBecomeInteractive: @MainActor () -> (@MainActor () -> Void)?
     private var focusRestoration: (@MainActor () -> Void)?
     private let onViewInPanel: @MainActor (EventNoticeAction?) -> Void
+    private let navigationOwner = UUID()
     private let navigation: SessionNavigationCoordinator
     private let window: EventNoticePanel
     private var snapshotCancellable: AnyCancellable?
@@ -114,7 +115,9 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     func openSourceApplication(_ action: EventNoticeAction) {
         guard model.isCurrent(action) else { return }
         becomeInteractive()
-        navigation.openSourceApplication(action, generation: navigation.capabilityGeneration) {
+        navigation.openSourceApplication(
+            action, generation: navigation.capabilityGeneration, owner: navigationOwner
+        ) {
             [weak self] outcome in
             guard let self else { return }
             if outcome == .opened {
@@ -136,6 +139,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func close() {
+        navigation.cancelSourceApplication(owner: navigationOwner)
         // Focus handback is only owed while this window still owns the key status; if the user
         // already moved focus elsewhere, giving anything back would override their choice.
         let owesHandback = isInteractive && window.isKeyWindow && NSApp.isActive
@@ -165,6 +169,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
 
     func windowDidResignKey(_ notification: Notification) {
         if navigation.applicationResult == .started {
+            navigation.cancelSourceApplication(owner: navigationOwner)
             focusRestoration = nil
             isInteractive = false
             window.allowsKeyboardInteraction = false
@@ -180,6 +185,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         let phaseChanged = renderedPhase != snapshot.phase
         renderedPhase = snapshot.phase
         guard (snapshot.current != nil || snapshot.isExpanded), snapshot.phase != .hidden else {
+            navigation.cancelSourceApplication(owner: navigationOwner)
             // Privacy clears arrive through the runtime's shared model as well as this adapter.
             // End the old interaction here so its return target cannot survive into a new epoch.
             focusRestoration = nil
@@ -265,7 +271,8 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         if presentationScreen == nil { presentationScreen = screen }
         let visible = screen.visibleFrame
         let width = EventNoticePlacement.clampedWidth(visibleFrame: visible)
-        let preferredHeight = EventNoticeView.preferredHeight(for: snapshot ?? model.bannerSnapshot)
+        let preferredHeight = EventNoticeView.preferredHeight(
+            for: snapshot ?? model.bannerSnapshot, navigation: navigation)
         let availableHeight = EventNoticePlacement.availableHeight(
             screenFrame: screen.frame, visibleFrame: visible, safeAreaTop: screen.safeAreaInsets.top
         )

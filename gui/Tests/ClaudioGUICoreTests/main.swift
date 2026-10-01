@@ -132,6 +132,16 @@ if CommandLine.arguments.contains("--question-integration-contract") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--review-repairs") {
+    await runReviewRepairSuites()
+    runNativePrototypeMigrationSuites()
+    runEventBannerActionSuites()
+    await runSessionNavigationSuites()
+    await runSettingsPresentationLifecycleSuites()
+    print("Review repairs: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
@@ -290,6 +300,7 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     exit(failures == 0 ? 0 : 1)
 }
 
+await runReviewRepairSuites()
 runOnboardingStateSuites()
 runLocalizationSuites()
 runAboutInformationSuites()

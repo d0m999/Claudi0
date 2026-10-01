@@ -23,6 +23,6 @@ public struct EventNoticeReadingSnapshot: Sendable, Equatable {
         self.receiverEpoch = receiverEpoch; self.isOpen = isOpen; self.latest = latest
     }
     public var needsRefresh: Bool {
-        pendingCount > 0 || records.contains { $0.isSuperseded }
+        pendingCount > 0 || records.contains { !$0.isActionable }
     }
 }
