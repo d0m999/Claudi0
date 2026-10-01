@@ -5,6 +5,7 @@ Run from the repository root: python3 scripts/test-panel-settings-prototype-brow
 The browser uses a temporary, offline context and never opens a personal profile.
 """
 
+import tempfile
 import unittest
 from pathlib import Path
 from urllib.parse import urlencode
@@ -42,6 +43,143 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
 
     def open(self, **query):
         self.page.goto(PROTOTYPE.as_uri() + "?" + urlencode({"clean": "1", **query}))
+
+    def banner_track_sample(self):
+        return self.page.locator("#banner .track > i").evaluate("""el => ({
+            fraction: el.getBoundingClientRect().width / el.parentElement.getBoundingClientRect().width,
+            opacity: Number(getComputedStyle(el).opacity),
+            time: performance.now()
+        })""")
+
+    def open_banner(self, reduced_motion="no-preference"):
+        self.page.emulate_media(reduced_motion=reduced_motion)
+        self.page.mouse.move(0, 0)
+        self.open()
+        self.page.evaluate("showNoticeScene('permission')")
+
+    def test_banner_reading_track_has_the_visible_event_color(self):
+        self.page.emulate_media(reduced_motion="no-preference")
+        for theme in ["light", "dark"]:
+            for scene in [
+                "permission", "needsInput", "interrupted", "review",
+                "stop", "subagent", "question", "taskStart",
+            ]:
+                with self.subTest(theme=theme, scene=scene):
+                    self.open(th=theme)
+                    self.page.evaluate("kind => showNoticeScene(kind)", scene)
+                    colors = self.page.locator("#banner").evaluate("""el => ({
+                        track: getComputedStyle(el.querySelector('.track > i')).backgroundColor,
+                        event: getComputedStyle(el.querySelector('.spine')).backgroundColor,
+                        height: el.querySelector('.track').getBoundingClientRect().height
+                    })""")
+                    self.assertEqual(colors["height"], 2)
+                    self.assertNotEqual(colors["event"], "rgba(0, 0, 0, 0)")
+                    evidence = None
+                    if colors["track"] != colors["event"]:
+                        evidence = Path(tempfile.mkdtemp(prefix="claudio-banner-track-red-")) / f"{theme}-{scene}.png"
+                        self.page.screenshot(path=str(evidence))
+                    self.assertEqual(colors["track"], colors["event"], f"visible event color; screenshot: {evidence}")
+
+    def test_banner_reading_track_shrinks_over_its_four_second_budget(self):
+        self.open_banner()
+        retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+        first = self.banner_track_sample()
+        self.assertGreater(first["fraction"], .95)
+        self.assertEqual(first["opacity"], 1)
+        self.page.wait_for_function("""() => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < .75;
+        }""")
+        second = self.banner_track_sample()
+        self.page.wait_for_function("""() => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < .5;
+        }""")
+        third = self.banner_track_sample()
+        for previous, current in [(first, second), (second, third)]:
+            self.assertGreater(previous["fraction"], current["fraction"])
+            self.assertAlmostEqual(
+                previous["fraction"] - current["fraction"],
+                (current["time"] - previous["time"]) / 4000,
+                delta=.035,
+            )
+        self.page.wait_for_function("!S.bannerAtn")
+        elapsed = self.page.evaluate("performance.now()") - first["time"]
+        self.assertGreater(elapsed, 3800)
+        self.assertLess(elapsed, 4500)
+        self.page.locator("#banner").wait_for(state="detached")
+        self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
+
+    def test_banner_reading_track_pauses_for_overlapping_hover_and_focus(self):
+        self.open_banner()
+        self.page.wait_for_function("""() => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < .85;
+        }""")
+        self.page.locator("#banner").hover()
+        hovered = self.banner_track_sample()
+        self.page.wait_for_timeout(650)
+        self.assertAlmostEqual(self.banner_track_sample()["fraction"], hovered["fraction"], delta=.006)
+        self.page.locator("#bannerAct").focus()
+        self.page.mouse.move(0, 0)
+        focused = self.banner_track_sample()
+        self.page.wait_for_timeout(650)
+        self.assertAlmostEqual(self.banner_track_sample()["fraction"], focused["fraction"], delta=.006)
+        self.assertAlmostEqual(focused["fraction"], hovered["fraction"], delta=.006)
+        self.page.locator("#mbIcon").focus()
+        self.page.wait_for_function("""fraction => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < fraction - .08;
+        }""", arg=focused["fraction"])
+        resumed = self.banner_track_sample()
+        self.assertLess(resumed["fraction"], focused["fraction"] - .08)
+
+    def test_banner_failure_and_retry_keep_the_remaining_reading_track(self):
+        self.open_banner()
+        retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+        self.page.locator("#foldBtn").click()
+        self.page.locator("#bannerFailureBtn").click()
+        self.page.wait_for_function("""() => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < .7;
+        }""")
+        before_failure = self.banner_track_sample()
+        self.page.locator("#bannerAct").click()
+        self.assertTrue(self.page.locator("#banner .banner-error").is_visible())
+        self.assertEqual(self.page.locator("#bannerAct").inner_text(), "重试")
+        after_failure = self.banner_track_sample()
+        self.assertLessEqual(after_failure["fraction"], before_failure["fraction"] + .006)
+        self.page.mouse.move(0, 0)
+        self.page.locator("#mbIcon").focus()
+        self.page.wait_for_function("""fraction => {
+            const fill = document.querySelector('#banner .track > i');
+            return fill && fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width < fraction - .08;
+        }""", arg=after_failure["fraction"])
+        self.page.locator("#bannerFailureBtn").click()
+        before_retry = self.banner_track_sample()
+        self.page.locator("#bannerAct").click()
+        self.assertTrue(self.page.locator("#banner .banner-error").is_visible())
+        self.assertLessEqual(self.banner_track_sample()["fraction"], before_retry["fraction"] + .006)
+        self.page.locator("#bannerAct").click()
+        self.page.locator("#banner").wait_for(state="detached")
+        self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
+
+    def test_reduced_motion_keeps_a_static_track_and_expires_the_budget(self):
+        self.open_banner(reduced_motion="reduce")
+        retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+        first = self.banner_track_sample()
+        self.assertAlmostEqual(first["fraction"], 1, delta=.001)
+        self.assertEqual(first["opacity"], .3)
+        self.page.wait_for_timeout(1100)
+        second = self.banner_track_sample()
+        self.assertAlmostEqual(second["fraction"], 1, delta=.001)
+        self.assertEqual(second["opacity"], .3)
+        self.page.wait_for_function("!S.bannerAtn")
+        elapsed = self.page.evaluate("performance.now()") - first["time"]
+        self.assertGreater(elapsed, 3800)
+        self.assertLess(elapsed, 4500)
+        self.page.locator("#banner").wait_for(state="detached")
+        self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
 
     def test_panel_wordmark_has_no_retired_decoration(self):
         self.open(panel="1")

@@ -10,13 +10,12 @@
 > allowlisted 多 Provider SoT 对齐。Swift registry、transport、credentials、adapters 与 production UI
 > 分别由 #104–#109 及 #85 的设置子 tickets 拥有；任何真实凭据或 Provider smoke 仍需单独授权。
 >
-> 视觉原型 SoT：
-> `mockups/ai-app-manager-native-macos.html?page=events&app=workbuddy&prototype=tts&profile=elevenlabs-global&stage=applied&credential=verified`
-> 上述链接记录统一设置窗口的历史视觉基线；AI 包级生成与缺声深链的现行交互基线为
-> `mockups/pack-scoped-ai-cues.html`（配套脚本 `pack-scoped-ai-cues.js`）。
->
-> 本次「集成」目的页的批准原型 SoT：
-> `mockups/ai-app-manager-native-macos.html?page=apps&app=workbuddy&prototype=tts&stage=applied&credential=ready`
+> 现行视觉与交互 SoT：
+> [`designs/panel-and-settings/Panel and Settings Prototype.html`](<../designs/panel-and-settings/Panel and Settings Prototype.html>)。
+> 呈现合同见 [DESIGN.md 的「整合原型修订」](../DESIGN.md)，原生迁移合同见
+> [PLAN-NATIVE-PROTOTYPE-MIGRATION.md](PLAN-NATIVE-PROTOTYPE-MIGRATION.md)。
+> `mockups/ai-app-manager-native-macos.html` 与 `mockups/pack-scoped-ai-cues.html`（配套脚本
+> `pack-scoped-ai-cues.js`）保留为历史参考，不覆盖整合原型的现行呈现；AI 领域合同仍由相关计划及 ADR 拥有。
 >
 > AI 提示音的 Provider/profile、凭据、候选与采用领域合同由
 > `plan/PLAN-CONSUMER-TTS-EXECUTION.md` 定义；本计划固定其统一设置投影并完成周边页面。

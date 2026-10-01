@@ -100,7 +100,9 @@ public struct EventNoticeView: View {
                 .background(ClaudioTheme.panelGradient(colorScheme))
                 .overlay(alignment: .bottom) {
                     if let reading = snapshot.readingTime {
-                        readingTrack(reading, event: record.event)
+                        EventNoticeReadingTrack(
+                            reading: reading, event: record.event, reduceMotion: reduceMotion,
+                            uptime: { model.presentationUptime })
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.panel))
@@ -148,19 +150,4 @@ public struct EventNoticeView: View {
         return EventNoticeProjection.actionTitle(for: record, language: languageStore.language)
     }
 
-    private func readingTrack(_ reading: EventNoticeReadingTime, event: Event) -> some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || reading.isPaused))
-        { _ in
-            GeometryReader { geometry in
-                let fraction = reading.fraction(at: model.presentationUptime)
-                ZStack(alignment: .leading) {
-                    ClaudioTheme.event(event, colorScheme).opacity(0.12)
-                    ClaudioTheme.event(event, colorScheme).frame(
-                        width: geometry.size.width * fraction)
-                }
-            }
-            .frame(height: 2)
-        }
-        .accessibilityHidden(true).allowsHitTesting(false)
-    }
 }
