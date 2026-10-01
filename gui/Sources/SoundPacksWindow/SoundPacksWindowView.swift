@@ -225,6 +225,7 @@ private struct SoundPacksWindowContentView: View {
     private let supplement: SoundPacksEditorSupplement
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.settingsUsesCompactLayout) private var compactLayout
     @FocusState private var focusedTarget: SoundPacksWindowFocusTarget?
     @State private var handledFocusRequestRevision = 0
     @State private var dropTargetEvent: Event?
@@ -263,7 +264,7 @@ private struct SoundPacksWindowContentView: View {
         }
         .frame(minWidth: 0, minHeight: 0)
         .soundPacksLayoutProbe("sound-packs.editor")
-        .background(ClaudioTheme.panel(colorScheme))
+        .background(SettingsAppearance.background(colorScheme))
         .onReceive(focusCoordinator.$requestRevision) { revision in
             guard revision > handledFocusRequestRevision else { return }
             requestedRoute = focusCoordinator.requestedRoute
@@ -517,8 +518,11 @@ private struct SoundPacksWindowContentView: View {
             .accessibilityIdentifier("sound-packs.pack-list")
             supplement.sidebarHeader
         }
-        .padding(.vertical, 12)
-        .frame(minHeight: 64)
+        .frame(minHeight: 38)
+        .modifier(SettingsSectionSurface())
+        .soundPacksLayoutProbe("sound-packs.selector.card")
+        .padding(.horizontal, 20)
+        .padding(.bottom, 16)
         .soundPacksLayoutProbe("sound-packs.pack-list")
     }
 
@@ -597,13 +601,20 @@ private struct SoundPacksWindowContentView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Color.clear.frame(height: 0).id("detail-top")
                             if geometry.size.width >= 760 {
-                                HStack(alignment: .top, spacing: 24) {
-                                    mappingContent(stacksDetail: stacksDetail)
+                                HStack(
+                                    alignment: .top,
+                                    spacing: SettingsAppearance.columnGap(compact: compactLayout)
+                                ) {
+                                    mappingContent(
+                                        stacksDetail: stacksDetail, alongsideAuxiliary: true)
                                     supplement.auxiliary.frame(width: 260)
+                                        .padding(.top, 20)
+                                        .padding(.trailing, 20)
                                 }
                             } else {
                                 mappingContent(stacksDetail: stacksDetail)
-                                supplement.auxiliary.padding(20)
+                                supplement.auxiliary.padding(.horizontal, 20)
+                                    .padding(.bottom, 20)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -629,86 +640,104 @@ private struct SoundPacksWindowContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func mappingContent(stacksDetail: Bool) -> some View {
+    private func mappingContent(stacksDetail: Bool, alongsideAuxiliary: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 36) {
-            supplement.detailHeader
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, supplement.isEmpty ? 0 : 20)
             if !activeSounds.windowStatuses.isEmpty {
                 windowStatusRegion
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .modifier(SettingsSectionSurface())
             }
 
             if let card = selectedCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    detailHeader(card, stacks: stacksDetail)
-
-                    if card.isBuiltinReadOnly {
-                        builtinCopyExplanation(card)
-                    }
-
-                    if activeSounds.route.isCopyAndApply {
-                        Text(
-                            l10n.format(
-                                .settingsSoundsAICueCopyAndApply,
-                                copyAndApplyScopeName as NSString)
-                        )
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier(
-                            "sound-packs.copy-and-apply-explanation")
-                    }
-
-                    Divider()
-
-                    eventRowsSection(stacks: stacksDetail)
-
-                    if inventoryIsLoading {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text(l10n.text(.soundPacksAudioLoading))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        detailHeader(card, stacks: stacksDetail)
+                        if !supplement.isEmpty {
+                            Divider()
+                            supplement.detailHeader
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(l10n.text(.soundPacksAudioLoadingLabel))
-                    }
 
-                    if let error = inventoryFailure {
-                        windowFailureRow(
-                            action: l10n.text(.soundPacksAudioLoadingLabel),
-                            reason: inventoryErrorMessage(error))
-                    }
+                        if card.isBuiltinReadOnly {
+                            builtinCopyExplanation(card)
+                        }
 
-                    orphanAudioSection
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-            } else if activeSounds.draft != nil {
-                VStack(alignment: .leading, spacing: 10) {
+                        if activeSounds.route.isCopyAndApply {
+                            Text(
+                                l10n.format(
+                                    .settingsSoundsAICueCopyAndApply,
+                                    copyAndApplyScopeName as NSString)
+                            )
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier(
+                                "sound-packs.copy-and-apply-explanation")
+                        }
+
+                    }
+                    .modifier(SettingsSectionSurface())
+                    .soundPacksLayoutProbe("sound-packs.information.card")
+
                     eventRowsSection(stacks: stacksDetail)
                 }
-                .padding(20)
+
+                if inventoryIsLoading || inventoryFailure != nil
+                    || inventoryFiles.contains(where: \.isOrphan)
+                {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if inventoryIsLoading {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text(l10n.text(.soundPacksAudioLoading))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(l10n.text(.soundPacksAudioLoadingLabel))
+                        }
+
+                        if let error = inventoryFailure {
+                            windowFailureRow(
+                                action: l10n.text(.soundPacksAudioLoadingLabel),
+                                reason: inventoryErrorMessage(error))
+                        }
+
+                        orphanAudioSection
+                    }
+                    .modifier(SettingsSectionSurface())
+                }
+            } else if activeSounds.draft != nil {
+                VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
+                    supplement.detailHeader
+                        .modifier(SettingsSectionSurface())
+                        .soundPacksLayoutProbe("sound-packs.information.card")
+                    eventRowsSection(stacks: stacksDetail)
+                }
             } else {
                 emptyState
+                    .modifier(SettingsSectionSurface())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(
+            EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: alongsideAuxiliary ? 0 : 20))
     }
 
     private func eventRowsSection(stacks: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.eventGap) {
             ForEach(activeSounds.eventRows) { row in
-                eventMappingRow(row, stacks: layoutAdaptation.stacksEventRows || stacks)
-                    .id("event-\(row.event.rawValue)")
-                supplement.eventContent(row.event)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 8)
-                    .padding(.bottom, supplement.isEmpty ? 0 : 8)
+                VStack(alignment: .leading, spacing: 10) {
+                    eventMappingRow(row, stacks: layoutAdaptation.stacksEventRows || stacks)
+                        .id("event-\(row.event.rawValue)")
+                    supplement.eventContent(row.event)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 8)
+                }
+                .modifier(
+                    SettingsSectionSurface(
+                        padding: SettingsAppearance.eventPadding(compact: compactLayout))
+                )
+                .soundPacksLayoutProbe("sound-packs.event-card.\(row.event.rawValue)")
             }
         }
     }
@@ -1171,7 +1200,7 @@ private struct SoundPacksWindowContentView: View {
                 .stroke(
                     dropTargetEvent == row.event
                         ? ClaudioTheme.clay(colorScheme)
-                        : ClaudioTheme.hairline(colorScheme),
+                        : Color.clear,
                     lineWidth: ClaudioTheme.Metrics.hairline)
         }
         .onDrop(
@@ -1378,7 +1407,6 @@ private struct SoundPacksWindowContentView: View {
     private var orphanAudioSection: some View {
         let orphanFiles = inventoryFiles.filter(\.isOrphan)
         if !orphanFiles.isEmpty {
-            Divider()
             VStack(alignment: .leading, spacing: 10) {
                 Text(l10n.text(.soundPacksOrphanTitle))
                     .font(.headline)

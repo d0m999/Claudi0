@@ -535,9 +535,29 @@ func runSettingsNavigationSuites() {
         let sidebarSections = settingsSidebarSections(
             availableDestinations: SettingsDestination.allCases)
         expect(
-            sidebarSections.map(\.id) == [.primary]
+            sidebarSections.map(\.id) == [.primary, .advanced, .product]
                 && sidebarSections.flatMap(\.destinations) == SettingsDestination.allCases,
-            "侧栏必须按主区、高级、claudi0 分组且保持固定目的页顺序")
+            "侧栏必须恢复三组并保持批准的八页顺序")
+        expect(
+            sidebarSections.map(\.destinations) == [
+                [.eventsAndSounds, .sounds, .integrations, .notifications],
+                [.general, .shortcuts], [.usage, .about],
+            ],
+            "侧栏三组必须分别承载声音与连接、偏好、活动与产品信息")
+        expect(
+            settingsSidebarSections(availableDestinations: [.about, .general]) == [
+                SettingsSidebarSection(id: .advanced, destinations: [.general]),
+                SettingsSidebarSection(id: .product, destinations: [.about]),
+            ] && settingsSidebarSections(availableDestinations: []).isEmpty,
+            "过滤不可用页不得产生空组，剩余页仍按固定顺序")
+        expect(
+            settingsSidebarDestination(
+                moving: .next, from: .notifications,
+                availableDestinations: SettingsDestination.allCases) == .general
+                && settingsSidebarDestination(
+                    moving: .previous, from: .usage,
+                    availableDestinations: SettingsDestination.allCases) == .shortcuts,
+            "方向键必须跨过视觉分组留白而不改变顺序")
         expect(
             settingsSidebarDestination(
                 moving: .next,

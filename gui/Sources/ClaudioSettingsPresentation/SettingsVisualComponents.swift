@@ -23,33 +23,21 @@ struct SettingsSectionCard: View {
     #if DEBUG
     @Environment(\.settingsReduceTransparencyOverride) private var reduceTransparencyOverride
     #endif
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-    @Environment(\.colorScheme) private var colorScheme
 
     private let content: AnyView
+    private let padding: CGFloat
 
-    init<Content: View>(@ViewBuilder content: () -> Content) {
+    init<Content: View>(padding: CGFloat = 16, @ViewBuilder content: () -> Content) {
+        self.padding = padding
         self.content = AnyView(content())
     }
 
     var body: some View {
         content
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                effectiveReduceTransparency
-                    ? ClaudioTheme.surface(colorScheme)
-                    : ClaudioTheme.elevated(colorScheme)
+            .modifier(
+                SettingsSectionSurface(
+                    padding: padding, reduceTransparencyOverride: effectiveReduceTransparency)
             )
-            .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-            .overlay {
-                RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                    .stroke(
-                        colorSchemeContrast == .increased
-                            ? ClaudioTheme.secondaryText(colorScheme).opacity(0.38)
-                            : ClaudioTheme.hairline(colorScheme),
-                        lineWidth: colorSchemeContrast == .increased ? 1.5 : 1)
-            }
     }
 
     private var effectiveReduceTransparency: Bool {
@@ -62,7 +50,7 @@ struct SettingsSectionCard: View {
 }
 
 extension View {
-    func settingsSectionSurface() -> some View {
-        SettingsSectionCard { self }
+    func settingsSectionSurface(padding: CGFloat = 16) -> some View {
+        SettingsSectionCard(padding: padding) { self }
     }
 }

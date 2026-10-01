@@ -2,6 +2,7 @@ import AppKit
 import ClaudioGUICore
 import ClaudioSettingsPresentation
 import Foundation
+import SoundPacksWindow
 import SwiftUI
 
 @MainActor
@@ -116,6 +117,7 @@ final class SettingsRootNativeProbe {
 
     init(session: SettingsPresentationSession) {
         _ = NSApplication.shared
+        SoundPacksLayoutRecorder.reset()
         window = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable],
@@ -149,22 +151,24 @@ final class SettingsRootNativeProbe {
         _ destination: SettingsDestination,
         horizontalFraction: CGFloat
     ) -> Bool {
-        guard let index = SettingsDestination.allCases.firstIndex(of: destination), index <= 6
+        refresh()
+        guard
+            let frame = SoundPacksLayoutRecorder.frames[
+                "settings.sidebar.item.\(destination.rawValue)"]
         else { return false }
-        let sidebarWidth = CGFloat(
-            settingsSidebarWidth(windowWidth: size.width))
-        let x = 12 + (sidebarWidth - 24) * horizontalFraction
-        let yFromTop = 72.5 + CGFloat(index) * 39
-        return click(windowPoint: NSPoint(x: x, y: size.height - yFromTop))
+        let x = frame.minX + frame.width * horizontalFraction
+        return click(windowPoint: NSPoint(x: x, y: size.height - frame.midY))
     }
 
     func clickOutsideSidebarRow(_ destination: SettingsDestination) -> Bool {
-        guard let index = SettingsDestination.allCases.firstIndex(of: destination), index <= 6
+        refresh()
+        guard
+            let frame = SoundPacksLayoutRecorder.frames[
+                "settings.sidebar.item.\(destination.rawValue)"]
         else { return false }
         let sidebarWidth = CGFloat(
             settingsSidebarWidth(windowWidth: size.width))
-        let yFromTop = 72.5 + CGFloat(index) * 39
-        return click(windowPoint: NSPoint(x: sidebarWidth + 4, y: size.height - yFromTop))
+        return click(windowPoint: NSPoint(x: sidebarWidth + 4, y: size.height - frame.midY))
     }
 
     func clickContent(x: CGFloat, yFromTop: CGFloat) -> Bool {

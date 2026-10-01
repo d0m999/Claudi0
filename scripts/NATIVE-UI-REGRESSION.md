@@ -7,6 +7,8 @@
 ```bash
 bash scripts/build-native-ui-regression.sh
 # 默认 SDK 不可用时可显式设置 CLAUDIO_UI_REGRESSION_SDK；证据会记录该选择。
+# 新规格使用自己的固定基线时，显式设置 CLAUDIO_UI_REGRESSION_BASE_SHA。
+# 不设置该值时继续使用完整原生迁移原有的固定基线。
 ```
 
 输出专用 app 路径及 `build-evidence.json`。用 `mcp__cua_repl` 获取该 app，执行脚本：
@@ -25,7 +27,19 @@ await run.generationExceptions();
 await run.exceptions();
 ```
 
+每次 `mcp__cua_repl` 调用内必须 `await` 完成所执行的用例。不要启动未等待的后台
+Promise 后结束调用；后续 CUA 行动会失去执行上下文，必须记为失败，不能算通过。
+较长异常组可通过已有的固定 `outcomes`、`includeTimeout`、`includeReminders` 和
+`scenarios` 参数拆分执行，避免长时间占用单次调用。重新运行时使用新的证据目录保留
+失败尝试；不要把不同 bundle 的结果拼接成一次通过。
+
 矩阵为简中／English × 浅色／深色 × 默认／最小窗口。每页检查路由、侧栏选择、标题，采集顶部和底部 AX／截图，并核对实际窗口尺寸和外观。完整流程检查工作区定向编辑和返回、生成锁定、取消、改名、真实本地采用、离页清理、提醒复制／移除、跳转失败／重试以及窗口关闭归还。固定异常场景覆盖 partial／失败、超时、提醒更新／过期、零音量、失效工作区、陈旧快照、重复绑定、损坏包和空库。
+
+设置一致性矩阵还复用实际挂载的 frame recorder 与只读位图取样，检查八页内容底色、
+侧栏组内／组间间距、五张独立事件卡、选择器高度、信息卡间距，以及主辅栏位置。
+位图先按其 ICC 色彩空间转换到 sRGB，再比较无文字区域，单通道容差为 3；不能对
+`colorAt()` 返回的 calibrated NSColor 单独转换并忽略位图原有的显示器配置。
+这些只读证据仅编译在专用 DEBUG fixture，正常 Debug／Release 均无此入口。
 
 `results.json` 逐项保存结果、失败原因、AX、截图、本地 readback 和构建证据；接口不可用或找不到唯一控件均失败，不把点击本身计为通过。每次行动后重新读取 AX，禁止复用历史索引。动态控件的 AX 行动不可用时，使用构建时生成的 `screenshot-ocr` 读取 CUA 当前截图，按唯一文字与事件锚点定位，再重验当前 AX 身份后通过 CUA 点击。OCR 仅解析截图文件，不读取桌面或发送输入；记录截图、AX、坐标及脚本摘要。脚本只通过公开 CUA 控制 UI，不接受任意测试命令。临时时钟仅通过固定控件推进。
 

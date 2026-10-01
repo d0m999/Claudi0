@@ -302,9 +302,13 @@ public func settingsSidebarSections(
     return [
         SettingsSidebarSection(
             id: .primary,
-            destinations: SettingsDestination.allCases.filter(available.contains))
-    ]
-
+            destinations: [.eventsAndSounds, .sounds, .integrations, .notifications]
+                .filter(available.contains)),
+        SettingsSidebarSection(
+            id: .advanced, destinations: [.general, .shortcuts].filter(available.contains)),
+        SettingsSidebarSection(
+            id: .product, destinations: [.usage, .about].filter(available.contains)),
+    ].filter { !$0.destinations.isEmpty }
 }
 
 public enum SettingsSidebarMoveDirection: Sendable {

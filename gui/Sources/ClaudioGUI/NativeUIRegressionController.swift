@@ -385,6 +385,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "selectedPack": fixture.eventSettingsModel.config.selectedPack,
             "volume": fixture.eventSettingsModel.config.masterVolume, "handbacks": handbacks,
             "windowGeometry": settings.regressionGeometry,
+            "settingsLayout": settings.regressionLayoutEvidence,
             "panelVisible": panel.isVisible, "panelKey": panel.isKeyWindow,
             "keyWindow": NSApp.keyWindow?.title ?? "none",
             "copiedFixtureSession": navigation.result == .copied

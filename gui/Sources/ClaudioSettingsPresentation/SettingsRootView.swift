@@ -84,15 +84,19 @@ package struct SettingsRootView: View {
                         maxHeight: geometry.size.height,
                         alignment: .topLeading
                     )
-                    .background(ClaudioTheme.panel(colorScheme))
+                    .background(SettingsAppearance.background(colorScheme))
+                    .soundPacksLayoutProbe("settings.content")
             }
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+            .environment(
+                \.settingsUsesCompactLayout,
+                geometry.size.width <= SettingsWindowGeometry.compactSidebarWindowThreshold)
         }
         .frame(
             minWidth: SettingsWindowGeometry.minimumWidth,
             minHeight: SettingsWindowGeometry.minimumHeight
         )
-        .background(ClaudioTheme.panel(colorScheme))
+        .background(SettingsAppearance.background(colorScheme))
         .tint(ClaudioTheme.clay(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(l10n.text(.settingsWindowTitle))
@@ -122,31 +126,22 @@ package struct SettingsRootView: View {
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let sections = settingsSidebarSections(
+            availableDestinations: preferences.availableSettingsDestinations)
+        return VStack(alignment: .leading, spacing: 0) {
             ClaudioOrbitWordmark(height: 19)
                 .padding(.horizontal, 14)
                 .padding(.bottom, 16)
 
-            ForEach(
-                settingsSidebarSections(
-                    availableDestinations: preferences.availableSettingsDestinations)
-            ) { section in
-                if section.id != .primary {
-                    Divider()
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 12)
-                    Text(sidebarSectionName(section.id))
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                        .padding(.horizontal, 10)
-                        .padding(.bottom, 5)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
+            ForEach(sections) { section in
+                VStack(alignment: .leading, spacing: 3) {
                     ForEach(section.destinations) { item in
                         sidebarButton(item)
                     }
                 }
+                .padding(
+                    .top,
+                    section.id == sections.first?.id ? 0 : 24)
             }
 
             Spacer(minLength: 0)
@@ -227,6 +222,7 @@ package struct SettingsRootView: View {
         .buttonStyle(.plain)
         .font(.system(.body, design: .rounded).weight(item == destination ? .semibold : .regular))
         .focused($focusedTarget, equals: SettingsWindowFocusTarget.sidebar(item))
+        .soundPacksLayoutProbe("settings.sidebar.item.\(item.rawValue)")
         .settingsSidebarInteraction(
             item: item,
             availableDestinations: preferences.availableSettingsDestinations
@@ -335,18 +331,26 @@ package struct SettingsRootView: View {
     ) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 36) {
-                destinationTitle
+                VStack(alignment: .leading, spacing: 10) {
+                    destinationTitle
+                    if destination == .general {
+                        Text(l10n.text(.settingsGeneralLanguageDescription))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 content()
             }
             .frame(maxWidth: 820, alignment: .leading)
-            .padding(.horizontal, 52)
-            .padding(.vertical, 60)
+            .padding(.horizontal, 36)
+            .padding(.top, 36)
+            .padding(.bottom, 48)
         }
     }
 
     private var destinationTitle: some View {
         Text(destination.localizedName(language: preferences.language))
-            .font(.system(size: 30, weight: .bold))
+            .font(SettingsAppearance.pageTitle)
             .accessibilityAddTraits(.isHeader)
             .accessibilitySortPriority(2)
             .focusable()
@@ -367,10 +371,6 @@ package struct SettingsRootView: View {
 
     private var generalSettings: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(l10n.text(.settingsGeneralLanguageDescription))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
             SettingsSectionCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Picker(
@@ -720,14 +720,6 @@ package struct SettingsRootView: View {
         case .usage: "chart.bar"
         case .shortcuts: "command"
         case .about: "info.circle"
-        }
-    }
-
-    private func sidebarSectionName(_ section: SettingsSidebarSectionID) -> String {
-        switch section {
-        case .primary: ""
-        case .advanced: l10n.text(.settingsSidebarAdvanced)
-        case .product: l10n.text(.settingsSidebarProduct)
         }
     }
 

@@ -1325,6 +1325,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let workspaceMigration: Self = "workspace.migration"
     public static let workspaceDismiss: Self = "workspace.dismiss"
     public static let workspaceAllSources: Self = "workspace.all-sources"
+    public static let workspaceDefaultApplicability: Self = "workspace.default-applicability"
     public static let workspaceUnavailable: Self = "workspace.unavailable"
     public static let workspaceChooseDefaultGroup: Self = "workspace.choose-default-group"
     public static let workspaceNoSurfaces: Self = "workspace.no-surfaces"
@@ -1395,6 +1396,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .workspaceMigration,
         .workspaceDismiss,
         .workspaceAllSources,
+        .workspaceDefaultApplicability,
         .workspaceUnavailable,
         .workspaceChooseDefaultGroup,
         .workspaceNoSurfaces,
