@@ -32,7 +32,8 @@ for raw in sorted(set(tracked+untracked)):
  if not raw: continue
  p=pathlib.Path(os.fsdecode(raw)); entries.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'deleted'})
 fingerprint=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest()
-manifest={'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':'30446c56cd010d3d3338b2e8d19618939885319b','worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
+base=git('rev-parse','--verify',os.environ.get('CLAUDIO_UI_REGRESSION_BASE_SHA','30446c56cd010d3d3338b2e8d19618939885319b')+'^{commit}').decode().strip()
+manifest={'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
 (output/'build-evidence.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 PY
 codesign --force --deep --sign - "$regression_app" >&2

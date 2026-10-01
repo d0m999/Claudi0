@@ -3035,7 +3035,7 @@ func runViewWiringSuites() {
             "只有 owner confirmation 签发的 destructive capability 才能触发永久删除")
         guard
             let detailBody = closureBody(
-                after: "private func mappingContent(stacksDetail: Bool)",
+                after: "private func mappingContent(",
                 in: collapsingWhitespace(
                     codeWithoutStrings(
                         "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
@@ -3497,7 +3497,7 @@ func runViewWiringSuites() {
                         "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
             let actualScrollBody = closureBody(after: "ScrollView", in: detailBody),
             let scrollBody = closureBody(
-                after: "private func mappingContent(stacksDetail: Bool)", in: flat),
+                after: "private func mappingContent(", in: flat),
             let scrollContentBody = closureBody(
                 after: "VStack(alignment: .leading, spacing: 36)", in: scrollBody),
             let statusRegionAt = scrollBody.range(of: "windowStatusRegion")?.lowerBound,
@@ -3512,8 +3512,11 @@ func runViewWiringSuites() {
             expect(false, "必须能切出详情 ScrollView、统一状态区与 selected-card 分支")
             return
         }
+        let scrollCalls = actualScrollBody.filter { !$0.isWhitespace }
         expect(
-            actualScrollBody.contains("mappingContent(stacksDetail: stacksDetail)")
+            scrollCalls.contains("mappingContent(stacksDetail:stacksDetail)")
+                && scrollCalls.contains(
+                    "mappingContent(stacksDetail:stacksDetail,alongsideAuxiliary:true)")
                 && statusRegionAt < selectedBranchAt
                 && scrollBody.contains("emptyState")
                 && statusRegionBody.contains("ForEach(activeSounds.windowStatuses)")

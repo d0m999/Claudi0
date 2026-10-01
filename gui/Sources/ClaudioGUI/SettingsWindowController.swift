@@ -6,6 +6,10 @@ import ClaudioSettingsPresentation
 import Combine
 import SwiftUI
 
+#if DEBUG && CLAUDIO_UI_REGRESSION
+import SoundPacksWindow
+#endif
+
 /// Thin AppKit adapter around the app-lifetime Settings presentation session. Destination route,
 /// focus, lifecycle and announcement intent stay in the importable session; this owner retains
 /// exactly one native window and the activation handback debt attached to it.
@@ -190,6 +194,50 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             "backingScale": window.backingScaleFactor,
             "appearance": window.effectiveAppearance.name.rawValue,
         ]
+    }
+
+    /// Read-only evidence from the real mounted Settings view and its existing frame recorder.
+    var regressionLayoutEvidence: [String: Any] {
+        guard let content = window?.contentView else { return [:] }
+        content.layoutSubtreeIfNeeded()
+        let frames = SoundPacksLayoutRecorder.frames
+        let recordedFrames = frames.mapValues { frame in
+            ["x": frame.minX, "y": frame.minY, "width": frame.width, "height": frame.height]
+        }
+        guard let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else {
+            return ["frames": recordedFrames]
+        }
+        content.cacheDisplay(in: content.bounds, to: bitmap)
+        guard let sampled = bitmap.converting(to: .sRGB, renderingIntent: .default) else {
+            return ["frames": recordedFrames]
+        }
+        func rgb(_ point: CGPoint) -> [Int] {
+            let x = Int(point.x * CGFloat(sampled.pixelsWide) / content.bounds.width)
+            let y = Int(point.y * CGFloat(sampled.pixelsHigh) / content.bounds.height)
+            guard x >= 0, y >= 0, x < sampled.pixelsWide, y < sampled.pixelsHigh,
+                let color = sampled.colorAt(x: x, y: y)
+            else { return [] }
+            return [color.redComponent, color.greenComponent, color.blueComponent].map {
+                Int(($0 * 255).rounded())
+            }
+        }
+        var colors: [String: Any] = [:]
+        if let region = frames["settings.content"] {
+            colors["background"] = [40.0, region.height / 2, region.height - 20].map {
+                rgb(CGPoint(x: region.minX + 8, y: $0))
+            }
+        }
+        let selectorID: String?
+        switch settingsPresentationSession.state.routeResolution.destination {
+        case .eventsAndSounds: selectorID = "workspace.scope-selector.card"
+        case .sounds: selectorID = "sound-packs.selector.card"
+        default: selectorID = nil
+        }
+        if let selectorID, let selector = frames[selectorID] {
+            colors["card"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 5))
+            colors["border"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 0.25))
+        }
+        return ["frames": recordedFrames, "colors": colors, "sampleColorSpace": "sRGB"]
     }
 
     func applyRegressionGeometry(minimum: Bool, dark: Bool) {

@@ -9416,13 +9416,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preview All"
+            "value": "Preview available events"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "试听全部"
+            "value": "试听可用事件"
           }
         }
       }
@@ -14623,6 +14623,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "所有来源"
+          }
+        }
+      }
+    },
+    "workspace.default-applicability": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used when an event does not match a workspace rule. Each workspace keeps its own sound pack, volume, and event switches."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "事件未匹配工作区规则时使用默认组。各工作区分别保存自己的声音包、音量与事件开关。"
           }
         }
       }

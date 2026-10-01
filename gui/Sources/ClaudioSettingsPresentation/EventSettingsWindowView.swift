@@ -27,6 +27,7 @@ struct EventSettingsWindowView: View {
     var reloadsOnAppear = true
     #endif
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.settingsUsesCompactLayout) private var compactLayout
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
@@ -102,20 +103,25 @@ struct EventSettingsWindowView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 36) {
                         Text(l10n.text(.settingsDestinationEventsAndSounds))
-                            .font(.system(size: 30, weight: .bold))
+                            .font(SettingsAppearance.pageTitle)
                             .accessibilityAddTraits(.isHeader)
                             .focusable()
                             .focused($focusedTarget, equals: .title)
                             .settingsMountIdentity("settings.title.events-and-sounds")
                         scopeSelector
                         if geometry.size.width - 72 >= 760 {
-                            HStack(alignment: .top, spacing: 24) {
+                            HStack(
+                                alignment: .top,
+                                spacing: SettingsAppearance.columnGap(compact: compactLayout)
+                            ) {
                                 scopeContent
                                 scopeAuxiliary.frame(width: 260)
                             }
                         } else {
-                            scopeContent
-                            scopeAuxiliary
+                            VStack(alignment: .leading, spacing: 20) {
+                                scopeContent
+                                scopeAuxiliary
+                            }
                         }
                     }
                     .frame(maxWidth: 820, alignment: .leading)
@@ -129,7 +135,7 @@ struct EventSettingsWindowView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(ClaudioTheme.panel(colorScheme))
+        .background(SettingsAppearance.background(colorScheme))
         .accessibilityIdentifier("workspace.settings")
         .onAppear {
             #if DEBUG
@@ -324,7 +330,9 @@ struct EventSettingsWindowView: View {
             Button(l10n.text(.workspaceAdd)) { isAddingWorkspace = true }
                 .accessibilityIdentifier("workspace.add")
         }
-        .frame(minHeight: 64)
+        .frame(minHeight: 38)
+        .settingsSectionSurface()
+        .soundPacksLayoutProbe("workspace.scope-selector.card")
     }
 
     private func selectScope(_ scope: PanelSoundScopeID) {
@@ -337,19 +345,12 @@ struct EventSettingsWindowView: View {
 
     private var scopeContent: some View {
         VStack(alignment: .leading, spacing: 36) {
-            Text(
-                (current?.name ?? l10n.text(.workspaceUnavailable))
-                    .replacingOccurrences(of: "-", with: "-\u{200B}")
-            )
-            .font(.title2)
-            .fontWeight(.bold)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilityLabel(current?.name ?? l10n.text(.workspaceUnavailable))
             if !migrationSeen && !model.configState.resolvedConfig.selectedPack.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(l10n.text(.workspaceMigration))
                     Button(l10n.text(.workspaceDismiss)) { migrationSeen = true }
-                }.padding(12).frame(minHeight: 64).background(ClaudioTheme.elevated(colorScheme))
+                }.frame(minHeight: 64).settingsSectionSurface()
+                    .soundPacksLayoutProbe("workspace.migration.card")
                     .accessibilityIdentifier("workspace.migration-notice")
             }
             if model.workspaceRulesMalformed {
@@ -402,19 +403,29 @@ struct EventSettingsWindowView: View {
             libraryNotice
             if writable {
                 if model.libraryPresentationState.hasUsableSnapshot {
-                    soundControls
-                    if model.config.hasLegacySystemSounds {
-                        Text(l10n.text(.soundPacksLegacySystemSounds))
-                            .font(.caption)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("workspace.legacy-system-sounds")
+                    VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
+                        soundControls
+                        if model.config.hasLegacySystemSounds {
+                            Text(l10n.text(.soundPacksLegacySystemSounds))
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("workspace.legacy-system-sounds")
+                        }
+                        VStack(spacing: SettingsAppearance.eventGap) {
+                            ForEach(events) { event in
+                                eventRow(event)
+                                    .settingsSectionSurface(
+                                        padding: SettingsAppearance.eventPadding(
+                                            compact: compactLayout)
+                                    )
+                                    .soundPacksLayoutProbe(
+                                        "workspace.event-card.\(event.event.rawValue)"
+                                    )
+                                    .id("workspace-event-\(event.event.rawValue)")
+                            }
+                        }
                     }
-                    Text(l10n.text(.workspacePreviewNote)).font(.caption)
-                        .foregroundColor(
-                            .secondary)
-                    ForEach(events) { event in
-                        eventRow(event).id("workspace-event-\(event.event.rawValue)")
-                    }
+                    previewControls
                 }
                 Button(l10n.text(.eventSettingsManageSounds)) {
                     openSoundOverview(scope: selection.route.scope)
@@ -440,7 +451,19 @@ struct EventSettingsWindowView: View {
     @ViewBuilder
     private var scopeAuxiliary: some View {
         if writable, let rule {
-            workspaceDetails(rule).settingsSectionSurface()
+            workspaceDetails(rule).settingsSectionSurface(padding: 18)
+                .soundPacksLayoutProbe("workspace.auxiliary.card")
+        } else if writable, selection.route.scope == .global {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(l10n.text(.workspaceSurfaces)).font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Text(l10n.text(.workspaceAllSources))
+                Text(l10n.text(.workspaceDefaultApplicability))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .settingsSectionSurface(padding: 18)
+            .soundPacksLayoutProbe("workspace.auxiliary.card")
         }
     }
 
@@ -448,6 +471,9 @@ struct EventSettingsWindowView: View {
         let scope = selection.route.scope
         let workspaceTarget = model.selectedWorkspaceTarget
         return VStack(alignment: .leading, spacing: 14) {
+            Text(current?.name ?? l10n.text(.workspaceUnavailable))
+                .font(.title2.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
             Picker(
                 l10n.text(.panelSoundPackLabel),
                 selection: Binding(
@@ -491,12 +517,6 @@ struct EventSettingsWindowView: View {
                 onAudibilityInputsChanged()
                 return landed
             }.id(selection.route.scope)
-            Button(l10n.text(.eventSettingsPreviewAll)) { previewAvailableEvents() }
-                .disabled(!events.contains(where: { $0.controls.previewEnabled }))
-                .accessibilityIdentifier("workspace.preview-available")
-            if !events.contains(where: { $0.controls.previewEnabled }) {
-                Text(l10n.text(.eventPreviewNoAvailableEvents)).font(.caption)
-            }
             if model.eventRows.contains(where: {
                 if case .broken = $0.coverage { return true }; return false
             })
@@ -506,7 +526,21 @@ struct EventSettingsWindowView: View {
                 FailureRow(message: l10n.text(.workspacePackRepair))
                     .accessibilityIdentifier("workspace.pack.repair-reason")
             }
-        }.padding(14).frame(minHeight: 64).background(ClaudioTheme.elevated(colorScheme))
+        }.frame(minHeight: 64).settingsSectionSurface()
+            .soundPacksLayoutProbe("workspace.configuration.card")
+    }
+
+    private var previewControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(l10n.text(.eventSettingsPreviewAll)) { previewAvailableEvents() }
+                .disabled(!events.contains(where: { $0.controls.previewEnabled }))
+                .accessibilityIdentifier("workspace.preview-available")
+            Text(
+                l10n.text(
+                    events.contains(where: { $0.controls.previewEnabled })
+                        ? .workspacePreviewNote : .eventPreviewNoAvailableEvents)
+            ).font(.caption).foregroundStyle(.secondary)
+        }
     }
 
     private func previewAvailableEvents() {
@@ -996,8 +1030,7 @@ struct EventSettingsWindowView: View {
                 )
                 .settingsMountIdentity("workspace.event.preview-failure.\(event.event.cliName)")
             }
-        }.padding(12).frame(minHeight: 64).background(ClaudioTheme.elevated(colorScheme))
-            .cornerRadius(ClaudioTheme.Radius.row)
+        }.frame(minHeight: 38)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("workspace.event.\(event.event.cliName)")
     }

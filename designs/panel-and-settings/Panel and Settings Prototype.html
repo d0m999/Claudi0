@@ -242,7 +242,7 @@
     color: var(--text); font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
   }
   .w-item:hover { background: var(--hover); }
-  .w-item.section-start { margin-top: 14px; }
+  .w-item.section-start { margin-top: var(--settings-sidebar-group-gap); }
   .w-item.active { background: var(--clay-soft); color: var(--clay); font-weight: 700; }
   .w-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .w-item .ic { width: 18px; text-align: center; color: var(--text-2); font-size: 12px; }
@@ -682,8 +682,9 @@
 <style>
 
 /* Settings rhythm: page > section > row. Shared by all eight destinations. */
-:root { --settings-header-gap:36px; --settings-section-gap:36px; --settings-row-height:64px; }
-.w-main { padding-top:36px; padding-bottom:48px; }
+:root { --settings-header-gap:36px; --settings-section-gap:36px; --settings-row-height:64px; --settings-sidebar-group-gap:24px; }
+/* 2026-10-01 待确认呈现：八页同底色，侧栏保留三组，功能区有边框与留白。 */
+.w-main { padding-top:36px; padding-bottom:48px; background:var(--window); }
 .settings-header { margin-bottom:var(--settings-header-gap); }
 .w-main .settings-header h1 { width:fit-content; max-width:100%; font-size:26px; line-height:1.25; font-weight:650; letter-spacing:-.025em; }
 .w-main .settings-header .sub { margin-top:10px; font-size:13px; line-height:1.65; }
@@ -705,11 +706,24 @@
 .w-side .brand { padding-bottom:24px; }
 .w-item { min-height:38px; padding-top:8px; padding-bottom:8px; }
 .w-item + .w-item:not(.section-start) { margin-top:3px; }
-.sounds-design .catalog-select,.workspace-design .catalog-select { margin-bottom:28px; }
+.settings-page .card,
+.sounds-design .event-tile,.workspace-design .event-tile,
+.sounds-design .provider-card,.workspace-design .provider-card,
+.sounds-design .catalog-select,.workspace-design .catalog-select,
+.scope-configuration,.pack-information {
+ background:var(--surface); border:1px solid var(--hairline-strong); border-radius:13px;
+}
+.sounds-design .catalog-select,.workspace-design .catalog-select {
+ padding:16px; min-height:70px; margin-bottom:var(--settings-section-gap);
+}
+.scope-configuration,.pack-information { padding:16px; margin-bottom:24px; }
+.pack-information h3 { font-size:18px; letter-spacing:-.015em; margin-bottom:8px; }
+.pack-information .note-line { margin-top:8px; }
 .sounds-design .event-tiles,.workspace-design .event-tiles { gap:12px; }
+.sounds-design .event-tiles { margin-top:0; }
 .sounds-design .event-tile,.workspace-design .event-tile { padding:16px; border-radius:13px; }
 .sounds-design .event-tile .mapping-row,.workspace-design .scope-event-row { min-height:38px; }
-.workspace-design .scope-controls { margin-bottom:26px; gap:22px; }
+.workspace-design .scope-controls { margin-bottom:0; gap:22px; }
 .sounds-design .sound-layout,.workspace-design .sound-layout { gap:26px; }
 @media(max-width:1150px) {
  .sounds-design .sound-layout,.workspace-design .sound-layout { gap:20px; }
@@ -780,6 +794,7 @@
     <tr><th>改动</th><th>第一性原理理由</th><th>依据 / 约束</th></tr>
 <tr><td><b>横幅只承担一眼阅读与快速跳转</b></td><td>正文静态，不展开详情。保留语义动作、关闭和 4 秒阅读轨；悬停与聚焦暂停，重绘和失败重试不重置预算。成功打开来源或到期只收起横幅，不移除“需要你”中的提醒。失败就地显示原因和重试，技术记录归入活动与诊断。</td><td>2026-09-30 用户确认；本 HTML 呈现覆盖 DESIGN.md 与 ADR 0019 的横幅详情入口，原生实现另行处理</td></tr>
 <tr><td><b>设置窗口按页面、区块、控件行分层</b></td><td>页头与内容间隔 36px，区块间隔 36px，控件行最小 64px；通知按横幅、自动静音和当前状态分组，权限与隐私说明归到对应控件。声音与工作区保留统一纵向事件卡片。</td><td>2026-09-30 用户提供 ChatGPT 设置页留白参考；本轮仅修改 HTML 呈现</td></tr>
+<tr><td><b>八页同底色，功能区保留边框与留白</b></td><td>八页统一暖色窗口底；选择器、声音配置、包信息和辅助信息使用完整描边。五事件各自成卡，卡间保留 12px；侧栏在“通用”和“活动与诊断”前留白 24px，维持三组导航。</td><td>2026-10-01 待用户确认；本轮只调整整合原型，确认后再迁移原生界面</td></tr>
 <tr><td><b>声音和工作区采用统一的纵向事件卡片</b></td><td>顶部选择声音包或作用域，左侧集中五个事件，右侧保留服务或来源设置；工作区编辑声音时进入对应声音包，返回保留作用域、音量和开关。内置声音包不显示生成提示音入口。</td><td>2026-09-30 用户确认新版 C；容器统一称“声音包”，单个声音称“提示音”；覆盖 ADR 0016 的旧界面称呼</td></tr>
     <tr>
       <td><b>面板顶部加入「需要你」条</b>（与横幅同源内容）</td>
@@ -1815,9 +1830,9 @@ function paneGroups() {
     '</select><div class="library-actions"><button class="sel-btn" id="addWsBtn">' + T.addWorkspace + '</button></div></div>' + libraryStatusHTML();
   if (!cur) return h + '<div class="err-line">' + tr("所选工作区已不可用，请重新选择。", "This workspace is unavailable. Select a scope again.") + '</div></div>';
   var pk = packById(cur.pack);
-  h += '<div class="sound-layout"><section class="editor-area" id="groupDetail"><h3 class="scope-title">' + esc(gName(cur)) + '</h3><div class="scope-controls">' +
+  h += '<div class="sound-layout"><section class="editor-area" id="groupDetail"><div class="scope-configuration"><h3 class="scope-title">' + esc(gName(cur)) + '</h3><div class="scope-controls">' +
     '<div class="kv form-row"><label class="k" for="groupPack">' + T.pack + '</label><select class="field" id="groupPack"' + (S.library.status !== "ready" ? ' disabled' : '') + '>' + packOptions(cur.pack) + '</select></div>' +
-    '<div class="kv form-row"><label class="k" for="grpVol">' + tr("音量", "Volume") + '</label><span class="range-control"><input type="range" id="grpVol" min="0" max="100" value="' + cur.volume + '" aria-label="' + T.volume + '"><span id="grpVolPct">' + cur.volume + '%</span></span></div></div><div class="event-tiles">';
+    '<div class="kv form-row"><label class="k" for="grpVol">' + tr("音量", "Volume") + '</label><span class="range-control"><input type="range" id="grpVol" min="0" max="100" value="' + cur.volume + '" aria-label="' + T.volume + '"><span id="grpVolPct">' + cur.volume + '%</span></span></div></div></div><div class="event-tiles">';
   EVENTS.forEach(function (e) {
     var reason = previewReason(pk, e.id, cur), on = !!cur.events[e.id], binding = pk && pk.files[e.id];
     var name = binding && typeof binding === "string" && pk.names[binding] ? pk.names[binding] + ' · ' + binding : sourceName(binding);
@@ -2112,7 +2127,7 @@ function paneSounds() {
     inspectedPacks.map(function (p) { return '<option value="' + esc(p.id) + '"' + (S.soundPack === p.id ? ' selected' : '') + '>' + esc(packName(p)) + (p.draft ? ' · ' + A.draft : p.builtin ? tr(" · 内置", " · Factory") : '') + (p.broken ? tr(" · 损坏", " · Damaged") : '') + '</option>'; }).join('') +
     '</select><div class="library-actions"><button class="sel-btn" id="newPackBtn"' + (S.ai.draft || S.library.status !== "ready" ? ' disabled' : '') + '>' + A.newPack + '</button><button class="ghost-btn" data-library-retry>' + tr("刷新", "Refresh") + '</button></div></div><div class="sound-layout"><section class="editor-area" id="packDetail">';
   if (!pk) return h + '<div class="err-line">' + tr("原声音包已不可用，请重新选择。", "The original pack is unavailable. Choose another pack.") + '</div></section>' + aiServiceCard() + '</div></div>';
-  h += '<div class="card"><h3>' + esc(packName(pk)) + '</h3>';
+  h += '<div class="card"><div class="pack-information"><h3>' + esc(packName(pk)) + '</h3>';
   if (pk.draft) h += '<p>' + A.draftNote + '</p>';
   if (pk.draft) h += '<div class="ai-row form-row"><label for="draftNameInput">' + A.packName + '</label><input class="field" id="draftNameInput" value="' + esc(S.ai.draftName == null ? pk.name : S.ai.draftName) + '"><button class="sel-btn" id="draftNameSave">' + A.saveName + '</button></div>';
   var users = aiPackUsageNames(pk.id);
@@ -2120,7 +2135,7 @@ function paneSounds() {
     ? A.usage + ' ' + (users.length ? esc(users.join(tr("、", ", "))) : tr("暂无", "None"))
     : A.scopeIncomplete + ' <button class="ghost-btn" data-goto-groups>' + tr("检查配置…", "Check profiles…") + '</button>') + '</p>';
   if (pk.broken) h += '<p class="err-line">' + tr("声音包损坏。请在 Finder 检查内容后刷新；内置包也可恢复出厂。", "Pack damaged. Inspect it in Finder and refresh, or restore a factory pack.") + '</p>';
-  h += '<div class="event-tiles">';
+  h += '</div><div class="event-tiles">';
   EVENTS.forEach(function (e) {
     var source = pk.files[e.id], reason = previewReason(pk, e.id), owner = source && sourceOwner(pk, source, e.id);
     var composerOpen = packWritable(pk) && S.aiEvent === e.id;

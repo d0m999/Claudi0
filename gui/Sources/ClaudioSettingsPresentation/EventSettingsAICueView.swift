@@ -106,13 +106,7 @@ struct EventSettingsAICueServiceCard: View {
                     .accessibilityIdentifier("event-settings.ai-cue.credential-manage")
             }
         }
-        .padding(12)
-        .background(ClaudioTheme.elevated(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
-        )
+        .settingsSectionSurface(padding: 18)
         .tint(ClaudioTheme.clay(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("event-settings.ai-cue.service")

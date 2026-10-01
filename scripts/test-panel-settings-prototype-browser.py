@@ -147,9 +147,10 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 original = name.input_value()
                 typed = "  Evening cue  "
                 name.fill(typed)
-                self.page.locator('[data-mapmenu="taskStart"]').click()
+                self.page.locator('[data-aiev="taskStart"]').click()
                 self.assertEqual(name.input_value(), typed)
                 self.assertEqual(self.page.locator("#packDetail").get_by_role("heading", name=original, exact=True).count(), 1)
+                self.page.locator("#foldBtn").click()
                 self.page.locator("#langBtn").click()
                 self.assertEqual(name.input_value(), typed)
                 self.page.locator("#draftNameSave").click()
@@ -217,6 +218,54 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#wMain").get_by_role("heading", level=1).evaluate(
             "el => el === document.activeElement"
         ))
+
+    def test_eight_pages_share_background_and_three_sidebar_groups(self):
+        for theme, background in [("light", "rgb(250, 248, 244)"), ("dark", "rgb(26, 24, 21)")]:
+            for pane in ["groups", "sounds", "integrations", "notifications", "general", "shortcuts", "activity", "about"]:
+                with self.subTest(theme=theme, pane=pane):
+                    self.open(win="1", pane=pane, th=theme)
+                    self.assertEqual(self.page.locator("#wMain").evaluate(
+                        "el => getComputedStyle(el).backgroundColor"
+                    ), background)
+                    rows = self.page.locator(".w-item[data-pane]").evaluate_all(
+                        "els => els.map(el => ({pane: el.dataset.pane, top: el.getBoundingClientRect().top, bottom: el.getBoundingClientRect().bottom}))"
+                    )
+                    self.assertEqual([row["pane"] for row in rows], [
+                        "groups", "sounds", "integrations", "notifications", "general", "shortcuts", "activity", "about"
+                    ])
+                    for index in range(1, len(rows)):
+                        self.assertAlmostEqual(
+                            rows[index]["top"] - rows[index - 1]["bottom"],
+                            24 if index in [4, 6] else 3,
+                        )
+
+    def test_scope_and_sound_cards_keep_boundaries_and_grow_with_ai_form(self):
+        for pane, info in [("groups", ".scope-configuration"), ("sounds", ".pack-information")]:
+            for theme, surface in [("light", "rgb(255, 255, 255)"), ("dark", "rgb(28, 26, 23)")]:
+                with self.subTest(pane=pane, theme=theme):
+                    self.open(win="1", pane=pane, th=theme)
+                    if pane == "sounds":
+                        self.page.locator("#newPackBtn").click()
+                    selector = self.page.locator(".catalog-select")
+                    self.assertGreaterEqual(selector.bounding_box()["height"], 70)
+                    tiles = self.page.locator(".event-tile")
+                    self.assertEqual(tiles.count(), 5)
+                    boxes = [tiles.nth(index).bounding_box() for index in range(5)]
+                    for index in range(5):
+                        style = tiles.nth(index).evaluate(
+                            "el => { const s = getComputedStyle(el); return [s.backgroundColor, s.borderTopWidth, s.borderRadius]; }"
+                        )
+                        self.assertEqual(style, [surface, "1px", "13px"])
+                        if index:
+                            self.assertAlmostEqual(boxes[index]["y"] - boxes[index - 1]["y"] - boxes[index - 1]["height"], 12)
+                    information = self.page.locator(info).bounding_box()
+                    self.assertAlmostEqual(boxes[0]["y"] - information["y"] - information["height"], 24)
+                    if pane == "sounds":
+                        self.page.locator('[data-aiev="taskStart"]').click()
+                        expanded = tiles.nth(0).bounding_box()
+                        following = tiles.nth(1).bounding_box()
+                        self.assertGreater(expanded["height"], boxes[0]["height"])
+                        self.assertAlmostEqual(following["y"] - expanded["y"] - expanded["height"], 12)
 
 
 if __name__ == "__main__":

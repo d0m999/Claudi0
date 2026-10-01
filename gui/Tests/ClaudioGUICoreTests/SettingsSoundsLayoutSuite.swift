@@ -10,6 +10,127 @@ import Vision
 
 @MainActor
 func runSettingsSoundsLayoutSuites() {
+    suite("设置原生呈现：八页暖色底、三组留白与独立事件卡") {
+        for size in [NSSize(width: 1_240, height: 820), NSSize(width: 960, height: 640)] {
+            for dark in [false, true] {
+                for destination in SettingsDestination.allCases {
+                    let fixture = SettingsPresentationFixtures.generalLogin(
+                        language: size.width == 960 ? .english : .zhHans,
+                        route: .destination(destination),
+                        availability: PreviewFixtures.settingsRouteAvailability)
+                    let probe = SettingsSoundsNativeLayoutProbe(
+                        session: fixture.session, size: size,
+                        appearance: dark ? .darkAqua : .aqua)
+                    defer { probe.close() }
+                    let name = "\(destination.rawValue) \(size.width) \(dark ? "dark" : "light")"
+                    let frames = SoundPacksLayoutRecorder.frames
+                    guard let content = frames["settings.content"] else {
+                        expect(false, "\(name) 内容区必须实际挂载")
+                        continue
+                    }
+                    let expectedBackground = dark ? [26, 24, 21] : [250, 248, 244]
+                    for y in [40.0, size.height / 2, size.height - 20] {
+                        let observed = probe.rgb(at: CGPoint(x: content.minX + 8, y: y))
+                        expect(
+                            colorsMatch(observed, expectedBackground),
+                            "\(name) 页头、滚动区和底部须连续使用设置底色：\(observed as Any)")
+                    }
+                    let sidebarRows = SettingsDestination.allCases.compactMap {
+                        frames["settings.sidebar.item.\($0.rawValue)"]
+                    }
+                    expect(sidebarRows.count == 8, "\(name) 八页侧栏必须实际挂载")
+                    if sidebarRows.count == 8 {
+                        for index in 1..<8 {
+                            let gap = sidebarRows[index].minY - sidebarRows[index - 1].maxY
+                            expect(
+                                abs(gap - ([4, 6].contains(index) ? 24 : 3)) < 1,
+                                "\(name) 侧栏第 \(index) 处组间／组内留白：\(gap)")
+                        }
+                    }
+                    if destination == .eventsAndSounds || destination == .sounds {
+                        let prefix = destination == .sounds ? "sound-packs" : "workspace"
+                        let cards = Event.allCases.compactMap {
+                            frames["\(prefix).event-card.\($0.rawValue)"]
+                        }
+                        expect(cards.count == 5, "\(name) 五事件必须各自成卡：\(frames.keys.sorted())")
+                        for pair in zip(cards, cards.dropFirst()) {
+                            expect(
+                                abs(pair.1.minY - pair.0.maxY - 12) < 1,
+                                "\(name) 事件卡间距必须为 12 pt：\(pair)")
+                        }
+                        let selectorID =
+                            destination == .sounds
+                            ? "sound-packs.selector.card" : "workspace.scope-selector.card"
+                        let infoID =
+                            destination == .sounds
+                            ? "sound-packs.information.card" : "workspace.configuration.card"
+                        if let selector = frames[selectorID] {
+                            expect(selector.height >= 70, "\(name) 选择器卡至少 70 pt")
+                            let observed = probe.rgb(
+                                at: CGPoint(x: selector.midX, y: selector.minY + 5))
+                            expect(
+                                colorsMatch(observed, dark ? [28, 26, 23] : [255, 255, 255]),
+                                "\(name) 卡片必须使用设置专用表面：\(observed as Any)")
+                            let border = probe.rgb(
+                                at: CGPoint(x: selector.midX, y: selector.minY + 0.25))
+                            expect(
+                                colorsMatch(border, dark ? [63, 60, 55] : [228, 225, 224]),
+                                "\(name) 卡片须显示真实 1 pt 描边：\(border as Any)")
+                            if let info = frames["workspace.migration.card"] ?? frames[infoID] {
+                                expect(
+                                    abs(info.minY - selector.maxY - 36) < 1,
+                                    "\(name) 选择器后留白须为 36 pt：\(selector), \(info)")
+                            }
+                        } else {
+                            expect(false, "\(name) 选择器卡必须实际挂载")
+                        }
+                        if let info = frames[infoID], let first = cards.first {
+                            expect(
+                                abs(first.minY - info.maxY - 24) < 1,
+                                "\(name) 配置／包信息卡至五事件留白须为 24 pt：\(info), \(first)")
+                        }
+                        let auxiliaryID =
+                            destination == .sounds
+                            ? "settings.sounds.ai-cue.service" : "workspace.auxiliary.card"
+                        if let auxiliary = frames[auxiliaryID], let last = cards.last {
+                            if size.width == 960 {
+                                expect(
+                                    auxiliary.minY > last.maxY,
+                                    "\(name) 窄窗口辅助卡须放在五事件与主操作之后")
+                            } else {
+                                expect(
+                                    abs(auxiliary.width - 260) < 1 && auxiliary.minX > last.maxX,
+                                    "\(name) 宽窗口辅助卡须在右侧且宽 260 pt：\(auxiliary)")
+                            }
+                        } else {
+                            expect(false, "\(name) 真实辅助卡必须挂载")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    suite("设置原生呈现：系统高对比度外观保留实色表面") {
+        for dark in [false, true] {
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .events(scope: .global, event: nil),
+                availability: PreviewFixtures.settingsRouteAvailability)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session, size: NSSize(width: 1_240, height: 820),
+                appearance: dark
+                    ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
+            defer { probe.close() }
+            guard
+                let selector = SoundPacksLayoutRecorder.frames["workspace.scope-selector.card"]
+            else { expect(false, "辅助功能检查必须挂载选择器卡"); continue }
+            let interior = probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5))
+            expect(
+                colorsMatch(interior, dark ? [28, 26, 23] : [255, 255, 255]),
+                "高对比度外观不得改变卡片实色：\(interior as Any)")
+        }
+    }
+
     suite("声音设置原生挂载：两种窗口尺寸和语言保留包列表、滚动详情与固定操作栏") {
         for (size, language, appearance) in [
             (NSSize(width: 1_240, height: 820), ClaudioAppLanguage.zhHans, NSAppearance.Name.aqua),
@@ -69,6 +190,14 @@ func runSettingsSoundsLayoutSuites() {
                             && abs(pair.0.minX - pair.1.minX) < 30
                     },
                 "\(name) 每个事件只能在包映射行下接一处描述生成动作：\(frames)")
+            expect(
+                Event.allCases.allSatisfy { event in
+                    guard let card = frames["sound-packs.event-card.\(event.rawValue)"],
+                        let action = frames["settings.sounds.ai-cue.event.\(event.rawValue)"]
+                    else { return false }
+                    return card.contains(action)
+                },
+                "\(name) 每个 AI 生成入口须属于自己的独立事件卡")
             let visibleText = probe.recognizedText()
             expect(
                 visibleText.map {
@@ -281,6 +410,21 @@ private final class SettingsSoundsNativeLayoutProbe {
         return (try? data.write(to: url)) != nil
     }
 
+    func rgb(at point: CGPoint) -> [Int]? {
+        // Convert the bitmap itself: colorAt() returns a calibrated NSColor and does not
+        // carry the source display's ICC profile through an NSColor-space conversion.
+        guard let bitmap = renderedBitmap()?.converting(to: .sRGB, renderingIntent: .default)
+        else { return nil }
+        let x = Int(point.x * CGFloat(bitmap.pixelsWide) / hostingView.bounds.width)
+        let y = Int(point.y * CGFloat(bitmap.pixelsHigh) / hostingView.bounds.height)
+        guard x >= 0, y >= 0, x < bitmap.pixelsWide, y < bitmap.pixelsHigh,
+            let color = bitmap.colorAt(x: x, y: y)
+        else { return nil }
+        return [color.redComponent, color.greenComponent, color.blueComponent].map {
+            Int(($0 * 255).rounded())
+        }
+    }
+
     private func renderedBitmap() -> NSBitmapImageRep? {
         guard let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds)
         else { return nil }
@@ -292,6 +436,11 @@ private final class SettingsSoundsNativeLayoutProbe {
         window.orderOut(nil)
         window.close()
     }
+}
+
+private func colorsMatch(_ observed: [Int]?, _ expected: [Int]) -> Bool {
+    guard let observed, observed.count == expected.count else { return false }
+    return zip(observed, expected).allSatisfy { abs($0 - $1) <= 3 }
 }
 
 /// 探针窗口只做离屏布局与位图采集，从不需要真正可见。CI runner 的虚拟屏幕不足

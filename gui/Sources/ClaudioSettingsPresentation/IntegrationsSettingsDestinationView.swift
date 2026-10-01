@@ -54,7 +54,7 @@ struct IntegrationsSettingsDestinationView: View {
                             l10n.format(
                                 .integrationsConnectionSection,
                                 localizedHostName(facts.host, language: languageStore.language)),
-                            topPadding: 30)
+                            topPadding: 36)
                         connectionSection(facts)
                         infoCallout
                     } else {
@@ -63,8 +63,9 @@ struct IntegrationsSettingsDestinationView: View {
                 }
                 .frame(maxWidth: 820, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 52)
-                .padding(.vertical, 60)
+                .padding(.horizontal, 36)
+                .padding(.top, 36)
+                .padding(.bottom, 48)
             }
             .accessibilityIdentifier("integrations.destination.scroll")
 
@@ -75,7 +76,7 @@ struct IntegrationsSettingsDestinationView: View {
                     .transition(reduceMotion ? .identity : .opacity)
             }
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(SettingsAppearance.background(colorScheme))
         .confirmationDialog(
             confirmationTitle,
             isPresented: Binding(
@@ -114,9 +115,9 @@ struct IntegrationsSettingsDestinationView: View {
     }
 
     private var pageHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(l10n.text(.settingsDestinationIntegrations))
-                .font(.system(size: 30, weight: .bold))
+                .font(SettingsAppearance.pageTitle)
                 .foregroundColor(ClaudioTheme.text(colorScheme))
                 .accessibilityAddTraits(.isHeader)
                 .focusable()
@@ -129,7 +130,7 @@ struct IntegrationsSettingsDestinationView: View {
         }
     }
 
-    private func sectionLabel(_ title: String, topPadding: CGFloat = 30) -> some View {
+    private func sectionLabel(_ title: String, topPadding: CGFloat = 36) -> some View {
         Text(title)
             .font(ClaudioTheme.font(.caption).weight(.semibold))
             .foregroundColor(ClaudioTheme.secondaryText(colorScheme))

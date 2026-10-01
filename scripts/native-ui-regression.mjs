@@ -147,6 +147,39 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     return clickMatching(line => /menu item|ID: menuAction:/.test(line) && line.includes(label));
   }
   const destinations=['events-and-sounds','sounds','integrations','notifications','general','shortcuts','usage','about'];
+  function assertSettingsLayout(read, index, destination) {
+    const evidence=read.settingsLayout;
+    assert(evidence?.sampleColorSpace==='sRGB','Mounted Settings color evidence is unavailable');
+    const {frames,colors}=evidence;
+    const dark=index%4===3||index%4===0;
+    const matches=(actual,expected)=>Array.isArray(actual)&&actual.length===3&&actual.every((value,i)=>Math.abs(value-expected[i])<=3);
+    const background=dark?[26,24,21]:[250,248,244];
+    assert(colors.background?.length===3&&colors.background.every(sample=>matches(sample,background)),`Settings background differs at ${destination}: ${JSON.stringify(colors.background)}`);
+    const rows=destinations.map(id=>frames[`settings.sidebar.item.${id}`]);
+    assert(rows.every(Boolean),'One or more mounted sidebar rows are unavailable');
+    const sidebarGaps=rows.slice(1).map((row,i)=>row.y-rows[i].y-rows[i].height);
+    assert(sidebarGaps.every((gap,i)=>Math.abs(gap-([3,5].includes(i)?24:3))<1),`Sidebar group spacing differs: ${sidebarGaps}`);
+    const result={destination,background:colors.background,sidebarGaps};
+    if (destination==='events-and-sounds'||destination==='sounds') {
+      const sounds=destination==='sounds'; const prefix=sounds?'sound-packs':'workspace';
+      const cards=Object.entries(frames).filter(([id])=>id.startsWith(`${prefix}.event-card.`)).map(([,frame])=>frame).sort((a,b)=>a.y-b.y);
+      assert(cards.length===5,`Five independent event cards were not mounted: ${prefix}`);
+      const eventGaps=cards.slice(1).map((card,i)=>card.y-cards[i].y-cards[i].height);
+      assert(eventGaps.every(gap=>Math.abs(gap-12)<1),`Event card spacing differs: ${eventGaps}`);
+      const selector=frames[sounds?'sound-packs.selector.card':'workspace.scope-selector.card'];
+      const info=frames[sounds?'sound-packs.information.card':'workspace.configuration.card'];
+      assert(selector?.height>=70&&info,'Selector or information card is unavailable');
+      assert(Math.abs(cards[0].y-info.y-info.height-24)<1,'Information-to-event spacing differs');
+      assert(matches(colors.card,dark?[28,26,23]:[255,255,255]),`Settings card surface differs: ${colors.card}`);
+      assert(matches(colors.border,dark?[63,60,55]:[228,225,224]),`Settings card border is unavailable: ${colors.border}`);
+      const auxiliary=frames[sounds?'settings.sounds.ai-cue.service':'workspace.auxiliary.card'];
+      assert(auxiliary,'Mounted auxiliary card is unavailable');
+      if (index%2===0) assert(auxiliary.y>cards[4].y+cards[4].height,'Minimum-window auxiliary card is not after the events');
+      else assert(Math.abs(auxiliary.width-260)<1&&auxiliary.x>cards[4].x+cards[4].width,'Default-window auxiliary card is not a 260 pt right column');
+      Object.assign(result,{eventGaps,selectorHeight:selector.height,card:colors.card,border:colors.border,auxiliary});
+    }
+    return result;
+  }
   async function matrix(index) {
     return test(`matrix-${index}`,async()=> {
       assert(index>=1 && index<=8,'Unknown fixed matrix');
@@ -154,11 +187,15 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       const geometry=(await readback()).windowGeometry;
       assert(Math.abs(geometry.width-(index%2===0?960:1240))<1 && Math.abs(geometry.height-(index%2===0?640:820))<1,`Requested window size was constrained: ${JSON.stringify(geometry)}`);
       assert(geometry.appearance===(index%4===3||index%4===0?'NSAppearanceNameDarkAqua':'NSAppearanceNameAqua'),'Requested appearance was not applied');
+      const layouts=[];
       for (const destination of destinations) {
         const s = await clickID(`settings.sidebar.${destination}`);
         assert(s.includes(`ID: ${destination==='integrations'?'integrations.destination.title':`settings.title.${destination}`}`),`Destination title did not appear: ${destination}`);
         assert(s.split('\n').some(line => line.includes('(selected)') && line.includes(`ID: settings.sidebar.${destination}`)),`Sidebar selection did not match ${destination}`);
         assert((await readback()).destination===destination,`Typed route did not match ${destination}`);
+        await control('Capture state');
+        await key('super+shift+l');
+        layouts.push(assertSettingsLayout(await readback(),index,destination));
         await observe(`matrix-${index}-${destination}-top`);
         const scroll = s.split('\n').find(line => /scroll area/.test(line) && !line.includes('sidebar'));
         if (scroll) {
@@ -172,7 +209,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
           await observe(`matrix-${index}-${destination}-bottom`);
         }
       }
-      return {navigation:destinations,language:index<=4?'zh-Hans':'en',appearance:index%4===3 || index%4===0?'dark':'light',requestedSize:index%2===0?'960x640':'1240x820',actualGeometry:geometry};
+      return {navigation:destinations,layouts,language:index<=4?'zh-Hans':'en',appearance:index%4===3 || index%4===0?'dark':'light',requestedSize:index%2===0?'960x640':'1240x820',actualGeometry:geometry};
     });
   }
   function imageWidth(bytes) {
