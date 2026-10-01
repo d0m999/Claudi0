@@ -115,7 +115,7 @@
     position: relative; height: 2px; margin: 0 13px 0 17px; border-radius: 999px;
     background: color-mix(in srgb, var(--text) 9%, transparent); overflow: hidden;
   }
-  .track > i { position: absolute; inset: 0; display: block; background: var(--ev-clay); transform-origin: left center; }
+  .track > i { position: absolute; inset: 0; display: block; background: var(--banner-color); transform-origin: left center; }
   .track.fixed > i { opacity: .3; }
 
   .glyph { width: 26px; height: 26px; flex: none; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
@@ -787,12 +787,12 @@
     同一套规范贯穿三个界面：内容规范（主行 = 宿主 + 用户语言动词短语，副行 = 工作区与年龄短码，诊断记录 = 绝对时刻与会话 ID）、
     事件色只上图形与小面积、糖果盘 token、100 / 180 / 260 / 400ms 动效节奏。
     本页为交互原型：操作只在本页演示，不写盘、不联网；请使用演示 Key。试听提供视觉反馈。
-    横幅共享 4 秒阅读预算，悬停与键盘聚焦暂停。动效减弱时即时切换。
+    横幅共享 4 秒阅读预算，底部彩色阅读轨逐渐缩短，悬停与键盘聚焦暂停。动效减弱时保留完整淡色轨，计时规则不变。
     下表是本次对面板与设置窗口做的第一性原理改动，可逐条对照。
   </p>
   <table>
     <tr><th>改动</th><th>第一性原理理由</th><th>依据 / 约束</th></tr>
-<tr><td><b>横幅只承担一眼阅读与快速跳转</b></td><td>正文静态，不展开详情。保留语义动作、关闭和 4 秒阅读轨；悬停与聚焦暂停，重绘和失败重试不重置预算。成功打开来源或到期只收起横幅，不移除“需要你”中的提醒。失败就地显示原因和重试，技术记录归入活动与诊断。</td><td>2026-09-30 用户确认；本 HTML 呈现覆盖 DESIGN.md 与 ADR 0019 的横幅详情入口，原生实现另行处理</td></tr>
+<tr><td><b>横幅只承担一眼阅读与快速跳转</b></td><td>正文静态，不展开详情。保留语义动作、关闭和 2px 彩色阅读轨；轨道左／右留白 17／13px、底部留白 2px，使用当前事件色，左端固定，按剩余的 4 秒阅读预算连续缩短。悬停与聚焦暂停，解除全部暂停后从剩余长度继续；重绘和失败重试不重置预算。Reduce Motion 下固定完整轨、30% 不透明度，预算及暂停规则不变。成功打开来源或到期只收起横幅，不移除“需要你”中的提醒。失败就地显示原因和重试，技术记录归入活动与诊断。</td><td>2026-09-30 用户确认；2026-10-01 阅读轨修订。本 HTML 是视觉与交互 SoT，覆盖旧原型和历史呈现描述；领域语义、安全与生命周期继续遵循 CONTEXT.md 和相关 ADR，原生实现另行处理</td></tr>
 <tr><td><b>设置窗口按页面、区块、控件行分层</b></td><td>页头与内容间隔 36px，区块间隔 36px，控件行最小 64px；通知按横幅、自动静音和当前状态分组，权限与隐私说明归到对应控件。声音与工作区保留统一纵向事件卡片。</td><td>2026-09-30 用户提供 ChatGPT 设置页留白参考；本轮仅修改 HTML 呈现</td></tr>
 <tr><td><b>八页同底色，功能区保留边框与留白</b></td><td>八页统一暖色窗口底；选择器、声音配置、包信息和辅助信息使用完整描边。五事件各自成卡，卡间保留 12px；侧栏在“通用”和“活动与诊断”前留白 24px，维持三组导航。</td><td>2026-10-01 待用户确认；本轮只调整整合原型，确认后再迁移原生界面</td></tr>
 <tr><td><b>声音和工作区采用统一的纵向事件卡片</b></td><td>顶部选择声音包或作用域，左侧集中五个事件，右侧保留服务或来源设置；工作区编辑声音时进入对应声音包，返回保留作用域、音量和开关。内置声音包不显示生成提示音入口。</td><td>2026-09-30 用户确认新版 C；容器统一称“声音包”，单个声音称“提示音”；覆盖 ADR 0016 的旧界面称呼</td></tr>
@@ -1649,7 +1649,7 @@ function bannerHTML() {
     (r ? '<button class="chip" id="bannerAct"' + (r.updated ? ' disabled' : '') + '>' + (failure === "unavailable" ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
     '<button class="icon-btn" id="bannerClose" aria-label="' + tr("收起横幅", "Dismiss banner") + '">' + G.x + '</button></div>' +
     (failure ? '<p class="banner-error" role="alert">' + bannerFailureText(failure) + '</p>' : '') +
-    '<div class="track" aria-hidden="true" style="--ev-clay:var(--ev-' + color + ')"><i></i></div></div>';
+    '<div class="track" aria-hidden="true"><i></i></div></div>';
 }
 function openBannerSource() {
   if (!S.bannerAtn) return;
