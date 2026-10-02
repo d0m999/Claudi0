@@ -128,6 +128,52 @@ func runPanelSettingsHandbackSuites() async {
         expect(settings.isKeyWindow, "主动前置设置后必须拥有键盘焦点")
     }
 
+    await suite("菜单打开期间显式 Settings 请求解除自动焦点抑制") {
+        for performRaise in [true, false] {
+            let settings = focusTestSettingsWindow()
+            let other = focusTestSettingsWindow()
+            let anchorWindow = NSWindow(
+                contentRect: NSRect(x: 200, y: 700, width: 28, height: 24),
+                styleMask: .borderless, backing: .buffered, defer: false)
+            anchorWindow.isReleasedWhenClosed = false
+            let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 24))
+            anchorWindow.contentView = anchor
+            let panel = MenuBarPanel()
+            panel.contentSize = NSSize(width: 120, height: 100)
+            defer {
+                panel.close()
+                settings.close()
+                other.close()
+                anchorWindow.close()
+            }
+
+            settings.presentForUserRequest()
+            other.presentForUserRequest()
+            expect(!settings.isKeyWindow, "夹具必须先让 Settings 位于后台")
+            settings.defersAutomaticFocusForPanel = true
+            panel.show(relativeTo: anchor.bounds, of: anchor)
+            expect(panel.isKeyWindow, "显式请求前菜单必须持有键盘焦点")
+            settings.makeKey()
+            expect(panel.isKeyWindow && !settings.isKeyWindow, "自动 key 交接仍须受菜单焦点抑制")
+            let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
+
+            if performRaise {
+                expect(settings.accessibilityPerformRaise(), "菜单打开时显式 AX Raise 必须成功")
+            } else {
+                settings.presentForUserRequest()
+            }
+            expect(!settings.defersAutomaticFocusForPanel, "显式请求必须自行解除抑制，不依赖控制器关闭回调")
+            expect(settings.isVisible && settings.isKeyWindow, "显式请求必须同时前置设置并取得键盘焦点")
+            expect(NSApp.keyWindow === settings, "原生 key owner 必须从菜单转移到 Settings")
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            expect(!panel.isShown, "显式 Settings 请求取得焦点后菜单按失去 key 路径收起")
+            expect(settings.isKeyWindow, "菜单收起后键盘焦点必须仍属于 Settings")
+            expect(
+                NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmost,
+                "显式非激活呈现不能改变前台应用")
+        }
+    }
+
     suite("菜单关闭只消费一次原来的 Settings key 所有权") {
         var handback = PanelSettingsHandback()
         handback.begin(settingsWasForeground: true)

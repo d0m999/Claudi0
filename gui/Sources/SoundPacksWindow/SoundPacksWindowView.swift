@@ -357,8 +357,14 @@ private struct SoundPacksWindowContentView: View {
             if detailRouteTracker.requestRevision != activeSounds.requestRevision {
                 detailCopyTransition = nil
             }
-            settingsDetail = detailRouteTracker.detailAfterFocusRequest(
+            let nextDetail = detailRouteTracker.detailAfterFocusRequest(
                 route: requestedRoute, sounds: activeSounds, currentDetail: settingsDetail)
+            // Initial route resolution may already have a composer; only leaving a detail cleans it.
+            if settingsDetail != .overview, nextDetail != settingsDetail {
+                openDetail(nextDetail)
+            } else {
+                settingsDetail = nextDetail
+            }
             handledFocusRequestRevision = revision
             applyInitialFocus()
             reconcileFocusWithVisibleControls()

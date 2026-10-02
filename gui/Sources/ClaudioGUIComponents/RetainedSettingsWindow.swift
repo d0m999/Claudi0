@@ -21,6 +21,8 @@ package final class RetainedSettingsWindow: NSPanel {
     /// Only an explicit Settings request may change its position among normal windows.
     /// `orderFront` alone cannot cross another application's key window while we are inactive.
     package func presentForUserRequest() {
+        // Explicit presentation takes precedence over the menu's automatic-focus suppression.
+        defersAutomaticFocusForPanel = false
         if isMiniaturized { deminiaturize(nil) }
         orderFrontRegardless()
         makeKey()
