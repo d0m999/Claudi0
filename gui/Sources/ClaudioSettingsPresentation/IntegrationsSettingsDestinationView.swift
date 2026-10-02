@@ -2,6 +2,7 @@ import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
+import SoundPacksWindow
 import SwiftUI
 
 /// Production Integrations destination. It owns no host configuration or capability-matrix
@@ -11,6 +12,7 @@ struct IntegrationsSettingsDestinationView: View {
     @ObservedObject var model: IntegrationDestinationModel
     @ObservedObject var focusCoordinator: IntegrationDestinationFocusCoordinator
     @ObservedObject var languageStore: ClaudioPreferences
+    var productImages: SettingsProductImages = .empty
     let onManageSoundScopes: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
 
@@ -18,65 +20,114 @@ struct IntegrationsSettingsDestinationView: View {
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedTarget: IntegrationDestinationFocusTarget?
     @State private var handledFocusRequestRevision = 0
+    @State private var detailsHost: HostID?
+    @State private var receiptHistoryTarget: ReceiptHistoryTarget?
+    @State private var pendingConnect: HostID?
     @State private var feedbackAnnouncer = IntegrationsFeedbackAnnouncementModel()
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
+
+    private struct ReceiptHistoryTarget: Identifiable {
+        let host: HostID
+        var id: HostID { host }
+    }
 
     init(
         model: IntegrationDestinationModel,
         focusCoordinator: IntegrationDestinationFocusCoordinator,
         languageStore: ClaudioPreferences,
+        productImages: SettingsProductImages = .empty,
         onManageSoundScopes: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
     ) {
         self.model = model
         self.focusCoordinator = focusCoordinator
         self.languageStore = languageStore
+        self.productImages = productImages
         self.onManageSoundScopes = onManageSoundScopes
         self.onAnnouncement = onAnnouncement
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 0) {
-                    pageHeader
-                    sectionLabel(l10n.text(.integrationsAgentSection))
-                    agentSection
-                    Text(l10n.text(.integrationsAgentHint))
-                        .font(ClaudioTheme.font(.secondary))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 12)
-
-                    if !model.content.isUnavailable, let facts = model.selectedHostFacts {
-                        sectionLabel(
-                            l10n.format(
-                                .integrationsConnectionSection,
-                                localizedHostName(facts.host, language: languageStore.language)),
-                            topPadding: 36)
-                        connectionSection(facts)
-                        infoCallout
-                    } else {
-                        unavailableSection
+        AnyView(
+            VStack(spacing: 0) {
+                SettingsPageHeader {
+                    if detailsHost != nil {
+                        Button {
+                            detailsHost = nil; focusedTarget = .title
+                        } label: {
+                            Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
+                        }
+                        .labelStyle(.iconOnly).buttonStyle(.plain)
+                        .accessibilityIdentifier("integrations.destination.detail.back")
                     }
+                    Text(detailsHost?.displayName ?? l10n.text(.settingsDestinationIntegrations))
+                        .font(SettingsAppearance.pageTitle)
+                        .accessibilityAddTraits(.isHeader)
+                        .focusable().focused($focusedTarget, equals: .title)
+                        .accessibilityIdentifier("integrations.destination.title")
                 }
-                .frame(maxWidth: 820, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 36)
-                .padding(.top, 36)
-                .padding(.bottom, 48)
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
+                        if let detailsHost {
+                            if let facts = model.selectedHostFacts, facts.host == detailsHost {
+                                connectionSection(facts)
+                                capabilitySection(facts)
+                                infoCallout
+                            } else {
+                                FailureRow(message: l10n.text(.settingsNativeTargetUnavailable))
+                                    .focusable().focused($focusedTarget, equals: .title)
+                                    .accessibilityIdentifier(
+                                        "integrations.destination.detail.unavailable")
+                            }
+                        } else {
+                            Text(l10n.text(.integrationsDestinationSubtitle))
+                                .font(SettingsAppearance.font(.secondary)).foregroundStyle(
+                                    .secondary
+                                )
+                                .fixedSize(horizontal: false, vertical: true)
+                            agentSection
+                            Text(l10n.text(.integrationsAgentHint))
+                                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if !model.content.isUnavailable, let facts = model.selectedHostFacts {
+                                connectionSection(facts)
+                                Button {
+                                    detailsHost = facts.host
+                                    focusedTarget = .title
+                                } label: {
+                                    HStack {
+                                        Text(l10n.text(.settingsNativeCapabilities))
+                                        Spacer(minLength: 12)
+                                        Image(systemName: "chevron.right").foregroundStyle(
+                                            .secondary)
+                                    }.frame(minHeight: 33).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain).settingsSectionSurface(padding: 14)
+                                .accessibilityIdentifier(
+                                    "integrations.destination.open-capabilities")
+                                infoCallout
+                            } else {
+                                unavailableSection
+                            }
+                        }
+                        if let feedback = model.feedback { feedbackToast(feedback) }
+                    }
+                    .soundPacksLayoutProbe("settings.reading.integrations")
+                    .settingsReadingColumn()
+                }
+                .accessibilityIdentifier("integrations.destination.scroll")
             }
-            .accessibilityIdentifier("integrations.destination.scroll")
-
-            if let feedback = model.feedback {
-                feedbackToast(feedback)
-                    .padding(.trailing, 24)
-                    .padding(.bottom, 24)
-                    .transition(reduceMotion ? .identity : .opacity)
-            }
-        }
+        )
         .background(SettingsAppearance.background(colorScheme))
+        .sheet(
+            item: $receiptHistoryTarget,
+            onDismiss: {
+                focusedTarget = .connectionRow(.receiptHistory)
+            }
+        ) { target in
+            receiptHistorySheet(target.host)
+        }
         .confirmationDialog(
             confirmationTitle,
             isPresented: Binding(
@@ -99,7 +150,28 @@ struct IntegrationsSettingsDestinationView: View {
             handledFocusRequestRevision = revision
             applyFocusRequest(focusCoordinator.requestedTarget)
         }
-        .onChange(of: model.selectedHost) { _ in reconcileFocus() }
+        .onChange(of: model.selectedHost) { _ in
+            receiptHistoryTarget = nil; detailsHost = nil; reconcileFocus()
+        }
+        .alert(
+            l10n.text(.settingsNativeConnectTitle),
+            isPresented: Binding(
+                get: { pendingConnect != nil }, set: { if !$0 { pendingConnect = nil } }),
+            presenting: pendingConnect
+        ) { host in
+            Button(l10n.text(.commonCancel), role: .cancel) { pendingConnect = nil }
+                .keyboardShortcut(.cancelAction)
+            Button(l10n.format(.integrationsEnable, host.displayName)) {
+                pendingConnect = nil
+                guard model.content.facts(for: host)?.status == .notConnected else { return }
+                perform(.connect(host))
+            }
+        } message: { host in
+            Text(l10n.format(.settingsNativeConnectMessage, host.displayName))
+        }
+        .onDisappear {
+            receiptHistoryTarget = nil; pendingConnect = nil; model.cancelPendingAction()
+        }
         .onChange(of: model.feedback?.revision) { _ in
             announceFeedbackIfNeeded()
             reconcileFocus()
@@ -111,33 +183,8 @@ struct IntegrationsSettingsDestinationView: View {
             reduceMotion ? nil : .easeInOut(duration: 0.16),
             value: model.feedback?.revision
         )
+        .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.integrations))
-    }
-
-    private var pageHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsDestinationIntegrations))
-                .font(SettingsAppearance.pageTitle)
-                .foregroundColor(ClaudioTheme.text(colorScheme))
-                .accessibilityAddTraits(.isHeader)
-                .focusable()
-                .focused($focusedTarget, equals: .title)
-                .accessibilityIdentifier("integrations.destination.title")
-            Text(l10n.text(.integrationsDestinationSubtitle))
-                .font(ClaudioTheme.font(.body))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func sectionLabel(_ title: String, topPadding: CGFloat = 36) -> some View {
-        Text(title)
-            .font(ClaudioTheme.font(.caption).weight(.semibold))
-            .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-            .textCase(.uppercase)
-            .padding(.top, topPadding)
-            .padding(.bottom, 10)
-            .accessibilityAddTraits(.isHeader)
     }
 
     private var agentSection: some View {
@@ -154,68 +201,79 @@ struct IntegrationsSettingsDestinationView: View {
         .accessibilityIdentifier("integrations.destination.agent-list")
     }
 
-    private func agentRow(_ agent: IntegrationAgentConnectionControlPresentation) -> some View {
-        HStack(spacing: 12) {
-            Button {
-                _ = model.selectHost(agent.host)
-            } label: {
-                Text(agent.title)
-                    .font(ClaudioTheme.font(.body).weight(.semibold))
-                    .foregroundColor(ClaudioTheme.text(colorScheme))
-                    .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .focused($focusedTarget, equals: .agent(agent.host))
-            .accessibilityLabel(agent.title)
-            .accessibilityValue(
-                "\(localizedAgentStatus(agent.status))，\(agent.coverageText)"
-            )
-            .accessibilityAddTraits(model.selectedHost == agent.host ? .isSelected : [])
-            .accessibilityIdentifier("integrations.destination.agent.\(agent.host.rawValue)")
+    private func agentRow(_ agent: IntegrationAgentConnectionControlPresentation) -> AnyView {
+        AnyView(
+            HStack(spacing: 12) {
+                if let image = productImages.image(agent.host, colorScheme == .dark) {
+                    Image(nsImage: image).resizable().scaledToFit().frame(width: 27, height: 27)
+                        .accessibilityHidden(true)
+                }
+                Button {
+                    _ = model.selectHost(agent.host)
+                } label: {
+                    Text(agent.title)
+                        .font(SettingsAppearance.font(.body).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.text(colorScheme))
+                        .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focused($focusedTarget, equals: .agent(agent.host))
+                .accessibilityLabel(agent.title)
+                .accessibilityValue(
+                    "\(localizedAgentStatus(agent.status))，\(agent.coverageText)"
+                )
+                .accessibilityAddTraits(model.selectedHost == agent.host ? .isSelected : [])
+                .accessibilityIdentifier("integrations.destination.agent.\(agent.host.rawValue)")
 
-            ClaudioStatusCapsule(localizedAgentStatus(agent.status), isEmphasized: agent.isOn)
-                .fixedSize()
-            Text(agent.coverageText)
-                .font(ClaudioTheme.font(.technical))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .monospacedDigit()
-                .accessibilityLabel(l10n.text(.integrationsCoverage))
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { agent.isOn },
-                    set: { _ in model.requestToggle(for: agent.host) })
-            )
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .tint(ClaudioTheme.clay(colorScheme))
-            .disabled(!agent.isToggleEnabled)
-            .focused($focusedTarget, equals: .toggle(agent.host))
-            .accessibilityLabel(
-                l10n.format(
-                    agent.isOn ? .integrationsDisable : .integrationsEnable,
-                    agent.title)
-            )
-            .accessibilityIdentifier("integrations.destination.toggle.\(agent.host.rawValue)")
+                SettingsStatusCapsule(localizedAgentStatus(agent.status), isEmphasized: agent.isOn)
+                    .fixedSize()
+                Text(agent.coverageText)
+                    .font(SettingsAppearance.font(.technical))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+                    .monospacedDigit()
+                    .accessibilityLabel(l10n.text(.integrationsCoverage))
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { agent.isOn },
+                        set: { _ in
+                            if agent.isOn {
+                                model.requestToggle(for: agent.host)
+                            } else {
+                                pendingConnect = agent.host
+                            }
+                        })
+                )
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(SettingsAppearance.accent(colorScheme))
+                .disabled(!agent.isToggleEnabled)
+                .focused($focusedTarget, equals: .toggle(agent.host))
+                .accessibilityLabel(
+                    l10n.format(
+                        agent.isOn ? .integrationsDisable : .integrationsEnable,
+                        agent.title)
+                )
+                .accessibilityIdentifier("integrations.destination.toggle.\(agent.host.rawValue)")
 
-            if agent.isInFlight, let operation = model.inFlightOperation {
-                ProgressView()
-                    .controlSize(.small)
-                    .accessibilityHidden(true)
-                Text(localizedInFlightStatus(operation))
-                    .font(ClaudioTheme.font(.caption).weight(.semibold))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                    .fixedSize(horizontal: false, vertical: true)
+                if agent.isInFlight, let operation = model.inFlightOperation {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityHidden(true)
+                    Text(localizedInFlightStatus(operation))
+                        .font(SettingsAppearance.font(.caption).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    model.selectedHost == agent.host
-                        ? Color.primary.opacity(0.06) : Color.clear))
+            .padding(.horizontal, 4)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        model.selectedHost == agent.host
+                            ? Color.primary.opacity(0.06) : Color.clear)))
     }
 
     private func connectionSection(_ facts: IntegrationDestinationHostFacts) -> some View {
@@ -234,53 +292,103 @@ struct IntegrationsSettingsDestinationView: View {
     private func connectionRow(
         _ row: IntegrationConnectionRowPresentation,
         facts: IntegrationDestinationHostFacts
-    ) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(localizedConnectionRowTitle(row.kind))
-                    .font(ClaudioTheme.font(.body).weight(.semibold))
-                    .foregroundColor(ClaudioTheme.text(colorScheme))
-                Text(localizedConnectionRowCaption(row.kind, facts: facts))
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                    .fixedSize(horizontal: false, vertical: true)
-                if row.kind == .receiptHistory {
-                    ForEach(facts.bindingReceipts) { receipt in
-                        Text(
-                            "\(receipt.text(language: languageStore.language)) · "
-                                + receipt.capabilityText(language: languageStore.language)
-                        )
-                        .font(ClaudioTheme.font(.caption))
-                        .foregroundStyle(ClaudioTheme.secondaryText(colorScheme))
+    ) -> AnyView {
+        AnyView(
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(localizedConnectionRowTitle(row.kind))
+                        .font(SettingsAppearance.font(.body).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.text(colorScheme))
+                    Text(localizedConnectionRowCaption(row.kind, facts: facts))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier(
-                            "integrations.destination.binding-receipt.\(receipt.id.rawValue)"
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .trailing, spacing: 7) {
+                    if row.kind == .connectionStatus {
+                        SettingsStatusCapsule(
+                            localizedAgentStatus(facts.status), isEmphasized: facts.status == .ready
                         )
+                    } else if row.kind == .mechanism, let value = row.value {
+                        Text(value)
+                            .font(SettingsAppearance.font(.technical))
+                            .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+                            .monospacedDigit()
+                    }
+                    if row.kind == .receiptHistory {
+                        Button(l10n.text(.integrationsReceiptHistoryView)) {
+                            receiptHistoryTarget = ReceiptHistoryTarget(host: facts.host)
+                        }
+                        .buttonStyle(.borderless)
+                        .focused($focusedTarget, equals: .connectionRow(.receiptHistory))
+                        .accessibilityIdentifier(
+                            "integrations.destination.open-history.\(facts.host.rawValue)")
+                    }
+                    ForEach(row.actions, id: \.self) { action in
+                        connectionActionButton(action, facts: facts)
                     }
                 }
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 61, alignment: .center)
+            .padding(.vertical, 5)
+            .focused($focusedTarget, equals: .connectionRow(row.kind))
+            .accessibilityIdentifier("integrations.destination.row.\(row.kind.rawValue)"))
+    }
 
-            VStack(alignment: .trailing, spacing: 7) {
-                if row.kind == .connectionStatus {
-                    ClaudioStatusCapsule(
-                        localizedAgentStatus(facts.status), isEmphasized: facts.status == .ready)
-                } else if row.kind == .mechanism, let value = row.value {
-                    Text(value)
-                        .font(ClaudioTheme.font(.technical))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                        .monospacedDigit()
+    private func receiptHistorySheet(_ host: HostID) -> AnyView {
+        let history = model.content.facts(for: host)?.receiptHistory
+        return AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(l10n.text(.integrationsReceiptHistory))
+                    .font(SettingsAppearance.font(.sectionTitle))
+                    .accessibilityAddTraits(.isHeader)
+                Text(host.displayName).foregroundStyle(.secondary)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let history {
+                            if case .damaged(let count) = history.state {
+                                Text(l10n.format(.settingsUsageHistoryDamaged, count))
+                            }
+                            if history.state == .unreadable {
+                                Text(l10n.text(.integrationsReceiptHistoryUnavailable))
+                            } else if history.entries.isEmpty {
+                                Text(l10n.text(.integrationsReceiptHistoryEmpty))
+                            }
+                            ForEach(history.entries.indices, id: \.self) { index in
+                                Text(
+                                    history.entries[index].text(language: languageStore.language)
+                                )
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier(
+                                    "integrations.destination.history.entry")
+                                Divider()
+                            }
+                        } else {
+                            Text(l10n.text(.integrationsReceiptHistoryUnavailable))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .settingsSectionSurface()
                 }
-                ForEach(row.actions, id: \.self) { action in
-                    connectionActionButton(action, facts: facts)
+                if let feedback = model.feedback { feedbackToast(feedback) }
+                HStack {
+                    Button(l10n.text(.actionRedetect)) { perform(.redetect) }
+                        .disabled(model.isPerformingAction)
+                    Spacer()
+                    Button(l10n.text(.commonClose)) { receiptHistoryTarget = nil }
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("integrations.destination.history.close")
                 }
             }
-            .fixedSize(horizontal: true, vertical: false)
-        }
-        .frame(minHeight: 58, alignment: .center)
-        .padding(.vertical, 5)
-        .focused($focusedTarget, equals: .connectionRow(row.kind))
-        .accessibilityIdentifier("integrations.destination.row.\(row.kind.rawValue)")
+            .font(SettingsAppearance.font(.body))
+            .padding(24)
+            .frame(width: 580, height: 420)
+            .background(SettingsAppearance.background(colorScheme))
+            .accessibilityIdentifier("integrations.destination.history.\(host.rawValue)")
+        )
     }
 
     @ViewBuilder
@@ -336,10 +444,10 @@ struct IntegrationsSettingsDestinationView: View {
         SettingsSectionCard {
             VStack(alignment: .leading, spacing: 10) {
                 Text(l10n.text(.integrationsUnavailableTitle))
-                    .font(ClaudioTheme.font(.body).weight(.semibold))
+                    .font(SettingsAppearance.font(.body).weight(.semibold))
                 Text(model.content.unavailableReason ?? l10n.text(.integrationsStoreUnavailable))
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.caption))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
                 Button(l10n.text(.actionRedetect)) { perform(.redetect) }
                     .disabled(model.isPerformingAction)
@@ -348,14 +456,44 @@ struct IntegrationsSettingsDestinationView: View {
         .padding(.top, 30)
     }
 
+    private func capabilitySection(_ facts: IntegrationDestinationHostFacts) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(l10n.text(.settingsNativeCapabilities)).font(
+                SettingsAppearance.font(.sectionTitle)
+            )
+            .accessibilityAddTraits(.isHeader).padding(14)
+            ForEach(Event.allCases, id: \.self) { event in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(localizedEventName(event, language: languageStore.language))
+                        .font(SettingsAppearance.font(.sectionTitle))
+                    ForEach(facts.capabilityReceipts.filter { $0.binding.event == event }) {
+                        receipt in
+                        Text(receipt.binding.nativeEvent ?? l10n.text(.panelCapabilityUnsupported))
+                            .font(SettingsAppearance.font(.caption))
+                        Text(receipt.capabilityText(language: languageStore.language))
+                            .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                        Text(receipt.text(language: languageStore.language))
+                            .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                            .accessibilityIdentifier(
+                                "integrations.destination.capability.\(receipt.id.rawValue)")
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true).padding(14)
+                if event != Event.allCases.last { Divider().padding(.horizontal, 14) }
+            }
+        }
+        .settingsSectionSurface(padding: 0)
+        .accessibilityIdentifier("integrations.destination.capabilities")
+    }
+
     private var infoCallout: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "info.circle")
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .accessibilityHidden(true)
             Text(l10n.text(.integrationsActivationCallout))
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 18)
@@ -369,22 +507,20 @@ struct IntegrationsSettingsDestinationView: View {
                 .foregroundColor(feedbackColor(feedback.kind))
                 .accessibilityHidden(true)
             Text(feedback.message(language: languageStore.language))
-                .font(ClaudioTheme.font(.caption).weight(.semibold))
+                .font(SettingsAppearance.font(.caption).weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
             Button {
                 model.dismissFeedback(revision: feedback.revision)
             } label: {
                 Image(systemName: "xmark")
             }
-            .buttonStyle(ClaudioIconButtonStyle())
+            .buttonStyle(.borderless)
             .accessibilityLabel(l10n.text(.integrationsCloseFeedback))
             .accessibilityIdentifier("integrations.destination.feedback.dismiss")
         }
         .padding(.horizontal, 13)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(ClaudioTheme.hairline(colorScheme)))
-        .shadow(radius: 8, y: 3)
+        .settingsSectionSurface()
         .accessibilityElement(children: .contain)
         .accessibilityLabel(feedback.localizedAccessibilityLabel(language: languageStore.language))
         .accessibilityIdentifier("integrations.destination.feedback.toast")
@@ -555,7 +691,7 @@ struct IntegrationsSettingsDestinationView: View {
             if facts.host == .workBuddy { return l10n.text(.integrationsWorkBuddySoundsCaption) }
             return l10n.text(.integrationsSurfaceEventsCaption)
         case .receiptHistory:
-            return l10n.text(.integrationsReceiptPolicy)
+            return l10n.text(.integrationsReceiptHistoryPolicy)
         }
     }
 
@@ -607,7 +743,7 @@ struct IntegrationsSettingsDestinationView: View {
     private func feedbackColor(_ kind: IntegrationsFeedbackKind) -> Color {
         switch kind {
         case .success: return ClaudioTheme.success(colorScheme)
-        case .information: return ClaudioTheme.clay(colorScheme)
+        case .information: return SettingsAppearance.accent(colorScheme)
         case .failure: return ClaudioTheme.error(colorScheme)
         }
     }

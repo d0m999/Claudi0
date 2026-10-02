@@ -75,6 +75,10 @@ package final class SettingsPresentationFixture: ObservableObject {
         session.dependencies.hostIntegrations
     }
 
+    package var quietPresentation: DynamicQuietPresentation {
+        session.dependencies.dynamicQuietPolicy.presentation
+    }
+
     package var lastSettingsDestination: SettingsDestination {
         session.dependencies.preferences.lastSettingsDestination
     }
@@ -134,10 +138,14 @@ package enum SettingsPresentationFixtures {
         aiCueScenario: PreviewFixtures.AICueGalleryScenario? = nil,
         integrationScenario: PreviewFixtures.HostIntegrationScenario? = nil,
         integrationInFlightAction: HostIntegrationUserAction? = nil,
+        hostIntegrations injectedHostIntegrations: HostIntegrationPresentationStore? = nil,
+        integrationsModel injectedIntegrationsModel: IntegrationDestinationModel? = nil,
         preferences injectedPreferences: ClaudioPreferences? = nil,
         eventNoticeModel: EventNoticeModel? = nil,
         noticeNavigation: SessionNavigationCoordinator? = nil,
-        activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil
+        activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil,
+        productImages: SettingsProductImages = .empty,
+        nativeEffects injectedNativeEffects: SoundPacksEditorNativeEffectsDispatcher? = nil
     ) -> SettingsPresentationFixture {
         let temporaryRoot = temporaryParent.appendingPathComponent(
             "claudio-settings-presentation-fixture-\(UUID().uuidString)",
@@ -154,10 +162,32 @@ package enum SettingsPresentationFixtures {
             : try! SettingsPresentationAICueAudioFixture(
                 parentDirectory: temporaryRoot,
                 identities: resolvedAICueScenario.candidateIdentities)
-        let aiCuePreviewState = resolvedAICueScenario.previewState(
+        let legacyAICuePreviewState = resolvedAICueScenario.previewState(
             candidateAssets: aiCueAudioFixture?.assets ?? [:])
+        let aiCuePreviewState = AICueGenerationPreviewState(
+            providerProfileID: legacyAICuePreviewState.providerProfileID,
+            credentialStatus: legacyAICuePreviewState.credentialStatus,
+            credentialActivity: legacyAICuePreviewState.credentialActivity,
+            credentialFailure: legacyAICuePreviewState.credentialFailure,
+            phase: legacyAICuePreviewState.phase,
+            adoptingCandidateID: legacyAICuePreviewState.adoptingCandidateID,
+            soundDescription: legacyAICuePreviewState.soundDescription,
+            displayName: legacyAICuePreviewState.displayName,
+            session: legacyAICuePreviewState.session.map {
+                AICueComposerSession(packID: "gallery-pack", event: $0.event)
+            },
+            generation: legacyAICuePreviewState.generation,
+            failure: legacyAICuePreviewState.failure,
+            adoptionOutcome: legacyAICuePreviewState.adoptionOutcome)
         let actionRecorder = SettingsPresentationActionRecorder(result: platformActionResult)
-        let preferences = injectedPreferences ?? ClaudioPreferences(previewLanguage: language)
+        let preferences =
+            injectedPreferences
+            ?? ClaudioPreferences(
+                defaults: SettingsFixtureDefaults(
+                    file: temporaryRoot.appendingPathComponent("preferences.plist")),
+                notificationCenter: NotificationCenter(),
+                preferredLanguageIdentifiers: { [language.rawValue] })
+        if injectedPreferences == nil { preferences.setLanguage(language) }
         preferences.setCompactPreviewDensity(textSize)
         let generalState = experienceProfile?.general
         let projectedLoginItemRegistration: LoginItemRegistrationState =
@@ -209,7 +239,7 @@ package enum SettingsPresentationFixtures {
                         state: .complete,
                         isSelected: false),
                 ],
-                selectedPackID: "settings-fixture-pack",
+                selectedPackID: aiCueScenario == nil ? "settings-fixture-pack" : "gallery-pack",
                 selectedEventRows: Event.allCases.map {
                     EventRow(
                         event: $0,
@@ -228,15 +258,17 @@ package enum SettingsPresentationFixtures {
             ?? PreviewFixtures.workBuddyVisualScenarios.first {
                 $0.phase == .allImplementedBindingsCurrent
             }!.state
-        let hostIntegrations = HostIntegrationPresentationStore(
-            state: hostState,
-            configurationSources: [
-                .claudeCode: "~/.claude/settings.json",
-                .codex: "~/.codex/hooks.json",
-                .workBuddy: "~/.workbuddy/settings.json",
-            ])
+        let hostIntegrations =
+            injectedHostIntegrations
+            ?? HostIntegrationPresentationStore(
+                state: hostState,
+                configurationSources: [
+                    .claudeCode: "~/.claude/settings.json",
+                    .codex: "~/.codex/hooks.json",
+                    .workBuddy: "~/.workbuddy/settings.json",
+                ])
         let dynamicQuietPolicy = makeSettingsFixtureDynamicQuietPolicy(
-            for: experienceProfile)
+            for: experienceProfile, temporaryRoot: temporaryRoot)
         let activityDiagnostics =
             injectedActivityDiagnostics
             ?? makeSettingsFixtureActivityDiagnostics(for: experienceProfile)
@@ -247,12 +279,14 @@ package enum SettingsPresentationFixtures {
             content: hostIntegrations.content,
             feedbackKind: .success,
             feedbackMessage: "fixture complete")
-        let integrationsModel = IntegrationDestinationModel(
-            content: hostIntegrations.content,
-            refreshHandler: IntegrationDestinationRefreshHandler { integrationOutcome },
-            actionHandler: IntegrationDestinationActionHandler { _ in integrationOutcome },
-            preferences: preferences,
-            clipboardWriter: IntegrationDestinationClipboardWriter { _ in true })
+        let integrationsModel =
+            injectedIntegrationsModel
+            ?? IntegrationDestinationModel(
+                content: hostIntegrations.content,
+                refreshHandler: IntegrationDestinationRefreshHandler { integrationOutcome },
+                actionHandler: IntegrationDestinationActionHandler { _ in integrationOutcome },
+                preferences: preferences,
+                clipboardWriter: IntegrationDestinationClipboardWriter { _ in true })
         if let integrationInFlightAction {
             integrationsModel.pinPreviewInFlight(integrationInFlightAction)
         }
@@ -272,13 +306,19 @@ package enum SettingsPresentationFixtures {
                         "event-packs", isDirectory: true),
                     durationProbe: SettingsPresentationFixtureDurationProbe(),
                     packsLockFile: temporaryRoot.appendingPathComponent("event-packs.lock")))
-        let nativeEffects = SoundPacksEditorNativeEffectsDispatcher(
-            adapter: SettingsPresentationFixtureNativeEffectsAdapter())
+        let nativeEffects =
+            injectedNativeEffects
+            ?? SoundPacksEditorNativeEffectsDispatcher(
+                adapter: SettingsPresentationFixtureNativeEffectsAdapter())
         let aiCueViewModel =
             injectedAICueViewModel
             ?? AICueGenerationViewModel(
                 previewState: aiCuePreviewState,
-                registry: PreviewFixtures.aiCueEvidenceRegistry)
+                registry: PreviewFixtures.aiCueEvidenceRegistry,
+                providerPreferences: AICueProviderPreferences(
+                    defaults: SettingsFixtureDefaults(
+                        file: temporaryRoot.appendingPathComponent("ai-preferences.plist")),
+                    registry: PreviewFixtures.aiCueEvidenceRegistry))
         let session = SettingsPresentationSession(
             dependencies: SettingsPresentationDependencies(
                 preferences: preferences,
@@ -294,7 +334,8 @@ package enum SettingsPresentationFixtures {
                 integrationsModel: integrationsModel,
                 aiCueViewModel: aiCueViewModel,
                 eventNoticeModel: eventNoticeModel,
-                noticeNavigation: noticeNavigation),
+                noticeNavigation: noticeNavigation,
+                productImages: productImages),
             actions: SettingsPresentationActions(
                 handler: { actionRecorder.perform($0) },
                 onEventAudibilityInputsChanged: {
@@ -305,17 +346,12 @@ package enum SettingsPresentationFixtures {
             session.replaceAvailabilityForTesting(availability)
         }
         let presentationRoute: SettingsRoute
-        if let aiSession = aiCueScenario == nil ? nil : aiCuePreviewState.session {
-            presentationRoute = .events(scope: aiSession.scope, event: aiSession.event)
+        if aiCueScenario != nil {
+            presentationRoute = .sounds(
+                .editEvent(packID: "gallery-pack", event: aiCuePreviewState.session?.event ?? .stop)
+            )
         } else {
             presentationRoute = route
-        }
-        if case .events(let scope, let event) = presentationRoute,
-            aiCueScenario != nil,
-            aiCuePreviewState.session != nil
-        {
-            session.eventSettingsSelection.select(
-                EventSettingsWindowRoute(scope: scope, event: event))
         }
         _ = session.send(.present(.route(presentationRoute)))
         if aiCueScenario?.rendersCredentialSheet == true {
@@ -379,7 +415,8 @@ extension SettingsPresentationDependencies {
         self.init(
             preferences: preferences,
             loginItemSettings: loginItemSettings,
-            dynamicQuietPolicy: makeSettingsFixtureDynamicQuietPolicy(for: nil),
+            dynamicQuietPolicy: makeSettingsFixtureDynamicQuietPolicy(
+                for: nil, temporaryRoot: temporaryRoot),
             activityDiagnostics: makeSettingsFixtureActivityDiagnostics(for: nil),
             globalShortcutSettings: makeSettingsFixtureShortcutSettings(for: nil),
             aboutSettings: makeSettingsFixtureAboutSettings(for: nil),
@@ -397,26 +434,24 @@ extension SettingsPresentationDependencies {
                 actionHandler: IntegrationDestinationActionHandler { _ in integrationOutcome }),
             aiCueViewModel: AICueGenerationViewModel(
                 previewState: PreviewFixtures.AICueGalleryScenario.editing.previewState(),
-                registry: PreviewFixtures.aiCueEvidenceRegistry))
+                registry: PreviewFixtures.aiCueEvidenceRegistry,
+                providerPreferences: AICueProviderPreferences(
+                    defaults: SettingsFixtureDefaults(
+                        file: temporaryRoot.appendingPathComponent("ai-preferences.plist")),
+                    registry: PreviewFixtures.aiCueEvidenceRegistry)))
     }
 }
 
 @MainActor
 private func makeSettingsFixtureDynamicQuietPolicy(
-    for profile: PreviewFixtures.SettingsExperienceProfile?
+    for profile: PreviewFixtures.SettingsExperienceProfile?, temporaryRoot: URL
 ) -> DynamicQuietPolicyController {
     let state = profile?.notifications ?? .ready
-    let suiteName = "Claudio.SettingsPresentationFixture.\(UUID().uuidString)"
-    let defaults = UserDefaults(suiteName: suiteName)!
+    let defaults = SettingsFixtureDefaults(
+        file: temporaryRoot.appendingPathComponent("quiet-preferences.plist"))
     let policyEnabled = profile?.destination == .notifications
-    if policyEnabled {
-        defaults.setVolatileDomain(
-            [
-                DynamicQuietPolicyController.focusDefaultsKey: true,
-                DynamicQuietPolicyController.calendarDefaultsKey: true,
-            ],
-            forName: suiteName)
-    }
+    defaults.set(policyEnabled, forKey: DynamicQuietPolicyController.focusDefaultsKey)
+    defaults.set(policyEnabled, forKey: DynamicQuietPolicyController.calendarDefaultsKey)
     let permissionDenied = state == .permissionRequired
     let focus = FocusQuietSystemState(
         authorization: permissionDenied ? .denied : .authorized,

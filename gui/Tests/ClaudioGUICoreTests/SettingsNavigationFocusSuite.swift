@@ -50,9 +50,6 @@ func runSettingsNavigationFocusSuites() async {
         expect(
             probe.sendKey(keyCode: 48, characters: "\t"), "Tab must leave the Notifications title")
         expect(
-            probe.sendKey(keyCode: 48, characters: "\t"),
-            "the next Tab must reach Event Source Prompts")
-        expect(
             probe.sendKey(keyCode: 49, characters: " "),
             "Space must activate the Event Source Prompts control")
         let activated = await settingsNavigationFocusWait {
@@ -64,7 +61,7 @@ func runSettingsNavigationFocusSuites() async {
         )
     }
 
-    await suite("Settings native focus: Sounds title leads to the first page action") {
+    await suite("Settings native focus: Sounds title leads to management scope") {
         expect(
             NSApp.isFullKeyboardAccessEnabled,
             "enable system Keyboard navigation for this regression")
@@ -87,19 +84,16 @@ func runSettingsNavigationFocusSuites() async {
         await Task.yield()
 
         expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must leave the Sounds title")
-        expect(
-            probe.sendKey(keyCode: 49, characters: " "),
-            "Space must activate the first Sounds action")
-        let activated = await settingsNavigationFocusWait {
-            guard case .sounds(let sounds) = fixture.soundPacksEditor.presentation.mode else {
-                return false
-            }
-            return sounds.draft != nil
-        }
+        // Opening an NSPopUpButton starts a synchronous AppKit menu loop. External native UI
+        // automation verifies its Space/arrow/Return interaction; this seam verifies actual focus.
+        let activated = await settingsNavigationFocusWait { probe.focusedPopUpItems != nil }
         expect(
             activated && fixture.session.state.routeResolution.destination == .sounds,
-            "Tab/Space from the Sounds title must create a draft instead of selecting a sidebar row"
+            "Tab from the Sounds title must focus the actual management-scope picker"
         )
+        expect(
+            probe.focusedPopUpSelection == "默认组",
+            "the first Sounds action must show the current management scope")
     }
 
     await suite("Settings native focus: Events title leads to the first sound scope") {
@@ -137,19 +131,16 @@ func runSettingsNavigationFocusSuites() async {
         )
 
         expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must leave the Events title")
-        expect(
-            probe.sendKey(keyCode: 49, characters: " "), "Space must activate the first sound scope"
-        )
-        let activated = await settingsNavigationFocusWait {
-            fixture.eventSettingsSelection.route.scope == .global
-                && fixture.eventSettingsModel.selectedSoundScope == .global
-        }
+        let activated = await settingsNavigationFocusWait { probe.focusedPopUpItems != nil }
         expect(
             activated && fixture.session.state.routeResolution.destination == .eventsAndSounds,
-            "Tab/Space from the Events title must select Default Group instead of a sidebar row")
+            "Tab from the Events title must focus the current sound-scope picker")
+        expect(
+            fixture.eventSettingsSelection.route.scope == workspace,
+            "focusing the picker must retain the selected Workspace")
     }
 
-    await suite("Settings native focus: the first sound-pack list stop accepts arrow navigation") {
+    await suite("Settings native focus: scope then pack picker has one stop per native control") {
         expect(
             NSApp.isFullKeyboardAccessEnabled,
             "enable system Keyboard navigation for this regression")
@@ -178,30 +169,15 @@ func runSettingsNavigationFocusSuites() async {
         expect(
             sounds.packs.count > 1 && originalPackID != nil,
             "the list needs distinct inspectable packs")
-        expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must reach New Pack")
+        expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must reach management scope")
         expect(
-            probe.sendKey(keyCode: 48, characters: "\t"), "the next Tab must reach the native list")
+            probe.sendKey(keyCode: 48, characters: "\t"), "the next Tab must reach the pack picker")
         expect(
-            probe.sendKey(keyCode: 125, characters: "\u{F701}"),
-            "Down must navigate the list at its first Tab stop")
-        let selected = await settingsNavigationFocusWait {
-            guard case .sounds(let current) = fixture.soundPacksEditor.presentation.mode else {
-                return false
-            }
-            return current.selectedPack?.id != originalPackID
-        }
+            (probe.focusedPopUpItems?.count ?? 0) == sounds.packs.count + 1,
+            "the native pack picker must contain every inspectable pack and None")
         expect(
-            selected, "the list's first Tab stop must inspect the next pack without an extra Tab")
-        expect(
-            probe.sendKey(keyCode: 126, characters: "\u{F700}"),
-            "Up must remain owned by the native list")
-        let restored = await settingsNavigationFocusWait {
-            guard case .sounds(let current) = fixture.soundPacksEditor.presentation.mode else {
-                return false
-            }
-            return current.selectedPack?.id == originalPackID
-        }
-        expect(restored, "the list must retain arrow navigation after its selection changes")
+            fixture.soundPacksEditor.presentation.mode == .sounds(sounds),
+            "keyboard focus must not apply or inspect another pack")
     }
 
     await suite("Settings native focus: an empty sound-pack list contributes no Tab stop") {
@@ -240,23 +216,13 @@ func runSettingsNavigationFocusSuites() async {
                 return
             }
             expect(sounds.packs.isEmpty, "the native list must have no inspectable pack")
-            expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must reach New Pack")
+            expect(probe.sendKey(keyCode: 48, characters: "\t"), "Tab must reach management scope")
             expect(
                 probe.sendKey(keyCode: 48, characters: "\t"),
-                "Tab must skip the empty list and reach the provider picker")
+                "Tab must skip the disabled empty pack picker")
             expect(
-                !probe.isNativeListFocused,
-                "an empty native List must not take a keyboard focus stop")
-            guard !probe.isNativeListFocused else { return }
-            expect(
-                probe.sendKey(keyCode: 48, characters: "\t"), "Tab must reach credential management"
-            )
-            expect(
-                probe.sendKey(keyCode: 49, characters: " "), "Space must open the credential sheet")
-            let opened = await settingsNavigationFocusWait { probe.hasAttachedSheet }
-            expect(
-                opened,
-                "empty-list traversal must reach the next real action without a phantom Tab stop")
+                !probe.isNativeListFocused && probe.focusedPopUpItems == nil,
+                "an empty pack picker must contribute no keyboard focus stop")
         }
     }
 }

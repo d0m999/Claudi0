@@ -960,6 +960,18 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "integrations.destination.binding-current-receipt"
     public static let integrationsReceiptPolicy: Self =
         "integrations.destination.receipt-policy"
+    package static let integrationsReceiptHistoryView: Self = "integrations.receipt-history.view"
+    package static let integrationsReceiptHistoryEmpty: Self = "integrations.receipt-history.empty"
+    package static let integrationsReceiptHistoryUnavailable: Self =
+        "integrations.receipt-history.unavailable"
+    package static let integrationsReceiptHistoryCurrent: Self =
+        "integrations.receipt-history.current"
+    package static let integrationsReceiptHistoryPrevious: Self =
+        "integrations.receipt-history.previous"
+    package static let integrationsReceiptHistoryUnknown: Self =
+        "integrations.receipt-history.unknown"
+    package static let integrationsReceiptHistoryPolicy: Self =
+        "integrations.receipt-history.policy"
     public static let integrationsActivationCallout: Self =
         "integrations.destination.activation-callout"
     public static let integrationsUnavailableTitle: Self =
@@ -1025,6 +1037,16 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let soundPacksAddingAudio: Self = "sound-packs.adding-audio"
     public static let soundPacksWritingChanges: Self = "sound-packs.writing-changes"
     public static let soundPacksAddAudioLabel: Self = "sound-packs.add-audio.label"
+    public static let soundPacksImportTargetChanged: Self = "sound-packs.import.target-changed"
+    public static let soundPacksImportBindingFailed: Self = "sound-packs.import.binding-failed"
+    public static let soundPacksImportSaved: Self = "sound-packs.import.saved"
+    public static let soundPacksImportAssignSaved: Self = "sound-packs.import.assign-saved"
+    public static let soundPacksImportOversize: Self = "sound-packs.import.oversize"
+    public static let soundPacksImportFormat: Self = "sound-packs.import.format"
+    public static let soundPacksImportUnsafeName: Self = "sound-packs.import.unsafe-name"
+    public static let soundPacksImportUnknownDuration: Self = "sound-packs.import.unknown-duration"
+    public static let soundPacksImportDuration: Self = "sound-packs.import.duration"
+    public static let soundPacksImportCopyFailed: Self = "sound-packs.import.copy-failed"
     public static let soundPacksImporting: Self = "sound-packs.importing"
     public static let soundPacksAddAudioHint: Self = "sound-packs.add-audio.hint"
     public static let soundPacksPackDelete: Self = "sound-packs.pack-delete"
@@ -1354,7 +1376,97 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let settingsNotificationsCurrentSection: Self =
         "settings.notifications.current-section"
 
+    package static let settingsNativeLocalNotice: Self = "settings.native.local-notice"
+    package static let settingsNativeBack: Self = "settings.native.back"
+    package static let settingsNativeAudioFiles: Self = "settings.native.audio-files"
+    package static let settingsNativeAIServices: Self = "settings.native.ai-services"
+    package static let settingsNativePanelDisplaySet: Self = "settings.native.panel-display-set"
+    package static let settingsNativeTargetUnavailable: Self = "settings.native.target-unavailable"
+    package static let settingsNativeAudioDescription: Self = "settings.native.audio-description"
+    package static let settingsNativePanelDescription: Self = "settings.native.panel-description"
+    package static let settingsNativeEditCue: Self = "settings.native.edit-cue"
+    package static let settingsNativeRemoveStar: Self = "settings.native.remove-star"
+    package static let settingsNativeAddStar: Self = "settings.native.add-star"
+    package static let settingsNativeSelectProfile: Self = "settings.native.select-profile"
+    package static let settingsNativeManagementScope: Self = "settings.native.management-scope"
+    package static let settingsNativeViewDoesNotApply: Self = "settings.native.view-does-not-apply"
+    package static let settingsNativeWorkspaces: Self = "settings.native.workspaces"
+    package static let settingsNativeManageWorkspaces: Self = "settings.native.manage-workspaces"
+    package static let settingsNativeDirectoryAndSurfaces: Self =
+        "settings.native.directory-and-surfaces"
+    package static let settingsNativeNoWorkspaces: Self = "settings.native.no-workspaces"
+    package static let settingsNativeCapabilities: Self = "settings.native.capabilities"
+    package static let settingsNativeReceiverStatus: Self = "settings.native.receiver-status"
+    package static let settingsNativeReceiverReady: Self = "settings.native.receiver-ready"
+    package static let settingsNativeReceiverDisabled: Self = "settings.native.receiver-disabled"
+
+    package static let settingsNativeConnectTitle: Self = "settings.native.connect-title"
+    package static let settingsNativeConnectMessage: Self = "settings.native.connect-message"
+    package static let settingsNativeOpenFocusSettings: Self = "settings.native.open-focus-settings"
+    package static let settingsNativeSystemSettingsFailed: Self =
+        "settings.native.system-settings-failed"
+    package static let settingsNativeRecheck: Self = "settings.native.recheck"
+
+    package static let settingsNativeCopyAndApplyTitle: Self =
+        "settings.native.copy-and-apply-title"
+    package static let settingsNativeCopyOnly: Self = "settings.native.copy-only"
+    package static let settingsNativeWorkspaceCreation: Self = "settings.native.workspace-creation"
+    package static let settingsNativeEditDraftName: Self = "settings.native.edit-draft-name"
+    package static let settingsNativeStyledRoute: Self = "settings.native.styled-route"
+    package static let settingsNativeNumberedRoute: Self = "settings.native.numbered-route"
+    package static let settingsNativeRegion: Self = "settings.native.region"
+    package static let settingsNativeGlobal: Self = "settings.native.global"
+    package static let settingsNativeSingapore: Self = "settings.native.singapore"
+    package static let settingsNativeBeijing: Self = "settings.native.beijing"
+    package static let settingsNativeChina: Self = "settings.native.china"
+
+    package static let settingsNativePanelLimit: Self = "settings.native.panel-limit"
+    package static let settingsNativePanelUnavailable: Self = "settings.native.panel-unavailable"
+
     public static let allKnown: [Self] = [
+        .settingsNativePanelLimit,
+        .settingsNativePanelUnavailable,
+        .settingsNativeCopyAndApplyTitle,
+        .settingsNativeCopyOnly,
+        .settingsNativeWorkspaceCreation,
+        .settingsNativeEditDraftName,
+        .settingsNativeStyledRoute,
+        .settingsNativeNumberedRoute,
+        .settingsNativeRegion,
+        .settingsNativeGlobal,
+        .settingsNativeSingapore,
+        .settingsNativeBeijing,
+        .settingsNativeChina,
+
+        .settingsNativeConnectTitle,
+        .settingsNativeConnectMessage,
+        .settingsNativeOpenFocusSettings,
+        .settingsNativeSystemSettingsFailed,
+        .settingsNativeRecheck,
+
+        .settingsNativeLocalNotice,
+        .settingsNativeBack,
+        .settingsNativeAudioFiles,
+        .settingsNativeAIServices,
+        .settingsNativePanelDisplaySet,
+        .settingsNativeTargetUnavailable,
+        .settingsNativeAudioDescription,
+        .settingsNativePanelDescription,
+        .settingsNativeEditCue,
+        .settingsNativeRemoveStar,
+        .settingsNativeAddStar,
+        .settingsNativeSelectProfile,
+        .settingsNativeManagementScope,
+        .settingsNativeViewDoesNotApply,
+        .settingsNativeWorkspaces,
+        .settingsNativeManageWorkspaces,
+        .settingsNativeDirectoryAndSurfaces,
+        .settingsNativeNoWorkspaces,
+        .settingsNativeCapabilities,
+        .settingsNativeReceiverStatus,
+        .settingsNativeReceiverReady,
+        .settingsNativeReceiverDisabled,
+
         .eventPreviewNoAvailableEvents,
         .settingsReturnToSoundScope,
         .eventNoticeViewInPanel,
@@ -1614,6 +1726,16 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .soundPacksCopy, .soundPacksCopyLabel, .soundPacksOriginalReadonly,
         .soundPacksAddAudio, .soundPacksAddingAudio, .soundPacksWritingChanges,
         .soundPacksAddAudioLabel,
+        .soundPacksImportTargetChanged,
+        .soundPacksImportBindingFailed,
+        .soundPacksImportSaved,
+        .soundPacksImportAssignSaved,
+        .soundPacksImportOversize,
+        .soundPacksImportFormat,
+        .soundPacksImportUnsafeName,
+        .soundPacksImportUnknownDuration,
+        .soundPacksImportDuration,
+        .soundPacksImportCopyFailed,
         .soundPacksImporting, .soundPacksAddAudioHint,
         .soundPacksPackDelete, .soundPacksPackDeleteTitle, .soundPacksPackDeleteMessage,
         .soundPacksPackDeleteLabel, .soundPacksPackDeleteHint,
@@ -1775,6 +1897,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .integrationsStatusLegacy, .integrationsStatusNotConnected,
         .integrationsStatusNeedsAttention, .integrationsMechanism,
         .integrationsEventsAndSounds, .integrationsReceiptHistory, .integrationsLatestReceipt,
+        .integrationsReceiptHistoryView, .integrationsReceiptHistoryEmpty,
+        .integrationsReceiptHistoryUnavailable, .integrationsReceiptHistoryCurrent,
+        .integrationsReceiptHistoryPrevious, .integrationsReceiptHistoryUnknown,
+        .integrationsReceiptHistoryPolicy,
         .integrationsNoConfigurationSource, .integrationsConfigurationSourceValue,
         .integrationsActivatedDescription, .integrationsConfiguredWaitingDescription,
         .integrationsNotConnectedDescription, .integrationsNeedsAttentionDescription,

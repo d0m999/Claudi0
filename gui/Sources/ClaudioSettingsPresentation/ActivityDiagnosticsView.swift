@@ -25,7 +25,7 @@ struct ActivityDiagnosticsView: View {
     private var global: ActivityOverviewPresentation { model.presentation.projection.global }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             Text(l10n.text(.settingsUsageDescription))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -82,7 +82,7 @@ struct ActivityDiagnosticsView: View {
                 feedbackView(feedback)
             }
         }
-        .frame(maxWidth: 820, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .task { model.refresh() }
         .onReceive(model.$feedback.dropFirst().compactMap { $0 }) { feedback in
             onAnnouncement?(feedbackText(feedback))
@@ -168,7 +168,7 @@ struct ActivityDiagnosticsView: View {
                 value: countText(global.sevenDaySubtasks),
                 status: global.sevenDayStatus,
                 identifier: "settings.activity.summary.subtasks")
-        }
+        }.settingsSectionSurface(padding: 0)
     }
 
     private func summaryCard(
@@ -182,7 +182,7 @@ struct ActivityDiagnosticsView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             Text(value)
-                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .font(.system(size: 25, weight: .bold, design: .default))
                 .monospacedDigit()
             Text(statusText(status))
                 .font(.caption2)
@@ -190,18 +190,20 @@ struct ActivityDiagnosticsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 13))
+
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier(identifier)
     }
 
     private var sourcesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsUsageHistoryTitle)).font(.headline)
-            ForEach(HostID.productVisibleCases, id: \.self) { host in
-                let overview = model.presentation.projection.surfaces[host]
-                sourceCard(host: host, overview: overview)
+            Text(l10n.text(.settingsUsageHistoryTitle)).font(SettingsAppearance.font(.sectionTitle))
+            VStack(spacing: 0) {
+                ForEach(HostID.productVisibleCases, id: \.self) { host in
+                    let overview = model.presentation.projection.surfaces[host]
+                    sourceCard(host: host, overview: overview)
+                    if host != HostID.productVisibleCases.last { Divider() }
+                }
             }
         }
         .settingsSectionSurface()
@@ -241,8 +243,7 @@ struct ActivityDiagnosticsView: View {
                 .foregroundColor(.secondary)
         }
         .padding(12)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 11))
+        .frame(minHeight: 61)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("settings.activity.source.\(host.rawValue)")
     }
@@ -260,7 +261,8 @@ struct ActivityDiagnosticsView: View {
 
     private var eventSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsActivityEventsTitle)).font(.headline)
+            Text(l10n.text(.settingsActivityEventsTitle)).font(
+                SettingsAppearance.font(.sectionTitle))
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
                 Text(l10n.text(.settingsActivityRangeToday))
@@ -287,6 +289,7 @@ struct ActivityDiagnosticsView: View {
                         .foregroundColor(.secondary)
                         .frame(width: 42, alignment: .trailing)
                 }
+                .frame(minHeight: 48)
                 .accessibilityElement(children: .combine)
                 .accessibilityValue(
                     "\(countText(row.todayCount)), \(countText(row.sevenDayCount)), \(row.coverage.fractionText)"
@@ -299,7 +302,7 @@ struct ActivityDiagnosticsView: View {
 
     private var logSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsUsageLogTitle)).font(.headline)
+            Text(l10n.text(.settingsUsageLogTitle)).font(SettingsAppearance.font(.sectionTitle))
             Text(l10n.text(.settingsUsageLogDescription))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -307,20 +310,21 @@ struct ActivityDiagnosticsView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.activity.log-state")
             Text(model.presentation.log.path)
+                .fixedSize(horizontal: false, vertical: true)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundColor(.secondary)
                 .textSelection(.enabled)
                 .accessibilityIdentifier("settings.activity.log-path")
             if model.presentation.log.failures.isEmpty {
                 Text(l10n.text(.settingsUsageLogNoFailures))
-                    .font(.system(.body, design: .rounded))
+                    .font(.system(.body, design: .default))
                     .foregroundColor(.secondary)
                     .accessibilityIdentifier("settings.activity.log-no-failures")
             } else {
                 ForEach(Array(model.presentation.log.failures.enumerated()), id: \.offset) {
                     offset, failure in
                     Text(logFailureText(failure))
-                        .font(.system(.caption, design: .rounded))
+                        .font(.system(.caption, design: .default))
                         .foregroundColor(.secondary)
                         .accessibilityIdentifier("settings.activity.log-failure.\(offset)")
                 }
@@ -339,7 +343,7 @@ struct ActivityDiagnosticsView: View {
 
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsUsagePrivacyTitle)).font(.headline)
+            Text(l10n.text(.settingsUsagePrivacyTitle)).font(SettingsAppearance.font(.sectionTitle))
             Label(l10n.text(.settingsUsagePrivacyHost), systemImage: "lock.shield")
             Label(l10n.text(.settingsUsagePrivacyProvider), systemImage: "network")
             Text(l10n.text(.settingsUsagePrivacyBilling))

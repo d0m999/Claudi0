@@ -48,6 +48,7 @@ package enum SettingsPresentationCommand: Equatable, Sendable {
     case route(SettingsRoute)
     case setLanguageMode(ClaudioLanguageMode)
     case setLoginItemEnabled(Bool)
+    case refreshLoginItemState
     case retryLoginItemOperation
     case performPlatformAction(SettingsPlatformAction)
     case eventAudibilityInputsChanged

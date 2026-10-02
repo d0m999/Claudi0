@@ -71,10 +71,10 @@ package struct SettingsRootView: View {
                         height: geometry.size.height,
                         alignment: .top
                     )
-                    .background(ClaudioTheme.elevated(colorScheme))
+                    .background(SettingsAppearance.sidebar(colorScheme))
                     .soundPacksLayoutProbe("settings.sidebar")
                 Rectangle()
-                    .fill(ClaudioTheme.hairline(colorScheme))
+                    .fill(SettingsAppearance.hairline(colorScheme))
                     .frame(width: ClaudioTheme.Metrics.hairline)
                     .accessibilityHidden(true)
                 routeSlot
@@ -97,7 +97,9 @@ package struct SettingsRootView: View {
             minHeight: SettingsWindowGeometry.minimumHeight
         )
         .background(SettingsAppearance.background(colorScheme))
-        .tint(ClaudioTheme.clay(colorScheme))
+        .tint(SettingsAppearance.accent(colorScheme))
+        .font(SettingsAppearance.font(.body))
+        .foregroundStyle(SettingsAppearance.text(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(l10n.text(.settingsWindowTitle))
         .accessibilityIdentifier(SettingsPresentationAccessibilityID.root)
@@ -146,18 +148,13 @@ package struct SettingsRootView: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(ClaudioTheme.success(colorScheme))
-                    .frame(width: 7, height: 7)
-                    .accessibilityHidden(true)
-                Text(l10n.text(.settingsSidebarLocalFirst))
-            }
-            .font(.caption2.weight(.semibold))
-            .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .accessibilityIdentifier("settings.sidebar.local-first")
+            Text(l10n.text(.settingsNativeLocalNotice))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundStyle(SettingsAppearance.secondaryText(colorScheme))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+                .padding(.top, 18)
+                .accessibilityIdentifier("settings.sidebar.local-first")
         }
         .padding(.horizontal, 12)
         .padding(.top, 20)
@@ -171,41 +168,27 @@ package struct SettingsRootView: View {
             HStack(spacing: 9) {
                 Image(systemName: icon(item))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(
-                        item == destination
-                            ? ClaudioTheme.clay(colorScheme)
-                            : ClaudioTheme.secondaryText(colorScheme)
-                    )
+                    .foregroundStyle(.white)
                     .frame(width: 25, height: 25)
-                    .background(
-                        item == destination
-                            ? ClaudioTheme.claySoft(colorScheme)
-                            : ClaudioTheme.surface(colorScheme)
-                    )
+                    .background(sidebarIconColor(item))
                     .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control))
                     .overlay(
                         RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
-                            .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
+                            .stroke(SettingsAppearance.hairline(colorScheme), lineWidth: 1)
                     )
                     .accessibilityHidden(true)
 
                 Text(item.localizedName(language: preferences.language))
                     .foregroundColor(
                         item == destination
-                            ? ClaudioTheme.text(colorScheme)
-                            : ClaudioTheme.secondaryText(colorScheme)
+                            ? SettingsAppearance.text(colorScheme)
+                            : SettingsAppearance.secondaryText(colorScheme)
                     )
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
                 Spacer(minLength: 4)
 
-                if item == destination {
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(ClaudioTheme.clay(colorScheme))
-                        .accessibilityHidden(true)
-                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 8)
@@ -214,13 +197,13 @@ package struct SettingsRootView: View {
                 RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
                     .fill(
                         item == destination
-                            ? ClaudioTheme.claySoft(colorScheme)
+                            ? Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.085)
                             : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(.system(.body, design: .rounded).weight(item == destination ? .semibold : .regular))
+        .font(SettingsAppearance.font(.body).weight(item == destination ? .semibold : .regular))
         .focused($focusedTarget, equals: SettingsWindowFocusTarget.sidebar(item))
         .soundPacksLayoutProbe("settings.sidebar.item.\(item.rawValue)")
         .settingsSidebarInteraction(
@@ -249,6 +232,7 @@ package struct SettingsRootView: View {
                     model: integrationsModel,
                     focusCoordinator: integrationsFocusCoordinator,
                     languageStore: preferences,
+                    productImages: settingsPresentationSession.dependencies.productImages,
                     onManageSoundScopes: {
                         settingsPresentationSession.send(
                             .route(.destination(.eventsAndSounds)))
@@ -271,31 +255,47 @@ package struct SettingsRootView: View {
             case .notifications:
                 standardDestination { notificationsSettings }
             case .sounds:
-                VStack(alignment: .leading, spacing: 36) {
-                    destinationTitle
-                    if settingsPresentationSession.soundReturnContext != nil {
-                        Button(l10n.text(.settingsReturnToSoundScope)) {
-                            _ = settingsPresentationSession.returnToSoundScope()
-                        }
-                        .accessibilityIdentifier("settings.sounds.return-to-scope")
-                    }
-                    SettingsSoundsDestinationView(
-                        aiCueViewModel: aiCueViewModel,
-                        editorOwner: soundPacksEditorOwner,
-                        route: soundsRoute,
-                        routeRequestRevision:
-                            settingsPresentationSession.state.explicitRouteRequestRevision,
-                        languageStore: preferences,
-                        nativeEffects: soundPacksEditorNativeEffects,
-                        onAnnouncement: onAnnouncement
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .soundPacksLayoutProbe("settings.sounds.editor-slot")
-                }
-                .frame(maxWidth: 820, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.horizontal, 36)
-                .padding(.top, 36)
-                .padding(.bottom, 20)
+                SettingsSoundsDestinationView(
+                    aiCueViewModel: aiCueViewModel,
+                    editorOwner: soundPacksEditorOwner,
+                    route: soundsRoute,
+                    routeRequestRevision:
+                        settingsPresentationSession.state.explicitRouteRequestRevision,
+                    languageStore: preferences,
+                    nativeEffects: soundPacksEditorNativeEffects,
+                    pageHeader: destinationTitle,
+                    scopePicker: SettingsSoundScopePicker(session: settingsPresentationSession),
+                    returnToScope: soundScopeReturnAction,
+                    onAnnouncement: onAnnouncement,
+                    credentialSheetIsPresented: Binding(
+                        get: {
+                            settingsPresentationSession.state.eventPresentation
+                                .credentialSheetIsPresented
+                        },
+                        set: { presented in
+                            if presented {
+                                settingsPresentationSession.eventSettingsSelection
+                                    .presentCredentialSheet()
+                            } else {
+                                settingsPresentationSession.eventSettingsSelection
+                                    .dismissCredentialSheet()
+                            }
+                        }),
+                    playingCandidateID: Binding(
+                        get: {
+                            settingsPresentationSession.state.eventPresentation.playingCandidateID
+                        },
+                        set: { id in
+                            if let id {
+                                settingsPresentationSession.eventSettingsSelection
+                                    .beginCandidatePreview(id: id)
+                            } else {
+                                settingsPresentationSession.eventSettingsSelection
+                                    .noteCandidatePreviewStopped()
+                            }
+                        })
+                )
+                .soundPacksLayoutProbe("settings.sounds.editor-slot")
             case .usage:
                 standardDestination {
                     ActivityDiagnosticsView(
@@ -329,23 +329,8 @@ package struct SettingsRootView: View {
     private func standardDestination<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 36) {
-                VStack(alignment: .leading, spacing: 10) {
-                    destinationTitle
-                    if destination == .general {
-                        Text(l10n.text(.settingsGeneralLanguageDescription))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                content()
-            }
-            .frame(maxWidth: 820, alignment: .leading)
-            .padding(.horizontal, 36)
-            .padding(.top, 36)
-            .padding(.bottom, 48)
-        }
+        SettingsDestinationPage(
+            destination: destination, header: { destinationTitle }, content: content)
     }
 
     private var destinationTitle: some View {
@@ -362,6 +347,11 @@ package struct SettingsRootView: View {
             .soundPacksLayoutProbe("settings.title.\(destination.rawValue)")
     }
 
+    private var soundScopeReturnAction: (@MainActor () -> Void)? {
+        guard settingsPresentationSession.soundReturnContext != nil else { return nil }
+        return { _ = settingsPresentationSession.returnToSoundScope() }
+    }
+
     private var soundsRoute: SoundPacksWindowRoute {
         guard
             case .sounds(let route) = settingsPresentationSession.state.routeResolution.route
@@ -370,7 +360,10 @@ package struct SettingsRootView: View {
     }
 
     private var generalSettings: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
+            SettingsSectionCard {
+                LoginItemSettingsSection(session: settingsPresentationSession)
+            }
             SettingsSectionCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Picker(
@@ -382,7 +375,7 @@ package struct SettingsRootView: View {
                                 .tag(mode)
                         }
                     }
-                    .pickerStyle(.radioGroup)
+                    .pickerStyle(.menu)
                     .focused(
                         $focusedTarget,
                         equals: SettingsWindowFocusTarget.firstAction(.general)
@@ -409,10 +402,6 @@ package struct SettingsRootView: View {
                 }
             }
 
-            SettingsSectionCard {
-                LoginItemSettingsSection(session: settingsPresentationSession)
-            }
-
             if !preferences.recoveryIssues.isEmpty {
                 Label {
                     Text(l10n.text(.settingsGeneralPreferenceRecovery))
@@ -432,7 +421,7 @@ package struct SettingsRootView: View {
     }
 
     private var notificationsSettings: some View {
-        VStack(alignment: .leading, spacing: 36) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             SettingsSectionCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(l10n.text(.settingsNotificationsBannerSection)).font(.headline)
@@ -447,7 +436,7 @@ package struct SettingsRootView: View {
                         }
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 64)
+                    .frame(minHeight: 61)
                     .accessibilityValue(
                         l10n.text(
                             preferences.showsEventSourcePrompts
@@ -456,6 +445,16 @@ package struct SettingsRootView: View {
                         )
                     )
                     .accessibilityIdentifier("settings.notifications.event-source-prompts")
+
+                    settingsStatusRow(
+                        title: l10n.text(.settingsNativeReceiverStatus),
+                        value: l10n.text(
+                            eventNoticeHealth.status == .ready
+                                ? .settingsNativeReceiverReady
+                                : eventNoticeHealth.status == .disabled
+                                    ? .settingsNativeReceiverDisabled : .aiCueServiceUnavailable)
+                    )
+                    .accessibilityIdentifier("settings.notifications.receiver-health")
 
                     if eventNoticeHealth.status == .unavailable,
                         let failureCode = eventNoticeHealth.failureCode
@@ -488,7 +487,7 @@ package struct SettingsRootView: View {
                         }
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 64)
+                    .frame(minHeight: 61)
                     .focused(
                         $focusedTarget,
                         equals: SettingsWindowFocusTarget.firstAction(.notifications)
@@ -498,6 +497,14 @@ package struct SettingsRootView: View {
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsPermissionTitle),
                         value: focusAuthorizationText)
+                    if dynamicQuietPolicy.presentation.focusAuthorization == .denied
+                        || dynamicQuietPolicy.presentation.focusAuthorization == .restricted
+                    {
+                        Button(l10n.text(.settingsNativeOpenFocusSettings)) {
+                            settingsPresentationSession.send(
+                                .performPlatformAction(.openFocusSettings))
+                        }.accessibilityIdentifier("settings.notifications.focus-settings")
+                    }
                     Divider()
                     Toggle(isOn: calendarQuietBinding) {
                         VStack(alignment: .leading, spacing: 5) {
@@ -509,7 +516,7 @@ package struct SettingsRootView: View {
                         }
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 64)
+                    .frame(minHeight: 61)
                     .accessibilityIdentifier("settings.notifications.calendar-toggle")
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCalendarPermissionTitle),
@@ -536,6 +543,14 @@ package struct SettingsRootView: View {
                         title: l10n.text(.settingsNotificationsSnapshotHealthTitle),
                         value: snapshotHealthText)
                 }
+            }
+
+            if settingsPresentationSession.state.platformActionFailure == .openFocusSettings
+                || settingsPresentationSession.state.platformActionFailure
+                    == .openCalendarPrivacySettings
+            {
+                FailureRow(message: l10n.text(.settingsNativeSystemSettingsFailed))
+                    .accessibilityIdentifier("settings.notifications.system-settings-failure")
             }
 
             if dynamicQuietPolicy.presentation.hasObserverFailure,
@@ -570,7 +585,7 @@ package struct SettingsRootView: View {
             }
             .accessibilityIdentifier("settings.notifications.open-events")
         }
-        .frame(maxWidth: 620, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.notifications))
         .onChange(of: dynamicQuietPolicy.presentation) { _ in
@@ -710,6 +725,18 @@ package struct SettingsRootView: View {
         }
     }
 
+    private func sidebarIconColor(_ item: SettingsDestination) -> Color {
+        switch item {
+        case .eventsAndSounds: Color(red: 0.949, green: 0.580, blue: 0.133)
+        case .sounds: Color(red: 0.635, green: 0.357, blue: 0.898)
+        case .integrations: Color(red: 0.345, green: 0.482, blue: 0.776)
+        case .notifications: Color(red: 0.886, green: 0.353, blue: 0.404)
+        case .general, .shortcuts: Color(red: 0.557, green: 0.557, blue: 0.576)
+        case .usage: Color(red: 0.396, green: 0.600, blue: 0.427)
+        case .about: Color(red: 0.333, green: 0.608, blue: 0.839)
+        }
+    }
+
     private func icon(_ destination: SettingsDestination) -> String {
         switch destination {
         case .general: "gearshape"
@@ -723,28 +750,4 @@ package struct SettingsRootView: View {
         }
     }
 
-}
-
-@MainActor
-private struct SettingsSoundsDestinationView: View {
-    let aiCueViewModel: AICueGenerationViewModel
-    let editorOwner: SoundPacksEditorOwner
-    let route: SoundPacksWindowRoute
-    let routeRequestRevision: UInt64
-    let languageStore: ClaudioPreferences
-    let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
-    let onAnnouncement: @MainActor (String) -> Void
-
-    var body: some View {
-        SettingsSoundsAICueView(
-            viewModel: aiCueViewModel,
-            editorOwner: editorOwner,
-            languageStore: languageStore,
-            nativeEffects: nativeEffects,
-            route: route,
-            routeRequestRevision: routeRequestRevision,
-            onAnnouncement: onAnnouncement
-        )
-        .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.sounds))
-    }
 }

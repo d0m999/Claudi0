@@ -276,9 +276,11 @@ func runSoundPacksRefreshSuites() async {
                 && !flat.contains("model.writesAllowed"),
             "映射、导入、拖放与孤儿写控件必须共同消费 owner 签发的 action availability")
         expect(
-            flat.contains("canForkFactoryPack: selectedCard?.forkAction != nil")
-                && flat.contains("canRestoreFactoryPack: selectedCard?.restoreAction != nil")
-                && flat.contains("canUseSelectedPack: selectedCard?.useAction != nil")
+            flat.contains("canForkFactoryPack: hasPackActions && selectedCard?.forkAction != nil")
+                && flat.contains(
+                    "canRestoreFactoryPack: hasPackActions && selectedCard?.restoreAction != nil")
+                && flat.contains(
+                    "canUseSelectedPack: hasPackActions && selectedCard?.useAction != nil")
                 && flat.contains("retryFactoryRestorePackIDs: activeSounds.recoveryActions.map")
                 && flat.contains(".disabled(card.restoreAction == nil)"),
             "复制、恢复、使用与重试的真控件/焦点必须由同一 owner capability 投影驱动")

@@ -1,0 +1,8 @@
+官方产品原图，逐字节提取自固定设置原型的 hostIcons。
+原型 SHA-256：f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91。
+仅用于设置来源身份；不替代产品状态、接入或回执。
+
+claude-light.png: 104425 bytes, SHA-256 1bec5f7b12a4a46fea879633464ebf1d32144ef731a0f054539b2d7251871cb6
+codex-light.png: 493468 bytes, SHA-256 de7d43f3386105ab20952958c2c25beb0d903e2aeb6e1aef57c49a648c0d1c07
+codex-dark.png: 630021 bytes, SHA-256 69fb4384e161be8a20dcb94a9ac34aea4fbfaeb67514110a71e7b0732eccb0fc
+workbuddy-light.png: 286954 bytes, SHA-256 3c2bc7d338c9eacc027af2b27693056b7cbea3a6c0a09225cf87020afe57fd7b

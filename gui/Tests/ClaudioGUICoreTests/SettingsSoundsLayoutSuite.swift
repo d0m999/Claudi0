@@ -10,100 +10,100 @@ import Vision
 
 @MainActor
 func runSettingsSoundsLayoutSuites() {
-    suite("设置原生呈现：八页暖色底、三组留白与独立事件卡") {
-        for size in [NSSize(width: 1_240, height: 820), NSSize(width: 960, height: 640)] {
-            for dark in [false, true] {
-                for destination in SettingsDestination.allCases {
-                    let fixture = SettingsPresentationFixtures.generalLogin(
-                        language: size.width == 960 ? .english : .zhHans,
-                        route: .destination(destination),
-                        availability: PreviewFixtures.settingsRouteAvailability)
-                    let probe = SettingsSoundsNativeLayoutProbe(
-                        session: fixture.session, size: size,
-                        appearance: dark ? .darkAqua : .aqua)
-                    defer { probe.close() }
-                    let name = "\(destination.rawValue) \(size.width) \(dark ? "dark" : "light")"
-                    let frames = SoundPacksLayoutRecorder.frames
-                    guard let content = frames["settings.content"] else {
-                        expect(false, "\(name) 内容区必须实际挂载")
-                        continue
-                    }
-                    let expectedBackground = dark ? [26, 24, 21] : [250, 248, 244]
-                    for y in [40.0, size.height / 2, size.height - 20] {
-                        let observed = probe.rgb(at: CGPoint(x: content.minX + 8, y: y))
+    suite("设置原生呈现：八页、两语言、两外观、两尺寸的 64 个组合") {
+        for language in [ClaudioAppLanguage.zhHans, .english] {
+            for size in [NSSize(width: 1_240, height: 820), NSSize(width: 960, height: 640)] {
+                for dark in [false, true] {
+                    for destination in SettingsDestination.allCases {
+                        let fixture = SettingsPresentationFixtures.generalLogin(
+                            language: language, route: .destination(destination),
+                            availability: PreviewFixtures.settingsRouteAvailability)
+                        let probe = SettingsSoundsNativeLayoutProbe(
+                            session: fixture.session, size: size,
+                            appearance: dark ? .darkAqua : .aqua)
+                        defer { probe.close() }
+                        let name =
+                            "\(destination.rawValue) \(Int(size.width)) \(language.rawValue) \(dark)"
+                        let frames = SoundPacksLayoutRecorder.frames
+                        guard let content = frames["settings.content"],
+                            let sidebar = frames["settings.sidebar"],
+                            let reading = frames["settings.reading.\(destination.rawValue)"]
+                        else {
+                            expect(false, "\(name) 必须挂载真实页面与单列内容：\(frames.keys.sorted())")
+                            continue
+                        }
                         expect(
-                            colorsMatch(observed, expectedBackground),
-                            "\(name) 页头、滚动区和底部须连续使用设置底色：\(observed as Any)")
-                    }
-                    let sidebarRows = SettingsDestination.allCases.compactMap {
-                        frames["settings.sidebar.item.\($0.rawValue)"]
-                    }
-                    expect(sidebarRows.count == 8, "\(name) 八页侧栏必须实际挂载")
-                    if sidebarRows.count == 8 {
-                        for index in 1..<8 {
-                            let gap = sidebarRows[index].minY - sidebarRows[index - 1].maxY
+                            abs(sidebar.width - (size.width <= 1_100 ? 210 : 252)) < 1,
+                            "\(name) 侧栏宽度必须匹配窗口：\(sidebar)")
+                        let padding: CGFloat = size.width <= 1_100 ? 26 : 32
+                        expect(
+                            reading.width <= 780 - padding * 2 + 1
+                                && reading.minX >= content.minX + padding - 1
+                                && reading.maxX <= content.maxX - padding + 1,
+                            "\(name) 单列包含内边距且无横向溢出：\(reading), \(content)")
+                        for y in [40.0, size.height / 2, size.height - 20] {
+                            expect(
+                                colorsMatch(
+                                    probe.rgb(at: CGPoint(x: content.minX + 8, y: y)),
+                                    dark ? [32, 32, 34] : [255, 255, 255]),
+                                "\(name) 页首、滚动区、页尾必须保持设置底色")
+                        }
+                        let rows = SettingsDestination.allCases.compactMap {
+                            frames["settings.sidebar.item.\($0.rawValue)"]
+                        }
+                        expect(rows.count == 8, "\(name) 八页侧栏必须实际挂载")
+                        for index in 1..<rows.count {
+                            let gap = rows[index].minY - rows[index - 1].maxY
                             expect(
                                 abs(gap - ([4, 6].contains(index) ? 24 : 3)) < 1,
-                                "\(name) 侧栏第 \(index) 处组间／组内留白：\(gap)")
+                                "\(name) 三组侧栏间距：\(gap)")
                         }
-                    }
-                    if destination == .eventsAndSounds || destination == .sounds {
-                        let prefix = destination == .sounds ? "sound-packs" : "workspace"
-                        let cards = Event.allCases.compactMap {
-                            frames["\(prefix).event-card.\($0.rawValue)"]
-                        }
-                        expect(cards.count == 5, "\(name) 五事件必须各自成卡：\(frames.keys.sorted())")
-                        for pair in zip(cards, cards.dropFirst()) {
-                            expect(
-                                abs(pair.1.minY - pair.0.maxY - 12) < 1,
-                                "\(name) 事件卡间距必须为 12 pt：\(pair)")
-                        }
-                        let selectorID =
-                            destination == .sounds
-                            ? "sound-packs.selector.card" : "workspace.scope-selector.card"
-                        let infoID =
-                            destination == .sounds
-                            ? "sound-packs.information.card" : "workspace.configuration.card"
-                        if let selector = frames[selectorID] {
-                            expect(selector.height >= 70, "\(name) 选择器卡至少 70 pt")
-                            let observed = probe.rgb(
-                                at: CGPoint(x: selector.midX, y: selector.minY + 5))
-                            expect(
-                                colorsMatch(observed, dark ? [28, 26, 23] : [255, 255, 255]),
-                                "\(name) 卡片必须使用设置专用表面：\(observed as Any)")
-                            let border = probe.rgb(
-                                at: CGPoint(x: selector.midX, y: selector.minY + 0.25))
-                            expect(
-                                colorsMatch(border, dark ? [63, 60, 55] : [228, 225, 224]),
-                                "\(name) 卡片须显示真实 1 pt 描边：\(border as Any)")
-                            if let info = frames["workspace.migration.card"] ?? frames[infoID] {
-                                expect(
-                                    abs(info.minY - selector.maxY - 36) < 1,
-                                    "\(name) 选择器后留白须为 36 pt：\(selector), \(info)")
+                        if destination == .eventsAndSounds || destination == .sounds {
+                            let prefix = destination == .sounds ? "sound-packs" : "workspace"
+                            let events = Event.allCases.compactMap {
+                                frames["\(prefix).event-row.\($0.rawValue)"]
                             }
-                        } else {
-                            expect(false, "\(name) 选择器卡必须实际挂载")
-                        }
-                        if let info = frames[infoID], let first = cards.first {
-                            expect(
-                                abs(first.minY - info.maxY - 24) < 1,
-                                "\(name) 配置／包信息卡至五事件留白须为 24 pt：\(info), \(first)")
-                        }
-                        let auxiliaryID =
-                            destination == .sounds
-                            ? "settings.sounds.ai-cue.service" : "workspace.auxiliary.card"
-                        if let auxiliary = frames[auxiliaryID], let last = cards.last {
-                            if size.width == 960 {
+                            expect(events.count == 5, "\(name) 五事件须在同一功能组内")
+                            if let group = frames["\(prefix).events.group"] {
                                 expect(
-                                    auxiliary.minY > last.maxY,
-                                    "\(name) 窄窗口辅助卡须放在五事件与主操作之后")
+                                    events.allSatisfy {
+                                        group.insetBy(dx: -1, dy: -1).contains($0)
+                                    },
+                                    "\(name) 五事件不得成为独立卡片或横向溢出")
+                                for pair in zip(events, events.dropFirst()) {
+                                    expect(
+                                        abs(pair.1.minY - pair.0.maxY) <= 2,
+                                        "\(name) 事件行只由分隔线分开：\(pair)")
+                                }
                             } else {
-                                expect(
-                                    abs(auxiliary.width - 260) < 1 && auxiliary.minX > last.maxX,
-                                    "\(name) 宽窗口辅助卡须在右侧且宽 260 pt：\(auxiliary)")
+                                expect(false, "\(name) 必须挂载事件功能组")
                             }
-                        } else {
-                            expect(false, "\(name) 真实辅助卡必须挂载")
+                            if let selector = frames[
+                                "\(prefix).\(prefix == "workspace" ? "scope-selector" : "selector").card"
+                            ] {
+                                expect(selector.height >= 48, "\(name) 选择器满足原生行最小高度")
+                                expect(
+                                    colorsMatch(
+                                        probe.rgb(
+                                            at: CGPoint(x: selector.midX, y: selector.minY + 5)),
+                                        dark ? [45, 45, 48] : [245, 245, 247]),
+                                    "\(name) 功能组必须使用新原型中性表面")
+                            } else {
+                                expect(false, "\(name) 必须挂载选择器")
+                            }
+                        }
+                        if let captureDirectory = ProcessInfo.processInfo.environment[
+                            "CLAUDIO_LAYOUT_CAPTURE_DIR"]
+                        {
+                            let file = URL(fileURLWithPath: captureDirectory)
+                                .appendingPathComponent(
+                                    "\(destination.rawValue)-\(Int(size.width))-\(language.rawValue)-\(dark ? "dark" : "light").png"
+                                )
+                            expect(probe.saveScreenshot(to: file), "\(name) 原生截图须可保存")
+                            expect(probe.scrollToEnd(), "\(name) 末尾必须通过原生滚动可达")
+                            let bottom = file.deletingPathExtension()
+                                .appendingPathExtension("bottom.png")
+                            expect(probe.saveScreenshot(to: bottom), "\(name) 滚动末尾原生截图须可保存")
                         }
                     }
                 }
@@ -111,7 +111,7 @@ func runSettingsSoundsLayoutSuites() {
         }
     }
 
-    suite("设置原生呈现：系统高对比度外观保留实色表面") {
+    suite("设置原生呈现：高对比度仍使用实色功能组") {
         for dark in [false, true] {
             let fixture = SettingsPresentationFixtures.generalLogin(
                 route: .events(scope: .global, event: nil),
@@ -121,117 +121,34 @@ func runSettingsSoundsLayoutSuites() {
                 appearance: dark
                     ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
             defer { probe.close() }
-            guard
-                let selector = SoundPacksLayoutRecorder.frames["workspace.scope-selector.card"]
-            else { expect(false, "辅助功能检查必须挂载选择器卡"); continue }
-            let interior = probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5))
+            guard let selector = SoundPacksLayoutRecorder.frames["workspace.scope-selector.card"]
+            else { expect(false, "高对比度检查须挂载实际选择器"); continue }
             expect(
-                colorsMatch(interior, dark ? [28, 26, 23] : [255, 255, 255]),
-                "高对比度外观不得改变卡片实色：\(interior as Any)")
+                colorsMatch(
+                    probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)),
+                    dark ? [45, 45, 48] : [245, 245, 247]), "增强对比度保留实色功能组")
         }
     }
 
-    suite("声音设置原生挂载：两种窗口尺寸和语言保留包列表、滚动详情与固定操作栏") {
-        for (size, language, appearance) in [
-            (NSSize(width: 1_240, height: 820), ClaudioAppLanguage.zhHans, NSAppearance.Name.aqua),
-            (NSSize(width: 960, height: 640), ClaudioAppLanguage.english, .darkAqua),
-        ] {
-            let fixture = SettingsPresentationFixtures.generalLogin(
-                language: language,
-                route: .sounds(.overview),
-                availability: PreviewFixtures.settingsRouteAvailability)
-            let probe = SettingsSoundsNativeLayoutProbe(
-                session: fixture.session,
-                size: size,
-                appearance: appearance)
-            let frames = SoundPacksLayoutRecorder.frames
-            let name = "\(Int(size.width))×\(Int(size.height)) \(language.rawValue)"
-            guard let sidebar = frames["settings.sidebar"],
-                let title = frames["settings.title.sounds"],
-                let list = frames["sound-packs.pack-list"],
-                let scroll = frames["sound-packs.detail-scroll"],
-                let action = frames["sound-packs.action-bar"],
-                let editor = frames["sound-packs.editor"],
-                let service = frames["settings.sounds.ai-cue.service"]
-            else {
-                expect(false, "\(name) 未挂载完整声音布局：\(frames.keys.sorted())")
-                probe.close()
-                continue
-            }
-            expect(
-                sidebar.minY <= 2 && sidebar.maxY >= size.height - 2
-                    && title.minY >= 0 && title.maxY <= editor.minY + 2,
-                "\(name) 侧栏须贴顶且标题在包编辑器上方：\(frames)")
-            expect(
-                editor.minY >= title.maxY - 2 && editor.maxY <= size.height + 2
-                    && list.width > 120 && list.height >= 64
-                    && list.maxY <= size.height + 2,
-                "\(name) 顶部完整库选择器须在窗口内可达：\(frames)")
-            expect(
-                scroll.width > 200 && scroll.height > 100
-                    && list.maxY <= scroll.minY + 2
-                    && service.minY >= scroll.minY - 2
-                    && service.width <= scroll.width + 2,
-                "\(name) 服务卡须复用同一个详情滚动区，窄窗口允许移到卡片后：\(frames)")
-            expect(
-                action.minY >= scroll.maxY - 3 && action.maxY <= size.height + 2,
-                "\(name) 包操作栏须固定在详情滚动区下方且保持可见：\(frames)")
-            let mappingRows = Event.allCases.compactMap {
-                frames["sound-packs.event.\($0.rawValue)"]
-            }
-            let generationActions = Event.allCases.compactMap {
-                frames["settings.sounds.ai-cue.event.\($0.rawValue)"]
-            }
-            expect(
-                mappingRows.count == Event.allCases.count
-                    && generationActions.count == Event.allCases.count
-                    && zip(mappingRows, generationActions).allSatisfy { pair in
-                        pair.0.maxY <= pair.1.minY + 2
-                            && abs(pair.0.minX - pair.1.minX) < 30
-                    },
-                "\(name) 每个事件只能在包映射行下接一处描述生成动作：\(frames)")
-            expect(
-                Event.allCases.allSatisfy { event in
-                    guard let card = frames["sound-packs.event-card.\(event.rawValue)"],
-                        let action = frames["settings.sounds.ai-cue.event.\(event.rawValue)"]
-                    else { return false }
-                    return card.contains(action)
-                },
-                "\(name) 每个 AI 生成入口须属于自己的独立事件卡")
-            let visibleText = probe.recognizedText()
-            expect(
-                visibleText.map {
-                    $0.count >= 5 && !$0.contains(where: { $0.contains("%@") })
-                } == true,
-                "\(name) 可见声音页不得出现原样格式占位符：\(visibleText ?? [])")
-            if let captureDirectory = ProcessInfo.processInfo.environment[
-                "CLAUDIO_LAYOUT_CAPTURE_DIR"]
-            {
-                let file = URL(fileURLWithPath: captureDirectory).appendingPathComponent(
-                    "sounds-\(Int(size.width))-\(language.rawValue).png")
-                expect(probe.saveScreenshot(to: file), "\(name) 原生挂载截图必须能保存")
-            }
-            probe.close()
-        }
-    }
-
-    suite("声音设置原生挂载：空组和只读深链仍在同一详情区") {
+    suite("声音详情：未发布草稿与只读深链保持真实可编辑边界") {
         let draftFixture = SettingsPresentationFixtures.generalLogin(
-            route: .sounds(.overview),
-            availability: PreviewFixtures.settingsRouteAvailability)
+            route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability)
         let draftProbe = SettingsSoundsNativeLayoutProbe(
             session: draftFixture.session,
             size: NSSize(width: 960, height: 640))
         expect(
-            draftFixture.soundPacksEditor.beginAICuePackDraft(language: .zhHans),
-            "空组必须经现有 owner 创建")
+            draftFixture.soundPacksEditor.beginAICuePackDraft(language: .zhHans), "草稿须由既有 owner 创建")
         draftProbe.refresh()
         expect(
-            Event.allCases.allSatisfy {
-                SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.\($0.rawValue)"]
-                    != nil
-            },
-            "未发布空组也必须保留唯一五事件生成入口")
+            SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
+            "新草稿直接进入事件详情且未发布")
+        expect(
+            {
+                if case .sounds(let sounds) = draftFixture.soundPacksEditor.presentation.mode {
+                    return sounds.draft != nil
+                }; return false
+            }(),
+            "呈现详情不得发布空草稿")
         draftProbe.close()
 
         let readonlyFixture = SettingsPresentationFixtures.generalLogin(
@@ -241,18 +158,10 @@ func runSettingsSoundsLayoutSuites() {
         let readonlyProbe = SettingsSoundsNativeLayoutProbe(
             session: readonlyFixture.session,
             size: NSSize(width: 1_240, height: 820))
-        expect(readonlyFixture.aiCueViewModel.session == nil, "只读编辑深链不启动 AI 会话")
-        if case .sounds(let presentation) = readonlyFixture.soundPacksEditor.presentation.mode {
-            expect(presentation.route.editTarget?.event == .stop, "只读深链定位真实编辑事件")
-        } else {
-            expect(false, "必须进入同一声音编辑 owner")
-        }
+        expect(readonlyFixture.aiCueViewModel.session == nil, "只读包详情不得启动 AI 会话")
         expect(
-            Event.allCases.allSatisfy {
-                SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.\($0.rawValue)"]
-                    == nil
-            } && SoundPacksLayoutRecorder.frames["sound-packs.action-bar"] != nil,
-            "只读包隐藏生成入口并保留复制操作栏")
+            SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
+            "只读深链仍进入对应事件详情")
         readonlyProbe.close()
     }
 
@@ -330,9 +239,8 @@ func runSettingsSoundsLayoutSuites() {
                     && fixture.aiCueViewModel.generation == nil,
                 "切换包后旧目标会话与候选必须失效")
             expect(
-                SoundPacksLayoutRecorder.frames["sound-packs.pack-list"] != nil
-                    && SoundPacksLayoutRecorder.frames["sound-packs.action-bar"] != nil,
-                "切换包后仍保留包列表和固定操作栏")
+                SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
+                "切换包后详情绑定新的检查包，旧候选不可操作")
         } else {
             expect(false, "测试包必须提供 owner 的检查动作")
         }
@@ -341,7 +249,7 @@ func runSettingsSoundsLayoutSuites() {
 }
 
 @MainActor
-private final class SettingsSoundsNativeLayoutProbe {
+final class SettingsSoundsNativeLayoutProbe {
     private let window: UnconstrainedProbeWindow
     private let hostingView: NSHostingView<SettingsRootView>
     private let requestedSize: NSSize
@@ -391,23 +299,104 @@ private final class SettingsSoundsNativeLayoutProbe {
         }
     }
 
-    func recognizedText() -> [String]? {
-        guard let image = renderedBitmap()?.cgImage else { return nil }
-        let request = VNRecognizeTextRequest()
-        // Deterministic inspection must not wait on the system Neural Engine service.
-        request.usesCPUOnly = true
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        guard
-            (try? VNImageRequestHandler(cgImage: image, options: [:]).perform([request])) != nil
-        else { return nil }
-        return request.results?.compactMap { $0.topCandidates(1).first?.string }
-    }
-
     func saveScreenshot(to url: URL) -> Bool {
         guard let data = renderedBitmap()?.representation(using: .png, properties: [:])
         else { return false }
         return (try? data.write(to: url)) != nil
+    }
+
+    var hasAttachedSheet: Bool { window.attachedSheet != nil }
+
+    func scrollToEnd() -> Bool {
+        var scrolls: [NSScrollView] = []
+        func visit(_ view: NSView, insideReadingScroll: Bool = false) {
+            let isReadingScroll = view is NSScrollView && view.bounds.width > 400
+            if let scroll = view as? NSScrollView, isReadingScroll, !insideReadingScroll {
+                scrolls.append(scroll)
+            }
+            for child in view.subviews {
+                visit(child, insideReadingScroll: insideReadingScroll || isReadingScroll)
+            }
+        }
+        visit(hostingView)
+        guard scrolls.count == 1, let scroll = scrolls.first,
+            let document = scroll.documentView
+        else { return false }
+        let clip = scroll.contentView
+        let y =
+            document.isFlipped
+            ? max(document.bounds.minY, document.bounds.maxY - clip.bounds.height)
+            : document.bounds.minY
+        clip.scroll(to: NSPoint(x: document.bounds.minX, y: y))
+        scroll.reflectScrolledClipView(clip)
+        refresh()
+        let visible = scroll.documentVisibleRect
+        return document.bounds.height <= visible.height + 1
+            || (document.isFlipped
+                ? abs(visible.maxY - document.bounds.maxY) < 1
+                : abs(visible.minY - document.bounds.minY) < 1)
+    }
+
+    func saveSheetScreenshot(to url: URL) -> Bool {
+        guard let view = window.attachedSheet?.contentView,
+            let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+        else { return false }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]) else { return false }
+        return (try? data.write(to: url)) != nil
+    }
+
+    func renderedSheetText() -> String? {
+        guard let view = window.attachedSheet?.contentView,
+            let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+        else { return nil }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        return recognizedText(in: bitmap)
+    }
+
+    func renderedButtonText(title: String) -> String? {
+        guard let button = findButton(title: title, in: hostingView),
+            let bitmap = renderedBitmap(), let image = bitmap.cgImage
+        else { return nil }
+        let frame = hostingView.convert(button.bounds, from: button)
+        let scaleX = CGFloat(image.width) / hostingView.bounds.width
+        let scaleY = CGFloat(image.height) / hostingView.bounds.height
+        let y = hostingView.isFlipped ? frame.minY : hostingView.bounds.height - frame.maxY
+        let crop = CGRect(
+            x: frame.minX * scaleX, y: y * scaleY,
+            width: frame.width * scaleX, height: frame.height * scaleY)
+        guard let cropped = image.cropping(to: crop) else { return nil }
+        return recognizedText(in: NSBitmapImageRep(cgImage: cropped))
+    }
+
+    func buttonLayout(title: String) -> [String: CGFloat]? {
+        guard let button = findButton(title: title, in: hostingView) else { return nil }
+        return [
+            "width": button.bounds.width,
+            "intrinsicWidth": button.intrinsicContentSize.width,
+            "cellWidth": button.cell?.cellSize.width ?? -1,
+            "wrapperWidth": button.superview?.bounds.width ?? -1,
+            "wrapperIntrinsicWidth": button.superview?.intrinsicContentSize.width ?? -1,
+        ]
+    }
+
+    private func findButton(title: String, in view: NSView) -> NSButton? {
+        if let button = view as? NSButton, button.title == title { return button }
+        return view.subviews.lazy.compactMap { self.findButton(title: title, in: $0) }.first
+    }
+
+    private func recognizedText(in bitmap: NSBitmapImageRep) -> String? {
+        guard let image = bitmap.cgImage else { return nil }
+        let request = VNRecognizeTextRequest()
+        request.usesCPUOnly = true
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        request.recognitionLanguages = ["zh-Hans", "en-US"]
+        guard (try? VNImageRequestHandler(cgImage: image).perform([request])) != nil else {
+            return nil
+        }
+        return request.results?.compactMap { $0.topCandidates(1).first?.string }.joined(
+            separator: "\n")
     }
 
     func rgb(at point: CGPoint) -> [Int]? {
@@ -433,6 +422,7 @@ private final class SettingsSoundsNativeLayoutProbe {
     }
 
     func close() {
+        if let sheet = window.attachedSheet { window.endSheet(sheet) }
         window.orderOut(nil)
         window.close()
     }

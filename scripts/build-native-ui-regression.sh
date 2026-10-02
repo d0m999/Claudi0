@@ -32,8 +32,11 @@ for raw in sorted(set(tracked+untracked)):
  if not raw: continue
  p=pathlib.Path(os.fsdecode(raw)); entries.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'deleted'})
 fingerprint=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest()
-base=git('rev-parse','--verify',os.environ.get('CLAUDIO_UI_REGRESSION_BASE_SHA','30446c56cd010d3d3338b2e8d19618939885319b')+'^{commit}').decode().strip()
-manifest={'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
+base=git('rev-parse','--verify',os.environ.get('CLAUDIO_UI_REGRESSION_BASE_SHA','7ca63a4af0497b74b53e89225ccf4de30d900c12')+'^{commit}').decode().strip()
+prototype=pathlib.Path('designs/macos-settings-native/claudi0 macOS Settings Prototype.html')
+prototype_sha=hashlib.sha256(prototype.read_bytes()).hexdigest()
+if prototype_sha!='f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91': raise SystemExit('Settings prototype fingerprint mismatch')
+manifest={'settingsPrototypeSHA256':prototype_sha,'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
 (output/'build-evidence.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 PY
 codesign --force --deep --sign - "$regression_app" >&2

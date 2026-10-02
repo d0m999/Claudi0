@@ -10467,6 +10467,118 @@
         }
       }
     },
+    "integrations.receipt-history.view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看…"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No receipt history."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无历史回执。"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receipt history is unreadable. Redetect and retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回执历史不可读，请重新检测后重试。"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.current": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current installation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前代次"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.previous": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous installation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧代次"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current installation unknown"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前代次未知"
+          }
+        }
+      }
+    },
+    "integrations.receipt-history.policy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retained events, times, installation generations, and playback outcomes; clearing affects only this surface’s history."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留事件、时间、安装代次与播放结果；清除只影响当前来源历史。"
+          }
+        }
+      }
+    },
     "settings.sidebar.advanced": {
       "localizations": {
         "en": {
@@ -12296,13 +12408,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Events & Sounds for the panel's current valid Sound Scope."
+            "value": "Open Default Group & Workspaces for the panel's current valid Sound Scope."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为面板当前合法的声音作用域打开「事件与提示音」。"
+            "value": "为面板当前合法的声音作用域打开「默认组／工作区」。"
           }
         }
       }
@@ -15503,6 +15615,808 @@
           "stringUnit": {
             "state": "translated",
             "value": "当前状态"
+          }
+        }
+      }
+    },
+    "settings.native.add-star": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in panel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示在面板"
+          }
+        }
+      }
+    },
+    "settings.native.ai-services": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI cue services"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 提示音服务"
+          }
+        }
+      }
+    },
+    "settings.native.audio-description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign unbound audio, inspect usage, or delete files."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指派未绑定音频、检查占用或删除文件。"
+          }
+        }
+      }
+    },
+    "settings.native.audio-files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio files"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音频文件"
+          }
+        }
+      }
+    },
+    "settings.native.back": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to parent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回上一级"
+          }
+        }
+      }
+    },
+    "settings.native.beijing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beijing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "北京"
+          }
+        }
+      }
+    },
+    "settings.native.capabilities": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Five event capabilities and receipts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "五事件能力与回执"
+          }
+        }
+      }
+    },
+    "settings.native.china": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "China"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中国"
+          }
+        }
+      }
+    },
+    "settings.native.connect-message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting %@ writes its integration configuration. A real receipt for the current installation is still required to confirm activation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接 %@ 会写入该来源的接入配置。配置成功后仍需当前安装的真实回执才能确认激活。"
+          }
+        }
+      }
+    },
+    "settings.native.connect-title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect event surface"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接事件来源"
+          }
+        }
+      }
+    },
+    "settings.native.copy-and-apply-title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy and apply"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制并应用"
+          }
+        }
+      }
+    },
+    "settings.native.copy-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and view a copy only. Group selections stay unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只创建并查看副本；组选包保持原值。"
+          }
+        }
+      }
+    },
+    "settings.native.directory-and-surfaces": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directory and eligible surfaces"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目录与适用来源"
+          }
+        }
+      }
+    },
+    "settings.native.edit-cue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View or edit cue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看或编辑提示音"
+          }
+        }
+      }
+    },
+    "settings.native.edit-draft-name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit draft name…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改草稿名…"
+          }
+        }
+      }
+    },
+    "settings.native.global": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全球"
+          }
+        }
+      }
+    },
+    "settings.native.local-notice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sounds stay on this Mac.\nYou start AI generation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "声音留在本机。\nAI 生成由你主动发起。"
+          }
+        }
+      }
+    },
+    "settings.native.manage-workspaces": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage workspaces"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理工作区"
+          }
+        }
+      }
+    },
+    "settings.native.management-scope": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current management scope"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前管理作用域"
+          }
+        }
+      }
+    },
+    "settings.native.no-workspaces": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No workspaces"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无工作区"
+          }
+        }
+      }
+    },
+    "settings.native.numbered-route": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Languages: %@ · %lld numbered candidates; at least %lld required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 语言：%@ · %lld 个编号候选；至少需要 %lld 个"
+          }
+        }
+      }
+    },
+    "settings.native.open-focus-settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置…"
+          }
+        }
+      }
+    },
+    "settings.native.panel-description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add up to four packs. Existing stars can always be removed, including unavailable packs and a fifth saved entry. Group selections stay unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最多新增四项。已有星标始终可取消，包括损坏包和已有第五项；不改变组选包。"
+          }
+        }
+      }
+    },
+    "settings.native.panel-display-set": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel display set"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "面板显示集"
+          }
+        }
+      }
+    },
+    "settings.native.panel-limit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The panel holds four packs. Remove a star first."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "面板最多四项，先取消一颗星标。"
+          }
+        }
+      }
+    },
+    "settings.native.panel-unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pack unavailable; adding a star is blocked."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "声音包不可用，无法新增星标。"
+          }
+        }
+      }
+    },
+    "settings.native.receiver-disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently disabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前停用"
+          }
+        }
+      }
+    },
+    "settings.native.receiver-ready": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receiver ready"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收器已就绪"
+          }
+        }
+      }
+    },
+    "settings.native.receiver-status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event-notice receiver"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提示来源接收器"
+          }
+        }
+      }
+    },
+    "settings.native.recheck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recheck"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检测"
+          }
+        }
+      }
+    },
+    "settings.native.region": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Region: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地区：%@"
+          }
+        }
+      }
+    },
+    "settings.native.remove-star": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove star"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消星标"
+          }
+        }
+      }
+    },
+    "settings.native.select-profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select and check credential"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择并检查凭据"
+          }
+        }
+      }
+    },
+    "settings.native.singapore": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Singapore"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新加坡"
+          }
+        }
+      }
+    },
+    "settings.native.styled-route": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Languages: %@ · %lld styled candidates; at least %lld required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 语言：%@ · %lld 个风格候选；至少需要 %lld 个"
+          }
+        }
+      }
+    },
+    "settings.native.system-settings-failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Settings could not be opened. Open it from the Apple menu and check authorization."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法打开系统设置。请从 Apple 菜单打开系统设置并检查授权。"
+          }
+        }
+      }
+    },
+    "settings.native.target-unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original edit target is unavailable. Go back and select again; no other target was changed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原编辑目标不可用。请返回重新选择；未对其他目标执行写入。"
+          }
+        }
+      }
+    },
+    "settings.native.view-does-not-apply": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewing a pack does not apply it to this group. Application is a separate action."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看声音包不会应用到此组；使用操作另行提交。"
+          }
+        }
+      }
+    },
+    "settings.native.workspace-creation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name comes from the selected directory. Confirm the volume before creation; zero eligible sources is allowed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称由所选目录派生。创建前明确确认音量；允许零适用来源。"
+          }
+        }
+      }
+    },
+    "settings.native.workspaces": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspaces"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作区"
+          }
+        }
+      }
+    },
+    "sound-packs.import.saved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存 %@。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.assign-saved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign saved audio using an event’s audio menu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可从事件的音频菜单指派已保存的文件。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.oversize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is %@ bytes; the limit is %@ bytes. Choose a smaller file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件为 %@ 字节，上限为 %@ 字节；请选择更小的文件。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsupported audio content. Choose a WAV, MP3, AIFF, or M4A file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音频内容格式不受支持；请选择 WAV、MP3、AIFF 或 M4A 文件。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.unsafe-name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file name is unsafe. Rename the source and add it again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名不安全；请修改源文件名后重新添加。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.unknown-duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio duration could not be read. Choose another file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取音频时长；请选择其他文件。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio is %@ seconds; the limit is %@ seconds. Shorten it and add it again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音频为 %@ 秒，上限为 %@ 秒；请剪短后重新添加。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.copy-failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file could not be read or saved. Check the source file and folder permissions, then add it again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取或保存文件；请检查源文件及目录权限后重新添加。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.target-changed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The editing target changed. Saved audio was not bound to the requested event."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑目标已改变；已保存的音频未绑定到原定事件。"
+          }
+        }
+      }
+    },
+    "sound-packs.import.binding-failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio was saved, but its event binding failed. Check manifest.json and assign the file again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音频已保存，但事件绑定失败；请检查 manifest.json 后重新指派文件。"
           }
         }
       }

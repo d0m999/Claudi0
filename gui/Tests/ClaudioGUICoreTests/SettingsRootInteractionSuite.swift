@@ -96,9 +96,7 @@ func runSettingsRootInteractionSuites() {
             availability: PreviewFixtures.settingsRouteAvailability)
         let toggleProbe = SettingsRootNativeProbe(session: toggleFixture.session)
         expect(
-            toggleProbe.clickContentGridUntil {
-                toggleFixture.session.state.loginItemRegistration == .enabled
-            },
+            toggleProbe.clickRecordedControl(SettingsPresentationAccessibilityID.loginItemToggle),
             "真实 Login toggle 必须接受 NSWindow mouse route")
         expect(
             toggleFixture.session.state.loginItemRegistration == .enabled,
@@ -140,6 +138,14 @@ final class SettingsRootNativeProbe {
 
     var isNativeListFocused: Bool { window.firstResponder is NSOutlineView }
 
+    var focusedPopUpItems: [String]? {
+        (window.firstResponder as? NSPopUpButton)?.itemTitles
+    }
+
+    var focusedPopUpSelection: String? {
+        (window.firstResponder as? NSPopUpButton)?.titleOfSelectedItem
+    }
+
     func activate() {
         window.center()
         NSApp.activate(ignoringOtherApps: true)
@@ -175,15 +181,10 @@ final class SettingsRootNativeProbe {
         click(windowPoint: NSPoint(x: x, y: size.height - yFromTop))
     }
 
-    func clickContentGridUntil(_ condition: @MainActor () -> Bool) -> Bool {
-        if condition() { return true }
-        for yFromTop in stride(from: CGFloat(260), through: 500, by: 12) {
-            for x in stride(from: CGFloat(300), through: 760, by: 16) {
-                guard clickContent(x: x, yFromTop: yFromTop) else { return false }
-                if condition() { return true }
-            }
-        }
-        return false
+    func clickRecordedControl(_ identifier: String) -> Bool {
+        refresh()
+        guard let frame = SoundPacksLayoutRecorder.frames[identifier] else { return false }
+        return clickContent(x: frame.maxX - 16, yFromTop: frame.midY)
     }
 
     func sendKey(
@@ -221,6 +222,7 @@ final class SettingsRootNativeProbe {
     }
 
     func close() {
+        if let sheet = window.attachedSheet { window.endSheet(sheet) }
         window.orderOut(nil)
         window.close()
     }

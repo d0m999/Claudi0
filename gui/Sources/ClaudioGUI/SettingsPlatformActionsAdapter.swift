@@ -16,6 +16,12 @@ func makeSystemSettingsPresentationActions(
                 guard #available(macOS 13.0, *) else { return .unavailable }
                 SMAppService.openSystemSettingsLoginItems()
                 return .performed
+            case .openFocusSettings:
+                guard
+                    let url = NSWorkspace.shared.urlForApplication(
+                        withBundleIdentifier: "com.apple.systempreferences")
+                else { return .unavailable }
+                return NSWorkspace.shared.open(url) ? .performed : .failed
             case .openCalendarPrivacySettings:
                 guard
                     let url = URL(

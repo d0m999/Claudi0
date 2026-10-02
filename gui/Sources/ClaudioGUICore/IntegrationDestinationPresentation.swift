@@ -84,6 +84,7 @@ public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable
     public let latestReceiptEvidence: HostReceiptEvidence?
     public let mechanism: HostIntegrationMechanism
     public let bindingReceipts: [IntegrationBindingReceiptPresentation]
+    package var receiptHistory: IntegrationReceiptHistoryPresentation?
 
     public init(
         host: HostID,
@@ -104,6 +105,12 @@ public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable
     }
 
     public var surfaceID: HostSurfaceID { host.surfaceID }
+    package var capabilityReceipts: [IntegrationBindingReceiptPresentation] {
+        HostCapabilityCatalog.bindings(for: host).map { binding in
+            bindingReceipts.first { $0.id == binding.id }
+                ?? IntegrationBindingReceiptPresentation(binding: binding, snapshot: nil)
+        }
+    }
     public var status: HostSourceRowStatus { row.status }
     public var coverageText: String {
         guard let supportedCount = row.supportedCount, let totalCount = row.totalCount else {

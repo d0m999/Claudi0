@@ -6,6 +6,39 @@ private struct BridgeSoundSpawner: ProcessSpawning {
     func spawn(executablePath: String, arguments: [String]) -> Bool { true }
 }
 
+private let bridgeHistoryCurrentInstallationID = UUID(
+    uuidString: "00000000-0000-4000-8000-0000000000B1")!
+private let bridgeHistoryPreviousInstallationID = UUID(
+    uuidString: "00000000-0000-4000-8000-0000000000B2")!
+private let bridgeHistoryScope = "bridge-history-test"
+
+@MainActor
+private func storeBridgeHistoryReceipt(
+    store: HostHookReceiptStore,
+    host: HostID,
+    installationID: UUID = bridgeHistoryCurrentInstallationID,
+    timestamp: Date = Date()
+) -> HostHookReceipt {
+    if case .failure(let error) = store.activate(
+        host: host,
+        installationID: installationID,
+        scopeFingerprint: bridgeHistoryScope)
+    {
+        expect(false, "测试前提：\(host) installation 必须发布：\(error.description)")
+    }
+    let receipt = HostHookReceipt(
+        installationID: installationID,
+        host: host,
+        nativeEvent: "UserPromptSubmit",
+        semanticEvent: .taskStart,
+        timestamp: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970.rounded(.down)),
+        playbackResult: .played)
+    expect(
+        store.store(receipt, scopeFingerprint: { bridgeHistoryScope }) == .success(.written),
+        "测试前提：\(host) 临时历史回执必须写入")
+    return receipt
+}
+
 private final class BridgeBootstrapper: SharedRuntimeBootstrapping, @unchecked Sendable {
     private let lock = NSLock()
     private var bootstrapCalls = 0
@@ -412,42 +445,195 @@ func runHostIntegrationManagerBridgeSuites() async {
         }
     }
 
-    await suite("HostIntegrationManagerBridge 清除历史：只删目标 surface 历史并返回可见反馈") {
+    await suite("HostIntegrationManagerBridge 历史：bootstrap 与 refresh 读取三来源真实旧／当前回执") {
+        await withTempDirectory { root in
+            let fixture = bridgeFixture(
+                root: root, initiallyConnected: true, codexObservesReceipt: false)
+            let now = Date()
+            var expected: [HostID: [HostHookReceipt]] = [:]
+            for (index, host) in HostID.productVisibleCases.enumerated() {
+                let previous = storeBridgeHistoryReceipt(
+                    store: fixture.receiptStore,
+                    host: host,
+                    installationID: bridgeHistoryPreviousInstallationID,
+                    timestamp: now.addingTimeInterval(-Double(index + 10)))
+                let current = storeBridgeHistoryReceipt(
+                    store: fixture.receiptStore,
+                    host: host,
+                    timestamp: now.addingTimeInterval(-Double(index)))
+                expected[host] = [current, previous]
+            }
+
+            let bootstrapped = await fixture.bridge.bootstrapSharedRuntime()
+            let refreshed = await fixture.bridge.refresh()
+            for state in [bootstrapped, refreshed] {
+                let content = integrationDestinationContent(state: state)
+                expect(
+                    Set(state.receiptHistories.keys) == Set(HostID.productVisibleCases),
+                    "bridge 历史必须恰好来自三个产品来源，不混入 AX identity")
+                for host in HostID.productVisibleCases {
+                    expect(
+                        state.receiptHistories[host]
+                            == fixture.receiptStore.receiptHistorySnapshot(host: host),
+                        "\(host) bridge 历史必须保留同一真实 store 的 snapshot")
+                    expect(
+                        state.receiptHistories[host]?.receipts == expected[host],
+                        "\(host) 旧／当前回执必须按时间保留且不得串入其它来源")
+                    expect(
+                        content.facts(for: host)?.receiptHistory?.entries.map(\.receipt)
+                            == expected[host],
+                        "\(host) content 必须消费 bridge 的完整历史，不能只复制 latestReceipt")
+                    expect(
+                        content.facts(for: host)?.receiptHistory?.entries.map(\.generation)
+                            == [.current, .previous],
+                        "\(host) content 必须相对 manager installation 区分当前／旧代次")
+                }
+                for host in [HostID.codex, .workBuddy] {
+                    expect(
+                        state.snapshots.first(where: { $0.host == host })?.activation
+                            == .awaitingReceipt(installationID: bridgeHistoryCurrentInstallationID),
+                        "\(host) 当前 history 回执不得替代 adapter 的 awaiting activation")
+                    expect(
+                        content.agent(for: host)?.status == .awaitingActivation,
+                        "\(host) history 不得点亮 Agent 的当前激活状态")
+                }
+            }
+        }
+    }
+
+    await suite("HostIntegrationManagerBridge 历史读取：损坏、不可读与缺失仍保留各来源事实") {
         await withTempDirectory { root in
             let fixture = bridgeFixture(root: root)
-            let installationID = UUID(uuidString: "10101010-1010-4010-8010-101010101010")!
-            guard
-                case .success = fixture.receiptStore.activate(
-                    host: .workBuddy,
-                    installationID: installationID,
-                    scopeFingerprint: "bridge-test")
-            else {
-                expect(false, "测试前提：临时 WorkBuddy installation 必须发布")
+            let receipt = storeBridgeHistoryReceipt(store: fixture.receiptStore, host: .claudeCode)
+            _ = storeBridgeHistoryReceipt(store: fixture.receiptStore, host: .workBuddy)
+            let damagedDirectory = fixture.receiptStore.historyRoot.appendingPathComponent(
+                HostID.claudeCode.surfaceID.rawValue, isDirectory: true)
+            writeFixture("{broken", to: damagedDirectory.appendingPathComponent("broken.json"))
+            let unreadableDirectory = fixture.receiptStore.historyRoot.appendingPathComponent(
+                HostID.workBuddy.surfaceID.rawValue, isDirectory: true)
+            do {
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o000], ofItemAtPath: unreadableDirectory.path)
+            } catch {
+                expect(false, "测试前提：WorkBuddy 历史目录必须设为不可读：\(error)")
                 return
             }
-            let receipt = HostHookReceipt(
-                installationID: installationID,
-                host: .workBuddy,
-                nativeEvent: "UserPromptSubmit",
-                semanticEvent: .taskStart,
-                timestamp: Date(),
-                playbackResult: .played)
+            defer {
+                try? FileManager.default.setAttributes(
+                    [.posixPermissions: 0o700], ofItemAtPath: unreadableDirectory.path)
+            }
+
+            let state = await fixture.bridge.refresh()
+            let content = integrationDestinationContent(state: state)
             expect(
-                fixture.receiptStore.store(receipt, scopeFingerprint: { "bridge-test" })
-                    == .success(.written),
-                "测试前提：临时历史回执必须写入")
+                state.receiptHistories[.claudeCode]
+                    == HostHookReceiptHistorySnapshot(
+                        receipts: [receipt], state: .damaged(skippedItemCount: 1)),
+                "损坏项必须保留计数与同次扫描中的可用回执")
+            expect(
+                state.receiptHistories[.workBuddy]
+                    == HostHookReceiptHistorySnapshot(receipts: [], state: .unreadable),
+                "不可读历史不得被伪装成正常空列表")
+            expect(
+                state.receiptHistories[.codex]
+                    == HostHookReceiptHistorySnapshot(receipts: [], state: .missing),
+                "从未生成的 Codex 历史必须保留 missing 事实")
+            for host in HostID.productVisibleCases {
+                expect(
+                    content.facts(for: host)?.receiptHistory?.state
+                        == state.receiptHistories[host]?.state,
+                    "\(host) content 必须保持损坏／不可读／缺失状态，不冻结其它来源")
+            }
+        }
+    }
+
+    await suite("HostIntegrationManagerBridge 清除历史：逐来源读回真实空历史，其它来源与激活不变") {
+        for target in HostID.productVisibleCases {
+            await withTempDirectory { root in
+                let fixture = bridgeFixture(root: root)
+                for host in HostID.productVisibleCases {
+                    _ = storeBridgeHistoryReceipt(store: fixture.receiptStore, host: host)
+                }
+                let before = await fixture.bridge.refresh()
+                let receiptFile = fixture.receiptStore.receiptFile(
+                    host: target, nativeEvent: "UserPromptSubmit")!
+                let stableReceipt = try? Data(contentsOf: receiptFile)
+
+                let outcome = try? await fixture.bridge.perform(.clearReceiptHistory(target))
+
+                expect(outcome != nil, "\(target) 清除成功必须返回刷新后的 outcome")
+                expect(
+                    outcome?.feedbackMessage == "已清除 \(target.displayName) 回执历史",
+                    "清除成功必须返回可见、宿主限定反馈")
+                expect(
+                    outcome?.state.receiptHistories[target]
+                        == fixture.receiptStore.receiptHistorySnapshot(host: target)
+                        && outcome?.state.receiptHistories[target]?.receipts.isEmpty == true,
+                    "\(target) 清除成功必须读取实际 store 空历史，不能只清空 UI")
+                expect(
+                    outcome.map { integrationDestinationContent(state: $0.state) }
+                        .flatMap { $0.facts(for: target)?.receiptHistory }?.entries.isEmpty == true,
+                    "\(target) 清除后的 content 必须不再显示旧条目")
+                expect(
+                    fixture.receiptStore.currentInstallationID(host: target)
+                        == bridgeHistoryCurrentInstallationID
+                        && (try? Data(contentsOf: receiptFile)) == stableReceipt,
+                    "\(target) 清除历史不得撤销 marker 或删除稳定回执")
+                expect(
+                    outcome?.state.snapshots == before.snapshots,
+                    "清除历史不得更改任何来源的连接与 activation snapshot")
+                for other in HostID.productVisibleCases where other != target {
+                    expect(
+                        outcome?.state.receiptHistories[other] == before.receiptHistories[other]
+                            && fixture.receiptStore.receiptHistorySnapshot(host: other)
+                                == before.receiptHistories[other],
+                        "清除 \(target) 不得删除或重写 \(other) 历史")
+                }
+            }
+        }
+    }
+
+    await suite("HostIntegrationManagerBridge 清除历史锁忙：返回 failure 与真实历史，允许重试") {
+        await withTempDirectory { root in
+            let fixture = bridgeFixture(root: root)
+            for host in HostID.productVisibleCases {
+                _ = storeBridgeHistoryReceipt(store: fixture.receiptStore, host: host)
+            }
+            let before = await fixture.bridge.refresh()
+            let lock = FileLock(
+                path: fixture.receiptStore.installationLockFile(host: .codex).path)
+            guard lock.attemptLock() == .acquired else {
+                expect(false, "测试前提：Codex installation lock 必须占用")
+                return
+            }
+            defer { lock.unlock() }
 
             let outcome = try? await fixture.bridge.perform(.clearReceiptHistory(.workBuddy))
 
+            expect(outcome?.feedbackKind == .failure, "lockBusy 必须返回可见失败 outcome")
             expect(
-                fixture.receiptStore.receiptHistory(host: .workBuddy).isEmpty,
-                "清除动作必须落到注入的目标 surface 历史目录")
+                outcome?.feedbackMessage.contains(HostHookReceiptStoreError.lockBusy.description)
+                    == true,
+                "失败反馈必须保留锁忙的可重试原因")
             expect(
-                outcome?.feedbackMessage == "已清除 WorkBuddy 回执历史",
-                "清除成功必须返回可见、宿主限定反馈")
+                outcome?.state.receiptHistories == before.receiptHistories,
+                "清除失败必须同代读回并保留三来源历史，不能显示虚假空列表")
             expect(
-                fixture.receiptStore.currentInstallationID(host: .workBuddy) == installationID,
-                "清除历史不得撤销当前 activation marker")
+                outcome?.state.snapshots == before.snapshots,
+                "清除失败不得改变各来源连接与当前激活事实")
+            for host in HostID.productVisibleCases {
+                expect(
+                    fixture.receiptStore.receiptHistorySnapshot(host: host)
+                        == before.receiptHistories[host],
+                    "lockBusy 必须让 \(host) 磁盘历史保持原样")
+            }
+
+            lock.unlock()
+            let retried = try? await fixture.bridge.perform(.clearReceiptHistory(.workBuddy))
+            expect(
+                retried?.feedbackKind == .information
+                    && retried?.state.receiptHistories[.workBuddy]?.receipts.isEmpty == true,
+                "锁释放后重试必须成功清除并读取真实空历史")
         }
     }
 

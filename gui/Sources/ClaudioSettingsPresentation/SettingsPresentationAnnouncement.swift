@@ -28,6 +28,8 @@ extension SettingsPresentationAnnouncement.Meaning {
             return sentence
         case .soundPacks(let request):
             return request.sentence
+        case .platformAction(_, .unavailable), .platformAction(_, .failed):
+            return l10n.text(.settingsNativeSystemSettingsFailed)
         case .loginItemStatus, .loginItemFailure, .platformAction:
             break
         }
@@ -55,6 +57,8 @@ extension SettingsPresentationAnnouncement.Meaning {
                     .settingsGeneralLoginItem.unavailable
                 case .openCalendarPrivacySettings:
                     .settingsNotificationsOpenCalendarPrivacy
+                case .openFocusSettings:
+                    .settingsNativeOpenFocusSettings
                 }
             case .destinationUpdate, .soundPacks:
                 preconditionFailure("render-ready announcements returned above")

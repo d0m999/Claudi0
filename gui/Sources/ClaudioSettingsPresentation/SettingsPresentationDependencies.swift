@@ -5,6 +5,7 @@ import SoundPacksWindow
 /// The complete, nonoptional owner set consumed by the unified Settings presentation tree.
 /// Native factories remain in the executable; this value only retains their typed products.
 package struct SettingsPresentationDependencies {
+    package let productImages: SettingsProductImages
     package let preferences: ClaudioPreferences
     package let loginItemSettings: LoginItemSettingsModel
     package let dynamicQuietPolicy: DynamicQuietPolicyController
@@ -38,8 +39,10 @@ package struct SettingsPresentationDependencies {
         aiCueViewModel: AICueGenerationViewModel,
         eventNoticeHealth: EventNoticeHealthStore? = nil,
         eventNoticeModel: EventNoticeModel? = nil,
-        noticeNavigation: SessionNavigationCoordinator? = nil
+        noticeNavigation: SessionNavigationCoordinator? = nil,
+        productImages: SettingsProductImages = .empty
     ) {
+        self.productImages = productImages
         self.preferences = preferences
         self.loginItemSettings = loginItemSettings
         self.dynamicQuietPolicy = dynamicQuietPolicy

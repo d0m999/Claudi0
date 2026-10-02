@@ -10,7 +10,7 @@ import SwiftUI
 /// correct for `swift run` but not for our hand-assembled macOS app: its resource bundle lives in
 /// `Contents/Resources`. Resolve that packaged location explicitly and keep `.module` only as the
 /// development/Xcode Preview fallback. The assembly scripts enforce the same exactly-one contract.
-private let hostIconResourceBundle: Bundle = {
+let hostIconResourceBundle: Bundle = {
     guard Bundle.main.bundleURL.pathExtension == "app" else {
         return .module
     }

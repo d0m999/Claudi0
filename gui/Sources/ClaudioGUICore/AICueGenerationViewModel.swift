@@ -117,14 +117,23 @@ public final class AICueGenerationViewModel: ObservableObject {
         registry: AICueProviderRegistry = AICueProviderRegistry()
     ) {
         self.init(
+            previewState: previewState, registry: registry,
+            providerPreferences: AICueProviderPreferences(
+                defaults: UserDefaults(), registry: registry))
+    }
+
+    package convenience init(
+        previewState: AICueGenerationPreviewState,
+        registry: AICueProviderRegistry,
+        providerPreferences: AICueProviderPreferences
+    ) {
+        self.init(
             credentialManager: AICuePreviewCredentialManager(
                 status: previewState.credentialStatus ?? .missing),
             generator: AICuePreviewGenerator(),
             providerProfileID: previewState.providerProfileID,
             registry: registry,
-            providerPreferences: AICueProviderPreferences(
-                defaults: UserDefaults(),
-                registry: registry))
+            providerPreferences: providerPreferences)
         credentialStatus = previewState.credentialStatus
         credentialActivity = previewState.credentialActivity
         credentialFailure = previewState.credentialFailure

@@ -94,8 +94,11 @@ public final class AboutSettingsModel: ObservableObject {
             ? .versionCopied : .clipboardFailed
     }
 
-    public func copyDiagnostics() {
-        feedback = actions.copy(diagnosticSummary) ? .diagnosticsCopied : .clipboardFailed
+    public func copyDiagnostics() { copyPresentedDiagnostics(diagnosticSummary) }
+
+    /// Copy the exact summary already displayed by the Settings view.
+    package func copyPresentedDiagnostics(_ summary: String) {
+        feedback = actions.copy(summary) ? .diagnosticsCopied : .clipboardFailed
     }
 
     public func openResource(_ resource: AboutBundledResource) {

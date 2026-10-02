@@ -166,6 +166,7 @@ package struct SoundPackEditorPackPresentation: Identifiable, Equatable {
     package let inspectAction: SoundPackEditorAction
     package let useAction: SoundPackEditorAction?
     package let toggleStarAction: SoundPackEditorAction?
+    package var starDisabledReason: String? = nil
     package let forkAction: SoundPackEditorAction?
     /// Copy is available for every healthy installed pack in the Sounds destination. `forkAction`
     /// remains the legacy built-in-only capability used by the retained window surface.
@@ -381,6 +382,8 @@ package struct SoundPackEditorActivityPresentation: Identifiable, Equatable {
     package let packID: String?
     package let event: Event?
     package let cancelAction: SoundPackEditorAction?
+    var retainedImportOutcome: SoundPackEditorRetainedImportOutcome? = nil
+    package var importOutcome: SoundPackEditorImportOutcome? { retainedImportOutcome?.value }
 }
 
 package struct SoundPackEditorConfirmation: Identifiable, Equatable {
@@ -524,6 +527,21 @@ package struct SoundPackEditorImportOutcome: Equatable, Sendable {
 
     package var allowsForegroundFollowUp: Bool {
         previewAction != nil
+    }
+}
+
+/// Immutable terminal facts shared by the owner's state and presentation copies. This avoids
+/// copying the full import receipt through every SwiftUI activity value; it owns no new state.
+/// Each terminal operation creates one instance, then every publication retains that identity.
+final class SoundPackEditorRetainedImportOutcome: Equatable, Sendable {
+    let value: SoundPackEditorImportOutcome
+
+    init(_ value: SoundPackEditorImportOutcome) { self.value = value }
+
+    static func == (
+        lhs: SoundPackEditorRetainedImportOutcome, rhs: SoundPackEditorRetainedImportOutcome
+    ) -> Bool {
+        lhs === rhs
     }
 }
 

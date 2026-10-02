@@ -306,7 +306,11 @@ package final class SoundPacksEditorOwner: ObservableObject {
             }
             guard didPost else { return .unchanged }
             let debt = announcementQueue.remove(at: index)
-            if let operationID = debt.operationID {
+            // Import results are the durable, visible per-file receipt. Posting its short
+            // announcement must not consume the only copy before the user can read it.
+            if let operationID = debt.operationID,
+                operationStates[operationID]?.kind != .importAudio
+            {
                 retireTerminalOperation(operationID)
             }
             publish(from: model.editorProjectionSeed())
@@ -1060,17 +1064,15 @@ package final class SoundPacksEditorOwner: ObservableObject {
             } else {
                 phase = batch.rejected.isEmpty ? .succeeded : .failed(.importRejected)
             }
-            settleAsyncOperation(operationID, phase: phase, seed: seed)
+            let outcome = SoundPackEditorImportOutcome(
+                accepted: [], rejected: batch.rejected, boundEvent: nil,
+                completedInBackground: false, orphan: nil,
+                completion: cancellationRequested
+                    ? .cancelled(changedOnDisk: false) : .failed(.importRejected),
+                previewAction: nil)
+            settleAsyncOperation(operationID, phase: phase, seed: seed, importOutcome: outcome)
             if cancellationRequested { return .rejected(.cancelled) }
-            return .imported(
-                SoundPackEditorImportOutcome(
-                    accepted: [],
-                    rejected: batch.rejected,
-                    boundEvent: nil,
-                    completedInBackground: false,
-                    orphan: nil,
-                    completion: .failed(.importRejected),
-                    previewAction: nil))
+            return .imported(outcome)
         }
 
         model.refreshEditorConfigProjection()
@@ -1155,22 +1157,23 @@ package final class SoundPacksEditorOwner: ObservableObject {
             phase = .succeeded
             completion = .succeeded
         }
-        settleAsyncOperation(operationID, phase: phase, seed: settledSeed)
         let previewAction: SoundPackEditorAction?
         if !completedInBackground, failure == nil, let imported = batch.accepted.last {
             previewAction = makeForegroundPreviewAction(imported, seed: settledSeed)
         } else {
             previewAction = nil
         }
-        return .imported(
-            SoundPackEditorImportOutcome(
-                accepted: batch.accepted,
-                rejected: batch.rejected,
-                boundEvent: boundEvent,
-                completedInBackground: completedInBackground,
-                orphan: orphan,
-                completion: completion,
-                previewAction: previewAction))
+        let outcome = SoundPackEditorImportOutcome(
+            accepted: batch.accepted,
+            rejected: batch.rejected,
+            boundEvent: boundEvent,
+            completedInBackground: completedInBackground,
+            orphan: orphan,
+            completion: completion,
+            previewAction: previewAction)
+        settleAsyncOperation(
+            operationID, phase: phase, seed: settledSeed, importOutcome: outcome)
+        return .imported(outcome)
     }
 
     private func eventBindingExpectation(
@@ -1312,11 +1315,12 @@ package final class SoundPacksEditorOwner: ObservableObject {
     private func settleAsyncOperation(
         _ operationID: SoundPackEditorOperationID,
         phase: SoundPackEditorActivityPhase,
-        seed: SoundPacksEditorModelSeed
+        seed: SoundPacksEditorModelSeed,
+        importOutcome: SoundPackEditorImportOutcome? = nil
     ) {
         operationCancellations.removeValue(forKey: operationID)
         guard let state = operationStates[operationID] else { return }
-        operationStates[operationID] = state.withPhase(phase)
+        operationStates[operationID] = state.withPhase(phase, importOutcome: importOutcome)
         if let completion = phase.announcementCompletion {
             enqueueOperationAnnouncement(
                 state.kind,
@@ -2349,6 +2353,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 ? makeAction(.use, binding: .use(packID: card.id), seed: seed) : nil,
             toggleStarAction: writesAllowed && starControl.isEnabled
                 ? makeAction(.toggleStar, binding: .toggleStar(packID: card.id), seed: seed) : nil,
+            starDisabledReason: starControl.disabledReason,
             forkAction: writesAllowed && isBuiltin && isInspected
                 ? makeAction(.fork, binding: .fork(packID: card.id), seed: seed) : nil,
             copyAction: allowsCopy && seed.library.isFresh && isAvailable && !isBroken
@@ -2471,7 +2476,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
                         .cancelOperation,
                         binding: .cancelOperation(operationID),
                         seed: seed)
-                    : nil)
+                    : nil,
+                retainedImportOutcome: state.retainedImportOutcome)
         }
     }
 
@@ -2847,9 +2853,15 @@ private struct EditorOperationState {
     let phase: SoundPackEditorActivityPhase
     let packID: String?
     let event: Event?
+    var retainedImportOutcome: SoundPackEditorRetainedImportOutcome? = nil
 
-    func withPhase(_ phase: SoundPackEditorActivityPhase) -> Self {
-        Self(kind: kind, phase: phase, packID: packID, event: event)
+    func withPhase(
+        _ phase: SoundPackEditorActivityPhase,
+        importOutcome: SoundPackEditorImportOutcome? = nil
+    ) -> Self {
+        Self(
+            kind: kind, phase: phase, packID: packID, event: event,
+            retainedImportOutcome: importOutcome.map { SoundPackEditorRetainedImportOutcome($0) })
     }
 }
 
@@ -3035,8 +3047,10 @@ extension EditorActionIntent {
 
 extension SoundPackLibraryPresentation {
     fileprivate var canRetryEditorLibrary: Bool {
-        if case .failed = self { return true }
-        return false
+        switch self {
+        case .ready, .failed: true
+        case .unloaded, .loading: false
+        }
     }
 }
 

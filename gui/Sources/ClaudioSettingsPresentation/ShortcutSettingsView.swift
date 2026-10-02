@@ -17,22 +17,25 @@ struct ShortcutSettingsView: View {
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             Text(l10n.text(.settingsShortcutsDescription))
-                .font(ClaudioTheme.font(.body))
+                .font(SettingsAppearance.font(.body))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Label(l10n.text(.settingsShortcutsRequirement), systemImage: "command")
-                .font(ClaudioTheme.font(.body))
+                .font(SettingsAppearance.font(.body))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            ForEach(GlobalShortcutAction.allCases) { action in
-                shortcutRow(action)
-            }
+            VStack(spacing: 0) {
+                ForEach(GlobalShortcutAction.allCases) { action in
+                    shortcutRow(action)
+                    if action != GlobalShortcutAction.allCases.last { Divider() }
+                }
+            }.settingsSectionSurface(padding: 0)
         }
-        .frame(maxWidth: 640, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.shortcuts))
         .background {
             LocalShortcutCaptureView(
@@ -57,17 +60,17 @@ struct ShortcutSettingsView: View {
     private func shortcutRow(_ action: GlobalShortcutAction) -> some View {
         let state = model.state(for: action)
         return VStack(alignment: .leading, spacing: 10) {
-            Text(actionTitle(action))
-                .font(ClaudioTheme.font(.sectionTitle))
-            Text(actionDescription(action))
-                .font(ClaudioTheme.font(.body))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(actionTitle(action)).font(SettingsAppearance.font(.body))
+                    Text(actionDescription(action))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }.frame(maxWidth: .infinity, alignment: .leading)
                 Text(currentValue(state))
-                    .font(ClaudioTheme.font(.body).weight(.medium))
-                    .frame(minWidth: 150, alignment: .leading)
+                    .font(SettingsAppearance.font(.technical))
+                    .fixedSize(horizontal: true, vertical: false)
                     .accessibilityLabel(
                         l10n.format(
                             .settingsShortcutsCurrentValue,
@@ -93,7 +96,7 @@ struct ShortcutSettingsView: View {
 
             if recordingAction == action {
                 Label(l10n.text(.settingsShortcutsRecording), systemImage: "keyboard")
-                    .foregroundColor(ClaudioTheme.clay(colorScheme))
+                    .foregroundColor(SettingsAppearance.accent(colorScheme))
                     .accessibilityIdentifier("settings.shortcuts.\(action.rawValue).recording")
             }
 
@@ -109,8 +112,8 @@ struct ShortcutSettingsView: View {
                 .accessibilityIdentifier("settings.shortcuts.\(action.rawValue).failure")
             }
         }
-        .font(ClaudioTheme.font(.body))
-        .settingsSectionSurface()
+        .font(SettingsAppearance.font(.body))
+        .padding(14).frame(minHeight: 61)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.shortcuts.\(action.rawValue)")
     }

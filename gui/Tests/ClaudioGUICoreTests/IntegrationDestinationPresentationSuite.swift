@@ -3,6 +3,21 @@ import ClaudioGUICore
 import ClaudioLocalization
 import Foundation
 
+private func integrationHistoryTestReceipt(
+    host: HostID,
+    installationID: UUID,
+    event: Event = .taskStart,
+    timestamp: Date = Date(timeIntervalSince1970: 1_800_000_000)
+) -> HostHookReceipt {
+    HostHookReceipt(
+        installationID: installationID,
+        host: host,
+        nativeEvent: event == .taskStart ? "UserPromptSubmit" : "Stop",
+        semanticEvent: event,
+        timestamp: timestamp,
+        playbackResult: .played)
+}
+
 @MainActor
 func runIntegrationDestinationPresentationSuites() {
     suite("集成 destination Agent 行：固定消费 productVisibleCases 顺序，不混入 AX identity") {
@@ -163,6 +178,181 @@ func runIntegrationDestinationPresentationSuites() {
         expect(
             content.agents.map(\.host) == [.claudeCode, .codex, .workBuddy],
             "共享矩阵的历史列顺序不得改变 destination Agent 的固定顺序")
+    }
+
+    suite("集成 destination 事件能力：五事件支持／实现／激活分别投影，保留已激活绑定") {
+        let content = integrationDestinationTestContent()
+        for host in HostID.productVisibleCases {
+            guard let facts = content.facts(for: host) else {
+                expect(false, "\(host) 必须存在能力事实")
+                continue
+            }
+            expect(
+                facts.capabilityReceipts.map(\.binding)
+                    == HostCapabilityCatalog.bindings(for: host),
+                "\(host) 能力明细必须保留 catalogue 所有绑定，不能只显示可播放项")
+            expect(
+                Set(facts.capabilityReceipts.map { $0.binding.event }) == Set(Event.allCases),
+                "\(host) 能力明细必须覆盖五个公共事件")
+            expect(
+                facts.capabilityReceipts.filter { $0.binding.isAudibleCapability }
+                    == facts.bindingReceipts,
+                "\(host) 已有可播放绑定的当前 activation evidence 必须原样保留")
+            expect(
+                facts.bindingReceipts.allSatisfy {
+                    if case .observed = $0.activation { return true }
+                    return false
+                },
+                "ready fixture 的可播放绑定必须继续保留 observed 回执")
+        }
+        let codexFailure = content.facts(for: .codex)?.capabilityReceipts.first {
+            $0.binding.event == .stopFailure
+        }
+        expect(
+            codexFailure?.binding.support == .unsupported
+                && codexFailure?.activation == HostActivationEvidence.none,
+            "Codex StopFailure 必须显示 unsupported，不得因 Host ready 伪造激活")
+        let workBuddyFailure = content.facts(for: .workBuddy)?.capabilityReceipts.first {
+            $0.binding.event == .stopFailure
+        }
+        expect(
+            workBuddyFailure?.binding.support == .supported
+                && workBuddyFailure?.binding.implementation == .notImplemented
+                && workBuddyFailure?.activation == HostActivationEvidence.none,
+            "WorkBuddy StopFailure 必须分别保留支持、尚未实现、无当前回执三个事实")
+    }
+
+    suite("集成 destination 历史：三来源独立传递完整回执，不提升当前激活") {
+        let statuses = Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map {
+                ($0, IntegrationDestinationTestStatus.awaitingActivation)
+            })
+        var state = integrationDestinationTestState(statuses: statuses)
+        let before = integrationDestinationContent(state: state)
+        let snapshotsBefore = state.snapshots
+        let previousInstallationID = UUID(
+            uuidString: "00000000-0000-4000-8000-00000000D002")!
+        for (index, host) in HostID.productVisibleCases.enumerated() {
+            let installationID = state.snapshots.first { $0.host == host }!.installationID!
+            let timestamp = Date(timeIntervalSince1970: 1_800_000_000 + Double(index))
+            let current = integrationHistoryTestReceipt(
+                host: host, installationID: installationID, timestamp: timestamp)
+            let previous = integrationHistoryTestReceipt(
+                host: host,
+                installationID: previousInstallationID,
+                timestamp: timestamp.addingTimeInterval(-1))
+            state.receiptHistories[host] = HostHookReceiptHistorySnapshot(
+                receipts: [current, previous], state: .available)
+        }
+
+        let content = integrationDestinationContent(state: state)
+
+        expect(
+            state.snapshots == snapshotsBefore && content.agents == before.agents
+                && content.matrix == before.matrix,
+            "历史分代只供诊断展示，不能升级 snapshot activation、Agent 或可听矩阵")
+        for host in HostID.productVisibleCases {
+            let history = content.facts(for: host)?.receiptHistory
+            expect(
+                history?.entries.map(\.receipt) == state.receiptHistories[host]?.receipts,
+                "\(host) 必须显示该来源完整历史，而非 latestReceipt 占位")
+            expect(
+                history?.entries.allSatisfy { $0.receipt.host == host } == true
+                    && history?.entries.map(\.generation) == [.current, .previous],
+                "\(host) 历史必须隔离其它来源并区分当前／旧代次")
+            expect(
+                content.facts(for: host)?.latestReceiptEvidence == nil
+                    && content.agent(for: host)?.status == .awaitingActivation,
+                "\(host) 当前历史条目不得伪造当前安装实例的 activation evidence")
+        }
+        expect(
+            before.hostFacts.allSatisfy { $0.receiptHistory == nil },
+            "未提供 history snapshot 时不得伪造已读取的空历史")
+    }
+
+    suite("集成 destination 历史分代与身份：缺少 installation 为 unknown，条目身份稳定且可区分") {
+        let snapshot = integrationDestinationTestSnapshot(
+            host: .claudeCode, status: .awaitingActivation)
+        let currentInstallationID = snapshot.installationID!
+        let previousInstallationID = UUID(
+            uuidString: "00000000-0000-4000-8000-00000000D002")!
+        let current = integrationHistoryTestReceipt(
+            host: .claudeCode, installationID: currentInstallationID)
+        let previous = integrationHistoryTestReceipt(
+            host: .claudeCode, installationID: previousInstallationID)
+        let otherBinding = integrationHistoryTestReceipt(
+            host: .claudeCode, installationID: currentInstallationID, event: .stop)
+        let later = integrationHistoryTestReceipt(
+            host: .claudeCode,
+            installationID: currentInstallationID,
+            timestamp: current.timestamp.addingTimeInterval(0.5))
+        let history = HostHookReceiptHistorySnapshot(
+            receipts: [current, previous, otherBinding, later], state: .available)
+        let presentation = IntegrationReceiptHistoryPresentation(
+            host: .claudeCode, snapshot: snapshot, history: history)
+        let repeated = IntegrationReceiptHistoryPresentation(
+            host: .claudeCode, snapshot: snapshot, history: history)
+        expect(
+            presentation.entries.map(\.generation) == [.current, .previous, .current, .current],
+            "历史分代必须逐条比对 manager snapshot 的 installation ID")
+        expect(
+            presentation.entries.map(\.id) == repeated.entries.map(\.id)
+                && Set(presentation.entries.map(\.id)).count == history.receipts.count,
+            "entry 身份必须跨重投影稳定，并区分 installation、binding 和 timestamp")
+
+        for unknownSnapshot in [
+            nil,
+            HostIntegrationSnapshot.disconnected(host: .claudeCode),
+            integrationDestinationTestSnapshot(host: .codex, status: .ready),
+        ] as [HostIntegrationSnapshot?] {
+            let unknown = IntegrationReceiptHistoryPresentation(
+                host: .claudeCode, snapshot: unknownSnapshot, history: history)
+            expect(
+                unknown.entries.allSatisfy { $0.generation == .unknown }
+                    && unknown.entries.map(\.receipt) == history.receipts,
+                "没有该来源可信 installation 时必须保留条目并显示 unknown，不能猜测当前代次")
+        }
+
+        let foreign = integrationHistoryTestReceipt(
+            host: .codex, installationID: currentInstallationID)
+        let mixed = IntegrationReceiptHistoryPresentation(
+            host: .claudeCode,
+            snapshot: snapshot,
+            history: HostHookReceiptHistorySnapshot(
+                receipts: [current, foreign], state: .available))
+        expect(
+            mixed.entries.map(\.receipt) == [current],
+            "即使调用方提供混合历史，Claude Code presentation 也不得显示 Codex 条目")
+    }
+
+    suite("集成 destination 历史读取状态：available、missing、damaged 与 unreadable 保真") {
+        let states: [HostHookReceiptHistoryState] = [
+            .available, .missing, .damaged(skippedItemCount: 3), .unreadable,
+        ]
+        for historyState in states {
+            var state = integrationDestinationTestState(statuses: [.workBuddy: .awaitingActivation])
+            let before = integrationDestinationContent(state: state)
+            let receipt = integrationHistoryTestReceipt(
+                host: .workBuddy,
+                installationID: state.snapshots.first { $0.host == .workBuddy }!.installationID!)
+            let receipts: [HostHookReceipt] =
+                historyState == .damaged(skippedItemCount: 3) ? [receipt] : []
+            state.receiptHistories[.workBuddy] = HostHookReceiptHistorySnapshot(
+                receipts: receipts, state: historyState)
+            let content = integrationDestinationContent(state: state)
+            expect(
+                content.facts(for: .workBuddy)?.receiptHistory?.state == historyState
+                    && content.facts(for: .workBuddy)?.receiptHistory?.entries.map(\.receipt)
+                        == receipts,
+                "\(historyState) 必须保留读取状态、损坏计数及同次扫描中的有效条目")
+            expect(
+                content.agents == before.agents && content.matrix == before.matrix,
+                "\(historyState) 不得改变任一来源的激活或可听状态")
+            expect(
+                content.facts(for: .claudeCode)?.receiptHistory == nil
+                    && content.facts(for: .codex)?.receiptHistory == nil,
+                "WorkBuddy 读取失败不得制造其它来源的 history snapshot")
+        }
     }
 
     suite("集成 destination 双语动作：可见标题只消费 typed action 与状态") {

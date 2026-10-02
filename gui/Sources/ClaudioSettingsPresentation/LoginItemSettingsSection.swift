@@ -1,6 +1,7 @@
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
+import SoundPacksWindow
 import SwiftUI
 
 package enum SettingsPresentationAccessibilityID {
@@ -25,20 +26,30 @@ struct LoginItemSettingsSection: View {
             session.state.loginItemRegistration
         ).localizedSentence(language: session.state.language)
         VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsGeneralLoginItem.description))
-                .foregroundColor(.secondary)
-
-            Toggle(
-                l10n.text(.settingsGeneralLoginItem.toggle),
-                isOn: enabledBinding
-            )
-            .disabled(!session.state.loginItemRegistration.canToggle)
-            .accessibilityHint(l10n.text(.settingsGeneralLoginItem.hint))
-            .accessibilityValue(loginItemStatusText)
-            .accessibilityIdentifier(SettingsPresentationAccessibilityID.loginItemToggle)
-
-            Text(loginItemStatusText)
-                .foregroundColor(.secondary)
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(l10n.text(.settingsGeneralLoginItem.toggle))
+                        .font(SettingsAppearance.font(.body))
+                    Text(loginItemStatusText)
+                        .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Toggle(l10n.text(.settingsGeneralLoginItem.toggle), isOn: enabledBinding)
+                    .labelsHidden().toggleStyle(.switch)
+                    .disabled(!session.state.loginItemRegistration.canToggle)
+                    .accessibilityHint(l10n.text(.settingsGeneralLoginItem.hint))
+                    .accessibilityValue(loginItemStatusText)
+                    .accessibilityIdentifier(SettingsPresentationAccessibilityID.loginItemToggle)
+                    .soundPacksLayoutProbe(SettingsPresentationAccessibilityID.loginItemToggle)
+            }.frame(minHeight: 61)
+            Divider()
+            HStack(spacing: 16) {
+                Text(l10n.text(.settingsGeneralLoginItem.description))
+                    .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Button(l10n.text(.settingsNativeRecheck)) { session.send(.refreshLoginItemState) }
+                    .accessibilityIdentifier("settings.general.login-item.recheck")
+            }.frame(minHeight: 48)
 
             if session.state.loginItemRegistration == .requiresApproval {
                 Button(l10n.text(.settingsGeneralLoginItem.openSettings)) {

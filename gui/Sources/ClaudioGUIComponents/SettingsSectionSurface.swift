@@ -17,14 +17,14 @@ package struct SettingsSectionSurface: ViewModifier {
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(SettingsAppearance.cardSurface(colorScheme))
-            .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
+            .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
             .overlay {
-                RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
+                RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius)
                     .strokeBorder(
                         colorSchemeContrast == .increased
-                            ? ClaudioTheme.secondaryText(colorScheme).opacity(0.38)
-                            : ClaudioTheme.hairline(colorScheme),
-                        lineWidth: colorSchemeContrast == .increased ? 1.5 : 1)
+                            ? SettingsAppearance.secondaryText(colorScheme).opacity(0.6)
+                            : Color.clear,
+                        lineWidth: colorSchemeContrast == .increased ? 1.5 : 0)
             }
     }
 }

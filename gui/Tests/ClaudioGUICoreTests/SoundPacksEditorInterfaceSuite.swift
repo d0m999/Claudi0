@@ -1,7 +1,9 @@
 import ClaudioCore
 import ClaudioGUICore
+import ClaudioLocalization
 import Combine
 import Foundation
+import SoundPacksWindow
 
 @MainActor
 func runSoundPacksEditorInterfaceSuites() async {
@@ -503,6 +505,10 @@ func runSoundPacksEditorInterfaceSuites() async {
                 #"{"id":"pack-a","events":{"stop":"stop.mp3"}}"#,
                 to: packs.appendingPathComponent("pack-a/manifest.json"))
             writeFixture("audio", to: packs.appendingPathComponent("pack-a/stop.mp3"))
+            writeFixture(
+                #"{"id":"pack-b","events":{"stop":"stop.mp3"}}"#,
+                to: packs.appendingPathComponent("pack-b/manifest.json"))
+            writeFixture("audio", to: packs.appendingPathComponent("pack-b/stop.mp3"))
             let fixture = makePresentationEditorFixture(
                 root: root,
                 environment: makeAudioImportEnvironment(userPacksDirectory: packs),
@@ -533,6 +539,24 @@ func runSoundPacksEditorInterfaceSuites() async {
                 }),
                 "成功扫描必须可观察 ready status")
 
+            guard case .sounds(let ready) = owner.presentation.mode,
+                let unused = ready.packs.first(where: { $0.id == "pack-b" }),
+                let used = ready.packs.first(where: { $0.id == "pack-a" })
+            else {
+                expect(false, "必须投影已引用及未引用的真实包"); return
+            }
+            expect(
+                soundPackDeleteExplanationKey(used) == .soundPacksPackDeleteActive,
+                "只有实际引用才能呈现当前正在使用")
+            _ = owner.send(.invoke(unused.inspectAction))
+            guard case .sounds(let inspected) = owner.presentation.mode,
+                let deletable = inspected.selectedPack
+            else { expect(false, "必须查看未被任何组引用的包"); return }
+            expect(
+                deletable.deleteAction != nil
+                    && soundPackDeleteExplanationKey(deletable) == .soundPacksPackDeleteHint,
+                "新鲜快照中的未引用包应保留删除入口和真实说明")
+
             replaceDirectoryWithRegularFile(packs)
             _ = await fixture.library.refreshSnapshot(trigger: .retry)
             await waitForSoundEditorLibraryFailure(owner, library: fixture.library)
@@ -557,6 +581,16 @@ func runSoundPacksEditorInterfaceSuites() async {
             expect(
                 failureReason == .locationUnavailable,
                 "root 不再是目录时必须投影稳定 semantic reason")
+            guard case .sounds(let stale) = owner.presentation.mode,
+                let retained = stale.selectedPack
+            else { expect(false, "刷新失败必须保留上次检查包"); return }
+            expect(
+                retained.id == "pack-b" && retained.deleteAction == nil
+                    && !retained.isReferencedByAnyScope && !retained.usage.usageIsIncomplete,
+                "旧快照的未引用包因无法复验而禁删，不是正在使用")
+            expect(
+                soundPackDeleteExplanationKey(retained) == .soundPacksPackDeleteConfigUnavailable,
+                "页面必须呈现无法安全复验，不能把缺少删除 capability 解释成正在使用")
             expect(
                 !String(describing: failureReason).contains(root.path),
                 "library failure reason 不得泄露临时目录绝对路径")
@@ -587,6 +621,50 @@ func runSoundPacksEditorInterfaceSuites() async {
             expect(
                 !String(describing: failureReason).contains(root.path),
                 "首次加载 failure reason 不得泄露绝对路径")
+        }
+    }
+
+    await suite("Sound editor presentation：ready 库可显式刷新并保留组配置") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a"])
+            let owner = fixture.owner
+            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 26)))
+            await waitForSoundEditorReady(owner, library: fixture.library)
+            await waitForSoundEditorInventory(owner) { inventory in
+                inventory.contains { $0.fileName == "stop.mp3" }
+            }
+            let originalConfig = try! Data(contentsOf: fixture.configFile)
+            guard case .sounds(let ready) = owner.presentation.mode,
+                let refresh = ready.retryLibraryAction
+            else {
+                expect(false, "ready 库必须提供显式刷新 capability")
+                return
+            }
+
+            writeFixture(
+                #"{"id":"pack-b","events":{"stop":"stop.mp3"}}"#,
+                to: root.appendingPathComponent("packs/pack-b/manifest.json"))
+            writeFixture("audio", to: root.appendingPathComponent("packs/pack-b/stop.mp3"))
+            writeFixture("audio", to: root.appendingPathComponent("packs/pack-a/new.mp3"))
+            await refreshSoundEditor(owner, using: refresh)
+            await waitForSoundEditorInventory(owner) { inventory in
+                inventory.contains { $0.fileName == "new.mp3" }
+            }
+            guard case .sounds(let refreshed) = owner.presentation.mode else {
+                expect(false, "显式刷新后必须保留 sounds 呈现")
+                return
+            }
+            expect(
+                owner.presentation.library == .ready
+                    && refreshed.packs.contains(where: { $0.id == "pack-b" })
+                    && refreshed.selectedPack?.id == "pack-a",
+                "共享库刷新必须发现外部新包并保留正在查看的包")
+            expect(
+                try! Data(contentsOf: fixture.configFile) == originalConfig,
+                "手动刷新不得改写组选包、音量或事件配置")
+            expect(
+                owner.send(.invoke(refresh)) == .rejected(.staleAction),
+                "刷新 capability 必须仍为 single-use")
         }
     }
 
@@ -627,6 +705,27 @@ func runSoundPacksEditorInterfaceSuites() async {
             expect(
                 !String(describing: failureReason).contains(root.path),
                 "inventory failure reason 不得泄露临时目录绝对路径")
+            expect(owner.presentation.library == .ready, "按需清单失败不能伪造库级失败")
+            guard let retry = failed.retryLibraryAction else {
+                expect(false, "清单失败且库仍 ready 时必须提供有效重试 capability")
+                return
+            }
+            let packDirectory = root.appendingPathComponent("packs/pack-b", isDirectory: true)
+            try! FileManager.default.removeItem(at: packDirectory)
+            try! FileManager.default.moveItem(
+                at: root.appendingPathComponent("packs/pack-b-backup", isDirectory: true),
+                to: packDirectory)
+            await refreshSoundEditor(owner, using: retry)
+            await waitForSoundEditorInventory(owner) { inventory in
+                inventory.contains { $0.fileName == "stop.mp3" }
+            }
+            guard case .sounds(let recovered) = owner.presentation.mode else {
+                expect(false, "恢复后必须仍是 sounds 呈现")
+                return
+            }
+            expect(
+                owner.presentation.library == .ready && recovered.selectedPack?.id == "pack-b",
+                "重试必须恢复原清单目标，不能改查其他包")
         }
     }
 
@@ -936,6 +1035,29 @@ private func replaceDirectoryWithRegularFile(_ directory: URL) {
         .appendingPathComponent("\(directory.lastPathComponent)-backup", isDirectory: true)
     try! FileManager.default.moveItem(at: directory, to: backup)
     writeFixture("not-a-directory", to: directory)
+}
+
+@MainActor
+private func refreshSoundEditor(
+    _ owner: SoundPacksEditorOwner,
+    using action: SoundPackEditorAction
+) async {
+    var observedRefreshing = false
+    var observedReadyAfterRefresh = false
+    let observation = owner.$presentation.sink { presentation in
+        if presentation.library == .loading(previousAvailable: true) {
+            observedRefreshing = true
+        } else if presentation.library == .ready, observedRefreshing {
+            observedReadyAfterRefresh = true
+        }
+    }
+    expect(owner.send(.invoke(action)) == .applied, "刷新必须被既有 owner 接受")
+    let deadline = ProcessInfo.processInfo.systemUptime + 3
+    while !observedReadyAfterRefresh && ProcessInfo.processInfo.systemUptime < deadline {
+        try? await Task.sleep(nanoseconds: 2_000_000)
+    }
+    withExtendedLifetime(observation) {}
+    expect(observedReadyAfterRefresh, "显式刷新必须经历保留旧结果的 refreshing 并成功回到 ready")
 }
 
 @MainActor
