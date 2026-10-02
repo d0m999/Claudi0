@@ -39,3 +39,8 @@ __pycache__/
 
 # macOS 截图落在仓库根，永远不进 Git
 /截屏*.png
+
+# Local animation distribution / comparison outputs; canonical assets and previewFiles stay tracked
+/designs/pixel-motion/samples/claudi0-pixel-motion-samples.zip
+/designs/pixel-motion/samples/G-compare-idle.gif
+/designs/pixel-motion/samples/H-compare-stop.gif

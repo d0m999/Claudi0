@@ -2,6 +2,8 @@
 
 状态：实施与验收分别记录，不因原型验证或编译通过而声明完成。
 
+2026-10-02 同步索引：[原生迁移记录](../docs/validation/macos-settings-native-2026-10-02.md) 保留其候选与验证边界；[当前 UI／实现／SoT 对齐记录](../docs/validation/sot-implementation-alignment-2026-10-02.md) 列出后续工作树实现、待修复偏离与未验证项。本规格中的“不新增字段／公共 API”约束 #215 迁移范围；后续 [#216 事件动画规格](PLAN-EVENT-ANIMATION.md) 明确新增动画偏好与子路由，继续复用原有 owner，不将该增量混入 C01–C48 的历史验收。
+
 ## 呈现与领域基线
 
 源码基线：`7ca63a4af0497b74b53e89225ccf4de30d900c12`。
