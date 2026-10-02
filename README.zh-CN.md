@@ -234,4 +234,4 @@ git diff --check
 
 安全问题请按 [SECURITY.md](SECURITY.md) 私下报告，不要在公开 issue 中粘贴宿主配置、回执或日志。社区参与遵循 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
-Claudio 源代码采用 [MIT License](LICENSE)，Copyright © 2026 d0m999。内置声音素材沿用 [packs/LICENSES.md](packs/LICENSES.md) 中分别列明的许可。
+Claudio 源代码采用 [PolyForm Noncommercial License 1.0.0](LICENSE)，Copyright © 2026 d0m999：个人及其它非商用免费；商用需另行付费授权，请联系 [@d0m999](https://github.com/d0m999/Claudio)。注意这是源码可见协议，不属于 OSI 定义的开源协议。内置声音素材沿用 [packs/LICENSES.md](packs/LICENSES.md) 中分别列明的许可。

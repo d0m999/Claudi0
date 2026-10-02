@@ -70,4 +70,4 @@ Describe:
 
 CI is required but does not establish native macOS or real-host acceptance. Maintainers may ask for Apple Silicon and Intel evidence for release-sensitive changes.
 
-By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE) and that you will follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+By contributing, you agree that your contribution is licensed under the repository's [PolyForm Noncommercial License 1.0.0](LICENSE), and you grant d0m999 the right to also license your contribution under separate commercial terms. You will follow the [Code of Conduct](CODE_OF_CONDUCT.md).

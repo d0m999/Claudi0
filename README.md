@@ -211,4 +211,4 @@ Maintainers closing the nine-page unified settings chain should also run the
 
 Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). Community participation follows [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-Claudio source code is released under the [MIT License](LICENSE), copyright © 2026 d0m999. Bundled sound assets keep their own licenses as listed in [packs/LICENSES.md](packs/LICENSES.md).
+Claudio source code is released under the [PolyForm Noncommercial License 1.0.0](LICENSE), copyright © 2026 d0m999: free for personal and other noncommercial use; commercial use requires a separate paid license — contact [@d0m999](https://github.com/d0m999/Claudio). Note this is a source-available license, not an OSI open-source license. Bundled sound assets keep their own licenses as listed in [packs/LICENSES.md](packs/LICENSES.md).
