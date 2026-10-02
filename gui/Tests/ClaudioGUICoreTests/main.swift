@@ -114,6 +114,18 @@ if CommandLine.arguments.contains("--ai-cue-native-focus") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--sound-editor-ai-lifecycle") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSoundEditorAILifecycleSuites()
+        print("Sound editor AI lifecycle: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-native-states") {
     let application = NSApplication.shared
     application.setActivationPolicy(.regular)
@@ -384,6 +396,7 @@ await runAICueGenerationViewModelSuites()
 runAICuePackScopedSuites()
 await runAICuePackScopedAsyncSuites()
 await runSenseAudioIsolationSuites()
+await runSoundEditorAILifecycleSuites()
 runAudioImportSuites()
 runAudioImportBatchSuites()
 await runAudioImportViewModelSuites()
