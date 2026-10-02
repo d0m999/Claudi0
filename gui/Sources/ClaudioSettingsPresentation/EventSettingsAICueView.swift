@@ -30,24 +30,24 @@ struct EventSettingsAICueServiceCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(ClaudioTheme.clay(colorScheme))
+                    .foregroundColor(SettingsAppearance.accent(colorScheme))
                     .frame(width: 30, height: 30)
-                    .background(ClaudioTheme.claySoft(colorScheme))
-                    .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.tile))
+                    .background(SettingsAppearance.accent(colorScheme).opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(l10n.text(.aiCueServiceTitle))
-                        .font(ClaudioTheme.font(.body).weight(.semibold))
-                        .foregroundColor(ClaudioTheme.text(colorScheme))
+                        .font(SettingsAppearance.font(.body).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.text(colorScheme))
                     Text(
                         l10n.format(
                             .aiCueServiceSubtitle,
                             l10n.text(viewModel.providerProfile.displayNameKey)
                         )
                     )
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.caption))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -79,8 +79,8 @@ struct EventSettingsAICueServiceCard: View {
             .accessibilityIdentifier("event-settings.ai-cue.provider-profile")
 
             Text(capabilityText)
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("event-settings.ai-cue.provider-capabilities")
 
@@ -90,8 +90,8 @@ struct EventSettingsAICueServiceCard: View {
                         .foregroundColor(status.symbolColor)
                         .accessibilityHidden(true)
                     Text(status.text)
-                        .font(ClaudioTheme.font(.caption).weight(.medium))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .font(SettingsAppearance.font(.caption).weight(.medium))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(
@@ -107,7 +107,7 @@ struct EventSettingsAICueServiceCard: View {
             }
         }
         .settingsSectionSurface(padding: 18)
-        .tint(ClaudioTheme.clay(colorScheme))
+        .tint(SettingsAppearance.accent(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("event-settings.ai-cue.service")
     }
@@ -117,7 +117,7 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(aiCueCredentialActivityKey(viewModel.credentialActivity)),
                 "clock.arrow.circlepath",
-                ClaudioTheme.secondaryText(colorScheme)
+                SettingsAppearance.secondaryText(colorScheme)
             )
         }
         switch viewModel.credentialStatus {
@@ -125,19 +125,19 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(.aiCueServiceChecking),
                 "clock.arrow.circlepath",
-                ClaudioTheme.secondaryText(colorScheme)
+                SettingsAppearance.secondaryText(colorScheme)
             )
         case .missing:
             return (
                 l10n.text(.aiCueServiceMissing),
                 "key.slash",
-                ClaudioTheme.secondaryText(colorScheme)
+                SettingsAppearance.secondaryText(colorScheme)
             )
         case .stored(_, true):
             return (
                 l10n.text(.aiCueServicePendingReplacement),
                 "arrow.triangle.2.circlepath",
-                ClaudioTheme.secondaryText(colorScheme)
+                SettingsAppearance.secondaryText(colorScheme)
             )
         case .stored(.verified, false):
             return (
@@ -149,7 +149,7 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(.aiCueServiceStoredDeferred),
                 "clock.badge.checkmark",
-                ClaudioTheme.secondaryText(colorScheme)
+                SettingsAppearance.secondaryText(colorScheme)
             )
         case .stored(.rejected, false):
             return (
@@ -186,7 +186,6 @@ struct EventSettingsAICueServiceCard: View {
 struct EventSettingsAICueComposerView: View {
     private enum DescriptionFocus: Hashable {
         case editor
-        case cancel
     }
 
     @ObservedObject var viewModel: AICueGenerationViewModel
@@ -242,17 +241,15 @@ struct EventSettingsAICueComposerView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(l10n.format(.aiCueComposerTitle, eventTitle))
-                    .font(ClaudioTheme.font(.sectionTitle).weight(.bold))
-                    .foregroundColor(ClaudioTheme.text(colorScheme))
+                    .font(SettingsAppearance.font(.sectionTitle).weight(.bold))
+                    .foregroundColor(SettingsAppearance.text(colorScheme))
                 Spacer(minLength: 8)
                 Button(l10n.text(.commonClose), action: onClose)
                     .buttonStyle(ClaudioCompactButtonStyle())
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .accessibilityLabel(l10n.text(.commonClose))
                     .accessibilityIdentifier("event-settings.ai-cue.close")
             }
-
-            stageIndicator
 
             if let failure = viewModel.failure {
                 errorNotice(
@@ -260,23 +257,10 @@ struct EventSettingsAICueComposerView: View {
                         failure, providerProfileID: viewModel.providerProfileID, l10n: l10n))
             }
 
-            switch viewModel.phase {
-            case .editing, .generating:
-                descriptionStep
-            case .candidatesReady, .adopting:
-                candidatesStep
-            case .applied:
-                appliedStep
-            }
+            phaseContent
         }
-        .padding(18)
-        .background(ClaudioTheme.elevated(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                .stroke(ClaudioTheme.clay(colorScheme).opacity(0.45), lineWidth: 1)
-        )
-        .tint(ClaudioTheme.clay(colorScheme))
+        .padding(.top, 12)
+        .tint(SettingsAppearance.accent(colorScheme))
         .accessibilityElement(children: .contain)
         .settingsMountIdentity("event-settings.ai-cue.composer")
         .onChange(of: viewModel.phase) { _ in
@@ -286,48 +270,30 @@ struct EventSettingsAICueComposerView: View {
         }
     }
 
-    private var stageIndicator: some View {
-        HStack(spacing: 10) {
-            stageLabel(
-                l10n.text(.aiCueStageDescription),
-                isActive: viewModel.phase == .editing || viewModel.phase == .generating)
-            Capsule()
-                .fill(ClaudioTheme.hairline(colorScheme))
-                .frame(width: 34, height: 1)
-                .accessibilityHidden(true)
-            stageLabel(
-                l10n.text(.aiCueStageCandidates),
-                isActive: viewModel.phase == .candidatesReady
-                    || viewModel.phase == .adopting
-                    || viewModel.phase == .applied)
+    private var phaseContent: AnyView {
+        switch viewModel.phase {
+        case .editing, .generating: AnyView(descriptionStep)
+        case .candidatesReady, .adopting: AnyView(candidatesStep)
+        case .applied: AnyView(appliedStep)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("event-settings.ai-cue.stages")
-    }
-
-    private func stageLabel(_ text: String, isActive: Bool) -> some View {
-        Text(text)
-            .font(ClaudioTheme.font(.caption).weight(.semibold))
-            .foregroundColor(
-                isActive
-                    ? ClaudioTheme.text(colorScheme)
-                    : ClaudioTheme.secondaryText(colorScheme))
     }
 
     private var descriptionStep: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(l10n.text(.aiCueDescriptionLabel))
-                .font(ClaudioTheme.font(.body).weight(.semibold))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
+                .font(SettingsAppearance.font(.body).weight(.semibold))
+                .foregroundColor(SettingsAppearance.text(colorScheme))
             Text(l10n.text(.aiCueDescriptionHelp))
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
 
             ZStack(alignment: .topLeading) {
                 if viewModel.soundDescription.isEmpty {
                     Text(l10n.text(.aiCueDescriptionPlaceholder))
-                        .font(ClaudioTheme.font(.body))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme).opacity(0.75))
+                        .font(SettingsAppearance.font(.body))
+                        .foregroundColor(
+                            SettingsAppearance.secondaryText(colorScheme).opacity(0.75)
+                        )
                         .padding(.horizontal, 8)
                         .padding(.vertical, 9)
                         .allowsHitTesting(false)
@@ -357,14 +323,14 @@ struct EventSettingsAICueComposerView: View {
                         }
                     }
                 }
-                .font(ClaudioTheme.font(.body))
+                .font(SettingsAppearance.font(.body))
                 .frame(minHeight: 92)
                 .padding(4)
-                .background(ClaudioTheme.surface(colorScheme))
+                .background(SettingsAppearance.background(colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control))
                 .overlay(
                     RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
-                        .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
+                        .stroke(SettingsAppearance.hairline(colorScheme), lineWidth: 1)
                 )
                 .accessibilityLabel(l10n.text(.aiCueDescriptionLabel))
                 .accessibilityHint(
@@ -377,8 +343,8 @@ struct EventSettingsAICueComposerView: View {
 
             if viewModel.phase == .generating {
                 Text(l10n.text(.aiCueDescriptionLocked))
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.caption))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
             }
 
             HStack(spacing: 10) {
@@ -388,15 +354,9 @@ struct EventSettingsAICueComposerView: View {
                         .controlSize(.small)
                         .accessibilityLabel(l10n.text(.aiCueGenerating))
                     Text(l10n.text(.aiCueGenerating))
-                        .font(ClaudioTheme.font(.caption))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     cancelGenerationButton
-                        .focused($descriptionFocus, equals: .cancel)
-                        .task {
-                            await Task.yield()
-                            guard viewModel.phase == .generating, !Task.isCancelled else { return }
-                            descriptionFocus = .cancel
-                        }
                         .accessibilityLabel(l10n.text(.commonCancel))
                         .accessibilityIdentifier("event-settings.ai-cue.cancel-generation")
                 } else {
@@ -426,24 +386,11 @@ struct EventSettingsAICueComposerView: View {
         }
     }
 
-    @ViewBuilder
     private var cancelGenerationButton: some View {
-        let button = Button(l10n.text(.commonCancel)) {
+        SettingsFocusableButton(l10n.text(.commonCancel), requestsFocus: true) {
             viewModel.returnToDescription()
         }
-        .focusable()
-        if #available(macOS 14.0, *) {
-            // The focus proxy needs its own activation handler when keyboard navigation is off.
-            button.onKeyPress(keys: [.space, .return], phases: .down) { press in
-                guard descriptionFocus == .cancel, viewModel.phase == .generating,
-                    press.modifiers.intersection([.command, .control, .option, .shift]).isEmpty
-                else { return .ignored }
-                viewModel.returnToDescription()
-                return .handled
-            }
-        } else {
-            button
-        }
+        .fixedSize()
     }
 
     private var candidatesStep: some View {
@@ -451,11 +398,11 @@ struct EventSettingsAICueComposerView: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(l10n.text(.aiCueDescriptionSummary))
-                        .font(ClaudioTheme.font(.caption).weight(.semibold))
-                        .foregroundColor(ClaudioTheme.text(colorScheme))
+                        .font(SettingsAppearance.font(.caption).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.text(colorScheme))
                     Text(viewModel.soundDescription)
-                        .font(ClaudioTheme.font(.caption))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .lineLimit(3)
                 }
                 Spacer(minLength: 8)
@@ -467,16 +414,16 @@ struct EventSettingsAICueComposerView: View {
                 .accessibilityIdentifier("event-settings.ai-cue.modify-description")
             }
             .padding(10)
-            .background(ClaudioTheme.surface(colorScheme))
+            .background(SettingsAppearance.background(colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row))
             .overlay(
                 RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
-                    .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
+                    .stroke(SettingsAppearance.hairline(colorScheme), lineWidth: 1)
             )
 
             Text(l10n.text(.aiCueNameLabel))
-                .font(ClaudioTheme.font(.body).weight(.semibold))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
+                .font(SettingsAppearance.font(.body).weight(.semibold))
+                .foregroundColor(SettingsAppearance.text(colorScheme))
             TextField(
                 l10n.text(.aiCueNameLabel),
                 text: Binding(
@@ -489,21 +436,34 @@ struct EventSettingsAICueComposerView: View {
             .accessibilityHint(l10n.text(.aiCueNameHelp))
             .accessibilityIdentifier("event-settings.ai-cue.name")
             Text(l10n.text(.aiCueNameHelp))
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+            if (try? AICueDisplayName(viewModel.displayName)) == nil {
+                Text(
+                    l10n.text(
+                        viewModel.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            .isEmpty
+                            ? .aiCueErrorNameRequired : .aiCueErrorNameInvalid)
+                )
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(ClaudioTheme.error(colorScheme))
+                .accessibilityIdentifier("event-settings.ai-cue.name-error")
+            }
 
             if let generation = viewModel.generation {
                 if let attributionDisclosure {
                     Text(attributionDisclosure)
-                        .font(ClaudioTheme.font(.caption))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if generation.completion == .partial {
                     partialCandidateNotice(count: generation.candidates.count)
                 }
-                VStack(spacing: 8) {
-                    ForEach(generation.candidates) { candidate in
+                VStack(spacing: 0) {
+                    ForEach(Array(generation.candidates.enumerated()), id: \.element.id) {
+                        index, candidate in
+                        if index != 0 { Divider() }
                         candidateRow(candidate)
                     }
                 }
@@ -511,8 +471,8 @@ struct EventSettingsAICueComposerView: View {
 
             HStack {
                 Text(l10n.text(.aiCueRegenerate))
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.caption))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .accessibilityHidden(true)
                 Spacer()
                 Button(l10n.text(.aiCueRegenerate)) {
@@ -542,7 +502,7 @@ struct EventSettingsAICueComposerView: View {
                     .claudioPreviewPulse(
                         trigger: playingCandidateID == candidate.id ? 1 : 0)
             }
-            .buttonStyle(ClaudioIconButtonStyle())
+            .buttonStyle(.borderless)
             .accessibilityLabel(candidatePreviewLabel(candidate))
             .accessibilityIdentifier(
                 "event-settings.ai-cue.candidate.\(candidateIdentifierComponent(candidate)).preview"
@@ -554,11 +514,11 @@ struct EventSettingsAICueComposerView: View {
                         candidate.identity,
                         language: languageStore.language)
                 )
-                .font(ClaudioTheme.font(.body).weight(.semibold))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
+                .font(SettingsAppearance.font(.body).weight(.semibold))
+                .foregroundColor(SettingsAppearance.text(colorScheme))
                 Text(candidateDuration(candidate))
-                    .font(ClaudioTheme.font(.caption))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.caption))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
             }
 
             Spacer(minLength: 8)
@@ -572,7 +532,10 @@ struct EventSettingsAICueComposerView: View {
                 onAdoptCandidate(candidate.id)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.phase == .adopting || !adoptionEnabled)
+            .disabled(
+                viewModel.phase == .adopting || !adoptionEnabled
+                    || (try? AICueDisplayName(viewModel.displayName)) == nil
+            )
             .accessibilityLabel(
                 localizedAICueCandidateUseAccessibilityLabel(
                     identity: candidate.identity,
@@ -584,13 +547,8 @@ struct EventSettingsAICueComposerView: View {
             .accessibilityIdentifier(
                 "event-settings.ai-cue.candidate.\(candidateIdentifierComponent(candidate)).use")
         }
-        .padding(10)
-        .background(ClaudioTheme.surface(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
-                .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
-        )
+        .frame(minHeight: 61)
+        .padding(.vertical, 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(
             "event-settings.ai-cue.candidate.\(candidateIdentifierComponent(candidate)).row")
@@ -603,14 +561,14 @@ struct EventSettingsAICueComposerView: View {
                     .foregroundColor(ClaudioTheme.success(colorScheme))
                     .accessibilityHidden(true)
                 Text(l10n.text(.aiCueAppliedTitle))
-                    .foregroundColor(ClaudioTheme.text(colorScheme))
+                    .foregroundColor(SettingsAppearance.text(colorScheme))
             }
-            .font(ClaudioTheme.font(.sectionTitle).weight(.semibold))
+            .font(SettingsAppearance.font(.sectionTitle).weight(.semibold))
             .accessibilityElement(children: .combine)
             if let outcome = viewModel.adoptionOutcome {
                 Text(l10n.format(.aiCueAppliedMessage, outcome.finalDisplayName))
-                    .font(ClaudioTheme.font(.body))
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .font(SettingsAppearance.font(.body))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
             }
             Button(l10n.text(.commonClose), action: onClose)
                 .buttonStyle(.borderedProminent)
@@ -627,17 +585,11 @@ struct EventSettingsAICueComposerView: View {
                 .foregroundColor(ClaudioTheme.error(colorScheme))
                 .accessibilityHidden(true)
             Text(message)
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ClaudioTheme.surface(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
-                .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
-        )
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("event-settings.ai-cue.error")
     }
@@ -648,17 +600,11 @@ struct EventSettingsAICueComposerView: View {
                 .foregroundColor(ClaudioTheme.warning(colorScheme))
                 .accessibilityHidden(true)
             Text(l10n.format(.aiCueCandidatePartial, Int64(count)))
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ClaudioTheme.surface(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
-                .stroke(ClaudioTheme.hairline(colorScheme), lineWidth: 1)
-        )
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("event-settings.ai-cue.partial")
     }
@@ -706,16 +652,16 @@ struct EventSettingsAICueCredentialSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(credentialTitle)
-                .font(ClaudioTheme.font(.sectionTitle).weight(.bold))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
+                .font(SettingsAppearance.pageTitle)
+                .foregroundColor(SettingsAppearance.text(colorScheme))
 
             Text(l10n.text(viewModel.providerProfile.privacyDisclosureKey))
-                .font(ClaudioTheme.font(.body))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.body))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
             Text(l10n.text(viewModel.providerProfile.credentialStorageDisclosureKey))
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
 
             if viewModel.credentialActivity != .idle {
@@ -724,15 +670,15 @@ struct EventSettingsAICueCredentialSheet: View {
                         .controlSize(.small)
                         .accessibilityHidden(true)
                     Text(l10n.text(aiCueCredentialActivityKey(viewModel.credentialActivity)))
-                        .font(ClaudioTheme.font(.caption))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("event-settings.ai-cue.credential-activity")
             }
 
             Text(l10n.text(.aiCueCredentialKeyLabel))
-                .font(ClaudioTheme.font(.body).weight(.semibold))
+                .font(SettingsAppearance.font(.body).weight(.semibold))
             SecureField(l10n.text(.aiCueCredentialKeyLabel), text: $keyInput)
                 .textFieldStyle(.roundedBorder)
                 .disableAutocorrection(true)
@@ -789,8 +735,8 @@ struct EventSettingsAICueCredentialSheet: View {
         }
         .padding(24)
         .frame(width: 520)
-        .background(ClaudioTheme.panel(colorScheme))
-        .tint(ClaudioTheme.clay(colorScheme))
+        .background(SettingsAppearance.background(colorScheme))
+        .tint(SettingsAppearance.accent(colorScheme))
         .alert(
             l10n.text(.aiCueCredentialDeleteTitle),
             isPresented: $confirmsDeletion
@@ -854,8 +800,8 @@ struct EventSettingsAICueCredentialSheet: View {
                 .foregroundColor(ClaudioTheme.error(colorScheme))
                 .accessibilityHidden(true)
             Text(message)
-                .font(ClaudioTheme.font(.caption))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .font(SettingsAppearance.font(.caption))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("event-settings.ai-cue.credential-error")
@@ -884,7 +830,7 @@ private func aiCueCredentialActivityKey(
     }
 }
 
-private func aiCueModalityKey(_ modality: AICueModality) -> ClaudioL10nKey {
+func aiCueModalityKey(_ modality: AICueModality) -> ClaudioL10nKey {
     switch modality {
     case .speech: return .aiCueModalitySpeech
     case .animal: return .aiCueModalityAnimal

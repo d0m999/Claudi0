@@ -104,6 +104,19 @@ func runSoundPacksEditorNativeEffectsSuites() async {
 
             let _: any SoundPacksEditorNativeEffectsAdapter =
                 SystemSoundPacksEditorNativeEffectsAdapter()
+
+            let failingAdapter = RecordingSoundPacksEditorNativeEffectsAdapter(
+                playbackDuration: nil)
+            let failingDispatcher = SoundPacksEditorNativeEffectsDispatcher(adapter: failingAdapter)
+            _ = failingDispatcher.dispatch(previewEffect)
+            expect(failingDispatcher.previewFailed, "真实播放器拒绝试听必须产生可见失败")
+            failingAdapter.playbackDuration = 0.5
+            _ = failingDispatcher.dispatch(previewEffect)
+            expect(!failingDispatcher.previewFailed, "实际重试成功后才清除失败")
+            failingDispatcher.handleLifecycle(.settingsWindowWillClose, owner: owner)
+            expect(
+                !failingDispatcher.previewFailed && failingAdapter.stopCount == 1,
+                "关闭停止实际试听并清除临时呈现状态")
         }
     }
 
@@ -431,7 +444,7 @@ private final class RecordingSoundPacksEditorNativeEffectsAdapter:
     private(set) var stopCount = 0
     private(set) var revealRequests: [URL] = []
 
-    private let playbackDuration: TimeInterval?
+    var playbackDuration: TimeInterval?
 
     init(pickerResults: [[URL]] = [], playbackDuration: TimeInterval? = 1) {
         self.pickerResults = pickerResults

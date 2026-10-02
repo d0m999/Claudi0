@@ -1404,6 +1404,7 @@ func runViewWiringSuites() {
                     ("SoundPacksEditorOwner", "lockFile", "config.lock"),
                     ("LocalActivitySummaryStore", "lockFile", "activity.lock"),
                     ("ActivityDiagnosticLogStore", "logLockFile", "log.lock"),
+                    ("appendLogLine", "lockFile", "log.lock"),
                 ] {
                     let sites = callArguments(of: constructor, in: code)
                     expect(
@@ -1411,13 +1412,13 @@ func runViewWiringSuites() {
                             && sites.allSatisfy {
                                 argumentValue(label, in: $0) == "root.appendingPathComponent(\"\")"
                             }, "验收构造点必须锚定同一隔离根：\(constructor)")
+                    let rawSites = callArguments(of: constructor, in: raw)
                     expect(
-                        (try? String(
-                            contentsOf: guiTestRepositoryRoot().appendingPathComponent(
-                                "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift"),
-                            encoding: .utf8))?.contains(
-                                "\(label): root.appendingPathComponent(\"\(literal)\")") == true,
-                        "验收锁字面量与本地写入链一致：\(constructor)")
+                        rawSites.count == 1
+                            && rawSites.allSatisfy {
+                                argumentValue(label, in: $0)
+                                    == "root.appendingPathComponent(\"\(literal)\")"
+                            }, "验收锁字面量必须在实际调用点匹配：\(constructor)")
                     accounted += sites.count
                 }
             }
@@ -3034,21 +3035,19 @@ func runViewWiringSuites() {
                 && !flat.contains("deleteSelectedOrphanAudioFileAfterConfirmation("),
             "只有 owner confirmation 签发的 destructive capability 才能触发永久删除")
         guard
-            let detailBody = closureBody(
-                after: "private func mappingContent(",
-                in: collapsingWhitespace(
-                    codeWithoutStrings(
-                        "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
-            let selectedCardAt = detailBody.range(of: "if let card = selectedCard")?.lowerBound,
-            let statusRegionAt = detailBody.range(of: "activeSounds.windowStatuses")?.lowerBound
+            let contentView = closureBody(
+                after: "private struct SoundPacksWindowContentView: View", in: flat),
+            let rootBody = closureBody(after: "var body: some View", in: contentView),
+            let scrollBody = closureBody(after: "ScrollView(.vertical", in: rootBody),
+            let statusRegionAt = scrollBody.range(of: "activeSounds.windowStatuses")?.lowerBound,
+            let detailAt = scrollBody.range(of: "detailContent")?.lowerBound
         else {
-            expect(false, "必须能切出详情体中的统一窗口状态区与 selected-card 分支")
+            expect(false, "必须挂载共享 ScrollView、统一窗口状态及详情内容")
             return
         }
         expect(
-            statusRegionAt < selectedCardAt,
-            "音频操作错误必须位于 selected-card 分支之外：确认期间唯一包被外部移走时，"
-                + "packNotFound 会把窗口重读为空态，若错误仍留在包详情里就会静默消失")
+            statusRegionAt < detailAt,
+            "音频错误必须在详情条件之外：唯一包被外部移走时仍显示失败和恢复入口")
     }
 
     suite("T10：CoverageTrack 的 present 接事件色、missing 接 text-2，且真实行底是糖果盘 surface") {
@@ -3424,7 +3423,7 @@ func runViewWiringSuites() {
             window.contains("row.previewAvailability")
                 && window.contains("invoke(row.previewAction)")
                 && window.contains(".disabled(row.previewAction == nil)")
-                && window.contains("previewableEvents: activeSounds.eventRows.filter")
+                && window.contains("previewableEvents: eventRows.filter")
                 && window.contains("$0.previewAction != nil")
                 && window.contains("l10n.text(.soundPacksPreview)"),
             "preview enabled 与 focus eligibility 必须同取 owner-signed capability；availability 只提供语义文案")
@@ -3435,18 +3434,18 @@ func runViewWiringSuites() {
                 && !window.contains("displayValue.resolve("),
             "selected pack 与 empty root 的 Finder AX Value 必须直接渲染 owner-projected display path")
         expect(
-            window.contains("invoke(card.forkAction)")
+            window.contains("card.isBuiltinReadOnly ? card.forkAction : card.copyAction")
                 && window.contains("invoke(card.useAction)")
                 && window.contains("case .restoreFactory(let action)")
                 && window.contains("invoke(confirmation.confirmAction)"),
             "复制、显式启用与空态恢复必须只回送 owner-signed actions")
         expect(
-            window.contains("l10n.text(.soundPacksCopy)")
+            collapsingWhitespace(window).contains("packActionRow( .soundPacksCopy")
                 && window.contains("l10n.text(.soundPacksAddAudio)")
                 && window.contains("l10n.text(.soundPacksUse)")
                 && window.contains("l10n.text(.soundPacksEmptyRestore)")
                 && !window.contains("l10n.text(.soundPacksPanelVisible)"),
-            "侧栏语义标题、底部动作栏与空态主行动的用户标签必须全部真实可见")
+            "包操作、音频详情与空态主行动的用户标签必须全部真实可见")
         expect(
             window.contains("ForEach(activeSounds.windowStatuses)")
                 && window.contains("activeSounds.recoveryActions.filter"),
@@ -3490,49 +3489,34 @@ func runViewWiringSuites() {
                 && flat.contains("status.recovery"),
             "恢复成功/失败必须进入统一状态投影，并保留可执行 retry recovery")
         guard
+            let contentView = closureBody(
+                after: "private struct SoundPacksWindowContentView: View", in: flat),
+            let rootBody = closureBody(after: "var body: some View", in: contentView),
+            let scrollBody = closureBody(after: "ScrollView(.vertical", in: rootBody),
             let detailBody = closureBody(
-                after: "private var detail: some View",
-                in: collapsingWhitespace(
-                    codeWithoutStrings(
-                        "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? "")),
-            let actualScrollBody = closureBody(after: "ScrollView", in: detailBody),
-            let scrollBody = closureBody(
-                after: "private func mappingContent(", in: flat),
-            let scrollContentBody = closureBody(
-                after: "VStack(alignment: .leading, spacing: 36)", in: scrollBody),
+                after: "private var detailContent: AnyView", in: contentView),
+            let overviewBody = closureBody(
+                after: "private var overviewDetail: some View", in: contentView),
             let statusRegionAt = scrollBody.range(of: "windowStatusRegion")?.lowerBound,
-            let selectedBranchAt = scrollBody.range(
-                of: "if let card = selectedCard")?.lowerBound,
+            let detailAt = scrollBody.range(of: "detailContent")?.lowerBound,
             let statusRegionBody = closureBody(
-                after: "private var windowStatusRegion: some View",
-                in: collapsingWhitespace(
-                    codeWithoutStrings(
-                        "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift") ?? ""))
+                after: "private var windowStatusRegion: some View", in: contentView)
         else {
-            expect(false, "必须能切出详情 ScrollView、统一状态区与 selected-card 分支")
+            expect(false, "必须切出共享 ScrollView、统一状态区和包详情")
             return
         }
-        let scrollCalls = actualScrollBody.filter { !$0.isWhitespace }
         expect(
-            scrollCalls.contains("mappingContent(stacksDetail:stacksDetail)")
-                && scrollCalls.contains(
-                    "mappingContent(stacksDetail:stacksDetail,alongsideAuxiliary:true)")
-                && statusRegionAt < selectedBranchAt
-                && scrollBody.contains("emptyState")
+            statusRegionAt < detailAt && detailBody.contains("AnyView(overviewDetail)")
+                && overviewBody.contains("emptyState")
                 && statusRegionBody.contains("ForEach(activeSounds.windowStatuses)")
                 && statusRegionBody.contains("windowStatusRow(status)"),
-            "统一状态与每包重试必须位于共享 ScrollView 的最前面，并在有包/空态两条路径都可见")
+            "统一状态与每包重试必须在共享 ScrollView 中先于详情，空态不能吞掉失败")
         expect(
-            braceDepth(
-                of: "if !activeSounds.windowStatuses.isEmpty", in: scrollContentBody) == 0
-                && braceDepth(
-                    of: "if let card = selectedCard", in: scrollContentBody) == 0,
-            "状态区与 selected/empty 分支必须同为滚动内容的无条件顶层结构；若外包 selectedCard "
-                + "条件，零 fallback 时状态或整段恢复入口都会消失")
+            braceDepth(of: "detailContent", in: scrollBody) == 1,
+            "详情入口只属于阅读列，不得嵌入 selected-card 条件")
         expect(
-            !scrollBody.contains("packActionBar(card, stacks: stacksDetail)")
-                && detailBody.contains("packActionBar(card, stacks: stacksDetail)"),
-            "状态、详情与空态入口应滚动，但 selected-card 底部动作栏必须留在 ScrollView 外固定可达")
+            overviewBody.contains("libraryActions") && !scrollBody.contains("packActionBar"),
+            "声音页的包和库操作跟随影响对象滚动，旧固定操作栏不再挂载")
         expect(
             flat.contains(".focused($focusedTarget, equals: .restoreFactoryPack)"),
             "恢复出厂按钮必须接进窗口专用焦点模型")

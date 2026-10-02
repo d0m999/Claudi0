@@ -30,7 +30,7 @@
 
 ## 整合原型修订（现行 · 2026-10-01）
 
-[`designs/panel-and-settings/Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板、八页设置与横幅的现行视觉及交互 SoT；其布局、颜色、动效和交互形态覆盖旧 mockups、独立横幅原型及本文历史呈现描述。`CONTEXT.md`、相关 ADR 和既有 owner 继续决定领域语义、安全、能力事实、持久化与生命周期。完整迁移合同见 [原生迁移规格](plan/PLAN-NATIVE-PROTOTYPE-MIGRATION.md)；本节记录呈现合同，不表示原生实现或验收已完成。容器统一称「声音包」，单个声音称「提示音」。八页顺序为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于，raw values 不变。
+[`designs/panel-and-settings/Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板与横幅的现行视觉及交互 SoT；其设置部分由下方 2026-10-02 修订取代；其布局、颜色、动效和交互形态覆盖旧 mockups、独立横幅原型及本文历史呈现描述。`CONTEXT.md`、相关 ADR 和既有 owner 继续决定领域语义、安全、能力事实、持久化与生命周期。完整迁移合同见 [原生迁移规格](plan/PLAN-NATIVE-PROTOTYPE-MIGRATION.md)；本节记录呈现合同，不表示原生实现或验收已完成。容器统一称「声音包」，单个声音称「提示音」。八页顺序为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于，raw values 不变。
 
 横幅正文静态，无展开或详情。未确认来源提供「在面板查看」；跳转失败就地呈现原因/重试，剩余 4 秒预算不重置。仅横幅自身悬停/聚焦暂停；面板与诊断共享独立冻结阅读集合，首个消费者冻结，显式刷新，末个关闭释放。来源激活仍保留提醒且不产生 exactReturnConfirmed。
 
@@ -53,6 +53,19 @@
 - 五事件各自成卡、间距 12 pt，无整组外框或事件间 Divider；标准／紧凑窗口事件卡内边距 16／14 pt。AI 描述、候选和错误属于对应事件卡，展开只增加该卡高度。辅助卡内边距 18 pt。
 - 窗口仍为默认 1240×820、最小 960×640，侧栏 210／252 pt 及 1100 pt 窗口断点。主辅栏唯一断点为内容可用宽度 760 pt，宽时辅助栏 260 pt、标准／紧凑栏间距 26／20 pt；窄时辅助卡放到事件与主要操作之后，间距 20 pt。浏览器视口断点不直接移植。
 - 声音选择器与包操作栏保留原生固定区域，事件和辅助卡共用现有详情滚动区。集成保留真实 Agent 与连接结构；此次不修改领域 owner、配置／manifest、试听或 AI 写入合同。
+
+## macOS 八页设置修订（现行 · 2026-10-02）
+
+设置窗口的唯一呈现 SoT 为 [`claudi0 macOS Settings Prototype.html`](<designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)，SHA-256：`f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。本节覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡、主辅栏与固定操作栏；这些记录保留为历史。原整合原型继续拥有菜单栏、面板和横幅。本节不改变领域、持久化或窗口焦点合同。
+
+- 八页顺序与 raw values 不变。默认／最小内容区 1240×820／960×640 pt，侧栏宽 252／210 pt，窗口断点 1100 pt；三组间距 24 pt。
+- 使用系统默认字体。页名 17 pt semibold，主标签 13 pt，辅助文字 11–12 pt；设置不继承 Rounded。accent 浅色 `#007AFF`、深色 `#0A84FF`。
+- 主底浅色 `#FFFFFF`／深色 `#202022`，功能组 `#F5F5F7`／`#2D2D30`，侧栏 `#E9E9EC`／`#2B2B2E`。实色表面、功能组圆角 10 pt；增强对比度加强边界，减少动态效果取消非必要动画。
+- 每页固定原生页头及一个主滚动区，单列宽度最多 780 pt，包含左右内边距 32／26 pt；section 间距 28 pt，group 间距 16 pt。普通行至少 48 pt、多行至少 61 pt，路径、错误与长英文自然增高。
+- 同组五事件使用分隔线。声音页通过单层详情进入事件编辑、音频清单、AI 服务及面板显示集；包操作靠近其影响对象。工作区管理与目录／适用来源使用同窗口详情。不存在固定声音操作栏或右侧辅助栏。
+- 查看包不应用；普通复制只查看副本；定向应用重验稳定目标。草稿仅在首个系统音绑定或 AI 采用成功后发布。共享使用者、引用不完整、部分导入、隔离结果与恢复入口必须如实展示。
+
+完整合同与验收边界见 [八页设置迁移规格](plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。64 个布局组合、C01–C48、详情／sheet、键盘／焦点、VoiceOver 和实际试听分别记录，不能沿用原型或旧 SenseAudio 豁免声明完成。
 
 ## Product Context（产品上下文）
 

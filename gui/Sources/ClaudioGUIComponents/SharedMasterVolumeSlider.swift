@@ -16,6 +16,7 @@ package struct SharedMasterVolumeSlider: View {
     let percentageWidth: CGFloat
     let flushRevision: Int?
     let flushesOnDisappear: Bool
+    let usesSettingsAppearance: Bool
     let onCommit: (Double) -> Double?
 
     @State private var session: VolumeDragSession
@@ -30,6 +31,7 @@ package struct SharedMasterVolumeSlider: View {
         percentageWidth: CGFloat = 42,
         flushRevision: Int? = nil,
         flushesOnDisappear: Bool = false,
+        usesSettingsAppearance: Bool = false,
         onCommit: @escaping (Double) -> Double?
     ) {
         self.diskVolume = diskVolume
@@ -39,6 +41,7 @@ package struct SharedMasterVolumeSlider: View {
         self.percentageWidth = percentageWidth
         self.flushRevision = flushRevision
         self.flushesOnDisappear = flushesOnDisappear
+        self.usesSettingsAppearance = usesSettingsAppearance
         self.onCommit = onCommit
         _session = State(initialValue: VolumeDragSession(baseline: diskVolume))
     }
@@ -69,7 +72,10 @@ package struct SharedMasterVolumeSlider: View {
                 .frame(width: percentageWidth, alignment: .trailing)
                 .accessibilityHidden(true)
         }
-        .tint(ClaudioTheme.clay(colorScheme))
+        .tint(
+            usesSettingsAppearance
+                ? SettingsAppearance.accent(colorScheme) : ClaudioTheme.clay(colorScheme)
+        )
         .accessibilityLabel(ClaudioL10n(language: language).text(.panelMasterVolume))
         .accessibilityValue("\(Int((session.draft * 100).rounded()))%")
         .accessibilityIdentifier(accessibilityIdentifier)

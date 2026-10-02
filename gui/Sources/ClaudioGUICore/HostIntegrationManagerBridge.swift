@@ -8,6 +8,7 @@ public struct HostIntegrationPresentationState: Sendable, Equatable {
     public let snapshots: [HostIntegrationSnapshot]
     public let matrix: AudibilityMatrix
     public let masterVolumeIsZero: Bool
+    package var receiptHistories: [HostID: HostHookReceiptHistorySnapshot] = [:]
 
     public init(
         snapshots: [HostIntegrationSnapshot],
@@ -106,7 +107,12 @@ public actor HostIntegrationManagerBridge {
     ) async throws -> HostIntegrationMutationOutcome {
         if case .clearReceiptHistory(let host) = action {
             if case .failure(let error) = receiptStore.clearReceiptHistory(host: host) {
-                throw HostIntegrationManagerBridgeError.receiptHistory(error)
+                return HostIntegrationMutationOutcome(
+                    state: await refresh(),
+                    feedbackKind: .failure,
+                    feedbackText: .localized(
+                        key: .feedbackOperationFailed,
+                        arguments: [error.description]))
             }
             return HostIntegrationMutationOutcome(
                 state: await refresh(),
@@ -193,10 +199,15 @@ public actor HostIntegrationManagerBridge {
             capabilities: capabilities,
             soundCoverageByHost: coverageByHost,
             enabledEventsByHost: enabledByHost)
-        return HostIntegrationPresentationState(
+        var state = HostIntegrationPresentationState(
             snapshots: snapshots,
             matrix: matrix,
             masterVolumeIsZero: !masterVolumeAllowsAudio)
+        state.receiptHistories = Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map {
+                ($0, receiptStore.receiptHistorySnapshot(host: $0))
+            })
+        return state
     }
 }
 

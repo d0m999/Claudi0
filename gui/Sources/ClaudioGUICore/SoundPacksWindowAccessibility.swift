@@ -3,6 +3,18 @@ import ClaudioLocalization
 import Combine
 import Foundation
 
+package func soundPackAudioUsageAccessibilityValue(
+    _ file: SoundPackEditorAudioPresentation, language: ClaudioAppLanguage
+) -> String {
+    let l10n = ClaudioL10n(language: language)
+    guard !file.usedByEvents.isEmpty else {
+        return l10n.text(.soundPacksOrphanAssignValue)
+    }
+    let names = file.usedByEvents.map { localizedEventName($0, language: language) }
+        .joined(separator: language == .english ? ", " : "、")
+    return l10n.format(.soundPacksSourceUsed, names)
+}
+
 /// One real keyboard stop in the Sound Packs standard window.
 ///
 /// This identity space is intentionally window-owned. A standard, resizable `NSWindow` has a

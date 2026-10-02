@@ -69,6 +69,15 @@ public final class ClaudioPreferences: ObservableObject {
     private let preferredLanguageIdentifiers: @MainActor () -> [String]
     private var localeCancellable: AnyCancellable?
 
+    /// Reuses the existing acknowledgement key in this owner's injected defaults domain.
+    package var hasSeenWorkspaceMigration: Bool {
+        defaults.bool(forKey: "claudio.workspace-migration-notice-seen")
+    }
+
+    package func acknowledgeWorkspaceMigration() {
+        defaults.set(true, forKey: "claudio.workspace-migration-notice-seen")
+    }
+
     public init(
         defaults: UserDefaults = .standard,
         notificationCenter: NotificationCenter = .default,

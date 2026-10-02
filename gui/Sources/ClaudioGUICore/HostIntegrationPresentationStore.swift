@@ -115,7 +115,7 @@ public func integrationDestinationContent(
     let facts = HostID.productVisibleCases.compactMap { host -> IntegrationDestinationHostFacts? in
         guard let row = sourceRows.first(where: { $0.host == host }) else { return nil }
         let snapshot = snapshots[host]
-        return IntegrationDestinationHostFacts(
+        var facts = IntegrationDestinationHostFacts(
             host: host,
             row: row,
             configurationSource: configurationSources[host],
@@ -126,6 +126,10 @@ public func integrationDestinationContent(
                 .filter(\.isAudibleCapability).map {
                     IntegrationBindingReceiptPresentation(binding: $0, snapshot: snapshot)
                 })
+        facts.receiptHistory = state.receiptHistories[host].map {
+            IntegrationReceiptHistoryPresentation(host: host, snapshot: snapshot, history: $0)
+        }
+        return facts
     }
     return IntegrationDestinationContent(
         sourceRows: sourceRows,

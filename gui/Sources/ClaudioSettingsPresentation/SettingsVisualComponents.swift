@@ -16,14 +16,9 @@ extension EnvironmentValues {
 }
 #endif
 
-/// One shared native Settings surface. It keeps the approved 13 pt group radius and strengthens
+/// One shared native Settings surface. It keeps the approved 10 pt group radius and strengthens
 /// its boundary under Increase Contrast without replacing the system control background.
 struct SettingsSectionCard: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    #if DEBUG
-    @Environment(\.settingsReduceTransparencyOverride) private var reduceTransparencyOverride
-    #endif
-
     private let content: AnyView
     private let padding: CGFloat
 
@@ -34,18 +29,7 @@ struct SettingsSectionCard: View {
 
     var body: some View {
         content
-            .modifier(
-                SettingsSectionSurface(
-                    padding: padding, reduceTransparencyOverride: effectiveReduceTransparency)
-            )
-    }
-
-    private var effectiveReduceTransparency: Bool {
-        #if DEBUG
-        reduceTransparencyOverride ?? reduceTransparency
-        #else
-        reduceTransparency
-        #endif
+            .modifier(SettingsSectionSurface(padding: padding))
     }
 }
 

@@ -1,6 +1,8 @@
 import ClaudioCore
 import ClaudioGUICore
+import ClaudioLocalization
 import Foundation
+import SoundPacksWindow
 
 @MainActor
 func runSoundPacksEditorAsyncOperationSuites() async {
@@ -149,6 +151,10 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                     && outcome.rejected.map(\.sourceFileName) == ["rejected.mp3"],
                 "partial outcome 必须同时保留 accepted 与逐项 rejected")
             expect(
+                owner.presentation.activities.last(where: { $0.kind == .importAudio })?
+                    .importOutcome == outcome,
+                "真实导入的逐项结果必须持久投影到页面，不能只返回给随后丢弃结果的 native dispatcher")
+            expect(
                 outcome.completion == .partial(accepted: 1, rejected: 1)
                     && outcome.allowsForegroundFollowUp,
                 "foreground partial 必须用 typed completion 形成 cancel 的正向对照")
@@ -166,7 +172,75 @@ func runSoundPacksEditorAsyncOperationSuites() async {
             expectSoundEditorAnnouncementDebt(
                 owner: owner,
                 kind: .importAudio,
-                completion: .partial(accepted: 1, rejected: 1))
+                completion: .partial(accepted: 1, rejected: 1),
+                acknowledge: true)
+            if let activity = owner.presentation.activities.last(where: { $0.kind == .importAudio })
+            {
+                let english = soundPacksImportResultText(activity, language: .english) ?? ""
+                let chinese = soundPacksImportResultText(activity, language: .zhHans) ?? ""
+                expect(
+                    english.contains("1 succeeded, 1 failed")
+                        && english.contains("Saved valid.mp3.")
+                        && english.contains("rejected.mp3: Unsupported audio content.")
+                        && english.contains("pack-a") && !english.contains(root.path),
+                    "播报确认后仍显示目标、保存文件及逐项失败原因，不泄漏导入源路径")
+                expect(
+                    chinese.contains("成功 1，失败 1")
+                        && chinese.contains("已保存 valid.mp3。")
+                        && chinese.contains("rejected.mp3: 音频内容格式不受支持"),
+                    "已完成结果必须即时双语化，文件名保持原值")
+            } else {
+                expect(false, "播报确认不能消耗可见导入结果")
+            }
+        }
+    }
+
+    await suite("Sound editor perform：全部拒绝仍保留逐项原因且不写盘") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a"])
+            let owner = fixture.owner
+            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 120)))
+            await waitForSoundEditorReady(owner, library: fixture.library)
+            guard let permit = soundEditorImportPermit(owner: owner, bindTo: nil) else {
+                expect(false, "必须取得批量导入许可")
+                return
+            }
+            let source = root.appendingPathComponent("invalid.mp3")
+            writeFixture(evilShellScriptData(), to: source)
+            let scansBefore = fixture.recorder.requests.count
+            let result = await owner.perform(
+                .importAudio(permit: permit, sources: [source], bindTo: nil))
+            guard case .imported(let outcome) = result,
+                let activity = owner.presentation.activities.last(where: { $0.kind == .importAudio }
+                )
+            else {
+                expect(false, "全部拒绝仍必须返回并显示实际结果")
+                return
+            }
+            expect(
+                activity.importOutcome == outcome && outcome.accepted.isEmpty,
+                "全部拒绝的逐项原因必须持续可见")
+            expect(
+                soundPacksImportResultText(activity, language: .english)?.contains(
+                    "invalid.mp3: Unsupported audio content.") == true,
+                "全失败不得变成无声操作")
+            expect(
+                !regularFileExists(at: root.appendingPathComponent("packs/pack-a/invalid.mp3"))
+                    && fixture.recorder.requests.count == scansBefore,
+                "全部拒绝不得写盘或制造写后刷新")
+            for _ in 0..<33 {
+                guard let next = soundEditorImportPermit(owner: owner, bindTo: nil) else {
+                    expect(false, "失败后必须能重新添加")
+                    return
+                }
+                _ = await owner.perform(.importAudio(permit: next, sources: [source], bindTo: nil))
+                while let announcement = owner.presentation.pendingAnnouncement {
+                    _ = owner.send(.acknowledgeAnnouncement(id: announcement.id, didPost: true))
+                }
+            }
+            expect(
+                owner.presentation.activities.count == 32,
+                "可见终态保留仍受既有 32 条上限约束，不无限累积")
         }
     }
 
@@ -314,6 +388,10 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                 outcome.accepted.map(\.fileName) == ["cancelled.mp3"]
                     && outcome.boundEvent == nil && outcome.orphan?.fileName == "cancelled.mp3",
                 "取消不能 rollback accepted bytes，也不能继续 final bind")
+            expect(
+                owner.presentation.activities.last(where: { $0.kind == .importAudio })?
+                    .importOutcome == outcome,
+                "取消后的已保存文件与未完成绑定必须留在可见结果中")
             expect(
                 regularFileExists(at: root.appendingPathComponent("packs/pack-a/cancelled.mp3")),
                 "post-write cancel 的 imported file 必须保留为 recoverable orphan")
@@ -1045,6 +1123,9 @@ func runSoundPacksEditorAsyncOperationSuites() async {
             } else {
                 expect(false, "pre-bind drift 必须返回 imported orphan identity")
             }
+            // The scan actor can be idle before its AsyncStream reaches the MainActor owner.
+            // A refreshing projection correctly withholds permits; assert the refreshed UI fact.
+            await waitForSoundEditorReady(owner, library: fixture.library)
             if case .events(let current) = owner.presentation.mode {
                 expect(
                     current.adoptionPermit != nil && current.adoptionPermit != permit,
@@ -1646,10 +1727,10 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                     .acknowledgeAnnouncement(id: slowAnnouncement.id, didPost: true)) == .applied,
                 "older completion debt 也必须可单次消费")
             expect(
-                !owner.presentation.activities.contains {
+                owner.presentation.activities.first {
                     $0.operationID == slowActivity.operationID
-                },
-                "所有 debt ack 后不得在 app-lifetime operation state 中继续累积")
+                }?.importOutcome == slowOutcome,
+                "导入播报确认后保留可见逐项结果；既有 32 条终态上限继续负责回收")
         }
     }
 

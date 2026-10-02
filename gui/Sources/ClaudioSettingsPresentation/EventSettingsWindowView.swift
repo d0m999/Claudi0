@@ -31,12 +31,13 @@ struct EventSettingsWindowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
+    @State private var detail: WorkspaceSettingsDetail = .configuration
     @State private var deletionCancelFocusID: UUID?
     @State private var previewSequence = EventPreviewSequenceCoordinator()
     @State private var player = NSSoundAudioPreviewPlayer()
     @State private var previewPulseTriggers: [Event: Int] = [:]
     @State private var previewSuccessTokens: [Event: UUID] = [:]
-    @AppStorage("claudio.workspace-migration-notice-seen") private var migrationSeen = false
+    @State private var migrationSeen = false
 
     init(
         model: PanelConfigController,
@@ -98,34 +99,41 @@ struct EventSettingsWindowView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 36) {
-                        Text(l10n.text(.settingsDestinationEventsAndSounds))
-                            .font(SettingsAppearance.pageTitle)
-                            .accessibilityAddTraits(.isHeader)
-                            .focusable()
-                            .focused($focusedTarget, equals: .title)
-                            .settingsMountIdentity("settings.title.events-and-sounds")
-                        scopeSelector
-                        if geometry.size.width - 72 >= 760 {
-                            HStack(
-                                alignment: .top,
-                                spacing: SettingsAppearance.columnGap(compact: compactLayout)
-                            ) {
-                                scopeContent
-                                scopeAuxiliary.frame(width: 260)
-                            }
-                        } else {
-                            VStack(alignment: .leading, spacing: 20) {
-                                scopeContent
-                                scopeAuxiliary
-                            }
-                        }
+        VStack(spacing: 0) {
+            SettingsPageHeader {
+                if detail != .configuration {
+                    Button {
+                        detail = .configuration
+                    } label: {
+                        Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
                     }
-                    .frame(maxWidth: 820, alignment: .leading)
-                    .padding(36)
+                    .labelStyle(.iconOnly).buttonStyle(.plain)
+                    .accessibilityIdentifier("workspace.detail.back")
+                }
+                Text(detailTitle)
+                    .font(SettingsAppearance.pageTitle)
+                    .accessibilityAddTraits(.isHeader)
+                    .focusable()
+                    .focused($focusedTarget, equals: .title)
+                    .settingsMountIdentity("settings.title.events-and-sounds")
+                    .soundPacksLayoutProbe("settings.title.events-and-sounds")
+            }
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
+                        detailContent
+                    }
+                    .id("workspace-top")
+                    .soundPacksLayoutProbe("settings.reading.events-and-sounds")
+                    .settingsReadingColumn()
+                }
+                .accessibilityIdentifier("workspace.settings.scroll")
+                .onChange(of: detail) { _ in
+                    previewSequence.cancel()
+                    player.stop()
+                    previewSuccessTokens.removeAll()
+                    proxy.scrollTo("workspace-top", anchor: .top)
+                    focusedTarget = .title
                 }
                 .onChange(of: selection.presentationState.focusRequestRevision) { _ in
                     if let event = selection.route.event {
@@ -136,8 +144,10 @@ struct EventSettingsWindowView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(SettingsAppearance.background(colorScheme))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("workspace.settings")
         .onAppear {
+            migrationSeen = languageStore.hasSeenWorkspaceMigration
             #if DEBUG
             if reloadsOnAppear && !model.usesInjectedPreviewState { model.reload() }
             #else
@@ -146,6 +156,7 @@ struct EventSettingsWindowView: View {
             synchronize()
         }
         .onChange(of: selection.route) { _ in
+            detail = .configuration
             previewSequence.cancel()
             player.stop()
             previewSuccessTokens.removeAll()
@@ -166,6 +177,11 @@ struct EventSettingsWindowView: View {
         .onChange(of: selection.deletionPresentation.pending?.id) { pendingID in
             if pendingID != nil {
                 deletionCancelFocusID = nil
+                if let request = selection.deletionPresentation.pending {
+                    detail = .scope(
+                        WorkspaceSoundWriteTarget(
+                            id: request.target.id, directory: request.target.directory))
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) {
@@ -195,7 +211,7 @@ struct EventSettingsWindowView: View {
         }
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.eventsAndSounds))
         .sheet(isPresented: $isAddingWorkspace) {
-            AddWorkspaceSoundRuleView(model: model, language: languageStore.language) { id in
+            AddWorkspaceSoundRuleView(model: model, languageStore: languageStore) { id in
                 selection.select(EventSettingsWindowRoute(scope: .workspace(id)))
                 model.selectSoundScope(.workspace(id))
                 isAddingWorkspace = false
@@ -230,6 +246,36 @@ struct EventSettingsWindowView: View {
             }
         } message: { request in
             Text(l10n.format(.workspaceDeleteConfirmMessage, request.target.directory.path))
+        }
+    }
+
+    private var detailContent: AnyView {
+        switch detail {
+        case .configuration: AnyView(configurationDetail)
+        case .workspaces: AnyView(workspaceList)
+        case .scope(let target): AnyView(workspaceDetail(target))
+        }
+    }
+
+    private var configurationDetail: some View {
+        Group {
+            scopeSelector
+            scopeContent
+            workspaceNavigation
+        }
+    }
+
+    @ViewBuilder
+    private func workspaceDetail(_ target: WorkspaceSoundWriteTarget) -> some View {
+        if let rule, WorkspaceSoundWriteTarget(rule: rule) == target, writable {
+            workspaceDetails(rule).settingsSectionSurface()
+            if let feedback = selection.deletionPresentation.feedback {
+                deletionFeedback(feedback)
+            }
+            if let error = model.workspaceError { workspaceFailure(error) }
+            writeFailures
+        } else {
+            scopeContent
         }
     }
 
@@ -327,10 +373,9 @@ struct EventSettingsWindowView: View {
             }
             .accessibilityIdentifier("workspace.scope-selector")
             .focused($focusedTarget, equals: .scope(selection.route.scope))
-            Button(l10n.text(.workspaceAdd)) { isAddingWorkspace = true }
-                .accessibilityIdentifier("workspace.add")
+
         }
-        .frame(minHeight: 38)
+        .frame(minHeight: 29)
         .settingsSectionSurface()
         .soundPacksLayoutProbe("workspace.scope-selector.card")
     }
@@ -344,13 +389,18 @@ struct EventSettingsWindowView: View {
     }
 
     private var scopeContent: some View {
-        VStack(alignment: .leading, spacing: 36) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             if !migrationSeen && !model.configState.resolvedConfig.selectedPack.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(l10n.text(.workspaceMigration))
-                    Button(l10n.text(.workspaceDismiss)) { migrationSeen = true }
+                    Button(l10n.text(.workspaceDismiss)) {
+                        languageStore.acknowledgeWorkspaceMigration()
+                        migrationSeen = true
+                    }
+                    .accessibilityIdentifier("workspace.migration-dismiss")
                 }.frame(minHeight: 64).settingsSectionSurface()
                     .soundPacksLayoutProbe("workspace.migration.card")
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("workspace.migration-notice")
             }
             if model.workspaceRulesMalformed {
@@ -411,19 +461,22 @@ struct EventSettingsWindowView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("workspace.legacy-system-sounds")
                         }
-                        VStack(spacing: SettingsAppearance.eventGap) {
+                        VStack(spacing: 0) {
                             ForEach(events) { event in
                                 eventRow(event)
-                                    .settingsSectionSurface(
-                                        padding: SettingsAppearance.eventPadding(
-                                            compact: compactLayout)
-                                    )
+                                    .padding(14)
+                                    .frame(minHeight: 61)
                                     .soundPacksLayoutProbe(
-                                        "workspace.event-card.\(event.event.rawValue)"
+                                        "workspace.event-row.\(event.event.rawValue)"
                                     )
                                     .id("workspace-event-\(event.event.rawValue)")
+                                if event.event != events.last?.event {
+                                    Divider().padding(.horizontal, 14)
+                                }
                             }
                         }
+                        .settingsSectionSurface(padding: 0)
+                        .soundPacksLayoutProbe("workspace.events.group")
                     }
                     previewControls
                 }
@@ -448,22 +501,72 @@ struct EventSettingsWindowView: View {
         }
     }
 
-    @ViewBuilder
-    private var scopeAuxiliary: some View {
-        if writable, let rule {
-            workspaceDetails(rule).settingsSectionSurface(padding: 18)
-                .soundPacksLayoutProbe("workspace.auxiliary.card")
-        } else if writable, selection.route.scope == .global {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(l10n.text(.workspaceSurfaces)).font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-                Text(l10n.text(.workspaceAllSources))
-                Text(l10n.text(.workspaceDefaultApplicability))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var detailTitle: String {
+        switch detail {
+        case .configuration: l10n.text(.settingsDestinationEventsAndSounds)
+        case .workspaces: l10n.text(.settingsNativeWorkspaces)
+        case .scope: current?.name ?? l10n.text(.workspaceUnavailable)
+        }
+    }
+
+    private var workspaceNavigation: some View {
+        Button {
+            if let rule {
+                detail = .scope(WorkspaceSoundWriteTarget(rule: rule))
+            } else {
+                detail = .workspaces
             }
-            .settingsSectionSurface(padding: 18)
-            .soundPacksLayoutProbe("workspace.auxiliary.card")
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(
+                        l10n.text(
+                            rule == nil
+                                ? .settingsNativeManageWorkspaces
+                                : .settingsNativeDirectoryAndSurfaces))
+                    Text(rule?.directory.path ?? l10n.text(.workspaceDefaultApplicability))
+                        .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 12)
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 33).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .settingsSectionSurface(padding: 14)
+        .settingsMountIdentity("workspace.open-management")
+    }
+
+    private var workspaceList: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if model.workspaceRules.isEmpty {
+                Text(l10n.text(.settingsNativeNoWorkspaces)).foregroundStyle(.secondary)
+            }
+            ForEach(model.workspaceRules, id: \.id) { rule in
+                Button {
+                    selectScope(.workspace(rule.id))
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(rule.name)
+                            Text(rule.directory.path).font(SettingsAppearance.font(.caption))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 12)
+                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                    }.contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .settingsSectionSurface(padding: 14)
+                .accessibilityIdentifier("workspace.rule.\(rule.id.uuidString)")
+            }
+            Text(l10n.text(.workspaceGitScope) + "\n" + l10n.text(.workspacePlainScope))
+                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(l10n.text(.workspaceAdd)) { isAddingWorkspace = true }
+                .accessibilityIdentifier("workspace.add")
         }
     }
 
@@ -472,7 +575,7 @@ struct EventSettingsWindowView: View {
         let workspaceTarget = model.selectedWorkspaceTarget
         return VStack(alignment: .leading, spacing: 14) {
             Text(current?.name ?? l10n.text(.workspaceUnavailable))
-                .font(.title2.weight(.semibold))
+                .font(SettingsAppearance.font(.sectionTitle))
                 .accessibilityAddTraits(.isHeader)
             Picker(
                 l10n.text(.panelSoundPackLabel),
@@ -502,6 +605,7 @@ struct EventSettingsWindowView: View {
                 }
             }.accessibilityIdentifier("event-settings.sound-pack-picker")
                 .focused($focusedTarget, equals: .packPicker)
+            Divider()
             EventSettingsMasterVolumeControl(
                 diskVolume: model.config.masterVolume, isEnabled: writable,
                 language: languageStore.language, focusedTarget: $focusedTarget
@@ -628,29 +732,14 @@ struct EventSettingsWindowView: View {
 
     @ViewBuilder
     private func workspaceRemoveButton(_ rule: WorkspaceSoundRule) -> some View {
-        let nativeButton = Button(l10n.text(.workspaceRemove)) {
+        SettingsFocusableButton(
+            l10n.text(.workspaceRemove),
+            requestsFocus: deletionCancelFocusID == rule.id
+                || selection.presentationState.focusTarget == .workspaceRemove(rule.id)
+        ) {
             _ = selection.requestDeletion(of: rule)
         }
-        let button = Group {
-            if NSApp.isFullKeyboardAccessEnabled {
-                nativeButton
-            } else {
-                nativeButton.focusable()
-            }
-        }
-        if #available(macOS 14.0, *) {
-            // Cancellation must restore usable focus even with system keyboard navigation off.
-            // Only add a proxy in that mode; otherwise the native Button owns its one Tab stop.
-            button.onKeyPress(keys: [.space, .return], phases: .down) { press in
-                guard focusedTarget == .workspaceRemove(rule.id),
-                    press.modifiers.intersection([.command, .control, .option, .shift]).isEmpty
-                else { return .ignored }
-                _ = selection.requestDeletion(of: rule)
-                return .handled
-            }
-        } else {
-            button
-        }
+        .fixedSize()
     }
 
     @ViewBuilder
@@ -917,8 +1006,10 @@ struct EventSettingsWindowView: View {
                 ClaudioEventGlyph(event: event.event, size: 24).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(event.title)
-                        .font(ClaudioTheme.font(.body).weight(.semibold))
+                        .font(SettingsAppearance.font(.body).weight(.semibold))
                     Text(event.soundFileText).font(.caption).foregroundColor(.secondary)
+                        .fixedSize(
+                            horizontal: false, vertical: true)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityHint(
@@ -964,13 +1055,14 @@ struct EventSettingsWindowView: View {
                         language: languageStore.language)
                 )
                 .focused($focusedTarget, equals: .preview(event.event))
-                Button(
-                    l10n.text(
-                        recovery == .repairSound
-                            ? .eventPreviewRepairSound : .eventSettingsManageSounds)
-                ) {
+                Button {
                     configureSound(event.event, scope: scope)
+                } label: {
+                    Label(l10n.text(.settingsNativeEditCue), systemImage: "chevron.right")
                 }
+                .labelStyle(.iconOnly)
+                .accessibilityLabel(l10n.text(.settingsNativeEditCue) + " " + event.title)
+                .accessibilityIdentifier("workspace.event.\(event.event.rawValue).edit")
                 .disabled(!writable)
                 .focused($focusedTarget, equals: .configure(event.event))
                 Toggle(
@@ -1019,7 +1111,7 @@ struct EventSettingsWindowView: View {
             if reduceMotion && previewSuccessTokens[event.event] != nil {
                 Label(l10n.text(.eventPreviewStarted), systemImage: "checkmark.circle.fill")
                     .font(.caption)
-                    .foregroundColor(ClaudioTheme.clay(colorScheme))
+                    .foregroundColor(SettingsAppearance.accent(colorScheme))
                     .accessibilityIdentifier(
                         "workspace.event.preview-started.\(event.event.cliName)")
             }
@@ -1095,7 +1187,7 @@ struct EventSettingsWindowView: View {
 @MainActor
 private struct AddWorkspaceSoundRuleView: View {
     @ObservedObject var model: PanelConfigController
-    let language: ClaudioAppLanguage
+    @ObservedObject var languageStore: ClaudioPreferences
     let onCreated: (UUID) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var directory: WorkspaceDirectory?
@@ -1105,13 +1197,22 @@ private struct AddWorkspaceSoundRuleView: View {
     @State private var surfaces = WorkspaceSurfaceEligibility.verified
     @State private var resolving = false
     @State private var failure: WorkspaceSoundError?
+    @State private var resolutionTask: Task<Void, Never>?
+    @State private var resolutionID: UUID?
+    private var language: ClaudioAppLanguage { languageStore.language }
     private var l10n: ClaudioL10n { ClaudioL10n(language: language) }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(l10n.text(.workspaceAdd)).font(.title2)
+            Text(l10n.text(.workspaceAdd)).font(SettingsAppearance.pageTitle)
+            Text(l10n.text(.settingsNativeWorkspaceCreation))
+                .font(SettingsAppearance.font(.secondary)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Button(l10n.text(.workspaceChooseDirectory)) { chooseDirectory() }.disabled(resolving)
             if let directory {
+                Text(URL(fileURLWithPath: directory.path).lastPathComponent)
+                    .font(SettingsAppearance.font(.sectionTitle))
                 Text(directory.path).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(l10n.text(directory.kind == .git ? .workspaceGitScope : .workspacePlainScope))
                     .font(.caption)
             }
@@ -1131,7 +1232,7 @@ private struct AddWorkspaceSoundRuleView: View {
                 Text("\(Int(volume * 100))%").monospacedDigit()
             }
             Toggle(l10n.text(.workspaceVolumeConfirm), isOn: $volumeConfirmed)
-            Text(l10n.text(.workspaceSurfaces)).font(.headline)
+            Text(l10n.text(.workspaceSurfaces)).font(SettingsAppearance.font(.sectionTitle))
             ForEach(WorkspaceSurfaceEligibility.candidates, id: \.rawValue) { surface in
                 Toggle(
                     HostID.productVisibleCases.first { $0.surfaceID == surface }?.displayName
@@ -1164,14 +1265,24 @@ private struct AddWorkspaceSoundRuleView: View {
                 )
                 .keyboardShortcut(.defaultAction)
             }
-        }.padding(24).frame(width: 520)
+        }.font(SettingsAppearance.font(.body)).padding(24).frame(width: 520)
+            .onDisappear {
+                resolutionID = nil
+                resolutionTask?.cancel()
+                resolutionTask = nil
+            }
     }
     private func chooseDirectory() {
         guard let url = runWorkspaceDirectoryOpenPanel() else { return }
         resolving = true; failure = nil
-        Task {
+        let identity = UUID()
+        resolutionID = identity
+        resolutionTask?.cancel()
+        resolutionTask = Task {
             let result = await Task.detached { WorkspaceDirectoryResolver.resolve(url.path) }.value
+            guard !Task.isCancelled, resolutionID == identity else { return }
             resolving = false
+            resolutionTask = nil
             switch result {
             case .success(let resolved): directory = resolved
             case .failure: directory = nil; failure = .invalidRule
@@ -1208,9 +1319,9 @@ private struct EventSettingsMasterVolumeControl: View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(ClaudioL10n(language: language).text(.panelMasterVolume))
-                    .font(ClaudioTheme.font(.body).weight(.semibold))
+                    .font(SettingsAppearance.font(.body).weight(.semibold))
                 Text(ClaudioL10n(language: language).text(.panelMasterVolumeDescription))
-                    .font(ClaudioTheme.font(.caption))
+                    .font(SettingsAppearance.font(.caption))
                     .foregroundColor(.secondary)
             }
             Spacer(minLength: 10)
@@ -1220,6 +1331,7 @@ private struct EventSettingsMasterVolumeControl: View {
                 language: language,
                 accessibilityIdentifier: "event-settings.master-volume",
                 flushesOnDisappear: true,
+                usesSettingsAppearance: true,
                 onCommit: onCommit
             )
             .focused(focusedTarget, equals: .masterVolume)

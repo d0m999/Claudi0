@@ -237,7 +237,8 @@ final class MenuBarController: NSObject {
                 aiCueViewModel: aiCueViewModel,
                 eventNoticeHealth: eventNoticeRuntime.health,
                 eventNoticeModel: eventNoticeRuntime.model,
-                noticeNavigation: noticeNavigation),
+                noticeNavigation: noticeNavigation,
+                productImages: makeSettingsProductImages()),
             actions: makeSystemSettingsPresentationActions(
                 onEventAudibilityInputsChanged: { [weak actionRouter] in
                     actionRouter?.audibilityInputsChanged()

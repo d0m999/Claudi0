@@ -241,7 +241,9 @@ func runNativePrototypeMigrationSuites() {
                 && launch.contains("com.claudio.app.ui-regression")
                 && launch.contains("ClaudioUIRegressionFixture"), "生产 owner 创建前校验专用身份与 fixture 标记")
         expect(
-            source.contains("UserDefaults(suiteName: defaultsName)")
+            source.contains("SettingsFixtureDefaults(")
+                && source.contains("file: root.appendingPathComponent(\"preferences.plist\")")
+                && source.contains("ClaudioPreferences(defaults: defaults)")
                 && source.contains("NativeRegressionCredentials()")
                 && source.contains("NativeRegressionGenerator("), "defaults 与外部操作使用隔离组合")
     }

@@ -30,7 +30,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     private let refreshes: SoundPacksRefreshCoordinator
     private let environment: AudioImportEnvironment
     private let configFile: URL
-    private let defaultsName: String
+    private let receiptStore: HostHookReceiptStore
+    private let activityStore: LocalActivitySummaryStore
+    private let diagnosticLogStore: ActivityDiagnosticLogStore
     private var clipboardBackup: [NSPasteboardItem] = []
     private var config: ClaudioConfig
     private let installation = UUID()
@@ -53,11 +55,69 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "claudio-ui-regression-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(
             at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
-        defaultsName = "com.claudio.app.ui-regression.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: defaultsName)!
+        let defaults = SettingsFixtureDefaults(
+            file: root.appendingPathComponent("preferences.plist"))
         preferences = ClaudioPreferences(defaults: defaults)
         preferences.setLanguage(.zhHans)
         configFile = root.appendingPathComponent("config.json")
+        let integrations = root.appendingPathComponent("integrations", isDirectory: true)
+        let receiptStore = HostHookReceiptStore(
+            receiptsRoot: integrations.appendingPathComponent("receipts", isDirectory: true),
+            locksRoot: integrations.appendingPathComponent("receipt-locks", isDirectory: true),
+            installationsRoot: integrations.appendingPathComponent(
+                "installations", isDirectory: true),
+            installationLocksRoot: integrations.appendingPathComponent(
+                "installation-locks", isDirectory: true),
+            historyRoot: integrations.appendingPathComponent("receipt-history", isDirectory: true))
+        self.receiptStore = receiptStore
+        let hostSnapshots = try Self.seedReceiptHistories(in: receiptStore)
+        let hostIntegrations = HostIntegrationPresentationStore(
+            state: Self.receiptPresentationState(store: receiptStore, snapshots: hostSnapshots),
+            configurationSources: Dictionary(
+                uniqueKeysWithValues: HostID.productVisibleCases.map {
+                    ($0, integrations.appendingPathComponent("\($0.rawValue)-fixture.json").path)
+                }))
+        let refreshReceiptContent: @MainActor @Sendable () async -> IntegrationDestinationContent =
+            {
+                let state = await Task.detached {
+                    Self.receiptPresentationState(store: receiptStore, snapshots: hostSnapshots)
+                }.value
+                return hostIntegrations.replace(state: state)
+            }
+        let integrationsModel = IntegrationDestinationModel(
+            content: hostIntegrations.content,
+            refreshHandler: IntegrationDestinationRefreshHandler {
+                IntegrationDestinationActionOutcome(
+                    content: await refreshReceiptContent(), feedbackKind: .information,
+                    feedbackText: .localized(key: .feedbackHostStateUpdated, arguments: []))
+            },
+            actionHandler: IntegrationDestinationActionHandler { action in
+                guard case .clearReceiptHistory(let host) = action else {
+                    return IntegrationDestinationActionOutcome(
+                        content: await refreshReceiptContent(), feedbackKind: .information,
+                        feedbackMessage:
+                            "Fixture host connection operation; no external host changed")
+                }
+                let result = await Task.detached {
+                    receiptStore.clearReceiptHistory(host: host)
+                }.value
+                let kind: IntegrationsFeedbackKind
+                let text: IntegrationsFeedbackText
+                switch result {
+                case .success:
+                    kind = .information
+                    text = .localized(
+                        key: .feedbackReceiptHistoryCleared, arguments: [host.displayName])
+                case .failure(let error):
+                    kind = .failure
+                    text = .localized(key: .feedbackOperationFailed, arguments: [error.description])
+                }
+                return IntegrationDestinationActionOutcome(
+                    content: await refreshReceiptContent(), feedbackKind: kind, feedbackText: text)
+            },
+            preferences: preferences,
+            clipboardWriter: IntegrationDestinationClipboardWriter { _ in true },
+            onContentChanged: { hostIntegrations.replace(content: $0) })
         let packs = root.appendingPathComponent("packs", isDirectory: true)
         let factory = root.appendingPathComponent("factory", isDirectory: true)
         for directory in [packs, factory] {
@@ -136,10 +196,23 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             summaryFile: root.appendingPathComponent("activity.json"),
             lockFile: root.appendingPathComponent("activity.lock"),
             pendingDirectory: root.appendingPathComponent("pending"))
+        activityStore = activity
         let log = ActivityDiagnosticLogStore(
             logFile: root.appendingPathComponent("diagnostic.log"),
             logLockFile: root.appendingPathComponent("log.lock"))
-        _ = activity.clear()
+        diagnosticLogStore = log
+        _ = try activity.clear().get()
+        guard
+            activity.record(
+                host: .claudeCode, event: .taskStart, installationID: installation,
+                activeInstallationID: installation, occurredAt: Date()) == .committed,
+            appendLogLine(
+                event: "stop", reason: "fixture playback failed",
+                to: root.appendingPathComponent("diagnostic.log"),
+                lockFile: root.appendingPathComponent("log.lock"))
+        else {
+            throw NSError(domain: "ClaudioNativeFixture", code: 2)
+        }
         let diagnostics = ActivityDiagnosticsModel(
             operations: ActivityDiagnosticsOperations(
                 load: {
@@ -165,9 +238,13 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         fixture = SettingsPresentationFixtures.generalLogin(
             temporaryParent: root, route: .destination(.eventsAndSounds),
             workspaceRules: config.workspaceRules, eventSettingsModel: eventModel,
-            soundPacksEditor: editor, aiCueViewModel: ai, preferences: preferences,
+            soundPacksEditor: editor, aiCueViewModel: ai,
+            hostIntegrations: hostIntegrations, integrationsModel: integrationsModel,
+            preferences: preferences,
             eventNoticeModel: notices, noticeNavigation: navigation,
-            activityDiagnostics: diagnostics)
+            activityDiagnostics: diagnostics, productImages: makeSettingsProductImages(),
+            nativeEffects: SoundPacksEditorNativeEffectsDispatcher(
+                adapter: SystemSoundPacksEditorNativeEffectsAdapter()))
         settings = SettingsWindowController(session: fixture.session)
         super.init()
         clipboardBackup = (NSPasteboard.general.pasteboardItems ?? []).map { original in
@@ -177,6 +254,65 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             }
             return saved
         }
+    }
+
+    /// Synthetic safe receipts exercise real archive I/O. They do not establish host callback
+    /// activation: the independent connection snapshots deliberately remain awaiting a receipt.
+    nonisolated private static func seedReceiptHistories(in store: HostHookReceiptStore) throws
+        -> [HostIntegrationSnapshot]
+    {
+        let now = Date()
+        return try HostID.productVisibleCases.enumerated().map { ordinal, host in
+            let currentID = UUID(
+                uuidString: String(format: "00000000-0000-4000-8000-%012d", ordinal + 301))!
+            let previousID = UUID(
+                uuidString: String(format: "00000000-0000-4000-8000-%012d", ordinal + 401))!
+            let scope = "native-fixture-\(host.rawValue)"
+            let bindings = HostCapabilityCatalog.bindings(for: host).filter {
+                $0.isAudibleCapability && ($0.event == .stop || $0.event == .subagentStop)
+            }
+            guard bindings.count == 2 else {
+                throw NSError(domain: "ClaudioNativeFixture", code: 1)
+            }
+            for (generation, id) in [previousID, currentID].enumerated() {
+                try store.activate(host: host, installationID: id, scopeFingerprint: scope).get()
+                for (index, binding) in bindings.enumerated() {
+                    let receipt = HostHookReceipt(
+                        installationID: id, host: host, bindingID: binding.id,
+                        nativeEvent: binding.nativeEvent!, semanticEvent: binding.event,
+                        timestamp: now.addingTimeInterval(
+                            TimeInterval(-120 + generation * 60 + index)),
+                        playbackResult: generation == 0 ? .muted : .playbackFailed)
+                    _ = try store.store(
+                        receipt, expectedScopeFingerprint: scope, scopeFingerprint: { scope }
+                    ).get()
+                }
+            }
+            return HostIntegrationSnapshot(
+                host: host, runtime: .ready, availability: .available,
+                configuration: .configured, writability: .writable,
+                activation: .awaitingReceipt(installationID: currentID),
+                installationID: currentID)
+        }
+    }
+
+    nonisolated private static func receiptPresentationState(
+        store: HostHookReceiptStore, snapshots: [HostIntegrationSnapshot]
+    ) -> HostIntegrationPresentationState {
+        let capabilities = Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map {
+                ($0, HostCapabilityCatalog.bindings(for: $0))
+            })
+        let matrix = AudibilityMatrix.make(
+            snapshots: snapshots, capabilities: capabilities,
+            soundCoverage: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }),
+            enabledEvents: Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0, true) }))
+        var state = HostIntegrationPresentationState(snapshots: snapshots, matrix: matrix)
+        state.receiptHistories = Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map {
+                ($0, store.receiptHistorySnapshot(host: $0))
+            })
+        return state
     }
 
     func start() {
@@ -221,6 +357,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             self?.focus.notePanelHidden(); self?.notices.closeReading(.panel)
         }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Let native file panels own their Go to Folder shortcut.
+            guard !(event.window is NSSavePanel) else { return event }
             guard event.modifierFlags.contains([.command, .shift]) else { return event }
             let keyCode = event.keyCode
             let handled = MainActor.assumeIsolated {
@@ -249,6 +387,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         for publisher in [
             notices.objectWillChange, navigation.objectWillChange, fixture.session.objectWillChange,
             fixture.eventSettingsModel.objectWillChange, fixture.aiCueViewModel.objectWillChange,
+            fixture.integrationsModel.objectWillChange,
+            fixture.activityDiagnostics.objectWillChange,
             focus.objectWillChange,
         ] {
             publisher.sink { [weak self] _ in
@@ -367,6 +507,12 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     func advance(_ seconds: TimeInterval) { clock.advance(seconds); capture() }
     func capture() {
         captureRevision += 1
+        let inspectedPack: String?
+        if case .sounds(let sounds) = fixture.soundPacksEditor.presentation.mode {
+            inspectedPack = sounds.selectedPack?.id
+        } else {
+            inspectedPack = nil
+        }
         let readback: [String: Any] = [
             "revision": captureRevision,
             "destination": fixture.session.state.routeResolution.destination.rawValue,
@@ -383,17 +529,84 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "description": fixture.aiCueViewModel.soundDescription,
             "candidateCount": fixture.aiCueViewModel.generation?.candidates.count ?? 0,
             "selectedPack": fixture.eventSettingsModel.config.selectedPack,
+            "inspectedPack": inspectedPack ?? "none",
             "volume": fixture.eventSettingsModel.config.masterVolume, "handbacks": handbacks,
             "windowGeometry": settings.regressionGeometry,
             "settingsLayout": settings.regressionLayoutEvidence,
             "panelVisible": panel.isVisible, "panelKey": panel.isKeyWindow,
             "keyWindow": NSApp.keyWindow?.title ?? "none",
+            "receiptHistories": receiptHistoryReadback(),
+            "activity": activityReadback(),
+            "diagnosticLog": diagnosticLogReadback(),
             "copiedFixtureSession": navigation.result == .copied
                 && NSPasteboard.general.string(forType: .string) == "fixture-session",
         ]
         try? JSONSerialization.data(
             withJSONObject: readback, options: [.sortedKeys, .prettyPrinted]
         ).write(to: root.appendingPathComponent("readback.json"), options: .atomic)
+    }
+
+    private func receiptHistoryReadback() -> [String: Any] {
+        Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map { host in
+                let disk = receiptStore.receiptHistorySnapshot(host: host)
+                let facts = fixture.integrationsModel.content.facts(for: host)
+                let history = facts?.receiptHistory
+                let installationID = receiptStore.currentInstallationID(host: host)
+                let scope = receiptStore.currentInstallationScopeFingerprint(host: host)
+                let currentEvidenceCount = HostCapabilityCatalog.bindings(for: host).filter {
+                    guard let nativeEvent = $0.nativeEvent, let installationID, let scope else {
+                        return false
+                    }
+                    return receiptStore.receiptEvidence(
+                        host: host, nativeEvent: nativeEvent, installationID: installationID,
+                        scopeFingerprint: scope) != nil
+                }.count
+                let values: [String: Any] = [
+                    "diskCount": disk.receipts.count,
+                    "diskState": String(describing: disk.state),
+                    "presentationCount": history?.entries.count ?? 0,
+                    "presentationState": history.map { String(describing: $0.state) } ?? "missing",
+                    "generations": history?.entries.map { String(describing: $0.generation) } ?? [],
+                    "events": disk.receipts.map { $0.semanticEvent.rawValue },
+                    "currentReceiptEvidenceCount": currentEvidenceCount,
+                    "installationID": installationID?.uuidString ?? "none",
+                    "connectionStatus": facts.map { String(describing: $0.status) } ?? "missing",
+                ]
+                return (host.rawValue, values)
+            })
+    }
+
+    private func activityReadback() -> [String: Any] {
+        let result = activityStore.read()
+        let count: UInt64
+        let state: String
+        switch result.state {
+        case .ready(let document), .stale(let document):
+            if case .ready = result.state { state = "ready" } else { state = "stale" }
+            count = document.buckets.reduce(0) { total, bucket in
+                total + bucket.counts.values.reduce(0, +)
+            }
+        case .missing:
+            state = "missing"; count = 0
+        case .unavailable:
+            state = "unavailable"; count = 0
+        }
+        return [
+            "state": state, "count": count, "path": "activity.json",
+            "bytes": (try? Data(contentsOf: root.appendingPathComponent("activity.json")))?.count
+                ?? 0,
+        ]
+    }
+
+    private func diagnosticLogReadback() -> [String: Any] {
+        let snapshot = diagnosticLogStore.diagnosticLogSnapshot()
+        return [
+            "state": String(describing: snapshot.state), "failureCount": snapshot.failures.count,
+            "path": "diagnostic.log",
+            "bytes": (try? Data(contentsOf: root.appendingPathComponent("diagnostic.log")))?.count
+                ?? 0,
+        ]
     }
 }
 

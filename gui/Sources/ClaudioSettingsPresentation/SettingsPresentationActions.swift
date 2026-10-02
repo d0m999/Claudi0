@@ -1,6 +1,7 @@
 /// Closed vocabulary for Settings-only effects implemented by native executable adapters.
 package enum SettingsPlatformAction: Equatable, Sendable {
     case openLoginItemsSettings
+    case openFocusSettings
     case openCalendarPrivacySettings
 }
 

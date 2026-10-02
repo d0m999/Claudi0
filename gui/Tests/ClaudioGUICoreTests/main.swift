@@ -114,6 +114,18 @@ if CommandLine.arguments.contains("--ai-cue-native-focus") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--settings-native-states") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.regular)
+    Task { @MainActor in
+        await runSettingsNativeStatesSuites()
+        print("Settings native states: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--question-intent") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
@@ -139,6 +151,12 @@ if CommandLine.arguments.contains("--review-repairs") {
     await runSessionNavigationSuites()
     await runSettingsPresentationLifecycleSuites()
     print("Review repairs: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--view-wiring") {
+    runViewWiringSuites()
+    print("View wiring: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -179,6 +197,18 @@ if CommandLine.arguments.contains("--user-sound-pack-deletion") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--sound-window-accessibility") {
+    runSoundPacksWindowAccessibilitySuites()
+    print("Sound window accessibility: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--sound-editor-import-results") {
+    await runSoundPacksEditorAsyncOperationSuites()
+    print("Sound editor import results: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--sound-editor-interface") {
     await runSoundPacksEditorInterfaceSuites()
     print("Sound editor interface: \(totalChecks) checks, \(failures) failures")
@@ -188,6 +218,12 @@ if CommandLine.arguments.contains("--sound-editor-interface") {
 if CommandLine.arguments.contains("--sound-editor-focus") {
     await runSoundPacksEditorViewSuites()
     print("Sound editor focus: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--sound-editor-detail-identity") {
+    await runSoundPacksSettingsDetailIdentityRegressions()
+    print("Sound editor detail identity: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -258,6 +294,7 @@ if CommandLine.arguments.contains("--ai-cue-pack-scoped") {
 }
 
 if CommandLine.arguments.contains("--settings-sounds-layout") {
+    runSettingsNativeMigrationSuites()
     runSettingsSoundsLayoutSuites()
     print("Settings sounds layout: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
@@ -422,6 +459,7 @@ runSettingsPresentationTargetSuites()
 runSettingsPresentationSliceSuites()
 runSettingsRootInteractionSuites()
 runSettingsSoundsLayoutSuites()
+runSettingsNativeMigrationSuites()
 runPreviewFixturesSuites()
 runMultiProviderPrototypeContractSuites()
 runVolumeDragSessionSuites()

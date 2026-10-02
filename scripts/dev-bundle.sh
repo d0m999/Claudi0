@@ -153,6 +153,11 @@ PLIST
     # Strip it completely before the size gate; helper/LoginItem keep their existing external
     # symbols because they are separate release contracts with their own budgets.
     strip "$APP/Contents/MacOS/claudi0-app"
+    # strip can leave the linker's temporary signature sized for the unstripped executable.
+    # Measure the stripped payload without that obsolete blob, then check the final signed app.
+    if codesign --display "$APP/Contents/MacOS/claudi0-app" >/dev/null 2>&1; then
+        codesign --remove-signature "$APP/Contents/MacOS/claudi0-app"
+    fi
     strip -x \
         "$APP/Contents/Resources/bin/claudi0" \
         "$LOGIN_ITEM_APP/Contents/MacOS/claudi0-login-item"
@@ -162,6 +167,7 @@ PLIST
     codesign --force --sign - "$LOGIN_ITEM_APP"
     codesign --force --sign - "$APP"
     bash "$repo_root/scripts/verify-dev-bundle-signature.sh" "$APP"
+    bash "$repo_root/scripts/check-release-size.sh" "$APP"
     echo "✅ dist/${APP}（$(uname -m)）—— 用 open dist/${APP} 启动（菜单栏出现 Orbit Zero 图标）"
 }
 

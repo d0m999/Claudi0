@@ -958,9 +958,15 @@ func runReleaseLayoutSuites() {
             devCommands.contains(#"strip "$APP/Contents/MacOS/claudi0-app""#)
                 && !devCommands.contains(#"strip -x "$APP/Contents/MacOS/claudi0-app""#)
                 && devCommands.contains(helperLoginItemStripCommand)
+                && devCommands.contains(
+                    #"codesign --remove-signature "$APP/Contents/MacOS/claudi0-app""#)
                 && devBundle.contains(#"bash "$repo_root/scripts/check-release-size.sh""#)
+                && devBundle.components(
+                    separatedBy: #"bash "$repo_root/scripts/check-release-size.sh" "$APP""#
+                ).count == 3
                 && devBundle.contains(#"ln -s claudi0 "$APP/Contents/Resources/bin/claudio""#),
-            "dev bundle 必须与正式发布一样完整 strip GUI、保留 helper/LoginItem 的 -x 合同并执行体积门禁")
+            "dev bundle 必须完整 strip GUI、移除链接器临时签名、保留 helper/LoginItem 的 -x 合同，"
+                + "并在签名前后执行同一体积门禁")
     }
 
     suite("release-size 门禁：逐架构边界、别名、架构与 bundle 总量都 fail closed") {
@@ -1191,12 +1197,12 @@ func runReleaseLayoutSuites() {
                 && gate.contains(
                     #"LOGIN_ITEM_BYTES_PER_ARCH="${CLAUDIO_LOGIN_ITEM_BYTES_PER_ARCH:-500000}""#)
                 && gate.contains(
-                    #"NON_EXECUTABLE_BUNDLE_BYTES="${CLAUDIO_NON_EXECUTABLE_BUNDLE_BYTES:-1500000}""#
+                    #"NON_EXECUTABLE_BUNDLE_BYTES="${CLAUDIO_NON_EXECUTABLE_BUNDLE_BYTES:-3100000}""#
                 )
                 && environment.contains("default `7000000`")
                 && environment.contains("default `3250000`")
                 && environment.contains("default `500000`")
-                && environment.contains("default `1500000`")
+                && environment.contains("default `3100000`")
                 && budget.contains("`5,500,000 B`")
                 && budget.contains("`5,600,000 B`")
                 && budget.contains("`6,900,000 B`")
@@ -1208,6 +1214,7 @@ func runReleaseLayoutSuites() {
                 && budget.contains("`3,250,000 B`")
                 && budget.contains("`500,000 B`")
                 && budget.contains("`1,500,000 B`")
+                && budget.contains("`3,100,000 B`")
                 && budget.contains("`4,223,128 B`")
                 && budget.contains("`2,466,184 B`")
                 && budget.contains("`435,818 B`")

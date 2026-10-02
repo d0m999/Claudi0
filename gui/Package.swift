@@ -129,7 +129,8 @@ let package = Package(
             resources: [
                 // Template PDFs keep the macOS 12 runtime independent of OS-version-specific
                 // SVG decoding. Bundle assembly must copy the generated *_ClaudioGUI.bundle.
-                .process("Resources/HostIcons")
+                .process("Resources/HostIcons"),
+                .copy("Resources/SettingsHostIcons"),
             ],
             linkerSettings: [
                 .linkedFramework("Carbon"),

@@ -262,6 +262,16 @@ func runAboutInformationSuites() {
             actionProbe.copiedValues.last == model.diagnosticSummary,
             "diagnostic copy must send only the safe summary to the adapter")
 
+        let presentedSummary = model.diagnosticSummary
+        model.replaceSurfaceFacts([AboutSurfaceFact(host: .claudeCode, state: .notConnected)!])
+        actionProbe.copySucceeds = true
+        model.copyPresentedDiagnostics(presentedSummary)
+        expect(
+            actionProbe.copiedValues.last == presentedSummary
+                && presentedSummary != model.diagnosticSummary
+                && model.feedback == .diagnosticsCopied,
+            "a Surface update must not replace the exact diagnostic text the user chose to copy")
+
         model.openResource(missingPrivacy)
         expect(
             model.feedback == .resourceOpenFailed(.privacyStatement)

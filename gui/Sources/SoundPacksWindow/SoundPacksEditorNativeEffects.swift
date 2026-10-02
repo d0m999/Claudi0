@@ -27,6 +27,7 @@ package enum SoundPacksEditorNativeLifecycleEvent: Sendable {
 /// selections become the only async domain operation the view needs to feed back to the owner.
 @MainActor
 package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
+    @Published package private(set) var previewFailed = false
     private let adapter: any SoundPacksEditorNativeEffectsAdapter
     private var operationTasks: [UUID: Task<Void, Never>] = [:]
     private var hasActiveAudio = false
@@ -81,6 +82,7 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     /// stop action directly from the owner avoids route-filtered view getters and never retires a
     /// newly activated context.
     package func stopPreview(owner: SoundPacksEditorOwner) {
+        previewFailed = false
         guard hasActiveAudio else { return }
         let result: SoundPacksEditorCommandResult
         switch owner.presentation.mode {
@@ -138,6 +140,7 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     private func playAudio(fileURL: URL, volume: Double) -> TimeInterval? {
         let duration = adapter.playAudio(fileURL: fileURL, volume: volume)
         hasActiveAudio = duration != nil
+        previewFailed = duration == nil
         return duration
     }
 

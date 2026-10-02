@@ -53,7 +53,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     await fs.writeFile(file,capture.screenshot);
     const {stdout}=await executeFile(ocr,[file]); const records=JSON.parse(stdout);
     let candidates=records.filter(record=>normalizedText(record.text)===normalizedText(label));
-    if (!candidates.length) candidates=records.filter(record=>normalizedText(record.text).endsWith(normalizedText(label)));
+    if (!candidates.length) candidates=records.filter(record=>normalizedText(record.text).endsWith(normalizedText(label))&&normalizedText(record.text).length<=normalizedText(label).length+2);
     async function scrollAndLocate() {
       assert(scrollDownIfMissing&&scrollAttempts<5,`Screenshot target is not visible: ${label}`);
       const current=await state(); const scroll=current.split('\n').find(line=>/^\s*\d+ scroll area/.test(line)&&!line.includes('sidebar'));
@@ -115,6 +115,14 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     return clickMatching(line => new RegExp(`\\bbutton ${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}$`).test(line));
   }
   const readback = async () => JSON.parse(await fs.readFile(path.join(root,'readback.json'),'utf8'));
+  async function waitUntil(predicate, description) {
+    const deadline=Date.now()+8000;
+    do {
+      const current=await state();
+      if (await predicate(current)) return current;
+    } while (Date.now()<deadline);
+    throw new Error(`Native result timed out: ${description}`);
+  }
   const manifest = async () => JSON.parse(await fs.readFile(path.join(root,'packs/regression-pack/manifest.json'),'utf8'));
   function assert(condition, description) { if (!condition) throw new Error(description); }
   async function observe(label) {
@@ -142,9 +150,17 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
   async function pick(id, label) {
     const current=await state();
     const control=current.split('\n').find(line=>line.includes(`ID: ${id}`));
-    if (control?.includes(`Value: ${label},`)) return current;
+    const selectedLabel=new RegExp(`Value: ${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(?=[,，]|$)`);
+    if (control&&selectedLabel.test(control)) return current;
     await clickID(id);
-    return clickMatching(line => /menu item|ID: menuAction:/.test(line) && line.includes(label));
+    const menuState=await state();
+    const matches=menuState.split('\n').filter(line=>/menu item|ID: menuAction:/.test(line)&&line.includes(label));
+    const exactLabel=new RegExp(`(?:^|\\s)${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(?=,|，|$)`);
+    const exact=matches.filter(line=>exactLabel.test(line));
+    const target=exact.length===1?exact:matches;
+    assert(target.length===1,`Native menu label is not unique: ${label}`);
+    const chosen=target[0];
+    return clickMatching(line=>line.trim()===chosen.trim());
   }
   const destinations=['events-and-sounds','sounds','integrations','notifications','general','shortcuts','usage','about'];
   function assertSettingsLayout(read, index, destination) {
@@ -153,42 +169,42 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     const {frames,colors}=evidence;
     const dark=index%4===3||index%4===0;
     const matches=(actual,expected)=>Array.isArray(actual)&&actual.length===3&&actual.every((value,i)=>Math.abs(value-expected[i])<=3);
-    const background=dark?[26,24,21]:[250,248,244];
+    const background=dark?[32,32,34]:[255,255,255];
     assert(colors.background?.length===3&&colors.background.every(sample=>matches(sample,background)),`Settings background differs at ${destination}: ${JSON.stringify(colors.background)}`);
+    const sidebar=frames['settings.sidebar'];
+    assert(sidebar&&Math.abs(sidebar.width-(index%2===0?210:252))<1,'Sidebar width does not match the window');
+    const reading=frames[`settings.reading.${destination}`], content=frames['settings.content'];
+    const padding=index%2===0?26:32;
+    assert(reading&&content&&reading.width<=780-padding*2+1&&reading.x>=content.x+padding-1&&reading.x+reading.width<=content.x+content.width-padding+1,`Single reading column overflows: ${JSON.stringify(reading)}`);
     const rows=destinations.map(id=>frames[`settings.sidebar.item.${id}`]);
     assert(rows.every(Boolean),'One or more mounted sidebar rows are unavailable');
     const sidebarGaps=rows.slice(1).map((row,i)=>row.y-rows[i].y-rows[i].height);
     assert(sidebarGaps.every((gap,i)=>Math.abs(gap-([3,5].includes(i)?24:3))<1),`Sidebar group spacing differs: ${sidebarGaps}`);
-    const result={destination,background:colors.background,sidebarGaps};
+    const result={destination,background:colors.background,sidebarGaps,reading};
     if (destination==='events-and-sounds'||destination==='sounds') {
-      const sounds=destination==='sounds'; const prefix=sounds?'sound-packs':'workspace';
-      const cards=Object.entries(frames).filter(([id])=>id.startsWith(`${prefix}.event-card.`)).map(([,frame])=>frame).sort((a,b)=>a.y-b.y);
-      assert(cards.length===5,`Five independent event cards were not mounted: ${prefix}`);
-      const eventGaps=cards.slice(1).map((card,i)=>card.y-cards[i].y-cards[i].height);
-      assert(eventGaps.every(gap=>Math.abs(gap-12)<1),`Event card spacing differs: ${eventGaps}`);
-      const selector=frames[sounds?'sound-packs.selector.card':'workspace.scope-selector.card'];
-      const info=frames[sounds?'sound-packs.information.card':'workspace.configuration.card'];
-      assert(selector?.height>=70&&info,'Selector or information card is unavailable');
-      assert(Math.abs(cards[0].y-info.y-info.height-24)<1,'Information-to-event spacing differs');
-      assert(matches(colors.card,dark?[28,26,23]:[255,255,255]),`Settings card surface differs: ${colors.card}`);
-      assert(matches(colors.border,dark?[63,60,55]:[228,225,224]),`Settings card border is unavailable: ${colors.border}`);
-      const auxiliary=frames[sounds?'settings.sounds.ai-cue.service':'workspace.auxiliary.card'];
-      assert(auxiliary,'Mounted auxiliary card is unavailable');
-      if (index%2===0) assert(auxiliary.y>cards[4].y+cards[4].height,'Minimum-window auxiliary card is not after the events');
-      else assert(Math.abs(auxiliary.width-260)<1&&auxiliary.x>cards[4].x+cards[4].width,'Default-window auxiliary card is not a 260 pt right column');
-      Object.assign(result,{eventGaps,selectorHeight:selector.height,card:colors.card,border:colors.border,auxiliary});
+      const prefix=destination==='sounds'?'sound-packs':'workspace';
+      const events=Object.entries(frames).filter(([id])=>id.startsWith(`${prefix}.event-row.`)).map(([,frame])=>frame).sort((a,b)=>a.y-b.y);
+      const group=frames[`${prefix}.events.group`];
+      assert(events.length===5&&group,`Five grouped event rows were not mounted: ${prefix}`);
+      assert(events.every(row=>row.x>=group.x-1&&row.x+row.width<=group.x+group.width+1),'Event rows overflow their functional group');
+      const eventGaps=events.slice(1).map((row,i)=>row.y-events[i].y-events[i].height);
+      assert(eventGaps.every(gap=>Math.abs(gap)<=2),`Event row dividers differ: ${eventGaps}`);
+      assert(matches(colors.card,dark?[45,45,48]:[245,245,247]),`Settings group surface differs: ${colors.card}`);
+      Object.assign(result,{eventGaps,card:colors.card,group});
     }
     return result;
   }
-  async function matrix(index) {
-    return test(`matrix-${index}`,async()=> {
+  async function matrix(index,{pages=destinations}={}) {
+    const suffix=pages.length===destinations.length?'':'-'+pages.join('-');
+    return test(`matrix-${index}${suffix}`,async()=> {
       assert(index>=1 && index<=8,'Unknown fixed matrix');
+      assert(pages.length>0&&new Set(pages).size===pages.length&&pages.every(page=>destinations.includes(page)),'Unknown or duplicate matrix destination');
       await control(`Matrix ${index}`);
       const geometry=(await readback()).windowGeometry;
       assert(Math.abs(geometry.width-(index%2===0?960:1240))<1 && Math.abs(geometry.height-(index%2===0?640:820))<1,`Requested window size was constrained: ${JSON.stringify(geometry)}`);
       assert(geometry.appearance===(index%4===3||index%4===0?'NSAppearanceNameDarkAqua':'NSAppearanceNameAqua'),'Requested appearance was not applied');
       const layouts=[];
-      for (const destination of destinations) {
+      for (const destination of pages) {
         const s = await clickID(`settings.sidebar.${destination}`);
         assert(s.includes(`ID: ${destination==='integrations'?'integrations.destination.title':`settings.title.${destination}`}`),`Destination title did not appear: ${destination}`);
         assert(s.split('\n').some(line => line.includes('(selected)') && line.includes(`ID: settings.sidebar.${destination}`)),`Sidebar selection did not match ${destination}`);
@@ -203,13 +219,13 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
           const current = await state();
           const scrollNow = current.split('\n').find(line => /scroll area/.test(line) && !line.includes('sidebar'));
           if (!scrollNow) throw new Error('Scrollable content disappeared');
-          if (scrollNow.includes('Scroll Down')) await app.performSecondaryAction(number(scrollNow),'Scroll Down');
+          if (scrollNow.includes('Scroll Down')) await app.scroll(number(scrollNow),'down',20);
           else assert(!current.includes('scroll bar'),'Required AX scroll action is unavailable');
           await state();
           await observe(`matrix-${index}-${destination}-bottom`);
         }
       }
-      return {navigation:destinations,layouts,language:index<=4?'zh-Hans':'en',appearance:index%4===3 || index%4===0?'dark':'light',requestedSize:index%2===0?'960x640':'1240x820',actualGeometry:geometry};
+      return {navigation:pages,layouts,language:index<=4?'zh-Hans':'en',appearance:index%4===3 || index%4===0?'dark':'light',requestedSize:index%2===0?'960x640':'1240x820',actualGeometry:geometry};
     });
   }
   function imageWidth(bytes) {
@@ -225,12 +241,12 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     }
     throw new Error('Screenshot dimensions cannot be determined');
   }
-  async function focusSettingsWindow() {
+  async function focusSettingsWindow({requireKey=false}={}) {
     const current=await state(); assert(/Window: "claudi0 · (设置|Settings)"/.test(current),'Settings window is not the current surface');
-    const capture=await app.getAXStateAndScreenshot({disableDiffing:true,emit:false});
-    const bytes=Buffer.from(capture.screenshot); const width=imageWidth(bytes);
-    const geometry=(await readback()).windowGeometry;
-    lastAction='current screenshot settings title'; await app.click([geometry.frameWidth*geometry.backingScale/2,14*geometry.backingScale]); await state();
+    const window=find(current,line=>/^\s*\d+ system dialog/.test(line)&&line.includes('Secondary Actions: Raise'));
+    lastAction='native Settings window Raise'; await app.performSecondaryAction(window,'Raise');
+    await key('super+shift+l');
+    if (requireKey) await waitUntil(async()=>/^claudi0 · (设置|Settings)$/.test((await readback()).keyWindow),'Settings must acquire key focus');
   }
   async function flow(index, {composerPoint} = {}) {
     return test(`flow-${index}-ai`,async()=> {
@@ -239,12 +255,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       const initialGenerationRequests=(await readback()).generationRequests;
       let s = await pick('workspace.scope-selector','workspace');
       const scopeBefore = await fs.readFile(path.join(root,'config.json'),'utf8');
-      // Each event card has one directional edit button; locate it under the current stop card.
-      let lines=s.split('\n'); let start=lines.findIndex(line=>line.includes('container workspace.event.stop'));
-      assert(start>=0,'Workspace stop event did not mount');
-      let candidate=lines.slice(start+1).find(line=>/button (?:Manage sounds|管理声音)/i.test(line));
-      assert(candidate,'Directional workspace editor did not appear');
-      await app.click(number(candidate)); s=await state();
+      await clickID('workspace.event.stop.edit'); s=await state();
       assert(s.includes('ID: settings.sounds.return-to-scope'),'Typed return control did not appear');
       assert((await readback()).aiPhase==='editing' && (await readback()).generationRequests===initialGenerationRequests,'Directional edit started a provider generation');
       await clickID('settings.sounds.return-to-scope');
@@ -252,36 +263,162 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       await clickID('settings.sidebar.sounds');
       await pick('sound-packs.pack-list','regression-pack');
       await observe(`flow-${index}-composer-entry`);
-      if (composerPoint) {
-        const fresh=await state(); find(fresh,line=>line.includes('ID: settings.sounds.ai-cue.event.stop')&&!line.includes('stop_failure'));
-        lastAction='screenshot-confirmed composer pointer'; await app.click(composerPoint); await state();
-      } else {
-        const current=await state(); const row=current.split('\n').find(line=>line.includes('ID: sound-packs.event.stop,')||line.endsWith('ID: sound-packs.event.stop'));
-        const anchor=row?.match(/Description: ([^，,]+)/)?.[1];
-        await pointerID('settings.sounds.ai-cue.event.stop',{text:index<=4?'描述生成':'Describe & generate',anchor,scrollDownIfMissing:true});
-      }
+      await clickID('sound-packs.event.stop.edit');
+      await pointerID('settings.sounds.ai-cue.event.stop',{text:(await readback()).language==='zh-Hans'?'描述生成':'Describe & Generate',scrollDownIfMissing:true});
       assert((await state()).includes('settings.sounds.ai-cue.composer.stop'),'Composer did not target the selected stop event');
       const description='A short soft chime for a finished response.';
       await textID('event-settings.ai-cue.description',description);
       const requestsBefore=(await readback()).generationRequests;
-      await clickID('event-settings.ai-cue.generate');
+      await pointerID('event-settings.ai-cue.generate',{scrollDownIfMissing:true});
       s=await state(); assert(s.includes('event-settings.ai-cue.cancel-generation'),'Generating controls did not appear');
       const locked=s.split('\n').find(line=>/^\s*\d+/.test(line)&&line.includes('ID: event-settings.ai-cue.description'));
       assert(locked && !locked.includes('(settable)') && /locked|锁定/i.test(locked) && (await readback()).description===description,'Description did not lock while generating');
-      await pointerID('event-settings.ai-cue.cancel-generation',{scrollDownIfMissing:true});
+      await clickID('event-settings.ai-cue.cancel-generation');
+      await waitUntil(async()=>(await readback()).aiPhase==='editing','Cancellation must restore editing');
       assert((await readback()).aiPhase==='editing','Cancellation did not restore editing');
-      await clickID('event-settings.ai-cue.generate'); await key('super+shift+g');
+      await pointerID('event-settings.ai-cue.generate',{scrollDownIfMissing:true}); await key('super+shift+g');
+      await waitUntil(async()=>(await readback()).candidateCount===3,'Completed generation must expose three route-owned candidates');
       s=await state(); assert((await readback()).candidateCount===3,'Route-owned complete candidate count was not three');
       const generationCount=(await readback()).generationRequests;
       await textID('event-settings.ai-cue.name',`Fixture adopted cue ${index}`);
       assert((await readback()).generationRequests===generationCount,'Rename triggered a new generation');
       const oldMapping=(await manifest()).events.stop;
       await pointerID('event-settings.ai-cue.candidate.clear.use',{text:index<=4?'用于此事件':'Use for this event',anchor:index<=4?'A · 清晰':'A · Clear',anchorPlacement:'same-row',scrollDownIfMissing:true});
+      await waitUntil(current=>current.includes('event-settings.ai-cue.applied'),'Adoption must show its actual result');
       s=await state(); assert(s.includes('event-settings.ai-cue.applied'),'Adoption did not show its result');
       assert((await manifest()).events.stop!==oldMapping || (await manifest()).audio_names?.[(await manifest()).events.stop]===`Fixture adopted cue ${index}`,'Successful adoption did not update the real isolated manifest');
       await clickID('settings.sidebar.general');
       assert((await readback()).candidateCount===0,'Leaving Sounds retained unadopted candidates');
       return {workspaceReturn:true,cancel:true,completeCandidates:3,renameWithoutGeneration:true,adoptedMapping:(await manifest()).events.stop,requestsBefore};
+    });
+  }
+  async function copyFlow() {
+    return test('pack-copy-cancel-confirm-and-factory-restore',async()=> {
+      await control('Matrix 5'); await focusSettingsWindow();
+      await clickID('settings.sidebar.sounds'); await pick('sound-packs.pack-list','regression-pack');
+      const configBefore=await fs.readFile(path.join(root,'config.json'),'utf8');
+      const originalBefore=await fs.readFile(path.join(root,'packs/regression-pack/manifest.json'),'utf8');
+      const before=(await fs.readdir(path.join(root,'packs'))).sort();
+      const protectedState=await state();
+      assert(protectedState.split('\n').some(line=>line.includes('sound-packs.delete-selected-pack')&&line.includes('disabled')),'Used package deletion is not protected');
+      await clickID('sound-packs.copy-selected-pack');
+      let s=await state(); assert(/author|attribution|license/i.test(s),'Copy confirmation did not explain attribution');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===configBefore,'Opening copy confirmation rewrote a group');
+      await key('Escape');
+      assert(JSON.stringify((await fs.readdir(path.join(root,'packs'))).sort())===JSON.stringify(before),'Cancelling copy created an installed package');
+      await clickID('sound-packs.copy-selected-pack'); await clickID('sound-packs.confirm-copy');
+      await control('Capture state'); await key('super+shift+l');
+      const created=(await fs.readdir(path.join(root,'packs'))).filter(id=>!before.includes(id));
+      assert(created.length===1,'Confirmed copy did not create exactly one package');
+      assert((await readback()).inspectedPack===created[0],'Confirmed copy did not inspect its result');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===configBefore,'Plain copy changed the selected group package');
+      const copy=JSON.parse(await fs.readFile(path.join(root,'packs',created[0],'manifest.json'),'utf8'));
+      assert(!copy.license&&!copy.author,'Copy retained whole-package license or author claims');
+      assert(await fs.readFile(path.join(root,'packs/regression-pack/manifest.json'),'utf8')===originalBefore,'Copy changed the original manifest');
+      const copyBefore=await fs.readFile(path.join(root,'packs',created[0],'manifest.json'),'utf8');
+      await clickID('sound-packs.restore-library'); await clickID('sound-packs.confirm-factory-restore');
+      await control('Capture state'); await key('super+shift+l');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===configBefore,'Factory restore changed group configuration');
+      assert(await fs.readFile(path.join(root,'packs',created[0],'manifest.json'),'utf8')===copyBefore,'Factory restore changed a user copy');
+      assert(await fs.readFile(path.join(root,'packs/regression-pack/manifest.json'),'utf8')===originalBefore,'Factory restore changed a user package');
+      return {cancelPreserved:true,plainCopy:created[0],plainCopyPreservedGroups:true,attributionRemoved:true,factoryRestorePreservedUsers:true,usedDeletionProtected:true};
+    });
+  }
+  async function targetCopyFlow() {
+    return test('workspace-copy-and-apply-stable-return',async()=> {
+      await control('Matrix 5'); await focusSettingsWindow(); await pick('workspace.scope-selector','workspace');
+      await pick('event-settings.sound-pack-picker','builtin-pack');
+      const before=JSON.parse(await fs.readFile(path.join(root,'config.json'),'utf8'));
+      const rules=Object.values(before.workspace_rules??{}); assert(rules.length===1,'Fixture workspace is unavailable');
+      const targetID=rules[0].id; const targetDirectory=JSON.stringify(rules[0].directory);
+      const packsBefore=await fs.readdir(path.join(root,'packs'));
+      await clickID('workspace.event.stop.edit');
+      assert((await state()).includes('settings.sounds.return-to-scope'),'Directional return is unavailable');
+      await clickID('sound-packs.copy-and-apply');
+      assert((await state()).includes('workspace'),'Copy-and-apply confirmation lost its workspace target');
+      await clickID('sound-packs.confirm-copy'); await control('Capture state'); await key('super+shift+l');
+      const created=(await fs.readdir(path.join(root,'packs'))).filter(id=>!packsBefore.includes(id));
+      assert(created.length===1,'Copy-and-apply did not retain exactly one copy');
+      const after=JSON.parse(await fs.readFile(path.join(root,'config.json'),'utf8'));
+      const rule=Object.values(after.workspace_rules??{}).find(rule=>rule.id===targetID);
+      assert(rule&&rule.profile.selectedPack===created[0]&&JSON.stringify(rule.directory)===targetDirectory,'Copy-and-apply missed its stable workspace identity');
+      assert(after.selected_pack===before.selected_pack,'Workspace copy-and-apply changed Default Group');
+      const appliedBytes=await fs.readFile(path.join(root,'config.json'),'utf8');
+      await clickID('settings.sounds.return-to-scope');
+      assert((await state()).includes('workspace')&&(await readback()).destination==='events-and-sounds','Directional return lost the originating workspace');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===appliedBytes,'Directional return rewrote the applied configuration');
+      return {copy:created[0],targetID,directoryPreserved:true,defaultGroupPreserved:true,returnPreserved:true};
+    });
+  }
+  async function draftFlow() {
+    return test('draft-name-cancel-save-system-publish-and-cleanup',async()=> {
+      await control('Matrix 5'); await focusSettingsWindow(); await clickID('settings.sidebar.sounds');
+      const configBefore=await fs.readFile(path.join(root,'config.json'),'utf8');
+      const before=await fs.readdir(path.join(root,'packs'));
+      await clickID('settings.sounds.ai-cue.new-pack');
+      assert((await state()).includes('settings.sounds.ai-cue.draft'),'Draft context did not appear');
+      assert(JSON.stringify(await fs.readdir(path.join(root,'packs')))===JSON.stringify(before),'Empty draft appeared in installed library');
+      await clickID('settings.sounds.ai-cue.rename-draft');
+      await textID('settings.sounds.ai-cue.draft-name','Draft fixture cancelled'); await key('Escape');
+      assert(!(await state()).includes('Draft fixture cancelled'),'Cancelling rename changed the draft name');
+      await clickID('settings.sounds.ai-cue.rename-draft'); await textID('settings.sounds.ai-cue.draft-name','');
+      assert((await state()).split('\n').some(line=>line.includes('settings.sounds.ai-cue.save-draft-name')&&line.includes('disabled')),'Invalid draft name can be saved');
+      await textID('settings.sounds.ai-cue.draft-name','Native fixture draft'); await clickID('settings.sounds.ai-cue.save-draft-name');
+      assert((await state()).includes('Native fixture draft'),'Saved draft name did not appear');
+      await clickID('sound-packs.event.task_start.mapping');
+      const menu=await state(); const systemLine=menu.split('\n').find(line=>line.includes('Basso')&&/menu item|menuAction:/.test(line)&&!line.includes('disabled'));
+      assert(systemLine,'Available local system sound was not offered');
+      await app.click(number(systemLine)); await state();
+      await control('Capture state'); await key('super+shift+l');
+      const created=(await fs.readdir(path.join(root,'packs'))).filter(id=>!before.includes(id));
+      assert(created.length===1,'First successful system binding did not publish exactly one draft');
+      const published=JSON.parse(await fs.readFile(path.join(root,'packs',created[0],'manifest.json'),'utf8'));
+      assert(published.name==='Native fixture draft','Published manifest lost the confirmed draft name');
+      assert(JSON.stringify(published).includes('Basso'),'Published manifest lost its first system sound');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===configBefore,'Draft publication changed group selection');
+      const publishedState=await state();
+      if (publishedState.includes('ID: sound-packs.detail.back')) await clickID('sound-packs.detail.back');
+      await clickID('settings.sounds.ai-cue.new-pack'); await clickID('settings.sidebar.general');
+      assert((await fs.readdir(path.join(root,'packs'))).filter(id=>!before.includes(id)).length===1,'Leaving Sounds published a second empty draft');
+      return {cancelRename:true,invalidNameProtected:true,confirmedName:published.name,firstSystemBindingPublished:created[0],groupsPreserved:true,unpublishedCleanup:true};
+    });
+  }
+  async function keyboardNavigation() {
+    return test('keyboard-native-scope-and-pack', async()=> {
+      await control('Matrix 5');
+      await focusSettingsWindow({requireKey:true});
+      await clickID('settings.sidebar.sounds');
+      await pick('settings.sounds.management-scope','Default Group');
+      await clickID('settings.sidebar.about');
+      await clickID('settings.sidebar.sounds');
+      await focusSettingsWindow({requireKey:true});
+      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.title.sounds'),'The page title must receive its requested focus');
+      let s=await key('Tab');
+      assert(s.split('The focused UI element is ')[1]?.includes('ID: settings.sounds.management-scope'),'The first Sounds Tab stop is not management scope');
+      const before=await fs.readFile(path.join(root,'config.json'),'utf8');
+      await focusSettingsWindow({requireKey:true});
+      assert((await state()).split('The focused UI element is ')[1]?.includes('ID: settings.sounds.management-scope'),'Explicit window Raise changed the focused scope control');
+      await key('space'); await waitUntil(current=>current.includes('ID: menuAction:'),'Space must open the native scope menu');
+      await key('Down'); await waitUntil(current=>current.split('\n').some(line=>line.includes('(selected) workspace, ID: menuAction:')),'Down must highlight Workspace');
+      await key('Return');
+      s=await waitUntil(current=>current.includes('Value: workspace, ID: settings.sounds.management-scope'),'Return must select Workspace');
+      assert(s.includes('Value: workspace, ID: settings.sounds.management-scope'),'Arrow/Return did not select Workspace');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===before,'Management scope selection wrote group configuration');
+      // A typed route requests the page title again. Re-enter through the retained sidebar.
+      await clickID('settings.sidebar.about'); await clickID('settings.sidebar.sounds');
+      await focusSettingsWindow({requireKey:true});
+      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.title.sounds'),'The page title must receive focus before pack traversal');
+      await key('Tab'); s=await key('Tab');
+      assert(s.split('The focused UI element is ')[1]?.includes('ID: sound-packs.pack-list'),'Scope and pack picker do not have one stop each');
+      const inspected=(await readback()).inspectedPack;
+      await focusSettingsWindow({requireKey:true});
+      assert((await state()).split('The focused UI element is ')[1]?.includes('ID: sound-packs.pack-list'),'Explicit window Raise changed the focused pack control');
+      await key('space'); await waitUntil(current=>current.includes('ID: menuAction:'),'Space must open the native pack menu');
+      await key('Up'); await key('Return');
+      await waitUntil(async()=>(await readback()).inspectedPack!==inspected,'Arrow/Return must inspect another pack');
+      assert((await readback()).inspectedPack!==inspected,'Arrow navigation did not inspect another pack');
+      assert(await fs.readFile(path.join(root,'config.json'),'utf8')===before,'Pack inspection applied it to the group');
+      return {nativeTab:true,scopeArrowReturn:true,packArrowReturn:true,configurationPreserved:true};
     });
   }
   async function reminderFlow(index) {
@@ -298,8 +435,11 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       s=await state(); assert(s.includes('fixture-session'),'Effective session ID did not appear');
       await clickID('event-notice.copy-session');
       s=await state(); assert(s.includes('event-notice.copy-result') && /Copied|已复制/i.test(s) && (await readback()).copiedFixtureSession,'Copy result did not appear');
+      const beforeRemove=await readback();
       await pointerID('event-notice.remove');
-      assert((await readback()).reminders===0,'Explicit removal did not remove the fixture reminder');
+      const afterRemove=await readback();
+      assert(afterRemove.reminders===0,'Explicit removal did not remove the fixture reminder');
+      for (const fact of ['activity','diagnosticLog','receiptHistories']) assert(JSON.stringify(afterRemove[fact])===JSON.stringify(beforeRemove[fact]),`Reminder removal changed ${fact}`);
       await key('Escape'); await key('Escape');
       // Keep a fixture surface available after the banner's final timer closes it.
       await controls();
@@ -320,7 +460,68 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       const beforeClose=(await readback()).handbacks;
       s=await state(); await app.click(find(s,line=>/^\s*\d+ close button$/.test(line))); await state();
       assert((await readback()).handbacks===beforeClose+1,'Window close did not consume one handback');
-      return {copy:true,remove:true,inlineRetry:true,successKeepsReminder:true,closeHandback:true};
+      return {copy:true,remove:true,removalPreserved:{activity:afterRemove.activity,diagnosticLog:afterRemove.diagnosticLog,receiptHistories:afterRemove.receiptHistories},inlineRetry:true,successKeepsReminder:true,closeHandback:true};
+    });
+  }
+  async function receiptHistoryFlow(host, label) {
+    assert(['claude-code','codex','workbuddy'].includes(host),'Unknown fixture host');
+    return test(`receipt-history-${host}`,async()=> {
+      await control('Matrix 5'); await focusSettingsWindow();
+      await clickID('settings.sidebar.integrations');
+      await clickMatching(line=>line.includes(`button Description: ${label},`)||line.includes(`button (selected) Description: ${label},`));
+      const before=await readback(); const facts=before.receiptHistories[host];
+      assert(facts.diskCount===4&&facts.presentationCount===4,'Seeded history is incomplete');
+      // SwiftUI may inherit a containing group's AX identifier; role + localized name still
+      // identifies exactly one current control, checked again before every action.
+      await clickMatching(line=>/button Description: View…(?:,|$)/.test(line));
+      let s=await state();
+      assert(s.includes(`integrations.destination.history.${host}`)&&s.includes(label),'History sheet lost its selected host');
+      assert((s.match(/Current installation/g)||[]).length===2&&(s.match(/Previous installation/g)||[]).length===2,'History must show both retained installation generations');
+      assert(s.includes('Playback failed')&&s.includes('Muted'),'History omitted actual playback results');
+      await observe(`receipt-history-${host}-sheet`);
+      await key('Escape');
+      assert(!(await state()).startsWith('Window: "",'),'Escape did not dismiss the history sheet');
+      await clickID('integrations.destination.open-capabilities'); s=await state();
+      for(const event of ['User initiated','Response ended','Execution interrupted','Waiting for input','Subtask ended']) assert(s.includes(event),`Capability detail omits ${event}`);
+      assert(/Interface .*supported/.test(s)&&s.includes('Implemented')&&s.includes('Unverified'),'Support, implementation and current activation are not independently visible');
+      const after=await readback();
+      assert(JSON.stringify(after.receiptHistories)===JSON.stringify(before.receiptHistories),'Viewing history changed receipt facts');
+      return {host,entries:4,current:2,previous:2,capabilityEvents:5,currentActivation:facts.connectionStatus,readOnly:true};
+    });
+  }
+  async function clearIsolationFlow(kind) {
+    assert(['receipts','log','activity'].includes(kind),'Unknown clear case');
+    return test(`independent-clear-${kind}`,async()=> {
+      await control('Matrix 5'); await focusSettingsWindow();
+      const before=await readback();
+      assert(before.reminders>0,'A retained reminder is required to check isolation');
+      if(kind==='receipts') {
+        await clickID('settings.sidebar.integrations');
+        await clickMatching(line=>line.includes('button Description: Claude Code,')||line.includes('button (selected) Description: Claude Code,'));
+        await clickMatching(line=>/button Description: Clear Claude Code receipt history,/.test(line));
+      } else {
+        await clickID('settings.sidebar.usage');
+        await clickID(kind==='log'?'settings.activity.clear-log':'settings.activity.clear');
+      }
+      const confirmation=await state();
+      assert(confirmation.includes('sheet Description: alert')&&confirmation.includes('Cancel'),'Clear must expose an explicit confirmation');
+      await key('Escape');
+      const cancelled=await readback();
+      for(const fact of ['activity','diagnosticLog','receiptHistories','reminders']) assert(JSON.stringify(cancelled[fact])===JSON.stringify(before[fact]),`Cancel changed ${fact}`);
+      if(kind==='receipts') await clickMatching(line=>/button Description: Clear Claude Code receipt history,/.test(line));
+      else await clickID(kind==='log'?'settings.activity.clear-log':'settings.activity.clear');
+      await clickID('action-button-1');
+      await waitUntil(async()=> {const current=await readback();return kind==='receipts'?current.receiptHistories['claude-code'].diskCount===0:kind==='log'?current.diagnosticLog.bytes===0:current.activity.count===0;},'Cleared owner must publish its actual disk result');
+      const after=await readback();
+      assert(after.reminders===before.reminders,'Clear removed a retained reminder');
+      if(kind==='receipts') {
+        const a=after.receiptHistories['claude-code'],b=before.receiptHistories['claude-code'];
+        assert(a.presentationCount===0&&a.currentReceiptEvidenceCount===b.currentReceiptEvidenceCount&&a.installationID===b.installationID&&a.connectionStatus===b.connectionStatus,'History clear changed current installation or activation evidence');
+        for(const host of ['codex','workbuddy']) assert(JSON.stringify(after.receiptHistories[host])===JSON.stringify(before.receiptHistories[host]),`History clear affected ${host}`);
+      } else assert(JSON.stringify(after.receiptHistories)===JSON.stringify(before.receiptHistories),'Local clear changed receipt histories');
+      if(kind!=='activity') assert(JSON.stringify(after.activity)===JSON.stringify(before.activity),'Clear changed activity');
+      if(kind!=='log') assert(JSON.stringify(after.diagnosticLog)===JSON.stringify(before.diagnosticLog),'Clear changed log');
+      return {kind,cancelPreserved:true,before,after};
     });
   }
   async function generationExceptions({outcomes=['partial','failure'],includeTimeout=true}={}) {
@@ -331,13 +532,15 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       results.push(await test(`exceptions-ai-${outcome}`,async()=> {
         await control(`AI ${outcome}`); await control('Return to settings');
         await clickID('settings.sidebar.sounds'); await pick('sound-packs.pack-list','regression-pack');
+        await clickID('sound-packs.open-service');
         await pick('event-settings.ai-cue.provider-profile', 'SenseAudio');
-        const row=(await state()).split('\n').find(line=>line.includes('ID: sound-packs.event.stop,')||line.endsWith('ID: sound-packs.event.stop'));
-        await pointerID('settings.sounds.ai-cue.event.stop',{text:'描述生成',anchor:row?.match(/Description: ([^，,]+)/)?.[1],scrollDownIfMissing:true});
+        await clickID('sound-packs.detail.back');
+        await clickID('sound-packs.event.stop.edit');
+        await pointerID('settings.sounds.ai-cue.event.stop',{text:(await readback()).language==='zh-Hans'?'描述生成':'Describe & Generate',scrollDownIfMissing:true});
         let s=await textID('event-settings.ai-cue.description','一个简短柔和的铃声提示音。');
         assert((await readback()).description==='一个简短柔和的铃声提示音。','The native description input did not retain its text');
         const before=await manifest(); const requests=(await readback()).generationRequests;
-        await clickID('event-settings.ai-cue.generate'); await key('super+shift+g');
+        await pointerID('event-settings.ai-cue.generate',{scrollDownIfMissing:true}); await key('super+shift+g');
         s=await state(); const back=await readback();
         assert(back.generationRequests===requests+1,'Generation did not issue exactly one substitute request');
         if (outcome==='partial') assert(back.candidateCount===2 && /partial|部分|2/i.test(s),'Partial route result did not show its actual candidates');
@@ -350,10 +553,14 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     }
     if (!includeTimeout) return results;
     results.push(await test('exceptions-source-timeout',async()=> {
-      await control('Advance 4 seconds');
       await control('Source timeout'); await control('Verified-source reminder');
-      await key('super+shift+b');
-      await pointerID((await state()).split('\n').find(line=>/^\s*\d+ button/.test(line)&&line.includes('ID: event-notice.open-source.'))?.match(/ID: (\S+)/)?.[1]??'missing-banner-action');
+      await control('Return to settings'); await clickID('settings.sidebar.usage');
+      const reader=await state();
+      if(reader.split('\n').some(line=>line.includes('disclosure triangle')&&line.includes('settings.activity.pending-records')&&line.includes('Value: off'))) await clickID('settings.activity.pending-records');
+      const recent=(await state()).split('\n').find(line=>/^\s*\d+ button/.test(line)&&line.includes('ID: event-notice.recent.'));
+      assert(recent,'Settings reader did not expose a current reminder');
+      await clickID(recent.match(/ID: (\S+)/)[1]);
+      await clickID('event-notice.reader.open-source');
       assert((await readback()).navigation==='started','Navigation did not enter its in-flight state');
       await key('super+shift+r'); await key('super+shift+r'); await key('super+shift+r');
       const s=await state(); const back=await readback();
@@ -367,15 +574,22 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     const output=[];
     assert(scenarios.every(scenario=>['zero-volume','invalid-workspace','stale-snapshot','duplicate-mapping','damaged-pack','empty-library'].includes(scenario)),'Unknown fixed library case');
     if (includeReminders) output.push(await test('exceptions-reminder-update-expiry',async()=> {
-      await control('Return to settings');
-      let settingsState=await state(); await app.click(find(settingsState,line=>/^\s*\d+ close button$/.test(line))); await state();
-      await key('super+shift+p'); await clickID('panel.recent-notices');
+      await control('Verified-source reminder');
+      await control('Return to settings'); await clickID('settings.sidebar.usage');
+      const initial=await state();
+      if(initial.split('\n').some(line=>line.includes('disclosure triangle')&&line.includes('settings.activity.pending-records')&&line.includes('Value: off'))) await clickID('settings.activity.pending-records');
+      const first=(await state()).split('\n').find(line=>/^\s*\d+ button/.test(line)&&line.includes('ID: event-notice.recent.'));
+      assert(first,'Settings reader did not expose its frozen reminder');
+      await clickID(first.match(/ID: (\S+)/)[1]);
+      const frozen=await state();
+      assert(frozen.includes('fixture-session'),'Frozen session identity did not appear');
       await key('super+shift+u'); let s=await state();
-      assert(s.includes('event-notice.refresh'),'Updated frozen reminder did not request explicit refresh');
+      assert(s.includes('event-notice.refresh') && !s.includes('Fixture updated'),'Updated reminder silently replaced the frozen content');
       await clickID('event-notice.refresh');
       const recent=(await state()).split('\n').find(line=>/^\s*\d+ button/.test(line)&&line.includes('ID: event-notice.recent.'));
       assert(recent,'Refreshed reminder did not expose a version-bound identity');
-      await pointerID(recent.match(/ID: (\S+)/)[1]);
+      await clickID(recent.match(/ID: (\S+)/)[1]);
+      assert((await state()).includes('Fixture updated'),'Explicit refresh did not display the new reminder');
       await key('super+shift+e'); s=await state();
       assert(!s.includes('fixture-session') && !s.includes('Fixture updated'),'TTL retained private source content');
       assert((await readback()).reminders===0,'Expired reminder remained live');
@@ -391,7 +605,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
         await control(`Scenario ${scenario}`); await key('super+shift+l');
         const s=await state(); const back=await readback();
         if (scenario==='zero-volume') assert(back.volume===0 && /音量|volume/.test(s) && s.split('\n').some(line=>line.includes('workspace.preview-available')&&line.includes('disabled')),'Zero-volume preview did not show an unavailable state');
-        if (scenario==='invalid-workspace') assert((JSON.parse(await fs.readFile(path.join(root,'config.json'),'utf8')).workspace_rules??[]).length===0 && s.includes('workspace.scope.unavailable') && !s.includes('workspace.preview-available'),'Invalid workspace did not reject the isolated target');
+        if (scenario==='invalid-workspace') assert(Object.keys(JSON.parse(await fs.readFile(path.join(root,'config.json'),'utf8')).workspace_rules??{}).length===0 && s.includes('workspace.scope.unavailable') && !s.includes('workspace.preview-available'),'Invalid workspace did not reject the isolated target');
         if (scenario==='stale-snapshot') assert(back.libraryFresh===false,'Snapshot did not become stale');
         if (scenario==='duplicate-mapping') assert((await manifest()).events.task_start===(await manifest()).events.notification,'Shared audio mapping was not preserved');
         if (scenario==='damaged-pack') assert(s.includes('声音包缺失或损坏，请在声音页修复') && s.split('\n').some(line=>line.includes('workspace.preview-available')&&line.includes('disabled')),'Damaged package did not show its pack-level repair reason');
@@ -401,5 +615,5 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     }
     return output;
   }
-  return {pointerID,matrix,flow,reminderFlow,generationExceptions,exceptions,report,readback,state,clickID,control,key,observe,pick,test};
+  return {pointerID,matrix,flow,copyFlow,targetCopyFlow,draftFlow,keyboardNavigation,reminderFlow,receiptHistoryFlow,clearIsolationFlow,generationExceptions,exceptions,report,readback,state,waitUntil,clickID,control,key,observe,pick,test};
 }

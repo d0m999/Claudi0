@@ -17,8 +17,8 @@ struct AboutSettingsView: View {
     private var unknown: String { l10n.text(.settingsAboutUnknown) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            identity.settingsSectionSurface()
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
+            identity
             resources.settingsSectionSurface()
             diagnostics.settingsSectionSurface()
 
@@ -37,8 +37,8 @@ struct AboutSettingsView: View {
                 .accessibilityIdentifier("settings.about.feedback")
             }
         }
-        .font(ClaudioTheme.font(.body))
-        .frame(maxWidth: 620, alignment: .leading)
+        .font(SettingsAppearance.font(.body))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.about))
         .onReceive(model.$feedback.dropFirst().compactMap { $0 }) { feedback in
             onAnnouncement(feedbackText(feedback))
@@ -52,22 +52,26 @@ struct AboutSettingsView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(model.bundleFacts.brandName ?? unknown)
-                        .font(ClaudioTheme.font(.productTitle))
+                        .font(SettingsAppearance.font(.productTitle))
                     Text(model.bundleFacts.productName ?? unknown)
-                        .font(ClaudioTheme.font(.sectionTitle))
+                        .font(SettingsAppearance.font(.sectionTitle))
                         .foregroundColor(.secondary)
                 }
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("settings.about.identity")
 
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 0) {
                 factRow(.settingsAboutVersion, value: model.bundleFacts.version)
+                Divider()
                 factRow(.settingsAboutBuild, value: model.bundleFacts.build)
+                Divider()
                 factRow(.settingsAboutArchitecture, value: model.bundleFacts.architecture)
+                Divider()
                 factRow(.settingsAboutMinimumMacOS, value: model.bundleFacts.minimumSystemVersion)
+                Divider()
                 factRow(.settingsAboutCurrentMacOS, value: model.bundleFacts.operatingSystemVersion)
-            }
+            }.settingsSectionSurface(padding: 0)
 
             Button(l10n.text(.settingsAboutCopyVersion)) {
                 model.copyVersionInformation(language: preferences.language)
@@ -81,7 +85,7 @@ struct AboutSettingsView: View {
     private var resources: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(l10n.text(.settingsAboutResourcesTitle))
-                .font(ClaudioTheme.font(.sectionTitle))
+                .font(SettingsAppearance.font(.sectionTitle))
                 .accessibilityAddTraits(.isHeader)
             Text(l10n.text(.settingsAboutResourcesDescription))
                 .foregroundColor(.secondary)
@@ -93,14 +97,19 @@ struct AboutSettingsView: View {
                     Button {
                         model.openResource(resource)
                     } label: {
-                        Label(presentation.name, systemImage: presentation.icon)
-                    }
-                    .accessibilityHint(
-                        l10n.format(
-                            .settingsAboutOpenResourceHint,
-                            presentation.name as NSString)
-                    )
-                    .accessibilityIdentifier("settings.about.resource.\(resource.kind.rawValue)")
+                        HStack {
+                            Label(presentation.name, systemImage: presentation.icon)
+                            Spacer(minLength: 12)
+                            Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
+                        }.frame(minHeight: 48).contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                        .accessibilityHint(
+                            l10n.format(
+                                .settingsAboutOpenResourceHint,
+                                presentation.name as NSString)
+                        )
+                        .accessibilityIdentifier(
+                            "settings.about.resource.\(resource.kind.rawValue)")
                 } else {
                     Label {
                         Text(
@@ -122,25 +131,26 @@ struct AboutSettingsView: View {
     }
 
     private var diagnostics: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let preview = model.diagnosticSummary
+        return VStack(alignment: .leading, spacing: 12) {
             Text(l10n.text(.settingsAboutDiagnosticsTitle))
-                .font(ClaudioTheme.font(.sectionTitle))
+                .font(SettingsAppearance.font(.sectionTitle))
                 .accessibilityAddTraits(.isHeader)
             Text(l10n.text(.settingsAboutDiagnosticsDescription))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(model.diagnosticSummary)
-                .font(ClaudioTheme.font(.technical))
+            Text(preview)
+                .font(SettingsAppearance.font(.technical))
                 .textSelection(.enabled)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(nsColor: .textBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
+                .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
                 .accessibilityLabel(l10n.text(.settingsAboutDiagnosticsTitle))
-                .accessibilityValue(model.diagnosticSummary)
+                .accessibilityValue(preview)
                 .accessibilityIdentifier("settings.about.diagnostics.summary")
             Button(l10n.text(.settingsAboutCopyDiagnostics)) {
-                model.copyDiagnostics()
+                model.copyPresentedDiagnostics(preview)
             }
             .accessibilityHint(l10n.text(.settingsAboutCopyDiagnosticsHint))
             .accessibilityIdentifier("settings.about.diagnostics.copy")
@@ -152,9 +162,11 @@ struct AboutSettingsView: View {
             Text(l10n.text(labelKey))
                 .foregroundColor(.secondary)
                 .frame(width: 128, alignment: .leading)
+            Spacer(minLength: 12)
             Text(value ?? unknown)
                 .textSelection(.enabled)
         }
+        .padding(.horizontal, 14).frame(minHeight: 48)
         .accessibilityElement(children: .combine)
     }
 

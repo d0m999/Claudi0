@@ -42,14 +42,19 @@ struct SettingsSoundsAICueView: View {
     let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
     let route: SoundPacksWindowRoute
     let routeRequestRevision: UInt64
+    var pageHeader: AnyView = AnyView(EmptyView())
+    var scopePicker: AnyView = AnyView(EmptyView())
+    var returnToScope: (@MainActor () -> Void)? = nil
     let onAnnouncement: @MainActor (String) -> Void
+    @Binding var credentialSheetIsPresented: Bool
+    @Binding var playingCandidateID: UUID?
 
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedEvent: Event?
-    @State private var credentialSheetIsPresented = false
-    @State private var playingCandidateID: UUID?
     @State private var pendingRouteSession: AICueComposerSession?
     @State private var draftNameInput = ""
+    @State private var renamingDraftID: String?
+    @FocusState private var draftNameButtonFocused: Bool
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
 
@@ -80,11 +85,7 @@ struct SettingsSoundsAICueView: View {
             routeRequestRevision: routeRequestRevision,
             languageStore: languageStore,
             nativeEffects: nativeEffects,
-            supplement: SoundPacksEditorSupplement(
-                sidebarHeader: AnyView(newPackButton),
-                detailHeader: AnyView(packContext),
-                auxiliary: AnyView(serviceCard),
-                eventContent: { event in AnyView(eventGenerationContent(event)) })
+            supplement: editorSupplement
         )
         .onAppear {
             pendingRouteSession = routeSession
@@ -119,23 +120,95 @@ struct SettingsSoundsAICueView: View {
                 viewModel: viewModel,
                 languageStore: languageStore)
         }
+        .sheet(
+            isPresented: Binding(
+                get: { renamingDraftID != nil }, set: { if !$0 { cancelDraftRename() } })
+        ) {
+            draftNameSheet
+        }
+        .onChange(of: sounds?.draft?.packID) { _ in cancelDraftRename() }
         .onDisappear {
+            cancelDraftRename()
             stopCandidatePreview()
+            editorOwner.cancelAICuePackDraft()
             viewModel.endSession()
             editorOwner.updateAICueComposer(session: nil, generation: nil)
         }
         .accessibilityElement(children: .contain)
     }
 
-    private var detailIntroduction: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(l10n.text(.settingsSoundsAICueTitle))
-                .font(ClaudioTheme.font(.sectionTitle).weight(.bold))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityIdentifier("settings.sounds.ai-cue.title")
+    private var editorSupplement: SoundPacksEditorSupplement {
+        var supplement = SoundPacksEditorSupplement(
+            sidebarHeader: AnyView(newPackButton),
+            detailHeader: AnyView(packContext),
+            auxiliary: AnyView(serviceDetail),
+            eventContent: { event in AnyView(eventGenerationContent(event)) })
+        supplement.pageHeader = pageHeader
+        supplement.scopePicker = scopePicker
+        supplement.serviceSummary = AnyView(
+            Text(l10n.text(viewModel.providerProfile.displayNameKey)))
+        supplement.onLeaveEvent = {
+            stopCandidatePreview()
+            viewModel.endSession()
+            editorOwner.updateAICueComposer(session: nil, generation: nil)
+        }
+        supplement.returnToScope = returnToScope
+        return supplement
+    }
+
+    private var serviceDetail: some View {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             serviceCard
-            packContext
+            ForEach(viewModel.availableProviderProfiles, id: \.id) { profile in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(l10n.text(profile.displayNameKey)).font(
+                            SettingsAppearance.font(.sectionTitle))
+                        Spacer(minLength: 8)
+                        Button(l10n.text(.settingsNativeSelectProfile)) {
+                            stopCandidatePreview()
+                            try? viewModel.selectProviderProfile(profile.id)
+                            Task { await viewModel.refreshCredentialStatus() }
+                        }
+                        .disabled(
+                            viewModel.isBusy || viewModel.credentialActivity != .idle
+                                || profile.id == viewModel.providerProfileID
+                        )
+                        .accessibilityIdentifier("settings.sounds.profile.\(profile.id.rawValue)")
+                    }
+                    Text(l10n.format(.settingsNativeRegion, regionName(profile.regionID)))
+                    ForEach(
+                        AICueModality.allCases.filter(profile.supportedModalities.contains),
+                        id: \.self
+                    ) { modality in
+                        if let route = profile.routes[modality] {
+                            Text(
+                                l10n.format(
+                                    route.candidateSetPolicy.semantics == .styled
+                                        ? .settingsNativeStyledRoute : .settingsNativeNumberedRoute,
+                                    l10n.text(aiCueModalityKey(modality)),
+                                    route.supportedLanguageTags.sorted().joined(separator: ", "),
+                                    Int64(route.candidateSetPolicy.requestedCount),
+                                    Int64(route.candidateSetPolicy.minimumAcceptedCount)))
+                        }
+                    }
+                    Text(l10n.text(profile.privacyDisclosureKey))
+                    Text(l10n.text(profile.credentialStorageDisclosureKey))
+                }
+                .font(SettingsAppearance.font(.caption))
+                .fixedSize(horizontal: false, vertical: true)
+                .settingsSectionSurface()
+            }
+        }
+    }
+
+    private func regionName(_ region: String?) -> String {
+        switch region {
+        case nil: l10n.text(.settingsNativeGlobal)
+        case "singapore": l10n.text(.settingsNativeSingapore)
+        case "beijing": l10n.text(.settingsNativeBeijing)
+        case "china": l10n.text(.settingsNativeChina)
+        default: region ?? l10n.text(.settingsAboutUnknown)
         }
     }
 
@@ -148,51 +221,45 @@ struct SettingsSoundsAICueView: View {
         .accessibilityIdentifier("settings.sounds.ai-cue.new-pack")
     }
 
-    private var serviceCard: some View {
-        EventSettingsAICueServiceCard(
-            viewModel: viewModel,
-            languageStore: languageStore,
-            onManageCredential: { credentialSheetIsPresented = true }
+    private var serviceCard: AnyView {
+        AnyView(
+            EventSettingsAICueServiceCard(
+                viewModel: viewModel,
+                languageStore: languageStore,
+                onManageCredential: { credentialSheetIsPresented = true }
+            )
+            .settingsMountIdentity("settings.sounds.ai-cue.service")
+            .soundPacksLayoutProbe("settings.sounds.ai-cue.service")
         )
-        .accessibilityIdentifier("settings.sounds.ai-cue.service")
-        .soundPacksLayoutProbe("settings.sounds.ai-cue.service")
     }
 
     @ViewBuilder
     private var packContext: some View {
         if let draft = sounds?.draft {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.pencil")
-                        .foregroundColor(ClaudioTheme.clay(colorScheme))
-                        .accessibilityHidden(true)
-                    TextField(l10n.text(.settingsSoundsAICuePackName), text: $draftNameInput)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 240)
-                        .disabled(viewModel.phase == .adopting)
-                        .accessibilityIdentifier("settings.sounds.ai-cue.draft-name")
-                    Button(l10n.text(.settingsSoundsAICueSaveName)) {
-                        guard let name = draftNameEdit.savableName else { return }
-                        _ = editorOwner.renameAICuePackDraft(name)
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(draft.name).font(SettingsAppearance.font(.body))
+                        Text(l10n.text(.settingsSoundsAICueDraft))
+                            .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                     }
-                    .disabled(
-                        viewModel.phase == .adopting
-                            || draft.cancelAction == nil
-                            || draftNameEdit.savableName == nil
-                    )
-                    .accessibilityIdentifier("settings.sounds.ai-cue.save-draft-name")
-                    Text(l10n.text(.settingsSoundsAICueDraft))
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    Spacer(minLength: 8)
+                    Button(l10n.text(.settingsNativeEditDraftName)) {
+                        nativeEffects.stopPreview(owner: editorOwner)
+                        draftNameInput = draft.name
+                        renamingDraftID = draft.packID
+                    }.disabled(viewModel.isBusy || draft.cancelAction == nil)
+                        .focused($draftNameButtonFocused)
+                        .accessibilityIdentifier("settings.sounds.ai-cue.rename-draft")
                 }
                 Text(l10n.text(.settingsSoundsAICueDescription))
                     .font(.caption)
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
                 if draftNameEdit == .invalid {
                     Text(l10n.text(.settingsSoundsAICueInvalidName))
                         .font(.caption)
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 }
                 if let cancelAction = draft.cancelAction {
                     Button(l10n.text(.commonCancel)) {
@@ -209,7 +276,7 @@ struct SettingsSoundsAICueView: View {
                 if selectedPack.usage.isShared {
                     Text(l10n.text(.settingsSoundsAICueShared))
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 }
                 if selectedPack.usage.usageIsIncomplete {
                     Label(
@@ -217,7 +284,7 @@ struct SettingsSoundsAICueView: View {
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.caption)
-                    .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.sounds.ai-cue.scope-incomplete")
                 }
@@ -228,13 +295,13 @@ struct SettingsSoundsAICueView: View {
                 {
                     Text(l10n.text(.soundPacksPackNotUsed))
                         .font(.caption)
-                        .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 } else {
                     ForEach(Array(selectedPack.usage.consumers.enumerated()), id: \.offset) {
                         _, consumer in
                         Text(usageLabel(consumer))
                             .font(.caption)
-                            .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                            .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     }
                 }
             }
@@ -243,14 +310,55 @@ struct SettingsSoundsAICueView: View {
         } else {
             Text(l10n.text(.settingsSoundsAICueDescription))
                 .font(.caption)
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var draftNameSheet: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(l10n.text(.settingsNativeEditDraftName)).font(SettingsAppearance.pageTitle)
+            if sounds?.draft?.packID == renamingDraftID {
+                TextField(l10n.text(.settingsSoundsAICuePackName), text: $draftNameInput)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("settings.sounds.ai-cue.draft-name")
+                if draftNameEdit == .invalid {
+                    FailureRow(message: l10n.text(.settingsSoundsAICueInvalidName))
+                }
+                HStack {
+                    Button(l10n.text(.commonCancel)) { cancelDraftRename() }
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("settings.sounds.ai-cue.cancel-draft-name")
+                    Spacer()
+                    Button(l10n.text(.settingsSoundsAICueSaveName)) {
+                        guard sounds?.draft?.packID == renamingDraftID,
+                            let name = draftNameEdit.savableName,
+                            editorOwner.renameAICuePackDraft(name)
+                        else { return }
+                        renamingDraftID = nil
+                        draftNameButtonFocused = true
+                    }.disabled(draftNameEdit.savableName == nil || viewModel.isBusy)
+                        .keyboardShortcut(.defaultAction)
+                        .accessibilityIdentifier("settings.sounds.ai-cue.save-draft-name")
+                }
+            } else {
+                FailureRow(message: l10n.text(.settingsNativeTargetUnavailable))
+                Button(l10n.text(.commonClose)) { cancelDraftRename() }
+            }
+        }.font(SettingsAppearance.font(.body)).padding(24).frame(width: 440)
+    }
+
+    private func cancelDraftRename() {
+        let wasPresented = renamingDraftID != nil
+        renamingDraftID = nil
+        draftNameInput = sounds?.draft?.name ?? ""
+        if wasPresented { draftNameButtonFocused = true }
     }
 
     private func eventGenerationContent(_ event: Event) -> some View {
         let row = sounds?.eventRows.first(where: { $0.event == event })
         return VStack(alignment: .leading, spacing: 8) {
+            serviceCard
             if selectedPack?.isBuiltinReadOnly != true {
                 Button(l10n.text(.aiCueGenerateAction)) {
                     beginSession(for: event)
@@ -289,22 +397,10 @@ struct SettingsSoundsAICueView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text(l10n.text(.settingsSoundsAICueCopyAttribution))
                 .font(.caption)
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
-            if route.isCopyAndApply, let action = selectedPack?.copyAndApplyAction {
-                Button(copyAndApplyTitle) { invoke(action) }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("settings.sounds.ai-cue.copy-and-apply")
-            } else if let action = selectedPack?.copyAction {
-                Button(l10n.text(.commonCopy)) { invoke(action) }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("settings.sounds.ai-cue.copy")
-            }
         }
-        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ClaudioTheme.elevated(colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row))
         .accessibilityIdentifier("settings.sounds.ai-cue.readonly-guidance")
         .soundPacksLayoutProbe("settings.sounds.ai-cue.readonly-guidance")
     }
@@ -341,21 +437,6 @@ struct SettingsSoundsAICueView: View {
         )
         .accessibilityIdentifier("settings.sounds.ai-cue.composer.\(event.rawValue)")
         .soundPacksLayoutProbe("settings.sounds.ai-cue.composer.\(event.rawValue)")
-    }
-
-    private var copyAndApplyTitle: String {
-        let target: String
-        switch route.scope {
-        case .global:
-            target = l10n.text(.panelGlobalName)
-        case .workspace:
-            target = sounds?.workspaceName ?? l10n.text(.workspaceUnavailable)
-        case .surface(let surface):
-            target =
-                HostID.productVisibleCases.first(where: { $0.surfaceID == surface })?.displayName
-                ?? surface.rawValue
-        }
-        return l10n.format(.settingsSoundsAICueCopyAndApply, target as NSString)
     }
 
     private var routeSession: AICueComposerSession? {

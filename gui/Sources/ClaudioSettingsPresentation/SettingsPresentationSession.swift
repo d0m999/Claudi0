@@ -190,6 +190,10 @@ package final class SettingsPresentationSession: ObservableObject {
         case .setLoginItemEnabled(let enabled):
             setLoginItemEnabled(enabled)
             return .routed
+        case .refreshLoginItemState:
+            refreshLoginItem()
+            publishProjection()
+            return .routed
         case .retryLoginItemOperation:
             retryLoginItemOperation()
             return .routed
@@ -559,6 +563,7 @@ package final class SettingsPresentationSession: ObservableObject {
                 session: nil,
                 generation: nil)
         case .sounds:
+            eventSettingsSelection.leaveDestination()
             dependencies.soundPacksEditorNativeEffects.handleLifecycle(
                 windowIsClosing ? .settingsWindowWillClose : .soundsViewDisappeared,
                 owner: dependencies.soundPacksEditorOwner)

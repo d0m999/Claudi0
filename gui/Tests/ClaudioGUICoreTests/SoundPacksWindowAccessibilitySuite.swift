@@ -1,10 +1,32 @@
 import ClaudioCore
-import ClaudioGUICore
 import ClaudioLocalization
 import Foundation
 
+@testable import ClaudioGUICore
+
 @MainActor
 func runSoundPacksWindowAccessibilitySuites() {
+    suite("音频清单辅助功能：指派与删除值区分未绑定、单事件和旧重复绑定") {
+        let cases: [([Event], String, String)] = [
+            ([], "Not used by an event yet", "尚未被事件使用"),
+            ([.stop], "Already used for Response ended", "已用于响应结束"),
+            (
+                [.taskStart, .stop], "Already used for User initiated, Response ended",
+                "已用于用户发起、响应结束"
+            ),
+        ]
+        for language in [ClaudioAppLanguage.english, .zhHans] {
+            for (events, english, chinese) in cases {
+                let file = SoundPackEditorAudioPresentation(
+                    fileName: "shared.wav", isOrphan: events.isEmpty, usedByEvents: events,
+                    assignments: [], deleteAction: nil, revealAction: nil)
+                let value = soundPackAudioUsageAccessibilityValue(file, language: language)
+                expect(
+                    value == (language == .english ? english : chinese),
+                    "\(language.rawValue) 必须播报实际占用，不能将已绑定文件说成未使用：\(value)")
+            }
+        }
+    }
     suite("SoundPacksWindow a11y：焦点序跟随视觉序，空态/陈旧选择不制造死焦点") {
         let populated = SoundPacksWindowFocusScope(
             packIDs: ["pack-a", "pack-b"],
@@ -597,11 +619,10 @@ func runSoundPacksWindowAccessibilitySuites() {
                 && !view.contains("@AppStorage(ClaudioInterfaceTextSize.defaultsKey)")
                 && !view.contains("interfaceTextSize.dynamicTypeSize")
                 && view.contains("private var packSelector: some View")
-                && view.contains("layoutAdaptation.packNameLineLimit")
-                && view.contains("soundPacksWindowDetailUsesStackedLayout(")
-                && view.contains("detailHeader(card, stacks: stacksDetail)")
-                && view.contains("packActionBar(card, stacks: stacksDetail)"),
-            "声音包窗口必须使用固定紧凑布局，同时保留真实 detail 宽度重排")
+                && view.contains(".settingsReadingColumn()")
+                && view.contains("detailHeader(card)")
+                && view.contains("packActionRow("),
+            "声音页使用设置专用单列，详情与操作行长文本自然增高")
         expect(
             view.contains("ClaudioTheme.Metrics.regularControlHeight")
                 && view.contains(".accessibilityLabel(packAccessibilityLabel(card))")

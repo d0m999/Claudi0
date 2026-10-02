@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioCore
 import ClaudioGUICore
 import ClaudioLocalization
 import ClaudioSettingsPresentation
@@ -351,11 +352,11 @@ func runSettingsPresentationSliceSuites() {
             ),
             (
                 .platformAction(.openLoginItemsSettings, .unavailable),
-                .settingsGeneralLoginItem.unavailable
+                .settingsNativeSystemSettingsFailed
             ),
             (
                 .platformAction(.openCalendarPrivacySettings, .failed),
-                .settingsNotificationsOpenCalendarPrivacy
+                .settingsNativeSystemSettingsFailed
             ),
         ]
 
@@ -654,13 +655,16 @@ func runSettingsPresentationSliceSuites() {
                 "\(scenario.rawValue) playing candidate 必须来自 selection coherent state")
             if let scenarioSession {
                 expect(
-                    state.route.scope == scenarioSession.scope
-                        && state.route.event == scenarioSession.event,
-                    "\(scenario.rawValue) composer route 必须与 fixture session scope/Event 对齐")
+                    fixture.session.state.routeResolution.route
+                        == .sounds(.editEvent(packID: "gallery-pack", event: scenarioSession.event))
+                        && fixture.aiCueViewModel.session
+                            == AICueComposerSession(
+                                packID: "gallery-pack", event: scenarioSession.event),
+                    "\(scenario.rawValue) composer 必须挂载 Sounds 包级 session 与对应事件详情")
                 expect(
-                    !SettingsMountRecorder.identifiers.contains(
+                    SettingsMountRecorder.identifiers.contains(
                         "event-settings.ai-cue.composer"),
-                    "\(scenario.rawValue) 声音配置页应通过定向声音包编辑进入 composer")
+                    "\(scenario.rawValue) 定向声音包编辑必须实际挂载 composer")
             }
             if scenario.rendersCredentialSheet {
                 expect(
