@@ -20,6 +20,7 @@ struct EventSettingsWindowView: View {
     @ObservedObject var soundPacksEditorOwner: SoundPacksEditorOwner
 
     let soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher
+    let performPlatformAction: @MainActor (SettingsPlatformAction) -> Void
     let onConfigureSound: @MainActor (SoundPacksWindowRoute) -> Void
     let onAudibilityInputsChanged: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
@@ -46,6 +47,7 @@ struct EventSettingsWindowView: View {
         aiCueViewModel: AICueGenerationViewModel,
         soundPacksEditorOwner: SoundPacksEditorOwner,
         soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher,
+        performPlatformAction: @escaping @MainActor (SettingsPlatformAction) -> Void,
         onConfigureSound: @escaping @MainActor (SoundPacksWindowRoute) -> Void,
         onAudibilityInputsChanged: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
@@ -57,6 +59,7 @@ struct EventSettingsWindowView: View {
         self.aiCueViewModel = aiCueViewModel
         self.soundPacksEditorOwner = soundPacksEditorOwner
         self.soundPacksEditorNativeEffects = soundPacksEditorNativeEffects
+        self.performPlatformAction = performPlatformAction
         self.onConfigureSound = onConfigureSound
         self.onAudibilityInputsChanged = onAudibilityInputsChanged
         self.onAnnouncement = onAnnouncement
@@ -830,7 +833,7 @@ struct EventSettingsWindowView: View {
                     : l10n.format(.panelRevealRecoveryFileNumber, Int64(index + 1))
             ) {
                 guard let currentTarget = panelExistingRecoveryFileTarget(file) else { return }
-                NSWorkspace.shared.activateFileViewerSelecting([currentTarget])
+                performPlatformAction(.revealInFinder(currentTarget))
             }
             .accessibilityValue(file.path)
             .accessibilityIdentifier("\(identifierPrefix).\(index + 1)")
@@ -842,7 +845,7 @@ struct EventSettingsWindowView: View {
         if let target = model.configRecoveryTarget {
             Button(l10n.text(.panelRevealConfig)) {
                 guard let currentTarget = model.configRecoveryTarget else { return }
-                NSWorkspace.shared.activateFileViewerSelecting([currentTarget])
+                performPlatformAction(.revealInFinder(currentTarget))
             }
             .accessibilityHint(l10n.text(.panelRevealConfigHint))
             .accessibilityIdentifier("workspace.reveal-config")

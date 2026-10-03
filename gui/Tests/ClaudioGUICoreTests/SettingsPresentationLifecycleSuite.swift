@@ -1076,6 +1076,63 @@ func runSettingsPresentationLifecycleSuites() async {
                 == .platformAction(.performed)
                 && fixture.actionRecorder.actions == [.openCalendarPrivacySettings],
             "Calendar privacy 必须经 closed typed platform effect 恰好一次")
+
+        let revealURL = URL(fileURLWithPath: "/tmp/claudio-settings/config.json.recovery")
+        expect(
+            fixture.session.send(.performPlatformAction(.revealInFinder(revealURL)))
+                == .platformAction(.performed)
+                && fixture.actionRecorder.actions == [
+                    .openCalendarPrivacySettings, .revealInFinder(revealURL),
+                ],
+            "recovery/config reveal 必须经同一 typed seam 携带精确 URL 恰好一次")
+        expect(
+            fixture.session.send(.performPlatformAction(.copyToPasteboard("session-1")))
+                == .platformAction(.performed)
+                && fixture.actionRecorder.actions.last == .copyToPasteboard("session-1"),
+            "copy session 必须经同一 typed seam 携带精确 session 字符串")
+
+        let failed = SettingsPresentationFixtures.generalLogin(platformActionResult: .failed)
+        expect(
+            failed.session.send(.performPlatformAction(.copyToPasteboard("session-1")))
+                == .platformAction(.failed)
+                && failed.session.state.platformActionFailure == .copyToPasteboard("session-1"),
+            "copy 失败必须经 seam 如实投影 failed；copySession 的 result == .performed 映射随之得到 false")
+    }
+
+    suite("Settings platform effect wiring：reveal 与 copy 视图只经 typed seam") {
+        let root = guiTestRepositoryRoot()
+        let eventsURL = root.appendingPathComponent(
+            "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift")
+        let activityURL = root.appendingPathComponent(
+            "gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift")
+        let rootViewURL = root.appendingPathComponent(
+            "gui/Sources/ClaudioSettingsPresentation/SettingsRootView.swift")
+        guard
+            let events = try? String(contentsOf: eventsURL, encoding: .utf8),
+            let activity = try? String(contentsOf: activityURL, encoding: .utf8),
+            let rootView = try? String(contentsOf: rootViewURL, encoding: .utf8)
+        else {
+            expect(false, "读不到 Settings presentation platform effect view source")
+            return
+        }
+        expect(
+            settingsPlatformEffectViewWiringIsSound(events: events, activity: activity)
+                && !settingsPlatformEffectViewWiringIsSound(
+                    events: events.replacingOccurrences(
+                        of: "performPlatformAction(.revealInFinder(currentTarget))",
+                        with: "NSWorkspace.shared.activateFileViewerSelecting([currentTarget])"),
+                    activity: activity)
+                && !settingsPlatformEffectViewWiringIsSound(
+                    events: events,
+                    activity: activity.replacingOccurrences(
+                        of: "performPlatformAction(.copyToPasteboard(session))",
+                        with: "NSPasteboard.general.setString(session, forType: .string)")),
+            "reveal/copy 必须经 typed seam；退回直接 AppKit 调用的 mutation 必须被识破")
+        expect(
+            rootView.components(
+                separatedBy: "settingsPresentationSession.send(.performPlatformAction($0))"
+            ).count - 1 == 2,
+            "events 与 usage 两处 mount 必须把同一 session typed seam 注入视图")
     }
     #endif
 }
@@ -1149,6 +1206,28 @@ private func settingsMenuRequestOwnsOnlyTypedRoute(_ source: String) -> Bool {
     return request.contains("host ?? integrationsModel.selectedHost ?? .claudeCode")
         && request.contains(".route(.integrations(surface: selectedHost.surfaceID))")
         && !request.contains("integrationsModel.selectHost")
+}
+
+private func settingsPlatformEffectViewWiringIsSound(events: String, activity: String) -> Bool {
+    let scannedEvents = strippingComments(events)
+    let scannedActivity = strippingComments(activity)
+    guard scannedEvents.unmodeledConstructs.isEmpty,
+        scannedActivity.unmodeledConstructs.isEmpty
+    else { return false }
+    let eventsCode = scannedEvents.codeWithoutStringLiterals
+    let activityCode = scannedActivity.codeWithoutStringLiterals
+    guard
+        let recovery = settingsLifecycleBracedBlock(
+            after: "private func recoveryFileButtons(", in: eventsCode),
+        let configReveal = settingsLifecycleBracedBlock(
+            after: "private var configRevealButton", in: eventsCode)
+    else { return false }
+    return recovery.contains("performPlatformAction(.revealInFinder(currentTarget))")
+        && configReveal.contains("performPlatformAction(.revealInFinder(currentTarget))")
+        && !eventsCode.contains("NSWorkspace")
+        && activityCode.contains("performPlatformAction(.copyToPasteboard(session))")
+        && activityCode.contains("== .platformAction(.performed)")
+        && !activityCode.contains("NSPasteboard")
 }
 
 private func settingsNativeAnnouncementAdapterIsSound(_ source: String) -> Bool {

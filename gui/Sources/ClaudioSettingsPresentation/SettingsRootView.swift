@@ -247,6 +247,9 @@ package struct SettingsRootView: View {
                     aiCueViewModel: aiCueViewModel,
                     soundPacksEditorOwner: soundPacksEditorOwner,
                     soundPacksEditorNativeEffects: soundPacksEditorNativeEffects,
+                    performPlatformAction: {
+                        _ = settingsPresentationSession.send(.performPlatformAction($0))
+                    },
                     onConfigureSound: {
                         settingsPresentationSession.editScopeSound($0)
                     },
@@ -303,6 +306,9 @@ package struct SettingsRootView: View {
                         preferences: preferences,
                         focusedTarget: $focusedTarget,
                         onAnnouncement: onAnnouncement,
+                        performPlatformAction: {
+                            settingsPresentationSession.send(.performPlatformAction($0))
+                        },
                         eventNoticeModel: settingsPresentationSession.dependencies.eventNoticeModel,
                         noticeNavigation: settingsPresentationSession.dependencies.noticeNavigation)
                 }
