@@ -421,7 +421,7 @@ N 个已发布来源 · 5 个声音事件
   `Return` / `Space` 执行。关闭 retained window 后精确聚焦声音作用域触发卡。
 - **行内状态动作（2026-09-10，替换菜单底部「连接与诊断…」footer）**：展开层中状态为
   「待回执」「旧版」或「需要处理」的 Surface 行，其右侧状态徽标成为独立按钮（描边胶囊 + `›`，
-  命中目标至少 29pt，不是变色文字徽标）；点击只提交 typed route `.integrations(surface:)` 打开
+  命中目标至少 29pt，不是变色文字徽标）；点击只提交 typed route `.integrations(IntegrationsSettingsRoute(surface:))` 打开
   retained 统一设置窗口并定位该来源，**不改变当前选中的声音作用域**，也不在菜单内复制
   connect / repair / receipt / 诊断动作。Global 行与「已激活」行的状态保持只读投影；触发卡上的
   状态徽标同样保持只读，仅展开层行内可点（触发卡单一职责是展开/收起与只读状态呈现）。
