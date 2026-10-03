@@ -55,7 +55,7 @@ func runSettingsSoundsLayoutSuites() {
                         for index in 1..<rows.count {
                             let gap = rows[index].minY - rows[index - 1].maxY
                             expect(
-                                abs(gap - ([4, 6].contains(index) ? 24 : 3)) < 1,
+                                abs(gap - ([4, 6].contains(index) ? 16 : 0)) < 1,
                                 "\(name) 三组侧栏间距：\(gap)")
                         }
                         if destination == .eventsAndSounds || destination == .sounds {
