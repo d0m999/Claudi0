@@ -13,18 +13,20 @@ struct IntegrationsSettingsDestinationView: View {
     @ObservedObject var focusCoordinator: IntegrationDestinationFocusCoordinator
     @ObservedObject var languageStore: ClaudioPreferences
     var productImages: SettingsProductImages = .empty
+    let route: IntegrationsSettingsRoute?
+    let onIntegrationsRoute: @MainActor (IntegrationsSettingsRoute) -> Void
     let onManageSoundScopes: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedTarget: IntegrationDestinationFocusTarget?
-    @State private var detailsHost: HostID?
     @State private var receiptHistoryTarget: ReceiptHistoryTarget?
     @State private var pendingConnect: HostID?
     @State private var feedbackAnnouncer = IntegrationsFeedbackAnnouncementModel()
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
+    private var detailsHost: HostID? { route?.detailsHost }
 
     private struct ReceiptHistoryTarget: Identifiable {
         let host: HostID
@@ -36,6 +38,8 @@ struct IntegrationsSettingsDestinationView: View {
         focusCoordinator: IntegrationDestinationFocusCoordinator,
         languageStore: ClaudioPreferences,
         productImages: SettingsProductImages = .empty,
+        route: IntegrationsSettingsRoute?,
+        onIntegrationsRoute: @escaping @MainActor (IntegrationsSettingsRoute) -> Void,
         onManageSoundScopes: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
     ) {
@@ -43,6 +47,8 @@ struct IntegrationsSettingsDestinationView: View {
         self.focusCoordinator = focusCoordinator
         self.languageStore = languageStore
         self.productImages = productImages
+        self.route = route
+        self.onIntegrationsRoute = onIntegrationsRoute
         self.onManageSoundScopes = onManageSoundScopes
         self.onAnnouncement = onAnnouncement
     }
@@ -53,7 +59,11 @@ struct IntegrationsSettingsDestinationView: View {
                 SettingsPageHeader {
                     if detailsHost != nil {
                         Button {
-                            detailsHost = nil; focusedTarget = .title
+                            if let route {
+                                onIntegrationsRoute(
+                                    IntegrationsSettingsRoute(surface: route.surface))
+                            }
+                            focusedTarget = .title
                         } label: {
                             Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
                         }
@@ -92,7 +102,10 @@ struct IntegrationsSettingsDestinationView: View {
                             if !model.content.isUnavailable, let facts = model.selectedHostFacts {
                                 connectionSection(facts)
                                 Button {
-                                    detailsHost = facts.host
+                                    onIntegrationsRoute(
+                                        IntegrationsSettingsRoute(
+                                            surface: facts.host.surfaceID,
+                                            detailsHost: facts.host))
                                     focusedTarget = .title
                                 } label: {
                                     HStack {
@@ -146,7 +159,7 @@ struct IntegrationsSettingsDestinationView: View {
             applyFocusRequest(focusCoordinator.requestedTarget)
         }
         .onChange(of: model.selectedHost) { _ in
-            receiptHistoryTarget = nil; detailsHost = nil; reconcileFocus()
+            receiptHistoryTarget = nil; reconcileFocus()
         }
         .alert(
             l10n.text(.settingsNativeConnectTitle),

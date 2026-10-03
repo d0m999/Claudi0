@@ -39,7 +39,7 @@ public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashab
 /// ClaudioGUICore; display names, view state, and model objects never cross this routing seam.
 public enum SettingsRoute: Sendable, Equatable, Hashable {
     case destination(SettingsDestination)
-    case integrations(surface: HostSurfaceID)
+    case integrations(IntegrationsSettingsRoute)
     case events(scope: PanelSoundScopeID, event: Event?)
     case sounds(SoundPacksWindowRoute)
 
@@ -58,8 +58,9 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
         switch self {
         case .destination(let destination):
             return [destination.rawValue]
-        case .integrations(let surface):
-            return [SettingsDestination.integrations.rawValue, surface.rawValue]
+        case .integrations(let route):
+            return [SettingsDestination.integrations.rawValue, route.surface.rawValue]
+                + (route.detailsHost.map { [$0.rawValue] } ?? [])
         case .events(let scope, let event):
             return [SettingsDestination.eventsAndSounds.rawValue, scope.storedValue]
                 + (event.map { [$0.cliName] } ?? [])
@@ -176,8 +177,9 @@ public enum SettingsRouteFailure: Sendable, Equatable {
     case staleSoundPack(String)
 }
 
-/// Resolution always retains the requested route and therefore its corresponding destination.
-/// A failure is presentation state for that destination, never a fallback route.
+/// Resolution always retains the requested destination, and a failure retains the requested route
+/// as presentation state for that destination, never a fallback route. A successful Integrations
+/// resolution drops a details target that no longer names the surface's current host.
 public struct SettingsRouteResolution: Sendable, Equatable {
     public let route: SettingsRoute
     public let failure: SettingsRouteFailure?
@@ -195,13 +197,19 @@ public func resolveSettingsRoute(
     availability: SettingsRouteAvailability
 ) -> SettingsRouteResolution {
     let failure: SettingsRouteFailure?
+    var resolvedRoute = route
     switch route {
     case .destination:
         failure = nil
-    case .integrations(let surface):
+    case .integrations(let route):
         failure = settingsSurfaceFailure(
-            surface,
+            route.surface,
             availableSurfaces: availability.integrationSurfaces)
+        if failure == nil, let detailsHost = route.detailsHost,
+            detailsHost.surfaceID != route.surface
+        {
+            resolvedRoute = .integrations(IntegrationsSettingsRoute(surface: route.surface))
+        }
     case .events(let scope, let event):
         if let scopeFailure = settingsScopeFailure(
             scope,
@@ -236,7 +244,20 @@ public func resolveSettingsRoute(
             failure = nil
         }
     }
-    return SettingsRouteResolution(route: route, failure: failure)
+    return SettingsRouteResolution(route: resolvedRoute, failure: failure)
+}
+
+/// Integrations sub-navigation. `detailsHost` is retained only while it names the host that the
+/// route's surface currently selects; resolution drops any other identity to nil instead of
+/// navigating to a host the selection has left.
+public struct IntegrationsSettingsRoute: Sendable, Equatable, Hashable {
+    public let surface: HostSurfaceID
+    public let detailsHost: HostID?
+
+    public init(surface: HostSurfaceID, detailsHost: HostID? = nil) {
+        self.surface = surface
+        self.detailsHost = detailsHost
+    }
 }
 
 private func settingsScopeFailure(

@@ -630,7 +630,7 @@ final class MenuBarController: NSObject {
     ) {
         let selectedHost = host ?? integrationsModel.selectedHost ?? .claudeCode
         requestSettingsPresentation(
-            request: .route(.integrations(surface: selectedHost.surfaceID)),
+            request: .route(.integrations(IntegrationsSettingsRoute(surface: selectedHost.surfaceID))),
             returnFocusTo: target)
     }
 

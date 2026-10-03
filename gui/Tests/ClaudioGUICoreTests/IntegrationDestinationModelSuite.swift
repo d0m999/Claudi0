@@ -120,7 +120,7 @@ func runIntegrationDestinationModelSuites() async {
             soundScopes: [.global],
             soundPackIDs: [],
             events: Set(Event.allCases))
-        let validRoute = SettingsRoute.integrations(surface: .workBuddy)
+        let validRoute = SettingsRoute.integrations(IntegrationsSettingsRoute(surface: .workBuddy))
         let validResolution = resolveSettingsRoute(validRoute, availability: availability)
         expect(validResolution.failure == nil, "产品 Surface deep link 必须解析成功")
 
@@ -157,14 +157,14 @@ func runIntegrationDestinationModelSuites() async {
             soundPackIDs: [],
             events: Set(Event.allCases))
         let stale = resolveSettingsRoute(
-            .integrations(surface: .codex),
+            .integrations(IntegrationsSettingsRoute(surface: .codex)),
             availability: staleAvailability)
         expect(stale.failure == .staleSurface(.codex), "缺失产品 Surface 必须保持 stale-route failure")
         expect(
             preferences.lastIntegrationSurface == .workBuddy,
             "stale deep link 不得静默回退或改写最后选择")
         let invalid = resolveSettingsRoute(
-            .integrations(surface: .chatGPTDesktopAX),
+            .integrations(IntegrationsSettingsRoute(surface: .chatGPTDesktopAX)),
             availability: availability)
         expect(
             invalid.failure == .invalidSurface(.chatGPTDesktopAX),

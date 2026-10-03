@@ -348,7 +348,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                     self?.showSettings(request: .route(.sounds(route)))
                 }, onOpenRecentNotices: {},
                 onOpenIntegration: { [weak self] host in
-                    self?.showSettings(request: .route(.integrations(surface: host.surfaceID)))
+                    self?.showSettings(
+                        request: .route(
+                            .integrations(IntegrationsSettingsRoute(surface: host.surfaceID))))
                 }, onQuit: { NSApp.terminate(nil) }, onRevealConfig: { _ in }, onAnnounce: { _ in })
         )
         panel.contentSize = NSSize(width: 312, height: 740)

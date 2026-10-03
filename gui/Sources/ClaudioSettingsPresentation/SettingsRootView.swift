@@ -225,6 +225,10 @@ package struct SettingsRootView: View {
                     focusCoordinator: integrationsFocusCoordinator,
                     languageStore: preferences,
                     productImages: settingsPresentationSession.dependencies.productImages,
+                    route: integrationsRoute,
+                    onIntegrationsRoute: {
+                        settingsPresentationSession.send(.route(.integrations($0)))
+                    },
                     onManageSoundScopes: {
                         settingsPresentationSession.send(
                             .route(.destination(.eventsAndSounds)))
@@ -354,6 +358,13 @@ package struct SettingsRootView: View {
         guard
             case .sounds(let route) = settingsPresentationSession.state.routeResolution.route
         else { return .overview }
+        return route
+    }
+
+    private var integrationsRoute: IntegrationsSettingsRoute? {
+        guard
+            case .integrations(let route) = settingsPresentationSession.state.routeResolution.route
+        else { return nil }
         return route
     }
 

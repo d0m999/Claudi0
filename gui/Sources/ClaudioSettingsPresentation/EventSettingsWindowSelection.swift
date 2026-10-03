@@ -152,6 +152,30 @@ package final class EventSettingsWindowSelection: ObservableObject {
         publishState()
     }
 
+    package func showConfigurationDetail() {
+        updateDetail(.configuration)
+    }
+
+    package func showWorkspacesDetail() {
+        updateDetail(.workspaces)
+    }
+
+    package func showScopeDetail(_ target: WorkspaceSoundWriteTarget) {
+        updateDetail(.scope(target))
+    }
+
+    private func updateDetail(_ detail: WorkspaceSettingsDetail) {
+        guard storage.route.detail != detail else { return }
+        storage.route = EventSettingsWindowRoute(
+            scope: storage.route.scope,
+            event: storage.route.event,
+            workspaceTarget: storage.route.workspaceTarget,
+            unavailableRequestedScopeStoredValue: storage.route.unavailableRequestedScopeStoredValue,
+            detail: detail)
+        storage.routeRequestRevision &+= 1
+        publishState()
+    }
+
     package func markCurrentScopeUnavailable() {
         guard storage.route.unavailableRequestedScopeStoredValue == nil else { return }
         storage.leaveDestination()
@@ -209,6 +233,7 @@ package final class EventSettingsWindowSelection: ObservableObject {
         deletionPresentation = WorkspaceDeletionPresentation(
             pending: WorkspaceDeletionRequest(target: WorkspaceSoundDeleteTarget(rule: rule)),
             feedback: nil)
+        updateDetail(.scope(WorkspaceSoundWriteTarget(rule: rule)))
         return true
     }
 

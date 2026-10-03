@@ -50,6 +50,7 @@ package final class SettingsPresentationSession: ObservableObject {
     private var aiGenerationCancellable: AnyCancellable?
     private var eventPresentationCancellable: AnyCancellable?
     private var soundScopeSelectionCancellable: AnyCancellable?
+    private var integrationsSelectionCancellable: AnyCancellable?
 
     package init(
         dependencies: SettingsPresentationDependencies,
@@ -187,6 +188,13 @@ package final class SettingsPresentationSession: ObservableObject {
             .sink { [weak self] projection in
                 MainActor.assumeIsolated {
                     self?.synchronizeEventSoundScope(projection)
+                }
+            }
+        integrationsSelectionCancellable = dependencies.integrationsModel.$selectedHost
+            .dropFirst()
+            .sink { [weak self] host in
+                MainActor.assumeIsolated {
+                    self?.synchronizeIntegrationSelection(host)
                 }
             }
     }
@@ -411,8 +419,9 @@ package final class SettingsPresentationSession: ObservableObject {
         eventShortcut: EventSettingsWindowRoute?
     ) {
         switch route {
-        case .integrations(let surface):
-            if let host = HostID.productVisibleCases.first(where: { $0.surfaceID == surface }) {
+        case .integrations(let route):
+            if let host = HostID.productVisibleCases.first(where: { $0.surfaceID == route.surface })
+            {
                 _ = dependencies.integrationsModel.selectHost(host)
             }
         case .events(let scope, let event):
@@ -492,6 +501,22 @@ package final class SettingsPresentationSession: ObservableObject {
         }
     }
 
+    private func synchronizeIntegrationSelection(_ host: HostID?) {
+        // The destination's selected host is a domain fact owned by the integrations model.
+        // Outside a route transaction, keep the retained route in step: the previous host's
+        // details page closes through the validator instead of rendering a target the
+        // selection has left.
+        guard !isPerformingTransaction,
+            lifecycleDestination == .integrations,
+            case .integrations(let route) = routeResolution.route,
+            host?.surfaceID != route.surface
+        else { return }
+        routeResolution = resolveSettingsRoute(
+            .integrations(IntegrationsSettingsRoute(surface: host?.surfaceID ?? route.surface)),
+            availability: availability)
+        publishProjection()
+    }
+
     private func synchronizeEventSoundScope(_ projection: SoundScopeSelection.Projection) {
         // Explicit route transactions retain their event and captured target. Outside those
         // transactions, a shared selection change must reach the retained page immediately.
@@ -552,8 +577,8 @@ package final class SettingsPresentationSession: ObservableObject {
     }
 
     private func requestIntegrationsFocus(route: SettingsRoute) {
-        if case .integrations(let surface) = route,
-            let host = HostID.productVisibleCases.first(where: { $0.surfaceID == surface })
+        if case .integrations(let route) = route,
+            let host = HostID.productVisibleCases.first(where: { $0.surfaceID == route.surface })
         {
             integrationsFocusCoordinator.requestFocus(.agent(host))
         } else {

@@ -32,6 +32,13 @@ public enum PanelSoundScopeID: Sendable, Equatable, Hashable, Identifiable {
 
 public let panelSoundScopeDefaultsKey = "claudio.panel.selected-surface"
 
+/// A directory detail keeps the identity captured at entry, including across configuration reloads.
+public enum WorkspaceSettingsDetail: Sendable, Equatable {
+    case configuration
+    case workspaces
+    case scope(WorkspaceSoundWriteTarget)
+}
+
 /// “事件与提示音”表面的显式入口。路由直接携带声音作用域与可选公共事件，避免把展示
 /// 名称或 Host Product 重新解析成配置写入目标。
 public struct EventSettingsWindowRoute: Sendable, Equatable, Hashable {
@@ -41,17 +48,20 @@ public struct EventSettingsWindowRoute: Sendable, Equatable, Hashable {
     /// cannot turn the request into an edit of another workspace.
     public let workspaceTarget: WorkspaceSoundWriteTarget?
     public let unavailableRequestedScopeStoredValue: String?
+    public let detail: WorkspaceSettingsDetail
 
     public init(
         scope: PanelSoundScopeID,
         event: Event? = nil,
         workspaceTarget: WorkspaceSoundWriteTarget? = nil,
-        unavailableRequestedScopeStoredValue: String? = nil
+        unavailableRequestedScopeStoredValue: String? = nil,
+        detail: WorkspaceSettingsDetail = .configuration
     ) {
         self.scope = scope
         self.event = event
         self.workspaceTarget = workspaceTarget
         self.unavailableRequestedScopeStoredValue = unavailableRequestedScopeStoredValue
+        self.detail = detail
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -62,14 +72,32 @@ public struct EventSettingsWindowRoute: Sendable, Equatable, Hashable {
         hasher.combine(workspaceTarget?.directory.path)
         hasher.combine(workspaceTarget?.directory.commonGitDirectory)
         hasher.combine(unavailableRequestedScopeStoredValue)
+        switch detail {
+        case .configuration:
+            hasher.combine(0)
+        case .workspaces:
+            hasher.combine(1)
+        case .scope(let target):
+            hasher.combine(2)
+            hasher.combine(target.id)
+            hasher.combine(target.directory.kind.rawValue)
+            hasher.combine(target.directory.path)
+            hasher.combine(target.directory.commonGitDirectory)
+        }
     }
 
     public func workspaceTargetIsCurrent(in config: ClaudioConfig) -> Bool {
-        guard let workspaceTarget else { return true }
-        guard case .workspace(let id) = scope, workspaceTarget.id == id,
+        if let workspaceTarget {
+            guard case .workspace(let id) = scope, workspaceTarget.id == id,
+                let rule = config.workspaceRules.first(where: { $0.id == id })
+            else { return false }
+            guard rule.directory == workspaceTarget.directory else { return false }
+        }
+        guard case .scope(let detailTarget) = detail else { return true }
+        guard case .workspace(let id) = scope, detailTarget.id == id,
             let rule = config.workspaceRules.first(where: { $0.id == id })
         else { return false }
-        return rule.directory == workspaceTarget.directory
+        return rule.directory == detailTarget.directory
     }
 
     public var surface: HostSurfaceID? { scope.surface }
@@ -280,8 +308,8 @@ public func panelSoundScopePresentations(
 }
 
 /// 行内状态动作的决策级投影：只有异常状态（待回执 / 旧版 / 需要处理）的 Surface 行产生
-/// 集成入口，返回值为 typed route `.integrations(surface:)` 需要的真实宿主身份。Global 与
-/// 「已激活」行保持只读；`.notConnected` 本就不进入选择器，即使出现也 fail closed。
+/// 集成入口，返回值为 typed route `.integrations(IntegrationsSettingsRoute)` 需要的真实宿主身份。
+/// Global 与 「已激活」行保持只读；`.notConnected` 本就不进入选择器，即使出现也 fail closed。
 /// 视图只原样转发此结果，不做二次判断。
 public func panelSoundScopeIntegrationActionHost(
     _ scope: PanelSoundScopePresentation

@@ -183,7 +183,8 @@ func runSettingsPresentationLifecycleSuites() async {
 
         for host in HostID.productVisibleCases {
             expect(
-                session.send(.route(.integrations(surface: host.surfaceID))) == .routed
+                session.send(.route(.integrations(IntegrationsSettingsRoute(surface: host.surfaceID))))
+                    == .routed
                     && fixture.integrationsModel.selectedHost == host,
                 "应能分别从每个 Host 的集成页测试声音入口")
             expect(
@@ -202,7 +203,7 @@ func runSettingsPresentationLifecycleSuites() async {
                 integrationSurfaces: Set(HostID.productVisibleCases.map(\.surfaceID)),
                 eventScopes: [.global], soundScopes: [.global], soundPackIDs: [],
                 events: Set(Event.allCases)))
-        _ = session.send(.route(.integrations(surface: .codex)))
+        _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .codex))))
         expect(
             session.send(.route(.destination(.eventsAndSounds))) == .routed
                 && session.state.eventPresentation.route.scope == selected
@@ -410,7 +411,7 @@ func runSettingsPresentationLifecycleSuites() async {
         let selected = PanelSoundScopeID.workspace(rule.id)
         fixture.eventSettingsSelection.select(EventSettingsWindowRoute(scope: selected))
         fixture.eventSettingsModel.selectSoundScope(selected)
-        _ = fixture.session.send(.route(.integrations(surface: .codex)))
+        _ = fixture.session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .codex))))
         fixture.session.replaceAvailabilityForTesting(
             SettingsRouteAvailability(
                 integrationSurfaces: Set(HostID.productVisibleCases.map(\.surfaceID)),
@@ -511,14 +512,15 @@ func runSettingsPresentationLifecycleSuites() async {
 
     suite("Settings session rejection：invalid/stale 保留 requested destination 且零 target mutation") {
         let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .integrations(surface: .workBuddy),
+            route: .integrations(IntegrationsSettingsRoute(surface: .workBuddy)),
             availability: PreviewFixtures.settingsRouteAvailability)
         let session = fixture.session
         _ = session.send(.windowPhaseChanged(.key))
         let priorHost = fixture.integrationsModel.selectedHost
         let priorSurface = fixture.eventSettingsModel.selectedSurface
         let priorSoundMode = fixture.soundPacksEditor.presentation.mode
-        let firstFailedRoute = SettingsRoute.integrations(surface: .chatGPTDesktopAX)
+        let firstFailedRoute = SettingsRoute.integrations(
+            IntegrationsSettingsRoute(surface: .chatGPTDesktopAX))
         let firstFailedRevision = session.state.explicitRouteRequestRevision
 
         expect(
@@ -546,7 +548,7 @@ func runSettingsPresentationLifecycleSuites() async {
                 && session.state.focusDebt?.revision == repeatedFailureRevision + 1,
             "同一 failed explicit route 每次仍必须形成一个新的可观察 revision/focus debt")
 
-        _ = session.send(.route(.integrations(surface: .workBuddy)))
+        _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .workBuddy))))
         _ = session.send(
             .acknowledgeFocus(revision: session.state.explicitRouteRequestRevision))
         let explicitRevision = session.state.explicitRouteRequestRevision
@@ -558,7 +560,8 @@ func runSettingsPresentationLifecycleSuites() async {
                 soundPackIDs: [],
                 events: Set(Event.allCases)))
         expect(
-            session.state.routeResolution.route == .integrations(surface: .workBuddy)
+            session.state.routeResolution.route
+                == .integrations(IntegrationsSettingsRoute(surface: .workBuddy))
                 && session.state.routeResolution.failure == .staleSurface(.workBuddy)
                 && session.state.activeDestination == .integrations
                 && session.state.explicitRouteRequestRevision == explicitRevision
@@ -630,6 +633,44 @@ func runSettingsPresentationLifecycleSuites() async {
         )
     }
 
+    suite("Settings integrations details：typed detailsHost 经 session 单事务，host 变更由 owner 清空") {
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .destination(.integrations),
+            availability: PreviewFixtures.settingsRouteAvailability)
+        let session = fixture.session
+        let details = IntegrationsSettingsRoute(surface: .workBuddy, detailsHost: .workBuddy)
+        expect(
+            session.send(.route(.integrations(details))) == .routed
+                && session.state.routeResolution.route == .integrations(details)
+                && fixture.integrationsModel.selectedHost == .workBuddy,
+            "合法 details 深链接必须保留 detailsHost 并选中对应 Host")
+
+        _ = fixture.integrationsModel.selectHost(.codex)
+        expect(
+            session.state.routeResolution.route
+                == .integrations(IntegrationsSettingsRoute(surface: .codex))
+                && session.state.routeResolution.failure == nil,
+            "Host 选择变更必须由 session 跟随并清空旧 detailsHost")
+
+        let mismatched = IntegrationsSettingsRoute(surface: .codex, detailsHost: .workBuddy)
+        expect(
+            session.send(.route(.integrations(mismatched))) == .routed
+                && session.state.routeResolution.route
+                    == .integrations(IntegrationsSettingsRoute(surface: .codex))
+                && fixture.integrationsModel.selectedHost == .codex,
+            "陈旧 detailsHost 必须被 validator 丢弃，且不得改变选中 Host")
+
+        let codexDetails = IntegrationsSettingsRoute(surface: .codex, detailsHost: .codex)
+        expect(
+            session.send(.route(.integrations(codexDetails))) == .routed
+                && session.state.routeResolution.route == .integrations(codexDetails),
+            "当前 Host 的 details 深链接必须原样进入 session state")
+        expect(
+            session.send(.route(.destination(.integrations))) == .routed
+                && session.state.routeResolution.route == .destination(.integrations),
+            "通用入口回到 overview，details 不跨 destination 泄漏")
+    }
+
     suite("Settings session failure matrix：Surface、scope、pack、Event 均只发布 typed failure") {
         let allSurfaces = Set(HostID.productVisibleCases.map(\.surfaceID))
         let allScopes = Set(
@@ -643,7 +684,7 @@ func runSettingsPresentationLifecycleSuites() async {
                 destination: SettingsDestination
             )] = [
                 (
-                    .integrations(surface: .chatGPTDesktopAX),
+                    .integrations(IntegrationsSettingsRoute(surface: .chatGPTDesktopAX)),
                     SettingsRouteAvailability(
                         integrationSurfaces: allSurfaces,
                         eventScopes: allScopes,
@@ -654,7 +695,7 @@ func runSettingsPresentationLifecycleSuites() async {
                     .integrations
                 ),
                 (
-                    .integrations(surface: .workBuddy),
+                    .integrations(IntegrationsSettingsRoute(surface: .workBuddy)),
                     SettingsRouteAvailability(
                         integrationSurfaces: [],
                         eventScopes: allScopes,
@@ -832,7 +873,7 @@ func runSettingsPresentationLifecycleSuites() async {
 
     suite("Settings session lifecycle：old inactive 先于 new active 且每次 route 只发布一次") {
         let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .integrations(surface: .workBuddy),
+            route: .integrations(IntegrationsSettingsRoute(surface: .workBuddy)),
             availability: PreviewFixtures.settingsRouteAvailability)
         let session = fixture.session
         _ = session.send(.windowPhaseChanged(.key))
@@ -853,7 +894,7 @@ func runSettingsPresentationLifecycleSuites() async {
             eventActivatedAfterIntegrationHidden && routePublications == 1,
             "transaction 必须先结束旧 Integrations lifecycle，再激活 Events，并只发布一个 coherent state")
         routePublications = 0
-        _ = session.send(.route(.integrations(surface: .workBuddy)))
+        _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .workBuddy))))
         expect(
             session.state.activeDestination == .integrations
                 && fixture.integrationsModel.isWindowVisible
@@ -1204,7 +1245,8 @@ private func settingsMenuRequestOwnsOnlyTypedRoute(_ source: String) -> Bool {
             in: scanned.code)
     else { return false }
     return request.contains("host ?? integrationsModel.selectedHost ?? .claudeCode")
-        && request.contains(".route(.integrations(surface: selectedHost.surfaceID))")
+        && request.contains(
+            ".route(.integrations(IntegrationsSettingsRoute(surface: selectedHost.surfaceID)))")
         && !request.contains("integrationsModel.selectHost")
 }
 

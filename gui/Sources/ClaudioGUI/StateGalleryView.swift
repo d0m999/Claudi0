@@ -1259,7 +1259,7 @@ private struct HostIntegrationSettingsFrame: View {
 
     var body: some View {
         SettingsWindowRouteFrame(
-            route: selectedSurface.map { SettingsRoute.integrations(surface: $0) }
+            route: selectedSurface.map { SettingsRoute.integrations(IntegrationsSettingsRoute(surface: $0)) }
                 ?? .destination(.integrations),
             availability: PreviewFixtures.settingsRouteAvailability,
             language: language,
