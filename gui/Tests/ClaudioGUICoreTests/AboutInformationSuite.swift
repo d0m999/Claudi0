@@ -66,24 +66,24 @@ func runAboutInformationSuites() {
             HostSourceRowPresentation(
                 host: .claudeCode,
                 title: secret,
-                readinessText: secret,
-                detailText: secret,
                 status: .ready,
-                accessibilityLabel: secret),
+                detail: .needsAttention(reason: secret),
+                supportedCount: 5,
+                totalCount: 5),
             HostSourceRowPresentation(
                 host: .workBuddy,
                 title: secret,
-                readinessText: secret,
-                detailText: secret,
                 status: .needsAttention,
-                accessibilityLabel: secret),
+                detail: .needsAttention(reason: secret),
+                supportedCount: 4,
+                totalCount: 5),
             HostSourceRowPresentation(
                 host: .chatGPTDesktopAX,
                 title: secret,
-                readinessText: secret,
-                detailText: secret,
                 status: .needsAttention,
-                accessibilityLabel: secret),
+                detail: .needsAttention(reason: secret),
+                supportedCount: 0,
+                totalCount: 5),
         ]
         let surfaces = aboutSurfaceFacts(from: rows)
         expect(

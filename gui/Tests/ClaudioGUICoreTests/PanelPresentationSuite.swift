@@ -11,8 +11,6 @@ private func panelPresentationRow(
     HostSourceRowPresentation(
         host: host,
         title: host.displayName,
-        readinessText: "fixture",
-        detailText: nil,
         status: status,
         supportedCount: supported,
         totalCount: Event.allCases.count)

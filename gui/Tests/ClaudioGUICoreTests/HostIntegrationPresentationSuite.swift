@@ -220,9 +220,13 @@ func runHostIntegrationPresentationSuites() {
             return
         }
         expect(
-            row.detailText?.contains("Notification 仍可播放") == true
-                && row.detailText?.contains("PreToolUse 提问入口") == true
-                && row.detailText?.contains("请升级连接") == true,
+            row.detail == .claudeCodeLegacyPartialHooks,
+            "集成页旧版连接说明必须保持类型化逐绑定事实")
+        let chineseRow = localizedHostSourceRow(row, language: .zhHans)
+        expect(
+            chineseRow.detailText?.contains("Notification 仍可播放") == true
+                && chineseRow.detailText?.contains("PreToolUse 提问入口") == true
+                && chineseRow.detailText?.contains("请升级连接") == true,
             "集成页旧版连接说明必须同时交代旧通知与新增提问入口")
         let englishRow = localizedHostSourceRow(row, language: .english)
         expect(

@@ -22,86 +22,90 @@ public func localizedEventName(_ event: Event, language: ClaudioAppLanguage) -> 
     }
 }
 
-private func localizedHostReadiness(
-    _ row: HostSourceRowPresentation,
-    language: ClaudioAppLanguage
-) -> String {
-    let l10n = ClaudioL10n(language: language)
-    let counts =
-        row.supportedCount.flatMap { supported in
-            row.totalCount.map { total in (supported, total) }
-        } ?? parseHostCounts(row.readinessText)
-    guard let (supported, total) = counts else { return row.readinessText }
-    let key: ClaudioL10nKey
-    switch row.status {
-    case .ready: key = .hostReady
-    case .awaitingActivation: key = .hostConfigured
-    case .legacy: key = .hostLegacy
-    case .notConnected: key = .hostNotConnected
-    case .needsAttention: key = .hostNeedsAttention
+/// 声音来源行在一个确定语言下的完整文字投影。这是视图消费行文字的唯一路径：由
+/// ``localizedHostSourceRow(_:language:)`` 从类型化行事实一次性生成，任何 call site
+/// 不得再自行 re-localize、解析或拼接行文字。
+public struct LocalizedHostSourceRowPresentation: Sendable, Equatable {
+    public let host: HostID
+    public let title: String
+    public let readinessText: String
+    public let detailText: String?
+    public let status: HostSourceRowStatus
+    public let accessibilityLabel: String
+    public let supportedCount: Int
+    public let totalCount: Int
+
+    public init(
+        host: HostID,
+        title: String,
+        readinessText: String,
+        detailText: String?,
+        status: HostSourceRowStatus,
+        accessibilityLabel: String,
+        supportedCount: Int,
+        totalCount: Int
+    ) {
+        self.host = host
+        self.title = title
+        self.readinessText = readinessText
+        self.detailText = detailText
+        self.status = status
+        self.accessibilityLabel = accessibilityLabel
+        self.supportedCount = supportedCount
+        self.totalCount = totalCount
     }
-    return l10n.format(key, Int64(supported), Int64(total))
+
+    /// 中性的能力覆盖事实（如 4/5），与 ``HostSourceRowPresentation/coverageText`` 同值。
+    public var coverageText: String { "\(supportedCount)/\(totalCount)" }
 }
 
-private func parseHostCounts(_ text: String) -> (Int, Int)? {
-    guard
-        let prefix = text.split(whereSeparator: { $0.isWhitespace }).first,
-        let separator = prefix.firstIndex(of: "/"),
-        let supported = Int(prefix[..<separator]),
-        let total = Int(prefix[prefix.index(after: separator)...])
-    else { return nil }
-    return (supported, total)
-}
-
-private func localizedHostDetail(
-    _ row: HostSourceRowPresentation,
+/// 类型化详情枚举的唯一文字渲染器。固定产品文案来自 catalog；`.needsAttention` 的
+/// reason 是 adapter 域数据，两种语言都逐字呈现，绝不与中文字面量做匹配。
+public func localizedHostSourceRowDetail(
+    _ detail: HostSourceRowDetail?,
     language: ClaudioAppLanguage
 ) -> String? {
+    guard let detail else { return nil }
     let l10n = ClaudioL10n(language: language)
-    switch row.status {
-    case .ready:
-        switch row.host {
-        case .claudeCode: return nil
-        case .codex: return l10n.text(.hostCodexReadyDetail)
-        case .workBuddy: return l10n.text(.hostWorkBuddyReadyDetail)
-        case .chatGPTDesktopAX, .claudeDesktopAX: return nil
-        }
-    case .awaitingActivation:
-        switch row.host {
-        case .claudeCode: return l10n.text(.hostClaudeAwaitingDetail)
-        case .codex: return l10n.text(.hostCodexAwaitingDetail)
-        case .workBuddy: return l10n.text(.hostWorkBuddyAwaitingDetail)
-        case .chatGPTDesktopAX, .claudeDesktopAX: return nil
-        }
-    case .legacy:
-        switch row.host {
-        case .claudeCode: return l10n.text(.hostClaudeLegacyDetail)
-        case .codex, .workBuddy: return l10n.text(.hostCodexLegacyDetail)
-        case .chatGPTDesktopAX, .claudeDesktopAX: return nil
-        }
-    case .notConnected:
-        return nil
-    case .needsAttention:
-        if row.host == .workBuddy,
-            row.detailText == "检测到与 Claudio 条目冲突的 WorkBuddy hook"
-        {
-            return l10n.text(.hostWorkBuddyConflictDetail)
-        }
-        // Unknown reasons are supplied by the host integration manager and retained as domain
-        // data. The GUI localizes only fixed product copy it owns; it never guesses at literals.
-        return row.detailText
+    switch detail {
+    case .codexInterruptionEventUnavailable:
+        return l10n.text(.hostCodexReadyDetail)
+    case .workBuddyNotificationScopeOnly:
+        return l10n.text(.hostWorkBuddyReadyDetail)
+    case .claudeCodeAwaitingFirstPrompt:
+        return l10n.text(.hostClaudeAwaitingDetail)
+    case .codexAwaitingHooksConfirmation:
+        return l10n.text(.hostCodexAwaitingDetail)
+    case .workBuddyAwaitingFirstPrompt:
+        return l10n.text(.hostWorkBuddyAwaitingDetail)
+    case .claudeCodeLegacyPartialHooks:
+        return l10n.text(.hostClaudeLegacyDetail)
+    case .legacyAudibleWithoutReceipt:
+        return l10n.text(.hostCodexLegacyDetail)
+    case .needsAttention(let reason):
+        return reason
     }
 }
 
 public func localizedHostSourceRow(
     _ row: HostSourceRowPresentation,
     language: ClaudioAppLanguage
-) -> HostSourceRowPresentation {
+) -> LocalizedHostSourceRowPresentation {
+    let l10n = ClaudioL10n(language: language)
     let title = localizedHostName(row.host, language: language)
-    let readiness = localizedHostReadiness(row, language: language)
-    let detail = localizedHostDetail(row, language: language)
+    let readinessKey: ClaudioL10nKey
+    switch row.status {
+    case .ready: readinessKey = .hostReady
+    case .awaitingActivation: readinessKey = .hostConfigured
+    case .legacy: readinessKey = .hostLegacy
+    case .notConnected: readinessKey = .hostNotConnected
+    case .needsAttention: readinessKey = .hostNeedsAttention
+    }
+    let readiness = l10n.format(
+        readinessKey, Int64(row.supportedCount), Int64(row.totalCount))
+    let detail = localizedHostSourceRowDetail(row.detail, language: language)
     let separator = localizedHostSeparator(language)
-    return HostSourceRowPresentation(
+    return LocalizedHostSourceRowPresentation(
         host: row.host,
         title: title,
         readinessText: readiness,
@@ -116,7 +120,7 @@ public func localizedHostSourceRow(
 public func localizedHostSourceRows(
     _ rows: [HostSourceRowPresentation],
     language: ClaudioAppLanguage
-) -> [HostSourceRowPresentation] {
+) -> [LocalizedHostSourceRowPresentation] {
     rows.map { localizedHostSourceRow($0, language: language) }
 }
 

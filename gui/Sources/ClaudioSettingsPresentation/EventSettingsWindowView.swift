@@ -714,7 +714,7 @@ struct EventSettingsWindowView: View {
                             !WorkspaceSurfaceEligibility.verified.contains(surface)
                                 ? l10n.text(.workspaceEvidencePending)
                                 : localizedSourceRow.map {
-                                    "\($0.readinessText) · \($0.supportedCount.map(String.init) ?? "—")/\($0.totalCount.map(String.init) ?? "—")"
+                                    "\($0.readinessText) · \($0.coverageText)"
                                 } ?? l10n.text(.workspaceDisconnected)
                         )
                         .font(.caption).foregroundColor(.secondary)

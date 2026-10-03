@@ -1457,22 +1457,6 @@
         }
       }
     },
-    "host.workbuddy.conflict-detail": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A WorkBuddy hook conflicts with a Claudio entry"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "检测到与 Claudio 条目冲突的 WorkBuddy hook"
-          }
-        }
-      }
-    },
     "event.task-start": {
       "localizations": {
         "en": {
