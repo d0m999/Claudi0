@@ -17,6 +17,9 @@ public final class FocusRequestCoordinator<Target: Hashable>: ObservableObject {
     /// focus policy" rather than an explicit control identity.
     @Published public private(set) var requestedTarget: Target?
 
+    // @Published emits in willSet, so synchronous subscribers must validate against the
+    // issued revision instead of the still-previous value of requestRevision.
+    private var issuedRevision: UInt64 = 0
     private var consumedThroughRevision: UInt64 = 0
     private var returnFocusDebts: [Target] = []
 
@@ -27,15 +30,17 @@ public final class FocusRequestCoordinator<Target: Hashable>: ObservableObject {
     @discardableResult
     public func requestFocus(_ target: Target?) -> UInt64 {
         requestedTarget = target
-        requestRevision &+= 1
-        return requestRevision
+        issuedRevision &+= 1
+        let revision = issuedRevision
+        requestRevision = revision
+        return revision
     }
 
     /// Exactly-once consumption of the latest issued request. A stale or already-consumed
     /// revision returns false, so ordinary view recomputation cannot steal focus back.
     @discardableResult
     public func consumeRequest(_ revision: UInt64) -> Bool {
-        guard revision == requestRevision, revision > consumedThroughRevision else {
+        guard revision == issuedRevision, revision > consumedThroughRevision else {
             return false
         }
         consumedThroughRevision = revision
@@ -44,7 +49,7 @@ public final class FocusRequestCoordinator<Target: Hashable>: ObservableObject {
 
     /// Drops an unconsumed request whose target left the screen before the view applied it.
     public func cancelPendingRequest() {
-        consumedThroughRevision = requestRevision
+        consumedThroughRevision = issuedRevision
         requestedTarget = nil
     }
 

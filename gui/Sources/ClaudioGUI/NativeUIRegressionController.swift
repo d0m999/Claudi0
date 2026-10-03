@@ -334,10 +334,11 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         panel.contentView = NSHostingView(
             rootView: PanelView(
                 audioEnvironment: environment, configFile: configFile,
-                lockFile: root.appendingPathComponent("config.lock"), focusCoordinator: focus,
+                panelModel: fixture.eventSettingsModel,
+                soundScopeSelection: fixture.eventSettingsModel.soundScopeSelection,
+                focusCoordinator: focus,
                 hostIntegrations: fixture.hostIntegrations, languageStore: preferences,
-                activityDiagnostics: fixture.activityDiagnostics, soundPackLibrary: library,
-                soundPacksRefreshCoordinator: refreshes, eventNoticeModel: notices,
+                activityDiagnostics: fixture.activityDiagnostics, eventNoticeModel: notices,
                 noticeNavigation: navigation, onAudibilityInputsChanged: {},
                 onOpenSettings: { [weak self] in self?.showSettings() },
                 onEditSoundScope: { [weak self] route in

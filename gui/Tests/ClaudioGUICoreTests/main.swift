@@ -173,6 +173,22 @@ if CommandLine.arguments.contains("--view-wiring") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--focus-scope-review") {
+    runFocusRequestCoordinatorSuites()
+    runPanelSettingsChoreographySuites()
+    runSoundScopeSelectionSuites()
+    runEventSettingsWindowSelectionSuites()
+    runWorkspaceDeletionPresentationSuites()
+    runSettingsNavigationSuites()
+    runIntegrationDestinationPresentationSuites()
+    await runIntegrationDestinationModelSuites()
+    runSoundPacksWindowAccessibilitySuites()
+    await runSettingsPresentationLifecycleSuites()
+    await runSoundPacksEditorViewSuites()
+    print("Focus and scope review: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
