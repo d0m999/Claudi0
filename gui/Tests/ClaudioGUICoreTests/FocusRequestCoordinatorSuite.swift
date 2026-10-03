@@ -1,4 +1,5 @@
 import ClaudioGUICore
+import Combine
 import Foundation
 
 /// Harness coverage for the single focus handshake owner. The six migrated call sites keep
@@ -39,6 +40,57 @@ func runFocusRequestCoordinatorSuites() {
         expect(
             !coordinator.consumeRequest(2) && coordinator.consumeRequest(3),
             "只有最新代次可消费：被跳过的中间请求不得复活")
+    }
+
+    suite("FocusRequestCoordinator：同步发布回调内可消费新代次及其精确目标") {
+        let coordinator = FocusRequestCoordinator<String>()
+        var receivedRevisions: [UInt64] = []
+        var receivedTargets: [String?] = []
+        let subscription = coordinator.$requestRevision.dropFirst().sink { revision in
+            receivedRevisions.append(revision)
+            receivedTargets.append(coordinator.requestedTarget)
+            expect(
+                coordinator.consumeRequest(revision),
+                "已挂载视图必须在同步发布回调内消费新请求")
+            expect(
+                !coordinator.consumeRequest(revision)
+                    && !coordinator.consumeRequest(revision - 1)
+                    && !coordinator.consumeRequest(revision + 1),
+                "同步回调也必须拒绝重复、陈旧和未发行代次")
+        }
+        coordinator.requestFocus("agent")
+        coordinator.requestFocus("agent")
+        coordinator.requestFocus(nil)
+        coordinator.requestFocus("editEvent")
+        expect(
+            receivedRevisions == [1, 2, 3, 4],
+            "同目标深链和默认焦点请求都必须同步交付")
+        expect(
+            receivedTargets == ["agent", "agent", nil, "editEvent"],
+            "回调消费到的目标必须属于本次发布的请求")
+        expect(
+            !coordinator.consumeRequest(4),
+            "已在发布回调消费的请求不得在 requestFocus 返回后再次消费")
+        withExtendedLifetime(subscription) {}
+    }
+
+    suite("FocusRequestCoordinator：同步发布回调内取消后不得复活该请求") {
+        let coordinator = FocusRequestCoordinator<String>()
+        let subscription = coordinator.$requestRevision.dropFirst().sink { revision in
+            coordinator.cancelPendingRequest()
+            expect(
+                coordinator.requestedTarget == nil && !coordinator.consumeRequest(revision),
+                "同步取消必须清除目标并消费正在发行的代次")
+        }
+        let first = coordinator.requestFocus("first")
+        expect(
+            !coordinator.consumeRequest(first),
+            "发布完成后不得复活回调内取消的请求")
+        let second = coordinator.requestFocus("second")
+        expect(
+            !coordinator.consumeRequest(second),
+            "后续发布也必须取消本次请求而非上一代次")
+        withExtendedLifetime(subscription) {}
     }
 
     suite("FocusRequestCoordinator：取消未消费请求与清除目标各有明确语义") {

@@ -144,26 +144,69 @@ func runPanelSettingsChoreographySuites() {
     }
 
     suite("Choreography：handback 应用解析——自身与陈旧 PID 都不得激活") {
+        let captured = PanelHandbackApplication(
+            processIdentifier: 700, bundleIdentifier: "dev.test.host", launchTimestamp: 100)
         let resolved = resolvePanelHandbackApplication(
-            PanelHandbackApplication(processIdentifier: 700),
-            currentProcessIdentifier: 1000
-        ) { pid in pid == 700 ? "live-app" : nil }
-        expect(resolved == "live-app", "存活的外部应用必须解析出来")
+            captured,
+            currentProcessIdentifier: 1000,
+            lookup: { pid in pid == 700 ? captured : nil },
+            identityOf: { $0 })
+        expect(resolved == captured, "存活的原始应用实例必须解析出来")
         let stale = resolvePanelHandbackApplication(
-            PanelHandbackApplication(processIdentifier: 700),
-            currentProcessIdentifier: 1000
-        ) { _ in nil as String? }
-        expect(stale == nil, "进程已退化的陈旧 PID 不得激活任何东西")
+            captured,
+            currentProcessIdentifier: 1000,
+            lookup: { _ in nil as PanelHandbackApplication? },
+            identityOf: { $0 })
+        expect(stale == nil, "进程已退出的陈旧 PID 不得激活任何东西")
         let itself = resolvePanelHandbackApplication(
-            PanelHandbackApplication(processIdentifier: 1000),
-            currentProcessIdentifier: 1000
-        ) { pid in "pid-\(pid)" }
+            captured,
+            currentProcessIdentifier: 700,
+            lookup: { _ in captured },
+            identityOf: { $0 })
         expect(itself == nil, "当前进程绝不激活自己")
         let missing = resolvePanelHandbackApplication(
             nil as PanelHandbackApplication?,
-            currentProcessIdentifier: 1000
-        ) { pid in "pid-\(pid)" }
+            currentProcessIdentifier: 1000,
+            lookup: { _ in captured },
+            identityOf: { $0 })
         expect(missing == nil, "没有 handback 债务时不解析")
+    }
+
+    suite("Choreography：handback 拒绝 PID 复用及无法确认的应用实例") {
+        let captured = PanelHandbackApplication(
+            processIdentifier: 700, bundleIdentifier: "dev.test.original", launchTimestamp: 100)
+        let replacements = [
+            PanelHandbackApplication(
+                processIdentifier: 700, bundleIdentifier: "dev.test.replacement",
+                launchTimestamp: 100),
+            PanelHandbackApplication(
+                processIdentifier: 700, bundleIdentifier: "dev.test.original",
+                launchTimestamp: 200),
+            PanelHandbackApplication(
+                processIdentifier: 701, bundleIdentifier: "dev.test.original",
+                launchTimestamp: 100),
+            PanelHandbackApplication(
+                processIdentifier: 700, bundleIdentifier: "dev.test.original"),
+        ]
+        for replacement in replacements {
+            let resolved = resolvePanelHandbackApplication(
+                captured,
+                currentProcessIdentifier: 1000,
+                lookup: { _ in replacement },
+                identityOf: { $0 })
+            expect(
+                resolved == nil,
+                "bundle、PID、启动时间不符或缺失时，不得回交焦点：\(replacement)")
+        }
+
+        let unknownLaunch = PanelHandbackApplication(
+            processIdentifier: 700, bundleIdentifier: "dev.test.original")
+        let resolved = resolvePanelHandbackApplication(
+            unknownLaunch,
+            currentProcessIdentifier: 1000,
+            lookup: { _ in unknownLaunch },
+            identityOf: { $0 })
+        expect(resolved == nil, "捕获和查找都缺少启动身份时，不能仅凭 PID 与 bundle 相同激活")
     }
 
     suite("Choreography：状态栏转发点击保护只在三项当前事实同时成立时启动") {

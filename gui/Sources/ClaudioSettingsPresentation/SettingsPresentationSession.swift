@@ -49,6 +49,7 @@ package final class SettingsPresentationSession: ObservableObject {
     private var aboutSurfaceCancellable: AnyCancellable?
     private var aiGenerationCancellable: AnyCancellable?
     private var eventPresentationCancellable: AnyCancellable?
+    private var soundScopeSelectionCancellable: AnyCancellable?
 
     package init(
         dependencies: SettingsPresentationDependencies,
@@ -175,6 +176,17 @@ package final class SettingsPresentationSession: ObservableObject {
                             candidateGenerationID: self.dependencies.aiCueViewModel.generation?.id)
                     }
                     self.publishProjection()
+                }
+            }
+        soundScopeSelectionCancellable = dependencies.eventSettingsModel.soundScopeSelection
+            .$projection
+            .removeDuplicates { previous, next in
+                previous.scope == next.scope && previous.writeTarget == next.writeTarget
+            }
+            .dropFirst()
+            .sink { [weak self] projection in
+                MainActor.assumeIsolated {
+                    self?.synchronizeEventSoundScope(projection)
                 }
             }
     }
@@ -478,6 +490,27 @@ package final class SettingsPresentationSession: ObservableObject {
         case .destination:
             break
         }
+    }
+
+    private func synchronizeEventSoundScope(_ projection: SoundScopeSelection.Projection) {
+        // Explicit route transactions retain their event and captured target. Outside those
+        // transactions, a shared selection change must reach the retained page immediately.
+        // Use the publisher payload because @Published delivers it before its storage changes.
+        guard !isPerformingTransaction else { return }
+        let route = EventSettingsWindowRoute(
+            scope: projection.scope,
+            workspaceTarget: projection.writeTarget,
+            unavailableRequestedScopeStoredValue:
+                projection.isAvailable && projection.staleness == .current
+                ? nil : projection.scope.storedValue)
+        guard eventSettingsSelection.route != route else { return }
+        if lifecycleDestination == .eventsAndSounds {
+            dependencies.soundPacksEditorNativeEffects.stopPreview(
+                owner: dependencies.soundPacksEditorOwner)
+            dependencies.aiCueViewModel.endSession()
+            dependencies.soundPacksEditorOwner.updateAICueComposer(session: nil, generation: nil)
+        }
+        eventSettingsSelection.select(route)
     }
 
     private func activate(

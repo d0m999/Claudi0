@@ -1,14 +1,20 @@
 /// Application identity carried through the panel↔settings handback as a plain value, so the
 /// ADR 0022 choreography never touches `NSRunningApplication`. The AppKit edge resolves it
-/// back to a live application at activation time; a stale process identifier resolves to
-/// nothing instead of activating a reused process.
+/// back to the same live application instance at activation time. The launch timestamp
+/// distinguishes a reused PID, including a later launch of the same bundle.
 public struct PanelHandbackApplication: Equatable, Sendable {
     public let processIdentifier: Int32
     public let bundleIdentifier: String?
+    public let launchTimestamp: Double?
 
-    public init(processIdentifier: Int32, bundleIdentifier: String? = nil) {
+    public init(
+        processIdentifier: Int32,
+        bundleIdentifier: String? = nil,
+        launchTimestamp: Double? = nil
+    ) {
         self.processIdentifier = processIdentifier
         self.bundleIdentifier = bundleIdentifier
+        self.launchTimestamp = launchTimestamp
     }
 }
 
@@ -144,18 +150,23 @@ public struct PanelSettingsChoreography<Request> {
     }
 }
 
-/// Resolves a handback identity to a live application at activation time. The current process
-/// never activates itself, and an identity whose process no longer exists (stale PID) resolves
-/// to nothing through the caller's lookup.
+/// Resolves a handback identity to the same live application instance at activation time.
+/// Unknown launch identity, reused PIDs and the current process all fail closed.
 public func resolvePanelHandbackApplication<Application>(
     _ identity: PanelHandbackApplication?,
     currentProcessIdentifier: Int32,
-    lookup: (Int32) -> Application?
+    lookup: (Int32) -> Application?,
+    identityOf: (Application) -> PanelHandbackApplication
 ) -> Application? {
-    guard let identity, identity.processIdentifier != currentProcessIdentifier else {
+    guard let identity, identity.processIdentifier > 0,
+        identity.processIdentifier != currentProcessIdentifier,
+        let launchTimestamp = identity.launchTimestamp, launchTimestamp.isFinite,
+        let application = lookup(identity.processIdentifier),
+        identityOf(application) == identity
+    else {
         return nil
     }
-    return lookup(identity.processIdentifier)
+    return application
 }
 
 /// ADR 0022 status-item protection starts only when all three current facts hold: Settings

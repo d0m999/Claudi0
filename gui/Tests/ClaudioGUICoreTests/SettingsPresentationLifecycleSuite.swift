@@ -221,6 +221,91 @@ func runSettingsPresentationLifecycleSuites() async {
             "显式工作区／事件深链接仍必须按可用性拒绝")
     }
 
+    suite("Settings shared sound selection：已打开页面跟随面板切换并结束旧目标活动") {
+        let rule = WorkspaceSoundRule(
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/shared-selection"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .destination(.eventsAndSounds), workspaceRules: [rule])
+        let session = fixture.session
+        let selection = fixture.eventSettingsSelection
+        let model = fixture.eventSettingsModel
+        let workspace = PanelSoundScopeID.workspace(rule.id)
+        let target = WorkspaceSoundWriteTarget(rule: rule)
+        let focusDebt = session.state.focusDebt
+        let routeRevision = session.state.explicitRouteRequestRevision
+        let configBefore = model.configState
+        fixture.beginEventTransientActivity()
+
+        // The menu panel changes this same app-lifetime controller, without navigating Settings.
+        model.selectSoundScope(workspace)
+
+        expect(
+            model.selectedSoundScope == workspace && selection.route.scope == workspace
+                && selection.route.workspaceTarget == target
+                && session.state.eventPresentation.route == selection.route
+                && selection.unavailableRequestedScopeStoredValue == nil,
+            "面板选择现有工作区后，已打开页面必须同步共享选择与钉定写目标，不能留下不可写的默认组")
+        expect(
+            selection.presentationState.previewState == .idle
+                && selection.presentationState.aiSessionState == .idle
+                && fixture.aiCueViewModel.session == nil,
+            "共享作用域切换必须结束旧目标的试听与 AI 会话")
+        if case .events(let editor) = fixture.soundPacksEditor.presentation.mode {
+            expect(editor.route == selection.route, "已激活 Events editor 必须跟随新作用域")
+        } else {
+            expect(false, "面板切换作用域后必须保留 Events editor")
+        }
+        expect(
+            session.state.focusDebt == focusDebt
+                && session.state.explicitRouteRequestRevision == routeRevision
+                && model.configState == configBefore,
+            "共享选择投影不能伪造导航、抢焦点或写入声音配置")
+
+        _ = session.send(.route(.events(scope: workspace, event: .stop)))
+        model.selectSoundScope(.global)
+        expect(
+            selection.route == EventSettingsWindowRoute(scope: .global)
+                && session.state.eventPresentation.route == selection.route
+                && session.state.routeResolution.route == .events(scope: .global, event: nil),
+            "从工作区事件深链切回默认组时，保留页面与外壳路由都必须跟随共享选择")
+    }
+
+    suite("Settings shared sound selection：配置重读不替换显式失效深链") {
+        let id = UUID(uuidString: "9E1E41B5-B256-4BE0-B6FC-F778E06086CB")!
+        let original = WorkspaceSoundRule(
+            id: id,
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/selection-old"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
+        let replacement = WorkspaceSoundRule(
+            id: id,
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/selection-new"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .destination(.eventsAndSounds), workspaceRules: [replacement])
+        let model = fixture.eventSettingsModel
+        model.selectSoundScope(.workspace(id))
+        _ = fixture.session.send(
+            .present(
+                .eventShortcut(
+                    EventSettingsWindowRoute(
+                        scope: .workspace(id), event: .stop,
+                        workspaceTarget: WorkspaceSoundWriteTarget(rule: original)))))
+        let unavailableRoute = fixture.eventSettingsSelection.route
+        var config = model.configState.resolvedConfig
+        config.workspaceRules = []
+        model.soundScopeSelection.applyConfig(config)
+
+        expect(
+            unavailableRoute.unavailableRequestedScopeStoredValue != nil
+                && fixture.eventSettingsSelection.route == unavailableRoute
+                && fixture.session.state.eventPresentation.route == unavailableRoute,
+            "同一选择的配置失效发布必须保留显式深链捕获的原目标与不可用原因")
+    }
+
     suite("Settings panel workspace shortcut：同 UUID 换绑保留旧目录并定位不可用说明") {
         let id = UUID(uuidString: "5DA1F0E5-488F-4EE1-8F20-EC0B75A3A74D")!
         let original = WorkspaceSoundRule(

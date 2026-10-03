@@ -61,7 +61,8 @@ extension PanelHandbackApplication {
     init(_ application: NSRunningApplication) {
         self.init(
             processIdentifier: application.processIdentifier,
-            bundleIdentifier: application.bundleIdentifier)
+            bundleIdentifier: application.bundleIdentifier,
+            launchTimestamp: application.launchDate?.timeIntervalSinceReferenceDate)
     }
 }
 
@@ -701,7 +702,8 @@ final class MenuBarController: NSObject {
                     NSRunningApplication(processIdentifier: processIdentifier).flatMap {
                         $0.isTerminated ? nil : $0
                     }
-                })
+                },
+                identityOf: { PanelHandbackApplication($0) })
         else { return }
 
         if #available(macOS 14.0, *) {
