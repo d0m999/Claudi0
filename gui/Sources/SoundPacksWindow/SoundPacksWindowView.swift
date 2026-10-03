@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 @MainActor
 package struct SoundPacksEditorSupplement {
     package var pageHeader: AnyView = AnyView(EmptyView())
-    package var scopePicker: AnyView = AnyView(EmptyView())
+    package var scopePicker: AnyView?
     package var serviceSummary: AnyView = AnyView(EmptyView())
     package var onLeaveEvent: @MainActor () -> Void = {}
     package var returnToScope: (@MainActor () -> Void)? = nil
@@ -642,7 +642,7 @@ private struct SoundPacksWindowContentView: View {
     }
 
     private var packSelector: some View {
-        HStack(spacing: 12) {
+        SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
             Picker(l10n.text(.panelSoundPackLabel), selection: selection) {
                 Text(l10n.text(.soundPacksSidebarNone)).tag(Optional<String>.none)
                 ForEach(activeSounds.packs) { card in
@@ -654,10 +654,10 @@ private struct SoundPacksWindowContentView: View {
             .focused($focusedTarget, equals: .packList)
             .disabled(activeSounds.packs.isEmpty)
             .accessibilityIdentifier("sound-packs.pack-list")
+            .soundPacksLayoutProbe("sound-packs.pack-list.control")
         }
-        .frame(minHeight: 29)
-        .modifier(SettingsSectionSurface())
-        .soundPacksLayoutProbe("sound-packs.selector.card")
+        .soundPacksLayoutProbe("sound-packs.pack-list.row")
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
         .soundPacksLayoutProbe("sound-packs.pack-list")
     }
 
@@ -699,11 +699,18 @@ private struct SoundPacksWindowContentView: View {
 
     @ViewBuilder
     private var overviewDetail: some View {
-        supplement.scopePicker
+        VStack(spacing: 0) {
+            if let scopePicker = supplement.scopePicker {
+                scopePicker
+                Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            }
+            packSelector
+        }
+        .modifier(SettingsSectionSurface(padding: 0))
+        .soundPacksLayoutProbe("sound-packs.selector.card")
         if localizedManagedScopeFailure != nil {
             managedScopeBar.modifier(SettingsSectionSurface())
         }
-        packSelector
         if let card = selectedCard {
             VStack(alignment: .leading, spacing: 16) {
                 detailHeader(card)
@@ -806,11 +813,16 @@ private struct SoundPacksWindowContentView: View {
                 Spacer(minLength: 12)
                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 33, alignment: .leading)
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(
+                maxWidth: .infinity, minHeight: SettingsAppearance.multilineControlRowHeight,
+                alignment: .leading
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .modifier(SettingsSectionSurface(padding: 14))
+        .modifier(SettingsSectionSurface(padding: 0))
         .accessibilityLabel(l10n.text(title))
         .accessibilityIdentifier(id)
     }
@@ -853,8 +865,9 @@ private struct SoundPacksWindowContentView: View {
                     )
                     .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).edit")
                 }
-                .padding(14)
-                .frame(minHeight: 61)
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
                 .soundPacksLayoutProbe("sound-packs.event-row.\(row.event.rawValue)")
                 if row.event != activeSounds.eventRows.last?.event {
                     Divider().padding(.horizontal, 14)
@@ -923,7 +936,9 @@ private struct SoundPacksWindowContentView: View {
                     )
                     .accessibilityIdentifier("sound-packs.star.\(card.id)")
                 }
-                .padding(14).frame(minHeight: 48)
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                .frame(minHeight: SettingsAppearance.controlRowHeight)
                 if card.id != activeSounds.packs.last?.id { Divider().padding(.horizontal, 14) }
             }
         }
@@ -1122,7 +1137,9 @@ private struct SoundPacksWindowContentView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }.frame(maxWidth: .infinity, alignment: .leading)
             content().frame(maxWidth: 270, alignment: .trailing)
-        }.padding(.vertical, 10).frame(minHeight: 61)
+        }
+        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+        .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
     }
 
     private func builtinCopyHelp(_ card: SoundPackEditorPackPresentation) -> String {
@@ -1364,10 +1381,13 @@ private struct SoundPacksWindowContentView: View {
             eventIdentity(row)
             Spacer(minLength: 12)
             eventControls(row)
+                .frame(maxWidth: 320, alignment: .trailing)
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+        .frame(
+            maxWidth: .infinity, minHeight: SettingsAppearance.controlRowHeight,
+            alignment: .leading
+        )
         .background {
             RoundedRectangle(cornerRadius: ClaudioTheme.Radius.row)
                 .fill(
@@ -1552,6 +1572,7 @@ private struct SoundPacksWindowContentView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .nativeMenuControl()
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: ClaudioTheme.Metrics.compactControlHeight)
             .focused($focusedTarget, equals: .eventAudio(row.event))
@@ -1611,6 +1632,7 @@ private struct SoundPacksWindowContentView: View {
                             "sound-packs.orphan.\(file.fileName).event.\(event.rawValue)")
                     }
                 }
+                .nativeMenuControl()
                 .disabled(file.assignments.isEmpty)
                 .frame(minHeight: ClaudioTheme.Metrics.compactControlHeight)
                 .focused(

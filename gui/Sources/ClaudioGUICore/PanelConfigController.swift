@@ -872,22 +872,6 @@ public final class PanelConfigController: ObservableObject {
         selectSoundScope(surface.map(PanelSoundScopeID.surface) ?? .global)
     }
 
-    /// Fail-closed projection for the Events & Sounds AI affordance. The controller already owns
-    /// the only coherent tuple of base config, effective surface profile, pack facts, and factory
-    /// identities, so the SwiftUI layer never reconstructs adoption authorization from labels.
-    public func aiCueAdoptionEligibility(for event: Event) -> AICueAdoptionEligibility {
-        guard case .operational = configState, surfaceSoundIssue == nil else {
-            return .ineligible(.writesStopped)
-        }
-        return ClaudioGUICore.aiCueAdoptionEligibility(
-            surface: selectedSurface,
-            event: event,
-            selectedPackID: config.selectedPack,
-            config: baseConfig,
-            packCards: packCards,
-            builtinPackIDs: builtinPackIDs)
-    }
-
     public func resetSelectedSurfaceOverrides() {
         guard let selectedSurface else { return }
         switch resetSurfaceSoundOverride(

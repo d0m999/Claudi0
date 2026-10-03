@@ -25,13 +25,14 @@ struct LoginItemSettingsSection: View {
         let loginItemStatusText = SettingsPresentationAnnouncement.Meaning.loginItemStatus(
             session.state.loginItemRegistration
         ).localizedSentence(language: session.state.language)
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(l10n.text(.settingsGeneralLoginItem.toggle))
                         .font(SettingsAppearance.font(.body))
                     Text(loginItemStatusText)
                         .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Toggle(l10n.text(.settingsGeneralLoginItem.toggle), isOn: enabledBinding)
                     .labelsHidden().toggleStyle(.switch)
@@ -40,8 +41,11 @@ struct LoginItemSettingsSection: View {
                     .accessibilityValue(loginItemStatusText)
                     .accessibilityIdentifier(SettingsPresentationAccessibilityID.loginItemToggle)
                     .soundPacksLayoutProbe(SettingsPresentationAccessibilityID.loginItemToggle)
-            }.frame(minHeight: 61)
-            Divider()
+            }
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
+            Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
             HStack(spacing: 16) {
                 Text(l10n.text(.settingsGeneralLoginItem.description))
                     .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
@@ -49,7 +53,10 @@ struct LoginItemSettingsSection: View {
                 Spacer(minLength: 8)
                 Button(l10n.text(.settingsNativeRecheck)) { session.send(.refreshLoginItemState) }
                     .accessibilityIdentifier("settings.general.login-item.recheck")
-            }.frame(minHeight: 48)
+            }
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(minHeight: SettingsAppearance.controlRowHeight)
 
             if session.state.loginItemRegistration == .requiresApproval {
                 Button(l10n.text(.settingsGeneralLoginItem.openSettings)) {
@@ -57,6 +64,8 @@ struct LoginItemSettingsSection: View {
                 }
                 .accessibilityHint(l10n.text(.settingsGeneralLoginItem.openSettingsHint))
                 .accessibilityIdentifier("settings.general.login-item.open-settings")
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
             }
 
             if let failure = session.state.loginItemFailure {
@@ -72,11 +81,15 @@ struct LoginItemSettingsSection: View {
                     }
                     .accessibilityIdentifier("settings.general.login-item.retry")
                 }
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
             }
 
             if session.state.platformActionFailure == .openLoginItemsSettings {
                 FailureRow(message: l10n.text(.settingsGeneralLoginItem.unavailable))
                     .accessibilityIdentifier("settings.general.login-item.settings-failure")
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
             }
         }
     }

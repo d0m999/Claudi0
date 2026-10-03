@@ -3016,7 +3016,7 @@ func runViewWiringSuites() {
         let fullWidthLeadingFrame = ".frame(maxWidth: .infinity, alignment: .leading)"
         expect(
             rowBody.contains(
-                ".padding(.horizontal, 8) .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading) .background"
+                ".frame( maxWidth: .infinity, minHeight: SettingsAppearance.controlRowHeight, alignment: .leading ) .background"
             ),
             "每张提示音卡片必须在绘制背景与描边前撑满详情列，不能随文件名产生不同外框宽度")
         expect(
@@ -3031,7 +3031,7 @@ func runViewWiringSuites() {
                 ".lineLimit(1) .fixedSize(horizontal: false, vertical: true) "
                     + fullWidthLeadingFrame)
                 && audioControlBody.contains(
-                    "} " + fullWidthLeadingFrame + " .frame(minHeight:"),
+                    "} .nativeMenuControl() " + fullWidthLeadingFrame + " .frame(minHeight:"),
             "映射菜单的标签与菜单表面都必须全宽，长短文件名不能改变可见控件宽度")
     }
 

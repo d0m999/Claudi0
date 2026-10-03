@@ -540,7 +540,10 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift": [".write("],
     // Dedicated DEBUG fixture only: atomic writes under one random private temporary root.
     // Launch identity and exclusion from normal/Release builds are checked by the GUI suite.
-    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": [".write("],
+    // Animation regression copies bundled resources into a new private fixture directory;
+    // fault/repair and restart preferences replace only fixture files with atomic writes.
+    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": [".copyItem(", ".write("],
+    "gui/Sources/ClaudioSettingsPresentation/SettingsFixtureDefaults.swift": [".write("],
     "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift": [".write("],
     // Claude/Codex 配置事务：0600 起步的私有 staging fd 完整写入并 fsync；一次性备份用
     // RENAME_EXCL 发布；卷不支持该 flag 时，同目录 link(2) 仍以 EEXIST 保证不覆盖。
@@ -648,7 +651,8 @@ private let contentReplacingWriteSites: [String: Int] = [
     "gui/Sources/ClaudioGUICore/AudioImport.swift": 1,
     "gui/Sources/ClaudioGUICore/AICuePackDraftTransaction.swift": 1,
     "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationFixtures.swift": 1,
-    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": 7,
+    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift": 10,
+    "gui/Sources/ClaudioSettingsPresentation/SettingsFixtureDefaults.swift": 1,
     "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift": 1,
 ]
 

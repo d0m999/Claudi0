@@ -3,8 +3,12 @@ import SwiftUI
 /// Settings-only palette and rhythm. Panel tokens retain their existing meaning.
 package enum SettingsAppearance {
     package static let pageTitle: Font = .system(size: 17, weight: .semibold)
-    package static let sectionGap: CGFloat = 28
-    package static let informationGap: CGFloat = 16
+    package static let sectionGap: CGFloat = 20
+    package static let informationGap: CGFloat = 12
+    package static let controlRowHeight: CGFloat = 38
+    package static let multilineControlRowHeight: CGFloat = 51
+    package static let controlRowHorizontalPadding: CGFloat = 14
+    package static let controlRowVerticalPadding: CGFloat = 7
     package static let eventGap: CGFloat = 0
     package static let groupRadius: CGFloat = 10
     package static let readingWidth: CGFloat = 780

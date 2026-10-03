@@ -91,6 +91,10 @@ private func usesSwiftSizeOptimization(_ command: String) -> Bool {
     command.contains("-Xswiftc -Osize")
 }
 
+private func usesSwiftFullLinkTimeOptimization(_ command: String) -> Bool {
+    command.contains("--experimental-lto-mode full")
+}
+
 private struct ReleaseExportSettingPlacement {
     let targetName: String
     let tool: String?
@@ -666,6 +670,23 @@ func runReleaseLayoutSuites() {
             "-Osize 只能出现在五条 Release ClaudioGUI 命令，不能扩散到 Debug、harness、"
                 + "LoginItem 或 helper；实际命令：\(optimizedCommands)")
 
+        expect(
+            devReleaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
+                && ciReleaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
+                && releaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization),
+            "dev、CI 与双架构 release 的五条 GUI 构建必须使用相同 SwiftPM full LTO 合同")
+        let ltoCommands = [devCommands, ciCommands, releaseCommands]
+            .flatMap { $0 }
+            .filter { $0.contains("--experimental-lto-mode") }
+        expect(
+            ltoCommands.count == 5
+                && ltoCommands.allSatisfy {
+                    isReleaseGUIBuildCommand($0) && usesSwiftSizeOptimization($0)
+                        && usesSwiftFullLinkTimeOptimization($0)
+                },
+            "full LTO 只能出现在五条 Release ClaudioGUI 命令，不能扩散到 Debug、harness、"
+                + "LoginItem 或 helper；实际命令：\(ltoCommands)")
+
         let packageDump = dumpGUIPackageDescription(repositoryRoot: root)
         guard packageDump.status == 0 else {
             expect(false, "SwiftPM 无法解析 GUI package：\(packageDump.output)")
@@ -734,6 +755,32 @@ func runReleaseLayoutSuites() {
             !isReleaseGUIBuildCommand(commands[1])
                 && !isReleaseGUIBuildCommand(commands[2]),
             "跨行 helper 与 Debug ClaudioGUI 的 -Osize 必须被识别为错误扩散")
+    }
+
+    suite("full LTO 合同跨行与参数调序仍会拒绝错误目标和模式") {
+        let commands = logicalCommandLines(
+            in: """
+                swift build --experimental-lto-mode full --product ClaudioGUI \
+                    --arch arm64 -Xswiftc -Osize -c release
+                swift build --experimental-lto-mode full -c release \
+                    --product claudio -Xswiftc -Osize
+                swift build --product ClaudioGUI --experimental-lto-mode full -c debug
+                swift build --product ClaudioGUI --experimental-lto-mode thin -c release
+                """
+        ).filter { $0.contains("--experimental-lto-mode") }
+        guard commands.count == 4 else {
+            expect(false, "fixture 的四条 LTO 命令都必须被归一化，实得 \(commands)")
+            return
+        }
+        expect(
+            isReleaseGUIBuildCommand(commands[0])
+                && usesSwiftFullLinkTimeOptimization(commands[0]),
+            "跨行且参数调序后的 Release ClaudioGUI 必须仍使用 full LTO")
+        expect(
+            !isReleaseGUIBuildCommand(commands[1])
+                && !isReleaseGUIBuildCommand(commands[2])
+                && !usesSwiftFullLinkTimeOptimization(commands[3]),
+            "helper、Debug 和 thin LTO 必须被识别为不满足 Release GUI full LTO 合同")
     }
 
     suite("Release 导出合同按 SwiftPM target 与配置绑定") {

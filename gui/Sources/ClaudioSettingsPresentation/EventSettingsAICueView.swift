@@ -2,6 +2,7 @@ import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
 import Foundation
+import SoundPacksWindow
 import SwiftUI
 
 @MainActor
@@ -52,31 +53,34 @@ struct EventSettingsAICueServiceCard: View {
                 }
             }
 
-            Picker(
-                l10n.text(.aiCueProviderLabel),
-                selection: Binding(
-                    get: { viewModel.providerProfileID },
-                    set: { profileID in
-                        try? viewModel.selectProviderProfile(profileID)
-                        Task {
-                            await viewModel.refreshCredentialStatus()
-                        }
-                    })
-            ) {
-                ForEach(viewModel.availableProviderProfiles, id: \.id) { profile in
-                    Text(l10n.text(profile.displayNameKey))
-                        .tag(profile.id)
+            SettingsControlRow(title: l10n.text(.aiCueProviderLabel)) {
+                Picker(
+                    l10n.text(.aiCueProviderLabel),
+                    selection: Binding(
+                        get: { viewModel.providerProfileID },
+                        set: { profileID in
+                            try? viewModel.selectProviderProfile(profileID)
+                            Task {
+                                await viewModel.refreshCredentialStatus()
+                            }
+                        })
+                ) {
+                    ForEach(viewModel.availableProviderProfiles, id: \.id) { profile in
+                        Text(l10n.text(profile.displayNameKey))
+                            .tag(profile.id)
+                    }
                 }
+                .disabled(
+                    viewModel.phase == .adopting
+                        || viewModel.credentialActivity != .idle
+                )
+                .accessibilityLabel(l10n.text(.aiCueProviderLabel))
+                .accessibilityValue(l10n.text(viewModel.providerProfile.displayNameKey))
+                .accessibilityHint(capabilityText)
+                .accessibilityIdentifier("event-settings.ai-cue.provider-profile")
+                .soundPacksLayoutProbe("event-settings.ai-cue.provider-profile.control")
             }
-            .pickerStyle(.menu)
-            .disabled(
-                viewModel.phase == .adopting
-                    || viewModel.credentialActivity != .idle
-            )
-            .accessibilityLabel(l10n.text(.aiCueProviderLabel))
-            .accessibilityValue(l10n.text(viewModel.providerProfile.displayNameKey))
-            .accessibilityHint(capabilityText)
-            .accessibilityIdentifier("event-settings.ai-cue.provider-profile")
+            .soundPacksLayoutProbe("event-settings.ai-cue.provider-profile.row")
 
             Text(capabilityText)
                 .font(SettingsAppearance.font(.caption))
@@ -106,7 +110,7 @@ struct EventSettingsAICueServiceCard: View {
                     .accessibilityIdentifier("event-settings.ai-cue.credential-manage")
             }
         }
-        .settingsSectionSurface(padding: 18)
+        .settingsSectionSurface(padding: SettingsAppearance.controlRowHorizontalPadding)
         .tint(SettingsAppearance.accent(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("event-settings.ai-cue.service")

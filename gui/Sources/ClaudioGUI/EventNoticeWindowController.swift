@@ -27,11 +27,13 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private var presentationScreen: NSScreen?
     private var isInteractive = false
     private var renderedPhase: EventNoticePresentationPhase = .hidden
+    private let animationVisibility = EventAnimationVisibility(isVisible: false)
 
     init(
         model: EventNoticeModel,
         languageStore: ClaudioPreferences,
         navigation: SessionNavigationCoordinator,
+        eventAnimations: EventAnimationResources? = nil,
         onViewInPanel: @escaping @MainActor (EventNoticeAction?) -> Void,
         onWillBecomeInteractive: @escaping @MainActor () -> (@MainActor () -> Void)? = { nil }
     ) {
@@ -64,6 +66,8 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
                 model: model,
                 languageStore: languageStore,
                 navigation: navigation,
+                eventAnimations: eventAnimations,
+                animationVisibility: animationVisibility,
                 onViewSource: { [weak self] notice in
                     self?.viewSource(notice)
                 },
@@ -153,6 +157,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func clearForPrivacy() {
+        animationVisibility.isVisible = false
         focusRestoration = nil
         isInteractive = false
         window.allowsKeyboardInteraction = false
@@ -165,6 +170,10 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         guard isInteractive else { return }
         model.setKeyboardFocused(true)
+    }
+
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        animationVisibility.isVisible = window.isVisible && window.occlusionState.contains(.visible)
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -185,6 +194,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         let phaseChanged = renderedPhase != snapshot.phase
         renderedPhase = snapshot.phase
         guard (snapshot.current != nil || snapshot.isExpanded), snapshot.phase != .hidden else {
+            animationVisibility.isVisible = false
             navigation.cancelSourceApplication(owner: navigationOwner)
             // Privacy clears arrive through the runtime's shared model as well as this adapter.
             // End the old interaction here so its return target cannot survive into a new epoch.
@@ -204,6 +214,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             if !window.isVisible {
                 window.alphaValue = reduceMotion ? 1 : 0; window.orderFront(nil)
             }
+            animationVisibility.isVisible = window.occlusionState.contains(.visible)
             if reduceMotion {
                 window.alphaValue = 1
             } else if phaseChanged {
@@ -213,6 +224,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
                 }
             }
         case .exiting:
+            animationVisibility.isVisible = false
             if reduceMotion {
                 window.alphaValue = 0
                 window.orderOut(nil)

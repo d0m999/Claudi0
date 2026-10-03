@@ -290,7 +290,8 @@ struct ActivityDiagnosticsView: View {
                         .foregroundColor(.secondary)
                         .frame(width: 42, alignment: .trailing)
                 }
-                .frame(minHeight: 48)
+                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                .frame(minHeight: SettingsAppearance.controlRowHeight)
                 .accessibilityElement(children: .combine)
                 .accessibilityValue(
                     "\(countText(row.todayCount)), \(countText(row.sevenDayCount)), \(row.coverage.fractionText)"
@@ -298,7 +299,7 @@ struct ActivityDiagnosticsView: View {
                 .accessibilityIdentifier("settings.activity.event.\(row.event.cliName)")
             }
         }
-        .settingsSectionSurface()
+        .settingsSectionSurface(padding: SettingsAppearance.controlRowHorizontalPadding)
     }
 
     private var logSection: some View {

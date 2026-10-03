@@ -224,13 +224,14 @@ jobs:
           strip -x dist/bin/claudio
           chmod +x dist/bin/claudio
 
+      # Match dev-bundle.sh's SwiftPM full LTO size contract and retain all GUI resources.
       - name: Build GUI (arm64)
         working-directory: gui
-        run: swift build -c release --arch arm64 --product ClaudioGUI -Xswiftc -Osize
+        run: swift build -c release --arch arm64 --product ClaudioGUI --experimental-lto-mode full -Xswiftc -Osize
 
       - name: Build GUI (x86_64)
         working-directory: gui
-        run: swift build -c release --arch x86_64 --product ClaudioGUI -Xswiftc -Osize
+        run: swift build -c release --arch x86_64 --product ClaudioGUI --experimental-lto-mode full -Xswiftc -Osize
 
       - name: Build LoginItem (arm64)
         working-directory: gui

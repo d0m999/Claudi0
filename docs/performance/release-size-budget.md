@@ -11,6 +11,20 @@
   `-no_exported_symbols` 与完整 `strip` 后仍可能保留工具链拥有的
   `__mh_execute_header` Mach-O 主程序头哨兵，门禁只精确允许该哨兵。
 
+## 2026-10-03 事件动画的 GUI 链接优化（Issue #216）
+
+事件动画接入保留上述四项预算。GUI 的五条 Release 构建命令（本地装包两分支、CI
+编译、Release 双架构）统一使用 SwiftPM `--experimental-lto-mode full` 与 `-Osize`。
+该选项让 SwiftPM 为完整链接优化生成并链接 LLVM bitcode；不强制切换构建后端，不裁切
+动画资源，也不把可执行代码转入资源。helper、LoginItem、Debug 和测试 harness 不使用此选项。
+
+`ReleaseLayoutSuite` 校验五条命令的同一合同，并拒绝将选项扩散至其他目标或改为 `thin`。
+本地装包仍在完整 strip、移除临时链接器签名之后及最终 ad-hoc 签名之后分别执行原有门禁。
+该选项仍标记为 experimental。历史隔离候选 `3322be93` 在本机 Swift 6.4 / SDK 26.5
+下完成 arm64 ad-hoc 装包，签后 GUI 为 `5,619,136 B`；该数值仅对应当时的候选。
+原始本机日志另行保留。当前提交仍须重新运行装包与体积门禁；固定 CI 工具链和双架构
+发行没有运行，不能由历史本机 arm64 结果推定通过。
+
 ## 2026-10-02 设置官方原图资源增量（Issue #215）
 
 八页设置规格要求将固定原型中的四份官方原图原字节加入现有 GUI 资源包。四份 PNG 共

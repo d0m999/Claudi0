@@ -25,6 +25,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     let notices: EventNoticeModel
     let navigation: SessionNavigationCoordinator
     let generator: NativeRegressionGenerator
+    let eventAnimations: EventAnimationResources
     private let generationFacts = NativeRegressionGenerationFacts()
     private let library: SoundPackLibrary
     private let refreshes: SoundPacksRefreshCoordinator
@@ -57,8 +58,32 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         let defaults = SettingsFixtureDefaults(
             file: root.appendingPathComponent("preferences.plist"))
+        let restartFile = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-animation-regression-restart.plist")
+        var restored = false
+        if let data = try? Data(contentsOf: restartFile), data.count < 65_536,
+            let resume = try? PropertyListSerialization.propertyList(from: data, format: nil)
+                as? [String: Any],
+            resume["bundle"] as? String == Bundle.main.bundlePath,
+            let saved = resume["preferences"] as? Data,
+            let values = try? PropertyListSerialization.propertyList(from: saved, format: nil)
+                as? [String: Any]
+        {
+            for key in [EventAnimationPreferences.defaultsKey, ClaudioAppLanguage.defaultsKey] {
+                if let value = values[key] { defaults.set(value, forKey: key) }
+            }
+            restored = true
+            try? FileManager.default.removeItem(at: restartFile)
+        }
         preferences = ClaudioPreferences(defaults: defaults)
-        preferences.setLanguage(.zhHans)
+        if !restored { preferences.setLanguage(.zhHans) }
+        let animationDirectory = root.appendingPathComponent("EventAnimations")
+        guard
+            let packagedAnimations = hostIconResourceBundle.resourceURL?.appendingPathComponent(
+                "EventAnimations")
+        else { throw EventAnimationResourceFailure.unavailable }
+        try FileManager.default.copyItem(at: packagedAnimations, to: animationDirectory)
+        eventAnimations = EventAnimationResources(directory: animationDirectory)
         configFile = root.appendingPathComponent("config.json")
         let integrations = root.appendingPathComponent("integrations", isDirectory: true)
         let receiptStore = HostHookReceiptStore(
@@ -243,6 +268,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             preferences: preferences,
             eventNoticeModel: notices, noticeNavigation: navigation,
             activityDiagnostics: diagnostics, productImages: makeSettingsProductImages(),
+            eventAnimations: eventAnimations,
             nativeEffects: SoundPacksEditorNativeEffectsDispatcher(
                 adapter: SystemSoundPacksEditorNativeEffectsAdapter()))
         settings = SettingsWindowController(session: fixture.session)
@@ -326,6 +352,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         controls.orderFrontRegardless()
         banner = EventNoticeWindowController(
             model: notices, languageStore: preferences, navigation: navigation,
+            eventAnimations: eventAnimations,
             onViewInPanel: { [weak self] action in self?.showPanel(action: action) })
         statusItem = NSStatusBar.system.statusItem(withLength: 26)
         statusItem?.button?.title = "UI"
@@ -392,6 +419,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             fixture.eventSettingsModel.objectWillChange, fixture.aiCueViewModel.objectWillChange,
             fixture.integrationsModel.objectWillChange,
             fixture.activityDiagnostics.objectWillChange,
+            preferences.objectWillChange,
+            fixture.session.animationPreview.objectWillChange,
             focus.objectWillChange,
         ] {
             publisher.sink { [weak self] _ in
@@ -520,6 +549,15 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "revision": captureRevision,
             "destination": fixture.session.state.routeResolution.destination.rawValue,
             "language": preferences.language.rawValue, "reminders": notices.snapshot.totalCount,
+            "eventAnimation": [
+                "style": preferences.eventAnimation.style.rawValue,
+                "effectiveStyle": preferences.eventAnimation.effectiveStyle.rawValue,
+                "showsCharacter": preferences.eventAnimation.showsCharacter,
+                "usesStaticExpression": preferences.eventAnimation.usesStaticExpression,
+                "previewActive": fixture.session.animationPreview.isActive,
+                "previewEvent": fixture.session.animationPreview.event.rawValue,
+                "previewRevision": fixture.session.animationPreview.replayRevision,
+            ],
             "readingCount": notices.readingSnapshot.records.count,
             "readingOpen": notices.readingSnapshot.isOpen,
             "banner": notices.bannerSnapshot.phase.rawValue,
@@ -547,6 +585,50 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         try? JSONSerialization.data(
             withJSONObject: readback, options: [.sortedKeys, .prettyPrinted]
         ).write(to: root.appendingPathComponent("readback.json"), options: .atomic)
+    }
+
+    func breakAnimationResources() {
+        preferences.selectEventAnimationStyle(.mechanicalDuck)
+        for name in ["sprites.png", "sprites-dark.png"] {
+            try? Data("broken fixture atlas".utf8).write(
+                to: root.appendingPathComponent("EventAnimations/E/\(name)"), options: .atomic)
+        }
+        Task {
+            for dark in [false, true] {
+                await eventAnimations.load(.mechanicalDuck, dark: dark, retry: true)
+            }
+            capture()
+        }
+    }
+
+    func restoreAnimationResources() {
+        guard
+            let packagedAnimations = hostIconResourceBundle.resourceURL?.appendingPathComponent(
+                "EventAnimations/E")
+        else { return }
+        for name in ["sprites.png", "sprites-dark.png"] {
+            if let data = try? Data(contentsOf: packagedAnimations.appendingPathComponent(name)) {
+                try? data.write(
+                    to: root.appendingPathComponent("EventAnimations/E/\(name)"), options: .atomic)
+            }
+        }
+        capture()
+    }
+
+    func restartAnimationFixture() {
+        guard
+            let preferences = try? Data(
+                contentsOf: root.appendingPathComponent("preferences.plist")),
+            let data = try? PropertyListSerialization.data(
+                fromPropertyList: ["bundle": Bundle.main.bundlePath, "preferences": preferences],
+                format: .binary, options: 0)
+        else { return }
+        do {
+            try data.write(
+                to: FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "claudio-animation-regression-restart.plist"), options: .atomic)
+            NSApp.terminate(nil)
+        } catch { return }
     }
 
     private func receiptHistoryReadback() -> [String: Any] {
@@ -633,6 +715,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 Button("Show settings") { owner.showSettings() }
                 Button("Return to settings") { owner.showSettings(request: .route(nil)) }
                 Button("Show panel") { owner.showPanel(action: nil) }
+                Button("Break animation resources") { owner.breakAnimationResources() }
+                Button("Restore animation resources") { owner.restoreAnimationResources() }
+                Button("Restart animation fixture") { owner.restartAnimationFixture() }
                 Button("Unknown-source reminder") { owner.notice() }
                 Button("Verified-source reminder") { owner.notice(verified: true) }
                 Button("Update reminder") { owner.notice(updated: true) }

@@ -1,3 +1,4 @@
+import ClaudioGUIComponents
 import ClaudioGUICore
 import Foundation
 import SoundPacksWindow
@@ -6,6 +7,7 @@ import SoundPacksWindow
 /// Native factories remain in the executable; this value only retains their typed products.
 package struct SettingsPresentationDependencies {
     package let productImages: SettingsProductImages
+    package let eventAnimations: EventAnimationResources
     package let preferences: ClaudioPreferences
     package let loginItemSettings: LoginItemSettingsModel
     package let dynamicQuietPolicy: DynamicQuietPolicyController
@@ -40,9 +42,11 @@ package struct SettingsPresentationDependencies {
         eventNoticeHealth: EventNoticeHealthStore? = nil,
         eventNoticeModel: EventNoticeModel? = nil,
         noticeNavigation: SessionNavigationCoordinator? = nil,
-        productImages: SettingsProductImages = .empty
+        productImages: SettingsProductImages = .empty,
+        eventAnimations: EventAnimationResources? = nil
     ) {
         self.productImages = productImages
+        self.eventAnimations = eventAnimations ?? EventAnimationResources()
         self.preferences = preferences
         self.loginItemSettings = loginItemSettings
         self.dynamicQuietPolicy = dynamicQuietPolicy

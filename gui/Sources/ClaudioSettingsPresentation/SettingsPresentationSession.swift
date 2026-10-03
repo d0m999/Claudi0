@@ -23,6 +23,7 @@ package final class SettingsPresentationSession: ObservableObject {
     /// exactly one request; an explicit payload (today only the event-animation entry's return
     /// focus) overrides the pure policy in `settingsWindowRequestedFocusTarget`.
     package let destinationFocusRequests = FocusRequestCoordinator<SettingsWindowFocusTarget>()
+    package let animationPreview = EventAnimationPreviewSession()
 
     private var preferenceSnapshot: ClaudioPreferenceSnapshot
     private var loginProjection: LoginItemSettingsProjection
@@ -96,6 +97,12 @@ package final class SettingsPresentationSession: ObservableObject {
             .sink { [weak self] snapshot in
                 MainActor.assumeIsolated {
                     guard let self else { return }
+                    if self.animationPreview.isActive,
+                        self.preferenceSnapshot.eventAnimation.style
+                            != snapshot.eventAnimation.style
+                    {
+                        self.animationPreview.replay()
+                    }
                     self.preferenceSnapshot = snapshot
                     self.publishProjection()
                 }
@@ -390,11 +397,19 @@ package final class SettingsPresentationSession: ObservableObject {
         }
 
         let previousLifecycleDestination = lifecycleDestination
+        let returnsToAnimationEntry =
+            routeResolution.route == .notifications(.eventAnimation)
+            && requestedRoute == .destination(.notifications)
         routeResolution = resolved
         if resolved.failure == nil {
             applyRoute(requestedRoute, eventShortcut: eventShortcut)
         }
         activeDestination = resolved.destination
+        if case .notifications(.eventAnimation) = resolved.route, resolved.failure == nil {
+            animationPreview.activate()
+        } else {
+            animationPreview.deactivate()
+        }
         if resolved.failure == nil {
             if let previousLifecycleDestination,
                 previousLifecycleDestination != resolved.destination
@@ -408,8 +423,10 @@ package final class SettingsPresentationSession: ObservableObject {
                 requestsFocus: true)
         }
         explicitRouteRequestRevision &+= 1
+        let focusDebtRevision = destinationFocusRequests.requestFocus(
+            returnsToAnimationEntry ? .eventAnimationEntry : nil)
         focusDebt = SettingsFocusDebt(
-            revision: explicitRouteRequestRevision,
+            revision: focusDebtRevision,
             destination: resolved.destination)
         if resolved.failure == nil {
             dependencies.preferences.setLastSettingsDestination(resolved.destination)
@@ -503,7 +520,7 @@ package final class SettingsPresentationSession: ObservableObject {
                     session: nil,
                     generation: nil)
             }
-        case .destination:
+        case .destination, .notifications:
             break
         }
     }
@@ -689,6 +706,11 @@ package final class SettingsPresentationSession: ObservableObject {
         guard windowPhase != phase else { return .unchanged }
         isPerformingTransaction = true
         windowPhase = phase
+        if phase == .hidden || phase == .closing {
+            animationPreview.deactivate()
+        } else if routeResolution.route == .notifications(.eventAnimation) {
+            animationPreview.activate()
+        }
         if phase == .key {
             refreshLoginItem()
         }
@@ -703,6 +725,7 @@ package final class SettingsPresentationSession: ObservableObject {
         guard isPresented else { return .unchanged }
         isPerformingTransaction = true
         windowPhase = .closing
+        animationPreview.deactivate()
         if let lifecycleDestination {
             deactivate(lifecycleDestination, windowIsClosing: true)
         }

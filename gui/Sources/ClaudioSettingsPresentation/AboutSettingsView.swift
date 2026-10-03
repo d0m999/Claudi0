@@ -19,7 +19,8 @@ struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             identity
-            resources.settingsSectionSurface()
+            resources.settingsSectionSurface(
+                padding: SettingsAppearance.controlRowHorizontalPadding)
             diagnostics.settingsSectionSurface()
 
             if let feedback = model.feedback {
@@ -101,7 +102,10 @@ struct AboutSettingsView: View {
                             Label(presentation.name, systemImage: presentation.icon)
                             Spacer(minLength: 12)
                             Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
-                        }.frame(minHeight: 48).contentShape(Rectangle())
+                        }
+                        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                        .frame(minHeight: SettingsAppearance.controlRowHeight)
+                        .contentShape(Rectangle())
                     }.buttonStyle(.plain)
                         .accessibilityHint(
                             l10n.format(
@@ -166,7 +170,9 @@ struct AboutSettingsView: View {
             Text(value ?? unknown)
                 .textSelection(.enabled)
         }
-        .padding(.horizontal, 14).frame(minHeight: 48)
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+        .frame(minHeight: SettingsAppearance.controlRowHeight)
         .accessibilityElement(children: .combine)
     }
 

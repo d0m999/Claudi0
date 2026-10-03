@@ -145,6 +145,7 @@ package enum SettingsPresentationFixtures {
         noticeNavigation: SessionNavigationCoordinator? = nil,
         activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil,
         productImages: SettingsProductImages = .empty,
+        eventAnimations: EventAnimationResources? = nil,
         nativeEffects injectedNativeEffects: SoundPacksEditorNativeEffectsDispatcher? = nil
     ) -> SettingsPresentationFixture {
         let temporaryRoot = temporaryParent.appendingPathComponent(
@@ -335,7 +336,7 @@ package enum SettingsPresentationFixtures {
                 aiCueViewModel: aiCueViewModel,
                 eventNoticeModel: eventNoticeModel,
                 noticeNavigation: noticeNavigation,
-                productImages: productImages),
+                productImages: productImages, eventAnimations: eventAnimations),
             actions: SettingsPresentationActions(
                 handler: { actionRecorder.perform($0) },
                 onEventAudibilityInputsChanged: {

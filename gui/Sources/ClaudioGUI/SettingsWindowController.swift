@@ -182,6 +182,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        guard let window, notification.object as? NSWindow === window else { return }
+        let visible = window.isVisible && window.occlusionState.contains(.visible)
+        _ = settingsPresentationSession.send(
+            .windowPhaseChanged(
+                visible ? (window.isKeyWindow ? .key : .visibleNonKey) : .hidden))
+    }
+
     private func takeFocusRestoration() -> (@MainActor () -> Void)? {
         guard let restoration = focusRestoration else { return nil }
         focusRestoration = nil
@@ -196,6 +204,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             "frameWidth": window.frame.width, "frameHeight": window.frame.height,
             "backingScale": window.backingScaleFactor,
             "appearance": window.effectiveAppearance.name.rawValue,
+            "firstResponder": window.firstResponder.map { String(reflecting: type(of: $0)) }
+                ?? "none",
+            "firstResponderIdentifier": (window.firstResponder as? NSView)?
+                .accessibilityIdentifier() ?? "none",
+            "fullKeyboardAccess": NSApp.isFullKeyboardAccessEnabled,
+            "windowPhase": String(describing: settingsPresentationSession.state.windowPhase),
+            "focusDebt": settingsPresentationSession.state.focusDebt?.revision ?? 0,
         ]
     }
 

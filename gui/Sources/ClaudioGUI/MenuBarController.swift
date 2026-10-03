@@ -211,6 +211,7 @@ final class MenuBarController: NSObject {
             providerPreferences: aiCueRuntime.providerPreferences)
         let dynamicQuietObserver = DynamicQuietSystemObserver()
         let eventNoticeRuntime = EventNoticeRuntime()
+        let eventAnimations = makeEventAnimationResources()
         let noticeNavigation = SessionNavigationCoordinator(
             model: eventNoticeRuntime.model,
             openApplication: SourceApplicationAdapter.openApplication)
@@ -218,6 +219,7 @@ final class MenuBarController: NSObject {
             model: eventNoticeRuntime.model,
             languageStore: languageStore,
             navigation: noticeNavigation,
+            eventAnimations: eventAnimations,
             onViewInPanel: { [weak actionRouter] action in
                 actionRouter?.owner?.openNoticeInPanel(action)
             },
@@ -245,7 +247,8 @@ final class MenuBarController: NSObject {
                 eventNoticeHealth: eventNoticeRuntime.health,
                 eventNoticeModel: eventNoticeRuntime.model,
                 noticeNavigation: noticeNavigation,
-                productImages: makeSettingsProductImages()),
+                productImages: makeSettingsProductImages(),
+                eventAnimations: eventAnimations),
             actions: makeSystemSettingsPresentationActions(
                 onEventAudibilityInputsChanged: { [weak actionRouter] in
                     actionRouter?.audibilityInputsChanged()

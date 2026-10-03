@@ -349,7 +349,7 @@ struct EventSettingsWindowView: View {
     }
 
     private var scopeSelector: some View {
-        HStack(spacing: 12) {
+        SettingsControlRow(title: l10n.text(.settingsDestinationEventsAndSounds)) {
             Picker(
                 l10n.text(.settingsDestinationEventsAndSounds),
                 selection: Binding(
@@ -364,10 +364,11 @@ struct EventSettingsWindowView: View {
             }
             .accessibilityIdentifier("workspace.scope-selector")
             .focused($focusedTarget, equals: .scope(selection.route.scope))
-
+            .soundPacksLayoutProbe("workspace.scope-selector.control")
         }
-        .frame(minHeight: 29)
-        .settingsSectionSurface()
+        .soundPacksLayoutProbe("workspace.scope-selector.row")
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+        .settingsSectionSurface(padding: 0)
         .soundPacksLayoutProbe("workspace.scope-selector.card")
     }
 
@@ -455,8 +456,13 @@ struct EventSettingsWindowView: View {
                         VStack(spacing: 0) {
                             ForEach(events) { event in
                                 eventRow(event)
-                                    .padding(14)
-                                    .frame(minHeight: 61)
+                                    .padding(
+                                        .horizontal, SettingsAppearance.controlRowHorizontalPadding
+                                    )
+                                    .padding(
+                                        .vertical, SettingsAppearance.controlRowVerticalPadding
+                                    )
+                                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
                                     .soundPacksLayoutProbe(
                                         "workspace.event-row.\(event.event.rawValue)"
                                     )
@@ -564,38 +570,44 @@ struct EventSettingsWindowView: View {
     private var soundControls: some View {
         let scope = selection.route.scope
         let workspaceTarget = model.selectedWorkspaceTarget
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 8) {
             Text(current?.name ?? l10n.text(.workspaceUnavailable))
                 .font(SettingsAppearance.font(.sectionTitle))
                 .accessibilityAddTraits(.isHeader)
-            Picker(
-                l10n.text(.panelSoundPackLabel),
-                selection: Binding(
-                    get: { model.config.selectedPack },
-                    set: {
-                        guard model.selectedSoundScope == scope else { return }
-                        previewSequence.cancel()
-                        player.stop()
-                        previewSuccessTokens.removeAll()
-                        let retry = EventSettingsWriteRetry(
-                            scope: scope, workspaceDirectory: workspaceTarget?.directory,
-                            operation: .pack(before: model.config.selectedPack, requested: $0))
-                        selection.clearConflictReadback()
-                        _ = model.switchPack(to: $0)
-                        selection.noteWriteResult(retry, using: model)
-                        selection.clearPreviewFailure()
-                        onAudibilityInputsChanged()
-                    })
-            ) {
-                if !model.allSoundPacks.contains(where: { $0.id == model.config.selectedPack }) {
-                    Text(model.config.selectedPack).tag(model.config.selectedPack)
+            SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
+                Picker(
+                    l10n.text(.panelSoundPackLabel),
+                    selection: Binding(
+                        get: { model.config.selectedPack },
+                        set: {
+                            guard model.selectedSoundScope == scope else { return }
+                            previewSequence.cancel()
+                            player.stop()
+                            previewSuccessTokens.removeAll()
+                            let retry = EventSettingsWriteRetry(
+                                scope: scope, workspaceDirectory: workspaceTarget?.directory,
+                                operation: .pack(before: model.config.selectedPack, requested: $0))
+                            selection.clearConflictReadback()
+                            _ = model.switchPack(to: $0)
+                            selection.noteWriteResult(retry, using: model)
+                            selection.clearPreviewFailure()
+                            onAudibilityInputsChanged()
+                        })
+                ) {
+                    if !model.allSoundPacks.contains(where: { $0.id == model.config.selectedPack })
+                    {
+                        Text(model.config.selectedPack).tag(model.config.selectedPack)
+                    }
+                    ForEach(model.allSoundPacks, id: \.id) { pack in
+                        Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
+                            pack.id)
+                    }
                 }
-                ForEach(model.allSoundPacks, id: \.id) { pack in
-                    Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
-                        pack.id)
-                }
-            }.accessibilityIdentifier("event-settings.sound-pack-picker")
+                .accessibilityIdentifier("event-settings.sound-pack-picker")
                 .focused($focusedTarget, equals: .packPicker)
+                .soundPacksLayoutProbe("event-settings.sound-pack-picker.control")
+            }
+            .soundPacksLayoutProbe("event-settings.sound-pack-picker.row")
             Divider()
             EventSettingsMasterVolumeControl(
                 diskVolume: model.config.masterVolume, isEnabled: writable,
@@ -621,7 +633,7 @@ struct EventSettingsWindowView: View {
                 FailureRow(message: l10n.text(.workspacePackRepair))
                     .accessibilityIdentifier("workspace.pack.repair-reason")
             }
-        }.frame(minHeight: 64).settingsSectionSurface()
+        }.settingsSectionSurface(padding: SettingsAppearance.controlRowHorizontalPadding)
             .soundPacksLayoutProbe("workspace.configuration.card")
     }
 
@@ -1207,13 +1219,18 @@ private struct AddWorkspaceSoundRuleView: View {
                 Text(l10n.text(directory.kind == .git ? .workspaceGitScope : .workspacePlainScope))
                     .font(.caption)
             }
-            Picker(l10n.text(.panelSoundPackLabel), selection: $selectedPack) {
-                Text(l10n.text(.workspaceSelectPack)).tag("")
-                ForEach(model.allSoundPacks, id: \.id) { pack in
-                    Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
-                        pack.id)
+            SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
+                Picker(l10n.text(.panelSoundPackLabel), selection: $selectedPack) {
+                    Text(l10n.text(.workspaceSelectPack)).tag("")
+                    ForEach(model.allSoundPacks, id: \.id) { pack in
+                        Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
+                            pack.id)
+                    }
                 }
+                .accessibilityIdentifier("workspace.new.sound-pack-picker")
+                .soundPacksLayoutProbe("workspace.new.sound-pack-picker.control")
             }
+            .soundPacksLayoutProbe("workspace.new.sound-pack-picker.row")
             HStack {
                 Text(l10n.text(.panelMasterVolume))
                 Slider(value: $volume, in: 0...1).accessibilityLabel(l10n.text(.panelMasterVolume))

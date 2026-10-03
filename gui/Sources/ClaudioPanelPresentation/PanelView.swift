@@ -783,28 +783,39 @@ public struct PanelView: View {
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
             VStack(spacing: 8) {
-                Picker(
-                    l10n.text(.panelSoundPackLabel),
-                    selection: Binding(
-                        get: { panelModel.config.selectedPack },
-                        set: {
-                            _ = panelModel.switchPack(to: $0); onAudibilityInputsChanged()
-                        })
-                ) {
-                    if !panelModel.allSoundPacks.contains(where: {
-                        $0.id == panelModel.config.selectedPack
-                    }) {
-                        Text(panelModel.config.selectedPack).tag(panelModel.config.selectedPack)
+                HStack(spacing: 8) {
+                    Text(l10n.text(.panelSoundPackLabel))
+                        .accessibilityHidden(true)
+                        .layoutPriority(1)
+                    Spacer(minLength: 8)
+                    Picker(
+                        l10n.text(.panelSoundPackLabel),
+                        selection: Binding(
+                            get: { panelModel.config.selectedPack },
+                            set: {
+                                _ = panelModel.switchPack(to: $0); onAudibilityInputsChanged()
+                            })
+                    ) {
+                        if !panelModel.allSoundPacks.contains(where: {
+                            $0.id == panelModel.config.selectedPack
+                        }) {
+                            Text(panelModel.config.selectedPack).tag(panelModel.config.selectedPack)
+                        }
+                        ForEach(panelModel.allSoundPacks, id: \.id) { pack in
+                            Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName)
+                                .tag(
+                                    pack.id)
+                        }
                     }
-                    ForEach(panelModel.allSoundPacks, id: \.id) { pack in
-                        Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
-                            pack.id)
-                    }
-                }.padding(.horizontal, 9).padding(.top, 7)
+                    .labelsHidden()
+                    .nativeMenuControl()
+                    .frame(maxWidth: 176, alignment: .trailing)
                     .disabled(!panelModel.soundControlsEnabled)
                     .accessibilityLabel(l10n.text(.panelSoundPackLabel))
                     .accessibilityIdentifier("panel.workspace.pack-picker")
                     .focused($focusedTarget, equals: .soundPackPicker)
+                }
+                .padding(.horizontal, 9).padding(.top, 7)
                 MasterVolumeRow(
                     diskVolume: panelModel.config.masterVolume,
                     isEnabled: masterVolumeEnabled && panelModel.soundControlsEnabled,

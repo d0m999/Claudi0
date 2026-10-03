@@ -23,12 +23,14 @@ elif [[ $# -ne 0 ]]; then
 fi
 
 gui_build() {
+    # SwiftPM full LTO reduces GUI code size and preserves bundled resources.
     if [[ "$GUI_NATIVE_HOST_CARD_PROBE" == true ]]; then
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
-            -Xswiftc -Osize -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE "$@"
+            --experimental-lto-mode full -Xswiftc -Osize \
+            -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE "$@"
     else
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
-            -Xswiftc -Osize "$@"
+            --experimental-lto-mode full -Xswiftc -Osize "$@"
     fi
 }
 

@@ -192,15 +192,16 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.locator('[data-pref="launchLogin"]').click()
         settings_state = self.page.evaluate("[S.pane, S.prefs.launchLogin, S.returnToPanel]")
         self.page.locator("#mbIcon").click()
-        activity = self.page.locator("#actBtn")
-        activity.scroll_into_view_if_needed()
-        box = activity.bounding_box()
+        control = self.page.locator('[data-mute="stop"]')
+        original = control.get_attribute("aria-pressed")
+        control.scroll_into_view_if_needed()
+        box = control.bounding_box()
         x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
-        self.assertTrue(activity.evaluate(
+        self.assertTrue(control.evaluate(
             "(el, p) => el.contains(document.elementFromPoint(p.x, p.y))", {"x": x, "y": y}
         ), "the visible panel control must own its hit target")
         self.page.mouse.click(x, y)
-        self.assertEqual(activity.get_attribute("aria-expanded"), "true")
+        self.assertNotEqual(control.get_attribute("aria-pressed"), original)
         self.assertTrue(self.page.locator("#window").is_visible())
         self.assertEqual(self.page.evaluate("[S.pane, S.prefs.launchLogin, S.returnToPanel]"), settings_state)
 
@@ -298,17 +299,19 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.page.locator("#newPackBtn").click()
                 self.assertNotEqual(name.input_value(), "Evening cue")
 
-    def test_zero_activity_keeps_four_visible_hollow_segments(self):
-        self.open(panel="1")
-        self.page.evaluate("""S.activity = true;
-            S.usage.today = {taskStart: 0, stop: 0, stopFailure: 0, notification: 0, subagentStop: 0};
-            render();""")
-        segments = self.page.locator(".act-bar > span")
-        self.assertEqual(segments.count(), 4)
-        for segment in segments.all():
-            self.assertGreater(segment.bounding_box()["width"], 0)
-            self.assertEqual(segment.evaluate("el => getComputedStyle(el).backgroundColor"), "rgba(0, 0, 0, 0)")
-            self.assertEqual(segment.evaluate("el => getComputedStyle(el).borderTopStyle"), "solid")
+    def test_panel_activity_is_static_and_zero_counts_remain_readable(self):
+        for lang in ["zh", "en"]:
+            with self.subTest(lang=lang):
+                self.open(panel="1", lang=lang)
+                self.page.evaluate("""S.usage.today = {taskStart: 0, stop: 0, stopFailure: 0, notification: 0, subagentStop: 0};
+                    S.usage.week = {...S.usage.today}; render();""")
+                summary = self.page.locator("#activitySummary")
+                self.assertEqual(summary.inner_text(), "今日 0 次 · 近 7 日 0 次" if lang == "zh" else "0 today · 0 last 7 days")
+                self.assertEqual(summary.evaluate("el => el.tagName"), "DIV")
+                self.assertIsNone(summary.get_attribute("tabindex"))
+                self.assertEqual(self.page.locator("#actBtn, #activityContent, .act-bar").count(), 0)
+                self.assertEqual(self.page.locator("#popover [id^='event-source-']").count(), 0)
+                self.assertEqual(self.page.locator("#popover .ev-reason").count(), 0)
 
     def test_sidebar_width_follows_the_actual_window_boundary(self):
         self.open(win="1", pane="general")

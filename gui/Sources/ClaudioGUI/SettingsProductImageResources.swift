@@ -12,7 +12,7 @@ func makeSettingsProductImages() -> SettingsProductImages {
             let image = NSImage(contentsOf: url)
         {
             image.isTemplate = false
-            images[name] = image
+            images[name] = SettingsProductImages.normalized(image)
         }
     }
     return SettingsProductImages { host, dark in

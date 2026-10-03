@@ -131,6 +131,7 @@ let package = Package(
                 // SVG decoding. Bundle assembly must copy the generated *_ClaudioGUI.bundle.
                 .process("Resources/HostIcons"),
                 .copy("Resources/SettingsHostIcons"),
+                .copy("Resources/EventAnimations"),
             ],
             linkerSettings: [
                 .linkedFramework("Carbon"),

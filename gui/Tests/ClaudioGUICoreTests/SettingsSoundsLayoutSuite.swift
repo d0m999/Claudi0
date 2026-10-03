@@ -58,6 +58,29 @@ func runSettingsSoundsLayoutSuites() {
                                 abs(gap - ([4, 6].contains(index) ? 16 : 0)) < 1,
                                 "\(name) 三组侧栏间距：\(gap)")
                         }
+                        let menuRows: [(identifier: String, minimumHeight: CGFloat)]
+                        switch destination {
+                        case .general:
+                            menuRows = [("settings.general.language", 38)]
+                        case .eventsAndSounds:
+                            menuRows = [
+                                ("workspace.scope-selector", 38),
+                                ("event-settings.sound-pack-picker", 38),
+                            ]
+                        case .sounds:
+                            menuRows = [
+                                ("settings.sounds.management-scope", 51),
+                                ("sound-packs.pack-list", 38),
+                            ]
+                        default:
+                            menuRows = []
+                        }
+                        for menuRow in menuRows {
+                            expectSettingsMenuLayout(
+                                probe: probe, identifier: menuRow.identifier, name: name,
+                                minimumHeight: menuRow.minimumHeight,
+                                exactHeight: menuRow.minimumHeight == 38 ? 38 : nil)
+                        }
                         if destination == .eventsAndSounds || destination == .sounds {
                             let prefix = destination == .sounds ? "sound-packs" : "workspace"
                             let events = Event.allCases.compactMap {
@@ -81,7 +104,6 @@ func runSettingsSoundsLayoutSuites() {
                             if let selector = frames[
                                 "\(prefix).\(prefix == "workspace" ? "scope-selector" : "selector").card"
                             ] {
-                                expect(selector.height >= 48, "\(name) 选择器满足原生行最小高度")
                                 expect(
                                     colorsMatch(
                                         probe.rgb(
@@ -127,6 +149,69 @@ func runSettingsSoundsLayoutSuites() {
                 colorsMatch(
                     probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)),
                     dark ? [45, 45, 48] : [245, 245, 247]), "增强对比度保留实色功能组")
+        }
+    }
+
+    suite("设置原生菜单：长包名仍在紧凑行右侧且不挤出内容") {
+        let temporaryRoot = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-long-menu-layout-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: temporaryRoot) }
+        for language in [ClaudioAppLanguage.zhHans, .english] {
+            for dark in [false, true] {
+                let packName =
+                    language == .zhHans
+                    ? "这是一个用于确认声音包名称很长时仍然保持紧凑且不会挤出设置内容区域的名称"
+                    : "A deliberately long sound pack name that stays within its compact settings row"
+                let owner = SoundPacksEditorOwner.stateGalleryFixture(
+                    previewConfig: ClaudioConfig(selectedPack: "long-pack"),
+                    packCards: [
+                        PackCard(
+                            id: "long-pack", name: packName, isCC0: true,
+                            presentEvents: Set(Event.allCases), state: .complete,
+                            isSelected: true)
+                    ],
+                    selectedPackID: "long-pack",
+                    selectedEventRows: Event.allCases.map {
+                        EventRow(
+                            event: $0, coverage: .present(fileName: "\($0.cliName).mp3"),
+                            enabled: true)
+                    },
+                    environment: makeAudioImportEnvironment(
+                        userPacksDirectory: temporaryRoot.appendingPathComponent("packs")))
+                let fixture = SettingsPresentationFixtures.generalLogin(
+                    language: language, route: .sounds(.overview), soundPacksEditor: owner)
+                let probe = SettingsSoundsNativeLayoutProbe(
+                    session: fixture.session, size: NSSize(width: 960, height: 640),
+                    appearance: dark ? .darkAqua : .aqua)
+                defer { probe.close() }
+                expectSettingsMenuLayout(
+                    probe: probe, identifier: "sound-packs.pack-list",
+                    name: "长包名 \(language.rawValue) \(dark)", minimumHeight: 38,
+                    exactHeight: 38)
+                let selectedTitle = probe.menuSelectedTitle(identifier: "sound-packs.pack-list")
+                expect(
+                    selectedTitle == packName,
+                    "长包名可视觉截断，但原生菜单当前项仍保留完整名称，\(language.rawValue) \(dark)：\(String(describing: selectedTitle))"
+                )
+            }
+        }
+    }
+
+    suite("设置原生菜单：不可用服务选择仍保留中性紧凑呈现") {
+        for dark in [false, true] {
+            let fixture = SettingsPresentationFixtures.generalLogin(aiCueScenario: .adopting)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session, size: NSSize(width: 960, height: 640),
+                appearance: dark ? .darkAqua : .aqua)
+            defer { probe.close() }
+            expect(fixture.aiCueViewModel.phase == .adopting, "fixture 必须处于禁止更换服务的采用阶段")
+            expectSettingsMenuLayout(
+                probe: probe, identifier: "event-settings.ai-cue.provider-profile",
+                name: "不可用服务选择 \(dark)", minimumHeight: 38, exactHeight: 38,
+                scrollIntoView: true)
+            expect(
+                probe.menuIsEnabled(identifier: "event-settings.ai-cue.provider-profile") == false,
+                "采用期间实际挂载的服务下拉控件必须不可操作")
         }
     }
 
@@ -249,6 +334,48 @@ func runSettingsSoundsLayoutSuites() {
 }
 
 @MainActor
+private func expectSettingsMenuLayout(
+    probe: SettingsSoundsNativeLayoutProbe,
+    identifier: String,
+    name: String,
+    minimumHeight: CGFloat,
+    exactHeight: CGFloat? = nil,
+    scrollIntoView: Bool = false
+) {
+    let rowID = "\(identifier).row"
+    let controlID = "\(identifier).control"
+    if scrollIntoView, let control = SoundPacksLayoutRecorder.frames[controlID] {
+        expect(probe.scrollToVisible(control), "\(name) 下拉控件必须可通过原生滚动到达")
+    }
+    guard let row = SoundPacksLayoutRecorder.frames[rowID],
+        let control = SoundPacksLayoutRecorder.frames[controlID]
+    else {
+        expect(false, "\(name) 必须挂载设置行与下拉控件：\(identifier)")
+        return
+    }
+    expect(
+        row.height >= minimumHeight - 1
+            && (exactHeight.map { abs(row.height - $0) < 1 } ?? true),
+        "\(name) \(identifier) 紧凑行高度必须匹配文字层级：\(row)")
+    expect(
+        row.insetBy(dx: -1, dy: -1).contains(control),
+        "\(name) \(identifier) 下拉控件不得溢出设置行：\(row), \(control)")
+    expect(
+        abs(row.maxX - control.maxX) < 1,
+        "\(name) \(identifier) 下拉控件必须靠设置行右侧：\(row), \(control)")
+    expect(
+        control.width < row.width * 0.65,
+        "\(name) \(identifier) 下拉控件不得伸展占满标签后的剩余空间：\(control)")
+    guard let colors = probe.controlColorFractions(in: control) else {
+        expect(false, "\(name) \(identifier) 收起控件必须能采集实际绘制像素")
+        return
+    }
+    expect(
+        colors.neutral >= 0.9 && colors.accentBlue < 0.002,
+        "\(name) \(identifier) 控件底、文字与箭头必须使用中性色，灰像素 \(colors.neutral)，蓝像素 \(colors.accentBlue)")
+}
+
+@MainActor
 final class SettingsSoundsNativeLayoutProbe {
     private let window: UnconstrainedProbeWindow
     private let hostingView: NSHostingView<SettingsRootView>
@@ -306,6 +433,46 @@ final class SettingsSoundsNativeLayoutProbe {
     }
 
     var hasAttachedSheet: Bool { window.attachedSheet != nil }
+
+    func menuIsEnabled(identifier: String) -> Bool? {
+        nativeMenu(identifier: identifier)?.isEnabled
+    }
+
+    func menuSelectedTitle(identifier: String) -> String? {
+        nativeMenu(identifier: identifier)?.titleOfSelectedItem
+    }
+
+    private func nativeMenu(identifier: String) -> NSPopUpButton? {
+        guard let frame = SoundPacksLayoutRecorder.frames["\(identifier).control"] else {
+            return nil
+        }
+        func find(in view: NSView) -> NSPopUpButton? {
+            if let button = view as? NSPopUpButton {
+                let buttonFrame = hostingView.convert(button.bounds, from: button)
+                if frame.insetBy(dx: -1, dy: -1).contains(
+                    CGPoint(x: buttonFrame.midX, y: buttonFrame.midY))
+                {
+                    return button
+                }
+            }
+            return view.subviews.lazy.compactMap { find(in: $0) }.first
+        }
+        return find(in: hostingView)
+    }
+
+    func scrollToVisible(_ frame: CGRect) -> Bool {
+        func findReadingScroll(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView, scroll.bounds.width > 400 { return scroll }
+            return view.subviews.lazy.compactMap { findReadingScroll(in: $0) }.first
+        }
+        guard let scroll = findReadingScroll(in: hostingView),
+            let document = scroll.documentView
+        else { return false }
+        let target = document.convert(frame, from: hostingView)
+        _ = document.scrollToVisible(target)
+        refresh()
+        return scroll.documentVisibleRect.insetBy(dx: -1, dy: -1).contains(target)
+    }
 
     func scrollToEnd() -> Bool {
         var scrolls: [NSScrollView] = []
@@ -412,6 +579,38 @@ final class SettingsSoundsNativeLayoutProbe {
         return [color.redComponent, color.greenComponent, color.blueComponent].map {
             Int(($0 * 255).rounded())
         }
+    }
+
+    /// Inspect all drawn text, arrow and background pixels without depending on glyph positions.
+    /// The inset excludes the system focus ring, which remains allowed to use the accent color.
+    func controlColorFractions(in frame: CGRect) -> (neutral: Double, accentBlue: Double)? {
+        guard let bitmap = renderedBitmap()?.converting(to: .sRGB, renderingIntent: .default)
+        else { return nil }
+        let scaleX = CGFloat(bitmap.pixelsWide) / hostingView.bounds.width
+        let scaleY = CGFloat(bitmap.pixelsHigh) / hostingView.bounds.height
+        let interior = frame.insetBy(dx: 3, dy: 3)
+        guard hostingView.bounds.contains(interior), !interior.isEmpty else { return nil }
+        let minX = Int(ceil(interior.minX * scaleX))
+        let maxX = Int(floor(interior.maxX * scaleX))
+        let minY = Int(ceil(interior.minY * scaleY))
+        let maxY = Int(floor(interior.maxY * scaleY))
+        guard minX < maxX, minY < maxY else { return nil }
+        var total = 0
+        var neutral = 0
+        var accentBlue = 0
+        for y in minY..<maxY {
+            for x in minX..<maxX {
+                guard let color = bitmap.colorAt(x: x, y: y) else { continue }
+                let r = color.redComponent * 255
+                let g = color.greenComponent * 255
+                let b = color.blueComponent * 255
+                total += 1
+                if max(r, max(g, b)) - min(r, min(g, b)) <= 18 { neutral += 1 }
+                if b - r > 35 && b - g > 10 { accentBlue += 1 }
+            }
+        }
+        guard total > 0 else { return nil }
+        return (Double(neutral) / Double(total), Double(accentBlue) / Double(total))
     }
 
     private func renderedBitmap() -> NSBitmapImageRep? {

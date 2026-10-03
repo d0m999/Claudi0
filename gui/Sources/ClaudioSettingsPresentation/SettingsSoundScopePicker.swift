@@ -2,6 +2,7 @@ import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
+import SoundPacksWindow
 import SwiftUI
 
 @MainActor
@@ -24,7 +25,10 @@ struct SettingsSoundScopePicker: View {
         let scopes = panelSoundScopePresentations(
             sourceRows: [], config: model.configState.resolvedConfig,
             language: session.state.language)
-        VStack(alignment: .leading, spacing: 8) {
+        SettingsControlRow(
+            title: l10n.text(.settingsNativeManagementScope),
+            subtitle: l10n.text(.settingsNativeViewDoesNotApply)
+        ) {
             Picker(
                 l10n.text(.settingsNativeManagementScope),
                 selection: Binding(
@@ -43,11 +47,11 @@ struct SettingsSoundScopePicker: View {
                 }
                 ForEach(scopes) { item in Text(item.name).tag(item.scope) }
             }
+            .accessibilityLabel(l10n.text(.settingsNativeManagementScope))
             .accessibilityIdentifier("settings.sounds.management-scope")
-            Text(l10n.text(.settingsNativeViewDoesNotApply))
-                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            .soundPacksLayoutProbe("settings.sounds.management-scope.control")
         }
-        .settingsSectionSurface()
+        .soundPacksLayoutProbe("settings.sounds.management-scope.row")
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
     }
 }

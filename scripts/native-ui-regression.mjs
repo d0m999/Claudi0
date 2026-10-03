@@ -179,7 +179,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     const rows=destinations.map(id=>frames[`settings.sidebar.item.${id}`]);
     assert(rows.every(Boolean),'One or more mounted sidebar rows are unavailable');
     const sidebarGaps=rows.slice(1).map((row,i)=>row.y-rows[i].y-rows[i].height);
-    assert(sidebarGaps.every((gap,i)=>Math.abs(gap-([3,5].includes(i)?24:3))<1),`Sidebar group spacing differs: ${sidebarGaps}`);
+    assert(sidebarGaps.every((gap,i)=>Math.abs(gap-([3,5].includes(i)?16:0))<1),`Sidebar group spacing differs: ${sidebarGaps}`);
     const result={destination,background:colors.background,sidebarGaps,reading};
     if (destination==='events-and-sounds'||destination==='sounds') {
       const prefix=destination==='sounds'?'sound-packs':'workspace';

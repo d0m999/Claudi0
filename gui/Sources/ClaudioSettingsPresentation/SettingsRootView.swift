@@ -16,6 +16,7 @@ package struct SettingsRootView: View {
     @ObservedObject var eventNoticeHealth: EventNoticeHealthStore
     @ObservedObject var globalShortcutSettings: GlobalShortcutSettingsModel
     @ObservedObject var aboutSettings: AboutSettingsModel
+    @ObservedObject private var eventAnimations: EventAnimationResources
     let soundPacksEditorOwner: SoundPacksEditorOwner
     let soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher
     let eventSettingsModel: PanelConfigController
@@ -30,7 +31,6 @@ package struct SettingsRootView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @FocusState private var focusedTarget: SettingsWindowFocusTarget?
-    @State private var handledFocusDebtRevision: UInt64 = 0
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var destination: SettingsDestination {
@@ -47,6 +47,7 @@ package struct SettingsRootView: View {
         _globalShortcutSettings = ObservedObject(
             wrappedValue: dependencies.globalShortcutSettings)
         _aboutSettings = ObservedObject(wrappedValue: dependencies.aboutSettings)
+        _eventAnimations = ObservedObject(wrappedValue: dependencies.eventAnimations)
         soundPacksEditorOwner = dependencies.soundPacksEditorOwner
         soundPacksEditorNativeEffects = dependencies.soundPacksEditorNativeEffects
         eventSettingsModel = dependencies.eventSettingsModel
@@ -119,10 +120,12 @@ package struct SettingsRootView: View {
     private func synchronizeDestinationFocus(_ state: SettingsPresentationState) {
         guard state.windowPhase == .key,
             let debt = state.focusDebt,
-            debt.revision > handledFocusDebtRevision
+            settingsPresentationSession.destinationFocusRequests.consumeRequest(debt.revision)
         else { return }
-        handledFocusDebtRevision = debt.revision
-        if let target = settingsWindowRequestedFocusTarget(resolution: state.routeResolution) {
+        if let requested = settingsPresentationSession.destinationFocusRequests.requestedTarget {
+            focusedTarget = requested
+        } else if let target = settingsWindowRequestedFocusTarget(resolution: state.routeResolution)
+        {
             focusedTarget = target
         }
         _ = settingsPresentationSession.send(.acknowledgeFocus(revision: debt.revision))
@@ -252,7 +255,15 @@ package struct SettingsRootView: View {
                     onAudibilityInputsChanged: onEventAudibilityInputsChanged,
                     onAnnouncement: onAnnouncement)
             case .notifications:
-                standardDestination { notificationsSettings }
+                standardDestination {
+                    if case .notifications(.eventAnimation) = settingsPresentationSession.state
+                        .routeResolution.route
+                    {
+                        EventAnimationSettingsView(session: settingsPresentationSession)
+                    } else {
+                        notificationsSettings
+                    }
+                }
             case .sounds:
                 SettingsSoundsDestinationView(
                     aiCueViewModel: aiCueViewModel,
@@ -336,17 +347,22 @@ package struct SettingsRootView: View {
     }
 
     private var destinationTitle: some View {
-        Text(destination.localizedName(language: preferences.language))
-            .font(SettingsAppearance.pageTitle)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilitySortPriority(2)
-            .focusable()
-            .focused(
-                $focusedTarget,
-                equals: SettingsWindowFocusTarget.title(destination)
-            )
-            .accessibilityIdentifier("settings.title.\(destination.rawValue)")
-            .soundPacksLayoutProbe("settings.title.\(destination.rawValue)")
+        Text(
+            settingsPresentationSession.state.routeResolution.route
+                == .notifications(.eventAnimation)
+                ? l10n.text(.eventAnimationTitle)
+                : destination.localizedName(language: preferences.language)
+        )
+        .font(SettingsAppearance.pageTitle)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilitySortPriority(2)
+        .focusable()
+        .focused(
+            $focusedTarget,
+            equals: SettingsWindowFocusTarget.title(destination)
+        )
+        .accessibilityIdentifier("settings.title.\(destination.rawValue)")
+        .soundPacksLayoutProbe("settings.title.\(destination.rawValue)")
     }
 
     private var soundScopeReturnAction: (@MainActor () -> Void)? {
@@ -370,32 +386,36 @@ package struct SettingsRootView: View {
 
     private var generalSettings: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
-            SettingsSectionCard {
+            SettingsSectionCard(padding: 0) {
                 LoginItemSettingsSection(session: settingsPresentationSession)
             }
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Picker(
-                        l10n.text(.settingsGeneralLanguageTitle),
-                        selection: languageModeBinding
-                    ) {
-                        ForEach(ClaudioLanguageMode.allCases) { mode in
-                            Text(mode.localizedName(language: preferences.language))
-                                .tag(mode)
+            SettingsSectionCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    SettingsControlRow(title: l10n.text(.settingsGeneralLanguageTitle)) {
+                        Picker(
+                            l10n.text(.settingsGeneralLanguageTitle),
+                            selection: languageModeBinding
+                        ) {
+                            ForEach(ClaudioLanguageMode.allCases) { mode in
+                                Text(mode.localizedName(language: preferences.language))
+                                    .tag(mode)
+                            }
                         }
+                        .focused(
+                            $focusedTarget,
+                            equals: SettingsWindowFocusTarget.firstAction(.general)
+                        )
+                        .accessibilityLabel(l10n.text(.settingsGeneralLanguageTitle))
+                        .accessibilityValue(
+                            preferences.languageMode.localizedName(language: preferences.language)
+                        )
+                        .accessibilityHint(l10n.text(.settingsGeneralLanguageHint))
+                        .accessibilitySortPriority(1)
+                        .accessibilityIdentifier("settings.general.language")
+                        .soundPacksLayoutProbe("settings.general.language.control")
                     }
-                    .pickerStyle(.menu)
-                    .focused(
-                        $focusedTarget,
-                        equals: SettingsWindowFocusTarget.firstAction(.general)
-                    )
-                    .accessibilityLabel(l10n.text(.settingsGeneralLanguageTitle))
-                    .accessibilityValue(
-                        preferences.languageMode.localizedName(language: preferences.language)
-                    )
-                    .accessibilityHint(l10n.text(.settingsGeneralLanguageHint))
-                    .accessibilitySortPriority(1)
-                    .accessibilityIdentifier("settings.general.language")
+                    .soundPacksLayoutProbe("settings.general.language.row")
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
 
                     if preferences.languageMode == .system {
                         Label(
@@ -404,7 +424,10 @@ package struct SettingsRootView: View {
                                 preferences.language.selfName as NSString),
                             systemImage: "globe"
                         )
+                        .font(SettingsAppearance.font(.caption))
                         .foregroundColor(.secondary)
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
                         .accessibilityIdentifier(
                             "settings.general.language.system-projection")
                     }
@@ -431,21 +454,55 @@ package struct SettingsRootView: View {
 
     private var notificationsSettings: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(l10n.text(.settingsNotificationsBannerSection)).font(.headline)
-                        .accessibilityAddTraits(.isHeader)
+            SettingsSectionCard(padding: 0) {
+                EventAnimationActionButton(
+                    title: l10n.text(.eventAnimationTitle),
+                    identifier: "settings.notifications.event-animation",
+                    value: l10n.text(effectiveAnimationStyle.localizationKey),
+                    requestsFocus: settingsPresentationSession.destinationFocusRequests
+                        .requestedTarget == .eventAnimationEntry,
+                    action: {
+                        settingsPresentationSession.send(.route(.notifications(.eventAnimation)))
+                    }
+                ) {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(l10n.text(.eventAnimationTitle))
+                            Text(l10n.text(.eventAnimationDescription))
+                                .font(SettingsAppearance.font(.caption))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Text(l10n.text(effectiveAnimationStyle.localizationKey))
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("settings.animation.effective-style")
+                        Image(systemName: "chevron.right").accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
+            }
+            SettingsSectionCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    settingsGroupTitle(l10n.text(.settingsNotificationsBannerSection))
                     Toggle(isOn: eventSourcePromptBinding) {
-                        VStack(alignment: .leading, spacing: 5) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(l10n.text(.settingsNotificationsEventSourcePromptsTitle))
-                                .font(.headline)
+                                .font(SettingsAppearance.font(.body))
                             Text(l10n.text(.settingsNotificationsEventSourcePromptsDescription))
+                                .font(SettingsAppearance.font(.caption))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 61)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
                     .accessibilityValue(
                         l10n.text(
                             preferences.showsEventSourcePrompts
@@ -455,6 +512,7 @@ package struct SettingsRootView: View {
                     )
                     .accessibilityIdentifier("settings.notifications.event-source-prompts")
 
+                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     settingsStatusRow(
                         title: l10n.text(.settingsNativeReceiverStatus),
                         value: l10n.text(
@@ -476,27 +534,32 @@ package struct SettingsRootView: View {
                         .font(.footnote)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
                         .accessibilityIdentifier(
                             "settings.notifications.event-source-receiver-unavailable")
                     }
 
                 }
             }
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(l10n.text(.settingsNotificationsQuietSection)).font(.headline)
-                        .accessibilityAddTraits(.isHeader)
+            SettingsSectionCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    settingsGroupTitle(l10n.text(.settingsNotificationsQuietSection))
                     Toggle(isOn: focusQuietBinding) {
-                        VStack(alignment: .leading, spacing: 5) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(l10n.text(.settingsNotificationsFocusTitle))
-                                .font(.headline)
+                                .font(SettingsAppearance.font(.body))
                             Text(l10n.text(.settingsNotificationsFocusDescription))
+                                .font(SettingsAppearance.font(.caption))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 61)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
                     .focused(
                         $focusedTarget,
                         equals: SettingsWindowFocusTarget.firstAction(.notifications)
@@ -512,20 +575,27 @@ package struct SettingsRootView: View {
                         Button(l10n.text(.settingsNativeOpenFocusSettings)) {
                             settingsPresentationSession.send(
                                 .performPlatformAction(.openFocusSettings))
-                        }.accessibilityIdentifier("settings.notifications.focus-settings")
+                        }
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
+                        .accessibilityIdentifier("settings.notifications.focus-settings")
                     }
-                    Divider()
+                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     Toggle(isOn: calendarQuietBinding) {
-                        VStack(alignment: .leading, spacing: 5) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(l10n.text(.settingsNotificationsCalendarTitle))
-                                .font(.headline)
+                                .font(SettingsAppearance.font(.body))
                             Text(l10n.text(.settingsNotificationsCalendarDescription))
+                                .font(SettingsAppearance.font(.caption))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .toggleStyle(.switch)
-                    .frame(minHeight: 61)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
                     .accessibilityIdentifier("settings.notifications.calendar-toggle")
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCalendarPermissionTitle),
@@ -536,18 +606,21 @@ package struct SettingsRootView: View {
                         Button(l10n.text(.settingsNotificationsOpenCalendarPrivacy)) {
                             settingsPresentationSession.send(
                                 .performPlatformAction(.openCalendarPrivacySettings))
-                        }.accessibilityIdentifier("settings.notifications.calendar-privacy")
+                        }
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
+                        .accessibilityIdentifier("settings.notifications.calendar-privacy")
                     }
                 }
             }
 
-            SettingsSectionCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(l10n.text(.settingsNotificationsCurrentSection)).font(.headline)
-                        .accessibilityAddTraits(.isHeader)
+            SettingsSectionCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    settingsGroupTitle(l10n.text(.settingsNotificationsCurrentSection))
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCurrentReasonTitle),
                         value: dynamicQuietCurrentReasonText)
+                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsSnapshotHealthTitle),
                         value: snapshotHealthText)
@@ -597,9 +670,17 @@ package struct SettingsRootView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.notifications))
+        .task(id: "\(preferences.eventAnimation.effectiveStyle.rawValue)-\(colorScheme)") {
+            await eventAnimations.load(
+                preferences.eventAnimation.effectiveStyle, dark: colorScheme == .dark)
+        }
         .onChange(of: dynamicQuietPolicy.presentation) { _ in
             onAnnouncement(dynamicQuietAnnouncement)
         }
+    }
+
+    private var effectiveAnimationStyle: EventAnimationStyle {
+        eventAnimations.effectiveStyle(for: preferences.eventAnimation, dark: colorScheme == .dark)
     }
 
     private var focusQuietBinding: Binding<Bool> {
@@ -675,14 +756,25 @@ package struct SettingsRootView: View {
             snapshotHealthText as NSString)
     }
 
+    private func settingsGroupTitle(_ title: String) -> some View {
+        Text(title)
+            .font(SettingsAppearance.font(.body).weight(.semibold))
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     private func settingsStatusRow(title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 36) {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(title)
                 .foregroundColor(.secondary)
-            Spacer(minLength: 20)
+            Spacer(minLength: 12)
             Text(value)
                 .multilineTextAlignment(.trailing)
         }
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+        .frame(minHeight: SettingsAppearance.controlRowHeight)
         .accessibilityElement(children: .combine)
     }
 

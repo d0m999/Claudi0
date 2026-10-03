@@ -113,9 +113,17 @@ struct IntegrationsSettingsDestinationView: View {
                                         Spacer(minLength: 12)
                                         Image(systemName: "chevron.right").foregroundStyle(
                                             .secondary)
-                                    }.frame(minHeight: 33).contentShape(Rectangle())
+                                    }
+                                    .padding(
+                                        .horizontal, SettingsAppearance.controlRowHorizontalPadding
+                                    )
+                                    .padding(
+                                        .vertical, SettingsAppearance.controlRowVerticalPadding
+                                    )
+                                    .frame(minHeight: SettingsAppearance.controlRowHeight)
+                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain).settingsSectionSurface(padding: 14)
+                                .buttonStyle(.plain).settingsSectionSurface(padding: 0)
                                 .accessibilityIdentifier(
                                     "integrations.destination.open-capabilities")
                                 infoCallout
@@ -196,12 +204,13 @@ struct IntegrationsSettingsDestinationView: View {
     }
 
     private var agentSection: some View {
-        SettingsSectionCard {
+        SettingsSectionCard(padding: 0) {
             VStack(spacing: 0) {
                 ForEach(model.agentControls) { agent in
                     agentRow(agent)
                     if agent.host != model.agentControls.last?.host {
-                        Divider()
+                        Divider().padding(
+                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     }
                 }
             }
@@ -214,6 +223,7 @@ struct IntegrationsSettingsDestinationView: View {
             HStack(spacing: 12) {
                 if let image = productImages.image(agent.host, colorScheme == .dark) {
                     Image(nsImage: image).resizable().scaledToFit().frame(width: 27, height: 27)
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                         .accessibilityHidden(true)
                 }
                 Button {
@@ -222,7 +232,12 @@ struct IntegrationsSettingsDestinationView: View {
                     Text(agent.title)
                         .font(SettingsAppearance.font(.body).weight(.semibold))
                         .foregroundColor(SettingsAppearance.text(colorScheme))
-                        .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: SettingsAppearance.controlRowHeight
+                                - 2 * SettingsAppearance.controlRowVerticalPadding,
+                            alignment: .leading
+                        )
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -275,8 +290,9 @@ struct IntegrationsSettingsDestinationView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 5)
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(minHeight: SettingsAppearance.controlRowHeight)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(
@@ -286,11 +302,14 @@ struct IntegrationsSettingsDestinationView: View {
 
     private func connectionSection(_ facts: IntegrationDestinationHostFacts) -> some View {
         let section = integrationConnectionSectionPresentation(for: facts)
-        return SettingsSectionCard {
+        return SettingsSectionCard(padding: 0) {
             VStack(spacing: 0) {
                 ForEach(section.rows) { row in
                     connectionRow(row, facts: facts)
-                    if row.kind != .receiptHistory { Divider() }
+                    if row.kind != .receiptHistory {
+                        Divider().padding(
+                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    }
                 }
             }
         }
@@ -340,8 +359,9 @@ struct IntegrationsSettingsDestinationView: View {
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
-            .frame(minHeight: 61, alignment: .center)
-            .padding(.vertical, 5)
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(minHeight: SettingsAppearance.multilineControlRowHeight, alignment: .center)
             .focused($focusedTarget, equals: .connectionRow(row.kind))
             .accessibilityIdentifier("integrations.destination.row.\(row.kind.rawValue)"))
     }
@@ -469,7 +489,10 @@ struct IntegrationsSettingsDestinationView: View {
             Text(l10n.text(.settingsNativeCapabilities)).font(
                 SettingsAppearance.font(.sectionTitle)
             )
-            .accessibilityAddTraits(.isHeader).padding(14)
+            .accessibilityAddTraits(.isHeader)
+            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+            .frame(minHeight: SettingsAppearance.controlRowHeight)
             ForEach(Event.allCases, id: \.self) { event in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(localizedEventName(event, language: languageStore.language))
@@ -486,8 +509,13 @@ struct IntegrationsSettingsDestinationView: View {
                                 "integrations.destination.capability.\(receipt.id.rawValue)")
                     }
                 }
-                .fixedSize(horizontal: false, vertical: true).padding(14)
-                if event != Event.allCases.last { Divider().padding(.horizontal, 14) }
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                .frame(minHeight: SettingsAppearance.multilineControlRowHeight, alignment: .leading)
+                if event != Event.allCases.last {
+                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                }
             }
         }
         .settingsSectionSurface(padding: 0)

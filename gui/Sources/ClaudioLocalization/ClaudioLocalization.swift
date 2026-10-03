@@ -1424,7 +1424,61 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     package static let settingsNativePanelLimit: Self = "settings.native.panel-limit"
     package static let settingsNativePanelUnavailable: Self = "settings.native.panel-unavailable"
 
+    public static let eventAnimationTitle: Self = "event-animation.title"
+    public static let eventAnimationDescription: Self = "event-animation.description"
+    public static let eventAnimationOriginal: Self = "event-animation.original"
+    public static let eventAnimationMechanicalDuck: Self = "event-animation.mechanical-duck"
+    public static let eventAnimationPixelGhost: Self = "event-animation.pixel-ghost"
+    public static let eventAnimationBitcoin: Self = "event-animation.bitcoin"
+    public static let eventAnimationBack: Self = "event-animation.back"
+    public static let eventAnimationPreview: Self = "event-animation.preview"
+    public static let eventAnimationPreviewSubtitle: Self = "event-animation.preview-subtitle"
+    public static let eventAnimationPreviewIsolation: Self = "event-animation.preview-isolation"
+    public static let eventAnimationReplay: Self = "event-animation.replay"
+    public static let eventAnimationShowCharacter: Self = "event-animation.show-character"
+    public static let eventAnimationStaticExpression: Self = "event-animation.static-expression"
+    public static let eventAnimationSystemReducedMotion: Self =
+        "event-animation.system-reduced-motion"
+    public static let eventAnimationCurrentStyle: Self = "event-animation.current-style"
+    public static let eventAnimationSelectionKept: Self = "event-animation.selection-kept"
+    public static let eventAnimationSelected: Self = "event-animation.selected"
+    public static let eventAnimationUnselected: Self = "event-animation.unselected"
+    public static let eventAnimationPreferenceRecovery: Self = "event-animation.preference-recovery"
+    public static let eventAnimationResourceFallback: Self = "event-animation.resource-fallback"
+    public static let eventAnimationResourceUnavailable: Self =
+        "event-animation.resource-unavailable"
+    public static let eventAnimationResourceInvalidManifest: Self =
+        "event-animation.resource-invalid-manifest"
+    public static let eventAnimationResourceChecksum: Self = "event-animation.resource-checksum"
+    public static let eventAnimationResourceInvalidAtlas: Self =
+        "event-animation.resource-invalid-atlas"
+
     public static let allKnown: [Self] = [
+        .eventAnimationTitle,
+        .eventAnimationDescription,
+        .eventAnimationOriginal,
+        .eventAnimationMechanicalDuck,
+        .eventAnimationPixelGhost,
+        .eventAnimationBitcoin,
+        .eventAnimationBack,
+        .eventAnimationPreview,
+        .eventAnimationPreviewSubtitle,
+        .eventAnimationPreviewIsolation,
+        .eventAnimationReplay,
+        .eventAnimationShowCharacter,
+        .eventAnimationStaticExpression,
+        .eventAnimationSystemReducedMotion,
+        .eventAnimationCurrentStyle,
+        .eventAnimationSelectionKept,
+        .eventAnimationSelected,
+        .eventAnimationUnselected,
+        .eventAnimationPreferenceRecovery,
+        .eventAnimationResourceFallback,
+        .eventAnimationResourceUnavailable,
+        .eventAnimationResourceInvalidManifest,
+        .eventAnimationResourceChecksum,
+        .eventAnimationResourceInvalidAtlas,
+
         .settingsNativePanelLimit,
         .settingsNativePanelUnavailable,
         .settingsNativeCopyAndApplyTitle,

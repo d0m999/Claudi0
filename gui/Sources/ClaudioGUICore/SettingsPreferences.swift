@@ -17,6 +17,7 @@ public enum ClaudioPreferenceRecoveryIssue: String, Sendable, Hashable {
     case invalidSettingsDestination
     case invalidIntegrationSurface
     case invalidEventSourcePromptVisibility
+    case invalidEventAnimation
 }
 
 /// One atomic projection of the Settings preferences currently owned by Claudio. New preference
@@ -27,6 +28,7 @@ public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
     public fileprivate(set) var lastSettingsDestination: SettingsDestination
     public fileprivate(set) var lastIntegrationSurface: HostSurfaceID
     public fileprivate(set) var showsEventSourcePrompts: Bool
+    public fileprivate(set) var eventAnimation: EventAnimationPreferences
     public fileprivate(set) var recoveryIssues: Set<ClaudioPreferenceRecoveryIssue>
 
     public init(
@@ -35,6 +37,7 @@ public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
         lastSettingsDestination: SettingsDestination,
         lastIntegrationSurface: HostSurfaceID = .claudeCode,
         showsEventSourcePrompts: Bool = true,
+        eventAnimation: EventAnimationPreferences = .defaultValue,
         recoveryIssues: Set<ClaudioPreferenceRecoveryIssue> = []
     ) {
         self.languageMode = languageMode
@@ -42,6 +45,7 @@ public struct ClaudioPreferenceSnapshot: Sendable, Equatable {
         self.lastSettingsDestination = lastSettingsDestination
         self.lastIntegrationSurface = lastIntegrationSurface
         self.showsEventSourcePrompts = showsEventSourcePrompts
+        self.eventAnimation = eventAnimation
         self.recoveryIssues = recoveryIssues
     }
 }
@@ -61,6 +65,7 @@ public final class ClaudioPreferences: ObservableObject {
     }
     public var lastIntegrationSurface: HostSurfaceID { snapshot.lastIntegrationSurface }
     public var showsEventSourcePrompts: Bool { snapshot.showsEventSourcePrompts }
+    public var eventAnimation: EventAnimationPreferences { snapshot.eventAnimation }
     public var recoveryIssues: Set<ClaudioPreferenceRecoveryIssue> {
         snapshot.recoveryIssues
     }
@@ -118,6 +123,13 @@ public final class ClaudioPreferences: ObservableObject {
         let showsEventSourcePrompts =
             (eventSourcePromptObject as? Bool) ?? (eventSourcePromptObject == nil)
         var recoveryIssues: Set<ClaudioPreferenceRecoveryIssue> = []
+        let animationObject = defaults.object(forKey: EventAnimationPreferences.defaultsKey)
+        let animation = (animationObject as? Data).flatMap {
+            try? JSONDecoder().decode(EventAnimationPreferences.self, from: $0)
+        }
+        if animationObject != nil, animation == nil {
+            recoveryIssues.insert(.invalidEventAnimation)
+        }
         if languageObject != nil {
             if let languageRawValue {
                 if ClaudioLanguageMode(rawValue: languageRawValue) == nil {
@@ -161,6 +173,7 @@ public final class ClaudioPreferences: ObservableObject {
             lastSettingsDestination: destination,
             lastIntegrationSurface: integrationSurface,
             showsEventSourcePrompts: showsEventSourcePrompts,
+            eventAnimation: animation ?? .defaultValue,
             recoveryIssues: recoveryIssues)
 
         localeCancellable =
@@ -242,6 +255,24 @@ public final class ClaudioPreferences: ObservableObject {
         guard next != snapshot else { return }
         defaults.set(showsPrompts, forKey: Self.eventSourcePromptsDefaultsKey)
         snapshot = next
+    }
+
+    /// Only explicit user changes replace damaged or future stored data.
+    public func setEventAnimation(_ animation: EventAnimationPreferences) {
+        guard let data = try? JSONEncoder().encode(animation) else { return }
+        var next = snapshot
+        next.eventAnimation = animation
+        next.recoveryIssues.remove(.invalidEventAnimation)
+        guard next != snapshot else { return }
+        defaults.set(data, forKey: EventAnimationPreferences.defaultsKey)
+        snapshot = next
+    }
+
+    public func selectEventAnimationStyle(_ style: EventAnimationStyle) {
+        var next = eventAnimation
+        next.style = style
+        next.showsCharacter = true
+        setEventAnimation(next)
     }
 
     private func refreshSystemLanguage() {

@@ -9,6 +9,8 @@ public struct EventNoticeView: View {
     @ObservedObject private var model: EventNoticeModel
     @ObservedObject private var languageStore: ClaudioPreferences
     @ObservedObject private var navigation: SessionNavigationCoordinator
+    private let eventAnimations: EventAnimationResources
+    @ObservedObject private var animationVisibility: EventAnimationVisibility
     private let onViewSource: @MainActor (EventNoticeAction) -> Void
     private let onOpenSourceApplication: @MainActor (EventNoticeAction) -> Void
     private let onClose: @MainActor () -> Void
@@ -19,6 +21,8 @@ public struct EventNoticeView: View {
     public init(
         model: EventNoticeModel, languageStore: ClaudioPreferences,
         navigation: SessionNavigationCoordinator? = nil,
+        eventAnimations: EventAnimationResources? = nil,
+        animationVisibility: EventAnimationVisibility? = nil,
         onViewSource: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onOpenSourceApplication: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onCopySessionID: @escaping @MainActor (EventNoticeAction) -> Bool = { _ in false },
@@ -27,6 +31,8 @@ public struct EventNoticeView: View {
         self.model = model
         self.languageStore = languageStore
         self.navigation = navigation ?? SessionNavigationCoordinator(model: model)
+        self.eventAnimations = eventAnimations ?? EventAnimationResources()
+        self.animationVisibility = animationVisibility ?? EventAnimationVisibility()
         self.onViewSource = onViewSource
         self.onOpenSourceApplication = onOpenSourceApplication
         self.onClose = onClose
@@ -50,23 +56,22 @@ public struct EventNoticeView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             if let record = snapshot.current {
                 VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        ClaudioEventGlyph(event: record.event, size: 25).accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(
-                                EventNoticeProjection.primaryLine(
-                                    for: record, language: languageStore.language)
-                            )
-                            .font(.system(.body, design: .rounded).weight(.semibold)).lineLimit(1)
-                            Text(
-                                EventNoticeProjection.secondaryLine(
-                                    for: record, language: languageStore.language, now: context.date
-                                )
-                            )
-                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityElement(children: .combine)
+                    EventNoticeBannerContent(
+                        event: record.event,
+                        title: EventNoticeProjection.primaryLine(
+                            for: record, language: languageStore.language),
+                        subtitle: EventNoticeProjection.secondaryLine(
+                            for: record, language: languageStore.language, now: context.date),
+                        action: EventAnimationTimeline.action(for: record.event, kind: record.kind),
+                        preferences: languageStore.eventAnimation, resources: eventAnimations,
+                        reading: snapshot.readingTime
+                            ?? EventNoticeReadingTime(
+                                sampledUptime: model.presentationUptime, remaining: 0,
+                                isPaused: true, budget: 4),
+                        isVisible: animationVisibility.isVisible
+                            && (snapshot.phase == .entering || snapshot.phase == .visible),
+                        uptime: { model.presentationUptime }
+                    ) {
                         if record.kind.isAttention {
                             Button(actionTitle(record)) {
                                 guard let action = record.action else { return }

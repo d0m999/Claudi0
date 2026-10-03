@@ -138,6 +138,20 @@ if CommandLine.arguments.contains("--settings-native-states") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--event-animation")
+    || CommandLine.arguments.contains("--event-animation-layout")
+{
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runEventAnimationIntegrationSuites()
+        print("Event animation: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--question-intent") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
@@ -324,6 +338,12 @@ if CommandLine.arguments.contains("--ai-cue-pack-scoped") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-product-images") {
+    runSettingsProductImagesSuites()
+    print("Settings product images: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--settings-sounds-layout") {
     runSettingsNativeMigrationSuites()
     runSettingsSoundsLayoutSuites()
@@ -369,6 +389,7 @@ if CommandLine.arguments.contains("--panel-error-copy") {
 }
 
 await runReviewRepairSuites()
+await runEventAnimationIntegrationSuites()
 runOnboardingStateSuites()
 runLocalizationSuites()
 runAboutInformationSuites()
@@ -493,6 +514,7 @@ await runSettingsPresentationLifecycleSuites()
 runSettingsPresentationTargetSuites()
 runSettingsPresentationSliceSuites()
 runSettingsRootInteractionSuites()
+runSettingsProductImagesSuites()
 runSettingsSoundsLayoutSuites()
 runSettingsNativeMigrationSuites()
 runPreviewFixturesSuites()

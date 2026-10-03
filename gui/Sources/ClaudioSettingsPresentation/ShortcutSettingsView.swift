@@ -113,7 +113,9 @@ struct ShortcutSettingsView: View {
             }
         }
         .font(SettingsAppearance.font(.body))
-        .padding(14).frame(minHeight: 61)
+        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+        .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+        .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.shortcuts.\(action.rawValue)")
     }

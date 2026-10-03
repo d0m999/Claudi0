@@ -42,6 +42,7 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
     case integrations(IntegrationsSettingsRoute)
     case events(scope: PanelSoundScopeID, event: Event?)
     case sounds(SoundPacksWindowRoute)
+    case notifications(NotificationsSettingsRoute)
 
     public var destination: SettingsDestination {
         switch self {
@@ -49,6 +50,7 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
         case .integrations: .integrations
         case .events: .eventsAndSounds
         case .sounds: .sounds
+        case .notifications: .notifications
         }
     }
 
@@ -58,6 +60,8 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
         switch self {
         case .destination(let destination):
             return [destination.rawValue]
+        case .notifications(let route):
+            return [SettingsDestination.notifications.rawValue, route.rawValue]
         case .integrations(let route):
             return [SettingsDestination.integrations.rawValue, route.surface.rawValue]
                 + (route.detailsHost.map { [$0.rawValue] } ?? [])
@@ -199,7 +203,7 @@ public func resolveSettingsRoute(
     let failure: SettingsRouteFailure?
     var resolvedRoute = route
     switch route {
-    case .destination:
+    case .destination, .notifications:
         failure = nil
     case .integrations(let route):
         failure = settingsSurfaceFailure(
@@ -245,6 +249,10 @@ public func resolveSettingsRoute(
         }
     }
     return SettingsRouteResolution(route: resolvedRoute, failure: failure)
+}
+
+public enum NotificationsSettingsRoute: String, Sendable, Hashable {
+    case eventAnimation = "event-animation"
 }
 
 /// Integrations sub-navigation. `detailsHost` is retained only while it names the host that the
@@ -385,6 +393,7 @@ public enum SettingsWindowFocusTarget: Sendable, Equatable, Hashable {
     case routeFailure(SettingsDestination)
     case firstAction(SettingsDestination)
     case shortcutAction(GlobalShortcutAction)
+    case eventAnimationEntry
 }
 
 /// Embedded destinations own deep-link focus. The shell owns the Sounds overview title and
