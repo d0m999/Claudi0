@@ -791,9 +791,9 @@ func runManifestBindingSuites() async {
         }
     }
 
-    // MARK: - EventRowImportViewModel: import → bind, wired end to end
+    // MARK: - import → bind, wired end to end
 
-    await suite("EventRowImportViewModel: a successful drop imports AND binds to the row's event") {
+    await suite("AudioImportViewModel + bindEventToManifest: a successful drop imports AND binds to the event") {
         await withTempDirectory { root in
             let userPacks = root.appendingPathComponent("packs")
             writeFixture(
@@ -801,22 +801,27 @@ func runManifestBindingSuites() async {
                 to: userPacks.appendingPathComponent("my-pack/manifest.json"))
             let environment = makeEnvironment(userPacksDirectory: userPacks)
             let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .notification, importViewModel: importViewModel)
 
             let sourceURL = root.appendingPathComponent("source/chime.wav")
             writeFixture(validWAVData(), to: sourceURL)
-            await rowViewModel.handleDrop(sourceURL: sourceURL, suggestedFileName: "chime.wav")
+            let dropResult = await importViewModel.handleDrop(
+                requests: [
+                    AudioImportRequest(sourceURL: sourceURL, suggestedFileName: "chime.wav")
+                ])
 
             guard case .success = importViewModel.state else {
                 expect(false, "expected the import itself to succeed, got \(importViewModel.state)")
                 return
             }
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "expected the bind to succeed, got \(String(describing: rowViewModel.bindResult))"
-                )
+            guard let file = dropResult.accepted.first else {
+                expect(false, "expected the drop to accept the file")
+                return
+            }
+            let bindResult = bindEventToManifest(
+                event: .notification, fileName: file.fileName, packID: file.packID,
+                environment: environment)
+            guard case .success = bindResult else {
+                expect(false, "expected the bind to succeed, got \(bindResult)")
                 return
             }
 
@@ -826,310 +831,40 @@ func runManifestBindingSuites() async {
             expect(
                 rows.first { $0.event == .notification }?.coverage
                     == .present(fileName: "chime.wav"),
-                "after a real drop through the view-model, notification must recompute to .present,"
-                    + " got \(String(describing: rows.first { $0.event == .notification }?.coverage))"
+                "after a real drop plus a bind through the production APIs, notification must"
+                    + " recompute to .present, got"
+                    + " \(String(describing: rows.first { $0.event == .notification }?.coverage))"
             )
         }
     }
 
-    await suite("EventRowImportViewModel: a rejected import never attempts to bind") {
-        await withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            writeFixture(
-                #"{ "id": "my-pack", "events": {} }"#,
-                to: userPacks.appendingPathComponent("my-pack/manifest.json"))
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
-
-            let sourceURL = root.appendingPathComponent("source/evil.mp3")
-            writeFixture(evilShellScriptData(), to: sourceURL)
-            await rowViewModel.handleDrop(sourceURL: sourceURL, suggestedFileName: "evil.mp3")
-
-            guard case .reject = importViewModel.state else {
-                expect(false, "setup: the import must be rejected, got \(importViewModel.state)")
-                return
-            }
-            expect(
-                rowViewModel.bindResult == nil,
-                "a rejected import must never even attempt a bind, got"
-                    + " \(String(describing: rowViewModel.bindResult))")
-        }
-    }
-
-    // The THIRD outcome `EventRowImportViewModel`'s doc comment explicitly promises to keep
-    // distinguishable ("two different failure surfaces with two different causes, never folded
-    // into one") but nothing tested: the import itself SUCCEEDS (file copied in) while the
-    // subsequent bind FAILS. Reachable whenever the pack directory has no readable manifest.json
-    // — `importAudioFile` creates the pack dir and copies the file without needing a manifest,
-    // then `bindEventToManifest` refuses because there's nothing to read-modify-write.
-    await suite(
-        "EventRowImportViewModel: an import that SUCCEEDS but whose bind FAILS records .failure in bindResult while state stays .success"
+    // The bind half of a successful import whose pack has no readable manifest.json:
+    // `importAudioFile` creates the pack dir and copies the file without needing a manifest, then
+    // `bindEventToManifest` must refuse because there's nothing to read-modify-write — and roll
+    // back nothing: the file stays on disk and no manifest is fabricated.
+    suite(
+        "bindEventToManifest: a pack directory WITHOUT manifest.json rejects the bind as .manifestUnreadable and leaves the file untouched"
     ) {
-        await withTempDirectory { root in
+        withTempDirectory { root in
             let userPacks = root.appendingPathComponent("packs")
-            // No manifest.json anywhere — the pack dir is created by the import itself.
+            // No manifest.json anywhere — only the pack directory with the imported file in it.
+            writeFixture("fake-audio", to: userPacks.appendingPathComponent("my-pack/chime.wav"))
             let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
 
-            let sourceURL = root.appendingPathComponent("source/chime.wav")
-            writeFixture(validWAVData(), to: sourceURL)
-            await rowViewModel.handleDrop(sourceURL: sourceURL, suggestedFileName: "chime.wav")
+            let result = bindEventToManifest(
+                event: .stop, fileName: "chime.wav", packID: "my-pack", environment: environment)
 
-            guard case .success = importViewModel.state else {
-                expect(
-                    false,
-                    "the IMPORT itself must still succeed (the file really was copied in), got"
-                        + " \(importViewModel.state)")
-                return
-            }
-            guard case .failure(let error) = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "the BIND must fail and be recorded — a successful import with an unreadable"
-                        + " manifest must never silently report a clean bind, got"
-                        + " \(String(describing: rowViewModel.bindResult))")
-                return
-            }
             expect(
-                { if case .manifestUnreadable = error { return true } else { return false } }(),
-                "the recorded bind failure must be .manifestUnreadable, got \(error)")
+                { if case .manifestUnreadable = failureError(result) { return true } else { return false } }(),
+                "the bind must fail as .manifestUnreadable, got \(result)")
             expect(
                 FileManager.default.fileExists(
                     atPath: userPacks.appendingPathComponent("my-pack/chime.wav").path),
-                "the imported file must still be on disk — the failed bind rolls back nothing,"
-                    + " which is exactly why the two surfaces stay distinguishable")
-        }
-    }
-
-    // MARK: - EventRowImportViewModel.clearBinding() (PLAN-SOUND-MANAGER.md §2.5/T2): the
-    // file-name `Menu`'s 「清除绑定」 item's caller-facing entry point (`EventRowView.clearBinding()`,
-    // compile-only/manual-verify — no ViewInspector in this repo). `clearEventBinding` itself is
-    // already thoroughly pinned at the Core level (`clearEventBinding` suites above, T3) — these
-    // close the ONE gap those don't reach: the view-model seam the menu item actually calls
-    // through, publishing into the SAME `bindResult` surface a failed bind already reports
-    // through (this type's own doc comment).
-
-    suite(
-        "EventRowImportViewModel.clearBinding(): clears a bound event — bindResult becomes .success, coverage recomputes to .unmapped, the file itself is untouched"
-    ) {
-        withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            writeFixture(
-                #"{ "id": "my-pack", "events": { "stop": "stop.mp3" } }"#,
-                to: userPacks.appendingPathComponent("my-pack/manifest.json"))
-            writeFixture("fake-audio", to: userPacks.appendingPathComponent("my-pack/stop.mp3"))
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(
-                packID: "my-pack",
-                environment: environment,
-                previewState: .reject(.nonWhitelistFormat))
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
-
-            rowViewModel.clearBinding()
-
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "clearBinding() must record .success in bindResult — the SAME surface a failed"
-                        + " bind reports through, got \(String(describing: rowViewModel.bindResult))"
-                )
-                return
-            }
-            let rows = packCoverage(
-                packID: "my-pack", config: ClaudioConfig(selectedPack: "my-pack"),
-                environment: environment)
+                "the imported file must still be on disk — the failed bind rolls back nothing")
             expect(
-                rows.first { $0.event == .stop }?.coverage == .unmapped,
-                "after clearBinding(), stop must recompute to .unmapped (never .broken — a"
-                    + " deliberate clear must not be disguised as a packaging defect), got"
-                    + " \(String(describing: rows.first { $0.event == .stop }?.coverage))")
-            expect(
-                FileManager.default.fileExists(
-                    atPath: userPacks.appendingPathComponent("my-pack/stop.mp3").path),
-                "clearBinding() must never delete the audio file — only the manifest key")
-            expect(
-                importViewModel.state == .idle,
-                "a newer clear action must remove an older import rejection so it cannot hide the bindResult"
-            )
-        }
-    }
-
-    suite(
-        "EventRowImportViewModel.clearBinding(): idempotent on an already-unmapped event — .success, a true no-op"
-    ) {
-        withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            writeFixture(
-                #"{ "id": "my-pack", "events": {} }"#,
-                to: userPacks.appendingPathComponent("my-pack/manifest.json"))
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .notification, importViewModel: importViewModel)
-
-            rowViewModel.clearBinding()
-
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "clearing an already-unmapped event must still succeed (idempotent), got"
-                        + " \(String(describing: rowViewModel.bindResult))")
-                return
-            }
-        }
-    }
-
-    suite(
-        "EventRowImportViewModel.clearBinding(): an unresolvable packID surfaces as .failure(.packNotFound) in bindResult — the SAME surface a failed bind already reports through, never a second, unrendered failure path"
-    ) {
-        withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(
-                packID: "ghost-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
-
-            rowViewModel.clearBinding()
-
-            expect(
-                failureError(rowViewModel.bindResult ?? .success(()))
-                    == .packNotFound(packID: "ghost-pack"),
-                "an unresolvable pack must surface .packNotFound through bindResult, got"
-                    + " \(String(describing: rowViewModel.bindResult))")
-        }
-    }
-
-    // MARK: - EventRowImportViewModel.retarget(to:) — the pack-switch state leak, one layer
-    // deeper than ``AudioImportViewModel/retarget(to:)`` (see AudioImportViewModelSuite.swift
-    // for that layer). This one has TWO things to clear on a REAL pack switch: the nested
-    // `importViewModel`'s `state` AND this row's own `bindResult` — a stale "绑定失败：
-    // manifest 读不动" left over from pack A displayed on pack B's row would be a pure
-    // misreport, since the row never even attempted to bind into B. Same load-bearing
-    // condition as the layer below: only clears when the packID actually changes, because
-    // `refresh()` also runs right after a bind on the SAME pack completes.
-
-    await suite(
-        "EventRowImportViewModel.retarget(to:): switching to a DIFFERENT pack clears bindResult to nil for BOTH a successful bind and a failed bind, and resets the nested importViewModel"
-    ) {
-        await withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            // pack-a HAS a manifest — a drop here binds successfully.
-            writeFixture(
-                #"{ "id": "pack-a", "events": {} }"#,
-                to: userPacks.appendingPathComponent("pack-a/manifest.json"))
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-
-            let successImportViewModel = AudioImportViewModel(
-                packID: "pack-a", environment: environment)
-            let successRowViewModel = EventRowImportViewModel(
-                event: .notification, importViewModel: successImportViewModel)
-            let goodSource = root.appendingPathComponent("source/chime.wav")
-            writeFixture(validWAVData(), to: goodSource)
-            await successRowViewModel.handleDrop(
-                sourceURL: goodSource, suggestedFileName: "chime.wav")
-            guard case .success = successRowViewModel.bindResult else {
-                expect(
-                    false,
-                    "setup: the bind must succeed, got"
-                        + " \(String(describing: successRowViewModel.bindResult))")
-                return
-            }
-
-            successRowViewModel.retarget(to: "pack-c")
-            expect(
-                successRowViewModel.bindResult == nil,
-                "retargeting to a DIFFERENT pack must clear a successful bindResult, got"
-                    + " \(String(describing: successRowViewModel.bindResult))")
-            expect(
-                successRowViewModel.importViewModel.state == .idle,
-                "retargeting to a DIFFERENT pack must also reset the nested importViewModel's"
-                    + " state, got \(successRowViewModel.importViewModel.state)")
-            expect(
-                successRowViewModel.importViewModel.packID == "pack-c",
-                "retargeting must repoint the nested importViewModel's packID too")
-
-            // pack-b has NO manifest.json — a drop here imports fine but the bind fails.
-            let failImportViewModel = AudioImportViewModel(
-                packID: "pack-b", environment: environment)
-            let failRowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: failImportViewModel)
-            let goodSource2 = root.appendingPathComponent("source/chime2.wav")
-            writeFixture(validWAVData(), to: goodSource2)
-            await failRowViewModel.handleDrop(
-                sourceURL: goodSource2, suggestedFileName: "chime2.wav")
-            guard case .failure = failRowViewModel.bindResult else {
-                expect(
-                    false,
-                    "setup: the bind must fail (no manifest.json in pack-b), got"
-                        + " \(String(describing: failRowViewModel.bindResult))")
-                return
-            }
-
-            failRowViewModel.retarget(to: "pack-c")
-            expect(
-                failRowViewModel.bindResult == nil,
-                "retargeting to a DIFFERENT pack must clear a FAILED bindResult too — a stale bind"
-                    + " failure from a pack the row no longer shows would be a pure misreport, got"
-                    + " \(String(describing: failRowViewModel.bindResult))")
-            expect(
-                failRowViewModel.importViewModel.state == .idle,
-                "retargeting to a DIFFERENT pack must reset the nested importViewModel's state even"
-                    + " when the LAST thing it recorded was a bind failure, got"
-                    + " \(failRowViewModel.importViewModel.state)")
-        }
-    }
-
-    await suite(
-        "EventRowImportViewModel.retarget(to:): retargeting to the SAME pack PRESERVES bindResult AND the nested importViewModel's state — the mutation-killer for the shared `packID != newPackID` guard"
-    ) {
-        await withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            writeFixture(
-                #"{ "id": "my-pack", "events": {} }"#,
-                to: userPacks.appendingPathComponent("my-pack/manifest.json"))
-            let environment = makeEnvironment(userPacksDirectory: userPacks)
-
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .notification, importViewModel: importViewModel)
-            let sourceURL = root.appendingPathComponent("source/chime.wav")
-            writeFixture(validWAVData(), to: sourceURL)
-            await rowViewModel.handleDrop(sourceURL: sourceURL, suggestedFileName: "chime.wav")
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "setup: the bind must succeed, got \(String(describing: rowViewModel.bindResult))"
-                )
-                return
-            }
-            guard case .success(let importedBeforeRetarget) = importViewModel.state else {
-                expect(false, "setup: the import must have succeeded, got \(importViewModel.state)")
-                return
-            }
-
-            // Exactly what `PanelView.refresh()` does right after THIS bind completed: it
-            // re-asserts the same packID the row is already showing.
-            rowViewModel.retarget(to: "my-pack")
-
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "retargeting to the SAME pack must PRESERVE a just-produced bindResult — the"
-                        + " very scenario refresh()-after-bind creates — got"
-                        + " \(String(describing: rowViewModel.bindResult))")
-                return
-            }
-            expect(
-                importViewModel.state == .success(importedBeforeRetarget),
-                "retargeting to the SAME pack must preserve the nested importViewModel's state too,"
-                    + " got \(importViewModel.state)")
-            expect(importViewModel.packID == "my-pack", "packID must stay unchanged")
+                !FileManager.default.fileExists(
+                    atPath: userPacks.appendingPathComponent("my-pack/manifest.json").path),
+                "a refused bind must never fabricate a manifest")
         }
     }
 
@@ -1224,149 +959,6 @@ func runManifestBindingSuites() async {
                     (try? String(contentsOf: manifestFile, encoding: .utf8)) == shape.json,
                     "\(shape.label): the malformed manifest must be left byte-for-byte untouched")
             }
-        }
-    }
-
-    // MARK: - EventRowImportViewModel must never re-read MUTABLE state across the `await`
-    // (T16 review 修复③ — Codex [P2] + Claude 对抗 F6, two axes of one root cause)
-    //
-    // `GatedDurationProbe` makes the race deterministic instead of timing-dependent: the import
-    // pipeline blocks inside the (off-main-actor) duration probe until this test explicitly
-    // releases it, so "a drop is in flight" is a state the test can hold open and act during — no
-    // sleeps, no yields-and-hope.
-
-    await suite(
-        "EventRowImportViewModel: switching packs MID-IMPORT binds into the pack the bytes were copied into — never the pack selected while the import was in flight (TOCTOU: it would edit a DIFFERENT pack's manifest)"
-    ) {
-        await withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            let manifestA = userPacks.appendingPathComponent("pack-a/manifest.json")
-            let manifestB = userPacks.appendingPathComponent("pack-b/manifest.json")
-            let originalB = #"{ "id": "pack-b", "events": {} }"#
-            writeFixture(#"{ "id": "pack-a", "events": {} }"#, to: manifestA)
-            writeFixture(originalB, to: manifestB)
-            // pack-b ALREADY holds a file of the same name — so a mis-targeted bind would not merely
-            // fail with .fileNotFound, it would SUCCEED into the wrong pack's manifest. This is the
-            // difference between "the bug is loud" and "the bug silently rewrites another pack".
-            writeFixture("fake-audio", to: userPacks.appendingPathComponent("pack-b/chime.wav"))
-
-            let probe = GatedDurationProbe(fixedDuration: 1.0)
-            let environment = AudioImportEnvironment(
-                userPacksDirectory: userPacks, bundledPacksDirectory: nil, durationProbe: probe,
-                packsLockFile: injectedPacksLock(under: root))
-            let importViewModel = AudioImportViewModel(packID: "pack-a", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
-
-            let sourceURL = root.appendingPathComponent("source/chime.wav")
-            writeFixture(validWAVData(), to: sourceURL)
-
-            let drop = Task {
-                await rowViewModel.handleDrop(sourceURL: sourceURL, suggestedFileName: "chime.wav")
-            }
-            // Yield so `drop` actually starts and reaches its `Task.detached` suspension; the import
-            // then runs off the main actor and parks inside the probe, where we hold it.
-            await Task.yield()
-            expect(
-                probe.waitUntilProbing(timeout: 5) == .success,
-                "setup: the import must really be in flight inside the probe, otherwise this test"
-                    + " isn't constructing the race at all")
-
-            // Exactly what `PanelView.refresh()` does on a pack switch: repoint every row's packID.
-            importViewModel.packID = "pack-b"
-            probe.release()
-            _ = await drop.value
-
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "the bind must succeed against pack-a (where the bytes landed), got"
-                        + " \(String(describing: rowViewModel.bindResult))")
-                return
-            }
-            expect(
-                FileManager.default.fileExists(
-                    atPath: userPacks.appendingPathComponent("pack-a/chime.wav").path),
-                "setup sanity: the import copied the file into pack-a, the pack selected when it began"
-            )
-
-            let rowsA = packCoverage(
-                packID: "pack-a", config: ClaudioConfig(selectedPack: "pack-a"),
-                environment: environment)
-            expect(
-                rowsA.first { $0.event == .stop }?.coverage == .present(fileName: "chime.wav"),
-                "pack-a — the pack that RECEIVED the file — must be the one whose manifest gained the"
-                    + " binding, got \(String(describing: rowsA.first { $0.event == .stop }?.coverage))"
-            )
-            expect(
-                (try? String(contentsOf: manifestB, encoding: .utf8)) == originalB,
-                "pack-b's manifest must be byte-for-byte untouched: the user switched to it, they"
-                    + " never dropped anything into it — binding there would silently rewrite a pack"
-                    + " the drop had nothing to do with")
-        }
-    }
-
-    await suite(
-        "EventRowImportViewModel: a CONCURRENT rejected drop on the same row cannot cancel a valid drop's bind (the bind follows the drop's OWN outcome, never the shared `state`) — no orphaned file"
-    ) {
-        await withTempDirectory { root in
-            let userPacks = root.appendingPathComponent("packs")
-            writeFixture(
-                #"{ "id": "my-pack", "events": {} }"#,
-                to: userPacks.appendingPathComponent("my-pack/manifest.json"))
-
-            let probe = GatedDurationProbe(fixedDuration: 1.0)
-            let environment = AudioImportEnvironment(
-                userPacksDirectory: userPacks, bundledPacksDirectory: nil, durationProbe: probe,
-                packsLockFile: injectedPacksLock(under: root))
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
-            let rowViewModel = EventRowImportViewModel(
-                event: .stop, importViewModel: importViewModel)
-
-            let goodURL = root.appendingPathComponent("source/chime.wav")
-            writeFixture(validWAVData(), to: goodURL)
-            let evilURL = root.appendingPathComponent("source/evil.mp3")
-            writeFixture(evilShellScriptData(), to: evilURL)
-
-            // Drop A (valid) goes first and parks inside the probe — its file is on its way in.
-            let dropA = Task {
-                await rowViewModel.handleDrop(sourceURL: goodURL, suggestedFileName: "chime.wav")
-            }
-            await Task.yield()
-            expect(
-                probe.waitUntilProbing(timeout: 5) == .success,
-                "setup: drop A must be in flight before drop B is issued")
-
-            // Drop B (content-sniff rejected — a shell script wearing a .mp3 name) never reaches the
-            // probe, so it completes FIRST and publishes `.reject` into the row's shared state.
-            await rowViewModel.handleDrop(sourceURL: evilURL, suggestedFileName: "evil.mp3")
-            guard case .reject = importViewModel.state else {
-                expect(false, "setup: drop B must be rejected, got \(importViewModel.state)")
-                return
-            }
-
-            probe.release()
-            _ = await dropA.value
-
-            // A's file was already copied into the pack. If A's bind decision consulted the shared
-            // `state` (which B had just set to `.reject`) instead of A's own returned outcome, A
-            // would silently skip binding: file on disk, row still 未配置, zero errors reported —
-            // an orphan.
-            guard case .success = rowViewModel.bindResult else {
-                expect(
-                    false,
-                    "drop A's bind must be driven by A's OWN import outcome, not by whatever the"
-                        + " shared state holds after a sibling drop, got"
-                        + " \(String(describing: rowViewModel.bindResult))")
-                return
-            }
-            let rows = packCoverage(
-                packID: "my-pack", config: ClaudioConfig(selectedPack: "my-pack"),
-                environment: environment)
-            expect(
-                rows.first { $0.event == .stop }?.coverage == .present(fileName: "chime.wav"),
-                "the valid drop's file must end up BOUND, never copied-in-but-unbound, got"
-                    + " \(String(describing: rows.first { $0.event == .stop }?.coverage))")
         }
     }
 
@@ -2184,40 +1776,4 @@ func runManifestBindingSuites() async {
                 "clear 因为锁忙而失败，绑定却已经被抹掉了 —— 读-改-写没有整段在锁里。实得：\(onDisk ?? "<读不出>")")
         }
     }
-}
-
-/// A duration probe that BLOCKS inside ``probeDuration(of:)`` until a test explicitly releases it —
-/// the seam that makes "an import is in flight" a state a test can HOLD OPEN, rather than a timing
-/// window it has to race (no sleeps, no yield-and-pray).
-///
-/// It works precisely because ``AudioImportViewModel/handleDrop(requests:)`` runs the import
-/// pipeline on a `Task.detached`: the probe blocks a background thread, never the `@MainActor`, so
-/// the test can keep driving the view-model (switching packs, issuing a second drop) while the
-/// first import sits parked here.
-///
-/// `@unchecked Sendable`: its only mutable state is the two semaphores, which are themselves
-/// thread-safe by construction.
-private final class GatedDurationProbe: AudioDurationProbing, @unchecked Sendable {
-    private let fixedDuration: TimeInterval?
-    /// Signaled BY the probe (on the import's background thread) once it is really running.
-    private let probing = DispatchSemaphore(value: 0)
-    /// Signaled BY the test to let the parked import finish.
-    private let resume = DispatchSemaphore(value: 0)
-
-    init(fixedDuration: TimeInterval?) { self.fixedDuration = fixedDuration }
-
-    func probeDuration(of fileURL: URL) -> TimeInterval? {
-        probing.signal()
-        resume.wait()
-        return fixedDuration
-    }
-
-    /// Blocks the caller until the import has actually entered the probe. Bounded by `timeout` so a
-    /// mis-constructed test fails an assertion instead of hanging the whole harness forever.
-    func waitUntilProbing(timeout seconds: TimeInterval) -> DispatchTimeoutResult {
-        probing.wait(timeout: .now() + seconds)
-    }
-
-    /// Lets the parked import proceed (copy the bytes in, return its outcome).
-    func release() { resume.signal() }
 }

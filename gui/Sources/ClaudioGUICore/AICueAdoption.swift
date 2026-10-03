@@ -27,20 +27,6 @@ public enum AICueAdoptionEligibility: Sendable, Equatable {
     case ineligible(AICueAdoptionIneligibility)
 }
 
-/// Pure fail-closed proof that a pack-wide manifest mutation affects only the requested surface.
-public func aiCueAdoptionEligibility(
-    surface: HostSurfaceID?,
-    event: Event,
-    selectedPackID: String?,
-    config: ClaudioConfig,
-    packCards: [PackCard],
-    builtinPackIDs: Set<String>
-) -> AICueAdoptionEligibility {
-    // Surface-scoped generation/adoption is retired. Pack-scoped editing owns this operation.
-    .ineligible(.writesStopped)
-
-}
-
 public struct AICueAdoptionOutcome: Sendable, Equatable {
     public let target: AICueAdoptionTarget
     public let importedFile: ImportedAudioFile

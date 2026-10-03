@@ -19,7 +19,6 @@ public struct EventNoticePauseReason: OptionSet, Sendable, Hashable {
 
     public static let hover = Self(rawValue: 1 << 0)
     public static let keyboardFocus = Self(rawValue: 1 << 1)
-    public static let expanded = Self(rawValue: 1 << 2)
 }
 
 public enum EventNoticeRecordStatus: String, Codable, Sendable, Equatable {
@@ -928,7 +927,6 @@ public final class EventNoticeModel: ObservableObject {
     }
 
     public func setPauseReason(_ reason: EventNoticePauseReason, active: Bool) {
-        guard reason != .expanded else { return }
         let wasPaused = !pauseReasons.isEmpty
         if active { pauseReasons.formUnion(reason) } else { pauseReasons.subtract(reason) }
         expireEntries()

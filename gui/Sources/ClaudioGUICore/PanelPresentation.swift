@@ -331,29 +331,6 @@ public func panelSoundScopeIntegrationActionLabel(
     ClaudioL10n(language: language).format(.panelSoundScopeIntegrationAction, name)
 }
 
-/// A missing Workspace keeps its typed identity so a refreshed panel cannot silently turn the
-/// next sound edit into a Default Group write. Unknown legacy values still display Global.
-/// 呈现层薄包装：解析核心在 `SoundScopeSelection.swift` 的 ID 版（C1 单一事实）。
-public func resolvedPanelSoundScopeSelection(
-    storedValue: String?,
-    scopes: [PanelSoundScopePresentation]
-) -> PanelSoundScopeID {
-    resolvedPanelSoundScopeSelection(
-        storedValue: storedValue, availableScopes: scopes.map(\.scope))
-}
-
-/// The retained selection stays visibly unavailable until the user picks a current scope.
-public func panelSoundScopeSelectionPresentation(
-    storedValue: String?,
-    scopes: [PanelSoundScopePresentation],
-    language: ClaudioAppLanguage
-) -> PanelSoundScopePresentation {
-    panelSoundScopeSelectionPresentation(
-        selection: resolvedPanelSoundScopeSelection(storedValue: storedValue, scopes: scopes),
-        scopes: scopes,
-        language: language)
-}
-
 /// typed 选择版：`SoundScopeSelection` 投影（C1 单一事实）直接给出 selection，无需再解析
 /// 持久化字节。缺失工作区保留 typed identity 并呈现为不可用；其余未命中回落到 Global 行。
 public func panelSoundScopeSelectionPresentation(
@@ -383,34 +360,6 @@ public func validatedPanelSoundScopeSelection(
     availableScopes: [PanelSoundScopeID]
 ) -> PanelSoundScopeID? {
     availableScopes.contains(requestedSelection) ? requestedSelection : nil
-}
-
-/// Produces the typed Events route used by the global shortcut. Known Surface identities remain
-/// intact even when currently unavailable. Unknown persisted identities cannot be represented as a
-/// typed scope, so they retain the exact raw value beside a non-writable Global presentation.
-/// 呈现层薄包装：路由核心在 `SoundScopeSelection.swift` 的 ID 版（C1 单一事实）。
-public func globalShortcutEventSettingsRoute(
-    storedValue: String?,
-    scopes: [PanelSoundScopePresentation]
-) -> EventSettingsWindowRoute {
-    globalShortcutEventSettingsRoute(
-        storedValue: storedValue, availableScopes: scopes.map(\.scope))
-}
-
-/// Resolves a retained Events & Sounds route only when its exact typed scope is currently visible.
-/// A missing Workspace retains its identity; an unknown raw shortcut value
-/// never turns its Global presentation into a writable fallback.
-public func resolvedEventSettingsScope(
-    route: EventSettingsWindowRoute,
-    scopes: [PanelSoundScopePresentation]
-) -> PanelSoundScopeID? {
-    if let unavailableValue = route.unavailableRequestedScopeStoredValue,
-        unavailableValue != route.scope.storedValue
-    {
-        return nil
-    }
-    guard scopes.contains(where: { $0.scope == route.scope }) else { return nil }
-    return route.scope
 }
 
 /// A first launch displays the Default Group; only a manual choice persists a different scope.

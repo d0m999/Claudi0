@@ -3142,10 +3142,9 @@ func runViewWiringSuites() {
 
     suite("EventRowView：禁用的试听 ▶ 不会被无障碍合并抢播 —— PLAN-SOUND-MANAGER.md §2.5 第 7 条 ②") {
         // structural check，理由同本文件头部：EventRowView 住在不可 import 的 ClaudioGUI
-        // executableTarget，够不着行为级测试，只能读它的源码结构。字符串级契约（① / ③）已经
-        // 拆成纯函数进了 `EventRowAccessibility.swift`，走真正的单测（`EventRowAccessibilitySuite`）——
-        // 这一条独立存在，是因为「禁用样式是不是结构性的、有没有被某种 .combine 悄悄合并」是一个
-        // **控件树形状**问题，不是字符串问题，两者用不了同一套断言。
+        // executableTarget，够不着行为级测试，只能读它的源码结构。这一条独立存在，是因为
+        // 「禁用样式是不是结构性的、有没有被某种 .combine 悄悄合并」是一个 **控件树形状**问题，
+        // 不是字符串问题，两者用不了同一套断言。
         guard let row = codeWithoutStrings("gui/Sources/ClaudioGUI/EventRowView.swift") else {
             expect(false, "读不到 EventRowView.swift —— 这个 suite 唯一的价值就是读它")
             return

@@ -922,15 +922,18 @@ func runSoundPacksRefreshSuites() async {
                 configFile: configFile,
                 environment: environment,
                 refreshCoordinator: coordinator)
-            let row = EventRowImportViewModel(
-                event: .notification,
-                importViewModel: AudioImportViewModel(packID: "pack-a", environment: environment))
             expect(
                 window.selectedAudioFiles
                     == [PackAudioFile(fileName: "spare.mp3", isOrphan: true)],
                 "前提：窗口已经打开且仍把 spare.mp3 显示为孤儿")
 
-            row.bindExistingFile("spare.mp3")
+            let panelBind = bindEventToManifest(
+                event: .notification, fileName: "spare.mp3", packID: "pack-a",
+                environment: environment)
+            guard case .success = panelBind else {
+                expect(false, "前提：面板侧 bind 必须成功，实得 \(panelBind)")
+                return
+            }
             expect(
                 window.selectedAudioFiles
                     == [PackAudioFile(fileName: "spare.mp3", isOrphan: true)],
