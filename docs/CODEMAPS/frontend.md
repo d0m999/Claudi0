@@ -48,6 +48,9 @@ composition root
 - `HostIntegrationPresentationStore` publishes host rows; `IntegrationDestinationModel` owns
   destination actions, feedback, recovery, and retained-window lifecycle facts.
 - `SoundPacksRefreshCoordinator` coordinates panel/window projections after config or pack writes.
+- `SoundScopeSelection` is the single app-lifetime sound-scope selection fact: typed scope, pinned
+  workspace write target, staleness, and persisted bytes. The menu-bar panel, the Settings Events
+  destination, and the global shortcut all consume its projection instead of holding their own copy.
 - `SoundPacksEditorOwner` is the common Sound Packs editor interface: callers observe one coherent
   immutable `presentation`, issue synchronous commands through `send`, and await disk-backed work
   through `perform`. Its raw `SoundPacksWindowModel` and directory/refresh details stay inside the
@@ -84,6 +87,9 @@ composition root
 - `gui/Sources/ClaudioGUI/MenuBarController.swift`: status item, popover, retained windows.
 - `gui/Sources/ClaudioGUICore/HostIntegrationManagerBridge.swift`: async core-to-UI seam.
 - `gui/Sources/ClaudioGUICore/SoundPackLibrary.swift`: app-lifetime pack scan/cache actor.
+- `gui/Sources/ClaudioGUICore/SoundScopeSelection.swift`: app-lifetime sound-scope selection owner
+  (typed scope, pinned write target, staleness, persisted bytes) shared by panel, Settings, and
+  the global shortcut.
 - `gui/Sources/ClaudioGUICore/SoundPacksEditorOwner.swift`: coherent editor presentation and typed
   command/operation boundary.
 - `gui/Sources/ClaudioGUICore/SoundPacksWindowModel.swift`: package-local owner implementation for

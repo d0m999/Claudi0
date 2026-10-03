@@ -52,7 +52,8 @@ public struct PanelConfigProjectionToken: Hashable, Sendable {
 ///   已因用户打开面板而取消，面板仍须重读 bootstrap 刚创建或修复的 config / packs。
 /// - 面板切包成功 → `windowReloadRevision` 前进；窗口重读 config 与包状态。
 /// - 面板包音频、manifest 或非切包 config 真变化 → `windowContentReloadRevision` 前进；窗口保持侧栏选择重读。
-/// - 任一 config projection 写成功 → `configFactRevision` 前进；source 跳过，所有 peer 重投影。
+/// - 唯一 `PanelConfigController` 写成功 → `configFactRevision` 前进。C1 之后没有第二个
+///   config projection 订阅它（双实例互刷已随选择收敛删除），revision 只作为写事实的观测面保留。
 /// - 没有落盘变化的失败 → revision 不动；失败前磁盘已经变化 → 两侧如实重读，但错误仍由调用面显示。
 ///
 /// `@MainActor` 不只是发布 UI 状态的要求，也是 manifest/config 写者的时序边界：调用方必须在
@@ -121,9 +122,12 @@ public final class SoundPacksRefreshCoordinator: ObservableObject {
         windowReloadRevision += 1
     }
 
-    /// Publishes a config fact to sibling `PanelConfigController` projections. A pack switch uses
+    /// Publishes a config fact written by the one `PanelConfigController`. A pack switch uses
     /// this directly because its management-window route is the separate active-pack revision;
     /// ordinary Event/volume writes publish through ``completePanelConfigChange(_:source:)``.
+    /// C1 removed the sibling-projection subscription (selection converged to a single instance
+    /// sharing one `SoundScopeSelection`), so no peer reprojects off this revision; `source`
+    /// remains only as a call-site breadcrumb and is always nil from the converged controller.
     public func completeConfigFactChange(
         _ outcome: PanelConfigChangeOutcome,
         source: PanelConfigProjectionToken? = nil

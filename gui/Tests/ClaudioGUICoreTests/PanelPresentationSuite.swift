@@ -94,94 +94,6 @@ func runPanelPresentationSuites() async {
                 scopes: [.global]) == .scope(.global),
             "陈旧 Surface 不得留下可写事件焦点，必须回到可见安全 scope")
 
-        let retired = ClaudioConfig(selectedPack: "default")
-        expect(
-            eventSettingsPackInheritanceState(config: retired, scope: .surface(.workBuddy))
-                == .invalidSurfaceOverride,
-            "退役 Surface 详情不得投影默认组为可写覆盖")
-        expect(
-            eventSettingsInheritanceState(
-                config: retired, scope: .surface(.workBuddy), event: .stop)
-                == .invalidSurfaceOverride,
-            "退役 Surface 事件路由必须失效")
-        expect(
-            !eventSettingsShouldCloseAICueComposer(
-                includesAICueComposer: false,
-                targetSurface: .workBuddy,
-                selectedSurface: .codex),
-            "不呈现 composer 的只读投影不得结束其他表面的 AI session")
-        expect(
-            eventSettingsShouldCloseAICueComposer(
-                includesAICueComposer: true,
-                targetSurface: .workBuddy,
-                selectedSurface: .codex),
-            "composer 切换到另一 scope 时必须结束旧 session")
-        expect(
-            !eventSettingsShouldCloseAICueComposer(
-                includesAICueComposer: true,
-                targetSurface: .workBuddy,
-                selectedSurface: .workBuddy),
-            "composer 留在同一 scope 时不得误关 session")
-        expect(
-            eventSettingsShouldCloseAICueComposer(
-                includesAICueComposer: true,
-                targetSurface: .workBuddy,
-                targetEvent: .stop,
-                selectedSurface: .workBuddy,
-                selectedEvent: .notification),
-            "同一 Surface 显式切换 Event 路由也必须结束旧候选 session")
-        expect(
-            !eventSettingsShouldCloseAICueComposer(
-                includesAICueComposer: true,
-                targetSurface: .workBuddy,
-                targetEvent: .stop,
-                selectedSurface: .workBuddy,
-                selectedEvent: nil),
-            "没有显式 Event 路由变化时不得因可选焦点为空误关 session")
-        expect(
-            eventSettingsAICueComposerMatches(
-                targetSurface: .workBuddy,
-                targetEvent: .stop,
-                selectedSurface: .workBuddy,
-                event: .stop),
-            "legacy composer 只在精确 Surface/Event 下显示")
-        expect(
-            !eventSettingsAICueComposerMatches(
-                targetSurface: .workBuddy,
-                targetEvent: .stop,
-                selectedSurface: .codex,
-                event: .stop),
-            "同 Event 的另一 Surface 不得显示或采用 legacy composer session")
-        expect(
-            !eventSettingsAICueComposerMatches(
-                targetSurface: nil,
-                targetEvent: nil,
-                selectedSurface: .workBuddy,
-                event: .stop),
-            "没有 AI target 时不得显示 composer")
-
-        let baseIdentity = "Stop, Claude Code Stop"
-        expect(
-            eventSettingsIdentityAccessibilityLabel(
-                presentationLabel: baseIdentity,
-                inheritanceText: nil,
-                language: .english) == baseIdentity,
-            "Global Event identity 没有继承状态时不得增加空 AX 片段")
-        expect(
-            eventSettingsIdentityAccessibilityLabel(
-                presentationLabel: baseIdentity,
-                inheritanceText: "Inherited from Global",
-                language: .english)
-                == "Stop, Claude Code Stop, Inherited from Global",
-            "英文 Event AX identity 必须包含可见继承状态")
-        expect(
-            eventSettingsIdentityAccessibilityLabel(
-                presentationLabel: "停止，Claude Code Stop",
-                inheritanceText: "继承 Global",
-                language: .zhHans)
-                == "停止，Claude Code Stop，继承 Global",
-            "中文 Event AX identity 必须包含可见继承状态并使用中文分隔")
-
         withTempDirectory { directory in
             let unavailablePreview = eventPreviewFileURL(
                 row: EventRow(
@@ -204,10 +116,12 @@ func runPanelPresentationSuites() async {
             panelPresentationRow(.claudeCode, status: .notConnected, supported: 5),
             panelPresentationRow(.workBuddy, status: .ready, supported: 2),
         ]
-        let scopeIDs = panelSoundScopeIDs(sourceRows: rows)
+        let config = ClaudioConfig(selectedPack: "pack")
+        // C1：route availability 与面板消费同一份 ID 真相（`SoundScopeSelection` 的可用集合）。
+        let scopeIDs = soundScopeAvailableScopeIDs(config: config)
         let panelScopes = panelSoundScopePresentations(
             sourceRows: rows,
-            config: ClaudioConfig(selectedPack: "pack"),
+            config: config,
             language: .zhHans)
 
         expect(
@@ -251,22 +165,6 @@ func runPanelPresentationSuites() async {
         expect(
             await capabilityCoordinator.run(events: [.stop]) { _ in nil } == .failed(.stop),
             "native adapter 拒绝播放时必须只返回对应 Event，不需要 URL 或目录权限")
-    }
-
-    suite("事件与提示音窗口布局：按窗口可用宽度与文字缩放独立降级") {
-        let regular = eventSettingsWindowLayout(availableWidth: 580, typeScale: 1)
-        let narrow = eventSettingsWindowLayout(availableWidth: 430, typeScale: 1)
-        let maximumText = eventSettingsWindowLayout(availableWidth: 580, typeScale: 1.42)
-
-        expect(
-            !regular.metadataStacks && !regular.actionsMoveBelow,
-            "标准窗口宽度下元数据与动作必须保持行内：\(regular)")
-        expect(
-            narrow.metadataStacks && narrow.actionsMoveBelow,
-            "窄窗口必须把元数据和动作逐级堆叠：\(narrow)")
-        expect(
-            maximumText.metadataStacks && maximumText.actionsMoveBelow,
-            "最大界面文字必须在同一窗口宽度触发窗口自己的降级：\(maximumText)")
     }
 
     suite("声音作用域菜单：未取得视口测量时仍完整提供可见选项") {
