@@ -594,12 +594,14 @@ func callArguments(of head: String, in source: String) -> [String] {
 /// ## 极性：宁可多报，绝不少报
 ///
 /// 下游是「非空 ⇒ 红」。多报一条 = 有人喊、去看一眼、要么挪走那个构造要么教会扫描器，fail-**closed**；
-/// 少报一条 = 那个形状静默退出审查，fail-**open**，没有人会喊。所以这里**不**去判断
-/// `typealias Foo = Int` 与 `type` 无关：一律记账。三个被扫文件今天**四类**形状（`typealias` /
-/// `#if` / 上下文 `.init(` / 未应用的 `.init` 引用）各 **0** 命中（`/review d7084be` 复测：三个
-/// 文件里 `.init` 总共只出现一次，在 `OnboardingActions.swift` 的一句 doc comment 里，而这里喂的
-/// 是**剥了注释**的文本），代价是零，而它把「未来某人引入一种新形状」这件事
-/// 从「静默失效」变成「当场红」。
+/// 少报一条 = 那个形状静默退出审查，fail-**open**，没有人会喊。`typealias` 原本一律记账（「不去判断
+/// `typealias Foo = Int` 与 `type` 无关」）；焦点协调重构引入了两个**存活的**焦点空间别名
+/// （`IntegrationDestinationFocusCoordinator` / `SoundPacksWindowFocusCoordinator`，右侧是
+/// `FocusRequestCoordinator<…>`，与 `type` 无关），一律记账从此代价非零，于是 `typealias` 升格为
+/// **已建模形状**：单行、右侧非空且不提及 `type` 才放行，其余形态（右侧提及 `type`、右侧折行、
+/// 多段 `=` 之外的怪异行）照旧记账 —— 收窄只发生在能被完整论证的一侧，威胁模型不变（见函数体内
+/// 该分支的注释）。`#if` / 上下文 `.init(` / 未应用的 `.init` 引用三类仍一律记账，它把「未来某人
+/// 引入一种新形状」这件事从「静默失效」变成「当场红」。
 ///
 /// ## 认得出 vs 记一笔，边界在哪
 ///
@@ -639,9 +641,22 @@ func unmodeledConstructionShapes(of type: String, in source: String) -> [String]
         let location = "第 \(offset + 1) 行：\(trimmed)"
 
         if trimmed.contains("typealias") {
-            shapes.append(
-                "`typealias` —— 别名之后的构造（`SE(…)`）`callArguments(of: \"\(type)\", …)` 永远"
-                    + "认不出，那一处会静默退出审查。\(location)")
+            // 唯一已建模的 `typealias` 形状：单行 `typealias X = <右侧>`，右侧非空且不提及
+            // `type`。别名自身不构造任何值；它能把一次构造藏进另一个名字底下的**唯一**路径是
+            // 右侧就是 `type`（或提及它的函数/闭包类型），那一种照旧记账。右侧不含 `type` 时，
+            // `X(…)` 构造的都是别的类型 —— 若那个类型内部真的构造 `type`，字面 `type(` 必出现
+            // 在它自己的定义文件里，而普查对构造点集合做的是**逐项相等**断言，那一处当场红。
+            // 别名链同理：链上定义处提及 `type` 的那一行被记账。右侧折到下一行（`=` 收尾）时
+            // 单行无从判定 ⇒ 照旧记账（fail-closed）。
+            let pieces = trimmed.split(
+                separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            let rightHandSide =
+                pieces.count == 2 ? pieces[1].trimmingCharacters(in: .whitespaces) : ""
+            if rightHandSide.isEmpty || rightHandSide.contains(type) {
+                shapes.append(
+                    "`typealias` —— 别名之后的构造（`SE(…)`）`callArguments(of: \"\(type)\", …)` 永远"
+                        + "认不出，那一处会静默退出审查。\(location)")
+            }
         }
         if trimmed.contains("#if") {
             shapes.append(

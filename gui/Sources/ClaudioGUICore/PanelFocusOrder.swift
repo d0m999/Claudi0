@@ -54,18 +54,9 @@ public func panelSoundScopePickerFocusOrder(
     scopes.map(PanelSoundScopePickerFocusTarget.scope)
 }
 
+/// The production panel's one live focus space. The retired onboarding/operational shapes had
+/// no production caller: `PanelView` only ever derives `.activityOperational`.
 public enum PanelFocusScope: Sendable, Equatable {
-    case onboarding(
-        hasPrimaryAction: Bool,
-        hasSecondaryAction: Bool,
-        hasDetailToggle: Bool = false)
-    case operational(
-        events: [PanelEventPresentation],
-        hasMasterVolume: Bool,
-        hasOpenSoundSettings: Bool,
-        hasResetSurface: Bool,
-        hasConfigFailureNotice: Bool = false,
-        bootstrapReportActions: [PanelFocusTarget] = [])
     case activityOperational(
         events: [PanelEventPresentation],
         hasActivityOverview: Bool,
@@ -82,35 +73,6 @@ public enum PanelFocusScope: Sendable, Equatable {
 /// 条件 reset → 固定退出 footer。禁用动作不制造幽灵 Tab stop。
 public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
     switch scope {
-    case .onboarding(let hasPrimaryAction, let hasSecondaryAction, let hasDetailToggle):
-        var order: [PanelFocusTarget] = []
-        if hasDetailToggle { order.append(.revealDetail) }
-        if hasPrimaryAction { order.append(.onboardingPrimaryAction) }
-        if hasSecondaryAction { order.append(.onboardingSecondaryAction) }
-        return order
-
-    case .operational(
-        let events,
-        let hasMasterVolume,
-        let hasOpenSoundSettings,
-        let hasResetSurface,
-        let hasConfigFailureNotice,
-        let bootstrapReportActions):
-        // 近期入口在 header（Settings 旁、Sound Scope 之上），焦点序与视觉序一致：
-        // 排在 Settings 与 Sound Scope 之间。
-        var order: [PanelFocusTarget] = [.recentNotices, .soundScope]
-        order.append(contentsOf: bootstrapReportActions)
-        if hasConfigFailureNotice { order.append(.configReveal) }
-        for event in events {
-            if event.controls.previewEnabled { order.append(.eventPreview(event.event)) }
-            if event.controls.muteEnabled { order.append(.eventMute(event.event)) }
-        }
-        if hasMasterVolume { order.append(.masterVolume) }
-        if hasOpenSoundSettings { order.append(.openSoundSettings) }
-        if hasResetSurface { order.append(.resetSurface) }
-        order.append(.quitApplication)
-        return order
-
     case .activityOperational(
         let events,
         let hasActivityOverview,
@@ -139,42 +101,17 @@ public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
     }
 }
 
-/// 面板打开时落在当前真实可操作顺序的第一项。operational 永远至少有声音作用域与退出。
-/// 例外：近期提示入口按 spec 在 Tab 序中排在 Sound Scope 之前，但打开焦点必须继续落在
-/// 声音作用域——面板的主任务是对声音作用域的直接操作，提示入口只做阅读。
+/// 面板打开时落在当前真实可操作顺序的第一项。例外：近期提示入口按 spec 在 Tab 序中排在
+/// Sound Scope 之前，但打开焦点必须继续落在声音作用域——面板的主任务是对声音作用域的直接
+/// 操作，提示入口只做阅读。Settings 关闭归还的显式目标（`requestedTarget`）仍然渲染时优先；
+/// 已被内容变化移除的目标不得复活。
 public func panelFirstFocusTarget(
     _ scope: PanelFocusScope,
-    nonOperableActionEvents _: Set<Event> = [],
-    ctaOperable: Bool = true
+    requestedTarget: PanelFocusTarget? = nil
 ) -> PanelFocusTarget? {
     let order = panelFocusOrder(scope)
-    if case .operational = scope, order.contains(.soundScope) {
-        return .soundScope
+    if let requestedTarget, order.contains(requestedTarget) {
+        return requestedTarget
     }
-    return order.first { target in
-        switch target {
-        case .onboardingPrimaryAction, .onboardingSecondaryAction, .disconnect, .revealDetail:
-            return ctaOperable
-        default:
-            return true
-        }
-    }
-}
-
-public func panelOpeningFocus(
-    events: [PanelEventPresentation],
-    hasMasterVolume: Bool,
-    hasOpenSoundSettings: Bool,
-    hasResetSurface: Bool,
-    hasConfigFailureNotice: Bool = false,
-    bootstrapReportActions: [PanelFocusTarget] = []
-) -> PanelFocusTarget? {
-    panelFirstFocusTarget(
-        .operational(
-            events: events,
-            hasMasterVolume: hasMasterVolume,
-            hasOpenSoundSettings: hasOpenSoundSettings,
-            hasResetSurface: hasResetSurface,
-            hasConfigFailureNotice: hasConfigFailureNotice,
-            bootstrapReportActions: bootstrapReportActions))
+    return order.first(where: { $0 == .soundScope }) ?? order.first
 }

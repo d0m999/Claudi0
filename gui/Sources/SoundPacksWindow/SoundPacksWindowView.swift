@@ -68,7 +68,8 @@ public struct EmbeddedSoundPacksEditorView: View {
     private let supplement: SoundPacksEditorSupplement
     @ObservedObject private var languageStore: ClaudioPreferences
     @StateObject private var focusCoordinator = SoundPacksWindowFocusCoordinator()
-    @State private var focusApplicationTracker = SoundPacksEditorFocusApplicationTracker()
+    @State private var focusApplicationTracker =
+        FocusApplicationTracker<SoundPacksEditorFocusProjection>()
 
     package init(
         editorOwner: SoundPacksEditorOwner,
@@ -123,11 +124,7 @@ public struct EmbeddedSoundPacksEditorView: View {
         case .pendingFreshSnapshot, .staleTarget:
             focusRoute = .overview(scope: sounds.route.scope)
         }
-        if requestsInitialFocus {
-            focusCoordinator.requestInitialFocus(route: focusRoute)
-        } else {
-            focusCoordinator.requestRoute(focusRoute)
-        }
+        focusCoordinator.requestFocus(focusRoute)
     }
 
     private var focusProjection: SoundPacksEditorFocusProjection? {
@@ -152,21 +149,6 @@ package struct SoundPacksEditorFocusProjection: Equatable {
         self.requestRevision = requestRevision
         self.routeState = routeState
         self.scopeAvailability = scopeAvailability
-    }
-}
-
-package struct SoundPacksEditorFocusApplicationTracker {
-    private var lastApplied: SoundPacksEditorFocusProjection?
-
-    package init() {}
-
-    package mutating func recordAndShouldApply(
-        _ projection: SoundPacksEditorFocusProjection,
-        force: Bool
-    ) -> Bool {
-        let changed = lastApplied != projection
-        lastApplied = projection
-        return force || changed
     }
 }
 
@@ -254,7 +236,7 @@ private struct SoundPacksWindowContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.settingsUsesCompactLayout) private var compactLayout
     @FocusState private var focusedTarget: SoundPacksWindowFocusTarget?
-    @State private var handledFocusRequestRevision = 0
+    @State private var handledFocusRequestRevision: UInt64 = 0
     @State private var dropTargetEvent: Event?
     @State private var requestedRoute: SoundPacksWindowRoute = .overview
     @State private var awaitsDeepLinkFocus = false
@@ -352,8 +334,8 @@ private struct SoundPacksWindowContentView: View {
         .soundPacksLayoutProbe("sound-packs.editor")
         .background(SettingsAppearance.background(colorScheme))
         .onReceive(focusCoordinator.$requestRevision) { revision in
-            guard revision > handledFocusRequestRevision else { return }
-            requestedRoute = focusCoordinator.requestedRoute
+            guard focusCoordinator.consumeRequest(revision) else { return }
+            requestedRoute = focusCoordinator.requestedTarget ?? .overview
             if detailRouteTracker.requestRevision != activeSounds.requestRevision {
                 detailCopyTransition = nil
             }
@@ -365,6 +347,7 @@ private struct SoundPacksWindowContentView: View {
             } else {
                 settingsDetail = nextDetail
             }
+            // Scroll trigger only; the request dedup itself lives in the coordinator.
             handledFocusRequestRevision = revision
             applyInitialFocus()
             reconcileFocusWithVisibleControls()

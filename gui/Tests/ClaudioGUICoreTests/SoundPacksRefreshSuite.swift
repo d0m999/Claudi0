@@ -2296,41 +2296,41 @@ func runSoundPacksRefreshSuites() async {
             requestBody.contains(
                 "request: .eventShortcut(route)")
                 && requestBody.contains("returnFocusTo: target")
-                && sharedRequestBody.contains("pendingSettingsPresentation = presentation")
+                && sharedRequestBody.contains("panelSettingsChoreography.requestSettingsPresentation(")
                 && sharedRequestBody.contains("panelWindow.close()"),
-            "管理入口必须提交 typed route 并先记单一 pending，再关闭菜单及其 child window")
+            "管理入口必须提交 typed route 并先把单一 pending 交给编排层记录，再关闭菜单及其 child window")
         expect(
             !sharedRequestBody.contains("panelWindow.performClose"),
             "自家窗口导航不得用可拒绝的 performClose；失败后没有 didClose 可消费 pending")
         if let pendingAt = sharedRequestBody.range(
-            of: "pendingSettingsPresentation = presentation"
+            of: "panelSettingsChoreography.requestSettingsPresentation("
         )?.lowerBound,
             let closeAt = sharedRequestBody.range(of: "panelWindow.close()")?.lowerBound
         {
             expect(
                 pendingAt < closeAt,
-                "管理入口顺序必须是 pending → 强制 close")
+                "管理入口顺序必须是编排层记 pending → 强制 close")
         } else {
-            expect(false, "管理入口必须同时包含 pending 与强制 close")
+            expect(false, "管理入口必须同时包含编排层 pending 与强制 close")
         }
         expect(
-            closeBody.contains("if let settingsPresentation")
-                && closeBody.contains("presentSettings(settingsPresentation)"),
+            closeBody.contains("case .presentSettings(let presentation)")
+                && closeBody.contains("presentSettings(presentation)"),
             "Panel 关闭后必须只展示统一 Settings；其关闭回调恢复精确触发控件")
         if let showAt = closeBody.range(
-            of: "presentSettings(settingsPresentation)"
+            of: "presentSettings(presentation)"
         )?.lowerBound,
-            let returnAt = closeBody[showAt...].range(of: "return")?.lowerBound,
             let keyRestorationAt = closeBody.range(
-                of: "if reason == .explicit, restoreSettings")?.lowerBound
+                of: "case .restoreSettingsKeyFocus")?.lowerBound
         {
             expect(
-                showAt < returnAt && returnAt < keyRestorationAt,
-                "主动 Settings presentation 必须在普通关闭的 key 恢复之前完成并直接 return")
+                showAt < keyRestorationAt,
+                "主动 Settings presentation 分支必须排在普通关闭的 key 恢复分支之前；两者的互斥与裁决"
+                    + "归 ADR 0022 编排层（PanelSettingsChoreographySuite 钉），owner 只按裁决执行")
         } else {
             expect(
                 false,
-                "didClose 必须同时包含窗口 presentation、直接 return 与普通关闭的 key 恢复分支")
+                "didClose 必须同时包含窗口 presentation 与普通关闭的 key 恢复分支")
         }
         expect(
             !closeBody.contains("activateHandbackApplication("),

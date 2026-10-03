@@ -32,7 +32,6 @@ struct EventSettingsWindowView: View {
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
     @State private var detail: WorkspaceSettingsDetail = .configuration
-    @State private var deletionCancelFocusID: UUID?
     @State private var previewSequence = EventPreviewSequenceCoordinator()
     @State private var player = NSSoundAudioPreviewPlayer()
     @State private var previewPulseTriggers: [Event: Int] = [:]
@@ -160,7 +159,6 @@ struct EventSettingsWindowView: View {
             previewSequence.cancel()
             player.stop()
             previewSuccessTokens.removeAll()
-            deletionCancelFocusID = nil
             synchronize()
         }
         .onChange(of: model.config.selectedPack) { _ in
@@ -176,7 +174,6 @@ struct EventSettingsWindowView: View {
         .onChange(of: selection.presentationState.focusRequestRevision) { _ in synchronize() }
         .onChange(of: selection.deletionPresentation.pending?.id) { pendingID in
             if pendingID != nil {
-                deletionCancelFocusID = nil
                 if let request = selection.deletionPresentation.pending {
                     detail = .scope(
                         WorkspaceSoundWriteTarget(
@@ -192,8 +189,8 @@ struct EventSettingsWindowView: View {
             previewSequence.cancel()
             player.stop()
             previewSuccessTokens.removeAll()
-            deletionCancelFocusID = nil
             selection.cancelDeletion()
+            selection.clearReturnFocus()
         }
         .sheet(
             isPresented: Binding(
@@ -281,7 +278,6 @@ struct EventSettingsWindowView: View {
 
     private func cancelDeletionFromAlert(_ request: WorkspaceDeletionRequest) {
         guard selection.deletionPresentation.pending == request else { return }
-        deletionCancelFocusID = request.target.id
         selection.cancelDeletion()
         // SwiftUI can restore the title while its native alert is closing. Reapply the request
         // after dismissal; the sheet-end callback above handles the later AppKit focus handback.
@@ -289,21 +285,21 @@ struct EventSettingsWindowView: View {
     }
 
     private func restoreDeletionCancelFocus(clearRequest: Bool = false) {
-        guard let id = deletionCancelFocusID,
+        guard case .workspaceRemove(let id)? = selection.pendingReturnFocusTarget,
             selection.deletionPresentation.pending == nil,
             selection.route.scope == .workspace(id),
             selection.presentationState.focusTarget == .workspaceRemove(id)
         else { return }
         focusedTarget = nil
         DispatchQueue.main.async {
-            guard deletionCancelFocusID == id,
+            guard selection.pendingReturnFocusTarget == .workspaceRemove(id),
                 selection.deletionPresentation.pending == nil,
                 selection.route.scope == .workspace(id),
                 selection.presentationState.focusTarget == .workspaceRemove(id)
             else { return }
             focusedTarget = .workspaceRemove(id)
             if clearRequest {
-                deletionCancelFocusID = nil
+                selection.consumeReturnFocus(.workspaceRemove(id))
             }
         }
     }
@@ -736,7 +732,7 @@ struct EventSettingsWindowView: View {
     private func workspaceRemoveButton(_ rule: WorkspaceSoundRule) -> some View {
         SettingsFocusableButton(
             l10n.text(.workspaceRemove),
-            requestsFocus: deletionCancelFocusID == rule.id
+            requestsFocus: selection.pendingReturnFocusTarget == .workspaceRemove(rule.id)
                 || selection.presentationState.focusTarget == .workspaceRemove(rule.id)
         ) {
             _ = selection.requestDeletion(of: rule)

@@ -183,23 +183,7 @@ public func soundPacksWindowFirstFocusTarget(
 /// The owner increments this only for a real hidden→visible presentation (first open or retained
 /// reopen). Re-invoking show while already visible leaves focus untouched. The view remembers the
 /// last revision it handled, so ordinary body recomputation does not steal focus back.
-@MainActor
-public final class SoundPacksWindowFocusCoordinator: ObservableObject {
-    @Published public private(set) var requestRevision = 0
-    @Published public private(set) var requestedRoute: SoundPacksWindowRoute = .overview
-
-    public init() {}
-
-    public func requestInitialFocus(route: SoundPacksWindowRoute = .overview) {
-        requestedRoute = route
-        requestRevision += 1
-    }
-
-    public func requestRoute(_ route: SoundPacksWindowRoute) {
-        requestedRoute = route
-        requestRevision += 1
-    }
-}
+public typealias SoundPacksWindowFocusCoordinator = FocusRequestCoordinator<SoundPacksWindowRoute>
 
 /// Window-specific Dynamic Type tiers. They describe this standard window, not the panel's width
 /// ladder.

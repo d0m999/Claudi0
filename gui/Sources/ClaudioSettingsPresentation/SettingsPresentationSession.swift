@@ -19,6 +19,10 @@ package final class SettingsPresentationSession: ObservableObject {
     let actions: SettingsPresentationActions
     let eventSettingsSelection: EventSettingsWindowSelection
     let integrationsFocusCoordinator: IntegrationDestinationFocusCoordinator
+    /// Single owner of the shell's destination focus handshake: every route transaction issues
+    /// exactly one request; an explicit payload (today only the event-animation entry's return
+    /// focus) overrides the pure policy in `settingsWindowRequestedFocusTarget`.
+    package let destinationFocusRequests = FocusRequestCoordinator<SettingsWindowFocusTarget>()
 
     private var preferenceSnapshot: ClaudioPreferenceSnapshot
     private var loginProjection: LoginItemSettingsProjection
@@ -615,6 +619,7 @@ package final class SettingsPresentationSession: ObservableObject {
         isPresented = false
         windowPhase = .hidden
         focusDebt = nil
+        destinationFocusRequests.cancelPendingRequest()
         if pendingSoundPackAnnouncementID != nil {
             pendingSoundPackAnnouncementID = nil
             pendingAnnouncement = nil

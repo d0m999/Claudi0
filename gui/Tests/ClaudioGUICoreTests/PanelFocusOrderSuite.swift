@@ -31,49 +31,68 @@ func runPanelFocusOrderSuites() {
             "行内状态动作只进入 Tab 焦点序，不得占用方向键顺序")
     }
 
-    suite("panelFocusOrder：onboarding 兼容顺序保持失败详情 → 主动作 → 次动作") {
-        expect(
-            panelFocusOrder(
-                .onboarding(
-                    hasPrimaryAction: true,
-                    hasSecondaryAction: true,
-                    hasDetailToggle: true))
-                == [.revealDetail, .onboardingPrimaryAction, .onboardingSecondaryAction],
-            "onboarding 兼容焦点顺序漂移")
-    }
-
-    suite("panelFocusOrder：Global 正常顺序为作用域 → 近期提示 → 五行试听/静音 → 音量 → 设置 → 退出") {
+    suite("panelFocusOrder：Global 正常顺序为设置 → 近期提示 → 作用域 → 五行试听/静音 → 包选择 → 音量 → 退出") {
         let events = focusEventPresentations()
-        let order = panelFocusOrder(
-            .operational(
-                events: events,
-                hasMasterVolume: true,
-                hasOpenSoundSettings: true,
-                hasResetSurface: false))
+        let scope = PanelFocusScope.activityOperational(
+            events: events,
+            hasActivityOverview: true,
+            hasMasterVolume: true,
+            hasSoundPackPicker: true)
+        let order = panelFocusOrder(scope)
         let eventTargets = Event.allCases.flatMap {
             [PanelFocusTarget.eventPreview($0), .eventMute($0)]
         }
         expect(
-            order == [.recentNotices, .soundScope] + eventTargets
-                + [.masterVolume, .openSoundSettings, .quitApplication],
+            order == [.headerSettings, .recentNotices, .soundScope] + eventTargets
+                + [.soundPackPicker, .masterVolume, .quitApplication],
             "Global 正常焦点顺序错误：\(order)")
         expect(
-            panelFirstFocusTarget(
-                .operational(
-                    events: events,
-                    hasMasterVolume: true,
-                    hasOpenSoundSettings: true,
-                    hasResetSurface: false)) == .soundScope, "打开必须落声音作用域")
+            panelFirstFocusTarget(scope) == .soundScope, "打开必须落声音作用域")
+    }
+
+    suite("panelFirstFocusTarget：生产开局策略——归还目标优先，其次声音作用域，再退到首项") {
+        let events = focusEventPresentations()
+        let scope = PanelFocusScope.activityOperational(
+            events: events,
+            hasActivityOverview: true,
+            hasMasterVolume: true,
+            hasConfigFailureNotice: true,
+            hasSoundPackPicker: true)
+        expect(
+            panelFirstFocusTarget(scope) == .soundScope,
+            "普通打开必须落在声音作用域——主任务是直接操作作用域，近期提示只做阅读")
+        expect(
+            panelFirstFocusTarget(scope, requestedTarget: .masterVolume) == .masterVolume,
+            "Settings 归还的精确目标仍在屏幕上时必须优先")
+        expect(
+            panelFirstFocusTarget(scope, requestedTarget: .soundScope) == .soundScope,
+            "归还目标就是声音作用域时结果不变")
+        expect(
+            panelFirstFocusTarget(scope, requestedTarget: .workspaceDetails) == .soundScope,
+            "已被内容变化移除的归还目标不得复活，必须退回声音作用域")
+        let configFailure = PanelFocusScope.activityOperational(
+            events: [],
+            hasActivityOverview: true,
+            hasMasterVolume: false,
+            hasConfigFailureNotice: true)
+        expect(
+            panelFirstFocusTarget(configFailure, requestedTarget: .soundPackPicker)
+                == .soundScope,
+            "config 失败态没有包选择控件，归还它也只能退回声音作用域")
+        expect(
+            panelFirstFocusTarget(configFailure, requestedTarget: .configReveal) == .configReveal,
+            "失败卡上的 Reveal 是真控件，归还目标可以直接落在它上面")
     }
 
     suite("panelFocusOrder：WorkBuddy 未实现事件不产生试听或静音焦点") {
         let events = focusEventPresentations(scope: .surface(.workBuddy))
         let order = panelFocusOrder(
-            .operational(
+            .activityOperational(
                 events: events,
+                hasActivityOverview: true,
                 hasMasterVolume: true,
-                hasOpenSoundSettings: true,
-                hasResetSurface: true))
+                hasSoundPackPicker: true,
+                hasWorkspaceDetails: true))
         for event in [Event.stopFailure] {
             expect(!order.contains(.eventPreview(event)), "\(event) 不得有试听焦点")
             expect(!order.contains(.eventMute(event)), "\(event) 不得有静音焦点")
@@ -84,19 +103,18 @@ func runPanelFocusOrderSuites() {
         }
         expect(
             order.suffix(4).elementsEqual([
-                .masterVolume, .openSoundSettings, .resetSurface, .quitApplication,
+                .soundPackPicker, .masterVolume, .workspaceDetails, .quitApplication,
             ]),
-            "Surface 播放设置与 reset/退出顺序错误：\(order)")
+            "包选择、播放设置、工作区详情与退出顺序错误：\(order)")
     }
 
     suite("panelFocusOrder：缺失声音只移除试听，保留已实现事件静音") {
         let events = focusEventPresentations(coverage: .broken(fileName: "missing.aiff"))
         let order = panelFocusOrder(
-            .operational(
+            .activityOperational(
                 events: events,
-                hasMasterVolume: true,
-                hasOpenSoundSettings: true,
-                hasResetSurface: false))
+                hasActivityOverview: true,
+                hasMasterVolume: true))
         for event in Event.allCases {
             expect(!order.contains(.eventPreview(event)), "缺失声音不得有试听焦点")
             expect(order.contains(.eventMute(event)), "缺失声音仍须保留静音焦点")
@@ -106,11 +124,10 @@ func runPanelFocusOrderSuites() {
     suite("panelFocusOrder：主音量为零移除试听，不影响静音") {
         let events = focusEventPresentations(masterVolume: 0)
         let order = panelFocusOrder(
-            .operational(
+            .activityOperational(
                 events: events,
-                hasMasterVolume: true,
-                hasOpenSoundSettings: true,
-                hasResetSurface: false))
+                hasActivityOverview: true,
+                hasMasterVolume: true))
         expect(
             !order.contains(where: {
                 if case .eventPreview = $0 { return true }; return false
@@ -121,33 +138,31 @@ func runPanelFocusOrderSuites() {
             "音量为零不等于逐事件静音")
     }
 
-    suite("panelFocusOrder：bootstrap/config recovery 位于事件之前") {
-        let actions: [PanelFocusTarget] = [
-            .bootstrapReportRetry(id: "a"),
-            .bootstrapReportDiagnostics(id: "a"),
-        ]
+    suite("panelFocusOrder：config recovery 位于作用域之后、事件之前") {
         let order = panelFocusOrder(
-            .operational(
-                events: [],
+            .activityOperational(
+                events: focusEventPresentations(),
+                hasActivityOverview: true,
                 hasMasterVolume: false,
-                hasOpenSoundSettings: false,
-                hasResetSurface: false,
-                hasConfigFailureNotice: true,
-                bootstrapReportActions: actions))
+                hasConfigFailureNotice: true))
         expect(
-            order == [.recentNotices, .soundScope] + actions + [.configReveal, .quitApplication],
-            "恢复动作视觉/焦点顺序错误：\(order)")
+            order.prefix(4).elementsEqual([
+                .headerSettings, .recentNotices, .soundScope, .configReveal,
+            ]),
+            "恢复按钮视觉/焦点顺序错误：\(order)")
     }
 
-    suite("panelFocusOrder：needsPack 保留声音作用域、近期提示、打开设置与退出，禁用主音量") {
+    suite("panelFocusOrder：needsPack 保留设置、近期提示、作用域、包选择与退出，禁用主音量") {
         let order = panelFocusOrder(
-            .operational(
+            .activityOperational(
                 events: [],
+                hasActivityOverview: true,
                 hasMasterVolume: false,
-                hasOpenSoundSettings: true,
-                hasResetSurface: false))
+                hasSoundPackPicker: true))
         expect(
-            order == [.recentNotices, .soundScope, .openSoundSettings, .quitApplication],
+            order == [
+                .headerSettings, .recentNotices, .soundScope, .soundPackPicker, .quitApplication,
+            ],
             "needsPack 焦点顺序错误：\(order)")
     }
 
@@ -311,16 +326,5 @@ func runPanelFocusOrderSuites() {
                 focusedTarget: .eventMute(.stop),
                 nextOrder: needsPackOrder) == .soundScope,
             "事件行消失且没有恢复按钮时，焦点必须回到声音作用域")
-    }
-}
-
-@MainActor
-func runPanelFocusInFlightSuites() {
-    suite("panelFirstFocusTarget：onboarding in-flight 不落禁用 CTA") {
-        expect(
-            panelFirstFocusTarget(
-                .onboarding(hasPrimaryAction: true, hasSecondaryAction: true),
-                ctaOperable: false) == nil,
-            "禁用 CTA 不得接收焦点")
     }
 }

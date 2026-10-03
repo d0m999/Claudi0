@@ -193,7 +193,7 @@ func runSoundPacksEditorViewSuites() async {
                 Array(soundPacksWindowFocusOrder(focusScope).prefix(2))
                     == [.managedScopeFailure, .packList],
                 "失效说明须成为首个焦点，包列表仍可经键盘到达")
-            var tracker = SoundPacksEditorFocusApplicationTracker()
+            var tracker = FocusApplicationTracker<SoundPacksEditorFocusProjection>()
             let available = SoundPacksEditorFocusProjection(
                 requestRevision: sounds.requestRevision, routeState: sounds.routeState,
                 scopeAvailability: .available(scope))
@@ -225,7 +225,7 @@ func runSoundPacksEditorViewSuites() async {
     }
 
     suite("Sound editor focus：同一 route request 只推进一次，settlement 与重新打开仍推进") {
-        var tracker = SoundPacksEditorFocusApplicationTracker()
+        var tracker = FocusApplicationTracker<SoundPacksEditorFocusProjection>()
         let pending = SoundPacksEditorFocusProjection(
             requestRevision: 801,
             routeState: .pendingFreshSnapshot,

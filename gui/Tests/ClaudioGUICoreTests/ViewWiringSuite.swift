@@ -283,21 +283,21 @@ private func guiSources() -> [ScannedSource] {
 /// 从 `lockLeaks` 普查里豁免的文件（**文件级单源**）。
 ///
 /// ⚠️ 提到文件级不是为了复用，是为了让「每个豁免项都换来一条更严的锚定绊线」这句散文有一条
-/// **可执行**版本：下面那条 suite 会断言这张表减去 `PanelView.swift` 之后，**逐项等于**
+/// **可执行**版本：下面那条 suite 会断言这张表减去 `lockCensusSelfGuardedFiles` 之后，**逐项等于**
 /// `expectedProductionLocks` 的文件集。上一版两张清单各自硬编码、互不绑定 —— 往这里加第四项
 /// 而对价一条不写，普查静默少查一个文件、全绿、没有人会喊（`/review d7084be` 红队 P2 坐实）。
 ///
-/// `PanelView.swift` 的豁免理由与另外两项不同（它是面板 config.lock 的唯一注入点，
-/// 只向 `PanelConfigController` 下传，由本文件的 config.lock suite 守着），所以它在
-/// 那条相等判定里被单独减掉 —— 减的是**它一个**，不是「随便谁都能豁免」。
+/// C1 之前 `PanelView.swift` 也在这张表里（它是面板 config.lock 的唯一注入点，由 config.lock
+/// suite 守着）；C1 之后 PanelView 不再持有任何锁代码、也不住在被普查的 target 里，
+/// 它的豁免与自我守卫项一并删除。
 private let lockCensusExemptedFiles = [
-    "PanelView.swift", "PanelComposition.swift", "ClaudioGUIApp.swift", "StateGalleryView.swift",
+    "PanelComposition.swift", "ClaudioGUIApp.swift", "StateGalleryView.swift",
     "NativeUIRegressionController.swift",
 ]
 
-/// 面板 view 与 GUI composition 各自有一条专属接线断言，不能混进包锁的 environment 普查。
+/// GUI composition 有一条专属接线断言，不能混进包锁的 environment 普查。
 private let lockCensusSelfGuardedFiles: Set<String> = [
-    "PanelView.swift", "PanelComposition.swift",
+    "PanelComposition.swift",
 ]
 
 /// 生产侧**每一处** `AudioImportEnvironment(…)` 构造点，连同它那把包锁应有的实参（**文件级单源**）。
@@ -837,20 +837,22 @@ func runViewWiringSuites() {
             "PanelView 必须把行内动作回调原样转发给选择器，不夹带路由知识")
         guard
             let selectionStart = panel.range(of: "private func selectSoundScope")?.lowerBound,
-            let synchronizationStart = panel.range(
-                of: "private func synchronizeSelectedSoundSurface")?.lowerBound,
-            selectionStart < synchronizationStart
+            let selectionEnd = panel.range(
+                of: "private var activityPresentation")?.lowerBound,
+            selectionStart < selectionEnd
         else {
             expect(false, "无法定位 PanelView 的作用域选择写入边界")
             return
         }
-        let selectionHandler = panel[selectionStart..<synchronizationStart]
+        let selectionHandler = panel[selectionStart..<selectionEnd]
         expect(
             selectionHandler.contains("validatedPanelSoundScopeSelection(")
                 && selectionHandler.contains(
                     "availableScopes: soundScopePresentations.map(\\.scope)")
-                && selectionHandler.contains("synchronizeSelectedSoundSurface()"),
-            "延迟选择写入前必须用最新可用作用域重验目标，失效时保持合法回退")
+                && selectionHandler.contains("panelModel.selectSoundScope(")
+                && selectionHandler.contains(
+                    "soundScopeSelection.projection.staleness == .staleRule"),
+            "延迟选择写入前必须用最新可用作用域重验目标；写入、持久化与 stale 重钉判断都必须委托 C1 owner 投影")
         expect(
             menu.contains("requestIntegrationsSettings(")
                 && collapsingWhitespace(menu).contains(
@@ -909,23 +911,23 @@ func runViewWiringSuites() {
                 && scopePicker.contains("value: interactionState.isInteractive"),
             "GUI 必须消费 GUICore 的最小动画投影，且胶囊不得靠 chevron 键让断言恒绿")
     }
-    suite("PanelView 的 config.lock 只转发给声音控制写者，不再供给宿主连接") {
+    suite("config.lock 只由 PanelComposition 灌进唯一写者，PanelView 不持有任何锁") {
         guard
             let panel = codeOnly("gui/Sources/ClaudioPanelPresentation/PanelView.swift"),
+            let composition = codeOnly("gui/Sources/ClaudioGUI/PanelComposition.swift"),
             let controllerSource = codeOnly(
                 "gui/Sources/ClaudioGUICore/PanelConfigController.swift")
         else {
-            expect(false, "读不到 PanelView/PanelConfigController")
+            expect(false, "读不到 PanelView/PanelComposition/PanelConfigController")
             return
         }
 
         expect(
-            panel.contains("lockFile: URL = ClaudioPaths.configLockFile"),
-            "PanelView 的 lockFile 默认值必须是 config.lock；静音与切包都写 config.json")
+            !panel.lowercased().contains("lockfile"),
+            "C1：PanelView 不再构造 PanelConfigController（由组合层注入），任何锁 token 都不许回流进视图层")
         expect(
-            collapsingWhitespace(panel).contains(
-                "PanelConfigController( configFile: configFile, lockFile: lockFile,"),
-            "PanelView 必须把 config.lock 灌进唯一 PanelConfigController")
+            composition.contains("lockFile: ClaudioPaths.configLockFile"),
+            "config.lock 必须由 app 组合层（PanelComposition）灌进唯一 PanelConfigController；静音与切包都写 config.json")
         expect(
             controllerSource.contains(
                 "bundledPacksDirectory: environment.bundledPacksDirectory, lockFile: lockFile)"),
@@ -943,26 +945,23 @@ func runViewWiringSuites() {
                 "PanelView 不再执行宿主连接，不得持有其锁/环境：\(forbidden)")
         }
     }
-    suite("MenuBarController 构造 PanelView 时不许传 lockFile —— 上面那个默认值的唯一活路") {
-        // 上面那条 suite 的头部注释里写着一句话：「MenuBarController.swift 是全仓唯一的
-        // `PanelView(` 构造点，且不传 `lockFile`」。**那是一个被写进注释的事实，而这个仓库
-        // 自己的规矩是：该断言的地方不许放注释**（`/codex review 803c639,b74b7f3` 的完整性
-        // 复查逮到的就是这一条）。
+    suite("ClaudioGUI 只许一处生产 PanelView 构造点，且全 target 不得出现未锚定的锁") {
+        // 这条 suite 的前身守的是「MenuBarController 构造 PanelView 时不许传 lockFile」——
+        // C1 之后那个形参整个没了：PanelConfigController 由组合层（PanelComposition /
+        // MenuBarController）构造并注入，PanelView 一行锁代码都不持有。于是这里的两道普查
+        // 守的东西变成了：
         //
-        // 它为什么必须是断言：`PanelView.lockFile` 是 `public` 的 init 参数，它存在的**唯一**
-        // 理由就是注入。任何一次「把锁/环境从 AppKit 外壳往下穿」的重构（主音量那一行、第二个
-        // popover、一个测试接缝）都会**自然而然**开始传它。而一旦这里传进 `ClaudioPaths.playLockFile`：
+        //   1. 唯一构造点：第二个 `PanelView(` 构造点意味着第二个 panel 绕开共享的
+        //      controller / C1 选择 owner（静音、切包、作用域选择各写各的）；
+        //   2. 锁普查：任何 `lockfile` token 回流进 ClaudioGUI（比如有人图省事让 PanelView
+        //      重新接一把锁）都必须是被锚定绊线按调用点绑住的那些。
         //
-        //   PanelView.lockFile → PanelConfigController
-        //                      → EventMuteController（静音写 config.json）
-        //                      → selectPack（切包写 config.json）
+        // 它为什么必须是断言而不是注释：「MenuBarController.swift 是全仓唯一的 `PanelView(`
+        // 构造点」曾是一句被写进注释的事实，而这个仓库自己的规矩是：该断言的地方不许放注释
+        // （`/codex review 803c639,b74b7f3` 的完整性复查逮到的就是这一条）。
         //
-        // 三个 GUI config 写者**同时**回到 play.lock 上。而上面那条 suite 只读 `PanelView.swift`：
-        // 默认值声明没动、两条转发没动、`!contains("playLockFile")` 也没动 —— **整套全绿**。
-        // 用户可见后果与默认值写错一模一样：点静音又吞一次提示音。
-        //
-        // 这是 D20 那条教训（「GUI 是显式向下传参的，改默认值挡不住调用点」）在**上一层**的复发：
-        // 阶段 A 给 PanelView 的默认值上了绊线，却把**调用点**的行为记成了一句散文。
+        // D20 那条教训（「GUI 是显式向下传参的，改默认值挡不住调用点」）在这里依然成立，
+        // 只是「默认值」已经随 C1 删除：现在没有默认值可依赖，构造点与锁 token 全靠下面两道普查。
         //
         // ## 为什么数的是整个 target，而不是 MenuBarController 一个文件（`/codex review d5ec97e,8f9cfa2`）
         //
@@ -988,8 +987,9 @@ func runViewWiringSuites() {
         //
         // 两种写法都数（`/codex review 840ea37` 的 P2）：`PanelView.init(` **不**包含 `PanelView(`，
         // 上一版只数后者，措辞却写着「唯一构造点」—— 又一次措辞比正则宽。真正守住锁的是下面的
-        // 普查二（任何显式传锁的构造点，不论写成哪种，都会漏出 `lockFile`）；普查一守的是上面那条
-        // 默认值断言的**前提**（「只有一个构造点、且走默认值」）。前提得连写法一起数，才配叫普查。
+        // 普查二（任何锁 token，不论写成哪种，都会漏出 `lockfile`）；普查一守的是「唯一生产构造点」
+        // 这个前提本身 —— 第二个构造点就是第二个绕开共享 controller / C1 选择 owner 的面板。
+        // 前提得连写法一起数，才配叫普查。
         var constructionSites: [String: Int] = [:]
         for file in sources {
             let bare = file.code.components(separatedBy: "PanelView(").count - 1
@@ -1003,7 +1003,7 @@ func runViewWiringSuites() {
                 "NativeUIRegressionController.swift": 1,
             ],
             "ClaudioGUI 只许一处生产 PanelView 构造点和一处 DEBUG State Gallery 构造点，实得 "
-                + "\(constructionSites)；新增入口必须重新证明 config.lock 来源")
+                + "\(constructionSites)；新增入口必须重新证明它不绕开共享 controller / C1 选择 owner")
         if let gallery = sources.first(where: { $0.path == "StateGalleryView.swift" })?.code {
             expect(
                 gallery.hasPrefix("#if DEBUG")
@@ -1014,8 +1014,11 @@ func runViewWiringSuites() {
             expect(false, "找不到 StateGalleryView.swift，无法证明额外构造点只存在于 DEBUG")
         }
 
-        // 普查二：除 PanelView 自己之外，全 target 的**代码**里不许出现任何锁。
-        // PanelView.swift 是唯一的例外，因为那个默认值与三条转发就住在它里面（上面那条 suite 钉的）。
+        // 普查二：全 target 的**代码**里不许出现任何未锚定的锁。
+        // C1 之前 `PanelView.swift` 是唯一的例外（那个 config.lock 默认值与三条转发住在它里面）；
+        // C1 之后它一行锁代码都不持有，而且根本不住在被普查的 target 里，它的豁免随之删除。
+        // 剩下的豁免项见下（包锁构造点与 PanelComposition 的 config.lock 转发），每一项都换一条
+        // 更严的锚定绊线。
         // `PackGalleryView` 的 doc comment 里提过 `selectPack(…lockFile:)`，`codeOnly` 已把它剥掉 ——
         // 这正是本文件头部记着的那次翻车（把谈论代码的文字当代码断）。
         //
@@ -1042,9 +1045,8 @@ func runViewWiringSuites() {
         // 办法是：豁免它们，**同时**各给一条更严的锚定绊线（下面那条 suite）。那条绊线按调用点绑
         // 实参、做相等判定，并且用实参**自己的文本**算出该文件应有的命中数 —— 多出一个 token 就是
         // 第三处锁，当场红。所以每个被豁免的文件换来的是一条比本普查**更强**的守卫，不是一个洞。
-        //
-        // PanelView.swift 的豁免理由与它们不同：它是面板 config.lock 的唯一注入点，
-        // 只向 PanelConfigController 下传，由上面的 config.lock suite 守着。
+        // `PanelComposition.swift` 的豁免同属这一类：它持有唯一一行 `lockFile: ClaudioPaths.configLockFile`
+        // 转发（C1 之后 PanelView 不再碰锁），由上面的 config.lock suite 按调用点守着。
         //
         // ⚠️ 这里**直接读**文件级的 ``lockCensusExemptedFiles``，不许再套一层 suite 局部别名
         //   （`let lockCensusExemptions = lockCensusExemptedFiles`）。上一版套了，而那一层就是洞：
@@ -1096,13 +1098,38 @@ func runViewWiringSuites() {
         }
         expect(
             lockLeaks.isEmpty,
-            "ClaudioGUI 里除 PanelView.swift 之外的文件出现了未锨定的锁：\(lockLeaks) —— "
-                + "这会绕过 PanelView 那个唯一活着的 config.lock 默认值，把静音、切包两个 "
-                + "config.json 写者一起送回"
-                + "调用点指定的那把锁上。传 playLockFile = 阶段 A 的分锁当场失效，而 PanelView.swift "
-                + "一个字都不用改，整套 GUI 测试照样全绿。包锁不在此列，由组装根和 "
-                + "preview 各自的锨定转发绊线守着。豁免名单：\(lockCensusExemptedFiles) —— 每一项都换来"
-                + "一条比本普查更严的锚定绊线，不是一个洞")
+            "ClaudioGUI 里出现了未锨定的锁：\(lockLeaks) —— "
+                + "C1 之后 config.lock 的唯一来源是 PanelComposition 那一行转发，任何第二处锁 token 都会把"
+                + "静音、切包两个 config.json 写者送回调用点指定的那把锁上。传 playLockFile = 阶段 A 的分锁"
+                + "当场失效，而 PanelComposition.swift 一个字都不用改，整套 GUI 测试照样全绿。包锁不在此列，"
+                + "由组装根和 preview 各自的锨定转发绊线守着。豁免名单：\(lockCensusExemptedFiles) —— "
+                + "每一项都换来一条比本普查更严的锚定绊线，不是一个洞")
+    }
+
+    suite("C1：MenuBarController 注入共享选择 owner，面板与快捷键消费同一事实") {
+        guard
+            let menu = codeOnly("gui/Sources/ClaudioGUI/MenuBarController.swift"),
+            let panel = codeOnly("gui/Sources/ClaudioPanelPresentation/PanelView.swift")
+        else {
+            expect(false, "读不到 MenuBarController/PanelView —— 这条 suite 唯一的价值就是读它们")
+            return
+        }
+        expect(
+            menu.components(separatedBy: "SoundScopeSelection(defaults: .standard)").count - 1 == 1,
+            "生产选择 owner 必须以 .standard 构造（真实持久字节），且全 app 只有一个构造点")
+        expect(
+            menu.components(separatedBy: "soundScopeSelection: soundScopeSelection").count - 1 == 2,
+            "同一个 owner 必须同时注入 makeEventSettingsConfigController 与 PanelView（面板与设置共享一份事实）")
+        expect(
+            menu.contains("soundScopeSelection.shortcutRoute()"),
+            "全局快捷键必须消费 owner 的即时路由，不再直读 UserDefaults")
+        expect(
+            !menu.contains("panelSoundScopeDefaultsKey") && !panel.contains("@AppStorage"),
+            "C1 之后持久字节只属于 owner：组合层不读 key，面板不持 AppStorage 副本")
+        expect(
+            panel.contains("panelModel: PanelConfigController,")
+                && !panel.contains("PanelConfigController("),
+            "PanelView 必须接收注入的 controller，不得再自构第二份")
     }
 
     suite("`AudioImportEnvironment.packsLockFile` 不许有默认值 —— 编译器执行「必须传」的那一半") {
@@ -1346,7 +1373,7 @@ func runViewWiringSuites() {
         expect(
             Set(lockCensusExemptedFiles).subtracting(lockCensusSelfGuardedFiles)
                 == Set(expectedProductionLocks.map(\.file)),
-            "`lockCensusExemptedFiles` 减掉面板 view 与 GUI composition 的专属接线豁免（它们由本文件"
+            "`lockCensusExemptedFiles` 减掉 GUI composition 的专属接线豁免（它由本文件"
                 + "另一条 suite 按调用点守着）之后，必须**逐项等于** `expectedProductionLocks` 的文件集 —— 否则「豁免换来的是"
                 + "更严，不是更松」这句话就有一项没兑现。豁免侧="
                 + "\(Set(lockCensusExemptedFiles).subtracting(lockCensusSelfGuardedFiles).sorted())，"
@@ -1398,8 +1425,9 @@ func runViewWiringSuites() {
                 .reduce(0, +)
             var accounted = packageLocksAccounted
             if expected.file == "NativeUIRegressionController.swift" {
+                // C1：PanelView 不再接收 lockFile（controller 由 fixture 注入），它的那一行锚随之删除；
+                // 剩下的构造点各自仍持一把必须锚定同一隔离根的锁。
                 for (constructor, label, literal) in [
-                    ("PanelView", "lockFile", "config.lock"),
                     ("PanelConfigController", "lockFile", "config.lock"),
                     ("SoundPacksEditorOwner", "lockFile", "config.lock"),
                     ("LocalActivitySummaryStore", "lockFile", "activity.lock"),
@@ -1947,7 +1975,10 @@ func runViewWiringSuites() {
         //
         // ⚠️ **R3 那一行是这一刀新加的，而它此前是全表唯一没有任何一条断言看得见的变异体**：诱饵喂饱
         // 计数与相等循环，真实构造走别名隐身，实参再从注入值派生出来 ⇒ 文本与行为**双双全绿**。
-        // 现在围栏（`unmodeledConstructionShapes`）独占它 —— `typealias` 一出现就红，不管它后面写什么。
+        // 现在围栏（`unmodeledConstructionShapes`）独占它 —— `typealias` 的右侧提及被守卫类型就红
+        // （R3 的 `typealias SE = SetupEnvironment` 正中这一条）；右侧与类型无关、单行可判的别名是
+        // 已建模的安全形状（焦点协调重构引入的两个焦点空间别名逼出了这次建模，见 TestSupport 该分支
+        // 注释），而那种形状构造不了 `SetupEnvironment`，对本变异体表无影响。
         //
         // ⚠️ **R5 那一行曾经写的是「本条独占 / 行为 —」，两次都不是了**，而两次变的都不是断言，是 fixture。
         // 最早那版把包锁放在 `claudioRoot/packs.lock`（与 config / settings 同父同名规则），于是
@@ -2241,7 +2272,7 @@ func runViewWiringSuites() {
         expect(
             panelCollapsed.contains("hasConfigFailureNotice: content.hasConfigFailureNotice"),
             "applyFirstFocus 必须**原样转发** `content.hasConfigFailureNotice`（`PanelTopContent` 上单测钉过返回值的"
-                + "投影）进 panelOpeningFocus —— 换成视图里本地重解释（`if case .configFailure = content { … }`）那颗"
+                + "投影）进 panelFocusOrder/panelFirstFocusTarget 的 scope —— 换成视图里本地重解释（`if case .configFailure = content { … }`）那颗"
                 + "闭包的返回值没测过，翻成 false 就让失败卡照画、`.configReveal` 被踢出焦点序还全绿（f54d335 P1#1 "
                 + "follow-up 对抗复核逮到的洞）；钉死字面量 / 换投影名同样让 render/focus 分叉")
         expect(

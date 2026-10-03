@@ -2087,6 +2087,28 @@ func runSourceScannerSuites() {
                 + "而这正是 `/codex review 37745f2` P1 用来让真实构造隐身的那一手。实得 "
                 + "\(unmodeledConstructionShapes(of: "Widget", in: alias))")
 
+        // `typealias` 的已建模安全形状（焦点协调重构逼出：两个存活焦点空间别名）：单行、右侧非空、
+        // 右侧不提及 `Widget` ⇒ 不记账。它构造不了 `Widget`，真的构造必以字面 `Widget(` 出现在
+        // 被扫源码里、由普查的集合相等兜住。
+        let safeAlias =
+            "public typealias FocusSpace = FocusRequestCoordinator<Foo>\nlet c = FocusSpace()"
+        expect(
+            !unmodeledConstructionShapes(of: "Widget", in: safeAlias).contains {
+                $0.contains("typealias")
+            },
+            "单行、右侧与 `Widget` 无关的别名是已建模的安全形状，不许再记账（那两个存活焦点空间别名"
+                + "会让围栏永久假红，而假红的守卫会被下一个人删掉）。实得 "
+                + "\(unmodeledConstructionShapes(of: "Widget", in: safeAlias))")
+
+        // 折行别名（`=` 收尾、右侧在下一行）单行无从判定 ⇒ 照旧记账（fail-closed）。
+        let splitAlias = "typealias SE =\n    Widget"
+        expect(
+            unmodeledConstructionShapes(of: "Widget", in: splitAlias).contains {
+                $0.contains("typealias")
+            },
+            "右侧折到下一行的别名必须照旧记一笔 —— 单行判不出右侧是什么时，放行就是 fail-open。"
+                + "实得 \(unmodeledConstructionShapes(of: "Widget", in: splitAlias))")
+
         let conditional = "#if DEBUG\nlet a = Widget(lock: x)\n#endif"
         expect(
             unmodeledConstructionShapes(of: "Widget", in: conditional).contains {
