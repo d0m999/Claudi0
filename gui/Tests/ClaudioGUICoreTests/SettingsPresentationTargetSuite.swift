@@ -358,6 +358,20 @@ func runSettingsPresentationSliceSuites() {
                 .platformAction(.openCalendarPrivacySettings, .failed),
                 .settingsNativeSystemSettingsFailed
             ),
+            (
+                .platformAction(.copyToPasteboard("session-1"), .failed),
+                .eventNoticeCopyFailed
+            ),
+            (
+                .platformAction(
+                    .revealInFinder(URL(fileURLWithPath: "/tmp/claudio-settings/recovery")),
+                    .performed),
+                .settingsNativeRevealInFinder
+            ),
+            (
+                .platformAction(.copyToPasteboard("session-1"), .performed),
+                .settingsNativeCopyToPasteboard
+            ),
         ]
 
         for (meaning, key) in cases {

@@ -30,6 +30,13 @@ func makeSystemSettingsPresentationActions(
                     )
                 else { return .failed }
                 return NSWorkspace.shared.open(url) ? .performed : .failed
+            case .revealInFinder(let url):
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+                return .performed
+            case .copyToPasteboard(let string):
+                NSPasteboard.general.clearContents()
+                return NSPasteboard.general.setString(string, forType: .string)
+                    ? .performed : .failed
             }
         },
         onEventAudibilityInputsChanged: onEventAudibilityInputsChanged)

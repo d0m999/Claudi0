@@ -15796,6 +15796,22 @@
         }
       }
     },
+    "settings.native.copy-to-pasteboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy to Clipboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拷贝到剪贴板"
+          }
+        }
+      }
+    },
     "settings.native.directory-and-surfaces": {
       "localizations": {
         "en": {
@@ -16112,6 +16128,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消星标"
+          }
+        }
+      }
+    },
+    "settings.native.reveal-in-finder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在访达中显示"
           }
         }
       }

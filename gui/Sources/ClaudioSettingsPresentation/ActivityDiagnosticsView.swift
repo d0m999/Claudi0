@@ -1,8 +1,8 @@
-import AppKit
 import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
+import Foundation
 import SwiftUI
 
 /// The production Activity & Diagnostics destination. It renders the shared activity projection;
@@ -13,6 +13,7 @@ struct ActivityDiagnosticsView: View {
     @ObservedObject var preferences: ClaudioPreferences
     let focusedTarget: FocusState<SettingsWindowFocusTarget?>.Binding
     let onAnnouncement: (@MainActor (String) -> Void)?
+    let performPlatformAction: @MainActor (SettingsPlatformAction) -> SettingsPresentationResult
 
     var eventNoticeModel: EventNoticeModel? = nil
     var noticeNavigation: SessionNavigationCoordinator? = nil
@@ -124,8 +125,8 @@ struct ActivityDiagnosticsView: View {
                     },
                     copySession: { action in
                         noticeNavigation.copy(action) { session in
-                            NSPasteboard.general.clearContents()
-                            return NSPasteboard.general.setString(session, forType: .string)
+                            performPlatformAction(.copyToPasteboard(session))
+                                == .platformAction(.performed)
                         }
                     }, showsRecordMetadata: true)
             }

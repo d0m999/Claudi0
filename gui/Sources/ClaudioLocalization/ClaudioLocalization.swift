@@ -1405,6 +1405,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     package static let settingsNativeSystemSettingsFailed: Self =
         "settings.native.system-settings-failed"
     package static let settingsNativeRecheck: Self = "settings.native.recheck"
+    package static let settingsNativeRevealInFinder: Self = "settings.native.reveal-in-finder"
+    package static let settingsNativeCopyToPasteboard: Self = "settings.native.copy-to-pasteboard"
 
     package static let settingsNativeCopyAndApplyTitle: Self =
         "settings.native.copy-and-apply-title"
@@ -1442,6 +1444,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsNativeOpenFocusSettings,
         .settingsNativeSystemSettingsFailed,
         .settingsNativeRecheck,
+        .settingsNativeRevealInFinder,
+        .settingsNativeCopyToPasteboard,
 
         .settingsNativeLocalNotice,
         .settingsNativeBack,

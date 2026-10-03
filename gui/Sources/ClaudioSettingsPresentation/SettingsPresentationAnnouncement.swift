@@ -28,6 +28,9 @@ extension SettingsPresentationAnnouncement.Meaning {
             return sentence
         case .soundPacks(let request):
             return request.sentence
+        case .platformAction(.copyToPasteboard, .unavailable),
+            .platformAction(.copyToPasteboard, .failed):
+            return l10n.text(.eventNoticeCopyFailed)
         case .platformAction(_, .unavailable), .platformAction(_, .failed):
             return l10n.text(.settingsNativeSystemSettingsFailed)
         case .loginItemStatus, .loginItemFailure, .platformAction:
@@ -59,6 +62,10 @@ extension SettingsPresentationAnnouncement.Meaning {
                     .settingsNotificationsOpenCalendarPrivacy
                 case .openFocusSettings:
                     .settingsNativeOpenFocusSettings
+                case .revealInFinder:
+                    .settingsNativeRevealInFinder
+                case .copyToPasteboard:
+                    .settingsNativeCopyToPasteboard
                 }
             case .destinationUpdate, .soundPacks:
                 preconditionFailure("render-ready announcements returned above")

@@ -1,8 +1,12 @@
+import Foundation
+
 /// Closed vocabulary for Settings-only effects implemented by native executable adapters.
 package enum SettingsPlatformAction: Equatable, Sendable {
     case openLoginItemsSettings
     case openFocusSettings
     case openCalendarPrivacySettings
+    case revealInFinder(URL)
+    case copyToPasteboard(String)
 }
 
 package enum SettingsPlatformActionResult: Equatable, Sendable {
