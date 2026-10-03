@@ -573,7 +573,6 @@ private struct ProductionPanelStateFrame: View {
     @StateObject private var languageStore: ClaudioPreferences
     @StateObject private var eventNoticeModel: EventNoticeModel
     private let panelModel: PanelConfigController
-    private let selectedScope: PanelSoundScopeID
     private let soundScopeExpanded: Bool
 
     init(
@@ -617,7 +616,6 @@ private struct ProductionPanelStateFrame: View {
 
         switch scenario {
         case .workBuddy, .workBuddyAwaitingExpanded:
-            selectedScope = .surface(.workBuddy)
             panelModel = PanelConfigController(
                 previewConfigState: .operational(baseConfig),
                 selectedSurface: .workBuddy,
@@ -627,13 +625,11 @@ private struct ProductionPanelStateFrame: View {
                     name: "Orbit Signals"),
                 environment: previewAudioImportEnvironment)
         case .needsPack:
-            selectedScope = .global
             panelModel = PanelConfigController(
                 previewConfigState: .needsPack,
                 libraryPresentationState: .ready,
                 environment: previewAudioImportEnvironment)
         case .configFailure:
-            selectedScope = .global
             panelModel = PanelConfigController(
                 previewConfigState: .malformed(
                     reason: language == .english
@@ -642,7 +638,6 @@ private struct ProductionPanelStateFrame: View {
                 libraryPresentationState: .ready,
                 environment: previewAudioImportEnvironment)
         case .libraryFailure:
-            selectedScope = .global
             panelModel = PanelConfigController(
                 previewConfigState: .operational(baseConfig),
                 selectedPackMetadata: SelectedPackMetadata(
@@ -654,7 +649,6 @@ private struct ProductionPanelStateFrame: View {
                         : "无法读取声音包库。"),
                 environment: previewAudioImportEnvironment)
         case .libraryRefreshFailed:
-            selectedScope = .global
             panelModel = PanelConfigController(
                 previewConfigState: .operational(baseConfig),
                 eventRows: presentRows,
@@ -672,7 +666,6 @@ private struct ProductionPanelStateFrame: View {
                 masterVolume: baseConfig.masterVolume,
                 eventsEnabled: Dictionary(
                     uniqueKeysWithValues: Event.allCases.map { ($0.cliName, false) }))
-            selectedScope = .surface(.workBuddy)
             panelModel = PanelConfigController(
                 previewConfigState: .operational(invalidBase),
                 effectiveConfig: failedEffective,
@@ -691,7 +684,6 @@ private struct ProductionPanelStateFrame: View {
     var body: some View {
         PanelView(
             previewPanelModel: panelModel,
-            previewScope: selectedScope,
             previewSoundScopeExpanded: soundScopeExpanded,
             audioEnvironment: previewAudioImportEnvironment,
             focusCoordinator: focusCoordinator,

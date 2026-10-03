@@ -154,109 +154,6 @@ public func eventSettingsRouteFocusTarget(
     return .scope(route.scope)
 }
 
-public enum EventSettingsInheritanceState: Sendable, Equatable {
-    case globalDefault
-    case workspaceConfiguration
-    case inheritedGlobal
-    case surfaceOverride
-    case invalidSurfaceOverride
-}
-
-/// Pack inheritance is independent from per-event sparse overrides. An Event-only override must
-/// not make the pack appear overridden, and a malformed Surface still fails closed.
-public func eventSettingsPackInheritanceState(
-    config: ClaudioConfig,
-    scope: PanelSoundScopeID
-) -> EventSettingsInheritanceState {
-    switch scope {
-    case .global: return .globalDefault
-    case .surface: return .invalidSurfaceOverride
-    case .workspace(let id):
-        if case .success = config.resolveWorkspaceProfile(id: id) { return .workspaceConfiguration }
-        return .invalidSurfaceOverride
-    }
-}
-
-/// One composer belongs to an exact Surface/Event route. A different selected Surface, or an
-/// explicit route to a different Event, invalidates the old candidate session.
-public func eventSettingsShouldCloseAICueComposer(
-    includesAICueComposer: Bool,
-    targetSurface: HostSurfaceID?,
-    targetEvent: Event? = nil,
-    selectedSurface: HostSurfaceID?,
-    selectedEvent: Event? = nil
-) -> Bool {
-    guard includesAICueComposer else { return false }
-    if targetSurface != selectedSurface { return true }
-    guard let selectedEvent else { return false }
-    return targetEvent != selectedEvent
-}
-
-/// The composer appears only beneath its exact Surface/Event tuple.
-public func eventSettingsAICueComposerMatches(
-    targetSurface: HostSurfaceID?,
-    targetEvent: Event?,
-    selectedSurface: HostSurfaceID?,
-    event: Event
-) -> Bool {
-    guard let targetSurface, let targetEvent, let selectedSurface else { return false }
-    return targetSurface == selectedSurface && targetEvent == event
-}
-
-/// VoiceOver receives the same inheritance fact rendered beside an Event. Keeping the join in
-/// GUICore makes both the no-override and bilingual projections executable without mounting UI.
-public func eventSettingsIdentityAccessibilityLabel(
-    presentationLabel: String,
-    inheritanceText: String?,
-    language: ClaudioAppLanguage
-) -> String {
-    guard let inheritanceText, !inheritanceText.isEmpty else { return presentationLabel }
-    let separator = language == .english ? ", " : "，"
-    return [presentationLabel, inheritanceText].joined(separator: separator)
-}
-
-/// Per-event sparse-override projection for the unified Events page. It consumes the same
-/// `resolveSoundProfile` fail-closed boundary as writes and never infers inheritance from only the
-/// pack field.
-public func eventSettingsInheritanceState(
-    config: ClaudioConfig,
-    scope: PanelSoundScopeID,
-    event: Event
-) -> EventSettingsInheritanceState {
-    switch scope {
-    case .global: return .globalDefault
-    case .surface: return .invalidSurfaceOverride
-    case .workspace(let id):
-        if case .success = config.resolveWorkspaceProfile(id: id) { return .workspaceConfiguration }
-        return .invalidSurfaceOverride
-    }
-}
-
-/// A standard window has its own width-driven degradation rules. Unlike
-/// ``PanelLayoutAdaptation``, this value never carries the menu-bar popover's fixed width or
-/// waveform decisions into a resizable window.
-public struct EventSettingsWindowLayout: Sendable, Equatable {
-    public let metadataStacks: Bool
-    public let actionsMoveBelow: Bool
-
-    public init(metadataStacks: Bool, actionsMoveBelow: Bool) {
-        self.metadataStacks = metadataStacks
-        self.actionsMoveBelow = actionsMoveBelow
-    }
-}
-
-public func eventSettingsWindowLayout(
-    availableWidth: Double,
-    typeScale: Double
-) -> EventSettingsWindowLayout {
-    let safeWidth = availableWidth.isFinite && availableWidth > 0 ? availableWidth : 0
-    let safeScale = typeScale.isFinite && typeScale > 0 ? typeScale : 1
-    let normalizedWidth = safeWidth / safeScale
-    return EventSettingsWindowLayout(
-        metadataStacks: normalizedWidth < 560,
-        actionsMoveBelow: normalizedWidth < 500)
-}
-
 /// 全宽声音作用域菜单的一项。状态仍是语义枚举；图标与颜色只在 SwiftUI 层选择。
 public struct PanelSoundScopePresentation: Sendable, Equatable, Identifiable {
     public var id: PanelSoundScopeID { scope }
@@ -341,15 +238,6 @@ public func panelSoundScopeMenuLayout(
             optionsHeight + diagnosticsHeight + chromeHeight))
 }
 
-/// 面板与 Events 共用的 Sound Scope 身份。Global 恒在；普通 Surface 只在“已配置或可用”时
-/// 进入选择器。`.notConnected` 仍由 Integrations 完整呈现，不会因为 Sound Scope 过滤而丢失诊断入口。
-public func panelSoundScopeIDs(
-    sourceRows: [HostSourceRowPresentation]
-) -> [PanelSoundScopeID] {
-    [.global]
-
-}
-
 public func panelSoundScopePresentations(
     sourceRows: [HostSourceRowPresentation],
     config: ClaudioConfig,
@@ -391,19 +279,6 @@ public func panelSoundScopePresentations(
 
 }
 
-private func panelSoundScopeStateText(
-    _ status: HostSourceRowStatus,
-    l10n: ClaudioL10n
-) -> String {
-    switch status {
-    case .ready: l10n.text(.panelSoundScopeStatusActive)
-    case .awaitingActivation: l10n.text(.panelSoundScopeStatusAwaitingReceipt)
-    case .legacy: l10n.text(.panelSoundScopeStatusLegacy)
-    case .notConnected: l10n.text(.panelSoundScopeStatusNotConnected)
-    case .needsAttention: l10n.text(.panelSoundScopeStatusNeedsAttention)
-    }
-}
-
 /// 行内状态动作的决策级投影：只有异常状态（待回执 / 旧版 / 需要处理）的 Surface 行产生
 /// 集成入口，返回值为 typed route `.integrations(surface:)` 需要的真实宿主身份。Global 与
 /// 「已激活」行保持只读；`.notConnected` 本就不进入选择器，即使出现也 fail closed。
@@ -430,22 +305,13 @@ public func panelSoundScopeIntegrationActionLabel(
 
 /// A missing Workspace keeps its typed identity so a refreshed panel cannot silently turn the
 /// next sound edit into a Default Group write. Unknown legacy values still display Global.
+/// 呈现层薄包装：解析核心在 `SoundScopeSelection.swift` 的 ID 版（C1 单一事实）。
 public func resolvedPanelSoundScopeSelection(
     storedValue: String?,
     scopes: [PanelSoundScopePresentation]
 ) -> PanelSoundScopeID {
-    if storedValue == PanelSoundScopeID.global.storedValue { return .global }
-    if let storedValue,
-        let exact = scopes.first(where: { $0.scope.storedValue == storedValue })
-    {
-        return exact.scope
-    }
-    if let storedValue, storedValue.hasPrefix("workspace:"),
-        let id = UUID(uuidString: String(storedValue.dropFirst("workspace:".count)))
-    {
-        return .workspace(id)
-    }
-    return .global
+    resolvedPanelSoundScopeSelection(
+        storedValue: storedValue, availableScopes: scopes.map(\.scope))
 }
 
 /// The retained selection stays visibly unavailable until the user picks a current scope.
@@ -454,7 +320,19 @@ public func panelSoundScopeSelectionPresentation(
     scopes: [PanelSoundScopePresentation],
     language: ClaudioAppLanguage
 ) -> PanelSoundScopePresentation {
-    let selection = resolvedPanelSoundScopeSelection(storedValue: storedValue, scopes: scopes)
+    panelSoundScopeSelectionPresentation(
+        selection: resolvedPanelSoundScopeSelection(storedValue: storedValue, scopes: scopes),
+        scopes: scopes,
+        language: language)
+}
+
+/// typed 选择版：`SoundScopeSelection` 投影（C1 单一事实）直接给出 selection，无需再解析
+/// 持久化字节。缺失工作区保留 typed identity 并呈现为不可用；其余未命中回落到 Global 行。
+public func panelSoundScopeSelectionPresentation(
+    selection: PanelSoundScopeID,
+    scopes: [PanelSoundScopePresentation],
+    language: ClaudioAppLanguage
+) -> PanelSoundScopePresentation {
     if let current = scopes.first(where: { $0.scope == selection }) { return current }
     if case .workspace = selection {
         let l10n = ClaudioL10n(language: language)
@@ -482,36 +360,13 @@ public func validatedPanelSoundScopeSelection(
 /// Produces the typed Events route used by the global shortcut. Known Surface identities remain
 /// intact even when currently unavailable. Unknown persisted identities cannot be represented as a
 /// typed scope, so they retain the exact raw value beside a non-writable Global presentation.
+/// 呈现层薄包装：路由核心在 `SoundScopeSelection.swift` 的 ID 版（C1 单一事实）。
 public func globalShortcutEventSettingsRoute(
     storedValue: String?,
     scopes: [PanelSoundScopePresentation]
 ) -> EventSettingsWindowRoute {
-    if storedValue == PanelSoundScopeID.global.storedValue {
-        return EventSettingsWindowRoute(scope: .global)
-    }
-    if let storedValue, storedValue.hasPrefix("workspace:"),
-        let id = UUID(uuidString: String(storedValue.dropFirst(10)))
-    {
-        let scope = PanelSoundScopeID.workspace(id)
-        return EventSettingsWindowRoute(
-            scope: scope,
-            unavailableRequestedScopeStoredValue: scopes.contains(where: { $0.scope == scope })
-                ? nil : storedValue)
-    }
-    if let storedValue, let surface = HostSurfaceID(rawValue: storedValue) {
-        let requestedScope = PanelSoundScopeID.surface(surface)
-        if scopes.contains(where: { $0.scope == requestedScope }) {
-            return EventSettingsWindowRoute(scope: requestedScope)
-        }
-        return EventSettingsWindowRoute(
-            scope: requestedScope,
-            unavailableRequestedScopeStoredValue: storedValue)
-    }
-    let resolved = resolvedPanelSoundScopeSelection(storedValue: storedValue, scopes: scopes)
-    let unavailableValue = storedValue == nil || storedValue == "unselected" ? nil : storedValue
-    return EventSettingsWindowRoute(
-        scope: resolved,
-        unavailableRequestedScopeStoredValue: unavailableValue)
+    globalShortcutEventSettingsRoute(
+        storedValue: storedValue, availableScopes: scopes.map(\.scope))
 }
 
 /// Resolves a retained Events & Sounds route only when its exact typed scope is currently visible.

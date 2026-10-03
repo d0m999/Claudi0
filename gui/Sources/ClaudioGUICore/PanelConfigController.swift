@@ -85,10 +85,21 @@ public final class PanelConfigController: ObservableObject {
     @Published public private(set) var configState: PanelConfigState
     /// 读模型（`packCoverage` / `availablePacks`）算什么用的那份 config —— 不是决定哪个顶层视图渲染的。
     @Published public private(set) var config: ClaudioConfig
+    /// C1：app 生命周期声音作用域选择的**唯一事实**（typed 身份、钉定的写目标、陈旧度、
+    /// 持久化字节）。本 controller 不再持有选择副本，只从它的投影派生读取；显式选择经
+    /// ``selectSoundScope(_:rebindSelectedWorkspace:)`` 委托给 owner，`$projection` sink 驱动
+    /// 读模型重投影。生产端面板与设置窗口共享同一个实例（见 `MenuBarController`）。
+    public let soundScopeSelection: SoundScopeSelection
+    /// owner 投影的同步镜像。`@Published` 在 **willSet** 里发文 —— sink 触发的那一刻 owner 的存储
+    /// 还没落地，此刻回读 `soundScopeSelection.projection` 拿到的是**旧** scope。所以派生属性一律读
+    /// 这份由 sink 参数喂进来的镜像（sink 在 owner 赋值语句内同步执行，`select` 返回时镜像已是最新）。
+    private var selectionProjection: SoundScopeSelection.Projection
     /// `nil` 是全局默认 profile；非 nil 时 `config` 是该 surface 的 effective 投影。
-    @Published public private(set) var selectedSurface: HostSurfaceID?
-    @Published public private(set) var selectedWorkspaceID: UUID? = nil
-    private var selectedWorkspaceWriteTarget: WorkspaceSoundWriteTarget?
+    public var selectedSurface: HostSurfaceID? { selectionProjection.scope.surface }
+    public var selectedWorkspaceID: UUID? { selectionProjection.scope.workspaceID }
+    private var selectedWorkspaceWriteTarget: WorkspaceSoundWriteTarget? {
+        selectionProjection.writeTarget
+    }
     @Published public private(set) var workspaceError: WorkspaceSoundError? = nil
     @Published public private(set) var previewSafetyFailures: [Event: EventPreviewSafetyFailure] =
         [:]
@@ -103,9 +114,7 @@ public final class PanelConfigController: ObservableObject {
         ClaudioGUICore.panelConfigRecoveryTarget(configFile: configFile)
     }
     public var selectedSoundScope: PanelSoundScopeID {
-        if let selectedWorkspaceID { return .workspace(selectedWorkspaceID) }
-        if let selectedSurface { return .surface(selectedSurface) }
-        return .global
+        selectionProjection.scope
     }
     /// A retired Surface or unavailable Workspace stays visible without panel write controls.
     public var soundControlsEnabled: Bool {
@@ -165,7 +174,7 @@ public final class PanelConfigController: ObservableObject {
             workspaceError = nil
             reload(origin: .writeAction, refreshSoundPackLibrary: false)
             soundPacksRefreshCoordinator?.completeConfigFactChange(
-                .changed, source: configProjectionToken)
+                .changed)
             return true
         case .failure(let error):
             if error.isPublishedConflict || error == .staleRule {
@@ -173,7 +182,7 @@ public final class PanelConfigController: ObservableObject {
             }
             if error.isPublishedConflict {
                 soundPacksRefreshCoordinator?.completeConfigFactChange(
-                    .changed, source: configProjectionToken)
+                    .changed)
             }
             workspaceError = error
             return false
@@ -183,19 +192,22 @@ public final class PanelConfigController: ObservableObject {
     public func selectSoundScope(
         _ scope: PanelSoundScopeID, rebindSelectedWorkspace: Bool = false
     ) {
+        // 防「延迟动作写默认组」的承重墙：no-op 守卫逐字保留。
         guard selectedSoundScope != scope || rebindSelectedWorkspace else { return }
         if rebindSelectedWorkspace {
             reload(origin: .external, refreshSoundPackLibrary: false)
         }
-        selectedWorkspaceID = scope.workspaceID
-        selectedWorkspaceWriteTarget = scope.workspaceID.flatMap { id in
-            baseConfig.workspaceRules.first(where: { $0.id == id }).map { rule in
-                WorkspaceSoundWriteTarget(rule: rule)
-            }
-        }
-        selectedSurface = scope.surface
         workspaceError = nil
         surfaceSoundIssueState = nil
+        // C1：持久化、重钉与投影发布都在 owner；`$projection` sink 接力做读模型重投影。
+        soundScopeSelection.select(scope)
+    }
+
+    /// C1：owner 投影变化后的读模型重投影 —— 与旧 `selectSoundScope` 尾段逐字一致，但**不清**
+    /// 写错误（清错只发生在上面那条显式选择路径里）。`projection` 是 sink 收到的**新值**（@Published
+    /// willSet 时 owner 存储尚未落地，先喂镜像再重投影）。
+    private func applySelectionProjection(_ projection: SoundScopeSelection.Projection) {
+        selectionProjection = projection
         applyEffectiveConfig()
         if let librarySnapshot {
             applySnapshot(librarySnapshot)
@@ -265,16 +277,17 @@ public final class PanelConfigController: ObservableObject {
     private let muteController: EventMuteController
     /// 同上，主音量的写者（D27/D39）——独占构造，与 ``muteController`` 同一个理由。
     private let masterVolumeController: MasterVolumeController
-    /// 定向通知保留的管理窗口与 sibling projection 重读 config；写者不反向推进 panel revision。
+    /// 定向通知保留的管理窗口重读 config；写者不反向推进 panel revision。C1：选择收敛为单实例
+    /// 之后，config 事实的发布者只有这个 controller 自己，`configProjectionToken` 自排除随之退役。
     private let soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator?
-    private let configProjectionToken = PanelConfigProjectionToken()
     /// 一次**全量** reload 之后，config 读模型之外还要做的跨-view-model 协调（onboarding 重探 + 两组
     /// import view-model `retarget` 到新包）。参数是刚重载出来的 config —— retarget 要用它的 `selectedPack`。
     private let afterFullReload: @MainActor (ClaudioConfig) -> Void
     /// 管理窗口成功写发布的 revision。订阅只做 ``reload()``，绝不降级到
     /// ``reloadConfigOnly()``，因为 manifest 与未来的星标写都可能改变 `packCards`。
     private var soundPacksRefreshCancellable: AnyCancellable?
-    private var configFactRefreshCancellable: AnyCancellable?
+    /// C1：owner 投影（显式选择 / `applyConfig` 重解析 / 陈旧度翻转）驱动读模型重投影。
+    private var selectionProjectionCancellable: AnyCancellable?
     private var baseConfig: ClaudioConfig
 
     #if DEBUG
@@ -291,7 +304,8 @@ public final class PanelConfigController: ObservableObject {
         environment: AudioImportEnvironment,
         soundPackLibrary: SoundPackLibrary,
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void = { _ in },
-        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil
+        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil,
+        soundScopeSelection: SoundScopeSelection? = nil
     ) {
         self.init(
             configFile: configFile,
@@ -300,7 +314,8 @@ public final class PanelConfigController: ObservableObject {
             soundPackLibrary: soundPackLibrary,
             readSource: .sharedLibrary,
             afterFullReload: afterFullReload,
-            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
+            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
+            soundScopeSelection: soundScopeSelection)
     }
 
     #if DEBUG
@@ -318,7 +333,8 @@ public final class PanelConfigController: ObservableObject {
         selectedPackMetadata: SelectedPackMetadata? = nil,
         libraryPresentationState: SoundPackLibraryPresentationState = .ready,
         environment: AudioImportEnvironment,
-        previewConfigFile: URL? = nil
+        previewConfigFile: URL? = nil,
+        soundScopeSelection: SoundScopeSelection? = nil
     ) {
         let baseConfig = previewConfigState.resolvedConfig
         let config = effectiveConfig ?? baseConfig
@@ -343,11 +359,12 @@ public final class PanelConfigController: ObservableObject {
         self.soundPacksRefreshCoordinator = nil
         self.afterFullReload = { _ in }
         self.soundPacksRefreshCancellable = nil
+        self.soundScopeSelection =
+            soundScopeSelection ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
         self.baseConfig = baseConfig
 
         self.configState = previewConfigState
         self.config = config
-        self.selectedSurface = selectedSurface
         self.surfaceSoundIssueState = surfaceSoundIssue.map { message in
             if case .failure = baseConfig.resolveSoundProfile(for: selectedSurface) {
                 return .malformedOverride(message: message)
@@ -365,6 +382,21 @@ public final class PanelConfigController: ObservableObject {
         self.packSwitchError = nil
         self.muteError = nil
         self.masterVolumeError = nil
+
+        // C1：先用注入的读模型喂 owner，再把预览的 Surface 身份播种进选择投影（不持久化）。
+        self.soundScopeSelection.applyConfig(baseConfig)
+        if let selectedSurface {
+            self.soundScopeSelection.select(.surface(selectedSurface))
+        }
+        self.selectionProjection = self.soundScopeSelection.projection
+        selectionProjectionCancellable = self.soundScopeSelection.$projection
+            .dropFirst()
+            .sink { [weak self] projection in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.applySelectionProjection(projection)
+                }
+            }
     }
 
     /// Compatibility initializer for the existing synchronous disk-behavior harness. Production
@@ -374,7 +406,8 @@ public final class PanelConfigController: ObservableObject {
         lockFile: URL,
         environment: AudioImportEnvironment,
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void = { _ in },
-        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil
+        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator? = nil,
+        soundScopeSelection: SoundScopeSelection? = nil
     ) {
         self.init(
             configFile: configFile,
@@ -383,7 +416,8 @@ public final class PanelConfigController: ObservableObject {
             soundPackLibrary: SoundPackLibrary(environment: environment),
             readSource: .directDiskFixture,
             afterFullReload: afterFullReload,
-            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator)
+            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
+            soundScopeSelection: soundScopeSelection)
     }
     #endif
 
@@ -394,7 +428,8 @@ public final class PanelConfigController: ObservableObject {
         soundPackLibrary: SoundPackLibrary,
         readSource: SoundPackReadSource,
         afterFullReload: @escaping @MainActor (ClaudioConfig) -> Void,
-        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator?
+        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator?,
+        soundScopeSelection: SoundScopeSelection? = nil
     ) {
         self.configFile = configFile
         self.configReadIsInjected = false
@@ -409,13 +444,18 @@ public final class PanelConfigController: ObservableObject {
             configFile: configFile, lockFile: lockFile)
         self.soundPacksRefreshCoordinator = soundPacksRefreshCoordinator
         self.afterFullReload = afterFullReload
+        // C1：生产经 `makeEventSettingsConfigController` 注入 app 生命周期 owner；nil 只发生在
+        // 测试 / 预览，落一个绝不碰 `.standard` 的隔离 fixture owner。
+        self.soundScopeSelection =
+            soundScopeSelection ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
 
         let loadedState = loadPanelConfig(from: configFile)
         let loadedConfig = loadedState.resolvedConfig
         self.configState = loadedState
         self.config = loadedConfig
         self.baseConfig = loadedConfig
-        self.selectedSurface = nil
+        self.soundScopeSelection.applyConfig(loadedConfig)
+        self.selectionProjection = self.soundScopeSelection.projection
         self.surfaceSoundIssueState = nil
         if !readSource.readsSharedSnapshot {
             self.eventRows = packCoverage(
@@ -454,16 +494,12 @@ public final class PanelConfigController: ObservableObject {
                 }
             }
 
-        configFactRefreshCancellable = soundPacksRefreshCoordinator?.$configFactRevision
+        selectionProjectionCancellable = self.soundScopeSelection.$projection
             .dropFirst()
-            .sink { [weak self] _ in
+            .sink { [weak self] projection in
                 MainActor.assumeIsolated {
-                    guard
-                        let self,
-                        self.soundPacksRefreshCoordinator?.configFactSource
-                            != self.configProjectionToken
-                    else { return }
-                    self.reload(origin: .external, refreshSoundPackLibrary: false)
+                    guard let self else { return }
+                    self.applySelectionProjection(projection)
                 }
             }
 
@@ -510,8 +546,7 @@ public final class PanelConfigController: ObservableObject {
                 surfaceSoundIssueState = nil
                 reloadConfigOnly(origin: .writeAction)
                 soundPacksRefreshCoordinator?.completePanelConfigChange(
-                    .changed,
-                    source: configProjectionToken)
+                    .changed)
             case .failure(let error):
                 surfaceSoundIssueState = .writeFailure(
                     message: error.description, category: error.panelCopyCategory,
@@ -519,7 +554,7 @@ public final class PanelConfigController: ObservableObject {
                 reloadConfigOnly(origin: .writeAction)
                 if case .configPublishedButFailed = error {
                     soundPacksRefreshCoordinator?.completePanelConfigChange(
-                        .changed, source: configProjectionToken)
+                        .changed)
                 }
             }
             return
@@ -541,8 +576,7 @@ public final class PanelConfigController: ObservableObject {
         }
         if succeeded || publishedDespiteFailure {
             soundPacksRefreshCoordinator?.completePanelConfigChange(
-                .changed,
-                source: configProjectionToken)
+                .changed)
         }
     }
 
@@ -606,8 +640,7 @@ public final class PanelConfigController: ObservableObject {
         }
         if landed != nil || publishedDespiteFailure {
             soundPacksRefreshCoordinator?.completePanelConfigChange(
-                .changed,
-                source: configProjectionToken)
+                .changed)
         }
         return landed
     }
@@ -652,8 +685,7 @@ public final class PanelConfigController: ObservableObject {
                 surfaceSoundIssueState = nil
                 reload(origin: .writeAction, refreshSoundPackLibrary: false)
                 soundPacksRefreshCoordinator?.completeConfigFactChange(
-                    .changed,
-                    source: configProjectionToken)
+                    .changed)
                 return .succeeded
             case .failure(let error):
                 surfaceSoundIssueState = .writeFailure(
@@ -666,7 +698,7 @@ public final class PanelConfigController: ObservableObject {
                 if case .configPublishedButFailed = error {
                     reload(origin: .writeAction, refreshSoundPackLibrary: false)
                     soundPacksRefreshCoordinator?.completeConfigFactChange(
-                        .changed, source: configProjectionToken)
+                        .changed)
                 }
                 return .failed(mapped)
             }
@@ -681,8 +713,7 @@ public final class PanelConfigController: ObservableObject {
             // current snapshot and `selectPack` just revalidated it, so a scan here is pure I/O.
             reload(origin: .writeAction, refreshSoundPackLibrary: false)
             soundPacksRefreshCoordinator?.completeConfigFactChange(
-                .changed,
-                source: configProjectionToken)
+                .changed)
             return .succeeded
         case .failure(let error):
             packSwitchError = error
@@ -693,7 +724,7 @@ public final class PanelConfigController: ObservableObject {
             }
             if case .configPublishedButFailed = error {
                 soundPacksRefreshCoordinator?.completeConfigFactChange(
-                    .changed, source: configProjectionToken)
+                    .changed)
             }
             return .failed(error)
         }
@@ -825,6 +856,7 @@ public final class PanelConfigController: ObservableObject {
 
         configState = reloaded
         baseConfig = reloaded.resolvedConfig
+        soundScopeSelection.applyConfig(baseConfig)
         applyEffectiveConfig()
         eventRows = eventRows.map { row in
             EventRow(
@@ -867,8 +899,7 @@ public final class PanelConfigController: ObservableObject {
             surfaceSoundIssueState = nil
             reload(origin: .writeAction, refreshSoundPackLibrary: false)
             soundPacksRefreshCoordinator?.completePanelConfigChange(
-                .changed,
-                source: configProjectionToken)
+                .changed)
         case .failure(let error):
             surfaceSoundIssueState = .writeFailure(
                 message: error.description, category: error.panelCopyCategory,
@@ -882,6 +913,7 @@ public final class PanelConfigController: ObservableObject {
     private func reloadConfigReadModel(using loadedState: PanelConfigState) {
         configState = loadedState
         baseConfig = configState.resolvedConfig
+        soundScopeSelection.applyConfig(baseConfig)
         applyEffectiveConfig()
         surfaceSoundIssueState = surfaceSoundIssueAfterReadBack(
             surfaceSoundIssueState,

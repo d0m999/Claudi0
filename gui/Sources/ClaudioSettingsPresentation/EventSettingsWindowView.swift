@@ -311,8 +311,10 @@ struct EventSettingsWindowView: View {
     private func synchronize() {
         player.stop()
         // Preserve invalid identities so delayed actions cannot write the Default Group.
+        // C1：选择事实住在共享 owner（`SoundScopeSelection`）；这里不再把保留路由推回 model ——
+        // 显式选择走 `selectScope`，通用入口经 session 的 applyRoute 跟随 owner，工作区删除
+        // 在 `confirmDeletion` 里显式 `selectSoundScope(.global)`。
         if selection.unavailableRequestedScopeStoredValue == nil {
-            model.selectSoundScope(selection.route.scope)
             if !selection.route.workspaceTargetIsCurrent(in: model.configState.resolvedConfig)
                 || (selection.route.workspaceTarget != nil
                     && model.selectedWorkspaceTarget != selection.route.workspaceTarget)

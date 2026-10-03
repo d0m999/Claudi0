@@ -37,7 +37,6 @@ func runPanelPresentationMountSuites() {
                 preferredLanguageIdentifiers: { ["en"] })
             let panel = PanelView(
                 previewPanelModel: panelModel,
-                previewScope: .global,
                 audioEnvironment: environment,
                 focusCoordinator: PanelFocusCoordinator(),
                 hostIntegrations: hostIntegrations,
@@ -77,7 +76,6 @@ func runPanelPresentationMountSuites() {
                 preferredLanguageIdentifiers: { ["zh-Hans"] })
             let panel = PanelView(
                 previewPanelModel: panelModel,
-                previewScope: .global,
                 audioEnvironment: environment,
                 focusCoordinator: PanelFocusCoordinator(),
                 hostIntegrations: HostIntegrationPresentationStore(
@@ -119,7 +117,6 @@ func runPanelPresentationMountSuites() {
                 preferredLanguageIdentifiers: { ["en"] })
             let panel = PanelView(
                 previewPanelModel: model,
-                previewScope: .global,
                 audioEnvironment: environment,
                 focusCoordinator: PanelFocusCoordinator(),
                 hostIntegrations: HostIntegrationPresentationStore(

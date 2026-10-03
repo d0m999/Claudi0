@@ -427,9 +427,15 @@ package final class SettingsPresentationSession: ObservableObject {
                 }
             }
         case .destination(.eventsAndSounds):
-            if let eventShortcut {
-                let routeChanged = eventSettingsSelection.route != eventShortcut
-                eventSettingsSelection.select(eventShortcut)
+            // C1：通用入口让保留路由跟随共享 owner 的当前选择；route.scope 已与 owner 一致时
+            // 原样保留整条 route（含 route.event），生命周期恢复语义不变。
+            let eventRoute =
+                eventShortcut
+                ?? EventSettingsWindowRoute(
+                    scope: dependencies.eventSettingsModel.selectedSoundScope)
+            if eventShortcut != nil || eventSettingsSelection.route.scope != eventRoute.scope {
+                let routeChanged = eventSettingsSelection.route != eventRoute
+                eventSettingsSelection.select(eventRoute)
                 if routeChanged {
                     dependencies.soundPacksEditorNativeEffects.stopPreview(
                         owner: dependencies.soundPacksEditorOwner)

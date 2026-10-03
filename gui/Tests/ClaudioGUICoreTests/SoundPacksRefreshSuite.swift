@@ -460,7 +460,7 @@ func runSoundPacksRefreshSuites() async {
         expect(coordinator.configFactSource == nil, "外部写者没有 projection token，所有 controller 都应刷新")
     }
 
-    suite("共享 config fact：双 controller 同步 pack/Event/volume，Surface 投影保持隔离") {
+    suite("共享 config fact：单 controller 发布 pack/Event/volume，选择经共享 owner 收敛") {
         withTempDirectory { root in
             let configFile = root.appendingPathComponent("config.json")
             let configLock = root.appendingPathComponent("config.lock")
@@ -482,39 +482,56 @@ func runSoundPacksRefreshSuites() async {
             let environment = soundPacksEnvironment(packs)
             let library = SoundPackLibrary(environment: environment)
             let coordinator = SoundPacksRefreshCoordinator()
-            let legacy = PanelConfigController(
+            // C1：生产只有一个 PanelConfigController（组合根注入同一个 app 生命周期 owner）。
+            // 这里显式注入 owner 钉住生产形状；peer 则走 nil → 隔离 fixture owner。
+            let owner = SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
+            let controller = PanelConfigController(
+                configFile: configFile,
+                lockFile: configLock,
+                environment: environment,
+                soundPackLibrary: library,
+                soundPacksRefreshCoordinator: coordinator,
+                soundScopeSelection: owner)
+            let peer = PanelConfigController(
                 configFile: configFile,
                 lockFile: configLock,
                 environment: environment,
                 soundPackLibrary: library,
                 soundPacksRefreshCoordinator: coordinator)
-            let unified = PanelConfigController(
-                configFile: configFile,
-                lockFile: configLock,
-                environment: environment,
-                soundPackLibrary: library,
-                soundPacksRefreshCoordinator: coordinator)
 
-            expect(legacy.switchPack(to: "pack-b") == .succeeded, "legacy 切包前提必须成功")
+            expect(controller.soundScopeSelection === owner, "注入的 owner 必须就是 controller 持有的那份")
             expect(
-                legacy.config.selectedPack == "pack-b" && unified.config.selectedPack == "pack-b",
-                "任一 projection 切包后，peer 必须同步同一 config fact")
+                peer.soundScopeSelection !== owner,
+                "未注入的实例必须落在隔离 fixture owner 上，绝不暗中共享选择事实")
 
-            legacy.toggleMute(.stop)
+            expect(controller.switchPack(to: "pack-b") == .succeeded, "切包前提必须成功")
             expect(
-                !legacy.config.isEnabled(.stop) && !unified.config.isEnabled(.stop),
-                "任一 projection 修改 Event 后，peer 必须同步 enabled 事实")
+                controller.config.selectedPack == "pack-b",
+                "切包成功后唯一 projection 必须读到新 config fact")
 
-            legacy.selectSoundScope(.global)
-            unified.selectSoundScope(.global)
-            expect(legacy.setMasterVolume(0.35) == 0.35, "全局主音量写入前提必须成功")
+            controller.toggleMute(.stop)
             expect(
-                legacy.config.masterVolume == 0.35 && unified.config.masterVolume == 0.35,
-                "唯一全局主音量必须同步到两个 projection")
+                !controller.config.isEnabled(.stop),
+                "Event 写成功后唯一 projection 必须读到新 enabled 事实")
+
+            expect(controller.setMasterVolume(0.35) == 0.35, "全局主音量写入前提必须成功")
             expect(
-                legacy.selectedSoundScope == .global && unified.selectedSoundScope == .global,
-                "共享 config 刷新不得合并或改写各窗口的 Surface projection")
+                controller.config.masterVolume == 0.35,
+                "唯一全局主音量必须读回落地值")
+            expect(controller.selectedSoundScope == .global, "config 写不得改写选择投影")
             expect(coordinator.configFactRevision == 3, "pack/Event/volume 必须各发布一次 config fact")
+            expect(
+                coordinator.configFactSource == nil,
+                "C1：唯一 controller 不再携带 projection token，source 恒为 nil")
+
+            // C1 删除的机制：peer 实例不再经 coordinator 自动同步。双实例互刷曾是两个
+            // PanelConfigController 之间的创可贴；选择收敛为单实例 + 共享 owner 之后，
+            // 「peer 读到旧事实」不再是生产可达状态，这里反向钉死它不会被悄悄复活。
+            expect(
+                peer.config.selectedPack == "pack-a"
+                    && peer.config.isEnabled(.stop)
+                    && peer.config.masterVolume == 0.5,
+                "peer 实例不得再经 configFactRevision 自动同步（C1 已删除该订阅）")
         }
     }
 

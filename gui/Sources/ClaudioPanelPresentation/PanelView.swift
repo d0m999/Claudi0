@@ -21,6 +21,9 @@ public struct PanelView: View {
     @State private var previewAttemptFailures: [Event: EventPreviewAttemptFailure] = [:]
     @FocusState private var focusedTarget: PanelFocusTarget?
 
+    /// C1：app 生命周期声音作用域选择的唯一事实，与设置窗口共享同一个 owner。视图只呈现它的
+    /// 投影，不再持有 `@AppStorage` 副本。
+    @ObservedObject private var soundScopeSelection: SoundScopeSelection
     @ObservedObject private var focusCoordinator: PanelFocusCoordinator
     @ObservedObject private var hostIntegrations: HostIntegrationPresentationStore
     @ObservedObject private var languageStore: ClaudioPreferences
@@ -29,9 +32,6 @@ public struct PanelView: View {
     @ObservedObject private var eventNoticeModel: EventNoticeModel
 
     @Environment(\.colorScheme) private var colorScheme
-    /// `unselected` 只表示从未选择；用户显式选过 Global 后持久化为 `global`。
-    @AppStorage(panelSoundScopeDefaultsKey)
-    private var selectedSurfaceRaw = "unselected"
 
     private let audioEnvironment: AudioImportEnvironment
     private let configFile: URL
@@ -47,16 +47,17 @@ public struct PanelView: View {
     private let onRevealConfig: @MainActor (URL) -> Void
     private let onAnnounce: @MainActor (String) -> Void
 
+    /// C1：`panelModel` 与 `soundScopeSelection` 都由 app 组合层（`MenuBarController`）注入 ——
+    /// 面板与设置窗口共享同一个 controller 与选择 owner，这里不再自构第二份。
     public init(
         audioEnvironment: AudioImportEnvironment,
         configFile: URL = ClaudioPaths.configFile,
-        lockFile: URL = ClaudioPaths.configLockFile,
+        panelModel: PanelConfigController,
+        soundScopeSelection: SoundScopeSelection,
         focusCoordinator: PanelFocusCoordinator = PanelFocusCoordinator(),
         hostIntegrations: HostIntegrationPresentationStore,
         languageStore: ClaudioPreferences,
         activityDiagnostics: ActivityDiagnosticsModel,
-        soundPackLibrary: SoundPackLibrary,
-        soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator,
         eventNoticeModel: EventNoticeModel,
         noticeNavigation: SessionNavigationCoordinator? = nil,
         onAudibilityInputsChanged: @escaping @MainActor () -> Void,
@@ -90,25 +91,18 @@ public struct PanelView: View {
         previewPlayer = NSSoundAudioPreviewPlayer()
         refreshesActivityOnLifecycle = true
 
-        let inputsChanged = onAudibilityInputsChanged
         _announcer = StateObject(wrappedValue: PanelAnnouncer())
-        _panelModel = StateObject(
-            wrappedValue: PanelConfigController(
-                configFile: configFile,
-                lockFile: lockFile,
-                environment: audioEnvironment,
-                soundPackLibrary: soundPackLibrary,
-                afterFullReload: { _ in inputsChanged() },
-                soundPacksRefreshCoordinator: soundPacksRefreshCoordinator))
+        _panelModel = StateObject(wrappedValue: panelModel)
+        _soundScopeSelection = ObservedObject(wrappedValue: soundScopeSelection)
     }
 
     #if DEBUG
     /// Deterministic production-composition initializer used only by the state gallery. The
-    /// injected model owns every visible state; callbacks are inert and the injected typed
-    /// preferences are isolated so frames cannot change the user's real panel preferences.
+    /// injected model owns every visible state —— 包括 C1 之后的选择投影（Surface 播种已在
+    /// preview controller 的 init 里完成）；callbacks are inert and the injected typed preferences
+    /// are isolated so frames cannot change the user's real panel preferences.
     public init(
         previewPanelModel: PanelConfigController,
-        previewScope: PanelSoundScopeID,
         previewSoundScopeExpanded: Bool = false,
         previewActivityPresentation: ActivityDiagnosticsPresentation = .empty(),
         previewActivityRange: LocalActivityRange = .today,
@@ -120,14 +114,9 @@ public struct PanelView: View {
         previewPlayer: AudioPreviewPlaying? = nil,
         onAnnounce: @escaping @MainActor (String) -> Void = { _ in }
     ) {
-        let previewKey = UUID().uuidString
-        let defaults = UserDefaults(suiteName: "com.orbitzero.claudio.state-gallery")!
-        _selectedSurfaceRaw = AppStorage(
-            wrappedValue: previewScope.storedValue,
-            "claudio.preview.selected-surface.\(previewKey)",
-            store: defaults)
         _announcer = StateObject(wrappedValue: PanelAnnouncer())
         _panelModel = StateObject(wrappedValue: previewPanelModel)
+        _soundScopeSelection = ObservedObject(wrappedValue: previewPanelModel.soundScopeSelection)
         _isSoundScopeMenuExpanded = State(initialValue: previewSoundScopeExpanded)
         _activityRange = State(initialValue: previewActivityRange)
         self.audioEnvironment = audioEnvironment
@@ -224,7 +213,6 @@ public struct PanelView: View {
                         model: model, coordinator: coordinator, preferences: preferences)
                 },
                 onAnnounce: onAnnounce)
-            synchronizeSelectedSoundSurface()
             applyFirstFocus()
             if refreshesActivityOnLifecycle {
                 activityDiagnostics.refresh()
@@ -237,12 +225,10 @@ public struct PanelView: View {
             if refreshesActivityOnLifecycle {
                 activityDiagnostics.refresh()
             }
-            synchronizeSelectedSoundSurface()
             applyFirstFocus()
             announcePanelSummary()
         }
         .onChange(of: hostIntegrations.content.sourceRows) { _ in
-            synchronizeSelectedSoundSurface()
             applyFirstFocus()
         }
         .onChange(of: panelModel.libraryPresentationState) { _ in
@@ -252,6 +238,9 @@ public struct PanelView: View {
             announcePanelSummary(opening: false)
         }
         .onChange(of: panelModel.config.selectedPack) { _ in
+            previewAttemptFailures = [:]
+        }
+        .onChange(of: soundScopeSelection.projection.scope) { _ in
             previewAttemptFailures = [:]
         }
         .onChange(of: panelModel.configState.topContent) { content in
@@ -399,7 +388,7 @@ public struct PanelView: View {
 
     private var selectedScope: PanelSoundScopePresentation {
         panelSoundScopeSelectionPresentation(
-            storedValue: selectedSurfaceRaw,
+            selection: soundScopeSelection.projection.scope,
             scopes: soundScopePresentations,
             language: languageStore.language)
     }
@@ -416,37 +405,20 @@ public struct PanelView: View {
             onOpenIntegration: onOpenIntegration)
     }
 
+    /// C1：持久化、重钉与投影发布全部委托给 owner（经 `panelModel.selectSoundScope`）。
+    /// 失效目标（菜单展开期间规则被删）不再回写任何持久字节 —— owner 的投影本来就是事实。
     private func selectSoundScope(_ requestedScope: PanelSoundScopeID) {
         guard
             let scope = validatedPanelSoundScopeSelection(
                 requestedScope,
                 availableScopes: soundScopePresentations.map(\.scope))
-        else {
-            synchronizeSelectedSoundSurface()
-            return
-        }
-        selectedSurfaceRaw = scope.storedValue
+        else { return }
         panelModel.selectSoundScope(
             scope,
             rebindSelectedWorkspace: panelModel.selectedSoundScope == scope
-                && panelModel.workspaceError == .staleRule)
+                && soundScopeSelection.projection.staleness == .staleRule)
         previewAttemptFailures = [:]
         applyFirstFocus()
-    }
-
-    private func synchronizeSelectedSoundSurface() {
-        let resolved = resolvedPanelSoundScopeSelection(
-            storedValue: selectedSurfaceRaw,
-            scopes: soundScopePresentations)
-        if let storedValue = panelSoundScopeStoredValueToPersist(
-            storedValue: selectedSurfaceRaw,
-            resolvedSelection: resolved),
-            selectedSurfaceRaw != storedValue
-        {
-            selectedSurfaceRaw = storedValue
-        }
-        if panelModel.selectedSoundScope != resolved { previewAttemptFailures = [:] }
-        panelModel.selectSoundScope(resolved)
     }
 
     // MARK: - Activity overview
@@ -672,10 +644,8 @@ public struct PanelView: View {
                             case .adjustGroupVolume:
                                 focusedTarget = .masterVolume
                             case .editSound, .repairSound:
-                                guard panelModel.selectedSoundScope == selectedScope.scope,
-                                    !panelModel.config.selectedPack.isEmpty
-                                else { return }
-                                let target = panelModel.selectedWorkspaceTarget
+                                guard !panelModel.config.selectedPack.isEmpty else { return }
+                                let target = soundScopeSelection.projection.writeTarget
                                 let targetMatchesScope =
                                     selectedScope.scope.workspaceID == nil
                                     || target?.id == selectedScope.scope.workspaceID
@@ -807,9 +777,7 @@ public struct PanelView: View {
 
     private func playbackSettings(masterVolumeEnabled: Bool) -> some View {
         let scope = selectedScope.scope
-        let workspaceTarget = scope.workspaceID.flatMap { _ in
-            panelModel.selectedSoundScope == scope ? panelModel.selectedWorkspaceTarget : nil
-        }
+        let workspaceTarget = soundScopeSelection.projection.writeTarget
         return VStack(alignment: .leading, spacing: 5) {
             Text(l10n.text(.panelPlaybackSettings))
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -820,7 +788,6 @@ public struct PanelView: View {
                     selection: Binding(
                         get: { panelModel.config.selectedPack },
                         set: {
-                            guard panelModel.selectedSoundScope == scope else { return }
                             _ = panelModel.switchPack(to: $0); onAudibilityInputsChanged()
                         })
                 ) {
@@ -867,8 +834,8 @@ public struct PanelView: View {
                     )
                     .font(.caption).foregroundColor(.secondary)
                     Button(l10n.text(.workspaceEdit)) {
-                        guard panelModel.selectedSoundScope == .workspace(id),
-                            let target = panelModel.selectedWorkspaceTarget, target.id == id
+                        guard let target = soundScopeSelection.projection.writeTarget,
+                            target.id == id
                         else {
                             onAnnounce(
                                 localizedWorkspaceError(

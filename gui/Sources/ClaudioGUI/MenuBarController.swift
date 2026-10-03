@@ -73,6 +73,10 @@ final class MenuBarController: NSObject {
     private let soundPackLibrary: SoundPackLibrary
     private let settingsWindowController: SettingsWindowController
     private let eventSettingsModel: PanelConfigController
+    /// C1：app 生命周期声音作用域选择的唯一事实 —— 面板、设置窗口与全局快捷键共享同一个
+    /// owner（注入 `eventSettingsModel`，并直接传给 `PanelView`）。持久化字节仍在
+    /// `panelSoundScopeDefaultsKey`，但读写只经这个 owner。
+    private let soundScopeSelection: SoundScopeSelection
     private let globalShortcutRegistrar: CarbonGlobalShortcutRegistrar
     private let globalShortcutSettings: GlobalShortcutSettingsModel
     private let languageStore: ClaudioPreferences
@@ -174,12 +178,14 @@ final class MenuBarController: NSObject {
             onContentChanged: { [weak hostIntegrations] content in
                 hostIntegrations?.replace(content: content)
             })
+        let soundScopeSelection = SoundScopeSelection(defaults: .standard)
         let eventSettingsModel = makeEventSettingsConfigController(
             configFile: ClaudioPaths.configFile,
             environment: audioEnvironment,
             soundPackLibrary: soundPackLibrary,
             bundledHelper: bundledHelper,
             soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
+            soundScopeSelection: soundScopeSelection,
             afterFullReload: { [weak actionRouter] _ in
                 actionRouter?.audibilityInputsChanged()
             })
@@ -258,12 +264,12 @@ final class MenuBarController: NSObject {
 
         let panel = PanelView(
             audioEnvironment: audioEnvironment,
+            panelModel: eventSettingsModel,
+            soundScopeSelection: soundScopeSelection,
             focusCoordinator: focusCoordinator,
             hostIntegrations: hostIntegrations,
             languageStore: languageStore,
             activityDiagnostics: activityDiagnostics,
-            soundPackLibrary: soundPackLibrary,
-            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
             eventNoticeModel: eventNoticeRuntime.model,
             noticeNavigation: noticeNavigation,
             onAudibilityInputsChanged: { [weak actionRouter] in
@@ -309,6 +315,7 @@ final class MenuBarController: NSObject {
         self.soundPackLibrary = soundPackLibrary
         self.settingsWindowController = settingsWindowController
         self.eventSettingsModel = eventSettingsModel
+        self.soundScopeSelection = soundScopeSelection
         self.globalShortcutRegistrar = globalShortcutRegistrar
         self.globalShortcutSettings = globalShortcutSettings
         self.languageStore = languageStore
