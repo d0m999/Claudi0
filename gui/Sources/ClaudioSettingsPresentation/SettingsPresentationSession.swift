@@ -179,15 +179,22 @@ package final class SettingsPresentationSession: ObservableObject {
                     self.publishProjection()
                 }
             }
-        soundScopeSelectionCancellable = dependencies.eventSettingsModel.soundScopeSelection
-            .$projection
+        let soundScopeSelection = dependencies.eventSettingsModel.soundScopeSelection
+        let initialSoundScopeProjection = soundScopeSelection.projection
+        soundScopeSelectionCancellable = soundScopeSelection.$projection
             .removeDuplicates { previous, next in
                 previous.scope == next.scope && previous.writeTarget == next.writeTarget
+                    && previous.staleness == next.staleness
+                    && previous.isAvailable == next.isAvailable
+            }
+            .scan((previous: initialSoundScopeProjection, current: initialSoundScopeProjection)) {
+                pair, projection in
+                (previous: pair.current, current: projection)
             }
             .dropFirst()
-            .sink { [weak self] projection in
+            .sink { [weak self] pair in
                 MainActor.assumeIsolated {
-                    self?.synchronizeEventSoundScope(projection)
+                    self?.synchronizeEventSoundScope(pair.current, previous: pair.previous)
                 }
             }
         integrationsSelectionCancellable = dependencies.integrationsModel.$selectedHost
@@ -517,17 +524,37 @@ package final class SettingsPresentationSession: ObservableObject {
         publishProjection()
     }
 
-    private func synchronizeEventSoundScope(_ projection: SoundScopeSelection.Projection) {
+    private func synchronizeEventSoundScope(
+        _ projection: SoundScopeSelection.Projection,
+        previous: SoundScopeSelection.Projection
+    ) {
         // Explicit route transactions retain their event and captured target. Outside those
         // transactions, a shared selection change must reach the retained page immediately.
         // Use the publisher payload because @Published delivers it before its storage changes.
         guard !isPerformingTransaction else { return }
+        let selectionChanged =
+            previous.scope != projection.scope || previous.writeTarget != projection.writeTarget
+        let retainedRoute = eventSettingsSelection.route
+        if !selectionChanged {
+            // A health update belongs to the shared selection, not an explicit request for a
+            // different captured directory. Keep the request's event and detail when it matches.
+            guard retainedRoute.scope == projection.scope,
+                retainedRoute.workspaceTarget == nil
+                    || retainedRoute.workspaceTarget == projection.writeTarget
+            else { return }
+            if case .scope(let target) = retainedRoute.detail, target != projection.writeTarget {
+                return
+            }
+        }
         let route = EventSettingsWindowRoute(
             scope: projection.scope,
-            workspaceTarget: projection.writeTarget,
+            event: selectionChanged ? nil : retainedRoute.event,
+            workspaceTarget:
+                selectionChanged ? projection.writeTarget : retainedRoute.workspaceTarget,
             unavailableRequestedScopeStoredValue:
                 projection.isAvailable && projection.staleness == .current
-                ? nil : projection.scope.storedValue)
+                ? nil : projection.scope.storedValue,
+            detail: selectionChanged ? .configuration : retainedRoute.detail)
         guard eventSettingsSelection.route != route else { return }
         if lifecycleDestination == .eventsAndSounds {
             dependencies.soundPacksEditorNativeEffects.stopPreview(
@@ -535,7 +562,15 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.aiCueViewModel.endSession()
             dependencies.soundPacksEditorOwner.updateAICueComposer(session: nil, generation: nil)
         }
-        eventSettingsSelection.select(route)
+        if selectionChanged {
+            eventSettingsSelection.select(
+                route, preservingSoundsAIState: lifecycleDestination == .sounds)
+        } else if route.unavailableRequestedScopeStoredValue != nil {
+            eventSettingsSelection.markCurrentScopeUnavailable(
+                preservingDetail: true, preservingSoundsAIState: lifecycleDestination == .sounds)
+        } else {
+            eventSettingsSelection.clearUnavailableScope(preservingDetail: true)
+        }
     }
 
     private func activate(
