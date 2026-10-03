@@ -28,6 +28,7 @@ package struct SettingsRootView: View {
     let onAnnouncement: @MainActor (String) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @FocusState private var focusedTarget: SettingsWindowFocusTarget?
     @State private var handledFocusDebtRevision: UInt64 = 0
 
@@ -136,14 +137,14 @@ package struct SettingsRootView: View {
                 .padding(.bottom, 16)
 
             ForEach(sections) { section in
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(section.destinations) { item in
                         sidebarButton(item)
                     }
                 }
                 .padding(
                     .top,
-                    section.id == sections.first?.id ? 0 : 24)
+                    section.id == sections.first?.id ? 0 : SettingsAppearance.sidebarGroupGap)
             }
 
             Spacer(minLength: 0)
@@ -165,24 +166,14 @@ package struct SettingsRootView: View {
         Button {
             settingsPresentationSession.send(.route(.destination(item)))
         } label: {
-            HStack(spacing: 9) {
-                Image(systemName: icon(item))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 25, height: 25)
-                    .background(sidebarIconColor(item))
-                    .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
-                            .stroke(SettingsAppearance.hairline(colorScheme), lineWidth: 1)
-                    )
-                    .accessibilityHidden(true)
+            HStack(spacing: 8) {
+                SettingsSidebarIcon(destination: item)
 
                 Text(item.localizedName(language: preferences.language))
-                    .foregroundColor(
+                    .foregroundStyle(
                         item == destination
-                            ? SettingsAppearance.text(colorScheme)
-                            : SettingsAppearance.secondaryText(colorScheme)
+                            ? Color.white
+                            : SettingsAppearance.text(colorScheme)
                     )
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -192,12 +183,13 @@ package struct SettingsRootView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 6)
+            .frame(minHeight: SettingsAppearance.sidebarRowHeight)
             .background(
                 RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
                     .fill(
                         item == destination
-                            ? Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.085)
+                            ? SettingsAppearance.sidebarSelection(colorSchemeContrast)
                             : Color.clear)
             )
             .contentShape(Rectangle())
@@ -728,31 +720,6 @@ package struct SettingsRootView: View {
             l10n.text(.settingsRouteInvalidPack)
         case .staleSoundPack(let packID):
             l10n.format(.settingsRouteStalePack, packID as NSString)
-        }
-    }
-
-    private func sidebarIconColor(_ item: SettingsDestination) -> Color {
-        switch item {
-        case .eventsAndSounds: Color(red: 0.949, green: 0.580, blue: 0.133)
-        case .sounds: Color(red: 0.635, green: 0.357, blue: 0.898)
-        case .integrations: Color(red: 0.345, green: 0.482, blue: 0.776)
-        case .notifications: Color(red: 0.886, green: 0.353, blue: 0.404)
-        case .general, .shortcuts: Color(red: 0.557, green: 0.557, blue: 0.576)
-        case .usage: Color(red: 0.396, green: 0.600, blue: 0.427)
-        case .about: Color(red: 0.333, green: 0.608, blue: 0.839)
-        }
-    }
-
-    private func icon(_ destination: SettingsDestination) -> String {
-        switch destination {
-        case .general: "gearshape"
-        case .integrations: "puzzlepiece.extension"
-        case .eventsAndSounds: "waveform"
-        case .notifications: "bell"
-        case .sounds: "speaker.wave.2"
-        case .usage: "chart.bar"
-        case .shortcuts: "command"
-        case .about: "info.circle"
         }
     }
 

@@ -8,6 +8,8 @@ package enum SettingsAppearance {
     package static let eventGap: CGFloat = 0
     package static let groupRadius: CGFloat = 10
     package static let readingWidth: CGFloat = 780
+    package static let sidebarRowHeight: CGFloat = 32
+    package static let sidebarGroupGap: CGFloat = 16
 
     package static func font(_ role: ClaudioTheme.FontRole) -> Font {
         switch role {
@@ -30,6 +32,10 @@ package enum SettingsAppearance {
 
     package static func sidebar(_ scheme: ColorScheme) -> Color {
         color(scheme == .dark ? 0x2B2B2E : 0xE9E9EC)
+    }
+
+    package static func sidebarSelection(_ contrast: ColorSchemeContrast) -> Color {
+        color(contrast == .increased ? 0x0056B3 : 0x006FE6)
     }
 
     package static func text(_ scheme: ColorScheme) -> Color {
