@@ -281,7 +281,7 @@ func runPackAudioInventorySuites() {
         }
     }
 
-    suite("EventRowImportViewModel.bindExistingFile：复用包内音频走 bindEventToManifest 并转 present") {
+    suite("bindEventToManifest：复用包内既有音频绑定事件并转 present") {
         withTempDirectory { root in
             let packs = root.appendingPathComponent("packs")
             let pack = packs.appendingPathComponent("my-pack")
@@ -290,22 +290,17 @@ func runPackAudioInventorySuites() {
                 to: pack.appendingPathComponent("manifest.json"))
             writeFixture("audio", to: pack.appendingPathComponent("spare.mp3"))
             let environment = packAudioEnvironment(userPacksDirectory: packs)
-            let importViewModel = AudioImportViewModel(
-                packID: "my-pack",
-                environment: environment,
-                previewState: .reject(.nonWhitelistFormat))
-            let viewModel = EventRowImportViewModel(
+
+            let result = bindEventToManifest(
                 event: .notification,
-                importViewModel: importViewModel)
-            expect(
-                importViewModel.state == .reject(.nonWhitelistFormat),
-                "前提：这一行仍显示上一次无效导入的拒绝")
+                fileName: "spare.mp3",
+                packID: "my-pack",
+                environment: environment)
 
-            viewModel.bindExistingFile("spare.mp3")
-
-            expect(
-                viewModel.bindResult != nil,
-                "复用包内文件必须把真实 bind outcome 发布到既有 bindResult 表面")
+            guard case .success = result else {
+                expect(false, "复用包内既有音频必须绑定成功，实得 \(result)")
+                return
+            }
             expect(
                 packCoverage(
                     packID: "my-pack",
@@ -314,9 +309,6 @@ func runPackAudioInventorySuites() {
                 ).first(where: { $0.event == .notification })?.coverage
                     == .present(fileName: "spare.mp3"),
                 "分配后 notification 行必须转为 .present(spare.mp3)")
-            expect(
-                importViewModel.state == .idle,
-                "成功复用包内音频后必须清掉旧导入拒绝，不能让 EventRowView 继续优先显示陈旧错误")
         }
     }
 }

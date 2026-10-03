@@ -18,7 +18,7 @@ import Foundation
 // `OnboardingCopySuite.swift`, `OnboardingDetectorSuite.swift`,
 // `OnboardingViewModelSuite.swift`, `AudioFormatSniffSuite.swift`, `AudioImportSuite.swift`,
 // `AudioImportBatchSuite.swift`, `AudioImportViewModelSuite.swift`,
-// `CoverageStateSuite.swift`, `EventRowAccessibilitySuite.swift`, `ManifestBindingSuite.swift`,
+// `CoverageStateSuite.swift`, `ManifestBindingSuite.swift`,
 // `PackGallerySuite.swift`, `PackAudioInventorySuite.swift`, `PackForkSuite.swift`,
 // `PackRestoreSuite.swift`,
 // `EventMuteControllerSuite.swift`, `MasterVolumeControllerSuite.swift`,
@@ -420,7 +420,6 @@ runAudioImportSuites()
 runAudioImportBatchSuites()
 await runAudioImportViewModelSuites()
 runCoverageStateSuites()
-runEventRowAccessibilitySuites()
 await runManifestBindingSuites()
 runPackGallerySuites()
 runPackAudioInventorySuites()

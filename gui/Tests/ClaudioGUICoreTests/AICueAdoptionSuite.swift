@@ -4,15 +4,6 @@ import Foundation
 
 @MainActor
 func runAICueAdoptionSuites() async {
-    suite("legacy Surface adoption is retired; pack-scoped adoption owns editing") {
-        expect(
-            aiCueAdoptionEligibility(
-                surface: .codex, event: .stop, selectedPackID: "pack",
-                config: ClaudioConfig(selectedPack: "pack"), packCards: [], builtinPackIDs: [])
-                == .ineligible(.writesStopped),
-            "stale source route cannot mutate a pack or hidden sound settings")
-    }
-
     suite("AI 提示音 manifest：事件绑定与显示名在一次原子 RMW 中发布并保留未知字段") {
         withTempDirectory { root in
             let packs = root.appendingPathComponent("packs", isDirectory: true)
@@ -113,14 +104,4 @@ func runAICueAdoptionSuites() async {
         }
     }
 
-}
-
-private func aiCuePackCard(id: String) -> PackCard {
-    PackCard(
-        id: id,
-        name: id,
-        isCC0: false,
-        presentEvents: [],
-        state: .partial(present: 0, total: Event.allCases.count),
-        isSelected: false)
 }

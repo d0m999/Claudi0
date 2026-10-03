@@ -22,6 +22,16 @@ private func panelPresentationEventRows(
     Event.allCases.map { EventRow(event: $0, coverage: coverage, enabled: true) }
 }
 
+// 生产可写判据的组合：路由不带失效原因（`SoundPacksEditorOwner` 的 `routeAvailable`），
+// 且 typed scope 通过当前可用集合重验（`PanelView` 的 `validatedPanelSoundScopeSelection`）。
+private func writableEventSettingsScope(
+    route: EventSettingsWindowRoute,
+    availableScopes: [PanelSoundScopeID]
+) -> PanelSoundScopeID? {
+    guard route.unavailableRequestedScopeStoredValue == nil else { return nil }
+    return validatedPanelSoundScopeSelection(route.scope, availableScopes: availableScopes)
+}
+
 @MainActor
 func runPanelPresentationSuites() async {
     suite("事件与提示音路由：保留 Global/Surface，并为声音编辑携带同一作用域") {
@@ -220,7 +230,8 @@ func runPanelPresentationSuites() async {
             "来源断开或新回调不得改变声音选择器")
         expect(
             resolvedPanelSoundScopeSelection(
-                storedValue: PanelSoundScopeID.workspace(rule.id).storedValue, scopes: scopes)
+                storedValue: PanelSoundScopeID.workspace(rule.id).storedValue,
+                availableScopes: scopes.map(\.scope))
                 == .workspace(rule.id),
             "手动工作区选择必须恢复")
     }
@@ -306,34 +317,40 @@ func runPanelPresentationSuites() async {
             language: .english)
 
         expect(
-            resolvedPanelSoundScopeSelection(storedValue: "global", scopes: scopes) == .global,
+            resolvedPanelSoundScopeSelection(
+                storedValue: "global", availableScopes: scopes.map(\.scope)) == .global,
             "显式 Global 不得被自动选择覆盖")
         expect(
             resolvedPanelSoundScopeSelection(
                 storedValue: HostSurfaceID.workBuddy.rawValue,
-                scopes: scopes) == .global,
+                availableScopes: scopes.map(\.scope)) == .global,
             "合法历史 WorkBuddy 选择必须恢复")
         expect(
-            resolvedPanelSoundScopeSelection(storedValue: nil, scopes: scopes) == .global,
+            resolvedPanelSoundScopeSelection(
+                storedValue: nil, availableScopes: scopes.map(\.scope)) == .global,
             "首次打开应选 registry 中首个可用来源")
         expect(
-            resolvedPanelSoundScopeSelection(storedValue: "stale", scopes: scopes)
+            resolvedPanelSoundScopeSelection(
+                storedValue: "stale", availableScopes: scopes.map(\.scope))
                 == .global,
             "未知旧值仅借用默认组展示")
         let missingWorkspace = PanelSoundScopeID.workspace(UUID())
         let missingValue = missingWorkspace.storedValue
         expect(
-            resolvedPanelSoundScopeSelection(storedValue: missingValue, scopes: scopes)
+            resolvedPanelSoundScopeSelection(
+                storedValue: missingValue, availableScopes: scopes.map(\.scope))
                 == missingWorkspace,
             "失效工作区不能静默改成默认组写入目标")
         expect(
             panelSoundScopeStoredValueToPersist(
                 storedValue: missingValue, resolvedSelection: missingWorkspace) == missingValue,
             "刷新不能覆盖用户存储的失效工作区身份")
+        let missingSelection = resolvedPanelSoundScopeSelection(
+            storedValue: missingValue, availableScopes: scopes.map(\.scope))
         let unavailableEnglish = panelSoundScopeSelectionPresentation(
-            storedValue: missingValue, scopes: scopes, language: .english)
+            selection: missingSelection, scopes: scopes, language: .english)
         let unavailableChinese = panelSoundScopeSelectionPresentation(
-            storedValue: missingValue, scopes: scopes, language: .zhHans)
+            selection: missingSelection, scopes: scopes, language: .zhHans)
         expect(
             unavailableEnglish.scope == missingWorkspace
                 && unavailableEnglish.status == .needsAttention
@@ -348,29 +365,30 @@ func runPanelPresentationSuites() async {
                 missingWorkspace, availableScopes: scopes.map(\.scope)) == nil,
             "失效工作区不能被菜单选成可写目标")
         expect(
-            resolvedPanelSoundScopeSelection(storedValue: nil, scopes: [scopes[0]]) == .global,
+            resolvedPanelSoundScopeSelection(
+                storedValue: nil, availableScopes: [scopes[0].scope]) == .global,
             "没有可用来源时必须回退 Global")
         expect(
-            resolvedEventSettingsScope(
+            writableEventSettingsScope(
                 route: EventSettingsWindowRoute(scope: .surface(.workBuddy)),
-                scopes: Array(scopes.prefix(2))) == nil,
+                availableScopes: scopes.prefix(2).map(\.scope)) == nil,
             "窗口保留期间 WorkBuddy 消失时必须拒绝其他 Surface 作为写目标")
         expect(
-            resolvedEventSettingsScope(
+            writableEventSettingsScope(
                 route: EventSettingsWindowRoute(scope: .surface(.workBuddy)),
-                scopes: [scopes[0]]) == nil,
+                availableScopes: [scopes[0].scope]) == nil,
             "窗口保留期间所有 Surface 消失时不得把 Global 变成写入 fallback")
         expect(
-            resolvedEventSettingsScope(
+            writableEventSettingsScope(
                 route: EventSettingsWindowRoute(
                     scope: .global,
                     unavailableRequestedScopeStoredValue: "future-surface"),
-                scopes: [scopes[0]]) == nil,
+                availableScopes: [scopes[0].scope]) == nil,
             "未知 raw scope 只能借用 Global 展示目的页，不得获得 Global 写权限")
 
         let pendingFallback = resolvedPanelSoundScopeSelection(
             storedValue: "unselected",
-            scopes: [scopes[0]])
+            availableScopes: [scopes[0].scope])
         expect(
             panelSoundScopeStoredValueToPersist(
                 storedValue: "unselected",
@@ -379,7 +397,7 @@ func runPanelPresentationSuites() async {
 
         let firstAvailable = resolvedPanelSoundScopeSelection(
             storedValue: "unselected",
-            scopes: scopes)
+            availableScopes: scopes.map(\.scope))
         expect(
             panelSoundScopeStoredValueToPersist(
                 storedValue: "unselected",

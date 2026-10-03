@@ -479,14 +479,14 @@ func runGlobalShortcutsSuites() {
             language: .english)
         let route = globalShortcutEventSettingsRoute(
             storedValue: "future-surface",
-            scopes: scopes)
+            availableScopes: scopes.map(\.scope))
         expect(
             route.scope == .global
                 && route.unavailableRequestedScopeStoredValue == "future-surface",
             "未知 scope 必须路由到合法页面并保留可见失败原因")
         let staleKnown = globalShortcutEventSettingsRoute(
             storedValue: PanelSoundScopeID.surface(.codex).storedValue,
-            scopes: scopes)
+            availableScopes: scopes.map(\.scope))
         expect(
             staleKnown.scope == .surface(.codex)
                 && staleKnown.unavailableRequestedScopeStoredValue
@@ -494,7 +494,7 @@ func runGlobalShortcutsSuites() {
             "已知但当前不存在的 Surface 必须保留 typed route 并带可见失败原因")
         let pending = globalShortcutEventSettingsRoute(
             storedValue: "unselected",
-            scopes: scopes)
+            availableScopes: scopes.map(\.scope))
         expect(
             pending.scope == .global && pending.unavailableRequestedScopeStoredValue == nil,
             "从未选择应使用安全当前投影，不伪造损坏原因")

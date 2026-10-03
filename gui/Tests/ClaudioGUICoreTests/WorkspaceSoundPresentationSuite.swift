@@ -339,7 +339,8 @@ func runWorkspaceSoundPresentationSuites() {
             "Codex 不支持 StopFailure 不应禁止包试听或事件配置")
         expect(
             resolvedPanelSoundScopeSelection(
-                storedValue: PanelSoundScopeID.workspace(rule.id).storedValue, scopes: scopes)
+                storedValue: PanelSoundScopeID.workspace(rule.id).storedValue,
+                availableScopes: scopes.map(\.scope))
                 == .workspace(rule.id), "手动选择保持稳定")
         let availability = SettingsRouteAvailability(
             integrationSurfaces: [.codex], eventScopes: Set(scopes.map(\.scope)),
