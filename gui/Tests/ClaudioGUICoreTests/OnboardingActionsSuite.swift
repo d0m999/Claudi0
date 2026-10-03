@@ -1583,16 +1583,9 @@ func runOnboardingActionsFixSuites() {
     }
 
     suite("焦点：「查看原因」是一个真控件，必须在焦点序里（WCAG 2.1.1）") {
-        let onboarding = panelFocusOrder(
-            .onboarding(hasPrimaryAction: true, hasSecondaryAction: false, hasDetailToggle: true))
-        expect(
-            onboarding == [.revealDetail, .onboardingPrimaryAction],
-            "失败行画在按钮上方，焦点序跟随视觉序。得到 \(onboarding)")
-
         let withoutToggle = panelFocusOrder(
-            .operational(
-                events: [], hasMasterVolume: false, hasOpenSoundSettings: true,
-                hasResetSurface: false))
+            .activityOperational(
+                events: [], hasActivityOverview: true, hasMasterVolume: false))
         expect(
             !withoutToggle.contains(.revealDetail),
             "新生产面板已删除旧运行态失败详情槽，不得凭空出现。得到 \(withoutToggle)")

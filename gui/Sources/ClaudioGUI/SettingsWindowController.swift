@@ -19,8 +19,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let postAccessibilityAnnouncement: @MainActor (NSWindow, String, Int) -> Bool
     private var window: RetainedSettingsWindow?
     private let statusActivationGuard = StatusItemWindowOrderGuard()
-    private var focusRestoration: (@MainActor (NSRunningApplication?) -> Void)?
-    private var handbackTracker = RetainedWindowHandbackTracker<NSRunningApplication>()
+    private var focusRestoration: (@MainActor (PanelHandbackApplication?) -> Void)?
+    private var handbackTracker = RetainedWindowHandbackTracker<PanelHandbackApplication>()
     private var externalActivationCancellable: AnyCancellable?
     private var settingsPresentationCancellable: AnyCancellable?
     private var settingsPresentationAnnouncementDeliveryScheduled = false
@@ -48,7 +48,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
                         application.processIdentifier
                         == ProcessInfo.processInfo.processIdentifier
                     self.handbackTracker.noteExternalActivation(
-                        application,
+                        PanelHandbackApplication(application),
                         isWindowVisible: self.window?.isVisible == true,
                         isCurrentApplication: isCurrentApplication)
                 }
@@ -68,8 +68,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func showWindow(
         request: SettingsPresentationRequest = .route(nil),
-        returnFocusTo application: NSRunningApplication?,
-        onClose restoration: @escaping @MainActor (NSRunningApplication?) -> Void
+        returnFocusTo application: PanelHandbackApplication?,
+        onClose restoration: @escaping @MainActor (PanelHandbackApplication?) -> Void
     ) {
         focusRestoration = restoration
         let wasVisible = window?.isVisible == true
@@ -115,11 +115,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// macOS can deactivate an accessory app before forwarding its status-item action.
     /// Capture this boundary while Settings still owns key; no remembered foreground cache.
     func protectSettingsDuringStatusActivation(button: NSView?) {
-        guard let window,
-            settingsWindowOwnsKeyFocus(window, keyWindow: NSApp.keyWindow),
-            CGEventSource.buttonState(.combinedSessionState, button: .left),
-            let button,
-            statusItemContainsScreenPoint(NSEvent.mouseLocation, button: button)
+        guard let window, let button,
+            panelSettingsShouldProtectDuringStatusActivation(
+                settingsOwnsKeyFocus: settingsWindowOwnsKeyFocus(
+                    window, keyWindow: NSApp.keyWindow),
+                primaryMouseButtonDown: CGEventSource.buttonState(
+                    .combinedSessionState, button: .left),
+                statusItemHit: statusItemContainsScreenPoint(
+                    NSEvent.mouseLocation, button: button))
         else { return }
         statusActivationGuard.begin(window: window)
     }

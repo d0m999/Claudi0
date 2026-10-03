@@ -116,6 +116,9 @@ package final class EventSettingsWindowSelection: ObservableObject {
     }
 
     private var storage: Storage
+    /// The single owner of this surface's focus handshake: revision counter, request dedup and
+    /// deletion-cancel return-focus debt. Projected into `presentationState` like any other fact.
+    private let focusRequests = FocusRequestCoordinator<EventSettingsFocusTarget>()
     private var isPublishingState = false
     private var republishRequested = false
     private var consumedDeleteRequest: WorkspaceDeletionRequest?
@@ -129,7 +132,8 @@ package final class EventSettingsWindowSelection: ObservableObject {
     package init(route: EventSettingsWindowRoute = EventSettingsWindowRoute(scope: .global)) {
         let storage = Storage(route: route)
         self.storage = storage
-        presentationState = storage.presentationState
+        presentationState = storage.presentationState(
+            focusRequestRevision: 0, focusTarget: nil)
     }
 
     package func select(_ route: EventSettingsWindowRoute) {
@@ -143,7 +147,8 @@ package final class EventSettingsWindowSelection: ObservableObject {
         consumedDeleteRequest = nil
         storage.route = route
         storage.routeRequestRevision &+= 1
-        storage.focusTarget = nil
+        focusRequests.clearRequestedTarget()
+        focusRequests.clearReturnFocus()
         publishState()
     }
 
@@ -161,7 +166,8 @@ package final class EventSettingsWindowSelection: ObservableObject {
             workspaceTarget: storage.route.workspaceTarget,
             unavailableRequestedScopeStoredValue: storage.route.scope.storedValue)
         storage.routeRequestRevision &+= 1
-        storage.focusTarget = nil
+        focusRequests.clearRequestedTarget()
+        focusRequests.clearReturnFocus()
         publishState()
     }
 
@@ -176,19 +182,20 @@ package final class EventSettingsWindowSelection: ObservableObject {
     }
 
     package func requestInitialFocus(scopes: [PanelSoundScopeID], for request: SettingsRoute) {
+        let target: EventSettingsFocusTarget?
         if storage.route.unavailableRequestedScopeStoredValue != nil
             || !scopes.contains(storage.route.scope)
         {
-            storage.focusTarget = .unavailableScope
+            target = .unavailableScope
         } else if case .events = request {
-            storage.focusTarget = eventSettingsRouteFocusTarget(
+            target = eventSettingsRouteFocusTarget(
                 route: storage.route,
                 scopes: scopes,
                 events: Set(Event.allCases))
         } else {
-            storage.focusTarget = .title
+            target = .title
         }
-        storage.focusRequestRevision &+= 1
+        focusRequests.requestFocus(target)
         publishState()
     }
 
@@ -198,6 +205,7 @@ package final class EventSettingsWindowSelection: ObservableObject {
             storage.route.unavailableRequestedScopeStoredValue == nil,
             deletionPresentation.pending == nil, consumedDeleteRequest == nil
         else { return false }
+        focusRequests.clearReturnFocus()
         deletionPresentation = WorkspaceDeletionPresentation(
             pending: WorkspaceDeletionRequest(target: WorkspaceSoundDeleteTarget(rule: rule)),
             feedback: nil)
@@ -208,8 +216,24 @@ package final class EventSettingsWindowSelection: ObservableObject {
         guard let pending = deletionPresentation.pending else { return }
         deletionPresentation.pending = nil
         if storage.route.scope == .workspace(pending.target.id) {
+            focusRequests.pushReturnFocus(.workspaceRemove(pending.target.id))
             requestFocus(.workspaceRemove(pending.target.id))
         }
+    }
+
+    /// The oldest outstanding deletion-cancel return-focus debt, for the view's sheet-end
+    /// handback. Consumed exactly once via ``consumeReturnFocus(_:)``.
+    package var pendingReturnFocusTarget: EventSettingsFocusTarget? {
+        focusRequests.pendingReturnFocus
+    }
+
+    @discardableResult
+    package func consumeReturnFocus(_ target: EventSettingsFocusTarget) -> Bool {
+        focusRequests.popReturnFocus(target)
+    }
+
+    package func clearReturnFocus() {
+        focusRequests.clearReturnFocus()
     }
 
     /// Clear the pending request before any disk I/O, so a second action cannot submit it again.
@@ -445,8 +469,7 @@ package final class EventSettingsWindowSelection: ObservableObject {
     package func restoreSoundControlFocus(_ event: Event) { requestFocus(.configure(event)) }
 
     private func requestFocus(_ target: EventSettingsFocusTarget) {
-        storage.focusTarget = target
-        storage.focusRequestRevision &+= 1
+        focusRequests.requestFocus(target)
         publishState()
     }
 
@@ -516,6 +539,7 @@ package final class EventSettingsWindowSelection: ObservableObject {
         writeRetryFailure = nil
         conflictReadbackState = .idle
         consumedDeleteRequest = nil
+        focusRequests.clearReturnFocus()
         publishState()
     }
 
@@ -529,7 +553,9 @@ package final class EventSettingsWindowSelection: ObservableObject {
 
         repeat {
             republishRequested = false
-            let projection = storage.presentationState
+            let projection = storage.presentationState(
+                focusRequestRevision: focusRequests.requestRevision,
+                focusTarget: focusRequests.requestedTarget)
             if presentationState != projection { presentationState = projection }
         } while republishRequested
     }
@@ -537,8 +563,6 @@ package final class EventSettingsWindowSelection: ObservableObject {
     private struct Storage {
         var route: EventSettingsWindowRoute
         var routeRequestRevision: UInt64 = 0
-        var focusRequestRevision: UInt64 = 0
-        var focusTarget: EventSettingsFocusTarget?
         var previewState: EventSettingsDestinationPreviewState = .idle
         var previewStopRequestRevision: UInt64 = 0
         var aiSessionState: EventSettingsDestinationAISessionState = .idle
@@ -547,7 +571,10 @@ package final class EventSettingsWindowSelection: ObservableObject {
         var playingCandidateID: UUID?
         var previewGeneration: UInt64 = 0
 
-        var presentationState: SettingsEventPresentationState {
+        func presentationState(
+            focusRequestRevision: UInt64,
+            focusTarget: EventSettingsFocusTarget?
+        ) -> SettingsEventPresentationState {
             SettingsEventPresentationState(
                 route: route,
                 routeRequestRevision: routeRequestRevision,

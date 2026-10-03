@@ -98,10 +98,9 @@ public struct EventRow: Sendable, Equatable {
 
 extension EventRow {
     /// Whether this row's ``PanelFocusTarget/eventAction(_:)`` slot currently renders as an
-    /// OPERABLE control — the pure decision behind ``PanelView``'s `nonOperableActionEvents`,
-    /// fed to ``panelFirstFocusTarget(_:nonOperableActionEvents:)`` so a panel never opens with
-    /// keyboard focus parked on a dimmed control (ENGINEERING.md「无障碍规格」"打开焦点落首个
-    /// 可操作项" — 可操作 is load-bearing).
+    /// OPERABLE control — the same decision ``PanelEventPresentation``'s `controls.previewEnabled`
+    /// projects into ``panelFocusOrder(_:)``, so a panel never lists keyboard focus for a dimmed
+    /// control (ENGINEERING.md「无障碍规格」"打开焦点落首个 可操作项" — 可操作 is load-bearing).
     ///
     /// `eventAction` 是手工试听；事件自动播放静音 (`enabled`) 与它正交。只要覆盖态存在安全文件，
     /// 试听焦点就是可操作的；主音量为零等运行期原因由 ``EventPreviewAvailability`` 在视图边界补充。

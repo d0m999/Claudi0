@@ -42,7 +42,8 @@ public final class OnboardingViewModel: ObservableObject {
     /// `@State private var isShowingDetail`，连带那句 `if copy.detail != nil { toggle() } else
     /// { performSecondaryAction() }` 的分派 —— 两者都是 SwiftUI 里的判定逻辑，harness 够不到。
     /// 这正是本仓库已经下沉过一次的形状（T16 修复⑥ 的 `previewClaimsActionFocus` /
-    /// `panelOpeningFocus`：测试证明函数算得对，却没人盯住视图是否调用它）。
+    /// 开局焦点策略：测试证明函数算得对，却没人盯住视图是否调用它——C2 起生产视图直接调用
+    /// 被测的 ``panelFirstFocusTarget(_:requestedTarget:)``，同一份策略只剩一份实现）。
     @Published public private(set) var isShowingDetail: Bool = false
 
     /// 当前这条 ``actionState`` 里的**结果**（一条失败，或一条「我替你做主」的告知），

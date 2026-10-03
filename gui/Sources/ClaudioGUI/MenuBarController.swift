@@ -56,10 +56,13 @@ private final class MenuBarActionRouter {
     }
 }
 
-private struct PendingSettingsPresentation {
-    let request: SettingsPresentationRequest
-    let panelFocusTarget: PanelFocusTarget?
-    let handbackApplication: NSRunningApplication?
+extension PanelHandbackApplication {
+    /// AppKit-edge capture: the choreography stores plain identities, never live applications.
+    init(_ application: NSRunningApplication) {
+        self.init(
+            processIdentifier: application.processIdentifier,
+            bundleIdentifier: application.bundleIdentifier)
+    }
 }
 
 /// App-lifetime owner for the menu Panel, shared focus coordinator and retained Settings routes.
@@ -101,15 +104,12 @@ final class MenuBarController: NSObject {
 
     /// External app captured for explicit Settings routing and its close handback.
     /// Ordinary Panel opening and dismissal never activate this application.
-    private var previousApp: NSRunningApplication?
-    private var panelSettingsHandback = PanelSettingsHandback()
-    /// Every production settings entry shares one close-before-show handoff. The typed route and
-    /// exact panel focus target travel together, so no legacy window can race with this retained
-    /// owner or leave a later Panel close carrying a stale presentation.
-    private var pendingSettingsPresentation: PendingSettingsPresentation?
-    /// Set by the retained settings window's close callback and consumed by the next
-    /// `panelDidShow`, so focus restoration is one-shot rather than sticky across later opens.
-    private var pendingRestoredPanelFocusTarget: PanelFocusTarget?
+    /// Every production settings entry shares one close-before-show handoff owned by the ADR 0022
+    /// choreography: the typed route and exact panel focus target travel together, so no legacy
+    /// window can race with this retained owner or leave a later Panel close carrying a stale
+    /// presentation. The restored panel focus target is one-shot, consumed by the next real show.
+    private var panelSettingsChoreography =
+        PanelSettingsChoreography<SettingsPresentationRequest>()
 
     /// 面板 shell 只接收 manager 已组合的宿主事实。内置 helper 的定位与
     /// shared bootstrap 已上移到 AppDelegate 的 composition root，不再经过面板。
@@ -548,13 +548,16 @@ final class MenuBarController: NSObject {
             ?? 560
         panelWindow.contentSize.height = min(560, max(400, visibleHeight - 32))
         let settingsWasForeground = settingsWindowController.ownsForegroundBeforePanel
-        panelSettingsHandback.begin(settingsWasForeground: settingsWasForeground)
         settingsWindowController.prepareForPanelPresentation(
             settingsWasForeground: settingsWasForeground)
         let front = NSWorkspace.shared.frontmostApplication
-        if front?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
-            previousApp = front
-        }
+        let selfProcessIdentifier = ProcessInfo.processInfo.processIdentifier
+        panelSettingsChoreography.notePanelWillShow(
+            settingsWasForeground: settingsWasForeground,
+            frontmostApplication: front.flatMap {
+                $0.processIdentifier != selfProcessIdentifier
+                    ? PanelHandbackApplication($0) : nil
+            })
         panelWindow.show(relativeTo: button.bounds, of: button)
         settingsWindowController.finishStatusActivation()
     }
@@ -596,25 +599,21 @@ final class MenuBarController: NSObject {
         }
     }
 
-    private func globalShortcutHandbackApplication() -> NSRunningApplication? {
-        let frontmost = NSWorkspace.shared.frontmostApplication
+    private func globalShortcutHandbackApplication() -> PanelHandbackApplication? {
+        let selfProcessIdentifier = ProcessInfo.processInfo.processIdentifier
         return resolveGlobalShortcutHandbackApplication(
-            frontmostApplication: frontmost,
-            previousApplication: previousApp,
+            frontmostApplication: NSWorkspace.shared.frontmostApplication
+                .map { PanelHandbackApplication($0) },
+            previousApplication: panelSettingsChoreography.previousApplication,
             isCurrentApplication: {
-                $0.processIdentifier == ProcessInfo.processInfo.processIdentifier
+                $0.processIdentifier == selfProcessIdentifier
             })
     }
 
     private func requestCurrentScopeEventsFromShortcut() {
-        let scopes = panelSoundScopePresentations(
-            sourceRows: hostIntegrations.content.sourceRows,
-            config: eventSettingsModel.config,
-            language: languageStore.language)
-        let storedValue = UserDefaults.standard.string(forKey: panelSoundScopeDefaultsKey)
-        let route = globalShortcutEventSettingsRoute(
-            storedValue: storedValue,
-            scopes: scopes)
+        // C1：路由由共享 owner 从同一份持久化字节与当前可用集合即时解析；stale 的已知 scope
+        // 原样保留，Events 页显示可见的恢复原因，而不是静默猜另一个目标。
+        let route = soundScopeSelection.shortcutRoute()
 
         requestSettingsPresentation(
             request: .eventShortcut(route),
@@ -646,24 +645,25 @@ final class MenuBarController: NSObject {
     private func requestSettingsPresentation(
         request: SettingsPresentationRequest,
         returnFocusTo target: PanelFocusTarget?,
-        handbackApplication explicitHandback: NSRunningApplication? = nil
+        handbackApplication explicitHandback: PanelHandbackApplication? = nil
     ) {
-        let presentation = PendingSettingsPresentation(
-            request: request,
-            panelFocusTarget: target,
-            handbackApplication: explicitHandback ?? previousApp)
-        previousApp = nil
-
-        guard panelWindow.isShown else {
-            presentSettings(presentation)
+        guard
+            let presentation = panelSettingsChoreography.requestSettingsPresentation(
+                request: request,
+                returnFocusTo: target,
+                handbackApplication: explicitHandback,
+                panelIsShown: panelWindow.isShown)
+        else {
+            // Close child surfaces and deliver the pending transition through the same lifecycle.
+            panelWindow.close()
             return
         }
-        pendingSettingsPresentation = presentation
-        // Close child surfaces and deliver the pending transition through the same lifecycle.
-        panelWindow.close()
+        presentSettings(presentation)
     }
 
-    private func presentSettings(_ presentation: PendingSettingsPresentation) {
+    private func presentSettings(
+        _ presentation: PanelSettingsChoreography<SettingsPresentationRequest>.PendingPresentation
+    ) {
         // Mutual exclusion: presenting Settings collapses the top notice surface first.
         eventNoticeWindowController.close()
         settingsWindowController.showWindow(
@@ -671,36 +671,37 @@ final class MenuBarController: NSObject {
             returnFocusTo: presentation.handbackApplication
         ) { [weak self] latestHandbackApplication in
             guard let self else { return }
-            let handback = latestHandbackApplication ?? presentation.handbackApplication
-            if let target = presentation.panelFocusTarget {
-                _ = self.restorePanelFocus(
-                    to: target,
-                    latestHandbackApplication: handback)
-            } else {
+            switch self.panelSettingsChoreography.resolveSettingsCloseHandback(
+                panelFocusTarget: presentation.panelFocusTarget,
+                presentationHandback: presentation.handbackApplication,
+                latestHandbackApplication: latestHandbackApplication)
+            {
+            case .restorePanelFocus(let target):
+                _ = self.restorePanelFocus(to: target)
+            case .activateApplication(let handback):
                 self.activateHandbackApplication(handback)
             }
         }
     }
 
-    private func restorePanelFocus(
-        to target: PanelFocusTarget,
-        latestHandbackApplication: NSRunningApplication?
-    ) -> Bool {
-        // Preserve the latest explicit Settings handback target if the restored Panel routes
-        // back into Settings. Ordinary Panel dismissal never activates another application.
-        if let latestHandbackApplication {
-            previousApp = latestHandbackApplication
-        }
-        pendingRestoredPanelFocusTarget = target
+    private func restorePanelFocus(to target: PanelFocusTarget) -> Bool {
+        // The resolved Settings handback target was already captured by the choreography, so a
+        // Panel routed back into Settings can preserve it. Ordinary Panel dismissal never
+        // activates another application.
         showPanel()
         return panelWindow.isShown
     }
 
-    private func activateHandbackApplication(_ application: NSRunningApplication?) {
+    private func activateHandbackApplication(_ identity: PanelHandbackApplication?) {
         guard
-            let application,
-            !application.isTerminated,
-            application.processIdentifier != ProcessInfo.processInfo.processIdentifier
+            let application = resolvePanelHandbackApplication(
+                identity,
+                currentProcessIdentifier: ProcessInfo.processInfo.processIdentifier,
+                lookup: { processIdentifier in
+                    NSRunningApplication(processIdentifier: processIdentifier).flatMap {
+                        $0.isTerminated ? nil : $0
+                    }
+                })
         else { return }
 
         if #available(macOS 14.0, *) {
@@ -723,14 +724,14 @@ final class MenuBarController: NSObject {
         let frontmost = NSWorkspace.shared.frontmostApplication
         let handback =
             frontmost?.processIdentifier == ProcessInfo.processInfo.processIdentifier
-            ? nil : frontmost
+            ? nil : frontmost.map { PanelHandbackApplication($0) }
         return { [weak self] in self?.handbackEventNoticeFocus(to: handback) }
     }
 
     /// The notice window requests this only while it still owns the key status. If it was
     /// opened from the panel, focus returns to the panel's recent-notices entry; otherwise the
     /// foreground goes back to the app captured when the notice became interactive.
-    private func handbackEventNoticeFocus(to application: NSRunningApplication?) {
+    private func handbackEventNoticeFocus(to application: PanelHandbackApplication?) {
         if panelWindow.isShown {
             panelWindow.contentViewController?.view.window?.makeKey()
             focusCoordinator.requestFocus(target: .recentNotices)
@@ -745,28 +746,22 @@ final class MenuBarController: NSObject {
         requestHostIntegrationRefresh()
         panelWindow.contentViewController?.view.window?.makeFirstResponder(
             panelWindow.contentViewController?.view)
-        let restoredTarget = pendingRestoredPanelFocusTarget
-        pendingRestoredPanelFocusTarget = nil
-        focusCoordinator.requestFocus(target: restoredTarget)
+        focusCoordinator.requestFocus(
+            target: panelSettingsChoreography.consumeRestoredPanelFocusTarget())
     }
 
     private func panelDidClose(_ reason: MenuBarPanel.Dismissal) {
         focusCoordinator.notePanelHidden()
         defer { settingsWindowController.finishPanelPresentation() }
-        let restoreSettings = panelSettingsHandback.takeSettingsRestoration()
-
-        let settingsPresentation = pendingSettingsPresentation
-        pendingSettingsPresentation = nil
-        if let settingsPresentation {
-            presentSettings(settingsPresentation)
-            return
-        }
-        previousApp = nil
-
         // A nonactivating panel releases keyboard focus itself. Only an explicit dismissal
         // may restore Settings' prior key target; outside interaction belongs to its recipient.
-        if reason == .explicit, restoreSettings {
+        switch panelSettingsChoreography.panelDidClose(explicitDismissal: reason == .explicit) {
+        case .presentSettings(let presentation):
+            presentSettings(presentation)
+        case .restoreSettingsKeyFocus:
             _ = settingsWindowController.restoreVisibleWindowAfterPanelClose()
+        case .none:
+            break
         }
     }
 }

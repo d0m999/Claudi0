@@ -988,12 +988,11 @@ public struct PanelView: View {
 
     private func applyFirstFocus() {
         let content = panelModel.configState.topContent
-        focusedTarget =
-            focusCoordinator.requestedTarget.flatMap { requested in
-                let order = focusOrder(for: content)
-                return order.contains(requested) ? requested : nil
-            } ?? focusOrder(for: content).first(where: { $0 == .soundScope })
-            ?? focusOrder(for: content).first
+        // The live opening policy IS the tested one (`panelFirstFocusTarget`): a still-rendered
+        // handback target wins, otherwise the sound scope, otherwise the first rendered control.
+        focusedTarget = panelFirstFocusTarget(
+            focusScope(for: content),
+            requestedTarget: focusCoordinator.requestedTarget)
         previousTopContent = content
     }
 
@@ -1008,27 +1007,29 @@ public struct PanelView: View {
     }
 
     private func focusOrder(for content: PanelTopContent) -> [PanelFocusTarget] {
+        panelFocusOrder(focusScope(for: content))
+    }
+
+    private func focusScope(for content: PanelTopContent) -> PanelFocusScope {
         let visibleEvents =
             content.showsEventContent
                 && panelModel.libraryPresentationState.hasUsableSnapshot
             ? eventPresentations : []
-        let order = panelFocusOrder(
-            .activityOperational(
-                events: visibleEvents,
-                hasActivityOverview: true,
-                hasMasterVolume: content.showsEventContent
-                    && panelModel.libraryPresentationState.hasUsableSnapshot,
-                hasConfigFailureNotice: content.hasConfigFailureNotice
-                    && panelConfigRecoveryTarget(configFile: configFile) != nil,
-                hasRefreshFailedNotice: showsRefreshFailedNotice,
-                writeFailureRecoveryPaths: writeFailureRecoveryFiles.map(\.path),
-                hasWriteFailureConfigRecovery: showsWriteFailureConfigRecovery,
-                hasSoundPackPicker: !content.hasConfigFailureNotice,
-                hasWorkspaceDetails: !content.hasConfigFailureNotice
-                    && panelModel.workspaceRules.contains {
-                        $0.id == selectedScope.scope.workspaceID
-                    }))
-        return order
+        return .activityOperational(
+            events: visibleEvents,
+            hasActivityOverview: true,
+            hasMasterVolume: content.showsEventContent
+                && panelModel.libraryPresentationState.hasUsableSnapshot,
+            hasConfigFailureNotice: content.hasConfigFailureNotice
+                && panelConfigRecoveryTarget(configFile: configFile) != nil,
+            hasRefreshFailedNotice: showsRefreshFailedNotice,
+            writeFailureRecoveryPaths: writeFailureRecoveryFiles.map(\.path),
+            hasWriteFailureConfigRecovery: showsWriteFailureConfigRecovery,
+            hasSoundPackPicker: !content.hasConfigFailureNotice,
+            hasWorkspaceDetails: !content.hasConfigFailureNotice
+                && panelModel.workspaceRules.contains {
+                    $0.id == selectedScope.scope.workspaceID
+                })
     }
 
     private func isEventFocusTarget(_ target: PanelFocusTarget?) -> Bool {

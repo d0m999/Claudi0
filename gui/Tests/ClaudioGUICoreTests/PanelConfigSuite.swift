@@ -276,7 +276,7 @@ func runPanelConfigSuites() {
     }
 
     // PanelTopContent 的两颗投影（/codex review f54d335 P1#1 follow-up）：applyFirstFocus 把它们**原样转发**进
-    // panelOpeningFocus（hasMasterVolume / hasConfigFailureNotice），不在视图里重新 pattern-match。返回值由这里
+    // focusScope(for:)（hasMasterVolume / hasConfigFailureNotice），不在视图里重新 pattern-match。返回值由这里
     // 钉死——对抗复核实测过：只让 render/focus 读同一个 topContent **值**不够，视图里若用未测闭包把值重解释成
     // Bool，翻个返回值就能让失败卡照画、焦点跳过 Reveal 钮，而整套测试全绿。投影上提到这里后返回值被单测钉，
     // 视图只剩一句转发（由 ViewWiringSuite 钉住转发原样还在），漂移堵在决策层。

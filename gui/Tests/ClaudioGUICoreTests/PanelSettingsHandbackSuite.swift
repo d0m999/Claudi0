@@ -236,8 +236,13 @@ func runPanelSettingsHandbackSuites() async {
         let settings = try! String(
             contentsOf: root.appendingPathComponent(
                 "gui/Sources/ClaudioGUI/SettingsWindowController.swift"), encoding: .utf8)
+        let choreography = try! String(
+            contentsOf: root.appendingPathComponent(
+                "gui/Sources/ClaudioGUICore/PanelSettingsChoreography.swift"), encoding: .utf8)
         let menuCode = strippingComments(menu).codeWithoutStringLiterals
         let settingsCode = strippingComments(settings).codeWithoutStringLiterals
+        let settingsFlat = collapsingWhitespace(settingsCode)
+        let choreographyCode = strippingComments(choreography).codeWithoutStringLiterals
         expect(menuCode.contains("let panelWindow = MenuBarPanel()"), "真实菜单必须使用非激活窗口组件")
         expect(
             menuCode.contains("panelWindow.onShow =") && menuCode.contains("panelWindow.onClose ="),
@@ -256,10 +261,12 @@ func runPanelSettingsHandbackSuites() async {
                 .lowerBound,
             "菜单取得焦点后才提交原层级恢复")
         expect(
-            settingsCode.contains("CGEventSource.buttonState(.combinedSessionState, button: .left)")
-                && settingsCode.contains(
-                    "statusItemContainsScreenPoint(NSEvent.mouseLocation, button: button)"),
-            "普通切换应用和其他状态项不能进入保护路径")
+            settingsFlat.contains("CGEventSource.buttonState( .combinedSessionState, button: .left)")
+                && settingsFlat.contains(
+                    "statusItemContainsScreenPoint( NSEvent.mouseLocation, button: button)")
+                && settingsCode.contains("panelSettingsShouldProtectDuringStatusActivation("),
+            "普通切换应用和其他状态项不能进入保护路径，三项事实判定下沉到可测的编排层"
+                + "（两条 AppKit 边缘调用在生产侧按 100 列折行，故对折叠空白后的文本断言）")
         expect(
             settingsCode.contains("statusActivationGuard.finish(restoringOrder: false)"),
             "关闭设置必须取消保护而不重新前置")
@@ -272,15 +279,20 @@ func runPanelSettingsHandbackSuites() async {
             "原生 key window 与 sheet 决定当前所有权")
         expect(settingsCode.contains("target.makeKey()"), "设置恢复只取回键盘，不重新排序")
         expect(
-            menuCode.contains("if reason == .explicit, restoreSettings"),
-            "外部点击或应用切换不得归还旧 Settings 焦点")
+            menuCode.contains("explicitDismissal: reason == .explicit")
+                && choreographyCode.contains("explicitDismissal && restoreSettings"),
+            "外部点击或应用切换不得归还旧 Settings 焦点；判定归 ADR 0022 编排层，MenuBarController 只转发关闭原因")
         expect(
             menuCode.contains("defer { settingsWindowController.finishPanelPresentation() }"),
             "所有关闭路径都必须恢复正常键盘资格")
         expect(
-            menuCode.contains("pendingSettingsPresentation = presentation")
-                && menuCode.contains("presentSettings(settingsPresentation)"),
-            "保留统一 Settings 路由与关闭后展示")
+            choreographyCode.contains("pendingPresentation = presentation")
+                && menuCode.contains("presentSettings(presentation)"),
+            "保留统一 Settings 路由与关闭后展示；排队事实归编排层，呈现调用留在窗口 owner")
+        expect(
+            menuCode.contains("panelSettingsChoreography")
+                && !menuCode.contains("NSRunningApplication?"),
+            "close-before-show 决策与 handback 身份归编排层值类型，窗口 owner 只接触原生边缘")
     }
 }
 

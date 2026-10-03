@@ -19,7 +19,6 @@ struct IntegrationsSettingsDestinationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedTarget: IntegrationDestinationFocusTarget?
-    @State private var handledFocusRequestRevision = 0
     @State private var detailsHost: HostID?
     @State private var receiptHistoryTarget: ReceiptHistoryTarget?
     @State private var pendingConnect: HostID?
@@ -143,11 +142,7 @@ struct IntegrationsSettingsDestinationView: View {
             Text(confirmationMessage(confirmation))
         }
         .onReceive(focusCoordinator.$requestRevision) { revision in
-            guard
-                revision > handledFocusRequestRevision,
-                focusCoordinator.consumeRequest(revision)
-            else { return }
-            handledFocusRequestRevision = revision
+            guard focusCoordinator.consumeRequest(revision) else { return }
             applyFocusRequest(focusCoordinator.requestedTarget)
         }
         .onChange(of: model.selectedHost) { _ in

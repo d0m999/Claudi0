@@ -123,22 +123,21 @@ func runSoundPacksWindowAccessibilitySuites() {
     suite("SoundPacksWindow a11y：每次真实 hidden→visible 都能发出独立首焦点请求") {
         let coordinator = SoundPacksWindowFocusCoordinator()
         expect(coordinator.requestRevision == 0, "焦点请求 revision 必须从 0 开始")
-        coordinator.requestInitialFocus(
-            route: .editEvent(packID: "pack-a", event: .notification))
+        coordinator.requestFocus(.editEvent(packID: "pack-a", event: .notification))
         expect(coordinator.requestRevision == 1, "第一次展示必须产生一次独立焦点请求")
         expect(
-            coordinator.requestedRoute == .editEvent(packID: "pack-a", event: .notification),
+            coordinator.requestedTarget == .editEvent(packID: "pack-a", event: .notification),
             "跨窗口打开必须把包与事件路由和首焦点请求原子传入")
-        coordinator.requestInitialFocus()
+        coordinator.requestFocus(.overview)
         expect(coordinator.requestRevision == 2, "隐藏后复用窗口重开也必须产生新请求")
-        expect(coordinator.requestedRoute == .overview, "普通重开必须回到显式 overview 路由")
+        expect(coordinator.requestedTarget == .overview, "普通重开必须回到显式 overview 路由")
         let repeatedRoute = SoundPacksWindowRoute.editEvent(
             packID: "pack-a", event: .notification)
-        coordinator.requestRoute(repeatedRoute)
-        coordinator.requestRoute(repeatedRoute)
+        coordinator.requestFocus(repeatedRoute)
+        coordinator.requestFocus(repeatedRoute)
         expect(
             coordinator.requestRevision == 4
-                && coordinator.requestedRoute == repeatedRoute,
+                && coordinator.requestedTarget == repeatedRoute,
             "相同 editEvent 重复请求也必须推进独立代次，不能依赖 route 值变化")
     }
 
