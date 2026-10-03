@@ -1,0 +1,1638 @@
+{
+  "sha_start": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+  "items": [
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 154.3312530517578,
+        "spanRight": 429.5187530517578,
+        "visibleLeft": 402,
+        "visibleRight": 429.5187530517578,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67697143554688,
+        "spanRight": 430.8644714355469,
+        "visibleLeft": 402,
+        "visibleRight": 430.8644714355469,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "zh",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.6713104248047,
+        "spanRight": 430.8588104248047,
+        "visibleLeft": 402,
+        "visibleRight": 430.8588104248047,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 11.761810302734375,
+        "spanRight": 279.7618103027344,
+        "visibleLeft": 250,
+        "visibleRight": 279.7618103027344,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.111282348632812,
+        "spanRight": 278.1112823486328,
+        "visibleLeft": 250,
+        "visibleRight": 278.1112823486328,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "zh",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.105545043945312,
+        "spanRight": 278.1055450439453,
+        "visibleLeft": 250,
+        "visibleRight": 278.1055450439453,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.6722869873047,
+        "spanRight": 430.8597869873047,
+        "visibleLeft": 402,
+        "visibleRight": 430.8597869873047,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67164611816406,
+        "spanRight": 430.85914611816406,
+        "visibleLeft": 402,
+        "visibleRight": 430.85914611816406,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67578125,
+        "spanRight": 430.86328125,
+        "visibleLeft": 402,
+        "visibleRight": 430.86328125,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -279,
+          "w": 780,
+          "h": 1161.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 762,
+          "st": 337
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.107025146484375,
+        "spanRight": 278.1070251464844,
+        "visibleLeft": 250,
+        "visibleRight": 278.1070251464844,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.111618041992188,
+        "spanRight": 278.1116180419922,
+        "visibleLeft": 250,
+        "visibleRight": 278.1116180419922,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "zh",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.1116943359375,
+        "spanRight": 278.1116943359375,
+        "visibleLeft": 250,
+        "visibleRight": 278.1116943359375,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -459,
+          "w": 750,
+          "h": 1161.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "等待介入",
+        "scroll": {
+          "sh": 1162,
+          "ch": 582,
+          "st": 517
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 157.3636932373047,
+        "spanRight": 432.5511932373047,
+        "visibleLeft": 402,
+        "visibleRight": 432.5511932373047,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 157.35987854003906,
+        "spanRight": 432.54737854003906,
+        "visibleLeft": 402,
+        "visibleRight": 432.54737854003906,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "en",
+      "theme": "light",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 159.7548828125,
+        "spanRight": 434.9423828125,
+        "visibleLeft": 402,
+        "visibleRight": 434.9423828125,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.110275268554688,
+        "spanRight": 278.1102752685547,
+        "visibleLeft": 250,
+        "visibleRight": 278.1102752685547,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.10528564453125,
+        "spanRight": 278.10528564453125,
+        "visibleLeft": 250,
+        "visibleRight": 278.10528564453125,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "en",
+      "theme": "light",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.106094360351562,
+        "spanRight": 278.10609436035156,
+        "visibleLeft": 250,
+        "visibleRight": 278.10609436035156,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(255, 255, 255)",
+        "rootPage": "#fff",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67771911621094,
+        "spanRight": 430.86521911621094,
+        "visibleLeft": 402,
+        "visibleRight": 430.86521911621094,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67156982421875,
+        "spanRight": 430.85906982421875,
+        "visibleLeft": 402,
+        "visibleRight": 430.85906982421875,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "en",
+      "theme": "dark",
+      "size": "default",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 402,
+        "barRight": 1090,
+        "spanLeft": 155.67578125,
+        "spanRight": 430.86328125,
+        "visibleLeft": 402,
+        "visibleRight": 430.86328125,
+        "contentLeft": 356,
+        "contentRight": 1136
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 1240,
+          "h": 820,
+          "right": 1240,
+          "bottom": 820
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 252,
+          "h": 820,
+          "right": 252,
+          "bottom": 820
+        },
+        "content": {
+          "x": 356,
+          "y": -269,
+          "w": 780,
+          "h": 1151.953125,
+          "right": 1136,
+          "bottom": 882.953125
+        },
+        "padding": [
+          "32px",
+          "32px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 762,
+          "st": 327
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 11.754669189453125,
+        "spanRight": 279.7546691894531,
+        "visibleLeft": 250,
+        "visibleRight": 279.7546691894531,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "generationFailure",
+      "lang": "en",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.110504150390625,
+        "spanRight": 278.1105041503906,
+        "visibleLeft": 250,
+        "visibleRight": 278.1105041503906,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "scene": "partial",
+      "lang": "en",
+      "theme": "dark",
+      "size": "minimum",
+      "ok": true,
+      "clip": {
+        "overflow": "hidden",
+        "barLeft": 250,
+        "barRight": 920,
+        "spanLeft": 10.11248779296875,
+        "spanRight": 278.11248779296875,
+        "visibleLeft": 250,
+        "visibleRight": 278.11248779296875,
+        "contentLeft": 210,
+        "contentRight": 960
+      },
+      "layout": {
+        "window": {
+          "x": 0,
+          "y": 0,
+          "w": 960,
+          "h": 640,
+          "right": 960,
+          "bottom": 640
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 640,
+          "right": 210,
+          "bottom": 640
+        },
+        "content": {
+          "x": 210,
+          "y": -449,
+          "w": 750,
+          "h": 1151.953125,
+          "right": 960,
+          "bottom": 702.953125
+        },
+        "padding": [
+          "26px",
+          "26px"
+        ],
+        "contentMax": "780px",
+        "boxSizing": "border-box",
+        "detailBackground": "rgb(32, 32, 34)",
+        "rootPage": "#202022",
+        "bodyOverflow": false,
+        "scrollOverflow": false,
+        "nameless": [],
+        "out": [],
+        "clipped": [],
+        "heading": "Awaiting intervention",
+        "scroll": {
+          "sh": 1152,
+          "ch": 582,
+          "st": 507
+        },
+        "navGroups": [
+          "24px",
+          "24px"
+        ]
+      },
+      "errors": []
+    }
+  ],
+  "sha_end": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+}

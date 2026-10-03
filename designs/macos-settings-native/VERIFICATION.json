@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "result": "PASS",
+  "source_baseline": "7ca63a4af0497b74b53e89225ccf4de30d900c12",
+  "original_html_sha256": "0986119bc2d289f6a77abd7e503fca9222cbf26a6eeb1019e39ecde04afc8951",
+  "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+  "scope": "Standalone offline HTML prototype, companion docs, screenshots and browser regression; production Swift and current presentation SoT unchanged.",
+  "browser_validation": {
+    "engine": "Installed Chrome headless through Python Playwright",
+    "page_layout_combinations": 64,
+    "state_layouts": 96,
+    "capability_cases_passed": 48,
+    "capability_cases_total": 48,
+    "capability_assertions": 511,
+    "latest_capability_cases": [
+      {
+        "id": "C01",
+        "passed": true,
+        "assertions": 2
+      },
+      {
+        "id": "C02",
+        "passed": true,
+        "assertions": 7
+      },
+      {
+        "id": "C03",
+        "passed": true,
+        "assertions": 11
+      },
+      {
+        "id": "C04",
+        "passed": true,
+        "assertions": 24
+      },
+      {
+        "id": "C05",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C06",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C07",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C08",
+        "passed": true,
+        "assertions": 3
+      },
+      {
+        "id": "C09",
+        "passed": true,
+        "assertions": 11
+      },
+      {
+        "id": "C10",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C11",
+        "passed": true,
+        "assertions": 11
+      },
+      {
+        "id": "C12",
+        "passed": true,
+        "assertions": 7
+      },
+      {
+        "id": "C13",
+        "passed": true,
+        "assertions": 6
+      },
+      {
+        "id": "C14",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C15",
+        "passed": true,
+        "assertions": 7
+      },
+      {
+        "id": "C16",
+        "passed": true,
+        "assertions": 9
+      },
+      {
+        "id": "C17",
+        "passed": true,
+        "assertions": 9
+      },
+      {
+        "id": "C18",
+        "passed": true,
+        "assertions": 7
+      },
+      {
+        "id": "C19",
+        "passed": true,
+        "assertions": 6
+      },
+      {
+        "id": "C20",
+        "passed": true,
+        "assertions": 12
+      },
+      {
+        "id": "C21",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C22",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C23",
+        "passed": true,
+        "assertions": 18
+      },
+      {
+        "id": "C24",
+        "passed": true,
+        "assertions": 12
+      },
+      {
+        "id": "C25",
+        "passed": true,
+        "assertions": 12
+      },
+      {
+        "id": "C26",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C27",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C28",
+        "passed": true,
+        "assertions": 11
+      },
+      {
+        "id": "C29",
+        "passed": true,
+        "assertions": 14
+      },
+      {
+        "id": "C30",
+        "passed": true,
+        "assertions": 3
+      },
+      {
+        "id": "C31",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C32",
+        "passed": true,
+        "assertions": 18
+      },
+      {
+        "id": "C33",
+        "passed": true,
+        "assertions": 11
+      },
+      {
+        "id": "C34",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C35",
+        "passed": true,
+        "assertions": 5
+      },
+      {
+        "id": "C36",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C37",
+        "passed": true,
+        "assertions": 42
+      },
+      {
+        "id": "C38",
+        "passed": true,
+        "assertions": 4
+      },
+      {
+        "id": "C39",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C40",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C41",
+        "passed": true,
+        "assertions": 10
+      },
+      {
+        "id": "C42",
+        "passed": true,
+        "assertions": 15
+      },
+      {
+        "id": "C43",
+        "passed": true,
+        "assertions": 17
+      },
+      {
+        "id": "C44",
+        "passed": true,
+        "assertions": 3
+      },
+      {
+        "id": "C45",
+        "passed": true,
+        "assertions": 12
+      },
+      {
+        "id": "C46",
+        "passed": true,
+        "assertions": 8
+      },
+      {
+        "id": "C47",
+        "passed": true,
+        "assertions": 14
+      },
+      {
+        "id": "C48",
+        "passed": true,
+        "assertions": 20
+      }
+    ],
+    "details_route_combinations": 376,
+    "operation_state_snapshots": 776,
+    "details_and_states_assertions": 11832,
+    "all_assertions_executed": 13476,
+    "page_errors": 0,
+    "runner_errors": 0,
+    "network_requests": 0,
+    "html_fingerprint_drift": false
+  },
+  "independent_review": {
+    "observations": 1984,
+    "page_layouts": 64,
+    "scene_combinations": 768,
+    "detail_route_combinations": 376,
+    "state_snapshots": 776,
+    "fixed_sheet_targeted_combinations": 16,
+    "raw_geometry_flags": 23,
+    "reviewed_exception": ".progress span decorative 3px animation is clipped by its overflow:hidden parent; 24 focused variants verified visible bounds",
+    "clipping_variants_verified": 24,
+    "unresolved_issues": []
+  },
+  "verification_commands": [
+    "python3 scripts/test-macos-settings-prototype-browser.py --skip-details --expected-sha f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+    "python3 scripts/test-macos-settings-prototype-browser.py --details-only --expected-sha f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+    "python3 scripts/test-macos-settings-prototype-browser.py --cases-only --case C47 --expected-sha f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+    "node --check (HTML inline script extracted to a temporary .js file)",
+    "python3 -m py_compile scripts/test-macos-settings-prototype-browser.py",
+    "jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings",
+    "git diff --check"
+  ],
+  "static_checks": {
+    "javascript_syntax": "PASS",
+    "python_syntax": "PASS",
+    "localization_json": "PASS",
+    "whitespace": "PASS",
+    "four_embedded_host_icons_byte_identical": true,
+    "capability_matrix_rows": 48,
+    "source_link_instances": 100,
+    "source_files": 54,
+    "source_links_exist": true
+  },
+  "preserved_files_sha256": {
+    "gui/Sources/ClaudioGUIComponents/RetainedSettingsWindow.swift": "463cecc83755320f24c85c4e792e160e02a8602b755b9b95fd8268191c6eb1e3",
+    "gui/Tests/ClaudioGUICoreTests/PanelSettingsHandbackSuite.swift": "376221c86a0b49a4ac676898c7f6ea1121510420168624e380a0638533be66e8",
+    "scripts/test-panel-settings-prototype-browser.py": "7a5ccaae6b87286629eb44e84134553d732ad5a0c6ade7e857a3839ce0fa560f",
+    "designs/panel-and-settings/Panel and Settings Prototype.html": "4d76fbbdb6b0c1432e8546a4bf73409cfc2530551bbe41a30bb12df38609c311"
+  },
+  "nonqualifying_run": "One long browser run ended with TargetClosedError and was not counted. The runner now restarts its isolated browser per variant and preserves failure reports; the complete details/state rerun passed.",
+  "evidence": [
+    {
+      "path": "verification/animation-clipping.json",
+      "sha256": "99b88d2ffbc906036bad74c3b56952b35eadbf1f7c02a3cb73fccdb9d6139140"
+    },
+    {
+      "path": "verification/details-and-states.json",
+      "sha256": "6617d982be9bd5989a7f0337eeca384d1b8a5df1f59625c1ae3d65491c6664b1"
+    },
+    {
+      "path": "verification/independent-layout-raw.json",
+      "sha256": "501162071c6843c553f3e447b4847683b5dca5fcbf57dd34ac8fa643391b00cd"
+    },
+    {
+      "path": "verification/independent-layout-reviewed.json",
+      "sha256": "4bebc965054fe0c5430cbed77329371be198b948cb81937d04814154c9477bfa"
+    },
+    {
+      "path": "verification/keyboard.json",
+      "sha256": "16dfad767fcb36182e110fd2a38fd7438d208fc75ff2fbaa4834743052c1d9e7"
+    },
+    {
+      "path": "verification/pages-and-cases.json",
+      "sha256": "8873926546b06d1f36de3bfc8358ac2087f0ca47d94f8b6f43d1d49a0a15da03"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/en-dark-default-integrations.png",
+      "width": 1240,
+      "height": 820,
+      "sha256": "4504ff5e9d9bf5aec0c97a6967f4905598775860a414e066505260f088ccccc2",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/en-dark-minimum-about.png",
+      "width": 960,
+      "height": 640,
+      "sha256": "a525b23f46598f81850c15bd9769f5e5e2c2b1f14bda0f4b9511c2dd8d7a7daf",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/en-dark-minimum-credential.png",
+      "width": 960,
+      "height": 640,
+      "sha256": "e5337b821ee37e30b48bb6be34894be88c064abed91e12070cfee565f3edd4cf",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/en-dark-minimum-sounds.png",
+      "width": 960,
+      "height": 640,
+      "sha256": "00b1cfb0ef5788ac74b66ab16857cf1b0b3095bb4e669be568b7a64f3972bb59",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/en-dark-minimum-system-sound.png",
+      "width": 960,
+      "height": 640,
+      "sha256": "315bba0e4281a77d53f90df8fdeaf92f857541c8c372a27d9f258694f6779c8b",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/zh-light-default-events.png",
+      "width": 1240,
+      "height": 820,
+      "sha256": "e0de7efe66883ca0f211bc37be226e637d80386297a4fd942cad44d6be503b15",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    },
+    {
+      "path": "screenshots/zh-light-minimum-sounds.png",
+      "width": 960,
+      "height": 640,
+      "sha256": "4994f3cfc6d7bdcd4c97601fa0dbf4735b10588f99bf67bb41cb4e65ecc2f118",
+      "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91"
+    }
+  ],
+  "not_verified": [
+    "Native AppKit/SwiftUI layout",
+    "Real keyboard/focus and VoiceOver",
+    "Actual audio",
+    "Real permissions, login item, host callbacks and Provider requests",
+    "Both CPU architectures",
+    "Signing, notarization, release and formal acceptance"
+  ],
+  "approval_state": "Prototype awaits user review; current settings SoT and native migration plan were not changed.",
+  "git_delivery": "No commit, push, release or issue-state change."
+}

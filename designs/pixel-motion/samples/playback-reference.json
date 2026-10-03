@@ -1,0 +1,7586 @@
+{
+  "sourceSHA256": "d2b3cf0e8440785149a803e6927e72171bceb30892afdd218d31da2bd21529c4",
+  "samples": [
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 169,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 170,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 171,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 299,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 300,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 301,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 354,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 355,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 356,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 419,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 420,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 421,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 519,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 520,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 521,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 579,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 580,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 581,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 649,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 650,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 651,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 734,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 735,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 736,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 829,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 830,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 831,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 894,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 895,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 896,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 964,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 965,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 966,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1059,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1060,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1061,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1169,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1170,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1171,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1319,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1320,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1321,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1739,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1740,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 1741,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "task_start",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 159,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 160,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 161,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 224,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 225,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 226,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 364,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 365,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 366,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 434,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 435,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 436,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 504,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 505,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 506,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 569,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 570,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 571,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 714,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 715,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 716,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 784,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 785,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 786,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 849,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 850,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 851,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 919,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 920,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 921,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1014,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1015,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1016,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1114,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1115,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1116,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1244,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1245,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1246,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1424,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1425,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1426,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1884,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1885,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 1886,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "notification",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 79,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 80,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 81,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 154,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 155,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 156,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 229,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 230,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 231,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 309,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 310,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 311,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 399,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 400,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 401,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 499,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 500,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 501,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 614,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 615,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 616,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 754,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 755,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 756,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 914,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 915,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 916,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1014,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1015,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1016,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1084,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1085,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1086,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1169,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1170,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1171,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1269,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1270,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1271,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1409,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1410,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1411,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1599,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1600,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 1601,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 2119,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 2120,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 2121,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 169,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 170,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 171,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 244,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 245,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 246,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 319,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 320,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 321,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 404,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 405,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 406,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 514,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 515,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 516,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 694,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 695,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 696,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 794,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 795,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 796,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 874,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 875,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 876,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 954,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 955,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 956,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1049,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1050,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1051,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1124,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1125,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1126,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1214,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1215,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1216,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1339,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1340,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1341,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1499,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1500,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1501,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1979,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1980,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 1981,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "subagent_stop",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 84,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 85,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 86,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 159,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 160,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 161,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 259,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 260,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 261,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 359,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 360,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 361,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 444,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 445,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 446,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 519,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 520,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 521,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 584,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 585,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 586,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 649,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 650,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 651,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 719,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 720,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 721,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 799,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 800,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 801,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 889,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 890,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 891,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 999,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1000,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1001,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1139,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1140,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1141,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1299,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1300,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1301,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1499,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1500,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 1501,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 2039,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 2040,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 2041,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "mechanicalDuck",
+      "action": "stop_failure",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 234,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 235,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 236,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 299,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 300,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 301,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 409,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 410,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 411,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 479,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 480,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 481,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 559,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 560,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 561,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 639,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 640,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 641,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 734,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 735,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 736,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 844,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 845,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 846,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 964,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 965,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 966,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1094,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1095,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1096,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1224,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1225,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1226,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1364,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1365,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1366,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1514,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1515,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1516,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1674,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1675,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 1676,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 2104,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 2105,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 2106,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "task_start",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 174,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 175,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 176,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 264,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 265,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 266,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 429,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 430,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 431,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 524,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 525,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 526,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 624,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 625,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 626,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 734,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 735,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 736,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 849,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 850,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 851,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 969,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 970,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 971,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1094,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1095,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1096,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1224,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1225,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1226,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1359,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1360,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1361,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1499,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1500,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1501,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1649,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1650,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1651,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1819,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1820,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 1821,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 2279,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 2280,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 2281,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "notification",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 99,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 100,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 101,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 219,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 220,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 221,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 304,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 305,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 306,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 384,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 385,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 386,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 469,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 470,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 471,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 559,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 560,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 561,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 659,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 660,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 661,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 799,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 800,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 801,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 929,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 930,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 931,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1039,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1040,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1041,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1129,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1130,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1131,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1239,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1240,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1241,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1379,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1380,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1381,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1549,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1550,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1551,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1759,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1760,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 1761,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 2279,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 2280,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 2281,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 89,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 90,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 91,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 169,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 170,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 171,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 244,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 245,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 246,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 324,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 325,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 326,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 414,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 415,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 416,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 534,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 535,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 536,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 679,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 680,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 681,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 779,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 780,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 781,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 859,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 860,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 861,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 944,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 945,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 946,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1109,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1110,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1111,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1209,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1210,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1211,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1329,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1330,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1331,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1479,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1480,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1481,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1659,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1660,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 1661,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 2129,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 2130,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 2131,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "subagent_stop",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 99,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 100,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 101,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 249,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 250,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 251,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 324,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 325,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 326,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 389,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 390,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 391,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 449,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 450,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 451,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 509,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 510,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 511,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 574,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 575,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 576,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 644,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 645,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 646,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 729,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 730,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 731,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 829,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 830,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 831,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 949,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 950,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 951,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1089,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1090,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1091,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1249,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1250,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1251,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1429,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1430,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1431,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1649,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1650,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 1651,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 2189,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 2190,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 2191,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "pixelGhost",
+      "action": "stop_failure",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 229,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 230,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 231,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 419,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 420,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 421,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 574,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 575,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 576,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 699,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 700,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 701,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 804,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 805,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 806,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 894,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 895,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 896,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 974,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 975,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 976,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1049,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1050,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1051,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1119,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1120,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1121,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1189,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1190,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1191,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1259,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1260,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1261,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1329,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1330,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1331,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1399,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1400,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1401,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1469,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1470,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1471,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1539,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1540,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1541,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1609,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1610,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1611,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1679,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1680,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1681,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1749,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1750,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1751,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1819,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1820,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1821,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1889,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1890,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1891,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1959,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1960,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 1961,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2029,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2030,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2031,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2099,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2100,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2101,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2169,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2170,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2171,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2239,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2240,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2241,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2309,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2310,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2311,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2379,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2380,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2381,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2449,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2450,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2451,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2519,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2520,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2521,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2589,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2590,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2591,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2659,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2660,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2661,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2729,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2730,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2731,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2799,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2800,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2801,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2869,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2870,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2871,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2939,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2940,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 2941,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3009,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3010,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3011,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3079,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3080,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3081,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3149,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3150,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3151,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3219,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3220,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3221,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3289,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3290,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 3291,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 4000,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 6000,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "task_start",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 84,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 85,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 86,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 174,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 175,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 176,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 234,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 235,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 236,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 289,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 290,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 291,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 354,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 355,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 356,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 449,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 450,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 451,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 544,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 545,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 546,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 609,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 610,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 611,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 659,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 660,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 661,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 709,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 710,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 711,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 769,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 770,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 771,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 839,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 840,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 841,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 919,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 920,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 921,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 999,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1000,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1001,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1084,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1085,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1086,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1169,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1170,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1171,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1254,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1255,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1256,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1344,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1345,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1346,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1404,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1405,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1406,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1459,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1460,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1461,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1524,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1525,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1526,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1619,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1620,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1621,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1714,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1715,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1716,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1779,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1780,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1781,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1829,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1830,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1831,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1879,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1880,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1881,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1939,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1940,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 1941,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2009,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2010,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2011,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2089,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2090,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2091,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2169,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2170,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2171,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2254,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2255,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2256,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2339,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2340,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2341,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2424,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2425,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2426,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2514,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2515,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2516,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2574,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2575,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2576,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2629,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2630,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2631,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2694,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2695,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2696,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2789,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2790,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2791,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2884,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2885,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2886,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2949,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2950,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2951,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 2999,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3000,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3001,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3049,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3050,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3051,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3109,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3110,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3111,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3179,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3180,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3181,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3259,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3260,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3261,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3339,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3340,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3341,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3424,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3425,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3426,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3509,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3510,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3511,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3594,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3595,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3596,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3684,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3685,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3686,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3744,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3745,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3746,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3799,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3800,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3801,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3864,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3865,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3866,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3959,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3960,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 3961,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4000,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4054,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4055,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4056,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4119,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4120,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4121,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4169,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4170,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4171,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4219,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4220,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4221,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4279,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4280,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4281,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4349,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4350,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4351,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4429,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4430,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4431,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4509,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4510,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4511,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4594,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4595,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4596,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4679,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4680,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 4681,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 6000,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "notification",
+      "elapsedMs": 10000,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 84,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 85,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 86,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 184,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 185,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 186,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 304,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 305,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 306,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 449,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 450,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 451,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 619,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 620,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 621,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 804,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 805,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 806,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 994,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 995,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 996,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1114,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1115,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1116,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1214,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1215,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1216,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1294,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1295,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1296,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1359,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1360,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1361,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1414,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1415,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1416,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1484,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1485,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1486,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1564,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1565,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1566,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1704,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1705,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 1706,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 2224,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 2225,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 2226,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 79,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 80,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 81,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 149,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 150,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 151,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 214,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 215,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 216,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 289,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 290,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 291,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 389,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 390,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 391,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 479,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 480,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 481,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 559,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 560,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 561,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 639,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 640,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 641,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 709,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 710,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 711,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 779,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 780,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 781,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 849,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 850,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 851,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 919,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 920,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 921,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 989,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 990,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 991,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1059,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1060,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1061,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1129,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1130,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1131,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1199,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1200,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1201,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1269,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1270,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1271,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1339,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1340,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1341,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1409,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1410,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1411,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1479,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1480,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1481,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1549,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1550,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1551,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1619,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1620,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1621,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1689,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1690,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1691,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1759,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1760,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1761,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1829,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1830,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1831,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1899,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1900,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1901,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1969,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1970,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 1971,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2039,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2040,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2041,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2109,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2110,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2111,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2179,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2180,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2181,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2249,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2250,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2251,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2319,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2320,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2321,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2389,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2390,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2391,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2459,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2460,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2461,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2529,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2530,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2531,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2599,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2600,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2601,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2669,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2670,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2671,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2739,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2740,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2741,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2809,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2810,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2811,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2879,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2880,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 2881,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 4000,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 6000,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "subagent_stop",
+      "elapsedMs": 10000,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 0,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 94,
+      "frame": 0,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 95,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 96,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 194,
+      "frame": 1,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 195,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 196,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 314,
+      "frame": 2,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 315,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 316,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 459,
+      "frame": 3,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 460,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 461,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 634,
+      "frame": 4,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 635,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 636,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 844,
+      "frame": 5,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 845,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 846,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 909,
+      "frame": 6,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 910,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 911,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 974,
+      "frame": 7,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 975,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 976,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1059,
+      "frame": 8,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1060,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1061,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1149,
+      "frame": 9,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1150,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1151,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1249,
+      "frame": 10,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1250,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1251,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1359,
+      "frame": 11,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1360,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1361,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1484,
+      "frame": 12,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1485,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1486,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1634,
+      "frame": 13,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1635,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1636,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1824,
+      "frame": 14,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1825,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 1826,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 2424,
+      "frame": 15,
+      "ended": false
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 2425,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 2426,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 4000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 6000,
+      "frame": 15,
+      "ended": true
+    },
+    {
+      "style": "bitcoin",
+      "action": "stop_failure",
+      "elapsedMs": 10000,
+      "frame": 15,
+      "ended": true
+    }
+  ]
+}

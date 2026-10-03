@@ -1,0 +1,304 @@
+{
+  "prototype": true,
+  "name": "claudi0-h-event-stickers",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "compactAvatarSize": 32,
+  "columns": 16,
+  "rows": 7,
+  "transparency": true,
+  "pixelScaling": "nearest-neighbor",
+  "defaultPlayback": "once",
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 16,
+      "durationsMs": [
+        200,
+        180,
+        160,
+        150,
+        120,
+        120,
+        120,
+        150,
+        160,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        400
+      ],
+      "reducedMotionFrame": 0,
+      "endPose": "expressive",
+      "playback": "once",
+      "apngAssets": {
+        "primary": {
+          "file": "idle.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary"
+        ]
+      }
+    },
+    "task_start": {
+      "row": 1,
+      "frames": 16,
+      "durationsMs": [
+        230,
+        190,
+        155,
+        125,
+        105,
+        90,
+        80,
+        75,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "reducedMotionFrame": 10,
+      "endPose": "expressive",
+      "playback": "loop",
+      "loopStartFrame": 8,
+      "loopEndFrame": 15,
+      "apngAssets": {
+        "primary": {
+          "file": "task_start.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary",
+          "loop"
+        ],
+        "loop": {
+          "file": "task_start-loop.png",
+          "numPlays": 0,
+          "sourceFrames": [
+            8,
+            15
+          ]
+        }
+      }
+    },
+    "notification": {
+      "row": 2,
+      "frames": 16,
+      "durationsMs": [
+        85,
+        90,
+        60,
+        55,
+        65,
+        95,
+        95,
+        65,
+        50,
+        50,
+        60,
+        70,
+        80,
+        80,
+        85,
+        85
+      ],
+      "reducedMotionFrame": 4,
+      "endPose": "expressive",
+      "playback": "loop",
+      "loopStartFrame": 0,
+      "loopEndFrame": 15,
+      "apngAssets": {
+        "primary": {
+          "file": "notification.png",
+          "numPlays": 0,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary"
+        ]
+      }
+    },
+    "stop": {
+      "row": 3,
+      "frames": 16,
+      "durationsMs": [
+        85,
+        100,
+        120,
+        145,
+        170,
+        185,
+        190,
+        120,
+        100,
+        80,
+        65,
+        55,
+        70,
+        80,
+        140,
+        520
+      ],
+      "reducedMotionFrame": 15,
+      "endPose": "expressive",
+      "playback": "once",
+      "apngAssets": {
+        "primary": {
+          "file": "stop.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary"
+        ]
+      }
+    },
+    "subagent_stop": {
+      "row": 4,
+      "frames": 16,
+      "durationsMs": [
+        80,
+        70,
+        65,
+        75,
+        100,
+        90,
+        80,
+        80,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "reducedMotionFrame": 4,
+      "endPose": "expressive",
+      "playback": "loop",
+      "loopStartFrame": 8,
+      "loopEndFrame": 15,
+      "apngAssets": {
+        "primary": {
+          "file": "subagent_stop.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary",
+          "loop"
+        ],
+        "loop": {
+          "file": "subagent_stop-loop.png",
+          "numPlays": 0,
+          "sourceFrames": [
+            8,
+            15
+          ]
+        }
+      }
+    },
+    "stop_failure": {
+      "row": 5,
+      "frames": 16,
+      "durationsMs": [
+        95,
+        100,
+        120,
+        145,
+        175,
+        210,
+        65,
+        65,
+        85,
+        90,
+        100,
+        110,
+        125,
+        150,
+        190,
+        600
+      ],
+      "reducedMotionFrame": 15,
+      "endPose": "expressive",
+      "playback": "once",
+      "apngAssets": {
+        "primary": {
+          "file": "stop_failure.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary"
+        ]
+      }
+    },
+    "preview": {
+      "row": 6,
+      "frames": 16,
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        350
+      ],
+      "reducedMotionFrame": 0,
+      "endPose": "expressive",
+      "playback": "once",
+      "apngAssets": {
+        "primary": {
+          "file": "preview.png",
+          "numPlays": 1,
+          "sourceFrames": [
+            0,
+            15
+          ]
+        },
+        "sequence": [
+          "primary"
+        ]
+      }
+    }
+  }
+}

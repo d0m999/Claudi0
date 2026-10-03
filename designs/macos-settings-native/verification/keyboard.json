@@ -1,0 +1,100 @@
+{
+  "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+  "source_baseline": "7ca63a4af0497b74b53e89225ccf4de30d900c12",
+  "passed": true,
+  "requested_scope": {
+    "page_layouts": false,
+    "detail_layouts": false,
+    "capability_cases": true
+  },
+  "layout_combinations": 0,
+  "state_layouts": 0,
+  "cases": [
+    {
+      "id": "C47",
+      "passed": true,
+      "assertions": 14
+    }
+  ],
+  "detail_layouts": [],
+  "operation_layouts": [],
+  "assertions": [
+    {
+      "case": "C47",
+      "label": "Tab enters current page at management scope",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "Tab skips disabled apply and reaches viewed pack",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "Tab reaches copy after viewed pack",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "control pack-options reachable",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "cancel focus returns to trigger",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "sidebar keyboard selection focus",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "control pack-options reachable",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "control sheet-cancel reachable",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "disappeared trigger falls back visible reason/title",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "Tab moves to enabled focusable control",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "control credential reachable",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "credential actions fit buttons",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "control system-sound reachable",
+      "passed": true
+    },
+    {
+      "case": "C47",
+      "label": "new long sheet begins with visible title",
+      "passed": true
+    }
+  ],
+  "layouts": [],
+  "state_layout_samples": [],
+  "page_errors": [],
+  "network_requests": [],
+  "html_changed_during_run": false,
+  "layout_error": null,
+  "evidence_boundary": "Offline browser only; no native layout, VoiceOver, actual audio, permissions, host callbacks, Provider, release, or formal acceptance."
+}

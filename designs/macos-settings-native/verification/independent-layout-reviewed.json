@@ -1,0 +1,33 @@
+{
+  "html_sha256": "f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91",
+  "scope": "Chrome headless, offline temporary contexts; no native app / personal browser profile / real credentials / external requests",
+  "result": "PASS after visible clipping review",
+  "counts": {
+    "pages": 64,
+    "scenes": 768,
+    "normal": 376,
+    "states": 776
+  },
+  "total_observations": 1984,
+  "raw_geometry_flags": 23,
+  "reviewed_geometry_exception": ".progress span decorative 3px animation is clipped by its overflow:hidden parent; 24 focused variants verified visible bounds",
+  "animation_reverification": {
+    "count": 24,
+    "passed": 24
+  },
+  "fixed_sheet_targeted_combinations": 16,
+  "meaningful_unresolved_issues": [],
+  "evidence": {
+    "raw": "independent-layout-raw.json",
+    "clipping_review": "animation-clipping.json",
+    "screenshots_retained_in_review_run": 180
+  },
+  "manual_images": [
+    "pages-events-normal-zh-light-default.png",
+    "pages-sounds-normal-en-dark-minimum.png",
+    "pages-integrations-normal-en-dark-minimum.png",
+    "pages-about-normal-en-dark-minimum.png",
+    "normal-profile-credential-normal-en-dark-minimum.png",
+    "normal-draft-system-sound-normal-en-dark-minimum.png"
+  ]
+}
