@@ -112,12 +112,7 @@ public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable
         }
     }
     public var status: HostSourceRowStatus { row.status }
-    public var coverageText: String {
-        guard let supportedCount = row.supportedCount, let totalCount = row.totalCount else {
-            return row.readinessText
-        }
-        return "\(supportedCount)/\(totalCount)"
-    }
+    public var coverageText: String { row.coverageText }
 
     /// Connection diagnosis deliberately distinguishes configuration from current-installation
     /// activation. A receipt is the only fact that permits the activated wording.
@@ -125,16 +120,17 @@ public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable
         if status == .ready, latestReceiptEvidence != nil {
             return "当前安装实例已取得真实宿主事件回执。"
         }
+        let detail = localizedHostSourceRowDetail(row.detail, language: .zhHans)
         let diagnosis: String
         switch status {
         case .notConnected:
             diagnosis = "当前安装实例尚未连接。"
         case .needsAttention:
-            diagnosis = row.detailText ?? "当前安装实例需要处理。"
+            diagnosis = detail ?? "当前安装实例需要处理。"
         case .ready, .awaitingActivation, .legacy:
             diagnosis = "当前安装实例已配置，等待真实宿主事件回执。"
         }
-        if status != .needsAttention, let detail = row.detailText {
+        if status != .needsAttention, let detail {
             return "\(diagnosis) \(detail)"
         }
         return diagnosis
@@ -170,11 +166,7 @@ public struct IntegrationAgentConnectionControlPresentation: Identifiable, Senda
         title = row.title
         status = row.status
         badgeText = hostIntegrationStatusBadgeText(row.status)
-        if let supportedCount = row.supportedCount, let totalCount = row.totalCount {
-            coverageText = "\(supportedCount)/\(totalCount)"
-        } else {
-            coverageText = row.readinessText
-        }
+        coverageText = row.coverageText
         isOn = row.status != .notConnected
         self.isToggleEnabled = isToggleEnabled
         self.isInFlight = isInFlight

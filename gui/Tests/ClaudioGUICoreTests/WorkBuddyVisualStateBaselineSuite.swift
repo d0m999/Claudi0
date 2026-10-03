@@ -168,21 +168,10 @@ func runWorkBuddyVisualStateBaselineSuites() {
                     && english.readinessText.contains("4/5")
                     && chinese.readinessText.contains("4/5"),
                 "\(scenario.id) 双语行必须保留 4/5")
-            if let detail = row.detailText {
+            if case .needsAttention(let reason) = row.detail {
                 expect(
-                    localizedHostSourceRow(
-                        HostSourceRowPresentation(
-                            host: .workBuddy,
-                            title: row.title,
-                            readinessText: row.readinessText,
-                            detailText: detail,
-                            status: .needsAttention,
-                            supportedCount: 2,
-                            totalCount: 5),
-                        language: .zhHans
-                    ).detailText == detail
-                        || scenario.phase == .conflict,
-                    "外部诊断 literal 不得被 GUI 猜测覆盖")
+                    english.detailText == reason && chinese.detailText == reason,
+                    "\(scenario.id) 外部诊断 literal 必须在两种语言逐字保留，GUI 不得猜测覆盖")
             }
         }
     }

@@ -14,39 +14,57 @@ public enum HostSourceRowStatus: Sendable, Equatable, Hashable {
     case needsAttention
 }
 
-/// 菜单栏与集成目的页共用的一条声音来源呈现。
+/// 声音来源行的类型化详情事实。两种语言的可见与无障碍文案只在
+/// `localizedHostSourceRowDetail(_:language:)` 一处从该枚举投影；`.needsAttention` 携带的
+/// reason 是 Core adapter 提供的域数据，逐字保留，GUI 不做字面匹配或猜测。
+public enum HostSourceRowDetail: Sendable, Equatable, Hashable {
+    /// Codex 已就绪：执行中断暂无事件。
+    case codexInterruptionEventUnavailable
+    /// WorkBuddy 已就绪：通知仅覆盖授权与空闲提醒；执行中断尚未实现。
+    case workBuddyNotificationScopeOnly
+    /// Claude Code 待激活：请向 Claude Code 提交一次提示词以确认连接。
+    case claudeCodeAwaitingFirstPrompt
+    /// Codex 待激活：在 Codex 输入 /hooks，确认后再提交一次提示词。
+    case codexAwaitingHooksConfirmation
+    /// WorkBuddy 待激活：请向 WorkBuddy 提交一次提示词以确认连接。
+    case workBuddyAwaitingFirstPrompt
+    /// Claude Code 旧版连接：四个旧版 hook 已接入，但提问入口与任务开始未安装。
+    case claudeCodeLegacyPartialHooks
+    /// Codex / WorkBuddy 旧版连接：可听，但暂无真实回执。
+    case legacyAudibleWithoutReceipt
+    /// 需要处理：adapter 提供的诊断原文，双语均逐字呈现。
+    case needsAttention(reason: String)
+}
+
+/// 菜单栏与集成目的页共用的一条声音来源呈现。它是纯类型化事实：宿主、状态、计数与详情枚举。
+/// 可见文字与无障碍文案不存储在这里，一律由 `localizedHostSourceRow(_:language:)` 投影。
 public struct HostSourceRowPresentation: Identifiable, Sendable, Equatable {
     public var id: HostID { host }
     public let host: HostID
     public let title: String
-    public let readinessText: String
-    public let detailText: String?
     public let status: HostSourceRowStatus
-    public let accessibilityLabel: String
-    public let supportedCount: Int?
-    public let totalCount: Int?
+    public let detail: HostSourceRowDetail?
+    public let supportedCount: Int
+    public let totalCount: Int
 
     public init(
         host: HostID,
         title: String,
-        readinessText: String,
-        detailText: String?,
         status: HostSourceRowStatus,
-        accessibilityLabel: String? = nil,
-        supportedCount: Int? = nil,
-        totalCount: Int? = nil
+        detail: HostSourceRowDetail? = nil,
+        supportedCount: Int,
+        totalCount: Int
     ) {
         self.host = host
         self.title = title
-        self.readinessText = readinessText
-        self.detailText = detailText
         self.status = status
-        self.accessibilityLabel =
-            accessibilityLabel
-            ?? [title, readinessText, detailText].compactMap { $0 }.joined(separator: "，")
+        self.detail = detail
         self.supportedCount = supportedCount
         self.totalCount = totalCount
     }
+
+    /// 中性的能力覆盖事实（如 4/5），与界面语言无关；带状态文案的行文字只在 localized seam 生成。
+    public var coverageText: String { "\(supportedCount)/\(totalCount)" }
 }
 
 /// 共享诊断消费者使用的 Product → Surface 分组。产品只负责分组，选择、能力和回执仍以
@@ -121,72 +139,62 @@ private func hostSourceRowPresentation(
     host: HostID,
     summary: HostReadinessSummary
 ) -> HostSourceRowPresentation {
-    let readinessText: String
-    let detailText: String?
     let status: HostSourceRowStatus
-    var supportedCount: Int?
-    var totalCount: Int?
+    let detail: HostSourceRowDetail?
+    let supportedCount: Int
+    let totalCount: Int
 
     switch summary {
     case .ready(let supported, let total):
         supportedCount = supported
         totalCount = total
-        readinessText = "\(supported)/\(total) 已就绪"
         switch host {
-        case .claudeCode: detailText = nil
-        case .codex: detailText = "执行中断暂无事件"
-        case .workBuddy:
-            detailText = "通知仅覆盖授权与空闲提醒；执行中断尚未实现"
-        case .chatGPTDesktopAX, .claudeDesktopAX: detailText = nil
+        case .claudeCode: detail = nil
+        case .codex: detail = .codexInterruptionEventUnavailable
+        case .workBuddy: detail = .workBuddyNotificationScopeOnly
+        case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .ready
 
     case .awaitingActivation(let supported, let total):
         supportedCount = supported
         totalCount = total
-        readinessText = "\(supported)/\(total) 已配置"
         switch host {
-        case .claudeCode: detailText = "请向 Claude Code 提交一次提示词以确认连接"
-        case .codex: detailText = "在 Codex 输入 /hooks，确认后再提交一次提示词"
-        case .workBuddy: detailText = "请向 WorkBuddy 提交一次提示词以确认连接"
-        case .chatGPTDesktopAX, .claudeDesktopAX: detailText = nil
+        case .claudeCode: detail = .claudeCodeAwaitingFirstPrompt
+        case .codex: detail = .codexAwaitingHooksConfirmation
+        case .workBuddy: detail = .workBuddyAwaitingFirstPrompt
+        case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .awaitingActivation
 
     case .legacy(let supported, let total):
         supportedCount = supported
         totalCount = total
-        readinessText = "\(supported)/\(total) 旧版连接"
         switch host {
-        case .claudeCode:
-            detailText =
-                "四个旧版 hook 已接入；Notification 仍可播放；PreToolUse 提问入口和任务开始未安装，请升级连接"
-        case .codex, .workBuddy: detailText = "可听，但暂无真实回执"
-        case .chatGPTDesktopAX, .claudeDesktopAX: detailText = nil
+        case .claudeCode: detail = .claudeCodeLegacyPartialHooks
+        case .codex, .workBuddy: detail = .legacyAudibleWithoutReceipt
+        case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .legacy
 
     case .notConnected(let supported, let total):
         supportedCount = supported
         totalCount = total
-        readinessText = "\(supported)/\(total) 未连接"
-        detailText = nil
+        detail = nil
         status = .notConnected
 
     case .needsAttention(let supported, let total, let reason):
         supportedCount = supported
         totalCount = total
-        readinessText = "\(supported)/\(total) 需要处理"
-        detailText = reason
+        detail = .needsAttention(reason: reason)
         status = .needsAttention
     }
 
     return HostSourceRowPresentation(
         host: host,
         title: host.displayName,
-        readinessText: readinessText,
-        detailText: detailText,
         status: status,
+        detail: detail,
         supportedCount: supportedCount,
         totalCount: totalCount)
 }
@@ -817,11 +825,11 @@ public struct IntegrationsFeedbackRequest: Sendable, Equatable {
 
 /// 短暂 banner 的可见文案保持简短，但主动 VoiceOver 播报必须携带足够上下文，避免
 /// “已重新检测”或“收到回执”在脱离视觉位置后成为无主语、无事件的提示。宿主状态与事件限定
-/// 只消费共享 presentation；特别是 Codex `PermissionRequest` 的“仅授权请求”由 matrix cell
-/// 原样进入播报，不在窗口 model 另写一份宿主映射。
+/// 只消费已按当前语言投影的共享 presentation；特别是 Codex `PermissionRequest` 的“仅授权请求”
+/// 由 matrix cell 原样进入播报，不在窗口 model 另写一份宿主映射。
 public func integrationsStateChangeAccessibilityLabel(
     message: String,
-    hostRow: HostSourceRowPresentation,
+    hostRow: LocalizedHostSourceRowPresentation,
     capabilityCells: [HostCapabilityCellPresentation]
 ) -> String {
     var clauses = [hostRow.accessibilityLabel]
