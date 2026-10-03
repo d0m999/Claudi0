@@ -136,9 +136,12 @@ package final class EventSettingsWindowSelection: ObservableObject {
             focusRequestRevision: 0, focusTarget: nil)
     }
 
-    package func select(_ route: EventSettingsWindowRoute) {
+    package func select(
+        _ route: EventSettingsWindowRoute,
+        preservingSoundsAIState: Bool = false
+    ) {
         guard storage.route != route else { return }
-        storage.leaveDestination()
+        storage.leaveDestination(preservingSoundsAIState: preservingSoundsAIState)
         deletionPresentation = WorkspaceDeletionPresentation()
         previewFailure = nil
         writeRetry = nil
@@ -176,9 +179,12 @@ package final class EventSettingsWindowSelection: ObservableObject {
         publishState()
     }
 
-    package func markCurrentScopeUnavailable() {
+    package func markCurrentScopeUnavailable(
+        preservingDetail: Bool = false,
+        preservingSoundsAIState: Bool = false
+    ) {
         guard storage.route.unavailableRequestedScopeStoredValue == nil else { return }
-        storage.leaveDestination()
+        storage.leaveDestination(preservingSoundsAIState: preservingSoundsAIState)
         deletionPresentation.pending = nil
         previewFailure = nil
         writeRetry = nil
@@ -188,19 +194,21 @@ package final class EventSettingsWindowSelection: ObservableObject {
             scope: storage.route.scope,
             event: storage.route.event,
             workspaceTarget: storage.route.workspaceTarget,
-            unavailableRequestedScopeStoredValue: storage.route.scope.storedValue)
+            unavailableRequestedScopeStoredValue: storage.route.scope.storedValue,
+            detail: preservingDetail ? storage.route.detail : .configuration)
         storage.routeRequestRevision &+= 1
         focusRequests.clearRequestedTarget()
         focusRequests.clearReturnFocus()
         publishState()
     }
 
-    package func clearUnavailableScope() {
+    package func clearUnavailableScope(preservingDetail: Bool = false) {
         guard storage.route.unavailableRequestedScopeStoredValue != nil else { return }
         storage.route = EventSettingsWindowRoute(
             scope: storage.route.scope,
             event: storage.route.event,
-            workspaceTarget: storage.route.workspaceTarget)
+            workspaceTarget: storage.route.workspaceTarget,
+            detail: preservingDetail ? storage.route.detail : .configuration)
         storage.routeRequestRevision &+= 1
         publishState()
     }
@@ -623,9 +631,12 @@ package final class EventSettingsWindowSelection: ObservableObject {
             aiSessionEndRequestRevision &+= 1
         }
 
-        mutating func leaveDestination() {
+        mutating func leaveDestination(preservingSoundsAIState: Bool = false) {
             requestPreviewStop()
             requestAISessionEnd()
+            // Sounds owns the package-level credential sheet and candidate playback identity.
+            // Synchronizing the hidden scope route must only end scope-specific activity.
+            guard !preservingSoundsAIState else { return }
             credentialSheetIsPresented = false
             playingCandidateID = nil
         }
