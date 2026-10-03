@@ -57,7 +57,7 @@ func runSettingsNavigationSuites() {
             generic.stableIdentityComponents == ["notifications"],
             "generic route 只能携带稳定 ID")
 
-        let integration = SettingsRoute.integrations(surface: .workBuddy)
+        let integration = SettingsRoute.integrations(IntegrationsSettingsRoute(surface: .workBuddy))
         expect(
             integration.stableIdentityComponents == ["integrations", "workbuddy"],
             "Integrations 深链接必须携带 HostSurfaceID 而非展示名")
@@ -85,7 +85,7 @@ func runSettingsNavigationSuites() {
             "已存在声音包深链接必须解析")
 
         let invalidSurface = resolveSettingsRoute(
-            .integrations(surface: .chatGPTDesktopAX),
+            .integrations(IntegrationsSettingsRoute(surface: .chatGPTDesktopAX)),
             availability: availability)
         expect(
             invalidSurface.destination == .integrations,
@@ -143,6 +143,62 @@ func runSettingsNavigationSuites() {
             "声音编辑的陈旧 Event 不得静默选择其他事件")
     }
 
+    suite("Settings Integrations route：detailsHost 身份、路径组件与 fail-closed 解析") {
+        let availability = SettingsRouteAvailability(
+            integrationSurfaces: [.workBuddy, .codex],
+            eventScopes: [.global],
+            soundScopes: [.global],
+            soundPackIDs: [],
+            events: Set(Event.allCases))
+
+        let overview = IntegrationsSettingsRoute(surface: .workBuddy)
+        let details = IntegrationsSettingsRoute(surface: .workBuddy, detailsHost: .workBuddy)
+        expect(
+            overview == IntegrationsSettingsRoute(surface: .workBuddy, detailsHost: nil)
+                && overview != details,
+            "detailsHost 默认 nil 且必须参与 typed route 身份")
+        expect(
+            SettingsRoute.integrations(overview).stableIdentityComponents
+                == ["integrations", "workbuddy"],
+            "overview 路径组件必须只携带 Surface 稳定 ID")
+        expect(
+            SettingsRoute.integrations(details).stableIdentityComponents
+                == ["integrations", "workbuddy", "workbuddy"],
+            "details 路径组件必须在 Surface 之后追加 Host 稳定 raw value")
+
+        let resolved = resolveSettingsRoute(
+            .integrations(details), availability: availability)
+        expect(
+            resolved.failure == nil && resolved.route == .integrations(details),
+            "surface 当前选中 Host 的 details 深链接必须原样解析")
+
+        let mismatched = resolveSettingsRoute(
+            .integrations(IntegrationsSettingsRoute(surface: .workBuddy, detailsHost: .codex)),
+            availability: availability)
+        expect(
+            mismatched.failure == nil
+                && mismatched.route == .integrations(overview),
+            "指向其他 Host 的 detailsHost 必须 drop 到 nil，不得跨 Host 导航")
+
+        let diagnostic = resolveSettingsRoute(
+            .integrations(
+                IntegrationsSettingsRoute(surface: .workBuddy, detailsHost: .chatGPTDesktopAX)),
+            availability: availability)
+        expect(
+            diagnostic.failure == nil
+                && diagnostic.route == .integrations(overview),
+            "诊断身份的 detailsHost 必须 fail closed 丢弃，不得当成产品 Host")
+
+        let staleSurfaceDetails = IntegrationsSettingsRoute(
+            surface: .claudeCode, detailsHost: .claudeCode)
+        let stale = resolveSettingsRoute(
+            .integrations(staleSurfaceDetails), availability: availability)
+        expect(
+            stale.failure == .staleSurface(.claudeCode)
+                && stale.route == .integrations(staleSurfaceDetails),
+            "失败解析必须原样保留请求路由，detailsHost 不被重写")
+    }
+
     suite("Settings Sounds route：只在共享库 fresh ready 后判定陈旧 pack") {
         let route = SettingsRoute.sounds(
             .editEvent(surface: .workBuddy, packID: "delayed-pack", event: .stop))
@@ -197,7 +253,7 @@ func runSettingsNavigationSuites() {
                 .routeFailure(.eventsAndSounds)
             ),
             (
-                .integrations(surface: .workBuddy),
+                .integrations(IntegrationsSettingsRoute(surface: .workBuddy)),
                 .staleSurface(.workBuddy),
                 .routeFailure(.integrations)
             ),

@@ -569,4 +569,90 @@ func runEventSettingsWindowSelectionSuites() {
                 && selection.deletionPresentation.feedback == nil,
             "用户重新选择读回后的同一规则才重建路由")
     }
+
+    suite("事件设置 detail：进入/返回经 selection 单写入，陈旧目标按 workspaceTarget 规则失效") {
+        let rule = WorkspaceSoundRule(
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/detail-workspace"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "pack-a", volume: 0.5))
+        var config = ClaudioConfig(selectedPack: "pack-a")
+        config.workspaceRules = [rule]
+        let selection = EventSettingsWindowSelection(
+            route: EventSettingsWindowRoute(scope: .workspace(rule.id)))
+        expect(
+            selection.route.detail == .configuration,
+            "初始 detail 必须是 configuration")
+
+        let entryRevision = selection.routeRequestRevision
+        selection.showWorkspacesDetail()
+        expect(
+            selection.route.detail == .workspaces
+                && selection.route.scope == .workspace(rule.id)
+                && selection.routeRequestRevision == entryRevision + 1,
+            "showWorkspacesDetail 必须只推进 detail 并保留 scope")
+
+        let target = WorkspaceSoundWriteTarget(rule: rule)
+        selection.showScopeDetail(target)
+        expect(
+            selection.route.detail == .scope(target)
+                && selection.route.workspaceTargetIsCurrent(in: config),
+            "现存规则的 scope detail 必须保持有效")
+
+        selection.showConfigurationDetail()
+        expect(
+            selection.route.detail == .configuration
+                && selection.route.scope == .workspace(rule.id),
+            "返回必须只把 detail 收回 configuration")
+
+        var replaced = config
+        replaced.workspaceRules = [
+            WorkspaceSoundRule(
+                id: rule.id,
+                directory: WorkspaceDirectory(
+                    kind: .directory, path: "/fixture/detail-replaced"),
+                surfaces: [.codex],
+                profile: WorkspaceSoundProfile(selectedPack: "pack-a", volume: 0.5))
+        ]
+        selection.showScopeDetail(target)
+        expect(
+            selection.route.detail == .scope(target)
+                && !selection.route.workspaceTargetIsCurrent(in: replaced),
+            "同 ID 换绑目录的 scope detail 必须与 stale workspaceTarget 一样判失效")
+        selection.markCurrentScopeUnavailable()
+        expect(
+            selection.route.detail == .configuration
+                && selection.unavailableRequestedScopeStoredValue
+                    == PanelSoundScopeID.workspace(rule.id).storedValue,
+            "失效后 detail 收回 configuration 并保留 typed 不可用说明")
+
+        var removed = config
+        removed.workspaceRules = []
+        selection.showScopeDetail(target)
+        expect(
+            !selection.route.workspaceTargetIsCurrent(in: removed),
+            "规则消失后 scope detail 不得被判为当前目标")
+    }
+
+    suite("事件设置 detail：删除请求经 selection owner 钉住 scope detail") {
+        let rule = WorkspaceSoundRule(
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/delete-detail"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "pack-a", volume: 0.5))
+        let selection = EventSettingsWindowSelection(
+            route: EventSettingsWindowRoute(scope: .workspace(rule.id)))
+        expect(
+            selection.route.detail == .configuration,
+            "删除前 detail 必须仍是 configuration")
+        expect(selection.requestDeletion(of: rule), "删除请求必须被接受")
+        expect(
+            selection.deletionPresentation.pending != nil
+                && selection.route.detail == .scope(WorkspaceSoundWriteTarget(rule: rule))
+                && selection.route.scope == .workspace(rule.id),
+            "删除确认必须由 selection owner 同时钉住对应 scope detail")
+        selection.cancelDeletion()
+        expect(
+            selection.deletionPresentation.pending == nil
+                && selection.route.detail == .scope(WorkspaceSoundWriteTarget(rule: rule)),
+            "取消确认保留原 scope detail，不产生额外路由")
+    }
 }

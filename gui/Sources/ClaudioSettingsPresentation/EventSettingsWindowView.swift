@@ -32,7 +32,6 @@ struct EventSettingsWindowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
-    @State private var detail: WorkspaceSettingsDetail = .configuration
     @State private var previewSequence = EventPreviewSequenceCoordinator()
     @State private var player = NSSoundAudioPreviewPlayer()
     @State private var previewPulseTriggers: [Event: Int] = [:]
@@ -66,6 +65,7 @@ struct EventSettingsWindowView: View {
     }
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
+    private var detail: WorkspaceSettingsDetail { selection.route.detail }
     private var scopes: [PanelSoundScopePresentation] {
         panelSoundScopePresentations(
             sourceRows: [], config: model.configState.resolvedConfig,
@@ -105,7 +105,7 @@ struct EventSettingsWindowView: View {
             SettingsPageHeader {
                 if detail != .configuration {
                     Button {
-                        detail = .configuration
+                        selection.showConfigurationDetail()
                     } label: {
                         Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
                     }
@@ -130,7 +130,7 @@ struct EventSettingsWindowView: View {
                     .settingsReadingColumn()
                 }
                 .accessibilityIdentifier("workspace.settings.scroll")
-                .onChange(of: detail) { _ in
+                .onChange(of: selection.route.detail) { _ in
                     previewSequence.cancel()
                     player.stop()
                     previewSuccessTokens.removeAll()
@@ -158,7 +158,6 @@ struct EventSettingsWindowView: View {
             synchronize()
         }
         .onChange(of: selection.route) { _ in
-            detail = .configuration
             previewSequence.cancel()
             player.stop()
             previewSuccessTokens.removeAll()
@@ -175,15 +174,6 @@ struct EventSettingsWindowView: View {
             }
         }
         .onChange(of: selection.presentationState.focusRequestRevision) { _ in synchronize() }
-        .onChange(of: selection.deletionPresentation.pending?.id) { pendingID in
-            if pendingID != nil {
-                if let request = selection.deletionPresentation.pending {
-                    detail = .scope(
-                        WorkspaceSoundWriteTarget(
-                            id: request.target.id, directory: request.target.directory))
-                }
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) {
             _ in
             restoreDeletionCancelFocus(clearRequest: true)
@@ -513,9 +503,9 @@ struct EventSettingsWindowView: View {
     private var workspaceNavigation: some View {
         Button {
             if let rule {
-                detail = .scope(WorkspaceSoundWriteTarget(rule: rule))
+                selection.showScopeDetail(WorkspaceSoundWriteTarget(rule: rule))
             } else {
-                detail = .workspaces
+                selection.showWorkspacesDetail()
             }
         } label: {
             HStack {

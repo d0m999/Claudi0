@@ -125,7 +125,8 @@ func runSettingsNativeStatesSuites() async {
         for scenario in PreviewFixtures.hostIntegrationScenarios where !cancelOnly {
             for host in HostID.productVisibleCases {
                 let fixture = SettingsPresentationFixtures.generalLogin(
-                    language: language, route: .integrations(surface: host.surfaceID),
+                    language: language,
+                    route: .integrations(IntegrationsSettingsRoute(surface: host.surfaceID)),
                     integrationScenario: scenario)
                 await suite("集成原生状态：\(scenario.id) \(host.rawValue) \(language.rawValue)") {
                     SettingsMountRecorder.reset()

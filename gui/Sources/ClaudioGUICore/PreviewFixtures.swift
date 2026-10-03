@@ -902,7 +902,7 @@ public enum PreviewFixtures {
             let route: SettingsRoute
             switch destination {
             case .integrations:
-                route = .integrations(surface: .workBuddy)
+                route = .integrations(IntegrationsSettingsRoute(surface: .workBuddy))
             case .eventsAndSounds:
                 route = .events(scope: .global, event: .notification)
             case .sounds:
@@ -942,7 +942,7 @@ public enum PreviewFixtures {
         return [
             SettingsRouteFailureScenario(
                 id: "invalid-surface",
-                route: .integrations(surface: .chatGPTDesktopAX),
+                route: .integrations(IntegrationsSettingsRoute(surface: .chatGPTDesktopAX)),
                 availability: settingsRouteAvailability,
                 expectedFailure: .invalidSurface(.chatGPTDesktopAX)),
             SettingsRouteFailureScenario(
