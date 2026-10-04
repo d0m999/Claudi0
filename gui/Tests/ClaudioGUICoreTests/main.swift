@@ -179,6 +179,7 @@ if CommandLine.arguments.contains("--review-repairs") {
     runHostSessionNavigationSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
+    await runNavigationReviewRegressionSuites()
     await runSettingsPresentationLifecycleSuites()
     print("Review repairs: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
@@ -218,6 +219,7 @@ if CommandLine.arguments.contains("--event-attention") {
     runHostSessionNavigationSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
+    await runNavigationReviewRegressionSuites()
     await runEventAttentionStressSuites()
     // Native AppKit event delivery stays terminal: on newer macOS versions, yielding back to
     // Swift's async-main drain queue after synthetic window tracking can end the harness early.
@@ -482,6 +484,7 @@ await runSessionNavigationSuites()
 runHostSessionNavigationSuites()
 runTmuxNavigationSuites()
 await runIDENavigationSocketSuites()
+await runNavigationReviewRegressionSuites()
 await runEventAttentionStressSuites()
 runPanelSoundScopeInteractionSuites()
 await runPanelPresentationSuites()

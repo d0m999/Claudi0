@@ -18,6 +18,7 @@ await runSessionNavigationSuites()
 runHostSessionNavigationSuites()
 runTmuxNavigationSuites()
 await runIDENavigationSocketSuites()
+await runNavigationReviewRegressionSuites()
 print("Navigation core: \\(totalChecks - failures)/\\(totalChecks) passed")
 exit(failures == 0 ? 0 : 1)
 ''')
@@ -27,7 +28,7 @@ swiftc -swift-version 6 -package-name claudio-gui -enable-testing -emit-module -
   -emit-module-path "$navigation_test_dir/ClaudioGUIComponents.swiftmodule" \
   -I gui/.build/out/Products/Debug \
   -Xcc -fmodule-map-file=gui/.build/out/Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap \
-  gui/Sources/ClaudioGUIComponents/{NavigationCommand,IDENavigationSocket,IDENavigationBridge,HostSessionNavigationAdapter,TmuxNavigationAdapter,SourceApplicationAdapter,SourceApplicationEnvironment,SourceApplicationDescriptor}.swift \
+  gui/Sources/ClaudioGUIComponents/{NavigationCommand,NavigationFocusGuard,EventNoticeNavigationIngress,IDENavigationSocket,IDENavigationBridge,HostSessionNavigationAdapter,TmuxNavigationAdapter,SourceApplicationAdapter,SourceApplicationEnvironment,SourceApplicationDescriptor}.swift \
   -o "$navigation_test_dir/ClaudioGUIComponents.o"
 swiftc -swift-version 6 -package-name claudio-gui -I "$navigation_test_dir" -I gui/.build/out/Products/Debug \
   -Xcc -fmodule-map-file=gui/.build/out/Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap \
@@ -37,6 +38,7 @@ swiftc -swift-version 6 -package-name claudio-gui -I "$navigation_test_dir" -I g
   gui/Tests/ClaudioGUICoreTests/HostSessionNavigationSuite.swift \
   gui/Tests/ClaudioGUICoreTests/TmuxNavigationSuite.swift \
   gui/Tests/ClaudioGUICoreTests/IDENavigationSocketSuite.swift \
+  gui/Tests/ClaudioGUICoreTests/NavigationReviewRegressionSuite.swift \
   "$navigation_test_dir/ClaudioGUIComponents.o" \
   gui/.build/out/Products/Debug/ClaudioCore.o \
   gui/.build/out/Products/Debug/ClaudioGUICore.o \
@@ -46,4 +48,10 @@ swiftc -swift-version 6 -package-name claudio-gui -I "$navigation_test_dir" -I g
 "$navigation_test_dir/tests"
 swiftc -swift-version 6 -package-name claudio-gui -typecheck -I gui/.build/out/Products/Debug \
   -Xcc -fmodule-map-file=gui/.build/out/Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap \
-  gui/Sources/ClaudioGUIComponents/{NavigationCommand,IDENavigationSocket,IDENavigationBridge,HostSessionNavigationAdapter,TmuxNavigationAdapter,SourceApplicationAdapter,SourceApplicationEnvironment,SourceApplicationDescriptor}.swift
+  gui/Sources/ClaudioGUIComponents/{NavigationCommand,NavigationFocusGuard,EventNoticeNavigationIngress,IDENavigationSocket,IDENavigationBridge,HostSessionNavigationAdapter,TmuxNavigationAdapter,SourceApplicationAdapter,SourceApplicationEnvironment,SourceApplicationDescriptor}.swift
+
+# Compile the production composition against the same navigation module, including DEBUG wiring.
+swiftc -swift-version 6 -package-name claudio-gui -D DEBUG -typecheck \
+  -I "$navigation_test_dir" -I gui/.build/out/Products/Debug \
+  -Xcc -fmodule-map-file=gui/.build/out/Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap \
+  gui/Sources/ClaudioGUI/{EventNoticeRuntime,CodexQuestionObservationSession}.swift

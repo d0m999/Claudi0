@@ -15,7 +15,7 @@ package enum NavigationCommand {
                 process.arguments = arguments
                 process.standardOutput = pipe
                 process.standardError = FileHandle.nullDevice
-                guard state.start(process) else { return nil }
+                guard state.start(process, deadline: deadline) else { return nil }
                 let remaining = deadline - ProcessInfo.processInfo.systemUptime
                 guard remaining > 0 else { state.cancel(); return nil }
                 DispatchQueue.global().asyncAfter(deadline: .now() + remaining) { state.cancel() }
@@ -39,14 +39,14 @@ package enum NavigationCommand {
     }
 }
 
-private final class CommandState: @unchecked Sendable {
+package final class CommandState: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
     private var cancelled = false
     var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
-    func start(_ value: Process) -> Bool {
+    package func start(_ value: Process, deadline: TimeInterval) -> Bool {
         lock.lock(); defer { lock.unlock() }
-        guard !cancelled else { return false }
+        guard !cancelled, ProcessInfo.processInfo.systemUptime < deadline else { return false }
         do { try value.run(); process = value; return true } catch { return false }
     }
     func cancel() {

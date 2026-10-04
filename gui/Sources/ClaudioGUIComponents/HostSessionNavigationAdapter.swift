@@ -78,6 +78,7 @@ public final class HostSessionNavigationAdapter {
             guard current() else { complete(.unavailable); return }
             complete(outcome)
         }
+        focus.cancelOnInvalidation(task, complete: complete)
         return EventNoticeCancellation { task.cancel() }
     }
 
@@ -287,45 +288,6 @@ public final class HostSessionNavigationAdapter {
             current()
         else { return .failed }
         return outcome
-    }
-}
-
-/// Expected transfer to the target app is permitted; activation of a third app cancels all
-/// subsequent actions. An already sent native action cannot be recalled.
-@MainActor
-private final class NavigationFocusGuard {
-    private var observer: NSObjectProtocol?
-    private(set) var isValid = true
-    private var handedOff = false
-    private var allowsHandoff = false
-    func beginHandoff() { allowsHandoff = true }
-    init(targetPID: Int32) {
-        let initial = NSWorkspace.shared.frontmostApplication?.processIdentifier
-        observer = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak self] notification in
-            let pid =
-                (notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?
-                .processIdentifier
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                if pid == targetPID {
-                    if self.allowsHandoff {
-                        self.handedOff = true
-                    } else if pid != initial {
-                        self.isValid = false
-                    }
-                } else if pid != NSRunningApplication.current.processIdentifier
-                    && (self.handedOff || pid != initial)
-                {
-                    self.isValid = false
-                }
-            }
-        }
-    }
-    func stop() {
-        if let observer { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
-        observer = nil
     }
 }
 
