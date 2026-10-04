@@ -37,14 +37,17 @@ fileprivate final class EventNoticeContent: Sendable, Equatable {
 
     private let payload: Payload
     let sourceApplication: SourceApplicationTarget?
+    let navigationTarget: SessionNavigationTarget?
 
     init(_ notice: HostEventNotice, sourceApplication: SourceApplicationTarget? = nil) {
         payload = .hook(notice.removingProcessAncestors())
         self.sourceApplication = sourceApplication
+        navigationTarget = HostSessionTargetResolver.resolve(notice, application: sourceApplication)
     }
     init(_ observation: CodexQuestionObservation) {
         payload = .developmentObservation(observation)
         sourceApplication = nil
+        navigationTarget = nil
     }
 
     var notice: HostEventNotice? {
@@ -90,7 +93,8 @@ fileprivate final class EventNoticeContent: Sendable, Equatable {
 
     static func == (lhs: EventNoticeContent, rhs: EventNoticeContent) -> Bool {
         lhs === rhs
-            || (lhs.payload == rhs.payload && lhs.sourceApplication == rhs.sourceApplication)
+            || (lhs.payload == rhs.payload && lhs.sourceApplication == rhs.sourceApplication
+                && lhs.navigationTarget == rhs.navigationTarget)
     }
 }
 
@@ -107,6 +111,7 @@ public struct EventNoticeRecord: Identifiable, Sendable, Equatable {
     public var host: HostID? { content?.host }
     public var reason: HostEventNoticeReason? { content?.reason }
     public var sourceApplication: SourceApplicationTarget? { content?.sourceApplication }
+    public var navigationTarget: SessionNavigationTarget? { content?.navigationTarget }
     public let status: EventNoticeRecordStatus
     public let isExpired: Bool
     public let version: UInt64
@@ -806,6 +811,10 @@ public final class EventNoticeModel: ObservableObject {
 
     public func sourceNotice(for action: EventNoticeAction) -> HostEventNotice? {
         actionableEntry(action)?.notice
+    }
+
+    public func navigationTarget(for action: EventNoticeAction) -> SessionNavigationTarget? {
+        actionableEntry(action)?.content?.navigationTarget
     }
 
     public func sourceApplication(for action: EventNoticeAction) -> SourceApplicationTarget? {

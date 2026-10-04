@@ -297,6 +297,9 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventNoticeActPermission: Self = "event-notice.act.permission"
     public static let eventNoticeActNeedsInput: Self = "event-notice.act.needs-input"
     public static let eventNoticeActReview: Self = "event-notice.act.review"
+    public static let eventNoticeNavigationFallback: Self = "event-notice.navigation-fallback"
+    public static let eventNoticeNavigationRequested: Self = "event-notice.navigation-requested"
+    public static let eventNoticeReturnParent: Self = "event-notice.return-parent"
     public static let eventNoticeOpenSource: Self = "event-notice.open-source"
     public static let eventNoticeSourceApp: Self = "event-notice.source-app"
     public static let eventNoticeOpenHint: Self = "event-notice.open-hint"
@@ -1897,6 +1900,9 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventNoticeActPermission,
         .eventNoticeActNeedsInput,
         .eventNoticeActReview,
+        .eventNoticeNavigationFallback,
+        .eventNoticeNavigationRequested,
+        .eventNoticeReturnParent,
         .eventNoticeOpenSource,
         .eventNoticeSourceApp,
         .eventNoticeOpenHint,

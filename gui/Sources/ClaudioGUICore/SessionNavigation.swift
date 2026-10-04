@@ -6,11 +6,21 @@ public struct SessionNavigationTarget: Sendable, Equatable, Hashable {
     public let surface: HostSurfaceID
     public let projectKey: String?
     public let sessionID: String
+    public let terminalProcess: HostProcessIdentity?
+    public let route: HostSessionRoute?
+    public let isParentSession: Bool
 
-    public init(surface: HostSurfaceID, projectKey: String?, sessionID: String) {
+    public init(
+        surface: HostSurfaceID, projectKey: String?, sessionID: String,
+        route: HostSessionRoute? = nil, terminalProcess: HostProcessIdentity? = nil,
+        isParentSession: Bool = false
+    ) {
         self.surface = surface
         self.projectKey = projectKey
         self.sessionID = sessionID
+        self.route = route
+        self.terminalProcess = terminalProcess
+        self.isParentSession = isParentSession
     }
 }
 
@@ -53,7 +63,7 @@ public func sessionNavigationCapability(
 
 public enum SessionNavigationActionResult: Sendable, Equatable {
     case idle, unavailable, started, succeeded, exactReturnConfirmed, failed, timedOut, cancelled,
-        copied, copyFailed
+        copied, copyFailed, requestSent, applicationFallback, focusHandoffStarted
 }
 
 /// One request at a time, with a cancellable adapter and an independent deadline. Late callbacks
@@ -71,7 +81,16 @@ public final class SessionNavigationCoordinator: ObservableObject {
         @MainActor (
             SessionNavigationTarget, @escaping @MainActor (SessionNavigationActionResult) -> Void
         ) -> EventNoticeCancellation
+    private let navigateHost:
+        (
+            @MainActor (
+                SessionNavigationTarget, SourceApplicationTarget,
+                @escaping @MainActor () -> Bool, TimeInterval,
+                @escaping @MainActor (SessionNavigationActionResult) -> Void
+            ) -> EventNoticeCancellation
+        )?
     private let scheduler: EventNoticeScheduler
+    private let uptime: @MainActor () -> TimeInterval
     private let openApplication:
         @MainActor (
             SourceApplicationTarget, @escaping @MainActor () -> Bool,
@@ -80,6 +99,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
     private var applicationTarget: SourceApplicationTarget?
     private var requestID: UUID?
     private var applicationRequestOwner: UUID?
+    private var expectedFocusHandoff = false
     private var operation: EventNoticeCancellation?
     private var timeoutTask: EventNoticeCancellation?
     private weak var model: EventNoticeModel?
@@ -97,6 +117,14 @@ public final class SessionNavigationCoordinator: ObservableObject {
                 complete(.unavailable)
                 return EventNoticeCancellation {}
             },
+        uptime: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+        navigateHost: (
+            @MainActor (
+                SessionNavigationTarget, SourceApplicationTarget,
+                @escaping @MainActor () -> Bool, TimeInterval,
+                @escaping @MainActor (SessionNavigationActionResult) -> Void
+            ) -> EventNoticeCancellation
+        )? = nil,
         openApplication:
             @escaping @MainActor (
                 SourceApplicationTarget, @escaping @MainActor () -> Bool,
@@ -108,8 +136,10 @@ public final class SessionNavigationCoordinator: ObservableObject {
     ) {
         self.model = model
         self.scheduler = scheduler
+        self.uptime = uptime
         self.capabilityGeneration = capabilityGeneration
         self.navigate = navigate
+        self.navigateHost = navigateHost
         self.openApplication = openApplication
         observation = model?.$snapshot.sink { [weak self] snapshot in
             guard let self, let action = self.action else { return }
@@ -191,6 +221,76 @@ public final class SessionNavigationCoordinator: ObservableObject {
         if requestID == id { operation = cancellation } else { cancellation.cancel() }
     }
 
+    /// Shared entry for banner body, primary action, Panel and Diagnostics. Fallback shares the
+    /// original deadline, and neither app activation nor deep-link acceptance consumes a reminder.
+    public func navigateSource(
+        _ action: EventNoticeAction, generation: UUID, owner: UUID? = nil,
+        completion: @escaping @MainActor (SessionNavigationActionResult) -> Void = { _ in }
+    ) {
+        guard requestID == nil else { return }
+        guard generation == capabilityGeneration, let model, model.isCurrent(action),
+            let application = model.sourceApplication(for: action)
+        else {
+            self.action = action; result = .unavailable; applicationResult = .unavailable
+            completion(.unavailable); return
+        }
+        let id = UUID()
+        requestID = id; self.action = action; applicationTarget = application
+        applicationRequestOwner = owner; model.protect(action)
+        result = .started; applicationResult = .started
+        let deadline = uptime() + Self.timeout
+        let current: @MainActor () -> Bool = { [weak self] in
+            guard let self else { return false }
+            return self.requestID == id && self.capabilityGeneration == generation
+                && self.model?.isCurrent(action) == true
+                && self.model?.sourceApplication(for: action) == application
+        }
+        let beforeAction: @MainActor () -> Bool = {
+            current() && self.uptime() < deadline
+        }
+        let complete: @MainActor (SessionNavigationActionResult) -> Void = { [weak self] outcome in
+            guard let self, current() else { return }
+            self.finish(outcome, id: id, action: action, generation: generation)
+            self.applicationResult =
+                outcome == .applicationFallback
+                ? .opened
+                : (outcome == .timedOut
+                    ? .timedOut
+                    : outcome == .cancelled ? .cancelled : outcome == .failed ? .failed : .idle)
+            completion(outcome)
+        }
+        timeoutTask = scheduler.schedule(after: Self.timeout) { complete(.timedOut) }
+        let fallback: @MainActor () -> Void = { [weak self] in
+            guard let self, current() else { return }
+            guard beforeAction() else { complete(.timedOut); return }
+            self.expectedFocusHandoff = true
+            let cancellation = self.openApplication(application, beforeAction) { outcome in
+                switch outcome {
+                case .opened: complete(.applicationFallback)
+                case .timedOut: complete(.timedOut)
+                case .cancelled: complete(.cancelled)
+                default: complete(.failed)
+                }
+            }
+            if current() { self.operation = cancellation } else { cancellation.cancel() }
+        }
+        guard let target = model.navigationTarget(for: action), let navigateHost else {
+            fallback(); return
+        }
+        let cancellation = navigateHost(target, application, beforeAction, deadline) { outcome in
+            guard current() else { return }
+            guard beforeAction() else { complete(.timedOut); return }
+            if outcome == .focusHandoffStarted { self.expectedFocusHandoff = true; return }
+            if outcome == .failed || outcome == .unavailable {
+                fallback()
+            } else {
+                complete(outcome)
+            }
+        }
+        // A synchronous host failure may already have installed the fallback cancellation.
+        if current(), operation == nil { operation = cancellation } else { cancellation.cancel() }
+    }
+
     /// Explicit copy is synchronous, so both validation and the actual pasteboard result belong
     /// to the captured action. Source browsing and copying never consume an attention version.
     @discardableResult
@@ -207,6 +307,10 @@ public final class SessionNavigationCoordinator: ObservableObject {
         guard generation != capabilityGeneration else { return }
         capabilityGeneration = generation
         reset()
+    }
+
+    public func permitsFocusHandoff(to pid: Int32?) -> Bool {
+        requestID != nil && expectedFocusHandoff && pid == applicationTarget?.process.pid
     }
 
     /// A presentation surface may cancel only the application request it dispatched.
@@ -237,6 +341,9 @@ public final class SessionNavigationCoordinator: ObservableObject {
             reset(); return
         }
         cancelRequest()
+        if outcome == .exactReturnConfirmed {
+            if model.bannerSnapshot.current?.action == action { model.dismiss() }
+        }
         if outcome == .exactReturnConfirmed, model.isAttentionReminder(action) {
             // Removing this exact version may synchronously invalidate the observed action.
             self.action = nil
@@ -251,6 +358,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         requestID = nil
         applicationTarget = nil
         applicationRequestOwner = nil
+        expectedFocusHandoff = false
         operation?.cancel()
         operation = nil
         timeoutTask?.cancel()

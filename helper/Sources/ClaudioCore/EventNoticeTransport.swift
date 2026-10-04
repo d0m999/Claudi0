@@ -74,7 +74,11 @@ public enum EventNoticeTransport {
         guard isValidDescriptor(descriptor) else {
             return .dropped(.endpointUnsafe)
         }
-        guard let data = try? JSONEncoder().encode(notice), data.count <= maximumMessageBytes else {
+        var encoded = try? JSONEncoder().encode(notice)
+        if let data = encoded, data.count > maximumMessageBytes {
+            encoded = try? JSONEncoder().encode(notice.removingProcessAncestors())
+        }
+        guard let data = encoded, data.count <= maximumMessageBytes else {
             return .dropped(.messageTooLarge)
         }
 

@@ -16820,6 +16820,54 @@
           }
         }
       }
+    },
+    "event-notice.navigation-fallback": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opened source app; session not located"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已打开来源应用，未定位到会话"
+          }
+        }
+      }
+    },
+    "event-notice.navigation-requested": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requested opening session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已请求打开会话"
+          }
+        }
+      }
+    },
+    "event-notice.return-parent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to parent session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回父会话"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

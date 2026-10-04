@@ -1,0 +1,297 @@
+--- a/gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift
++++ b/gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift
+@@ -14,6 +14,10 @@
+     let reading: EventNoticeReadingTime
+     var isVisible = true
+     var uptime: @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
++    private let onActivate: (@MainActor () -> Void)?
++    private let isNavigationEnabled: Bool
++    private let onBodyFocusChange: @MainActor (Bool) -> Void
++    @FocusState private var bodyFocused: Bool
+     @ViewBuilder let actions: Actions
+
+     package init(
+@@ -21,6 +25,8 @@
+         preferences: EventAnimationPreferences, resources: EventAnimationResources,
+         reading: EventNoticeReadingTime, isVisible: Bool = true,
+         uptime: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
++        onActivate: (@MainActor () -> Void)? = nil, isNavigationEnabled: Bool = true,
++        onBodyFocusChange: @escaping @MainActor (Bool) -> Void = { _ in },
+         @ViewBuilder actions: () -> Actions
+     ) {
+         self.event = event
+@@ -32,6 +38,9 @@
+         self.reading = reading
+         self.isVisible = isVisible
+         self.uptime = uptime
++        self.onActivate = onActivate
++        self.isNavigationEnabled = isNavigationEnabled
++        self.onBodyFocusChange = onBodyFocusChange
+         self.actions = actions()
+     }
+
+@@ -40,13 +49,27 @@
+             EventAnimationView(
+                 resources: resources, preferences: preferences, event: event, action: action,
+                 reading: reading, isVisible: isVisible, uptime: uptime)
+-            VStack(alignment: .leading, spacing: 3) {
++            if let onActivate {
++                Button(action: onActivate) { summary }
++                    .buttonStyle(.plain).contentShape(Rectangle())
++                    .disabled(!isNavigationEnabled)
++                    .focused($bodyFocused)
++                    .accessibilityIdentifier("event-notice.body")
++                    .onChange(of: bodyFocused) { onBodyFocusChange($0) }
++            } else {
++                summary
++            }
++            actions
++        }
++    }
++
++    private var summary: some View {
++        VStack(alignment: .leading, spacing: 3) {
+                 Text(title).font(.system(.body, design: .rounded).weight(.semibold)).lineLimit(1)
+                 Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+             }
+             .frame(maxWidth: .infinity, alignment: .leading)
+             .accessibilityElement(children: .combine)
+-            actions
+-        }
++
+     }
+ }
+--- a/gui/Sources/ClaudioGUIComponents/EventNoticeView.swift
++++ b/gui/Sources/ClaudioGUIComponents/EventNoticeView.swift
+@@ -3,7 +3,7 @@
+ import ClaudioLocalization
+ import SwiftUI
+
+-/// The banner is a static summary with explicit actions. Reading lives in the menu panel.
++/// The summary and primary action share one navigation entry; close is independent. Reading lives in the menu panel.
+ @MainActor
+ public struct EventNoticeView: View {
+     @ObservedObject private var model: EventNoticeModel
+@@ -17,6 +17,7 @@
+     @Environment(\.colorScheme) private var colorScheme
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     @FocusState private var focusedControl: String?
++    @State private var bodyHasFocus = false
+
+     public init(
+         model: EventNoticeModel, languageStore: ClaudioPreferences,
+@@ -46,9 +47,9 @@
+         let hasFeedback =
+             !record.isActionable
+             || (navigation?.action == record.action
+-                && [.started, .failed, .unavailable, .timedOut].contains(
+-                    navigation?.applicationResult ?? .idle))
+-        return base + (record.kind.isAttention && hasFeedback ? 55 : 0)
++                && [.started, .failed, .unavailable, .timedOut, .applicationFallback, .requestSent].contains(
++                    navigation?.result ?? .idle))
++        return base + (hasFeedback ? 55 : 0)
+     }
+
+     public var body: some View {
+@@ -70,20 +71,21 @@
+                                 isPaused: true, budget: 4),
+                         isVisible: animationVisibility.isVisible
+                             && (snapshot.phase == .entering || snapshot.phase == .visible),
+-                        uptime: { model.presentationUptime }
++                        uptime: { model.presentationUptime },
++                        onActivate: { activate(record) },
++                        isNavigationEnabled: record.isActionable && navigation.result != .started,
++                        onBodyFocusChange: { focused in
++                            bodyHasFocus = focused
++                            model.setKeyboardFocused(focused || focusedControl != nil)
++                        }
+                     ) {
+                         if record.kind.isAttention {
+                             Button(actionTitle(record)) {
+-                                guard let action = record.action else { return }
+-                                if record.sourceApplication != nil {
+-                                    onOpenSourceApplication(action)
+-                                } else {
+-                                    onViewSource(action)
+-                                }
++                                activate(record)
+                             }
+                             .buttonStyle(EventNoticeActionStyle(event: record.event))
+                             .disabled(
+-                                !record.isActionable || navigation.applicationResult == .started
++                                !record.isActionable || navigation.result == .started
+                             )
+                             .focused($focusedControl, equals: "open")
+                             .accessibilityIdentifier(
+@@ -95,7 +97,7 @@
+                             .focused($focusedControl, equals: "close")
+                             .accessibilityIdentifier("event-notice.close")
+                     }
+-                    if record.kind.isAttention, let feedback = feedback(record) {
++                    if let feedback = feedback(record) {
+                         Text(feedback).font(.caption).fixedSize(horizontal: false, vertical: true)
+                             .accessibilityIdentifier("event-notice.open-feedback")
+                     }
+@@ -107,7 +109,13 @@
+                     if let reading = snapshot.readingTime {
+                         EventNoticeReadingTrack(
+                             reading: reading, event: record.event, reduceMotion: reduceMotion,
+-                            uptime: { model.presentationUptime })
++                            uptime: { model.presentationUptime },
++                        onActivate: { activate(record) },
++                        isNavigationEnabled: record.isActionable && navigation.result != .started,
++                        onBodyFocusChange: { focused in
++                            bodyHasFocus = focused
++                            model.setKeyboardFocused(focused || focusedControl != nil)
++                        })
+                     }
+                 }
+                 .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.panel))
+@@ -122,7 +130,7 @@
+         .onAppear { model.setReducedMotion(reduceMotion) }
+         .onChange(of: reduceMotion) { model.setReducedMotion($0) }
+         .onHover { model.setHovering($0) }
+-        .onChange(of: focusedControl) { model.setKeyboardFocused($0 != nil) }
++        .onChange(of: focusedControl) { model.setKeyboardFocused($0 != nil || bodyHasFocus) }
+         .onDisappear {
+             model.setHovering(false); model.setKeyboardFocused(false)
+         }
+@@ -131,24 +139,32 @@
+
+     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
+
++    private func activate(_ record: EventNoticeRecord) {
++        guard record.isActionable, navigation.result != .started, let action = record.action else { return }
++        if record.sourceApplication != nil { onOpenSourceApplication(action) }
++        else { onViewSource(action) }
++    }
++
+     private func feedback(_ record: EventNoticeRecord) -> String? {
+         guard record.isActionable else {
+             return l10n.text(record.isExpired ? .eventNoticeExpired : .eventNoticeStale)
+                 + " " + l10n.text(.eventNoticeRetryAtNeedsYou)
+         }
+         guard navigation.action == record.action else { return nil }
+-        switch navigation.applicationResult {
++        switch navigation.result {
+         case .started: return l10n.text(.eventNoticeOpenStarted)
+         case .failed: return l10n.text(.eventNoticeOpenFailed)
+         case .unavailable: return l10n.text(.eventNoticeOpenUnavailable)
+         case .timedOut: return l10n.text(.eventNoticeOpenTimeout)
+-        case .idle, .opened, .cancelled: return nil
++        case .applicationFallback: return l10n.text(.eventNoticeNavigationFallback)
++        case .requestSent: return l10n.text(.eventNoticeNavigationRequested)
++        default: return nil
+         }
+     }
+
+     private func actionTitle(_ record: EventNoticeRecord) -> String {
+         if record.isActionable, navigation.action == record.action,
+-            [.failed, .unavailable, .timedOut].contains(navigation.applicationResult)
++            [.failed, .unavailable, .timedOut].contains(navigation.result)
+         {
+             return l10n.text(.commonRetry)
+         }
+--- a/gui/Sources/ClaudioGUI/EventNoticeWindowController.swift
++++ b/gui/Sources/ClaudioGUI/EventNoticeWindowController.swift
+@@ -84,7 +84,7 @@
+         snapshotCancellable = model.$bannerSnapshot.sink { [weak self] snapshot in
+             self?.render(snapshot)
+         }
+-        navigationCancellable = navigation.$applicationResult.sink { [weak self] _ in
++        navigationCancellable = navigation.$result.sink { [weak self] _ in
+             DispatchQueue.main.async { self?.repositionIfVisible() }
+         }
+         screenCancellable = NotificationCenter.default
+@@ -119,12 +119,12 @@
+     func openSourceApplication(_ action: EventNoticeAction) {
+         guard model.isCurrent(action) else { return }
+         becomeInteractive()
+-        navigation.openSourceApplication(
++        navigation.navigateSource(
+             action, generation: navigation.capabilityGeneration, owner: navigationOwner
+         ) {
+             [weak self] outcome in
+             guard let self else { return }
+-            if outcome == .opened {
++            if outcome == .exactReturnConfirmed {
+                 self.focusRestoration = nil
+                 self.isInteractive = false
+                 self.window.allowsKeyboardInteraction = false
+@@ -177,7 +177,15 @@
+     }
+
+     func windowDidResignKey(_ notification: Notification) {
+-        if navigation.applicationResult == .started {
++        let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
++        let completedHandoff = [.applicationFallback, .requestSent].contains(navigation.result)
++            && navigation.action.flatMap { model.sourceApplication(for: $0) }?.process.pid == frontmost
++        if navigation.permitsFocusHandoff(to: frontmost) || completedHandoff {
++            focusRestoration = nil
++            isInteractive = false
++            window.allowsKeyboardInteraction = false
++            model.setKeyboardFocused(false)
++        } else if navigation.result == .started {
+             navigation.cancelSourceApplication(owner: navigationOwner)
+             focusRestoration = nil
+             isInteractive = false
+--- a/gui/Sources/ClaudioGUIComponents/EventNoticeProjection.swift
++++ b/gui/Sources/ClaudioGUIComponents/EventNoticeProjection.swift
+@@ -95,6 +95,7 @@
+     {
+         let l10n = ClaudioL10n(language: language)
+         guard record.sourceApplication != nil else { return l10n.text(.eventNoticeViewInPanel) }
++        if record.navigationTarget?.isParentSession == true { return l10n.text(.eventNoticeReturnParent) }
+         switch record.kind {
+         case .permission: return l10n.text(.eventNoticeActPermission)
+         case .needsInput: return l10n.text(.eventNoticeActNeedsInput)
+--- a/gui/Sources/ClaudioGUIComponents/EventNoticeReadingView.swift
++++ b/gui/Sources/ClaudioGUIComponents/EventNoticeReadingView.swift
+@@ -139,19 +139,21 @@
+                     .accessibilityIdentifier("event-notice.copy-session")
+                 }
+                 if record.sourceApplication != nil {
+-                    Button(l10n.text(.eventNoticeOpenSource)) {
++                    Button(record.navigationTarget?.isParentSession == true ? l10n.text(.eventNoticeReturnParent) : l10n.text(.eventNoticeOpenSource)) {
+                         if let action = record.action { openSource(action) }
+                     }
+-                    .disabled(!record.isActionable || navigation.applicationResult == .started)
++                    .disabled(!record.isActionable || navigation.result == .started)
+                     .accessibilityIdentifier("event-notice.reader.open-source")
+                 }
+                 if navigation.action == record.action {
+-                    switch navigation.applicationResult {
++                    switch navigation.result {
+                     case .failed: Text(l10n.text(.eventNoticeOpenFailed))
+                     case .unavailable: Text(l10n.text(.eventNoticeOpenUnavailable))
+                     case .timedOut: Text(l10n.text(.eventNoticeOpenTimeout))
+                     case .started: Text(l10n.text(.eventNoticeOpenStarted))
+-                    case .idle, .opened, .cancelled: EmptyView()
++                    case .applicationFallback: Text(l10n.text(.eventNoticeNavigationFallback))
++                    case .requestSent: Text(l10n.text(.eventNoticeNavigationRequested))
++                    default: EmptyView()
+                     }
+                 }
+                 if let copyResult, record.isActionable {
+--- a/gui/Sources/ClaudioPanelPresentation/PanelView.swift
++++ b/gui/Sources/ClaudioPanelPresentation/PanelView.swift
+@@ -310,7 +310,7 @@
+                     model: eventNoticeModel, preferences: languageStore,
+                     navigation: noticeNavigation, selected: $focusCoordinator.noticeSelection,
+                     openSource: { action in
+-                        noticeNavigation.openSourceApplication(
++                        noticeNavigation.navigateSource(
+                             action, generation: noticeNavigation.capabilityGeneration)
+                     },
+                     copySession: { action in
+--- a/gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift
++++ b/gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift
+@@ -120,7 +120,7 @@
+                     model: eventNoticeModel, preferences: preferences,
+                     navigation: noticeNavigation, selected: $selectedNotice,
+                     openSource: { action in
+-                        noticeNavigation.openSourceApplication(
++                        noticeNavigation.navigateSource(
+                             action, generation: noticeNavigation.capabilityGeneration)
+                     },
+                     copySession: { action in

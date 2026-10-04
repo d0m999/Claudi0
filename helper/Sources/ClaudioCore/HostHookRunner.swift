@@ -289,6 +289,7 @@ public func handleHostHook(
     {
         let input = HostEventSourceParser.parseInput(
             host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
+        let ancestors = HostProcessAncestry.capture()
         let notice = HostEventNotice(
             id: eventID,
             receiverEpoch: channel.receiverEpoch,
@@ -301,7 +302,8 @@ public func handleHostHook(
             source: input.source.source,
             reason: input.reason,
             observedUptime: observedUptime,
-            processAncestors: HostProcessAncestry.capture())
+            processAncestors: ancestors,
+            navigationEvidence: HostNavigationEvidence.capture(ancestors: ancestors))
         // The send is best effort, but a known failure still earns one fixed redacted
         // diagnostic code on the existing log path; the payload never leaves this process.
         if case .dropped(let failure) = channel.sender(notice) {

@@ -214,6 +214,13 @@ final class MenuBarController: NSObject {
         let eventAnimations = makeEventAnimationResources()
         let noticeNavigation = SessionNavigationCoordinator(
             model: eventNoticeRuntime.model,
+            navigateHost: {
+                [navigationAdapter = eventNoticeRuntime.navigationAdapter]
+                target, app, current, deadline, complete in
+                navigationAdapter.navigate(
+                    target, application: app, isCurrent: current, deadline: deadline,
+                    complete: complete)
+            },
             openApplication: SourceApplicationAdapter.openApplication)
         let eventNoticeWindowController = EventNoticeWindowController(
             model: eventNoticeRuntime.model,

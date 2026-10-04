@@ -146,6 +146,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         before_failure = self.banner_track_sample()
         self.page.locator("#bannerAct").click()
         self.assertTrue(self.page.locator("#banner .banner-error").is_visible())
+        self.page.wait_for_function("S.bannerFailure === 'unavailable'")
         self.assertEqual(self.page.locator("#bannerAct").inner_text(), "重试")
         after_failure = self.banner_track_sample()
         self.assertLessEqual(after_failure["fraction"], before_failure["fraction"] + .006)
@@ -160,8 +161,10 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.locator("#bannerAct").click()
         self.assertTrue(self.page.locator("#banner .banner-error").is_visible())
         self.assertLessEqual(self.banner_track_sample()["fraction"], before_retry["fraction"] + .006)
+        self.page.wait_for_function("S.bannerFailure === 'unavailable'")
         self.page.locator("#bannerAct").click()
-        self.page.locator("#banner").wait_for(state="detached")
+        self.page.wait_for_function("S.bannerFailure === 'fallback'")
+        self.assertIn("未定位到会话", self.page.locator("#banner .banner-error").inner_text())
         self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
 
     def test_reduced_motion_keeps_a_static_track_and_expires_the_budget(self):

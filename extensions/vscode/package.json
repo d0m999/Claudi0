@@ -1,0 +1,14 @@
+{
+  "name": "claudio-session-navigation",
+  "displayName": "Claudio Session Navigation",
+  "description": "Return Claudio event notices to the exact local integrated terminal.",
+  "version": "1.0.0",
+  "publisher": "claudio-local",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "main": "./src/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "extensionKind": ["ui"],
+  "scripts": { "test": "node --test test/*.test.js", "package": "npx --yes @vscode/vsce package --out ../../dist/claudio-session-navigation-1.0.0.vsix" },
+  "license": "SEE LICENSE IN LICENSE"
+}

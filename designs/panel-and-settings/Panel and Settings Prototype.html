@@ -884,7 +884,7 @@
   <div class="chips" style="margin-top:8px">
     <button class="ctl" id="btnBannerAtn">待接手事件</button>
     <button class="ctl" id="btnBannerInfo">瞬时事件</button>
-    <button class="ctl" id="bannerFailureBtn">下次跳转失败：off</button>
+    <label class="ctl">会话跳转（交互原型）<select id="bannerNavigationOutcome"><option value="fallback">应用回退</option><option value="exact">精确返回</option><option value="requested">请求已发送</option><option value="failed">失败</option></select></label><button class="ctl" id="bannerFailureBtn">下次跳转失败：off</button>
   </div>
   <label for="reminderScene">待接手列表与详情</label>
   <select class="field" id="reminderScene">
@@ -1263,7 +1263,7 @@ function reminderDemand(r) { return r.demand[S.lang]; }
 
 var S = {
   bannerEvent: "permission", bannerReminderID: null, reminderScene: "list", reminderOverflow: 0,
-  popover: true, bannerAtn: false, bannerInfo: false, bannerFailure: null, bannerInjectFailure: false, bannerSerial: 0,
+  popover: true, bannerAtn: false, bannerInfo: false, bannerNavigationOutcome: "fallback", bannerFailure: null, bannerInjectFailure: false, bannerSerial: 0,
   needs: "collapsed", reminder: null,
   scope: "default", scopeMenu: false,
   window: false, pane: "general", ws: "default",
@@ -1631,7 +1631,7 @@ function refreshReminder(id) {
 }
 /* ============ 横幅 ============ */
 function bannerFailureText(key) {
-  return key === "unavailable" ? tr("来源应用未能打开，请重试。", "The source app could not be opened. Try again.")
+  return key === "started" ? tr("正在定位会话…", "Locating session…") : key === "fallback" ? tr("已打开来源应用，未定位到会话", "Opened source app; session not located") : key === "requested" ? tr("已请求打开会话", "Requested opening session") : key === "unavailable" ? tr("来源应用未能打开，请重试。", "The source app could not be opened. Try again.")
     : tr("此提醒已更新或过期，请在面板的“需要你”查看最新事项。", "This reminder changed or expired. Check “Needs you” in the panel for the latest item.");
 }
 function bannerHTML() {
@@ -1644,22 +1644,30 @@ function bannerHTML() {
   var failure = S.bannerAtn && (!r || r.updated) ? "stale" : S.bannerFailure;
   return '<div class="banner" id="banner" style="--banner-color:var(--ev-' + color + ')" aria-label="' + tr("事件横幅", "Event banner") + '"><div class="cap' + (S.bannerAtn ? '' : ' is-info') + '">' +
     '<span class="spine" style="background:var(--ev-' + color + ')"></span>' + glyph(color, scene.glyph) +
-    '<div class="cap-text"><span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
-    '<span class="s">' + esc(r ? r.proj + ' · ' + t().age(r.mins) : 'claudi0 · ' + tr('<1分', '<1m')) + '</span></div>' +
-    (r ? '<button class="chip" id="bannerAct"' + (r.updated ? ' disabled' : '') + '>' + (failure === "unavailable" ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
+    '<button type="button" class="cap-text" id="bannerBody"' + (failure === "started" || failure === "stale" ? ' disabled' : '') + '><span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
+    '<span class="s">' + esc(r ? r.proj + ' · ' + t().age(r.mins) : 'claudi0 · ' + tr('<1分', '<1m')) + '</span></button>' +
+    (r ? '<button class="chip" id="bannerAct"' + (r.updated || failure === "started" ? ' disabled' : '') + '>' + (failure === "unavailable" ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
     '<button class="icon-btn" id="bannerClose" aria-label="' + tr("收起横幅", "Dismiss banner") + '">' + G.x + '</button></div>' +
     (failure ? '<p class="banner-error" role="alert">' + bannerFailureText(failure) + '</p>' : '') +
     '<div class="track" aria-hidden="true"><i></i></div></div>';
 }
 function openBannerSource() {
-  if (!S.bannerAtn) return;
-  var r = REMINDERS.find(function (x) { return x.id === S.bannerReminderID; });
-  if (!r || r.updated) { S.bannerFailure = "stale"; render(); return; }
-  // The prototype simulates this action. The drawer can fail one attempt for recovery review.
-  if (S.bannerInjectFailure) {
-    S.bannerInjectFailure = false; S.bannerFailure = "unavailable"; render(); return;
-  }
-  closeBanner(); toast(tr("已打开来源应用：", "Opened source app: ") + r.host);
+  if (S.bannerFailure === "started") return;
+  var r = S.bannerAtn ? REMINDERS.find(function (x) { return x.id === S.bannerReminderID; }) : null;
+  if (S.bannerAtn && (!r || r.updated)) { S.bannerFailure = "stale"; render(); return; }
+  var serial = S.bannerSerial, reminderID = S.bannerReminderID;
+  var outcome = S.bannerInjectFailure ? "failed" : S.bannerNavigationOutcome;
+  S.bannerInjectFailure = false; S.bannerFailure = "started"; render();
+  setTimeout(function () {
+    if (serial !== S.bannerSerial || (!S.bannerAtn && !S.bannerInfo)) return;
+    if (r && (r.updated || REMINDERS.find(function (x) { return x.id === reminderID; }) !== r)) { S.bannerFailure = "stale"; render(); return; }
+    if (outcome === "exact") {
+      if (r && !r.updated) REMINDERS.splice(REMINDERS.indexOf(r), 1);
+      closeBanner(); toast(tr("已返回会话", "Returned to session"));
+    } else {
+      S.bannerFailure = outcome === "failed" ? "unavailable" : outcome; render();
+    }
+  }, 450);
 }
 
 /* ============ 面板 ============ */
@@ -3289,6 +3297,8 @@ function bind() {
   if (bc) bc.onclick = closeBanner;
   var ba = document.getElementById("bannerAct");
   if (ba) ba.onclick = openBannerSource;
+  var bb = document.getElementById("bannerBody"); if (bb) bb.onclick = openBannerSource;
+  var bo = document.getElementById("bannerNavigationOutcome"); if (bo) { bo.value = S.bannerNavigationOutcome; bo.onchange = function () { S.bannerNavigationOutcome = bo.value; }; }
 
   var nb = document.getElementById("needsBtn");
   if (nb) nb.onclick = function () {

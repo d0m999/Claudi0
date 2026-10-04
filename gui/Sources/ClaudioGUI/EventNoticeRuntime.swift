@@ -10,8 +10,10 @@ import Foundation
 final class EventNoticeRuntime {
     let model: EventNoticeModel
     let health: EventNoticeHealthStore
+    let navigationAdapter = HostSessionNavigationAdapter()
+    private var navigationIngressTasks: [UUID: Task<Void, Never>] = [:]
     private var receiver: EventNoticeReceiver?
-    private let ingress: EventNoticeIngress
+    private var ingress: EventNoticeIngress!
     private let receiptStore: HostHookReceiptStore
     #if DEBUG
     private let developmentTarget = CodexRolloutObservationTarget.developmentEnvironment(
@@ -29,10 +31,44 @@ final class EventNoticeRuntime {
             locksRoot: ClaudioPaths.receiptLocksDirectory,
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory)
-        ingress = EventNoticeIngress { [weak model] notices in
-            model?.acceptBatch(notices).count ?? notices.count
+        ingress = EventNoticeIngress { [weak self] notices in
+            self?.acceptNotices(notices) ?? notices.count
         }
         startReceiver()
+    }
+
+    private func acceptNotices(_ notices: [HostEventNotice]) -> Int {
+        guard navigationIngressTasks.count < 4 else { return model.acceptBatch(notices).count }
+        let id = UUID(), epoch = model.receiverEpoch
+        let preparationDeadline = ProcessInfo.processInfo.systemUptime + 0.6
+        navigationIngressTasks[id] = Task { @MainActor [weak self] in
+            for notice in notices {
+                guard !Task.isCancelled, let self, self.model.receiverEpoch == epoch,
+                    self.model.canReceive
+                else { break }
+                var prepared = notice
+                if let evidence = notice.navigationEvidence, let tmux = evidence.tmux,
+                    let pane = await TmuxNavigationAdapter.pane(
+                        tmux,
+                        deadline: preparationDeadline),
+                    pane.last == evidence.tty,
+                    let client = await TmuxNavigationAdapter.client(
+                        tmux,
+                        deadline: preparationDeadline)
+                {
+                    let ancestors = HostProcessAncestry.capture(startingAt: client.pid)
+                    prepared = notice.replacingNavigationEvidence(
+                        HostNavigationEvidence(
+                            process: client.process, tty: client.tty, tmux: tmux),
+                        ancestors: ancestors)
+                }
+                guard !Task.isCancelled, self.model.receiverEpoch == epoch, self.model.canReceive
+                else { break }
+                _ = self.model.accept(prepared)
+            }
+            self?.navigationIngressTasks.removeValue(forKey: id)
+        }
+        return notices.count
     }
 
     func startReceiver() {
@@ -58,6 +94,7 @@ final class EventNoticeRuntime {
             ) { [weak ingress] notice in
                 ingress?.enqueue(notice)
             }
+            navigationAdapter.ide.start()
             receiver.start()
             self.receiver = receiver
             health.reportReady()
@@ -72,6 +109,9 @@ final class EventNoticeRuntime {
     }
 
     func stopReceiver() {
+        for task in navigationIngressTasks.values { task.cancel() }
+        navigationIngressTasks.removeAll()
+        navigationAdapter.ide.stop()
         #if DEBUG
         developmentObserver?.stop()
         developmentObserver = nil

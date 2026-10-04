@@ -708,3 +708,9 @@ N 个已发布来源 · 5 个声音事件
 | 2026-08-11 | 在方案 C 内加入中英文即时切换，并将语言状态提升为 app-lifetime 共享投影 | 入口不变，280pt 子 Popover 增加始终可见的 `中文 | English` 原生分段控件；默认简体中文，显式语言 key 与 `Localizable.xcstrings` 管理所有 GUI 自有文案。面板与两个 retained 管理窗口共享同一 `ClaudioLanguageStore`，切换不触发 I/O、宿主动作或窗口重建；SwiftPM 与组装 `.app` 均 fail-closed 解析唯一 `*_ClaudioLocalization.bundle`。自动测试覆盖 key/参数/复数、两语言四字号画廊、窗口标题和共享展示投影；原生人工验收保持独立，不以 build/harness 代替。 |
 | 2026-08-14 | 事件行采用 C 小标签重排，替代 2026-08-10 的独立 18pt Logo / 37–52pt 固定行方案 | 标题最多两行且不再单行省略；Claude/Codex 的 12pt PDF Logo 与紧凑名、映射三态共同进入完整事件身份按钮。宿主连接态为状态色浅底、非连接态为中性描边；映射 `present/unmapped/broken` 分别为实底/虚线/错误图标实线。紧凑、标准、较大动作覆盖右上，仅最大档通过 `eventActionsMoveBelow` 下移；焦点仍为身份→试听→静音。State Gallery 与 HTML 基准覆盖双语 × 四字号 × 三映射态；不改变能力矩阵、CoverageState、音频或 manifest 写入。 |
 | 2026-08-26 | 设置体验统一为一个 app-lifetime retained window，以固定侧栏完整承载九个目的页；独立 Integrations/EventSettings/SoundPacks 窗口在等价迁移后退役 | 用户以仓库内 `ai-app-manager-native-macos.html` 完整原型为视觉 SoT，并要求图示九项全部开发。原型负责导航、视觉层级与交互形态；`CONTEXT.md`、ADR 和真实模型负责 Surface 身份、写入、安全与能力事实。所有页必须有真实数据、失败与权限语义，不允许 placeholder 或演示常量；完整规格与依赖见 `plan/PLAN-SETTINGS-EXPERIENCE.md`。 |
+
+## 横幅会话定位原型（待确认 · 2026-10-04）
+
+按用户实施计划补齐整合 HTML 原型的正文按钮、处理中、精确返回、应用回退、请求已发送与失败反馈。原型工具栏的“会话跳转（交互原型）”切换模拟结果；正文与主操作入口相同，关闭独立，反馈不重置阅读时间。仅精确返回移除当前模拟提醒；其他结果保留提醒和横幅。
+
+此提案将替代上方现行“正文静态”和 ADR 0019 中 App 激活即收起的规定；原生呈现尚待计划要求的原型确认。本节不覆盖现行原生合同，也不表示真实宿主定位/键盘/VoiceOver 已验收。数据及宿主边界见 [ADR 0023](docs/adr/0023-return-to-verified-local-sessions.md)。

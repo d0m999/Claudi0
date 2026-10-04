@@ -497,6 +497,11 @@ private func isSimpleOptionMember(_ element: String) -> Bool {
 /// 一个全仓总数的 `>= N` 挡不住「某一处单独隐身、别处补上一处」（`/review e7c38ea` 的教训，
 /// 而上一版把它原样复发在了 `totalWriteSites >= 9` 上）。
 private let diskWriteSurfaceLedger: [String: Set<String>] = [
+    // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
+    // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
+    "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
+    // Fixed osascript/tmux actions only. Output is a bounded pipe; no shell or file output.
+    "gui/Sources/ClaudioGUIComponents/NavigationCommand.swift": ["Process("],
     // —— helper ——
     // config/manifest 可复用的目录描述符发布层：目标读写与暂存均固定在同一目录 fd；
     // 已有目标用 RENAME_SWAP 防止外部删除后复活，首次创建用 RENAME_EXCL。
@@ -644,6 +649,7 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 计数**绑调用点**（`/review e7c38ea`：上一版是一个全仓总数 `totalWriteSites >= 9`，它挡的只是
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
+    "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,
     "helper/Sources/ClaudioCore/Log.swift": 2,
     // Play.swift now uses writePrivateAtomic; PlaySuite exercises FIFO replacement and exact bytes.

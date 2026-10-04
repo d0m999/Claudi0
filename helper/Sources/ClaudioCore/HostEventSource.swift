@@ -529,6 +529,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
     /// Hook-local monotonic observation, never a host transaction timestamp.
     public let observedUptime: TimeInterval?
     public let processAncestors: [HostProcessIdentity]?
+    public let navigationEvidence: HostNavigationEvidence?
 
     public init(
         schema: Int = HostEventNotice.currentSchema,
@@ -544,7 +545,8 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         sourceCompleteness: HostEventSourceCompleteness? = nil,
         reason: HostEventNoticeReason? = nil,
         observedUptime: TimeInterval? = nil,
-        processAncestors: [HostProcessIdentity]? = nil
+        processAncestors: [HostProcessIdentity]? = nil,
+        navigationEvidence: HostNavigationEvidence? = nil
     ) {
         self.schema = schema
         self.id = id
@@ -560,6 +562,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         self.reason = reason
         self.observedUptime = observedUptime.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
         self.processAncestors = processAncestors
+        self.navigationEvidence = navigationEvidence.flatMap { $0.isValid ? $0 : nil }
     }
 
     public init(from decoder: any Decoder) throws {
@@ -583,14 +586,29 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         // Optional navigation evidence must never suppress an otherwise valid event.
         let ancestors = try? values.decode([HostProcessIdentity].self, forKey: .processAncestors)
         processAncestors = ancestors.flatMap { HostProcessAncestry.isValid($0) ? $0 : nil }
+        let evidence = try? values.decode(HostNavigationEvidence.self, forKey: .navigationEvidence)
+        navigationEvidence = evidence.flatMap { $0.isValid ? $0 : nil }
     }
 
-    public func removingProcessAncestors() -> Self {
+    public func replacingNavigationEvidence(
+        _ evidence: HostNavigationEvidence,
+        ancestors: [HostProcessIdentity]
+    ) -> Self {
         Self(
             schema: schema, id: id, receiverEpoch: receiverEpoch, surface: surface,
             bindingID: bindingID, installationID: installationID, nativeEvent: nativeEvent,
             event: event, occurredAt: occurredAt, source: source,
-            sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime)
+            sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime,
+            processAncestors: ancestors, navigationEvidence: evidence)
+    }
+
+    public func removingProcessAncestors(keepingNavigationEvidence: Bool = false) -> Self {
+        Self(
+            schema: schema, id: id, receiverEpoch: receiverEpoch, surface: surface,
+            bindingID: bindingID, installationID: installationID, nativeEvent: nativeEvent,
+            event: event, occurredAt: occurredAt, source: source,
+            sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime,
+            navigationEvidence: keepingNavigationEvidence ? navigationEvidence : nil)
     }
 
     public var host: HostID? { HostID(rawValue: surface.rawValue) }
@@ -632,5 +650,6 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         case reason
         case observedUptime = "observed_uptime"
         case processAncestors = "process_ancestors"
+        case navigationEvidence = "navigation_evidence"
     }
 }

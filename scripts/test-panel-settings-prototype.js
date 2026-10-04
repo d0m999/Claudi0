@@ -637,18 +637,21 @@ for (const lang of ["zh", "en"]) {
     context.S.bannerAtn = true;
     context.S.bannerReminderID = context.REMINDERS[0].id;
     const markup = context.bannerHTML();
-    assert.ok(markup.includes('<div class="cap-text">'));
+    assert.ok(markup.includes('id="bannerBody"'));
+    assert.ok(!markup.includes('<div class="cap-text">'));
     assert.ok(!markup.includes("aria-expanded"));
     assert.ok(!markup.includes("bannerDetails"));
     assert.ok(!markup.includes("data-copysession"));
     assert.ok(!markup.includes(context.REMINDERS[0].session));
     runtime.mountControls(markup);
-    assert.equal(document.querySelectorAll("[id]").length, 2);
+    assert.equal(document.querySelectorAll("[id]").length, 3);
     const before = JSON.stringify(context.REMINDERS);
     document.getElementById("bannerAct").click();
-    assert.equal(context.S.bannerAtn, false);
+    assert.equal(context.S.bannerFailure, "started");
+    runtime.advanceTime(450);
+    assert.equal(context.S.bannerAtn, true);
+    assert.equal(context.S.bannerFailure, "fallback");
     assert.equal(JSON.stringify(context.REMINDERS), before);
-    assert.ok(runtime.messages.at(-1).includes(context.REMINDERS[0].host));
     assert.ok(context.paneActivity().includes(context.REMINDERS[0].session));
   });
   test(`${lang}: banner failure stays inline and a retry retains the reminder`, () => {
@@ -663,14 +666,17 @@ for (const lang of ["zh", "en"]) {
     runtime.mountControls(context.bannerHTML());
     document.getElementById("bannerAct").click();
     assert.equal(context.S.bannerAtn, true);
+    assert.equal(context.S.bannerFailure, "started");
+    runtime.advanceTime(450);
     assert.equal(context.S.bannerFailure, "unavailable");
     assert.equal(context.S.bannerSerial, serial);
     assert.ok(context.bannerHTML().includes('role="alert"'));
     assert.ok(context.bannerHTML().includes(lang === "zh" ? "重试" : "Retry"));
     runtime.mountControls(context.bannerHTML());
     document.getElementById("bannerAct").click();
-    assert.equal(context.S.bannerAtn, false);
-    assert.equal(context.S.bannerFailure, null);
+    runtime.advanceTime(450);
+    assert.equal(context.S.bannerAtn, true);
+    assert.equal(context.S.bannerFailure, "fallback");
     assert.equal(JSON.stringify(context.REMINDERS), before);
   });
   test(`${lang}: missing or changed banner targets cannot open a different reminder`, () => {
@@ -739,4 +745,26 @@ test("informational banners have a close action and reading track without a sour
 // native event editor is a different capability and remains available.
 test("whole-pack import has no control, confirmation, demo creation or event binding", () => {
   assert.doesNotMatch(html, /importPack|data-import-pack|导入声音包|Import sound pack/);
+});
+
+for (const outcome of ["exact", "requested", "fallback", "failed"]) {
+  test(`banner body shares navigation action: ${outcome}`, () => {
+    const runtime = loadPrototype(); const { context, document } = runtime;
+    context.S.bannerAtn = true; context.S.bannerReminderID = context.REMINDERS[0].id;
+    context.S.bannerNavigationOutcome = outcome;
+    const count = context.REMINDERS.length;
+    runtime.mountControls(context.bannerHTML());
+    document.getElementById("bannerBody").click();
+    document.getElementById("bannerAct").click();
+    assert.equal(context.S.bannerFailure, "started"); runtime.advanceTime(450);
+    assert.equal(context.REMINDERS.length, count - (outcome === "exact" ? 1 : 0));
+    assert.equal(context.S.bannerAtn, outcome !== "exact");
+  });
+}
+test("ordinary body is clickable and close invalidates an in-flight jump", () => {
+  const runtime = loadPrototype(); const { context, document } = runtime;
+  context.S.bannerInfo = true; context.S.bannerNavigationOutcome = "exact";
+  runtime.mountControls(context.bannerHTML()); document.getElementById("bannerBody").click();
+  document.getElementById("bannerClose").click(); runtime.advanceTime(450);
+  assert.equal(context.S.bannerInfo, false); assert.equal(runtime.messages.length, 0);
 });
