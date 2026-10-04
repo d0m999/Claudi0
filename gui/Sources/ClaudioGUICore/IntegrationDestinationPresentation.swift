@@ -229,6 +229,7 @@ public func hostIntegrationStatusBadgeText(_ status: HostSourceRowStatus) -> Str
 public func hostIntegrationMechanismDisplayName(_ mechanism: HostIntegrationMechanism) -> String {
     switch mechanism {
     case .nativeHooks: "原生 hooks"
+    case .pluginBridge: "Claudio 插件桥接"
     case .accessibilityBeta: "Accessibility Beta"
     }
 }

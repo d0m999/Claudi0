@@ -15,11 +15,24 @@ if [[ -n "$REQUESTED_VERSION" && ! "$REQUESTED_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|
 fi
 
 GUI_NATIVE_HOST_CARD_PROBE=false
-if [[ $# -eq 1 && "$1" == "--native-host-card-probe" ]]; then
-    GUI_NATIVE_HOST_CARD_PROBE=true
-elif [[ $# -ne 0 ]]; then
-    echo "usage: $0 [--native-host-card-probe]" >&2
-    exit 2
+ADDITIONAL_HOST_ACCEPTANCE=false
+SWIFT_BUILD_OPTIONS=()
+HOST_BUILD_OPTIONS=()
+for option in "$@"; do
+    case "$option" in
+        --native-host-card-probe) GUI_NATIVE_HOST_CARD_PROBE=true ;;
+        --additional-host-acceptance)
+            ADDITIONAL_HOST_ACCEPTANCE=true
+            HOST_BUILD_OPTIONS=(-Xswiftc -DCLAUDIO_ADDITIONAL_HOST_ACCEPTANCE)
+            ;;
+        --native-sdk)
+            SWIFT_BUILD_OPTIONS=(--build-system native --sdk "$(xcrun --sdk macosx --show-sdk-path)")
+            ;;
+        *) echo "usage: $0 [--native-host-card-probe] [--additional-host-acceptance] [--native-sdk]" >&2; exit 2 ;;
+    esac
+done
+if [[ -n "${CLAUDIO_BUILD_SDK:-}" ]]; then
+    SWIFT_BUILD_OPTIONS=(--build-system native --sdk "$CLAUDIO_BUILD_SDK")
 fi
 
 gui_build() {
@@ -27,15 +40,20 @@ gui_build() {
     if [[ "$GUI_NATIVE_HOST_CARD_PROBE" == true ]]; then
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
-            -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE "$@"
+            -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE \
+            "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     else
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
-            --experimental-lto-mode full -Xswiftc -Osize "$@"
+            --experimental-lto-mode full -Xswiftc -Osize \
+            "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     fi
 }
 
 login_item_build() {
-    swift build -c release --package-path "$repo_root/gui" --product ClaudioLoginItem "$@"
+    swift build -c release --package-path "$repo_root/gui" --product ClaudioLoginItem \
+        "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
 }
 
 find_unique_gui_resource_bundle() {
@@ -77,6 +95,9 @@ assemble_dev_bundle() {
     local LOGIN_ITEM_BINARY
     local LOCALIZATION_BUNDLE
 
+    # Validate source only after the output directory identity has been pinned.
+    python3 "$repo_root/scripts/embed-opencode-plugin.py" --check
+
     # 建之前先清旧 bundle：若下面任一 `swift build` 因编译错误退出（set -e），旧 app
     # 不能留在原地——否则走查者会 `open` 到上一次成功构建的旧二进制，却以为测的是这次改动。
     rm -rf "$APP" "$LEGACY_APP"
@@ -85,7 +106,10 @@ assemble_dev_bundle() {
     # executable 一起建，而测试会引用 `#if DEBUG` 门控的 fixture，Release 下编译不过。
     gui_build
     login_item_build
-    swift build -c release --package-path "$repo_root/helper" --product claudio
+    # Size optimization keeps the plugin/parser inside the unchanged helper budget.
+    swift build -c release --package-path "$repo_root/helper" --product claudio -Xswiftc -Osize \
+        "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+        "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}"
 
     GUI_BIN_DIR="$(gui_build --show-bin-path)"
     GUI_RESOURCE_BUNDLE="$(find_unique_gui_resource_bundle "$GUI_BIN_DIR")"
@@ -100,7 +124,9 @@ assemble_dev_bundle() {
     cp -R "$repo_root/gui/AppResources/zh-Hans.lproj" \
         "$APP/Contents/Resources/zh-Hans.lproj"
     HELPER_BIN_DIR="$(swift build -c release --package-path "$repo_root/helper" \
-        --product claudio --show-bin-path)"
+        --product claudio -Xswiftc -Osize \
+        "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+        "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" --show-bin-path)"
     HELPER_BINARY="$HELPER_BIN_DIR/claudio"
     BUNDLE_VERSION="$("$HELPER_BINARY" --version)"
     if [[ "$BUNDLE_VERSION" != "0.0.0-dev" \
@@ -119,6 +145,8 @@ assemble_dev_bundle() {
         "$APP/Contents/Resources/packs"
     cp "$repo_root/LICENSE" "$APP/Contents/Resources/LICENSE"
     cp "$repo_root/PRIVACY.md" "$APP/Contents/Resources/PRIVACY.md"
+    mkdir -p "$APP/Contents/Resources/integrations/opencode"
+    cp "$repo_root/integrations/opencode/claudio.js" "$APP/Contents/Resources/integrations/opencode/claudio.js"
     cp "$repo_root/assets/branding/claudi0.icns" "$APP/Contents/Resources/claudi0.icns"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -145,6 +173,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
     printf 'APPL????' > "$APP/Contents/PkgInfo"
+    if [[ "$ADDITIONAL_HOST_ACCEPTANCE" == true ]]; then
+        /usr/libexec/PlistBuddy -c 'Add :ClaudioAdditionalHostAcceptance bool true' "$APP/Contents/Info.plist"
+    fi
 
     LOGIN_ITEM_BIN_DIR="$(login_item_build --show-bin-path)"
     LOGIN_ITEM_BINARY="$LOGIN_ITEM_BIN_DIR/ClaudioLoginItem"

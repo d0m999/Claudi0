@@ -22,6 +22,9 @@ public enum HostSourceRowDetail: Sendable, Equatable, Hashable {
     case codexInterruptionEventUnavailable
     /// WorkBuddy 已就绪：通知仅覆盖授权与空闲提醒；执行中断尚未实现。
     case workBuddyNotificationScopeOnly
+    case opencodeReliableEventsOnly
+    case kimiCodeReliableEventsOnly
+    case additionalHostAwaitingFirstTurn
     /// Claude Code 待激活：请向 Claude Code 提交一次提示词以确认连接。
     case claudeCodeAwaitingFirstPrompt
     /// Codex 待激活：在 Codex 输入 /hooks，确认后再提交一次提示词。
@@ -152,6 +155,8 @@ private func hostSourceRowPresentation(
         case .claudeCode: detail = nil
         case .codex: detail = .codexInterruptionEventUnavailable
         case .workBuddy: detail = .workBuddyNotificationScopeOnly
+        case .opencode: detail = .opencodeReliableEventsOnly
+        case .kimiCode: detail = .kimiCodeReliableEventsOnly
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .ready
@@ -163,6 +168,7 @@ private func hostSourceRowPresentation(
         case .claudeCode: detail = .claudeCodeAwaitingFirstPrompt
         case .codex: detail = .codexAwaitingHooksConfirmation
         case .workBuddy: detail = .workBuddyAwaitingFirstPrompt
+        case .opencode, .kimiCode: detail = .additionalHostAwaitingFirstTurn
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .awaitingActivation
@@ -172,7 +178,7 @@ private func hostSourceRowPresentation(
         totalCount = total
         switch host {
         case .claudeCode: detail = .claudeCodeLegacyPartialHooks
-        case .codex, .workBuddy: detail = .legacyAudibleWithoutReceipt
+        case .codex, .workBuddy, .opencode, .kimiCode: detail = .legacyAudibleWithoutReceipt
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .legacy
@@ -441,6 +447,8 @@ public func eventHostIndicatorCompactDisplayName(for host: HostID) -> String {
     case .claudeCode: "Claude"
     case .codex: "Codex"
     case .workBuddy: "Buddy"
+    case .opencode: "OpenCode"
+    case .kimiCode: "Kimi"
     case .chatGPTDesktopAX: "ChatGPT"
     case .claudeDesktopAX: "Claude AX"
     }
@@ -452,6 +460,8 @@ public func eventHostIndicatorAssetName(for host: HostID) -> String {
     case .claudeCode: "claude"
     case .codex: "codex"
     case .workBuddy: "workbuddy"
+    case .opencode: "opencode"
+    case .kimiCode: "kimi-code"
     case .chatGPTDesktopAX: "codex"
     case .claudeDesktopAX: "claude"
     }
@@ -482,6 +492,10 @@ public func eventHostIndicatorPalette(for host: HostID) -> EventHostIndicatorPal
         EventHostIndicatorPalette(
             lightHex: ClaudioColorHex.workBuddyIndicatorLight,
             darkHex: ClaudioColorHex.workBuddyIndicatorDark)
+    case .opencode, .kimiCode:
+        EventHostIndicatorPalette(
+            lightHex: ClaudioColorHex.codexIndicatorLight,
+            darkHex: ClaudioColorHex.codexIndicatorDark)
     case .chatGPTDesktopAX:
         EventHostIndicatorPalette(
             lightHex: ClaudioColorHex.codexIndicatorLight,
@@ -503,6 +517,11 @@ func defaultQualificationText(_ qualification: HostCapabilityQualificationID) ->
     case .interfacePartiallySupportedNotImplemented: "接口部分支持，当前版本尚未实现"
     case .undeclaredCapability: "此宿主未声明该能力"
     case .accessibilityBetaUnavailable: "Accessibility Beta 候选尚未实现"
+    case .bridgeTerminalEvidenceOnly: "Claudio 桥接事件；仅确认会话身份与终态后触发"
+    case .bridgeExecutionEvidenceOnly: "Claudio 桥接事件；仅确认主会话身份并实际执行后触发"
+    case .userOriginOnly: "仅用户发起的 TurnStarted"
+    case .mainAgentIdentityUnavailable: "缺少主／子 agent 身份，首版暂未启用"
+    case .subagentIdentityUnavailable: "仅成功结束；无法定位具体子任务"
     }
 }
 
@@ -514,7 +533,7 @@ public func eventHostIndicatorPresentations(
 ) -> [EventHostIndicatorPresentation] {
     let row = matrix.rows.first(where: { $0.event == event })
     return matrix.hostColumns.filter {
-        $0.descriptor.mechanism == .nativeHooks
+        $0.descriptor.mechanism == .nativeHooks || $0.descriptor.mechanism == .pluginBridge
     }.map { host in
         guard let cell = row?.cells.first(where: { $0.host == host }) else {
             return EventHostIndicatorPresentation(host: host, state: .unsupported)

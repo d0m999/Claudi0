@@ -44,7 +44,8 @@ func runPreviewFixturesSuites() {
             PreviewFixtures.aboutSurfaceFacts.map(\.surface)
                 == HostID.productVisibleCases.map(\.surfaceID)
                 && PreviewFixtures.aboutSurfaceFacts.map(\.state)
-                    == [.ready, .awaitingActivation, .legacy],
+                    == [.ready, .awaitingActivation, .legacy]
+                    + AdditionalHostReleasePolicy.visibleHosts.map { _ in .awaitingActivation },
             "About Surface fixtures must follow the product registry and cover distinct states")
     }
 
@@ -289,10 +290,12 @@ func runPreviewFixturesSuites() {
         }
 
         expect(
-            indicators("full-color").allSatisfy(\.state.usesActiveColor),
+            indicators("full-color").filter { [.claudeCode, .codex, .workBuddy].contains($0.host) }
+                .allSatisfy(\.state.usesActiveColor),
             "full-color 帧必须三枚产品 Logo 都彩色")
         expect(
-            indicators("mixed").map(\.state) == [.unsupported, .connected, .unsupported],
+            indicators("mixed").filter { [.claudeCode, .codex, .workBuddy].contains($0.host) }
+                .map(\.state) == [.unsupported, .connected, .unsupported],
             "mixed 帧必须按视觉序显示 Codex 灰色、Claude 彩色、WorkBuddy 灰色")
         expect(
             indicators("all-gray").allSatisfy { !$0.state.usesActiveColor },
@@ -681,8 +684,10 @@ func runPreviewFixturesSuites() {
             let presentation = hostCapabilityMatrixPresentation(from: scenario.state.matrix)
             expect(
                 presentation.hostColumns == [.codex, .claudeCode, .workBuddy]
+                    + AdditionalHostReleasePolicy.visibleHosts
                     && presentation.rows.allSatisfy {
                         $0.cells.map(\.host) == [.codex, .claudeCode, .workBuddy]
+                            + AdditionalHostReleasePolicy.visibleHosts
                     },
                 "\(scenario.id) preview 必须服从生产 Product → Surface 视觉序")
             expect(

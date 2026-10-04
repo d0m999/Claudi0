@@ -29,7 +29,7 @@ private func storeBridgeHistoryReceipt(
     let receipt = HostHookReceipt(
         installationID: installationID,
         host: host,
-        nativeEvent: "UserPromptSubmit",
+        nativeEvent: HostCapabilityCatalog.binding(host: host, event: .taskStart)!.nativeEvent!,
         semanticEvent: .taskStart,
         timestamp: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970.rounded(.down)),
         playbackResult: .played)
@@ -217,7 +217,10 @@ private func bridgeFixture(
         connected: initiallyConnected,
         observesReceipt: false)
     let manager = HostIntegrationManager(
-        adapters: [claude, codex, workBuddy],
+        adapters: [claude, codex, workBuddy]
+            + AdditionalHostReleasePolicy.visibleHosts.map {
+                BridgeAdapter(host: $0, connected: initiallyConnected, observesReceipt: false)
+            },
         bootstrapper: bootstrapper)
     let audioEnvironment = AudioImportEnvironment(
         userPacksDirectory: packs,
@@ -256,10 +259,10 @@ func runHostIntegrationManagerBridgeSuites() async {
             expect(workBuddyCounts.inspect == 1, "首启必须 inspect WorkBuddy")
             expect(
                 state.snapshots.map(\.host) == HostID.productVisibleCases,
-                "首启状态必须同代返回三条产品宿主快照")
+                "首启状态必须同代返回当前可见产品宿主快照")
             expect(
                 hostSourceRowPresentations(from: state.matrix).map(\.host)
-                    == [.codex, .claudeCode, .workBuddy],
+                    == [.codex, .claudeCode, .workBuddy] + AdditionalHostReleasePolicy.visibleHosts,
                 "首启产品来源必须服从唯一视觉序，且不得显示 AX identity")
         }
     }
@@ -470,7 +473,7 @@ func runHostIntegrationManagerBridgeSuites() async {
                 let content = integrationDestinationContent(state: state)
                 expect(
                     Set(state.receiptHistories.keys) == Set(HostID.productVisibleCases),
-                    "bridge 历史必须恰好来自三个产品来源，不混入 AX identity")
+                    "bridge 历史必须恰好来自当前可见产品来源，不混入 AX identity")
                 for host in HostID.productVisibleCases {
                     expect(
                         state.receiptHistories[host]
@@ -556,7 +559,9 @@ func runHostIntegrationManagerBridgeSuites() async {
                 }
                 let before = await fixture.bridge.refresh()
                 let receiptFile = fixture.receiptStore.receiptFile(
-                    host: target, nativeEvent: "UserPromptSubmit")!
+                    host: target,
+                    nativeEvent: HostCapabilityCatalog.binding(host: target, event: .taskStart)!
+                        .nativeEvent!)!
                 let stableReceipt = try? Data(contentsOf: receiptFile)
 
                 let outcome = try? await fixture.bridge.perform(.clearReceiptHistory(target))
@@ -617,7 +622,7 @@ func runHostIntegrationManagerBridgeSuites() async {
                 "失败反馈必须保留锁忙的可重试原因")
             expect(
                 outcome?.state.receiptHistories == before.receiptHistories,
-                "清除失败必须同代读回并保留三来源历史，不能显示虚假空列表")
+                "清除失败必须同代读回并保留各来源历史，不能显示虚假空列表")
             expect(
                 outcome?.state.snapshots == before.snapshots,
                 "清除失败不得改变各来源连接与当前激活事实")
@@ -652,7 +657,7 @@ func runHostIntegrationManagerBridgeSuites() async {
                 "失败反馈必须保留 manager 的具体原因")
             expect(
                 outcome?.state.snapshots.map(\.host) == HostID.productVisibleCases,
-                "单侧失败仍必须同代返回三条产品宿主快照")
+                "单侧失败仍必须同代返回当前可见产品宿主快照")
             expect(
                 codexAfter > codexBefore,
                 "Claude 连接失败后仍必须刷新 Codex，不能把另一侧冻结在旧状态")

@@ -263,11 +263,15 @@ public enum PreviewFixtures {
         AboutPathExistenceFact(kind: $0, exists: true)
     }
 
-    public static let aboutSurfaceFacts = [
-        AboutSurfaceFact(host: .claudeCode, state: .ready),
-        AboutSurfaceFact(host: .codex, state: .awaitingActivation),
-        AboutSurfaceFact(host: .workBuddy, state: .legacy),
-    ].compactMap { $0 }
+    public static let aboutSurfaceFacts =
+        [
+            AboutSurfaceFact(host: .claudeCode, state: .ready),
+            AboutSurfaceFact(host: .codex, state: .awaitingActivation),
+            AboutSurfaceFact(host: .workBuddy, state: .legacy),
+        ].compactMap { $0 }
+        + AdditionalHostReleasePolicy.visibleHosts.compactMap {
+            AboutSurfaceFact(host: $0, state: .awaitingActivation)
+        }
 
     // MARK: - Unified Settings routes (#86)
 

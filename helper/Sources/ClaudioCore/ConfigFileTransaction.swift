@@ -30,6 +30,13 @@ public enum ConfigFileTypedMutation<Value> {
     case replace([String: Any], Value)
 }
 
+/// TOML and managed plugin callers retain bytes, comments and unknown fields. nil removes an
+/// owned regular file; preserving a user's final symlink remains a replacement-only operation.
+public enum ConfigFileByteMutation<Value> {
+    case unchanged(Value)
+    case replace(Data?, Value)
+}
+
 public struct ConfigFileTransactionReport<Value: Sendable>: Sendable {
     public let outcome: ConfigFileTransactionOutcome
     public let backup: ConfigBackupOutcome
@@ -201,6 +208,81 @@ public struct ConfigFileTransaction {
             },
             betweenReadAndWrite: nil
         ).map(\.outcome)
+    }
+
+    public func updateBytes<Value: Sendable>(
+        _ mutate: (Data?) throws -> ConfigFileByteMutation<Value>,
+        beforeFinalPublish: () -> Void = {}
+    ) -> Result<ConfigFileTransactionReport<Value>, ConfigFileTransactionError> {
+        let locked = withNonBlockingLock(path: lockFile.path) {
+            () -> Result<ConfigFileTransactionReport<Value>, ConfigFileTransactionError> in
+            if symlinkPolicy == .reject, leafNodeIsSymbolicLink(at: file) {
+                return .failure(.symlinkRejected(path: file.path))
+            }
+            if symlinkPolicy == .preserveTarget, leafNodeIsSymbolicLink(at: file),
+                !FileManager.default.fileExists(atPath: file.path)
+            {
+                return .failure(.danglingSymlink(path: file.path))
+            }
+            do {
+                let anchored = try AnchoredFileIO(
+                    file: file,
+                    preserveFinalSymlink: symlinkPolicy == .preserveTarget)
+                let snapshot = try anchored.read(maxBytes: maximumBytes)
+                let bytes: Data?
+                let value: Value
+                switch try mutate(snapshot.data) {
+                case .unchanged(let result):
+                    return .success(.init(outcome: .unchanged, backup: .notNeeded, value: result))
+                case .replace(let replacement, let result):
+                    bytes = replacement
+                    value = result
+                }
+                guard (bytes?.count ?? 0) <= maximumBytes else {
+                    return .failure(.mutationRejected(reason: "配置超过安全大小上限，未修改"))
+                }
+                if case .notWritable(let reason) = probeSettingsWritable(settingsFile: file) {
+                    return .failure(.notWritable(reason: reason))
+                }
+                let original: FileContentsSnapshot =
+                    snapshot.data.map(FileContentsSnapshot.bytes)
+                    ?? .missing
+                let backup = try prepareBackup(
+                    original: original,
+                    source: anchored.resolvedFile
+                ).get()
+                if let bytes {
+                    try anchored.publish(
+                        bytes, expected: snapshot,
+                        beforeRename: {
+                            beforeFinalPublish()
+                            guard try anchored.read(maxBytes: maximumBytes) == snapshot else {
+                                throw ConfigFileTransactionError.concurrentModification(
+                                    path: file.path)
+                            }
+                        })
+                } else {
+                    beforeFinalPublish()
+                    try anchored.remove(expected: snapshot)
+                }
+                return .success(.init(outcome: .written, backup: backup, value: value))
+            } catch let error as ConfigFileTransactionError {
+                return .failure(error)
+            } catch AnchoredFileError.changed, AnchoredFileError.destinationExists {
+                return .failure(.concurrentModification(path: file.path))
+            } catch AnchoredFileError.publishedWithConflict(let recoveryPath) {
+                return .failure(.postPublishConflict(recoveryPath: recoveryPath))
+            } catch AnchoredFileError.publishedButPathChanged(let location) {
+                return .failure(.postPublishLocationChanged(location: location))
+            } catch {
+                return .failure(.mutationRejected(reason: "无法安全解析或写入配置，未覆盖原文件"))
+            }
+        }
+        switch locked {
+        case .ran(let result): return result
+        case .skipped: return .failure(.lockBusy)
+        case .failed(let code): return .failure(.lockFailed(errno: code))
+        }
     }
 
     /// Typed schema mutation/report overload. Existing ``update(_:)`` callers keep their

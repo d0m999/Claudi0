@@ -123,6 +123,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
             adapters: [
                 ClaudeCodeIntegrationAdapter(), CodexIntegrationAdapter(),
                 WorkBuddyIntegrationAdapter(),
+                OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
             ],
             bootstrapper: SystemSharedRuntimeBootstrapper(environment: setupEnvironment))
         let integrationBridge = HostIntegrationManagerBridge(

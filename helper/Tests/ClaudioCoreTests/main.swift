@@ -53,6 +53,13 @@ func asyncSuite(_ name: String, _ body: @MainActor () async -> Void) async {
     await body()
 }
 
+if CommandLine.arguments.contains("--additional-hosts") {
+    await runAdditionalHostIntegrationSuites()
+    runAdditionalHostHookSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--questions") {
     runQuestionBindingSuites()
     runHostQuestionHookSuites()
@@ -72,6 +79,8 @@ if CommandLine.arguments.contains("--system-sounds") {
 runEventSuites()
 runQuestionBindingSuites()
 runHostQuestionHookSuites()
+await runAdditionalHostIntegrationSuites()
+runAdditionalHostHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
 runHostHookRunnerSuites()

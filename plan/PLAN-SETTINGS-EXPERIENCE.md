@@ -250,7 +250,8 @@ macOS 13+ 的主 app 登录项入口见 Apple 的
 
 内容与行为：
 
-- Agent 固定消费 `HostID.productVisibleCases`，顺序为 Claude Code → Codex → WorkBuddy；不显示宿主 Logo，
+- Agent 固定消费 `HostID.productVisibleCases`，基础顺序为 Claude Code → Codex → WorkBuddy；
+  OpenCode → Kimi Code 由 ADR 0024 的验收／正式启用策略追加。未取得真实证据时只出现在验收构建；不显示宿主 Logo，
   名称选择与 Toggle 是两个独立控件。每行显示 manager 投影的五态 badge、`supported/total` 和真实 Toggle；
   `4/5`、`2/5` 保持中性能力事实。
 - 选中 Agent 后只显示四行 typed connection section，顺序固定为「连接状态、接入方式、默认组／工作区、

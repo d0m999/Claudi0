@@ -12,7 +12,7 @@ private func integrationHistoryTestReceipt(
     HostHookReceipt(
         installationID: installationID,
         host: host,
-        nativeEvent: event == .taskStart ? "UserPromptSubmit" : "Stop",
+        nativeEvent: HostCapabilityCatalog.binding(host: host, event: event)!.nativeEvent!,
         semanticEvent: event,
         timestamp: timestamp,
         playbackResult: .played)
@@ -23,13 +23,14 @@ func runIntegrationDestinationPresentationSuites() {
     suite("集成 destination Agent 行：固定消费 productVisibleCases 顺序，不混入 AX identity") {
         let content = integrationDestinationTestContent()
         expect(
-            integrationAgentHostOrder() == [.claudeCode, .codex, .workBuddy],
+            integrationAgentHostOrder() == [.claudeCode, .codex, .workBuddy]
+                + AdditionalHostReleasePolicy.visibleHosts,
             "Agent 顺序必须固定为 Claude Code → Codex → WorkBuddy")
         expect(
             content.agents.map(\.host) == HostID.productVisibleCases,
             "destination content 必须按 productVisibleCases 投影 Agent 行")
         expect(
-            content.agents.map(\.title) == ["Claude Code", "Codex", "WorkBuddy"],
+            content.agents.map(\.title) == HostID.productVisibleCases.map(\.displayName),
             "Agent 行只显示产品名称，不显示 AX identity 或宿主 Logo")
         expect(
             Set(content.agents.map(\.host)).isDisjoint(with: [.chatGPTDesktopAX, .claudeDesktopAX]),
@@ -176,7 +177,7 @@ func runIntegrationDestinationPresentationSuites() {
                 == .masterVolumeZero,
             "主音量为零的事实仍通过共享矩阵传给非 destination 消费者")
         expect(
-            content.agents.map(\.host) == [.claudeCode, .codex, .workBuddy],
+            content.agents.map(\.host) == HostID.productVisibleCases,
             "共享矩阵的历史列顺序不得改变 destination Agent 的固定顺序")
     }
 

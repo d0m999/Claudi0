@@ -245,7 +245,7 @@ func runDualHostDoctorSuites() {
                         atPath: workBuddySettings.deletingLastPathComponent().path),
                 "fixture 与 doctor 都不得创建未安装宿主的配置目录")
             let hostRows = report.results.filter { $0.name.hasPrefix("host-") }
-            expect(hostRows.count == 3, "完整 doctor 必须固定输出三条宿主行")
+            expect(hostRows.count == HostID.productVisibleCases.count, "完整 doctor 必须输出当前可见宿主行")
             expect(
                 hostRows.allSatisfy { $0.severity == .warning },
                 "全部宿主均未安装只能是 warning，got \(hostRows)")
@@ -263,9 +263,9 @@ func runDualHostDoctorSuites() {
             let fixture = makeDualHostDoctorFixture(under: root)
             let results = hostIntegrationDoctorResults(environment: fixture.environment)
 
-            expect(results.count == 3, "无论连接状态如何都必须固定返回三个宿主结果")
+            expect(results.count == HostID.productVisibleCases.count, "无论连接状态如何都必须返回当前可见宿主结果")
             expect(
-                results.map(\.name) == ["host-claude-code", "host-codex", "host-workbuddy"],
+                results.map(\.name) == HostID.productVisibleCases.map { "host-" + $0.rawValue },
                 "doctor 行顺序必须固定为 Claude Code、Codex、WorkBuddy")
             expect(
                 results.allSatisfy { $0.severity == .warning },
@@ -291,7 +291,7 @@ func runDualHostDoctorSuites() {
                 workBuddyAvailability: { .available })
 
             let results = hostIntegrationDoctorResults(environment: unavailableEnvironment)
-            expect(results.count == 3, "单侧不可用不能吞掉其他宿主 doctor 行")
+            expect(results.count == HostID.productVisibleCases.count, "单侧不可用不能吞掉其他宿主 doctor 行")
             expect(
                 dualHostDoctorResult(results, host: .claudeCode)?.severity == .warning,
                 "未连接 Claude Code 仍只是 warning")

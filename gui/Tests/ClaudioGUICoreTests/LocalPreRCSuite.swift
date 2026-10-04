@@ -30,6 +30,19 @@ private struct LocalPreRCScriptFixture {
                 makeExecutable(destination)
             }
         }
+        if names.contains("dev-bundle.sh") {
+            for relative in [
+                "scripts/embed-opencode-plugin.py", "integrations/opencode/claudio.js",
+                "helper/Sources/ClaudioCore/OpenCodePluginSource.swift",
+            ] {
+                let destination = repository.appendingPathComponent(relative)
+                try? fileManager.createDirectory(
+                    at: destination.deletingLastPathComponent(),
+                    withIntermediateDirectories: true)
+                try? fileManager.copyItem(
+                    at: sourceRoot.appendingPathComponent(relative), to: destination)
+            }
+        }
     }
 
     func installExecutable(_ contents: String, at url: URL) {

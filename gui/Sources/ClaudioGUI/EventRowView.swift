@@ -355,6 +355,8 @@ public struct EventRowView: View {
         if host == .workBuddy {
             return Image(systemName: "briefcase.fill")
         }
+        if host == .opencode { return Image(systemName: "terminal.fill") }
+        if host == .kimiCode { return Image(systemName: "moon.stars.fill") }
         let assetName = eventHostIndicatorAssetName(for: host)
         guard let image = hostIconResourceBundle.image(forResource: NSImage.Name(assetName)) else {
             preconditionFailure("Missing host indicator resource: \(assetName).pdf")

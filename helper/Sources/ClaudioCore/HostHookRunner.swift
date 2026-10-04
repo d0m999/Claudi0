@@ -89,7 +89,7 @@ public func systemHostHookEnvironment(
     eventNoticeChannel: HostEventNoticeChannel? = nil,
     sourcePayload: Data? = nil
 ) -> HostHookEnvironment {
-    let questionScope = HookQuestionScopeSnapshot()
+    let questionScope = HookQuestionScopeSnapshot(host: host)
     return HostHookEnvironment(
         host: host,
         playEnvironment: PlayEnvironment(
@@ -105,6 +105,7 @@ public func systemHostHookEnvironment(
         activityStore: .production,
         eventNoticeChannel: eventNoticeChannel,
         sourcePayload: sourcePayload,
+        scopeFingerprint: { questionScope.value },
         questionScopeFingerprint: { questionScope.value },
         questionDeduplicationStore: HostQuestionDeduplicationStore(
             directory: ClaudioPaths.hostQuestionDeduplicationDirectory(host),
@@ -118,12 +119,15 @@ private final class HookQuestionScopeSnapshot: @unchecked Sendable {
     private let lock = NSLock()
     private var hasResolved = false
     private var stored: String?
+    private let host: HostID
+
+    init(host: HostID) { self.host = host }
 
     var value: String? {
         lock.lock()
         defer { lock.unlock() }
         if !hasResolved {
-            stored = HostActivationScope.claudeCode()
+            stored = HostActivationScope.current(for: host)
             hasResolved = true
         }
         return stored
@@ -169,6 +173,11 @@ public func handleHostHook(
     else { return nil }
 
     let isQuestion = HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil
+    let isAdditionalHost = host == .opencode || host == .kimiCode
+    let additionalPayload = AdditionalHostHookPayload.parse(
+        host: host, nativeEvent: nativeEvent,
+        data: environment.sourcePayload)
+    guard !isAdditionalHost || additionalPayload != nil else { return nil }
     let questionPayload = HostQuestionHookPayload.parse(
         host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
     guard !isQuestion || questionPayload != nil else { return nil }
@@ -179,7 +188,7 @@ public func handleHostHook(
     let observedUptime = environment.eventNoticeChannel?.observedUptime ?? environment.uptime()
     let currentScope =
         isQuestion ? environment.questionScopeFingerprint : environment.scopeFingerprint
-    let requiresScope = host == .workBuddy || isQuestion
+    let requiresScope = host == .workBuddy || isQuestion || isAdditionalHost
     let scope = requiresScope ? currentScope() : nil
     let installationIsCurrent: @Sendable () -> Bool = {
         if requiresScope {
@@ -210,7 +219,7 @@ public func handleHostHook(
     let isTaskStart = event == .taskStart
     let observedPlayEnvironment = PlayEnvironment(
         surfaceID: host.surfaceID,
-        workingDirectory: isQuestion
+        workingDirectory: isQuestion || isAdditionalHost
             ? nil : WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
         playbackAuthorized: {
             base.playbackAuthorized()
@@ -237,13 +246,13 @@ public func handleHostHook(
         spawnResultObserver: { succeeded in capture.record(succeeded) })
     let playbackResult: HostHookPlaybackResult
     let shouldSendNotice: Bool
-    if let questionPayload {
+    if let questionPayload = additionalPayload?.identity ?? questionPayload {
         switch environment.questionDeduplicationStore.consume(
             host: host, installationID: installationID, payload: questionPayload,
             now: occurredAt, isCurrent: installationIsCurrent)
         {
         case .consumed:
-            let outcome = playConsumedQuestion(environment: observedPlayEnvironment)
+            let outcome = playConsumedHostEvent(event, environment: observedPlayEnvironment)
             playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
             shouldSendNotice = true
         case .duplicate:
@@ -254,7 +263,10 @@ public func handleHostHook(
             shouldSendNotice = false
         }
     } else {
-        let outcome = playSoundEvent(event.cliName, environment: observedPlayEnvironment)
+        let outcome =
+            isAdditionalHost
+            ? playConsumedHostEvent(event, environment: observedPlayEnvironment)
+            : playSoundEvent(event.cliName, environment: observedPlayEnvironment)
         playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
         shouldSendNotice = true
     }
