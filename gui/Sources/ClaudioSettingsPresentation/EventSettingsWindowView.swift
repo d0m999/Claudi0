@@ -21,6 +21,7 @@ struct EventSettingsWindowView: View {
 
     let soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher
     let performPlatformAction: @MainActor (SettingsPlatformAction) -> Void
+    let onNavigateWorkspace: (@MainActor (EventSettingsWindowRoute) -> Void)?
     let onConfigureSound: @MainActor (SoundPacksWindowRoute) -> Void
     let onAudibilityInputsChanged: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
@@ -29,6 +30,7 @@ struct EventSettingsWindowView: View {
     #endif
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.settingsUsesCompactLayout) private var compactLayout
+    @Environment(\.settingsSuppressesAutomaticContentFocus) private var suppressesContentFocus
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
@@ -47,6 +49,7 @@ struct EventSettingsWindowView: View {
         soundPacksEditorOwner: SoundPacksEditorOwner,
         soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher,
         performPlatformAction: @escaping @MainActor (SettingsPlatformAction) -> Void,
+        onNavigateWorkspace: (@MainActor (EventSettingsWindowRoute) -> Void)? = nil,
         onConfigureSound: @escaping @MainActor (SoundPacksWindowRoute) -> Void,
         onAudibilityInputsChanged: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
@@ -59,6 +62,7 @@ struct EventSettingsWindowView: View {
         self.soundPacksEditorOwner = soundPacksEditorOwner
         self.soundPacksEditorNativeEffects = soundPacksEditorNativeEffects
         self.performPlatformAction = performPlatformAction
+        self.onNavigateWorkspace = onNavigateWorkspace
         self.onConfigureSound = onConfigureSound
         self.onAudibilityInputsChanged = onAudibilityInputsChanged
         self.onAnnouncement = onAnnouncement
@@ -102,24 +106,6 @@ struct EventSettingsWindowView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingsPageHeader {
-                if detail != .configuration {
-                    Button {
-                        selection.showConfigurationDetail()
-                    } label: {
-                        Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
-                    }
-                    .labelStyle(.iconOnly).buttonStyle(.plain)
-                    .accessibilityIdentifier("workspace.detail.back")
-                }
-                Text(detailTitle)
-                    .font(SettingsAppearance.pageTitle)
-                    .accessibilityAddTraits(.isHeader)
-                    .focusable()
-                    .focused($focusedTarget, equals: .title)
-                    .settingsMountIdentity("settings.title.events-and-sounds")
-                    .soundPacksLayoutProbe("settings.title.events-and-sounds")
-            }
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
@@ -135,7 +121,6 @@ struct EventSettingsWindowView: View {
                     player.stop()
                     previewSuccessTokens.removeAll()
                     proxy.scrollTo("workspace-top", anchor: .top)
-                    focusedTarget = .title
                 }
                 .onChange(of: selection.presentationState.focusRequestRevision) { _ in
                     if let event = selection.route.event {
@@ -311,6 +296,7 @@ struct EventSettingsWindowView: View {
                 selection.markCurrentScopeUnavailable()
             }
         }
+        guard !suppressesContentFocus else { return }
         if let target = selection.presentationState.focusTarget {
             focusedTarget = target
         } else if selection.unavailableRequestedScopeStoredValue != nil {
@@ -350,18 +336,21 @@ struct EventSettingsWindowView: View {
 
     private var scopeSelector: some View {
         SettingsControlRow(title: l10n.text(.settingsDestinationEventsAndSounds)) {
-            Picker(
+            SettingsNativePopUp(
                 l10n.text(.settingsDestinationEventsAndSounds),
                 selection: Binding(
                     get: { selection.route.scope },
                     set: selectScope
-                )
-            ) {
-                if current == nil {
-                    Text(l10n.text(.workspaceUnavailable)).tag(selection.route.scope)
-                }
-                ForEach(scopes) { scope in Text(scope.name).tag(scope.scope) }
-            }
+                ),
+                options: (current == nil
+                    ? [
+                        SettingsMenuOption(
+                            selection.route.scope, l10n.text(.workspaceUnavailable),
+                            isEnabled: false)
+                    ] : []) + scopes.map { SettingsMenuOption($0.scope, $0.name) },
+                identifier: "workspace.scope-selector"
+            )
+            .fixedSize(horizontal: true, vertical: false)
             .accessibilityIdentifier("workspace.scope-selector")
             .focused($focusedTarget, equals: .scope(selection.route.scope))
             .soundPacksLayoutProbe("workspace.scope-selector.control")
@@ -372,12 +361,30 @@ struct EventSettingsWindowView: View {
         .soundPacksLayoutProbe("workspace.scope-selector.card")
     }
 
+    private func navigateDetail(_ detail: WorkspaceSettingsDetail) {
+        let current = selection.route
+        let route = EventSettingsWindowRoute(
+            scope: current.scope, event: current.event,
+            workspaceTarget: current.workspaceTarget,
+            unavailableRequestedScopeStoredValue: current.unavailableRequestedScopeStoredValue,
+            detail: detail)
+        if let onNavigateWorkspace { onNavigateWorkspace(route) } else { selection.select(route) }
+    }
+
     private func selectScope(_ scope: PanelSoundScopeID) {
         guard scopes.contains(where: { $0.scope == scope }) else { return }
         previewSequence.cancel()
         player.stop()
-        selection.select(EventSettingsWindowRoute(scope: scope))
-        model.selectSoundScope(scope, rebindSelectedWorkspace: true)
+        let target = scope.workspaceID.flatMap { id in
+            model.workspaceRules.first(where: { $0.id == id }).map(
+                WorkspaceSoundWriteTarget.init(rule:))
+        }
+        if let onNavigateWorkspace {
+            onNavigateWorkspace(EventSettingsWindowRoute(scope: scope, workspaceTarget: target))
+        } else {
+            selection.select(EventSettingsWindowRoute(scope: scope, workspaceTarget: target))
+            model.selectSoundScope(scope, rebindSelectedWorkspace: true)
+        }
     }
 
     private var scopeContent: some View {
@@ -509,9 +516,9 @@ struct EventSettingsWindowView: View {
     private var workspaceNavigation: some View {
         Button {
             if let rule {
-                selection.showScopeDetail(WorkspaceSoundWriteTarget(rule: rule))
+                navigateDetail(.scope(WorkspaceSoundWriteTarget(rule: rule)))
             } else {
-                selection.showWorkspacesDetail()
+                navigateDetail(.workspaces)
             }
         } label: {
             HStack {
@@ -570,12 +577,13 @@ struct EventSettingsWindowView: View {
     private var soundControls: some View {
         let scope = selection.route.scope
         let workspaceTarget = model.selectedWorkspaceTarget
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(current?.name ?? l10n.text(.workspaceUnavailable))
-                .font(SettingsAppearance.font(.sectionTitle))
-                .accessibilityAddTraits(.isHeader)
+        return SettingsSectionCard(
+            title: current?.name ?? l10n.text(.workspaceUnavailable),
+            padding: SettingsAppearance.controlRowHorizontalPadding
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
             SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
-                Picker(
+                    SettingsNativePopUp(
                     l10n.text(.panelSoundPackLabel),
                     selection: Binding(
                         get: { model.config.selectedPack },
@@ -592,17 +600,23 @@ struct EventSettingsWindowView: View {
                             selection.noteWriteResult(retry, using: model)
                             selection.clearPreviewFailure()
                             onAudibilityInputsChanged()
+                            }),
+                        options: (model.allSoundPacks.contains(where: {
+                            $0.id == model.config.selectedPack
                         })
-                ) {
-                    if !model.allSoundPacks.contains(where: { $0.id == model.config.selectedPack })
-                    {
-                        Text(model.config.selectedPack).tag(model.config.selectedPack)
-                    }
-                    ForEach(model.allSoundPacks, id: \.id) { pack in
-                        Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
-                            pack.id)
-                    }
-                }
+                            ? []
+                            : [
+                                SettingsMenuOption(
+                                    model.config.selectedPack, model.config.selectedPack,
+                                    isEnabled: false)
+                            ])
+                            + model.allSoundPacks.map {
+                                SettingsMenuOption(
+                                    $0.id,
+                                    SelectedPackMetadata(id: $0.id, name: $0.name).displayName)
+                            }, identifier: "event-settings.sound-pack-picker"
+                    )
+                    .fixedSize(horizontal: true, vertical: false)
                 .accessibilityIdentifier("event-settings.sound-pack-picker")
                 .focused($focusedTarget, equals: .packPicker)
                 .soundPacksLayoutProbe("event-settings.sound-pack-picker.control")
@@ -633,7 +647,8 @@ struct EventSettingsWindowView: View {
                 FailureRow(message: l10n.text(.workspacePackRepair))
                     .accessibilityIdentifier("workspace.pack.repair-reason")
             }
-        }.settingsSectionSurface(padding: SettingsAppearance.controlRowHorizontalPadding)
+            }
+        }
             .soundPacksLayoutProbe("workspace.configuration.card")
     }
 
@@ -1064,6 +1079,7 @@ struct EventSettingsWindowView: View {
                     Label(l10n.text(.settingsNativeEditCue), systemImage: "chevron.right")
                 }
                 .labelStyle(.iconOnly)
+                .buttonStyle(.plain)
                 .accessibilityLabel(l10n.text(.settingsNativeEditCue) + " " + event.title)
                 .accessibilityIdentifier("workspace.event.\(event.event.rawValue).edit")
                 .disabled(!writable)
@@ -1085,7 +1101,9 @@ struct EventSettingsWindowView: View {
                             selection.clearPreviewFailure()
                             onAudibilityInputsChanged()
                         })
-                ).labelsHidden().toggleStyle(.switch).disabled(!event.controls.muteEnabled)
+                ).labelsHidden().toggleStyle(.switch).controlSize(.mini).disabled(
+                    !event.controls.muteEnabled
+                )
                     .focused($focusedTarget, equals: .mute(event.event))
             }
             if !event.controls.previewEnabled {
@@ -1220,13 +1238,17 @@ private struct AddWorkspaceSoundRuleView: View {
                     .font(.caption)
             }
             SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
-                Picker(l10n.text(.panelSoundPackLabel), selection: $selectedPack) {
-                    Text(l10n.text(.workspaceSelectPack)).tag("")
-                    ForEach(model.allSoundPacks, id: \.id) { pack in
-                        Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName).tag(
-                            pack.id)
-                    }
-                }
+                SettingsNativePopUp(
+                    l10n.text(.panelSoundPackLabel), selection: $selectedPack,
+                    options: [
+                        SettingsMenuOption("", l10n.text(.workspaceSelectPack), isEnabled: false)
+                    ]
+                        + model.allSoundPacks.map {
+                            SettingsMenuOption(
+                                $0.id, SelectedPackMetadata(id: $0.id, name: $0.name).displayName)
+                        }, identifier: "workspace.new.sound-pack-picker"
+                )
+                .fixedSize(horizontal: true, vertical: false)
                 .accessibilityIdentifier("workspace.new.sound-pack-picker")
                 .soundPacksLayoutProbe("workspace.new.sound-pack-picker.control")
             }

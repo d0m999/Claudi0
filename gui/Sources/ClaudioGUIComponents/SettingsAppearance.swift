@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Settings-only palette and rhythm. Panel tokens retain their existing meaning.
@@ -27,44 +28,21 @@ package enum SettingsAppearance {
     }
 
     package static func background(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0x202022 : 0xFFFFFF)
+        Color(nsColor: .windowBackgroundColor)
     }
-
     package static func cardSurface(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0x2D2D30 : 0xF5F5F7)
+        Color(nsColor: .underPageBackgroundColor)
     }
-
-    package static func sidebar(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0x2B2B2E : 0xE9E9EC)
-    }
-
-    package static func sidebarSelection(_ contrast: ColorSchemeContrast) -> Color {
-        color(contrast == .increased ? 0x0056B3 : 0x006FE6)
-    }
-
-    package static func text(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0xF0F0F2 : 0x202023)
-    }
-
+    package static func sidebar(_ scheme: ColorScheme) -> Color { .clear }
+    package static func sidebarSelection(_ contrast: ColorSchemeContrast) -> Color { .accentColor }
+    package static func text(_ scheme: ColorScheme) -> Color { Color(nsColor: .labelColor) }
     package static func secondaryText(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0xAAAAB0 : 0x6E6E73)
+        Color(nsColor: .secondaryLabelColor)
     }
-
-    package static func accent(_ scheme: ColorScheme) -> Color {
-        color(scheme == .dark ? 0x0A84FF : 0x007AFF)
-    }
-
-    package static func hairline(_ scheme: ColorScheme) -> Color {
-        (scheme == .dark ? Color.white : Color.black).opacity(scheme == .dark ? 0.085 : 0.075)
-    }
+    package static func accent(_ scheme: ColorScheme) -> Color { .accentColor }
+    package static func hairline(_ scheme: ColorScheme) -> Color { Color(nsColor: .separatorColor) }
 
     package static func horizontalPadding(compact: Bool) -> CGFloat { compact ? 26 : 32 }
     package static func eventPadding(compact _: Bool) -> CGFloat { 14 }
 
-    private static func color(_ hex: UInt32) -> Color {
-        Color(
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255)
-    }
 }

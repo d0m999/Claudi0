@@ -197,8 +197,7 @@ struct ActivityDiagnosticsView: View {
     }
 
     private var sourcesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsUsageHistoryTitle)).font(SettingsAppearance.font(.sectionTitle))
+        SettingsSectionCard(title: l10n.text(.settingsUsageHistoryTitle), padding: 0) {
             VStack(spacing: 0) {
                 ForEach(HostID.productVisibleCases, id: \.self) { host in
                     let overview = model.presentation.projection.surfaces[host]
@@ -207,7 +206,6 @@ struct ActivityDiagnosticsView: View {
                 }
             }
         }
-        .settingsSectionSurface()
     }
 
     private func sourceCard(
@@ -261,9 +259,8 @@ struct ActivityDiagnosticsView: View {
     }
 
     private var eventSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsActivityEventsTitle)).font(
-                SettingsAppearance.font(.sectionTitle))
+        SettingsSectionCard(title: l10n.text(.settingsActivityEventsTitle)) {
+            VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
                 Text(l10n.text(.settingsActivityRangeToday))
@@ -297,17 +294,18 @@ struct ActivityDiagnosticsView: View {
                     "\(countText(row.todayCount)), \(countText(row.sevenDayCount)), \(row.coverage.fractionText)"
                 )
                 .accessibilityIdentifier("settings.activity.event.\(row.event.cliName)")
+                    if row.event != global.eventRows.last?.event { Divider() }
+                }
             }
         }
-        .settingsSectionSurface(padding: SettingsAppearance.controlRowHorizontalPadding)
     }
 
     private var logSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsUsageLogTitle)).font(SettingsAppearance.font(.sectionTitle))
-            Text(l10n.text(.settingsUsageLogDescription))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        SettingsSectionCard(
+            title: l10n.text(.settingsUsageLogTitle),
+            description: l10n.text(.settingsUsageLogDescription)
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
             Label(logStateText(model.presentation.log.state), systemImage: logStateIcon)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.activity.log-state")
@@ -339,20 +337,20 @@ struct ActivityDiagnosticsView: View {
                     .disabled(model.isOperationActive)
                     .accessibilityIdentifier("settings.activity.copy-log-path")
             }
+            }
         }
-        .settingsSectionSurface()
     }
 
     private var privacySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.settingsUsagePrivacyTitle)).font(SettingsAppearance.font(.sectionTitle))
+        SettingsSectionCard(title: l10n.text(.settingsUsagePrivacyTitle)) {
+            VStack(alignment: .leading, spacing: 10) {
             Label(l10n.text(.settingsUsagePrivacyHost), systemImage: "lock.shield")
             Label(l10n.text(.settingsUsagePrivacyProvider), systemImage: "network")
             Text(l10n.text(.settingsUsagePrivacyBilling))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .settingsSectionSurface()
     }
 
     private func actionLabel(

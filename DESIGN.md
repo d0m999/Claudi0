@@ -93,6 +93,22 @@ Claude Code、Codex 与 WorkBuddy 的可见图标主体统一为 27×27 pt、6 p
 加载原图时按半透明以上的主体边界裁去外围透明留白与微弱投影，再使用同一视图尺寸；
 Codex 明暗两版保持相同主体比例。官方 PNG 与来源记录保留原始字节。
 
+
+### 系统原生外壳与窗口期历史（现行 · 2026-10-04）
+
+本节根据已给定的最终对齐规格，覆盖以上固定 RGB、独立 58 pt 正文页头、侧栏自绘选择及仅通知历史的合同。交互样稿为 [Native Settings Alignment Prototype.html](<designs/macos-settings-native/Native Settings Alignment Prototype.html>)；它演示八页、代表详情、失效位置和阅读恢复。样稿不是 macOS 控件绘制、原生焦点或正式验收证据。
+
+- 唯一 retained 非激活窗口保持 `.accessory`、原层级与 handback；默认／最小尺寸 1240×820／960×640、侧栏 252／210 pt、1100 pt 断点不变。使用 `NSSplitViewController` 原生 sidebar item，source-list 单选列表与真实 `.unified` `NSToolbar`。隐藏可见窗口标题但保留本地化窗口身份；系统 safe area 避让工具栏，不固定补偿高度。
+- 工具栏共用原生瞬时前后分段控件，页名为 AX heading，无静态标题 Tab 停靠点。侧栏鼠标和方向键导航保留列表第一响应者；程序回写选择不触发导航。八页三组顺序与 20 pt 图标、轻量字标保留，选择和材质由系统绘制。
+- 内容、功能组、文字、分隔线和强调色采用系统语义色；不强制 sidebar 为 active。事件语义色、角色与动画资产继续遵循已有合同。最大阅读宽度 780 pt、左右边距 32／26 pt、section／group 间距 20／12 pt、普通／多行最低行高 38／51 pt。
+- section 标题和说明在功能组外；组内保留字段、值、操作和必要子层级，同组行使用分隔线。原生 `NSPopUpButton` 无边框收起态按内容宽度布局、最多 280 pt；菜单和 AX 值保存完整名称。标签左控件右，单行开关 mini；播放是独立原生按钮，详情入口统一无底箭头。
+- 五事件预览采用原生单选分段控件，持续显示选中值；只预览、不写偏好或播放声音。四项角色画廊有单选组语义，左右选择、Space／Return 操作，选择、焦点和悬停分别表达。
+- `SettingsPresentationSession` 唯一拥有 `SettingsLocation`、最多 64 个位置的 `SettingsNavigationHistory` 和带版本的焦点／滚动恢复请求。侧栏、详情、新深链接追加；重复位置只重验并更新焦点，保留 Forward；Back／Forward 移动游标，新的位置截断前进分支。刷新、hydration 和匹配当前操作的成功转换只更新当前条目。
+- 历史保留 scope、UUID、捕获目录、查看包和可见详情，不保留旧配置、音量、映射、凭据、候选、草稿或签名动作。目标失效进入对应不可用页，保留身份和导航；不回落可写默认组。遍历不重放复制／应用／采用；迟到结果必须匹配操作、条目和导航版本才可转换当前查看目标。
+- sheet、确认和文件选择器阻止外层导航；取消保留游标并回触发入口。离页沿用停止试听、结束 AI 和取消草稿；已接受的磁盘事务仍由 owner 结算。关闭窗口清空历史与书签，仅原最后顶层目的页偏好保留。语言／后台更新不 makeKey 或激活。
+
+本次实现与自动、Computer Use、独立人工、macOS 12 实际运行证据分别登记在验证记录中；本节不宣称正式验收通过。
+
 ## 事件动画（现行 · 2026-10-02，#216）
 
 角色画面、逐帧时长、循环范围和静态帧以 `designs/pixel-motion/Pixel Motion Prototype.html`

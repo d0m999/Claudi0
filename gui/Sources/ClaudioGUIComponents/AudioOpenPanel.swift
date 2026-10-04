@@ -8,6 +8,8 @@ private let audioOpenPanelContentTypes: [UTType] = [.wav, .mp3, .aiff, .mpeg4Aud
 /// The one native audio-file picker used by the panel and the standard Sound Packs window.
 @MainActor
 public func runAudioOpenPanel(allowsMultipleSelection: Bool) -> [URL] {
+    NotificationCenter.default.post(name: .claudioSettingsModalWillBegin, object: nil)
+    defer { NotificationCenter.default.post(name: .claudioSettingsModalDidEnd, object: nil) }
     let panel = NSOpenPanel()
     panel.allowedContentTypes = audioOpenPanelContentTypes
     panel.allowsMultipleSelection = allowsMultipleSelection
@@ -20,10 +22,19 @@ public func runAudioOpenPanel(allowsMultipleSelection: Bool) -> [URL] {
 /// Directory-only chooser for a workspace scope; it never accepts audio files.
 @MainActor
 public func runWorkspaceDirectoryOpenPanel() -> URL? {
+    NotificationCenter.default.post(name: .claudioSettingsModalWillBegin, object: nil)
+    defer { NotificationCenter.default.post(name: .claudioSettingsModalDidEnd, object: nil) }
     let panel = NSOpenPanel()
     panel.canChooseDirectories = true
     panel.canChooseFiles = false
     panel.allowsMultipleSelection = false
     guard panel.runModal() == .OK else { return nil }
     return panel.url
+}
+
+extension Notification.Name {
+    package static let claudioSettingsModalWillBegin = Notification.Name(
+        "Claudio.Settings.ModalWillBegin")
+    package static let claudioSettingsModalDidEnd = Notification.Name(
+        "Claudio.Settings.ModalDidEnd")
 }

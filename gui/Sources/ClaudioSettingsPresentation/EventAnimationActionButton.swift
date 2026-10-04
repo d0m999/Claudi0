@@ -35,6 +35,8 @@ struct EventAnimationActionButton<Label: View>: NSViewRepresentable {
 final class EventAnimationActionView<Label: View>: NSView {
     let host: NSHostingView<EventAnimationActionLabel<Label>>
     var onActivate: @MainActor () -> Void = {}
+    var onMove: ((Int) -> Void)?
+    private(set) var isHovered = false
     var isEnabled = true
     var requestsFocus = false {
         didSet { if !requestsFocus { appliedFocusRequest = false } }
@@ -68,6 +70,22 @@ final class EventAnimationActionView<Label: View>: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         bounds.contains(convert(point, from: superview)) ? self : nil
     }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas { removeTrackingArea(area) }
+        addTrackingArea(
+            NSTrackingArea(
+                rect: bounds,
+                options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self))
+    }
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        host.rootView.hovered = true
+    }
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        host.rootView.hovered = false
+    }
     override func mouseDown(with _: NSEvent) {
         guard isEnabled else { return }
         window?.makeFirstResponder(self)
@@ -82,7 +100,11 @@ final class EventAnimationActionView<Label: View>: NSView {
     }
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
-        if event.keyCode == 49 || event.keyCode == 36 {
+        if isEnabled, modifiers.isEmpty, let onMove, event.keyCode == 123 || event.keyCode == 124 {
+            onMove(event.keyCode == 123 ? -1 : 1)
+            return
+        }
+        if event.keyCode == 49 || event.keyCode == 36 || event.keyCode == 76 {
             if isEnabled, modifiers.isEmpty { onActivate() }
             return
         }
@@ -115,7 +137,13 @@ final class EventAnimationActionView<Label: View>: NSView {
 
 struct EventAnimationActionLabel<Content: View>: View {
     let content: Content
-    var body: some View { content.accessibilityHidden(true) }
+    var hovered = false
+    var body: some View {
+        content.accessibilityHidden(true)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10).stroke(
+                    hovered ? Color(nsColor: .tertiaryLabelColor) : .clear, lineWidth: 1))
+    }
 }
 
 @MainActor

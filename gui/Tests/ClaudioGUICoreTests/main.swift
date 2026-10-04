@@ -78,6 +78,18 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--settings-notification-navigation") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsNotificationNavigationSuites()
+        print("Settings notification navigation: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-navigation-native-focus") {
     let application = NSApplication.shared
     application.setActivationPolicy(.regular)
@@ -128,7 +140,7 @@ if CommandLine.arguments.contains("--sound-editor-ai-lifecycle") {
 
 if CommandLine.arguments.contains("--settings-native-states") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.regular)
+    application.setActivationPolicy(.accessory)
     Task { @MainActor in
         await runSettingsNativeStatesSuites()
         print("Settings native states: \(totalChecks) checks, \(failures) failures")
@@ -313,10 +325,16 @@ if CommandLine.arguments.contains("--system-sounds") {
 }
 
 if CommandLine.arguments.contains("--settings-lifecycle") {
-    runSettingsNavigationSuites()
-    await runSettingsPresentationLifecycleSuites()
-    print("Settings lifecycle: \(totalChecks) checks, \(failures) failures")
-    exit(failures == 0 ? 0 : 1)
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runSettingsNavigationSuites()
+        await runSettingsPresentationLifecycleSuites()
+        print("Settings lifecycle: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
 }
 
 if CommandLine.arguments.contains("--ai-cue-generation") {
@@ -353,16 +371,28 @@ if CommandLine.arguments.contains("--settings-product-images") {
 }
 
 if CommandLine.arguments.contains("--settings-menu-layout") {
-    runSettingsMenuLayoutSuites()
-    print("Settings menu layout: \(totalChecks) checks, \(failures) failures")
-    exit(failures == 0 ? 0 : 1)
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsMenuLayoutSuites()
+        print("Settings menu layout: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
 }
 
 if CommandLine.arguments.contains("--settings-sounds-layout") {
-    runSettingsNativeMigrationSuites()
-    runSettingsSoundsLayoutSuites()
-    print("Settings sounds layout: \(totalChecks) checks, \(failures) failures")
-    exit(failures == 0 ? 0 : 1)
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runSettingsNativeMigrationSuites()
+        await runSettingsSoundsLayoutSuites()
+        print("Settings sounds layout: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
 }
 
 if CommandLine.arguments.contains("--ai-cue-provider-contracts") {
@@ -402,6 +432,40 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-native-alignment") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsNavigationHistorySuites()
+        await runSettingsNativeShellSuites()
+        await runSettingsNativeControlsSuites()
+        print("Settings native alignment: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--settings-native-regressions") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runWorkspaceDeletionPresentationSuites()
+        runEventSettingsWindowSelectionSuites()
+        await runSettingsRootInteractionSuites()
+        await runSoundEditorAILifecycleSuites()
+        await runSoundPacksSettingsDetailIdentityRegressions()
+        await runSettingsNotificationNavigationSuites()
+        print("Settings native regressions: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+let fullHarnessApplication = NSApplication.shared
+fullHarnessApplication.setActivationPolicy(.accessory)
+Task { @MainActor in
 await runReviewRepairSuites()
 await runEventAnimationIntegrationSuites()
 runOnboardingStateSuites()
@@ -531,9 +595,9 @@ runSettingsNavigationSuites()
 await runSettingsPresentationLifecycleSuites()
 runSettingsPresentationTargetSuites()
 runSettingsPresentationSliceSuites()
-runSettingsRootInteractionSuites()
+    await runSettingsRootInteractionSuites()
 runSettingsProductImagesSuites()
-runSettingsSoundsLayoutSuites()
+    await runSettingsSoundsLayoutSuites()
 runSettingsNativeMigrationSuites()
 runPreviewFixturesSuites()
 runMultiProviderPrototypeContractSuites()
@@ -550,7 +614,12 @@ runQuestionIntentPresentationSuites()
 runCodexDevelopmentNoticeSuites()
 runCodexQuestionObservationSuites()
 
-// MARK: - Summary
+    await runSettingsNavigationHistorySuites()
+    await runSettingsNativeShellSuites()
+    await runSettingsNativeControlsSuites()
+    await runSettingsNotificationNavigationSuites()
+
+    // MARK: - Summary
 
 print("")
 if failures == 0 {
@@ -560,3 +629,6 @@ if failures == 0 {
     print("✗ \(failures) of \(totalChecks) checks FAILED")
     exit(1)
 }
+}
+fullHarnessApplication.run()
+exit(1)

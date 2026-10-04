@@ -29,6 +29,16 @@ package final class SettingsPresentationSession: ObservableObject {
     private var loginProjection: LoginItemSettingsProjection
     private var availability: SettingsRouteAvailability
     private var routeResolution: SettingsRouteResolution
+    package private(set) var navigationHistory = SettingsNavigationHistory()
+    package var captureReadingPosition: (@MainActor () -> SettingsReadingBookmark?)?
+    private var navigationFocus: SettingsNavigationFocus = .content
+    private var navigationRestoration: SettingsNavigationRestoration?
+    package private(set) var renderedNavigationStamp: SettingsNavigationStamp?
+    private var modalNavigationBlockers: Set<String> = []
+    private var lastViewedSoundPackID: String?
+    private var activeSoundsRequestRevision: UInt64?
+    private var workspaceDeletionNavigation:
+        (request: WorkspaceDeletionRequest, stamp: SettingsNavigationStamp)?
     private var explicitRouteRequestRevision: UInt64 = 0
     private var focusDebt: SettingsFocusDebt?
     private var windowPhase: SettingsWindowPhase = .hidden
@@ -54,6 +64,7 @@ package final class SettingsPresentationSession: ObservableObject {
     private var aboutSurfaceCancellable: AnyCancellable?
     private var aiGenerationCancellable: AnyCancellable?
     private var eventPresentationCancellable: AnyCancellable?
+    private var workspaceDeletionCancellable: AnyCancellable?
     private var soundScopeSelectionCancellable: AnyCancellable?
     private var integrationsSelectionCancellable: AnyCancellable?
 
@@ -196,8 +207,23 @@ package final class SettingsPresentationSession: ObservableObject {
                             aiSession: self.dependencies.aiCueViewModel.session,
                             candidateGenerationID: self.dependencies.aiCueViewModel.generation?.id)
                     }
+                    if !self.isPerformingTransaction,
+                        self.lifecycleDestination == .eventsAndSounds,
+                        let current = self.navigationHistory.current
+                    {
+                        self.navigationHistory.replaceCurrent(
+                            SettingsLocation(
+                                route: self.routeResolution.route,
+                                workspaceRoute: presentation.route,
+                                viewedPackID: current.location.viewedPackID))
+                    }
                     self.publishProjection()
                 }
+            }
+        workspaceDeletionCancellable = eventSettingsSelection.$deletionPresentation
+            .dropFirst()
+            .sink { [weak self] deletion in
+                MainActor.assumeIsolated { self?.synchronizeWorkspaceDeletion(deletion) }
             }
         let soundScopeSelection = dependencies.eventSettingsModel.soundScopeSelection
         let initialSoundScopeProjection = soundScopeSelection.projection
@@ -235,8 +261,70 @@ package final class SettingsPresentationSession: ObservableObject {
             return present(request)
         case .route(let route):
             return routeTransaction(.route(route))
+        case .selectSidebar(let destination):
+            return routeTransaction(.route(.destination(destination)), focus: .sidebar)
+        case .navigateWorkspace(let route):
+            return routeTransaction(.eventShortcut(route))
+        case .goBack, .goBackFromEventAnimation:
+            return traverseHistory(by: -1)
+        case .goForward, .goForwardToEventAnimation:
+            return traverseHistory(by: 1)
+        case .setNavigationBlocked(let id, let blocked):
+            if blocked {
+                rememberCurrentReadingPosition()
+                modalNavigationBlockers.insert(id)
+            } else {
+                modalNavigationBlockers.remove(id)
+                if let current = navigationHistory.current, let stamp = navigationHistory.stamp {
+                    navigationRestoration = SettingsNavigationRestoration(
+                        stamp: stamp,
+                        location: current.location, bookmark: current.bookmark, focus: .restore)
+                }
+            }
+            publishProjection()
+            return .routed
+        case .rememberReading(let bookmark, let stamp):
+            navigationHistory.updateBookmark(bookmark, stamp: stamp)
+            return .routed
+        case .destinationReady(let stamp):
+            guard navigationHistory.stamp == stamp, navigationRestoration?.stamp == stamp
+            else { return .unchanged }
+            renderedNavigationStamp = stamp
+            publishProjection()
+            return .routed
+        case .acknowledgeRestoration(let stamp):
+            guard navigationRestoration?.stamp == stamp, navigationHistory.stamp == stamp
+            else { return .unchanged }
+            navigationRestoration = nil
+            publishProjection()
+            return .routed
+        case .restoreFailureFocus(let stamp):
+            guard navigationHistory.stamp == stamp, renderedNavigationStamp == stamp,
+                navigationRestoration?.stamp == stamp, routeResolution.failure != nil,
+                windowPhase == .key, navigationEnabled
+            else { return .unchanged }
+            let revision = destinationFocusRequests.requestFocus(
+                .routeFailure(routeResolution.destination))
+            focusDebt = SettingsFocusDebt(
+                revision: revision, destination: routeResolution.destination)
+            publishProjection()
+            return .routed
         case .requestSoundsDetail(let destination):
             return requestSoundsDetail(destination)
+        case .inspectSoundPack(let packID):
+            guard lifecycleDestination == .sounds, routeResolution.failure == nil,
+                availability.soundPackIDs.contains(packID)
+            else { return .unchanged }
+            let scope: PanelSoundScopeID
+            let target: WorkspaceSoundWriteTarget?
+            if case .sounds(let route) = routeResolution.route {
+                scope = route.scope; target = route.workspaceTarget
+            } else {
+                scope = .global; target = nil
+            }
+            return routeTransaction(
+                .route(.sounds(.overview(scope: scope, workspaceTarget: target))),
+                inspecting: packID)
         case .setLanguageMode(let languageMode):
             dependencies.preferences.setLanguageMode(languageMode)
             return .routed
@@ -284,28 +372,13 @@ package final class SettingsPresentationSession: ObservableObject {
 
     @discardableResult
     package func returnToSoundScope() -> SettingsPresentationResult {
-        guard let context = soundReturnContext else { return .unchanged }
+        guard navigationEnabled, let context = soundReturnContext else { return .unchanged }
         soundReturnContext = nil
         let route = context.route
-        dependencies.eventSettingsModel.reloadConfigForPinnedRoute()
-        guard
-            route.workspaceTargetIsCurrent(
-                in: dependencies.eventSettingsModel.configState.resolvedConfig),
-            availability.eventScopes.contains(route.scope)
-        else {
-            if let lifecycleDestination { deactivate(lifecycleDestination) }
-            lifecycleDestination = nil
-            activeDestination = .eventsAndSounds
-            eventSettingsSelection.select(route)
-            eventSettingsSelection.markCurrentScopeUnavailable()
-            routeResolution = SettingsRouteResolution(
-                route: .events(scope: route.scope, event: route.event),
-                failure: .staleSoundScope(route.scope))
-            publishProjection()
-            return .rejected(.staleSoundScope(route.scope))
-        }
         let result = send(.present(.eventShortcut(route)))
-        if let event = route.event { eventSettingsSelection.restoreSoundControlFocus(event) }
+        if state.routeResolution.failure == nil, let event = route.event {
+            eventSettingsSelection.restoreSoundControlFocus(event)
+        }
         return result
     }
 
@@ -321,8 +394,7 @@ package final class SettingsPresentationSession: ObservableObject {
         enqueueAnnouncement(.loginItemStatus(loginProjection.registration))
     }
 
-    /// The Sounds destination renders this session's published detail; every open/back click is
-    /// an intent against the retained arbitration, never a rewrite of the outer route.
+    /// Local detail disclosures enter the same typed history as sidebar and deep-link requests.
     private func requestSoundsDetail(
         _ destination: SoundPacksWindowRoute.Destination
     ) -> SettingsPresentationResult {
@@ -330,25 +402,42 @@ package final class SettingsPresentationSession: ObservableObject {
             case .sounds = dependencies.soundPacksEditorOwner.presentation.mode,
             !isArbitratingSoundsDetail
         else { return .unchanged }
-        var didChange = false
-        pumpSoundsDetailArbitration {
-            let effects = soundsDetailArbitration.requestDetail(
-                destination, publication: dependencies.soundPacksEditorOwner.presentation)
-            didChange = effects.detailChanged
-            return effects
+        let scope: PanelSoundScopeID
+        let target: WorkspaceSoundWriteTarget?
+        if case .sounds(let route) = routeResolution.route {
+            scope = route.scope
+            target = route.workspaceTarget
+        } else {
+            scope = .global
+            target = nil
         }
-        return didChange ? .routed : .unchanged
+        return routeTransaction(
+            .route(
+                .sounds(
+                    SoundPacksWindowRoute(
+                        scope: scope, destination: destination, workspaceTarget: target))))
     }
 
     private func applySoundEditorPublication(_ publication: SoundPacksEditorPresentation) {
-        guard lifecycleDestination == .sounds else { return }
+        guard lifecycleDestination == .sounds, case .sounds(let sounds) = publication.mode,
+            sounds.requestRevision == activeSoundsRequestRevision
+        else { return }
         if isArbitratingSoundsDetail {
             // Effect execution synchronously republishes the owner; fold that emission into the
             // running pass instead of recursing.
             pendingSoundEditorPublication = publication
             return
         }
-        pumpSoundsDetailArbitration { soundsDetailArbitration.consume(publication) }
+        pumpSoundsDetailArbitration {
+            soundsDetailArbitration.consume(publication, navigationStamp: navigationHistory.stamp)
+        }
+        if case .sounds(let sounds) = publication.mode, sounds.draft == nil,
+            sounds.routeState != .pendingFreshSnapshot, routeResolution.failure == nil,
+            let packID = soundsDetailArbitration.detail.capturedPackID ?? sounds.selectedPack?.id
+        {
+            lastViewedSoundPackID = packID
+            synchronizeCurrentBrowsingLocation(publication: sounds)
+        }
     }
 
     private func pumpSoundsDetailArbitration(
@@ -359,7 +448,11 @@ package final class SettingsPresentationSession: ObservableObject {
         runSoundsDetailEffects(firstPass())
         while let queued = pendingSoundEditorPublication {
             pendingSoundEditorPublication = nil
-            runSoundsDetailEffects(soundsDetailArbitration.consume(queued))
+            guard case .sounds(let sounds) = queued.mode,
+                sounds.requestRevision == activeSoundsRequestRevision
+            else { continue }
+            runSoundsDetailEffects(
+                soundsDetailArbitration.consume(queued, navigationStamp: navigationHistory.stamp))
         }
     }
 
@@ -413,10 +506,12 @@ package final class SettingsPresentationSession: ObservableObject {
     #endif
 
     private func present(_ request: SettingsPresentationRequest) -> SettingsPresentationResult {
+        guard navigationEnabled else { return .unchanged }
         let wasAlreadyPresented = isPresented
         if wasAlreadyPresented, request == .route(nil) {
             return .presented(wasAlreadyPresented: true)
         }
+        let previousStamp = navigationHistory.stamp
         isPresented = true
         let effectiveRequest: SettingsPresentationRequest
         if request == .route(nil) {
@@ -425,16 +520,22 @@ package final class SettingsPresentationSession: ObservableObject {
         } else {
             effectiveRequest = request
         }
-        let result = routeTransaction(effectiveRequest)
+        let result = routeTransaction(
+            effectiveRequest, focus: request == .route(nil) ? .sidebar : .content)
         if case .rejected = result {
+            if navigationHistory.stamp == previousStamp { isPresented = wasAlreadyPresented }
             return result
         }
         return .presented(wasAlreadyPresented: wasAlreadyPresented)
     }
 
     private func routeTransaction(
-        _ request: SettingsPresentationRequest
+        _ request: SettingsPresentationRequest,
+        focus: SettingsNavigationFocus = .content,
+        restoring entry: SettingsNavigationEntry? = nil,
+        inspecting viewedPackID: String? = nil
     ) -> SettingsPresentationResult {
+        guard navigationEnabled else { return .unchanged }
         let requestedRoute: SettingsRoute
         let eventShortcut: EventSettingsWindowRoute?
         switch request {
@@ -457,15 +558,32 @@ package final class SettingsPresentationSession: ObservableObject {
                     workspaceTarget: requested.workspaceTarget,
                     unavailableRequestedScopeStoredValue: requested.scope.storedValue)
             }
-            requestedRoute =
-                route.unavailableRequestedScopeStoredValue == nil
-                ? .events(scope: route.scope, event: route.event)
-                : .destination(.eventsAndSounds)
+            requestedRoute = .events(scope: route.scope, event: route.event)
             eventShortcut = route
         }
 
+        let candidate = makeRequestedLocation(requestedRoute, eventShortcut: eventShortcut)
+        let requestedLocation =
+            entry?.location
+            ?? SettingsLocation(
+                route: candidate.route,
+                workspaceRoute: candidate.workspaceRoute,
+                viewedPackID: viewedPackID ?? candidate.viewedPackID)
+        let resolved = requestedLocation.resolve(
+            availability: availability,
+            config: dependencies.eventSettingsModel.configState.resolvedConfig)
+        if let failure = resolved.failure {
+            switch failure {
+            case .invalidSurface, .invalidSoundPackID: return .rejected(failure)
+            default: break
+            }
+        }
+        if entry == nil { rememberCurrentReadingPosition() }
+        workspaceDeletionNavigation = nil
         if requestedRoute.destination != .sounds { soundReturnContext = nil }
-        let resolved = resolveSettingsRoute(requestedRoute, availability: availability)
+        if entry == nil { navigationHistory.visit(requestedLocation) }
+        renderedNavigationStamp = nil
+        soundsDetailArbitration.invalidateNavigationTransition()
         isPerformingTransaction = true
         defer {
             isPerformingTransaction = false
@@ -477,12 +595,27 @@ package final class SettingsPresentationSession: ObservableObject {
             routeResolution.route == .notifications(.eventAnimation)
             && requestedRoute == .destination(.notifications)
         routeResolution = resolved
+        navigationFocus = focus
         if resolved.failure != nil, resolved.destination == .sounds {
             // The destination view unmounts behind the failure explanation; drop its detail.
             soundsDetailArbitration.reset()
         }
         if resolved.failure == nil {
-            applyRoute(requestedRoute, eventShortcut: eventShortcut)
+            applyRoute(
+                requestedRoute, eventShortcut: requestedLocation.workspaceRoute ?? eventShortcut)
+        }
+        if let previousLifecycleDestination, resolved.failure != nil {
+            deactivate(previousLifecycleDestination)
+            lifecycleDestination = nil
+        }
+        if case .staleSoundScope = resolved.failure, let pinned = requestedLocation.workspaceRoute {
+            eventSettingsSelection.select(
+                EventSettingsWindowRoute(
+                    scope: pinned.scope, event: pinned.event,
+                    workspaceTarget: pinned.workspaceTarget,
+                    unavailableRequestedScopeStoredValue: pinned.scope.storedValue,
+                    detail: pinned.detail))
+            eventSettingsSelection.markCurrentScopeUnavailable(preservingDetail: true)
         }
         activeDestination = resolved.destination
         if case .notifications(.eventAnimation) = resolved.route, resolved.failure == nil {
@@ -500,14 +633,32 @@ package final class SettingsPresentationSession: ObservableObject {
             activate(
                 resolved.destination,
                 route: requestedRoute,
-                requestsFocus: true)
+                requestsFocus: focus == .content)
+            if let viewedPackID = requestedLocation.viewedPackID,
+                case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode,
+                sounds.draft == nil,
+                let action = sounds.packs.first(where: { $0.id == viewedPackID })?.inspectAction
+            {
+                _ = dependencies.soundPacksEditorOwner.send(.invoke(action))
+            }
         }
         explicitRouteRequestRevision &+= 1
-        let focusDebtRevision = destinationFocusRequests.requestFocus(
-            returnsToAnimationEntry ? .eventAnimationEntry : nil)
-        focusDebt = SettingsFocusDebt(
-            revision: focusDebtRevision,
-            destination: resolved.destination)
+        if focus == .sidebar || focus == .restore {
+            destinationFocusRequests.cancelPendingRequest()
+            integrationsFocusCoordinator.cancelPendingRequest()
+            eventSettingsSelection.cancelNavigationFocus()
+            focusDebt = nil
+        } else {
+            let focusDebtRevision = destinationFocusRequests.requestFocus(
+                returnsToAnimationEntry ? .eventAnimationEntry : nil)
+            focusDebt = SettingsFocusDebt(
+                revision: focusDebtRevision, destination: resolved.destination)
+        }
+        if let stamp = navigationHistory.stamp {
+            navigationRestoration = SettingsNavigationRestoration(
+                stamp: stamp, location: requestedLocation,
+                bookmark: entry?.bookmark ?? .init(), focus: focus)
+        }
         if resolved.failure == nil {
             dependencies.preferences.setLastSettingsDestination(resolved.destination)
         }
@@ -575,6 +726,15 @@ package final class SettingsPresentationSession: ObservableObject {
                 }
             }
         case .sounds(let soundRoute):
+            applySoundsRoute(soundRoute)
+        case .destination(.sounds):
+            applySoundsRoute(.overview)
+        case .destination, .notifications:
+            break
+        }
+    }
+
+    private func applySoundsRoute(_ soundRoute: SoundPacksWindowRoute) {
             let requestedTarget = soundRoute.editTarget
             let currentSession = dependencies.aiCueViewModel.session
             let sessionMatches: Bool = {
@@ -600,9 +760,41 @@ package final class SettingsPresentationSession: ObservableObject {
                     session: nil,
                     generation: nil)
             }
-        case .destination, .notifications:
-            break
+    }
+
+    private func synchronizeWorkspaceDeletion(_ deletion: WorkspaceDeletionPresentation) {
+        if let request = deletion.pending, let stamp = navigationHistory.stamp,
+            let target = navigationHistory.current?.location.workspaceRoute?.workspaceTarget,
+            target.id == request.target.id, target.directory == request.target.directory
+        {
+            workspaceDeletionNavigation = (request, stamp)
         }
+        guard case .succeeded(let target) = deletion.feedback,
+            let transaction = workspaceDeletionNavigation,
+            transaction.request.target == target,
+            navigationHistory.stamp == transaction.stamp,
+            isPresented
+        else { return }
+        workspaceDeletionNavigation = nil
+        // The writer already removed the captured rule. Convert only its current browsing
+        // entry; a navigation during the transaction revokes this presentation permission.
+        let route = EventSettingsWindowRoute(scope: .global)
+        routeResolution = resolveSettingsRoute(
+            .events(scope: .global, event: nil), availability: availability)
+        navigationHistory.replaceCurrent(
+            SettingsLocation(route: routeResolution.route, workspaceRoute: route),
+            matching: transaction.stamp)
+        lifecycleDestination = .eventsAndSounds
+        activateEventsEditor(
+            eventPresentation: eventPresentation,
+            aiSession: nil, candidateGenerationID: nil)
+        if let restoration = navigationRestoration, restoration.stamp == transaction.stamp {
+            navigationRestoration = SettingsNavigationRestoration(
+                stamp: restoration.stamp,
+                location: navigationHistory.current!.location, bookmark: .init(),
+                focus: restoration.focus)
+        }
+        publishProjection()
     }
 
     private func synchronizeIntegrationSelection(_ host: HostID?) {
@@ -618,6 +810,7 @@ package final class SettingsPresentationSession: ObservableObject {
         routeResolution = resolveSettingsRoute(
             .integrations(IntegrationsSettingsRoute(surface: host?.surfaceID ?? route.surface)),
             availability: availability)
+        navigationHistory.replaceCurrent(SettingsLocation(route: routeResolution.route))
         publishProjection()
     }
 
@@ -629,6 +822,14 @@ package final class SettingsPresentationSession: ObservableObject {
         // transactions, a shared selection change must reach the retained page immediately.
         // Use the publisher payload because @Published delivers it before its storage changes.
         guard !isPerformingTransaction else { return }
+        // A history failure is tied to its captured directory, including when the shared
+        // selection has since rebound the same UUID. Health publications cannot adopt it.
+        if routeResolution.failure != nil,
+            let captured = navigationHistory.current?.location.workspaceRoute?.workspaceTarget,
+            captured != projection.writeTarget
+        {
+            return
+        }
         let selectionChanged =
             previous.scope != projection.scope || previous.writeTarget != projection.writeTarget
         let retainedRoute = eventSettingsSelection.route
@@ -695,11 +896,12 @@ package final class SettingsPresentationSession: ObservableObject {
         case .sounds:
             let soundRoute: SoundPacksWindowRoute =
                 if case .sounds(let requested) = route { requested } else { .overview }
+            activeSoundsRequestRevision = explicitRouteRequestRevision + 1
             _ = dependencies.soundPacksEditorOwner.send(
                 .activate(
                     .sounds(
                         route: soundRoute,
-                        requestRevision: explicitRouteRequestRevision + (requestsFocus ? 1 : 0))))
+                        requestRevision: explicitRouteRequestRevision + 1)))
             dependencies.soundPacksEditorOwner.updateAICueComposer(
                 session: dependencies.aiCueViewModel.session,
                 generation: dependencies.aiCueViewModel.generation)
@@ -715,7 +917,9 @@ package final class SettingsPresentationSession: ObservableObject {
             integrationsFocusCoordinator.requestFocus(.agent(host))
         } else {
             dependencies.integrationsModel.restorePreferredHost()
-            integrationsFocusCoordinator.requestFocus(.title)
+            integrationsFocusCoordinator.requestFocus(
+                dependencies.integrationsModel.selectedHost.map(
+                    IntegrationDestinationFocusTarget.agent))
         }
     }
 
@@ -747,14 +951,16 @@ package final class SettingsPresentationSession: ObservableObject {
 
     private func deactivate(
         _ destination: SettingsDestination,
-        windowIsClosing: Bool = false
+        windowIsClosing: Bool = false,
+        preservingAcceptedDeletion: Bool = false
     ) {
         switch destination {
         case .integrations:
             dependencies.integrationsModel.noteWindowKeyState(false)
             dependencies.integrationsModel.noteWindowVisibility(false)
         case .eventsAndSounds:
-            eventSettingsSelection.leaveDestination()
+            eventSettingsSelection.leaveDestination(
+                preservingAcceptedDeletion: preservingAcceptedDeletion)
             dependencies.soundPacksEditorNativeEffects.handleLifecycle(
                 windowIsClosing ? .settingsWindowWillClose : .eventsViewDisappeared,
                 owner: dependencies.soundPacksEditorOwner)
@@ -763,6 +969,7 @@ package final class SettingsPresentationSession: ObservableObject {
                 session: nil,
                 generation: nil)
         case .sounds:
+            activeSoundsRequestRevision = nil
             eventSettingsSelection.leaveDestination()
             dependencies.soundPacksEditorNativeEffects.handleLifecycle(
                 windowIsClosing ? .settingsWindowWillClose : .soundsViewDisappeared,
@@ -809,8 +1016,15 @@ package final class SettingsPresentationSession: ObservableObject {
         isPerformingTransaction = true
         windowPhase = .closing
         animationPreview.deactivate()
+        navigationHistory.clear()
+        workspaceDeletionNavigation = nil
+        navigationRestoration = nil
+        renderedNavigationStamp = nil
+        modalNavigationBlockers.removeAll()
         if let lifecycleDestination {
             deactivate(lifecycleDestination, windowIsClosing: true)
+        } else if eventSettingsSelection.hasAcceptedDeletion {
+            eventSettingsSelection.leaveDestination()
         }
         soundReturnContext = nil
         activeDestination = nil
@@ -836,15 +1050,21 @@ package final class SettingsPresentationSession: ObservableObject {
     private func applyAvailability(_ replacement: SettingsRouteAvailability) {
         let priorAvailability = availability
         availability = replacement
-        guard priorAvailability != availability else {
+        guard
+            priorAvailability != availability
+                || navigationHistory.current?.location.workspaceRoute != nil
+                || routeResolution.destination == .sounds
+        else {
             synchronizePendingSoundPackAnnouncement()
             publishProjection()
             return
         }
         let previousResolution = routeResolution
-        let resolved = resolveSettingsRoute(
-            previousResolution.route,
-            availability: availability)
+        let location =
+            navigationHistory.current?.location ?? SettingsLocation(route: previousResolution.route)
+        let resolved = location.resolve(
+            availability: availability,
+            config: dependencies.eventSettingsModel.configState.resolvedConfig)
         guard resolved != previousResolution else {
             synchronizePendingSoundPackAnnouncement()
             publishProjection()
@@ -854,14 +1074,20 @@ package final class SettingsPresentationSession: ObservableObject {
         let wasPerformingTransaction = isPerformingTransaction
         isPerformingTransaction = true
         routeResolution = resolved
-        if previousResolution.failure == nil, resolved.failure != nil,
-            resolved.destination == .sounds
-        {
-            // The destination view unmounts behind the failure explanation; drop its detail.
-            soundsDetailArbitration.reset()
+        if previousResolution.failure == nil, resolved.failure != nil {
+            if let lifecycleDestination {
+                let preservesDeletion =
+                    eventSettingsSelection.hasAcceptedDeletion
+                    && workspaceDeletionNavigation?.stamp == navigationHistory.stamp
+                deactivate(lifecycleDestination, preservingAcceptedDeletion: preservesDeletion)
+            }
+            lifecycleDestination = nil
+            if location.workspaceRoute != nil {
+                eventSettingsSelection.markCurrentScopeUnavailable(preservingDetail: true)
+            }
         }
         if previousResolution.failure != nil, resolved.failure == nil, isPresented {
-            applyRoute(resolved.route, eventShortcut: nil)
+            applyRoute(resolved.route, eventShortcut: location.workspaceRoute)
             if let lifecycleDestination,
                 lifecycleDestination != resolved.destination
             {
@@ -975,6 +1201,10 @@ package final class SettingsPresentationSession: ObservableObject {
     private func makeState(presentationRevision: UInt64) -> SettingsPresentationState {
         Self.makeState(
             routeResolution: routeResolution,
+            canGoForwardToEventAnimation: navigationHistory.canGoForward,
+            chrome: chromeProjection,
+            navigationRestoration: navigationRestoration,
+            navigationFocus: navigationFocus,
             explicitRouteRequestRevision: explicitRouteRequestRevision,
             soundsDetail: soundsDetailArbitration.detail,
             focusDebt: focusDebt,
@@ -990,6 +1220,10 @@ package final class SettingsPresentationSession: ObservableObject {
 
     private static func makeState(
         routeResolution: SettingsRouteResolution,
+        canGoForwardToEventAnimation: Bool = false,
+        chrome: SettingsChromeProjection? = nil,
+        navigationRestoration: SettingsNavigationRestoration? = nil,
+        navigationFocus: SettingsNavigationFocus = .content,
         explicitRouteRequestRevision: UInt64,
         soundsDetail: SoundPacksSettingsDetail,
         focusDebt: SettingsFocusDebt?,
@@ -1004,6 +1238,15 @@ package final class SettingsPresentationSession: ObservableObject {
     ) -> SettingsPresentationState {
         SettingsPresentationState(
             routeResolution: routeResolution,
+            chrome: chrome
+                ?? SettingsChromeProjection(
+                    destination: routeResolution.destination,
+                    title: routeResolution.destination.localizedName(
+                        language: preferenceSnapshot.language),
+                    navigationEnabled: true, canGoBack: false, canGoForward: false),
+            navigationRestoration: navigationRestoration,
+            navigationFocus: navigationFocus,
+            canGoForwardToEventAnimation: canGoForwardToEventAnimation,
             explicitRouteRequestRevision: explicitRouteRequestRevision,
             soundsDetail: soundsDetail,
             focusDebt: focusDebt,
@@ -1016,5 +1259,172 @@ package final class SettingsPresentationSession: ObservableObject {
             platformActionFailure: platformActionFailure,
             pendingAnnouncement: pendingAnnouncement,
             presentationRevision: presentationRevision)
+    }
+}
+
+// Browsing remains in this session; native chrome only captures and consumes reading requests.
+extension SettingsPresentationSession {
+    private var navigationEnabled: Bool {
+        modalNavigationBlockers.isEmpty
+            && !eventPresentation.credentialSheetIsPresented
+            && eventSettingsSelection.deletionPresentation.pending == nil
+            && dependencies.integrationsModel.pendingConfirmation == nil
+            && dependencies.soundPacksEditorOwner.presentation.pendingConfirmation == nil
+    }
+
+    private func rememberCurrentReadingPosition() {
+        guard let stamp = navigationHistory.stamp, let bookmark = captureReadingPosition?() else {
+            return
+        }
+        navigationHistory.updateBookmark(bookmark, stamp: stamp)
+    }
+
+    private func makeRequestedLocation(
+        _ route: SettingsRoute, eventShortcut: EventSettingsWindowRoute?
+    ) -> SettingsLocation {
+        let config = dependencies.eventSettingsModel.configState.resolvedConfig
+        let workspaceRoute: EventSettingsWindowRoute?
+        switch route {
+        case .events(let scope, let event):
+            let target = scope.workspaceID.flatMap { id in
+                config.workspaceRules.first(where: { $0.id == id }).map(
+                    WorkspaceSoundWriteTarget.init(rule:))
+            }
+            if let shortcut = eventShortcut {
+                workspaceRoute = EventSettingsWindowRoute(
+                    scope: shortcut.scope, event: shortcut.event,
+                    workspaceTarget: shortcut.workspaceTarget ?? target,
+                    unavailableRequestedScopeStoredValue: shortcut
+                        .unavailableRequestedScopeStoredValue,
+                    detail: shortcut.detail)
+            } else {
+                workspaceRoute = EventSettingsWindowRoute(
+                    scope: scope, event: event, workspaceTarget: target)
+            }
+        case .destination(.eventsAndSounds):
+            workspaceRoute = EventSettingsWindowRoute(
+                scope: dependencies.eventSettingsModel.selectedSoundScope,
+                event: eventSettingsSelection.route.event,
+                workspaceTarget: dependencies.eventSettingsModel.selectedWorkspaceTarget)
+        default: workspaceRoute = nil
+        }
+        let viewedPackID: String?
+        if route.destination == .sounds {
+            if case .sounds(let requested) = route, let packID = requested.destinationPackID {
+                viewedPackID = packID
+            } else if let lastViewedSoundPackID,
+                !availability.soundPackSnapshotIsFresh
+                    || availability.soundPackIDs.contains(lastViewedSoundPackID)
+            {
+                viewedPackID = lastViewedSoundPackID
+            } else {
+                if case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode {
+                    viewedPackID = sounds.selectedPack?.id
+                } else {
+                    viewedPackID = nil
+                }
+            }
+        } else {
+            viewedPackID = nil
+        }
+        return SettingsLocation(
+            route: route, workspaceRoute: workspaceRoute, viewedPackID: viewedPackID)
+    }
+
+    private func traverseHistory(by delta: Int) -> SettingsPresentationResult {
+        guard navigationEnabled else { return .unchanged }
+        rememberCurrentReadingPosition()
+        guard let entry = navigationHistory.move(by: delta) else { return .unchanged }
+        let request: SettingsPresentationRequest =
+            entry.location.workspaceRoute.map {
+                .eventShortcut($0)
+            } ?? .route(entry.location.route)
+        return routeTransaction(request, focus: .restore, restoring: entry)
+    }
+
+    private func synchronizeCurrentBrowsingLocation(publication: SoundsEditorPresentation) {
+        guard let current = navigationHistory.current, current.location.destination == .sounds
+        else { return }
+        // Preserve a pending/stale identity; refresh fallback is not a browsing choice.
+        if let packID = current.location.viewedPackID,
+            !publication.packs.contains(where: { $0.id == packID })
+        {
+            return
+        }
+        let previous = current.location.route
+        let scope: PanelSoundScopeID
+        let target: WorkspaceSoundWriteTarget?
+        if case .sounds(let route) = previous {
+            scope = route.scope; target = route.workspaceTarget
+        } else {
+            scope = .global; target = nil
+        }
+        let destination: SoundPacksWindowRoute.Destination
+        switch soundsDetailArbitration.detail {
+        case .overview: destination = .overview
+        case .event(let packID, let event):
+            if case .sounds(let route) = previous, route.isCopyAndApply,
+                route.destinationPackID == packID
+            {
+                destination = .copyAndApply(packID: packID, event: event)
+            } else {
+                destination = .editEvent(packID: packID, event: event)
+            }
+        case .audio(let packID): destination = .audio(packID: packID)
+        case .service: destination = .service
+        case .panel: destination = .panel
+        }
+        let route: SettingsRoute = .sounds(
+            SoundPacksWindowRoute(scope: scope, destination: destination, workspaceTarget: target))
+        // Generic roots keep their compatibility route; detail routes follow visible identity.
+        if case .sounds = routeResolution.route {
+            routeResolution = .init(route: route, failure: nil)
+        }
+        navigationHistory.replaceCurrent(
+            SettingsLocation(
+                route: routeResolution.route,
+                viewedPackID: soundsDetailArbitration.detail.capturedPackID
+                    ?? publication.selectedPack?.id))
+        publishProjection()
+    }
+
+    private var chromeProjection: SettingsChromeProjection {
+        let l10n = ClaudioL10n(language: preferenceSnapshot.language)
+        var title = routeResolution.destination.localizedName(language: preferenceSnapshot.language)
+        switch routeResolution.destination {
+        case .notifications:
+            if routeResolution.route == .notifications(.eventAnimation) {
+                title = l10n.text(.eventAnimationTitle)
+            }
+        case .sounds:
+            switch soundsDetailArbitration.detail {
+            case .overview: break
+            case .event(_, let event):
+                title = localizedEventName(event, language: preferenceSnapshot.language)
+            case .audio: title = l10n.text(.settingsNativeAudioFiles)
+            case .service: title = l10n.text(.settingsNativeAIServices)
+            case .panel: title = l10n.text(.settingsNativePanelDisplaySet)
+            }
+        case .integrations:
+            if case .integrations(let route) = routeResolution.route, let host = route.detailsHost {
+                title = host.displayName
+            }
+        case .eventsAndSounds:
+            switch eventPresentation.route.detail {
+            case .configuration: break
+            case .workspaces: title = l10n.text(.settingsNativeWorkspaces)
+            case .scope(let target):
+                title =
+                    dependencies.eventSettingsModel.workspaceRules.first(where: {
+                        $0.id == target.id
+                    })?.name ?? l10n.text(.workspaceUnavailable)
+            }
+        default: break
+        }
+        return SettingsChromeProjection(
+            destination: routeResolution.destination, title: title,
+            navigationEnabled: navigationEnabled,
+            canGoBack: navigationEnabled && navigationHistory.canGoBack,
+            canGoForward: navigationEnabled && navigationHistory.canGoForward)
     }
 }

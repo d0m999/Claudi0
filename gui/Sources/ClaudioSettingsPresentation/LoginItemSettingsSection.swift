@@ -34,8 +34,10 @@ struct LoginItemSettingsSection: View {
                         .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }.frame(maxWidth: .infinity, alignment: .leading)
-                Toggle(l10n.text(.settingsGeneralLoginItem.toggle), isOn: enabledBinding)
-                    .labelsHidden().toggleStyle(.switch)
+                SettingsNativeSwitch(
+                    l10n.text(.settingsGeneralLoginItem.toggle), isOn: enabledBinding,
+                    identifier: SettingsPresentationAccessibilityID.loginItemToggle
+                )
                     .disabled(!session.state.loginItemRegistration.canToggle)
                     .accessibilityHint(l10n.text(.settingsGeneralLoginItem.hint))
                     .accessibilityValue(loginItemStatusText)

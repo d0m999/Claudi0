@@ -1,5 +1,7 @@
 # claudi0 · macOS 设置：来源与验证索引
 
+**2026-10-04 现行对齐规格**见 [Native Settings Alignment Prototype.html](<Native Settings Alignment Prototype.html>)、[DESIGN.md](../../DESIGN.md) 的「系统原生外壳与窗口期历史」及 [ADR 0008](../../docs/adr/0008-use-one-retained-unified-settings-window.md)。该轮采用系统 toolbar、source-list 与语义表面，增加窗口期最多 64 个浏览位置的统一历史；section/group 间距为 20/12，普通/多行最低行高为 38/51。下面 2026-10-01/02 的固定颜色、58 pt 页头、旧间距及没有通用历史的说明仅属于历史基线，冲突部分由现行规格覆盖。验证结果见 [本轮实现记录](../../docs/validation/macos-native-settings-alignment-2026-10-04.md)。
+
 2026-10-01 为八页原型设计、能力盘点与浏览器验证日期；该阶段只修改独立 HTML、配套说明与浏览器回归。2026-10-02 已将该原型固定为 #215 的设置呈现基线，见 [DESIGN.md 的现行八页设置章节](../../DESIGN.md) 与 [八页迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。设置基线的采用、原生实现和验证结果分别记录，不由其中一项推定全部完成。
 
 历史源码盘点基线为 `7ca63a4af0497b74b53e89225ccf4de30d900c12`；修订前 HTML SHA-256 为 `0986119bc2d289f6a77abd7e503fca9222cbf26a6eeb1019e39ecde04afc8951`。下方浏览器结果绑定修订后的指纹，旧版通过记录不能作为修订版证据。
@@ -10,6 +12,7 @@
 
 | 来源 | 拥有的事实与适用范围 |
 | --- | --- |
+| [原生对齐原型](<Native Settings Alignment Prototype.html>) 与 [本轮实现记录](../../docs/validation/macos-native-settings-alignment-2026-10-04.md) | 2026-10-04 的八页、代表性详情、跨页历史、失效位置、阅读恢复及动画选择演示。HTML 仅模拟系统外壳；生产控件由 AppKit 绘制，原生验收与原型演示分别记录。 |
 | [DESIGN.md](../../DESIGN.md) 与 [#215 迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md) | 已固定的八页设置呈现合同、领域边界及验收要求。设置基线 HTML 为本目录的 `claudi0 macOS Settings Prototype.html`，指纹 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。 |
 | [整合原型](<../panel-and-settings/Panel and Settings Prototype.html>) | 菜单栏、面板和横幅的呈现基线；其中旧设置部分已由 #215 取代。 |
 | [#216 事件动画规格](../../plan/PLAN-EVENT-ANIMATION.md) 与 Pixel Motion Prototype（工作树待提交：`designs/pixel-motion/Pixel Motion Prototype.html`） | 后续授权的动画增量；角色画面、时序、循环与静态帧由 Pixel 原型拥有，指纹 `d2b3cf0e8440785149a803e6927e72171bceb30892afdd218d31da2bd21529c4`。新增通知详情及动画偏好不属于旧 C01–C48 的浏览器覆盖。 |
@@ -20,6 +23,8 @@
 | [当前 SoT 与实现对齐记录](../../docs/validation/sot-implementation-alignment-2026-10-02.md) | 本次源码／原型差异、当前验证边界及待修复项。当前原生现场观察因工具超时为 `BLOCKED`；历史原生通过项不能直接作为 #216 工作树的验收。 |
 
 ## 打开与重现
+
+当前对齐原型可直接离线打开 `Native Settings Alignment Prototype.html`；支持下方 `page/theme/size/lang/scene/clean` 参数。后文浏览器脚本和固定 `VERIFICATION.json` 仍绑定旧基线文件，不能把其通过结果作为当前原型或原生外壳的证据。
 
 双击 [`claudi0 macOS Settings Prototype.html`](<claudi0 macOS Settings Prototype.html>) 即可离线预览，也可从仓库根目录打开：
 

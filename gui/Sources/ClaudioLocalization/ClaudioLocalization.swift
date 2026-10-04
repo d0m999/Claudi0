@@ -1380,6 +1380,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
 
     package static let settingsNativeLocalNotice: Self = "settings.native.local-notice"
     package static let settingsNativeBack: Self = "settings.native.back"
+    package static let settingsNavigationBack: Self = "settings.navigation.back"
+    package static let settingsNavigationForward: Self = "settings.navigation.forward"
     package static let settingsNativeAudioFiles: Self = "settings.native.audio-files"
     package static let settingsNativeAIServices: Self = "settings.native.ai-services"
     package static let settingsNativePanelDisplaySet: Self = "settings.native.panel-display-set"
@@ -1506,6 +1508,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
 
         .settingsNativeLocalNotice,
         .settingsNativeBack,
+        .settingsNavigationBack,
+        .settingsNavigationForward,
         .settingsNativeAudioFiles,
         .settingsNativeAIServices,
         .settingsNativePanelDisplaySet,

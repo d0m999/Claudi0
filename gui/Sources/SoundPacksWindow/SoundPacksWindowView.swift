@@ -15,6 +15,7 @@ package struct SoundPacksEditorSupplement {
     package var serviceSummary: AnyView = AnyView(EmptyView())
     package var onLeaveEvent: @MainActor () -> Void = {}
     package var returnToScope: (@MainActor () -> Void)? = nil
+    package var onInspectPack: (@MainActor (String) -> Void)? = nil
     package let sidebarHeader: AnyView
     package let auxiliary: AnyView
     package let detailHeader: AnyView
@@ -62,6 +63,7 @@ package struct SoundPacksEditorSupplement {
 /// Every disk/config mutation stays behind `SoundPacksEditorOwner`.
 @MainActor
 public struct EmbeddedSoundPacksEditorView: View {
+    @Environment(\.settingsSuppressesAutomaticContentFocus) private var suppressesContentFocus
     @ObservedObject private var editorOwner: SoundPacksEditorOwner
     private let route: SoundPacksWindowRoute
     private let routeRequestRevision: UInt64
@@ -116,7 +118,8 @@ public struct EmbeddedSoundPacksEditorView: View {
     }
 
     private func applyFocusFromPresentation(requestsInitialFocus: Bool) {
-        guard case .sounds(let sounds) = editorOwner.presentation.mode else { return }
+        guard !suppressesContentFocus, case .sounds(let sounds) = editorOwner.presentation.mode
+        else { return }
         let projection = SoundPacksEditorFocusProjection(
             requestRevision: sounds.requestRevision,
             routeState: sounds.routeState,
@@ -292,36 +295,15 @@ private struct SoundPacksWindowContentView: View {
     var body: some View {
         AnyView(
             VStack(spacing: 0) {
-                SettingsPageHeader {
-                    if detail != .overview {
-                        Button {
-                            leaveDetail()
-                        } label: {
-                            Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
-                        }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(l10n.text(.settingsNativeBack))
-                        .accessibilityIdentifier("sound-packs.detail.back")
-                        Text(detailTitle)
-                            .accessibilityAddTraits(.isHeader)
-                            .focusable()
-                            .focused($detailTitleFocused)
-                            .accessibilityIdentifier("sound-packs.detail.title")
-                    } else {
-                        supplement.pageHeader
-                    }
-                    Spacer(minLength: 8)
-                    if let returnToScope = supplement.returnToScope {
-                        Button(l10n.text(.settingsReturnToSoundScope), action: returnToScope)
-                            .font(SettingsAppearance.font(.secondary))
-                            .accessibilityLabel(l10n.text(.settingsReturnToSoundScope))
-                            .accessibilityIdentifier("settings.sounds.return-to-scope")
-                    }
-                }
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
+                            if let returnToScope = supplement.returnToScope {
+                                Button(
+                                    l10n.text(.settingsReturnToSoundScope), action: returnToScope
+                                )
+                                .accessibilityIdentifier("settings.sounds.return-to-scope")
+                            }
                             libraryStatusBar
                             importResultRegion
                             if nativeEffects.previewFailed {
@@ -341,9 +323,7 @@ private struct SoundPacksWindowContentView: View {
                     .soundPacksLayoutProbe("sound-packs.detail-scroll")
                     .onChange(of: detail) { newDetail in
                         proxy.scrollTo("detail-top", anchor: .top)
-                        detailTitleFocused =
-                            newDetail != .overview
-                            && newDetail.targetIsAvailable(in: activeSounds)
+                        detailTitleFocused = false
                     }
                     .onChange(of: handledFocusRequestRevision) { _ in
                         proxy.scrollTo("detail-top", anchor: .top)
@@ -652,14 +632,20 @@ private struct SoundPacksWindowContentView: View {
 
     private var packSelector: some View {
         SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
-            Picker(l10n.text(.panelSoundPackLabel), selection: selection) {
-                Text(l10n.text(.soundPacksSidebarNone)).tag(Optional<String>.none)
-                ForEach(activeSounds.packs) { card in
-                    Text(SelectedPackMetadata(id: card.id, name: card.name).displayName)
-                        .accessibilityLabel(packAccessibilityLabel(card))
-                        .tag(Optional(card.id))
-                }
-            }
+            SettingsNativePopUp(
+                l10n.text(.panelSoundPackLabel), selection: selection,
+                options: [
+                    SettingsMenuOption(
+                        Optional<String>.none, l10n.text(.soundPacksSidebarNone), isEnabled: false)
+                ]
+                    + activeSounds.packs.map {
+                        SettingsMenuOption(
+                            Optional($0.id),
+                            SelectedPackMetadata(id: $0.id, name: $0.name).displayName,
+                            accessibilityLabel: packAccessibilityLabel($0))
+                    }, identifier: "sound-packs.pack-list"
+            )
+            .fixedSize(horizontal: true, vertical: false)
             .focused($focusedTarget, equals: .packList)
             .disabled(activeSounds.packs.isEmpty)
             .accessibilityIdentifier("sound-packs.pack-list")
@@ -1801,7 +1787,11 @@ private struct SoundPacksWindowContentView: View {
         Binding(
             get: { activeSounds.selectedPack?.id },
             set: { newValue in
-                invoke(activeSounds.packs.first(where: { $0.id == newValue })?.inspectAction)
+                if let newValue, let onInspect = supplement.onInspectPack {
+                    onInspect(newValue)
+                } else {
+                    invoke(activeSounds.packs.first(where: { $0.id == newValue })?.inspectAction)
+                }
             })
     }
 

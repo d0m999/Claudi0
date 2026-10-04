@@ -109,7 +109,8 @@ func runSettingsPresentationTargetSuites() {
         }
         let code = scanned.codeWithoutStringLiterals
         expect(
-            code.contains("ForEach(scopes)") && code.contains("set: selectScope")
+            code.contains("scopes.map") && code.contains("SettingsNativePopUp(")
+                && code.contains("set: selectScope")
                 && code.contains("model.selectSoundScope(scope, rebindSelectedWorkspace: true)")
                 && !code.contains("hostSourceProductGroups"), "声音选择器必须由默认组与工作区组成，不再按 Product 分类")
     }

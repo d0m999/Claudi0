@@ -21,15 +21,35 @@ extension EnvironmentValues {
 struct SettingsSectionCard: View {
     private let content: AnyView
     private let padding: CGFloat
+    private let title: String?
+    private let description: String?
 
-    init<Content: View>(padding: CGFloat = 16, @ViewBuilder content: () -> Content) {
+    init<Content: View>(
+        title: String? = nil, description: String? = nil,
+        padding: CGFloat = 16, @ViewBuilder content: () -> Content
+    ) {
         self.padding = padding
+        self.title = title
+        self.description = description
         self.content = AnyView(content())
     }
 
     var body: some View {
-        content
-            .modifier(SettingsSectionSurface(padding: padding))
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title).font(SettingsAppearance.font(.sectionTitle))
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            }
+            if let description {
+                Text(description).font(SettingsAppearance.font(.secondary)).foregroundStyle(
+                    .secondary
+                )
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+            }
+            content.modifier(SettingsSectionSurface(padding: padding))
+        }
     }
 }
 

@@ -6,7 +6,6 @@ import SwiftUI
 
 @MainActor
 struct EventAnimationSettingsView: View {
-    private let session: SettingsPresentationSession
     @ObservedObject private var preferences: ClaudioPreferences
     @ObservedObject private var preview: EventAnimationPreviewSession
     @ObservedObject private var resources: EventAnimationResources
@@ -14,7 +13,6 @@ struct EventAnimationSettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(session: SettingsPresentationSession) {
-        self.session = session
         _preferences = ObservedObject(wrappedValue: session.dependencies.preferences)
         _preview = ObservedObject(wrappedValue: session.animationPreview)
         _resources = ObservedObject(wrappedValue: session.dependencies.eventAnimations)
@@ -26,79 +24,36 @@ struct EventAnimationSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            EventAnimationActionButton(
-                title: l10n.text(.eventAnimationBack), identifier: "settings.animation.back",
-                requestsFocus: true,
-                action: {
-                    session.send(.route(.destination(.notifications)))
-                }
-            ) {
-                Label(l10n.text(.eventAnimationBack), systemImage: "chevron.left").font(
-                    .system(size: 13))
-            }
-            .frame(width: 180, height: 22, alignment: .leading)
             Text(l10n.text(.eventAnimationDescription)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(EventAnimationStyle.allCases) { style in
-                    EventAnimationActionButton(
-                        title: l10n.text(style.localizationKey),
-                        identifier: "settings.animation.style.\(style.rawValue)",
-                        value: l10n.text(
-                            selected.style == style
-                                ? .eventAnimationSelected : .eventAnimationUnselected),
-                        selected: selected.style == style,
-                        action: {
-                            preferences.selectEventAnimationStyle(style)
-                        }
-                    ) {
-                        VStack(spacing: 8) {
-                            EventAnimationView(
-                                resources: resources,
-                                preferences: EventAnimationPreferences(style: style),
-                                event: .notification, action: "idle", reading: preview.reading,
-                                isVisible: false, size: 64)
-                            Text(l10n.text(style.localizationKey)).font(.system(size: 13))
-                                .multilineTextAlignment(.center).lineLimit(2)
-                                .frame(height: 34)
-                            Image(
-                                systemName: selected.style == style
-                                    ? "checkmark.circle.fill" : "circle"
-                            )
-                            .foregroundStyle(
-                                selected.style == style ? Color.accentColor : Color.secondary
-                            )
-                            .accessibilityHidden(true)
-                        }
-                        .padding(12).frame(maxWidth: .infinity)
-                        .background(SettingsAppearance.cardSurface(colorScheme))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10).stroke(
-                                selected.style == style
-                                    ? Color.accentColor : SettingsAppearance.hairline(colorScheme),
-                                lineWidth: selected.style == style ? 2 : 1))
-                    }
-                    .frame(maxWidth: .infinity).frame(height: 153)
-                    .soundPacksLayoutProbe("settings.animation.style.\(style.rawValue)")
-                }
-            }
+            EventAnimationGallery(
+                title: l10n.text(.eventAnimationTitle), selected: selected.style,
+                label: { AnyView(styleLabel($0)) }, name: { l10n.text($0.localizationKey) },
+                select: { preferences.selectEventAnimationStyle($0) }
+            )
+            .frame(height: 153)
             .soundPacksLayoutProbe("settings.animation.choices")
             previewSection
             if selected.style != .original {
-                SettingsSectionCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        EventAnimationSwitch(
-                            title: l10n.text(.eventAnimationShowCharacter),
-                            identifier: "settings.animation.show-character", isOn: characterBinding
-                        )
-                        .frame(maxWidth: .infinity).frame(height: 24)
+                SettingsSectionCard(padding: 0) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsControlRow(title: l10n.text(.eventAnimationShowCharacter)) {
+                            SettingsNativeSwitch(
+                                l10n.text(.eventAnimationShowCharacter), isOn: characterBinding,
+                                identifier: "settings.animation.show-character"
+                            )
+                            .accessibilityIdentifier("settings.animation.show-character")
+                        }
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                         Divider()
-                        EventAnimationSwitch(
-                            title: l10n.text(.eventAnimationStaticExpression),
-                            identifier: "settings.animation.static-expression", isOn: staticBinding
-                        )
-                        .frame(maxWidth: .infinity).frame(height: 24)
+                        SettingsControlRow(title: l10n.text(.eventAnimationStaticExpression)) {
+                            SettingsNativeSwitch(
+                                l10n.text(.eventAnimationStaticExpression), isOn: staticBinding,
+                                identifier: "settings.animation.static-expression"
+                            )
+                            .accessibilityIdentifier("settings.animation.static-expression")
+                        }
+                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                         if reduceMotion {
                             Text(l10n.text(.eventAnimationSystemReducedMotion)).font(.caption)
                                 .foregroundStyle(.secondary)
@@ -136,9 +91,39 @@ struct EventAnimationSettingsView: View {
         .onDisappear { preview.deactivate() }
     }
 
+    private func styleLabel(_ style: EventAnimationStyle) -> some View {
+        VStack(spacing: 8) {
+            EventAnimationView(
+                resources: resources,
+                preferences: EventAnimationPreferences(style: style),
+                event: .notification, action: "idle", reading: preview.reading,
+                isVisible: false, size: 64)
+            Text(l10n.text(style.localizationKey)).font(.system(size: 13))
+                .multilineTextAlignment(.center).lineLimit(2)
+                .frame(height: 34)
+            Image(
+                systemName: selected.style == style
+                    ? "checkmark.circle.fill" : "circle"
+            )
+            .foregroundStyle(
+                selected.style == style ? Color.accentColor : Color.secondary
+            )
+            .accessibilityHidden(true)
+        }
+        .padding(12).frame(maxWidth: .infinity)
+        .background(SettingsNativeSurface(.group))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10).stroke(
+                selected.style == style
+                    ? Color.accentColor : SettingsAppearance.hairline(colorScheme),
+                lineWidth: selected.style == style ? 2 : 1))
+    }
+
     private var previewSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.eventAnimationPreview)).font(.headline).accessibilityAddTraits(
+            Text(l10n.text(.eventAnimationPreview)).font(SettingsAppearance.font(.sectionTitle))
+                .accessibilityAddTraits(
                 .isHeader)
             EventNoticeBannerContent(
                 event: preview.event,
@@ -167,24 +152,17 @@ struct EventAnimationSettingsView: View {
             .frame(maxWidth: .infinity)
             .accessibilityIdentifier("settings.animation.banner-preview")
             .soundPacksLayoutProbe("settings.animation.banner-preview")
-            HStack(spacing: 8) {
-                ForEach(Event.allCases, id: \.self) { event in
-                    SettingsFocusableButton(
-                        localizedEventName(event, language: preferences.language),
-                        requestsFocus: false
-                    ) {
-                        preview.select(event)
-                    }
-                    .tint(preview.event == event ? .accentColor : .secondary)
-                    .accessibilityValue(
-                        l10n.text(
-                            preview.event == event
-                                ? .eventAnimationSelected : .eventAnimationUnselected)
-                    )
-                    .accessibilityIdentifier("settings.animation.event.\(event.manifestKey)")
-                    .soundPacksLayoutProbe("settings.animation.event.\(event.manifestKey)")
-                }
-            }
+            SettingsNativeSelectionControl(
+                title: l10n.text(.eventAnimationPreview),
+                selection: Binding(get: { preview.event }, set: { preview.select($0) }),
+                options: Event.allCases.map {
+                    SettingsMenuOption(
+                        $0,
+                        localizedEventName($0, language: preferences.language))
+                }, identifier: "settings.animation.event-selection"
+            )
+            .accessibilityIdentifier("settings.animation.event-selection")
+            .frame(height: 28)
             HStack {
                 Text(l10n.text(.eventAnimationPreviewIsolation)).font(.caption).foregroundStyle(
                     .secondary

@@ -176,6 +176,8 @@ func runWorkspaceDeletionPresentationSuites() {
             expect(selection.requestDeletion(of: rule), "request captures the deep-linked rule")
             let request = selection.deletionPresentation.pending!
             expect(selection.consumeDeletion(request), "confirmation consumes exactly once")
+            let entry = fixture.session.navigationHistory.current?.id
+            let count = fixture.session.navigationHistory.entries.count
             let succeeded = model.changeWorkspace(.remove(request.target))
             expect(succeeded, "the normal config writer must remove the requested rule")
             let selectedDefault = selection.finishDeletion(
@@ -193,6 +195,47 @@ func runWorkspaceDeletionPresentationSuites() {
                 fixture.session.state.routeResolution.failure == nil
                     && selection.route.scope == .global,
                 "later config readback must keep the successful Default Group destination")
+            expect(
+                fixture.session.navigationHistory.current?.id == entry
+                    && fixture.session.navigationHistory.entries.count == count
+                    && fixture.session.navigationHistory.current?.location.workspaceRoute?.scope
+                        == .global,
+                "accepted deletion converts its entry without adding a new visit")
+        }
+    }
+
+    suite("workspace delete session: a late accepted result cannot reclaim another page") {
+        withTempDirectory { root in
+            let rule = deletionPresentationRule()
+            let file = root.appendingPathComponent("config.json")
+            try! JSONEncoder().encode(deletionPresentationConfig(rule: rule)).write(to: file)
+            let model = PanelConfigController(
+                configFile: file,
+                lockFile: root.appendingPathComponent("config.lock"),
+                environment: makeAudioImportEnvironment(
+                    userPacksDirectory: root.appendingPathComponent("packs")))
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .events(scope: .workspace(rule.id), event: .stop),
+                workspaceRules: [rule], eventSettingsModel: model)
+            let selection = fixture.eventSettingsSelection
+            expect(selection.requestDeletion(of: rule), "capture the original deletion")
+            guard let request = selection.deletionPresentation.pending else { return }
+            expect(
+                selection.consumeDeletion(request),
+                "the existing writer receives an accepted target")
+            fixture.session.send(.selectSidebar(.general))
+            let stamp = fixture.session.navigationHistory.stamp
+            let succeeded = model.changeWorkspace(.remove(request.target))
+            let selectedDefault = selection.finishDeletion(
+                request, succeeded: succeeded,
+                error: model.workspaceError, configState: model.configState)
+            expect(
+                succeeded && model.configState.resolvedConfig.workspaceRules.isEmpty,
+                "the accepted disk transaction still settles through its owner")
+            expect(
+                !selectedDefault && fixture.session.state.chrome.destination == .general
+                    && fixture.session.navigationHistory.stamp == stamp,
+                "its late result cannot convert or refocus the newer browsing entry")
         }
     }
 

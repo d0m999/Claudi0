@@ -8,7 +8,7 @@ import SwiftUI
 
 /// Unified Settings navigation shell shared by production and the compiled harness.
 @MainActor
-package struct SettingsRootView: View {
+package struct SettingsDestinationContentView: View {
     @ObservedObject var preferences: ClaudioPreferences
     @ObservedObject var dynamicQuietPolicy: DynamicQuietPolicyController
     @ObservedObject var settingsPresentationSession: SettingsPresentationSession
@@ -65,56 +65,33 @@ package struct SettingsRootView: View {
     }
 
     package var body: some View {
-        GeometryReader { geometry in
-            HStack(spacing: 0) {
-                sidebar
-                    .frame(
-                        width: CGFloat(settingsSidebarWidth(windowWidth: geometry.size.width)),
-                        height: geometry.size.height,
-                        alignment: .top
-                    )
-                    .background(SettingsAppearance.sidebar(colorScheme))
-                    .soundPacksLayoutProbe("settings.sidebar")
-                Rectangle()
-                    .fill(SettingsAppearance.hairline(colorScheme))
-                    .frame(width: ClaudioTheme.Metrics.hairline)
-                    .accessibilityHidden(true)
-                routeSlot
-                    .settingsContentFocusSection()
-                    .frame(
-                        maxWidth: .infinity,
-                        maxHeight: geometry.size.height,
-                        alignment: .topLeading
-                    )
-                    .background(SettingsAppearance.background(colorScheme))
-                    .soundPacksLayoutProbe("settings.content")
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+        routeSlot
             .environment(
-                \.settingsUsesCompactLayout,
-                geometry.size.width <= SettingsWindowGeometry.compactSidebarWindowThreshold)
-        }
-        .frame(
-            minWidth: SettingsWindowGeometry.minimumWidth,
-            minHeight: SettingsWindowGeometry.minimumHeight
-        )
-        .background(SettingsAppearance.background(colorScheme))
-        .tint(SettingsAppearance.accent(colorScheme))
-        .font(SettingsAppearance.font(.body))
-        .foregroundStyle(SettingsAppearance.text(colorScheme))
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(l10n.text(.settingsWindowTitle))
-        .accessibilityIdentifier(SettingsPresentationAccessibilityID.root)
-        .settingsExitInteraction(destination: destination) { target in
-            focusedTarget = target
-        }
-        .task(id: settingsPresentationSession.state) {
-            // Let the previous page leave the native key-view loop before applying the
-            // new request. Otherwise its focus teardown can overwrite the new title.
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            synchronizeDestinationFocus(settingsPresentationSession.state)
-        }
+                \.settingsSuppressesAutomaticContentFocus,
+                settingsPresentationSession.state.navigationFocus != .content
+            )
+            .settingsContentFocusSection()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(SettingsAppearance.background(colorScheme))
+            .soundPacksLayoutProbe("settings.content")
+            .font(SettingsAppearance.font(.body))
+            .foregroundStyle(SettingsAppearance.text(colorScheme))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("settings.presentation.content")
+            .task(id: settingsPresentationSession.state.navigationRestoration?.stamp) {
+                guard let request = settingsPresentationSession.state.navigationRestoration else {
+                    return
+                }
+                if request.focus != .content { focusedTarget = nil }
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                _ = settingsPresentationSession.send(.destinationReady(request.stamp))
+            }
+            .task(id: settingsPresentationSession.state.focusDebt) {
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                synchronizeDestinationFocus(settingsPresentationSession.state)
+            }
     }
 
     private func synchronizeDestinationFocus(_ state: SettingsPresentationState) {
@@ -129,89 +106,6 @@ package struct SettingsRootView: View {
             focusedTarget = target
         }
         _ = settingsPresentationSession.send(.acknowledgeFocus(revision: debt.revision))
-    }
-
-    private var sidebar: some View {
-        let sections = settingsSidebarSections(
-            availableDestinations: preferences.availableSettingsDestinations)
-        return VStack(alignment: .leading, spacing: 0) {
-            ClaudioOrbitWordmark(height: 19)
-                .padding(.horizontal, 14)
-                .padding(.bottom, 16)
-
-            ForEach(sections) { section in
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(section.destinations) { item in
-                        sidebarButton(item)
-                    }
-                }
-                .padding(
-                    .top,
-                    section.id == sections.first?.id ? 0 : SettingsAppearance.sidebarGroupGap)
-            }
-
-            Spacer(minLength: 0)
-
-            Text(l10n.text(.settingsNativeLocalNotice))
-                .font(SettingsAppearance.font(.caption))
-                .foregroundStyle(SettingsAppearance.secondaryText(colorScheme))
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 8)
-                .padding(.top, 18)
-                .accessibilityIdentifier("settings.sidebar.local-first")
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 20)
-        .padding(.bottom, 12)
-    }
-
-    private func sidebarButton(_ item: SettingsDestination) -> some View {
-        Button {
-            settingsPresentationSession.send(.route(.destination(item)))
-        } label: {
-            HStack(spacing: 8) {
-                SettingsSidebarIcon(destination: item)
-
-                Text(item.localizedName(language: preferences.language))
-                    .foregroundStyle(
-                        item == destination
-                            ? Color.white
-                            : SettingsAppearance.text(colorScheme)
-                    )
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                Spacer(minLength: 4)
-
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .frame(minHeight: SettingsAppearance.sidebarRowHeight)
-            .background(
-                RoundedRectangle(cornerRadius: ClaudioTheme.Radius.control)
-                    .fill(
-                        item == destination
-                            ? SettingsAppearance.sidebarSelection(colorSchemeContrast)
-                            : Color.clear)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .font(SettingsAppearance.font(.body).weight(item == destination ? .semibold : .regular))
-        .focused($focusedTarget, equals: SettingsWindowFocusTarget.sidebar(item))
-        .soundPacksLayoutProbe("settings.sidebar.item.\(item.rawValue)")
-        .settingsSidebarInteraction(
-            item: item,
-            availableDestinations: preferences.availableSettingsDestinations
-        ) { next in
-            settingsPresentationSession.send(.route(.destination(next)))
-            focusedTarget = .sidebar(next)
-        }
-        .accessibilityLabel(item.localizedName(language: preferences.language))
-        .accessibilityAddTraits(item == destination ? .isSelected : [])
-        .accessibilitySortPriority(3)
-        .accessibilityIdentifier("settings.sidebar.\(item.rawValue)")
     }
 
     @ViewBuilder
@@ -249,6 +143,9 @@ package struct SettingsRootView: View {
                     performPlatformAction: {
                         _ = settingsPresentationSession.send(.performPlatformAction($0))
                     },
+                    onNavigateWorkspace: {
+                        settingsPresentationSession.send(.navigateWorkspace($0))
+                    },
                     onConfigureSound: {
                         settingsPresentationSession.editScopeSound($0)
                     },
@@ -275,6 +172,7 @@ package struct SettingsRootView: View {
                     onDetailIntent: {
                         settingsPresentationSession.send(.requestSoundsDetail($0))
                     },
+                    onInspectPack: { settingsPresentationSession.send(.inspectSoundPack($0)) },
                     languageStore: preferences,
                     nativeEffects: soundPacksEditorNativeEffects,
                     pageHeader: destinationTitle,
@@ -346,28 +244,10 @@ package struct SettingsRootView: View {
     private func standardDestination<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
-        SettingsDestinationPage(
-            destination: destination, header: { destinationTitle }, content: content)
+        SettingsDestinationPage(destination: destination, content: content)
     }
 
-    private var destinationTitle: some View {
-        Text(
-            settingsPresentationSession.state.routeResolution.route
-                == .notifications(.eventAnimation)
-                ? l10n.text(.eventAnimationTitle)
-                : destination.localizedName(language: preferences.language)
-        )
-        .font(SettingsAppearance.pageTitle)
-        .accessibilityAddTraits(.isHeader)
-        .accessibilitySortPriority(2)
-        .focusable()
-        .focused(
-            $focusedTarget,
-            equals: SettingsWindowFocusTarget.title(destination)
-        )
-        .accessibilityIdentifier("settings.title.\(destination.rawValue)")
-        .soundPacksLayoutProbe("settings.title.\(destination.rawValue)")
-    }
+    private var destinationTitle: some View { EmptyView() }
 
     private var soundScopeReturnAction: (@MainActor () -> Void)? {
         guard settingsPresentationSession.soundReturnContext != nil else { return nil }
@@ -396,15 +276,15 @@ package struct SettingsRootView: View {
             SettingsSectionCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsControlRow(title: l10n.text(.settingsGeneralLanguageTitle)) {
-                        Picker(
+                        SettingsNativePopUp(
                             l10n.text(.settingsGeneralLanguageTitle),
-                            selection: languageModeBinding
-                        ) {
-                            ForEach(ClaudioLanguageMode.allCases) { mode in
-                                Text(mode.localizedName(language: preferences.language))
-                                    .tag(mode)
-                            }
-                        }
+                            selection: languageModeBinding,
+                            options: ClaudioLanguageMode.allCases.map {
+                                SettingsMenuOption(
+                                    $0, $0.localizedName(language: preferences.language))
+                            }, identifier: "settings.general.language"
+                        )
+                        .fixedSize(horizontal: true, vertical: false)
                         .focused(
                             $focusedTarget,
                             equals: SettingsWindowFocusTarget.firstAction(.general)
@@ -463,8 +343,7 @@ package struct SettingsRootView: View {
                     title: l10n.text(.eventAnimationTitle),
                     identifier: "settings.notifications.event-animation",
                     value: l10n.text(effectiveAnimationStyle.localizationKey),
-                    requestsFocus: settingsPresentationSession.destinationFocusRequests
-                        .requestedTarget == .eventAnimationEntry,
+                    requestsFocus: focusedTarget == .eventAnimationEntry,
                     action: {
                         settingsPresentationSession.send(.route(.notifications(.eventAnimation)))
                     }
@@ -488,10 +367,10 @@ package struct SettingsRootView: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
+                .focused($focusedTarget, equals: .eventAnimationEntry)
             }
-            SettingsSectionCard(padding: 0) {
+            SettingsSectionCard(title: l10n.text(.settingsNotificationsBannerSection), padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    settingsGroupTitle(l10n.text(.settingsNotificationsBannerSection))
                     Toggle(isOn: eventSourcePromptBinding) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(l10n.text(.settingsNotificationsEventSourcePromptsTitle))
@@ -503,7 +382,7 @@ package struct SettingsRootView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .toggleStyle(.switch)
+                    .toggleStyle(.switch).controlSize(.mini)
                     .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
                     .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
@@ -546,9 +425,8 @@ package struct SettingsRootView: View {
 
                 }
             }
-            SettingsSectionCard(padding: 0) {
+            SettingsSectionCard(title: l10n.text(.settingsNotificationsQuietSection), padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    settingsGroupTitle(l10n.text(.settingsNotificationsQuietSection))
                     Toggle(isOn: focusQuietBinding) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(l10n.text(.settingsNotificationsFocusTitle))
@@ -560,7 +438,7 @@ package struct SettingsRootView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .toggleStyle(.switch)
+                    .toggleStyle(.switch).controlSize(.mini)
                     .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
                     .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
@@ -596,7 +474,7 @@ package struct SettingsRootView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .toggleStyle(.switch)
+                    .toggleStyle(.switch).controlSize(.mini)
                     .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
                     .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
@@ -618,9 +496,9 @@ package struct SettingsRootView: View {
                 }
             }
 
-            SettingsSectionCard(padding: 0) {
+            SettingsSectionCard(title: l10n.text(.settingsNotificationsCurrentSection), padding: 0)
+            {
                 VStack(alignment: .leading, spacing: 0) {
-                    settingsGroupTitle(l10n.text(.settingsNotificationsCurrentSection))
                     settingsStatusRow(
                         title: l10n.text(.settingsNotificationsCurrentReasonTitle),
                         value: dynamicQuietCurrentReasonText)
@@ -760,14 +638,6 @@ package struct SettingsRootView: View {
             snapshotHealthText as NSString)
     }
 
-    private func settingsGroupTitle(_ title: String) -> some View {
-        Text(title)
-            .font(SettingsAppearance.font(.body).weight(.semibold))
-            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
-            .accessibilityAddTraits(.isHeader)
-    }
-
     private func settingsStatusRow(title: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(title)
@@ -797,6 +667,7 @@ package struct SettingsRootView: View {
     }
 
     private func routeFailure(_ failure: SettingsRouteFailure) -> some View {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
         Label {
             Text(settingsFailureMessage(failure))
                 .fixedSize(horizontal: false, vertical: true)
@@ -811,6 +682,30 @@ package struct SettingsRootView: View {
         .focused($focusedTarget, equals: .routeFailure(destination))
         .accessibilityIdentifier("settings.route.failure.\(destination.rawValue)")
         .settingsMountIdentity("settings.route.failure.\(destination.rawValue)")
+            if let location = settingsPresentationSession.navigationHistory.current?.location,
+                let directory = location.workspaceRoute?.workspaceTarget?.directory
+                    ?? {
+                        if case .sounds(let route) = location.route {
+                            return route.workspaceTarget?.directory
+                        }; return nil
+                    }()
+            {
+                Text(directory.path).font(SettingsAppearance.font(.technical))
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("settings.route.captured-directory")
+            }
+            if case .staleSoundScope = failure {
+                Button(l10n.text(.workspaceChooseDefaultGroup)) {
+                    if destination == .sounds {
+                        settingsPresentationSession.send(.route(.sounds(.overview)))
+                    } else {
+                        settingsPresentationSession.send(
+                            .navigateWorkspace(EventSettingsWindowRoute(scope: .global)))
+                    }
+                }
+                .settingsMountIdentity("workspace.choose-default-group")
+            }
+        }
     }
 
     private func settingsFailureMessage(_ failure: SettingsRouteFailure) -> String {

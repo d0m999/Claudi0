@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioGUIComponents
 import ApplicationServices
 import ClaudioCore
 import ClaudioGUICore
@@ -10,8 +11,8 @@ import SwiftUI
 import Vision
 
 @MainActor
-func runSettingsSoundsLayoutSuites() {
-    suite("设置原生呈现：八页、两语言、两外观、两尺寸的 64 个组合") {
+func runSettingsSoundsLayoutSuites() async {
+    await suite("设置原生呈现：八页、两语言、两外观、两尺寸的 64 个组合") {
         for language in [ClaudioAppLanguage.zhHans, .english] {
             for size in [NSSize(width: 1_240, height: 820), NSSize(width: 960, height: 640)] {
                 for dark in [false, true] {
@@ -23,6 +24,7 @@ func runSettingsSoundsLayoutSuites() {
                             session: fixture.session, size: size,
                             appearance: dark ? .darkAqua : .aqua)
                         defer { probe.close() }
+                        await probe.settle()
                         let name =
                             "\(destination.rawValue) \(Int(size.width)) \(language.rawValue) \(dark)"
                         let frames = SoundPacksLayoutRecorder.frames
@@ -42,11 +44,11 @@ func runSettingsSoundsLayoutSuites() {
                                 && reading.minX >= content.minX + padding - 1
                                 && reading.maxX <= content.maxX - padding + 1,
                             "\(name) 单列包含内边距且无横向溢出：\(reading), \(content)")
-                        for y in [40.0, size.height / 2, size.height - 20] {
+                        for y in [content.minY + 8, size.height / 2, size.height - 20] {
                             expect(
                                 colorsMatch(
                                     probe.rgb(at: CGPoint(x: content.minX + 8, y: y)),
-                                    dark ? [32, 32, 34] : [255, 255, 255]),
+                                    probe.semanticRGB(.windowBackgroundColor)),
                                 "\(name) 页首、滚动区、页尾必须保持设置底色")
                         }
                         let rows = SettingsDestination.allCases.compactMap {
@@ -56,7 +58,7 @@ func runSettingsSoundsLayoutSuites() {
                         for index in 1..<rows.count {
                             let gap = rows[index].minY - rows[index - 1].maxY
                             expect(
-                                abs(gap - ([4, 6].contains(index) ? 16 : 0)) < 1,
+                                ([4, 6].contains(index) ? gap >= 16 : abs(gap) < 1),
                                 "\(name) 三组侧栏间距：\(gap)")
                         }
                         let menuRows: [(identifier: String, minimumHeight: CGFloat)]
@@ -109,8 +111,9 @@ func runSettingsSoundsLayoutSuites() {
                                     colorsMatch(
                                         probe.rgb(
                                             at: CGPoint(x: selector.midX, y: selector.minY + 5)),
-                                        dark ? [45, 45, 48] : [245, 245, 247]),
-                                    "\(name) 功能组必须使用新原型中性表面")
+                                        probe.semanticRGB(.underPageBackgroundColor)),
+                                    "\(name) 功能组使用系统语义色：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.semanticRGB(.underPageBackgroundColor) as Any)"
+                                )
                             } else {
                                 expect(false, "\(name) 必须挂载选择器")
                             }
@@ -134,7 +137,7 @@ func runSettingsSoundsLayoutSuites() {
         }
     }
 
-    suite("设置原生呈现：高对比度仍使用实色功能组") {
+    await suite("设置原生呈现：高对比度仍使用实色功能组") {
         for dark in [false, true] {
             let fixture = SettingsPresentationFixtures.generalLogin(
                 route: .events(scope: .global, event: nil),
@@ -144,23 +147,27 @@ func runSettingsSoundsLayoutSuites() {
                 appearance: dark
                     ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
             defer { probe.close() }
+            await probe.settle()
             guard let selector = SoundPacksLayoutRecorder.frames["workspace.scope-selector.card"]
             else { expect(false, "高对比度检查须挂载实际选择器"); continue }
             expect(
                 colorsMatch(
                     probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)),
-                    dark ? [45, 45, 48] : [245, 245, 247]), "增强对比度保留实色功能组")
+                    probe.semanticRGB(.underPageBackgroundColor)),
+                "增强对比度系统功能组：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.semanticRGB(.underPageBackgroundColor) as Any)"
+            )
         }
     }
 
-    runSettingsMenuLayoutSuites()
+    await runSettingsMenuLayoutSuites()
 
-    suite("声音详情：未发布草稿与只读深链保持真实可编辑边界") {
+    await suite("声音详情：未发布草稿与只读深链保持真实可编辑边界") {
         let draftFixture = SettingsPresentationFixtures.generalLogin(
             route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability)
         let draftProbe = SettingsSoundsNativeLayoutProbe(
             session: draftFixture.session,
             size: NSSize(width: 960, height: 640))
+        await draftProbe.settle()
         expect(
             draftFixture.soundPacksEditor.beginAICuePackDraft(language: .zhHans), "草稿须由既有 owner 创建")
         draftProbe.refresh()
@@ -183,6 +190,7 @@ func runSettingsSoundsLayoutSuites() {
         let readonlyProbe = SettingsSoundsNativeLayoutProbe(
             session: readonlyFixture.session,
             size: NSSize(width: 1_240, height: 820))
+        await readonlyProbe.settle()
         expect(readonlyFixture.aiCueViewModel.session == nil, "只读包详情不得启动 AI 会话")
         expect(
             SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
@@ -190,7 +198,7 @@ func runSettingsSoundsLayoutSuites() {
         readonlyProbe.close()
     }
 
-    suite("声音设置原生挂载：切换检查包清理旧事件会话") {
+    await suite("声音设置原生挂载：切换检查包清理旧事件会话") {
         let generationID = UUID()
         let profileID = AICueProviderProfileID.elevenLabsGlobal
         let candidates = AICueVariant.allCases.enumerated().map { index, variant in
@@ -253,19 +261,18 @@ func runSettingsSoundsLayoutSuites() {
         expect(
             SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.composer.stop"] != nil,
             "行内表单必须位于同一映射列表")
-        if case .sounds(let sounds) = fixture.soundPacksEditor.presentation.mode,
-            let action = sounds.packs.first(where: { $0.id == "settings-fixture-pack" })?
-                .inspectAction
-        {
-            _ = fixture.soundPacksEditor.send(.invoke(action))
-            probe.refresh()
+        if fixture.session.send(.inspectSoundPack("settings-fixture-pack")) == .routed {
+            await probe.settle()
             expect(
                 fixture.aiCueViewModel.session == nil
                     && fixture.aiCueViewModel.generation == nil,
                 "切换包后旧目标会话与候选必须失效")
             expect(
-                SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
-                "切换包后详情绑定新的检查包，旧候选不可操作")
+                fixture.session.state.soundsDetail == .overview
+                    && fixture.session.navigationHistory.current?.location.viewedPackID
+                        == "settings-fixture-pack"
+                    && SoundPacksLayoutRecorder.frames["sound-packs.events.group"] != nil,
+                "显式检查新包进入其概览，历史保存新查看身份，旧候选不可操作")
         } else {
             expect(false, "测试包必须提供 owner 的检查动作")
         }
@@ -274,8 +281,8 @@ func runSettingsSoundsLayoutSuites() {
 }
 
 @MainActor
-func runSettingsMenuLayoutSuites() {
-    suite("设置原生菜单：长包名仍在紧凑行右侧且不挤出内容") {
+func runSettingsMenuLayoutSuites() async {
+    await suite("设置原生菜单：长包名仍在紧凑行右侧且不挤出内容") {
         let temporaryRoot = FileManager.default.temporaryDirectory.appendingPathComponent(
             "claudio-long-menu-layout-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: temporaryRoot) }
@@ -307,6 +314,7 @@ func runSettingsMenuLayoutSuites() {
                     session: fixture.session, size: NSSize(width: 960, height: 640),
                     appearance: dark ? .darkAqua : .aqua)
                 defer { probe.close() }
+                await probe.settle()
                 expectSettingsMenuLayout(
                     probe: probe, identifier: "sound-packs.pack-list",
                     name: "长包名 \(language.rawValue) \(dark)", minimumHeight: 38,
@@ -336,13 +344,14 @@ func runSettingsMenuLayoutSuites() {
         }
     }
 
-    suite("设置原生菜单：不可用服务选择仍保留中性紧凑呈现") {
+    await suite("设置原生菜单：不可用服务选择仍保留中性紧凑呈现") {
         for dark in [false, true] {
             let fixture = SettingsPresentationFixtures.generalLogin(aiCueScenario: .adopting)
             let probe = SettingsSoundsNativeLayoutProbe(
                 session: fixture.session, size: NSSize(width: 960, height: 640),
                 appearance: dark ? .darkAqua : .aqua)
             defer { probe.close() }
+            await probe.settle()
             expect(fixture.aiCueViewModel.phase == .adopting, "fixture 必须处于禁止更换服务的采用阶段")
             expectSettingsMenuLayout(
                 probe: probe, identifier: "event-settings.ai-cue.provider-profile",
@@ -400,9 +409,27 @@ private func expectSettingsMenuLayout(
 @MainActor
 final class SettingsSoundsNativeLayoutProbe {
     private static var hasPreparedMenuAccessibility = false
-    private let window: UnconstrainedProbeWindow
-    private let hostingView: NSHostingView<SettingsRootView>
+    private let window: RetainedSettingsWindow
+    private let hostingView: NSView
+    private let shell: SettingsNativeShellController
+    private let session: SettingsPresentationSession
     private let requestedSize: NSSize
+
+    var notificationNavigationControl: NSSegmentedControl? {
+        refresh()
+        return shell.navigationControl
+    }
+
+    var focusedControlIdentifier: String? {
+        (window.firstResponder as? NSView)?.accessibilityIdentifier()
+    }
+
+    var isKeyWindow: Bool { window.isKeyWindow }
+
+    func activate() {
+        window.presentForUserRequest()
+        refresh()
+    }
 
     init(
         session: SettingsPresentationSession,
@@ -411,18 +438,21 @@ final class SettingsSoundsNativeLayoutProbe {
     ) {
         _ = NSApplication.shared
         SoundPacksLayoutRecorder.reset()
+        self.session = session
+        shell = SettingsNativeShellController(session: session)
         requestedSize = size
-        window = UnconstrainedProbeWindow(
+        window = RetainedSettingsWindow(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .closable, .resizable],
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
-        hostingView = NSHostingView(rootView: SettingsRootView(session: session))
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        window.contentView = hostingView
+        hostingView = shell.view
+        window.contentViewController = shell
+        shell.install(in: window)
         window.appearance = NSAppearance(named: appearance)
         window.isReleasedWhenClosed = false
-        window.makeKeyAndOrderFront(nil)
+        window.setContentSize(size)
+        window.presentForUserRequest()
         refresh()
         enforceRequestedContentSize()
     }
@@ -442,16 +472,26 @@ final class SettingsSoundsNativeLayoutProbe {
         )
     }
 
+    func settle() async {
+        for _ in 0..<4 { await Task.yield(); refresh() }
+    }
+
     func refresh() {
         for _ in 0..<4 {
             RunLoop.current.run(until: Date().addingTimeInterval(0.025))
             hostingView.layoutSubtreeIfNeeded()
+            shell.synchronizeLayout()
         }
     }
 
     func saveScreenshot(to url: URL) -> Bool {
-        guard let data = renderedBitmap()?.representation(using: .png, properties: [:])
+        guard let frame = window.contentView?.superview,
+            let bitmap = frame.bitmapImageRepForCachingDisplay(in: frame.bounds)
         else { return false }
+        frame.cacheDisplay(in: frame.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]) else { return false }
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         return (try? data.write(to: url)) != nil
     }
 
@@ -515,7 +555,9 @@ final class SettingsSoundsNativeLayoutProbe {
         guard let scroll = findReadingScroll(in: hostingView),
             let document = scroll.documentView
         else { return false }
-        let target = document.convert(frame, from: hostingView)
+        var nativeFrame = frame
+        if !hostingView.isFlipped { nativeFrame.origin.y = hostingView.bounds.maxY - frame.maxY }
+        let target = document.convert(nativeFrame, from: hostingView)
         _ = document.scrollToVisible(target)
         refresh()
         return scroll.documentVisibleRect.insetBy(dx: -1, dy: -1).contains(target)
@@ -613,6 +655,34 @@ final class SettingsSoundsNativeLayoutProbe {
             separator: "\n")
     }
 
+    func semanticRGB(_ color: NSColor) -> [Int]? {
+        var result: [Int]?
+        func groupSurface(in view: NSView) -> NSView? {
+            if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
+            return view.subviews.lazy.compactMap { groupSurface(in: $0) }.first
+        }
+        let appearance =
+            color == .underPageBackgroundColor
+            ? (groupSurface(in: hostingView)?.effectiveAppearance ?? window.effectiveAppearance)
+            : window.effectiveAppearance
+        appearance.performAsCurrentDrawingAppearance {
+            if let rgb = color.usingColorSpace(.sRGB),
+                let background = NSColor.windowBackgroundColor.usingColorSpace(.sRGB)
+            {
+                // Compare the rendered system color, including its system-provided alpha,
+                // over the page surface. Comparing only the RGB ignores native compositing.
+                let alpha = rgb.alphaComponent
+                result = zip(
+                    [rgb.redComponent, rgb.greenComponent, rgb.blueComponent],
+                    [background.redComponent, background.greenComponent, background.blueComponent]
+                ).map { foreground, behind in
+                    Int(((foreground * alpha + behind * (1 - alpha)) * 255).rounded())
+                }
+            }
+        }
+        return result
+    }
+
     func rgb(at point: CGPoint) -> [Int]? {
         // Convert the bitmap itself: colorAt() returns a calibrated NSColor and does not
         // carry the source display's ICC profile through an NSColor-space conversion.
@@ -669,13 +739,16 @@ final class SettingsSoundsNativeLayoutProbe {
 
     func close() {
         if let sheet = window.attachedSheet { window.endSheet(sheet) }
+        session.send(.windowWillClose)
         window.orderOut(nil)
+        window.contentViewController = nil
         window.close()
     }
 }
 
-private func colorsMatch(_ observed: [Int]?, _ expected: [Int]) -> Bool {
-    guard let observed, observed.count == expected.count else { return false }
+
+private func colorsMatch(_ observed: [Int]?, _ expected: [Int]?) -> Bool {
+    guard let observed, let expected, observed.count == expected.count else { return false }
     return zip(observed, expected).allSatisfy { abs($0 - $1) <= 3 }
 }
 

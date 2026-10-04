@@ -10,7 +10,13 @@
 > allowlisted 多 Provider SoT 对齐。Swift registry、transport、credentials、adapters 与 production UI
 > 分别由 #104–#109 及 #85 的设置子 tickets 拥有；任何真实凭据或 Provider smoke 仍需单独授权。
 >
-> 现行视觉与交互 SoT：
+> 2026-10-04 现行外壳、控件与导航合同：
+> [`Native Settings Alignment Prototype.html`](<../designs/macos-settings-native/Native Settings Alignment Prototype.html>)、
+> [DESIGN.md 的「系统原生外壳与窗口期历史」](../DESIGN.md)、[ADR 0008](../docs/adr/0008-use-one-retained-unified-settings-window.md)。
+> 使用 `NSToolbar`、source list、窗口期 64 条位置历史及系统语义色；正文 section/group 间距 20/12 pt、普通/多行最低 38/51 pt。
+> 旧固定 RGB、58 pt 页头及通知局部历史的呈现合同由此次修订覆盖。领域能力与既有写入 owner 继续有效。原生人工验收单独记录，不因实现或辅助 SDK 检查通过而完成。
+>
+> 上一轮视觉与交互基线（历史）：
 > [`designs/macos-settings-native/claudi0 macOS Settings Prototype.html`](<../designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)，
 > SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。
 > 设置的现行迁移合同为 [PLAN-MACOS-SETTINGS-MIGRATION.md](PLAN-MACOS-SETTINGS-MIGRATION.md)；

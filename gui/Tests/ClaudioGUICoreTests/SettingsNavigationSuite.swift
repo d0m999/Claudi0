@@ -356,14 +356,14 @@ func runSettingsNavigationSuites() {
         expect(
             settingsWindowRequestedFocusTarget(
                 resolution: resolveSettingsRoute(
-                    .destination(.general), availability: availability)) == .title(.general),
-            "普通 Settings 导航仍请求页面标题焦点")
+                    .destination(.general), availability: availability)) == .firstAction(.general),
+            "普通 Settings 内容导航请求首个动作，静态标题不占 Tab")
         for route in [SettingsRoute.destination(.sounds), .sounds(.overview)] {
             expect(
                 settingsWindowRequestedFocusTarget(
                     resolution: resolveSettingsRoute(route, availability: availability))
-                    == .title(.sounds),
-                "普通 Sounds 导航必须由统一设置壳请求可见页面标题焦点")
+                    == .firstAction(.sounds),
+                "普通 Sounds 内容导航请求首个动作")
         }
         expect(
             settingsWindowRequestedFocusTarget(
@@ -375,7 +375,7 @@ func runSettingsNavigationSuites() {
             settingsWindowRequestedFocusTarget(
                 resolution: resolveSettingsRoute(
                     .destination(.eventsAndSounds), availability: availability)) == nil,
-            "普通 Events 导航仍由嵌入页请求标题焦点")
+            "普通 Events 内容导航交由嵌入页定位作用域")
     }
 
     suite("Settings Sounds 工作区路由：身份、缺包回退与失效拒绝") {
@@ -715,23 +715,23 @@ func runSettingsNavigationSuites() {
         expect(
             settingsWindowFocusOrder(selectedDestination: .sounds)
                 == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
-                + [.title(.sounds)],
-            "Sounds 先走 sidebar 与标题，再把编辑器内焦点交给其独立 route coordinator")
+                + [],
+            "Sounds 先走 sidebar，再把编辑器内焦点交给同版本的内容请求")
         expect(
             settingsWindowFocusOrder(selectedDestination: .eventsAndSounds)
                 == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
-                + [.title(.eventsAndSounds)],
-            "Events 先走 sidebar 与标题，再把精确 scope/Event 焦点交给嵌入页")
+                + [],
+            "Events 先走 sidebar，再把精确 scope/Event 焦点交给嵌入页")
         expect(
             settingsWindowFocusOrder(selectedDestination: .general)
                 == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
-                + [.title(.general), .firstAction(.general)],
-            "非嵌入目的页必须保留 sidebar、标题、首个动作焦点序")
+                + [.firstAction(.general)],
+            "非嵌入目的页保留 sidebar、首个动作焦点序，标题不占 Tab")
         expect(
             settingsWindowFocusOrder(selectedDestination: .integrations)
                 == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
-                + [.title(.integrations)],
-            "Integrations 的 destination focus coordinator 必须接管标题之后的焦点序")
+                + [],
+            "Integrations 的 destination focus coordinator 接管 sidebar 之后的内容焦点序")
 
     }
 }

@@ -19,9 +19,15 @@ struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             identity
-            resources.settingsSectionSurface(
-                padding: SettingsAppearance.controlRowHorizontalPadding)
-            diagnostics.settingsSectionSurface()
+            SettingsSectionCard(
+                title: l10n.text(.settingsAboutResourcesTitle),
+                description: l10n.text(.settingsAboutResourcesDescription),
+                padding: SettingsAppearance.controlRowHorizontalPadding
+            ) { resources }
+            SettingsSectionCard(
+                title: l10n.text(.settingsAboutDiagnosticsTitle),
+                description: l10n.text(.settingsAboutDiagnosticsDescription)
+            ) { diagnostics }
 
             if let feedback = model.feedback {
                 Label {
@@ -85,14 +91,10 @@ struct AboutSettingsView: View {
 
     private var resources: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsAboutResourcesTitle))
-                .font(SettingsAppearance.font(.sectionTitle))
-                .accessibilityAddTraits(.isHeader)
-            Text(l10n.text(.settingsAboutResourcesDescription))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
 
-            ForEach(model.resources) { resource in
+
+            ForEach(Array(model.resources.enumerated()), id: \.element.id) { index, resource in
+                if index > 0 { Divider() }
                 let presentation = resourcePresentation(resource.kind)
                 if resource.url != nil {
                     Button {
@@ -137,12 +139,7 @@ struct AboutSettingsView: View {
     private var diagnostics: some View {
         let preview = model.diagnosticSummary
         return VStack(alignment: .leading, spacing: 12) {
-            Text(l10n.text(.settingsAboutDiagnosticsTitle))
-                .font(SettingsAppearance.font(.sectionTitle))
-                .accessibilityAddTraits(.isHeader)
-            Text(l10n.text(.settingsAboutDiagnosticsDescription))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+
             Text(preview)
                 .font(SettingsAppearance.font(.technical))
                 .textSelection(.enabled)

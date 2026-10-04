@@ -75,6 +75,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let wasVisible = window?.isVisible == true
         _ = settingsPresentationSession.send(.present(request))
         let presentedWindow = window ?? makeWindow()
+        (presentedWindow.contentViewController as? SettingsNativeShellController)?.install(
+            in: presentedWindow)
         finishPanelPresentation()
         if !wasVisible {
             handbackTracker.beginPresentation(returnTo: application)
@@ -269,14 +271,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     #endif
 
     private func makeWindow() -> RetainedSettingsWindow {
-        let content = SettingsRootView(session: settingsPresentationSession)
+        let content = SettingsNativeShellController(session: settingsPresentationSession)
         let window = RetainedSettingsWindow(
             contentRect: NSRect(
                 x: 0,
                 y: 0,
                 width: SettingsWindowGeometry.defaultWidth,
                 height: SettingsWindowGeometry.defaultHeight),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
         window.title = ClaudioL10n(
@@ -285,7 +287,12 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.contentMinSize = NSSize(
             width: SettingsWindowGeometry.minimumWidth,
             height: SettingsWindowGeometry.minimumHeight)
-        window.contentViewController = NSHostingController(rootView: content)
+        window.contentViewController = content
+        content.install(in: window)
+        window.setContentSize(
+            NSSize(
+                width: SettingsWindowGeometry.defaultWidth,
+                height: SettingsWindowGeometry.defaultHeight))
         window.isReleasedWhenClosed = false
         window.autorecalculatesKeyViewLoop = true
         window.delegate = self

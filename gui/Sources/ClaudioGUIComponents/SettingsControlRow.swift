@@ -32,7 +32,6 @@ package struct SettingsControlRow: View {
             control
                 .labelsHidden()
                 .nativeMenuControl()
-                .frame(maxWidth: 280, alignment: .trailing)
         }
         .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
         .frame(

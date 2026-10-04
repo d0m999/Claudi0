@@ -44,6 +44,7 @@ struct SettingsSoundsAICueView: View {
     let routeRequestRevision: UInt64
     let detail: SoundPacksSettingsDetail
     let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
+    var onInspectPack: (@MainActor (String) -> Void)? = nil
     var pageHeader: AnyView = AnyView(EmptyView())
     var scopePicker: AnyView = AnyView(EmptyView())
     var returnToScope: (@MainActor () -> Void)? = nil
@@ -157,6 +158,7 @@ struct SettingsSoundsAICueView: View {
             editorOwner.updateAICueComposer(session: nil, generation: nil)
         }
         supplement.returnToScope = returnToScope
+        supplement.onInspectPack = onInspectPack
         return supplement
     }
 

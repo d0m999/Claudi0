@@ -213,6 +213,12 @@ package final class EventSettingsWindowSelection: ObservableObject {
         publishState()
     }
 
+    package func cancelNavigationFocus() {
+        focusRequests.cancelPendingRequest()
+        focusRequests.clearRequestedTarget()
+        publishState()
+    }
+
     package func requestInitialFocus(scopes: [PanelSoundScopeID], for request: SettingsRoute) {
         let target: EventSettingsFocusTarget?
         if storage.route.unavailableRequestedScopeStoredValue != nil
@@ -225,7 +231,7 @@ package final class EventSettingsWindowSelection: ObservableObject {
                 scopes: scopes,
                 events: Set(Event.allCases))
         } else {
-            target = .title
+            target = .scope(storage.route.scope)
         }
         focusRequests.requestFocus(target)
         publishState()
@@ -564,14 +570,18 @@ package final class EventSettingsWindowSelection: ObservableObject {
         publishState()
     }
 
-    package func leaveDestination() {
+    package var hasAcceptedDeletion: Bool { consumedDeleteRequest != nil }
+
+    package func leaveDestination(preservingAcceptedDeletion: Bool = false) {
         storage.leaveDestination()
-        deletionPresentation = WorkspaceDeletionPresentation()
+        if !preservingAcceptedDeletion {
+            deletionPresentation = WorkspaceDeletionPresentation()
+            consumedDeleteRequest = nil
+        }
         previewFailure = nil
         writeRetry = nil
         writeRetryFailure = nil
         conflictReadbackState = .idle
-        consumedDeleteRequest = nil
         focusRequests.clearReturnFocus()
         publishState()
     }

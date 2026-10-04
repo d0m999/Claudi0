@@ -80,9 +80,9 @@ func runEventSettingsWindowSelectionSuites() {
             scopes: [.global, .surface(.workBuddy)], for: .destination(.eventsAndSounds))
         expect(
             selection.presentationState.focusRequestRevision == 2
-                && selection.presentationState.focusTarget == .title
+                && selection.presentationState.focusTarget == .scope(selection.route.scope)
                 && selection.route == route,
-            "普通导航必须聚焦标题，同时保留上次深链的选择与事件")
+            "普通导航必须聚焦当前选择，同时保留上次深链的选择与事件")
 
         selection.markCurrentScopeUnavailable()
         expect(

@@ -404,8 +404,8 @@ public enum SettingsWindowFocusTarget: Sendable, Equatable, Hashable {
     case eventAnimationEntry
 }
 
-/// Embedded destinations own deep-link focus. The shell owns the Sounds overview title and
-/// the visible failure explanation for every rejected deep link.
+/// Embedded destinations own deep-link focus. Static toolbar headings never become Tab stops;
+/// standard destinations focus their first available action or the visible failure explanation.
 public func settingsWindowRequestedFocusTarget(
     resolution: SettingsRouteResolution
 ) -> SettingsWindowFocusTarget? {
@@ -417,9 +417,9 @@ public func settingsWindowRequestedFocusTarget(
         return nil
     case .sounds:
         if case .sounds(let route) = resolution.route, !route.isOverview { return nil }
-        return .title(.sounds)
+        return .firstAction(.sounds)
     case .general, .notifications, .usage, .shortcuts, .about:
-        return .title(resolution.destination)
+        return .firstAction(resolution.destination)
     }
 }
 
@@ -427,7 +427,6 @@ public func settingsWindowFocusOrder(
     selectedDestination: SettingsDestination
 ) -> [SettingsWindowFocusTarget] {
     var order = SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
-    order.append(.title(selectedDestination))
     // Embedded destinations own route-aware focus identity spaces. Inventing a Settings-shell
     // first action for them would point at no rendered control and compete with their
     // initial-focus requests.

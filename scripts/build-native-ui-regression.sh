@@ -37,6 +37,9 @@ prototype=pathlib.Path('designs/macos-settings-native/claudi0 macOS Settings Pro
 prototype_sha=hashlib.sha256(prototype.read_bytes()).hexdigest()
 if prototype_sha!='f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91': raise SystemExit('Settings prototype fingerprint mismatch')
 manifest={'settingsPrototypeSHA256':prototype_sha,'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
+alignment_prototype=pathlib.Path('designs/macos-settings-native/Native Settings Alignment Prototype.html')
+if alignment_prototype.is_file():
+ manifest['settingsNativeAlignmentPrototype']={'path':str(alignment_prototype),'sha256':hashlib.sha256(alignment_prototype.read_bytes()).hexdigest()}
 (output/'build-evidence.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 PY
 codesign --force --deep --sign - "$regression_app" >&2

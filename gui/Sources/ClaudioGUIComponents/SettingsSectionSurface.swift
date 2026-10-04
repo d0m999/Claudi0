@@ -7,7 +7,7 @@ package struct SettingsSectionSurface: ViewModifier {
 
     private let padding: CGFloat
 
-    // Retain the existing host override label; this surface is opaque in both modes.
+    // Retain the existing host override label; the system semantic color owns its alpha.
     package init(padding: CGFloat = 16, reduceTransparencyOverride _: Bool? = nil) {
         self.padding = padding
     }
@@ -16,7 +16,7 @@ package struct SettingsSectionSurface: ViewModifier {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(SettingsAppearance.cardSurface(colorScheme))
+            .background(SettingsNativeSurface(.group))
             .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius)

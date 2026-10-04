@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioSettingsPresentation
 import Foundation
@@ -6,126 +7,95 @@ import SoundPacksWindow
 import SwiftUI
 
 @MainActor
-func runSettingsRootInteractionSuites() {
-    #if DEBUG
-    suite("Settings mounted root：sidebar 整行命中与行外安全区走真实 AppKit event route") {
-        let probes: [(SettingsDestination, CGFloat)] = [
-            (.integrations, 0.08),
-            (.notifications, 0.5),
+func runSettingsRootInteractionSuites() async {
+    await suite("Settings native sidebar: full row hit geometry and one selection transaction") {
+        for (destination, fraction) in [
+            (SettingsDestination.integrations, CGFloat(0.08)), (.notifications, 0.5),
             (.sounds, 0.92),
-        ]
-        for (destination, fraction) in probes {
+        ] {
             let fixture = SettingsPresentationFixtures.generalLogin(
                 availability: PreviewFixtures.settingsRouteAvailability)
             let probe = SettingsRootNativeProbe(session: fixture.session)
+            defer { probe.close() }
+            await probe.settle()
+            let revision = fixture.session.navigationHistory.version
             expect(
-                probe.clickSidebar(destination, horizontalFraction: fraction),
-                "settings.sidebar.\(destination.rawValue) 必须能构造真实 mouse down/up")
+                probe.selectSidebar(destination, horizontalFraction: fraction),
+                "The native table hit region resolves the entire requested row")
             expect(
-                fixture.session.state.routeResolution.destination == destination,
-                "sidebar 行 \(fraction) 位置必须命中同一个 typed destination")
-            probe.close()
+                fixture.session.state.chrome.destination == destination
+                    && fixture.session.navigationHistory.version == revision + 1,
+                "A native selection invokes one session transaction")
         }
-
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            availability: PreviewFixtures.settingsRouteAvailability)
-        let probe = SettingsRootNativeProbe(session: fixture.session)
-        expect(
-            probe.clickOutsideSidebarRow(.integrations),
-            "sidebar 行外测试点必须能投递真实 mouse down/up")
-        expect(
-            fixture.session.state.routeResolution.destination == .general,
-            "sidebar 行外安全区不得误触 destination")
-        probe.close()
     }
-
-    suite("Settings mounted root：方向键/Escape modifier 与 raw key capability 边界") {
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            availability: PreviewFixtures.settingsRouteAvailability)
-        SettingsRootInteractionRecorder.reset()
-        SettingsMountRecorder.reset()
+    await suite("Settings native sidebar: arrows skip spacers, boundaries and modal state") {
+        let fixture = SettingsPresentationFixtures.generalLogin()
         let probe = SettingsRootNativeProbe(session: fixture.session)
+        defer { probe.close() }
+        await probe.settle()
+        _ = probe.selectSidebar(.eventsAndSounds, horizontalFraction: 0.5)
+        probe.sendSidebarKey(125)
         expect(
-            probe.clickSidebar(.eventsAndSounds, horizontalFraction: 0.5),
-            "必须先通过真实 mouse event 聚焦当前 sidebar row")
-        let deliveredDown = probe.sendKey(keyCode: 125, characters: "\u{F701}")
-        let rawDownWasHandled =
-            fixture.session.state.routeResolution.destination == .sounds
-        if !rawDownWasHandled {
-            expect(
-                SettingsRootInteractionRecorder.invokeMove(.next, from: .eventsAndSounds),
-                "无 Full Keyboard Access 时必须调用 mounted modifier 注册的同一 move handler")
-        }
+            fixture.session.state.chrome.destination == .sounds,
+            "Down uses the real NSTableView keyDown implementation")
+        probe.sendSidebarKey(126)
         expect(
-            deliveredDown
-                && fixture.session.state.routeResolution.destination == .sounds
-                && SettingsMountRecorder.identifiers.contains(
-                    "settings.interaction.sidebar.\(SettingsDestination.eventsAndSounds.rawValue)"),
-            "Down raw event 必须可投递；无 Full Keyboard Access 时同一 mounted modifier driver 仍切 typed destination"
-        )
-        let deliveredUp = probe.sendKey(keyCode: 126, characters: "\u{F700}")
-        let rawUpWasHandled = fixture.session.state.routeResolution.destination == .eventsAndSounds
-        if !rawUpWasHandled {
-            expect(
-                SettingsRootInteractionRecorder.invokeMove(.previous, from: .sounds),
-                "Up fallback 必须调用 mounted modifier 注册的同一 move handler")
-        }
+            fixture.session.state.chrome.destination == .eventsAndSounds,
+            "Up returns to the previous real row")
+        let revision = fixture.session.navigationHistory.version
+        probe.sendSidebarKey(126)
         expect(
-            deliveredUp && fixture.session.state.routeResolution.destination == .eventsAndSounds,
-            "Up raw event 必须可投递；compiled modifier driver 必须回到上一个 typed destination")
-
-        expect(probe.clickContent(x: 360, yFromTop: 190), "必须先通过真实 mouse event 聚焦 content")
-        let deliveredEscape = probe.sendKey(keyCode: 53, characters: "\u{1b}")
-        if SettingsRootInteractionRecorder.lastExitTarget == nil {
-            expect(
-                SettingsRootInteractionRecorder.invokeExit(),
-                "无稳定 raw keyboard focus 时必须调用 mounted modifier 注册的同一 exit handler")
-        }
+            fixture.session.navigationHistory.version == revision,
+            "The first-row boundary emits no navigation")
+        fixture.session.send(.setNavigationBlocked(id: "sheet", blocked: true))
+        probe.sendSidebarKey(125)
         expect(
-            deliveredEscape
-                && SettingsRootInteractionRecorder.lastExitTarget == .sidebar(.eventsAndSounds)
-                && SettingsMountRecorder.identifiers.contains("settings.interaction.exit"),
-            "Escape raw event 必须可投递，且 mounted exit handler 必须把当前 destination 映射回 sidebar focus")
-        probe.close()
-        SettingsRootInteractionRecorder.stopRecording()
+            fixture.session.navigationHistory.version == revision,
+            "A sheet blocks the same native arrow-key path")
+        fixture.session.send(.setNavigationBlocked(id: "sheet", blocked: false))
     }
-
-    suite("Settings mounted root：真实 sidebar Button 与 Login toggle 触发 owner") {
-        let toggleFixture = SettingsPresentationFixtures.generalLogin(
+    await suite("Settings native content: Login toggle invokes its existing owner") {
+        let fixture = SettingsPresentationFixtures.generalLogin(
             loginItemRegistration: .disabled,
             availability: PreviewFixtures.settingsRouteAvailability)
-        let toggleProbe = SettingsRootNativeProbe(session: toggleFixture.session)
+        let probe = SettingsRootNativeProbe(session: fixture.session)
+        defer { probe.close() }
+        await probe.settle()
         expect(
-            toggleProbe.clickRecordedControl(SettingsPresentationAccessibilityID.loginItemToggle),
-            "真实 Login toggle 必须接受 NSWindow mouse route")
+            probe.changeNativeSwitch(
+                SettingsPresentationAccessibilityID.loginItemToggle, isOn: true),
+            "The compiled native Login switch invokes its target/action binding")
         expect(
-            toggleFixture.session.state.loginItemRegistration == .enabled,
-            "Login toggle 必须经 session/model seam 更新 projection")
-        toggleProbe.close()
+            fixture.session.state.loginItemRegistration == .enabled,
+            "The binding updates the retained login projection")
     }
-    #endif
 }
 
 @MainActor
 final class SettingsRootNativeProbe {
-    private let window: NSWindow
-    private let hostingView: NSHostingView<SettingsRootView>
+    private let window: RetainedSettingsWindow
+    private let hostingView: NSView
+    private let shell: SettingsNativeShellController
+    private let session: SettingsPresentationSession
     private let size = NSSize(width: 1_240, height: 820)
     private var eventNumber = 1
 
     init(session: SettingsPresentationSession) {
         _ = NSApplication.shared
         SoundPacksLayoutRecorder.reset()
-        window = NSWindow(
+        self.session = session
+        shell = SettingsNativeShellController(session: session)
+        window = RetainedSettingsWindow(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
-        hostingView = NSHostingView(rootView: SettingsRootView(session: session))
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        window.contentView = hostingView
+        hostingView = shell.view
+        window.contentViewController = shell
+        shell.install(in: window)
+        window.setContentSize(size)
         window.isReleasedWhenClosed = false
-        window.makeKeyAndOrderFront(nil)
+        window.presentForUserRequest()
         refresh()
     }
 
@@ -134,9 +104,9 @@ final class SettingsRootNativeProbe {
         return window.attachedSheet != nil || !window.sheets.isEmpty
     }
 
-    var isActiveKeyWindow: Bool { NSApp.isActive && window.isKeyWindow }
+    var isActiveKeyWindow: Bool { window.isKeyWindow }
 
-    var isNativeListFocused: Bool { window.firstResponder is NSOutlineView }
+    var isNativeListFocused: Bool { window.firstResponder === shell.sidebarController.table }
 
     var focusedPopUpItems: [String]? {
         (window.firstResponder as? NSPopUpButton)?.itemTitles
@@ -148,9 +118,35 @@ final class SettingsRootNativeProbe {
 
     func activate() {
         window.center()
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        window.presentForUserRequest()
         refresh()
+    }
+
+    func settle() async { for _ in 0..<4 { await Task.yield(); refresh() } }
+
+    func selectSidebar(_ destination: SettingsDestination, horizontalFraction: CGFloat) -> Bool {
+        refresh()
+        let table = shell.sidebarController.table
+        guard let frame = shell.sidebarController.frame(for: destination) else { return false }
+        let point = NSPoint(x: frame.minX + frame.width * horizontalFraction, y: frame.midY)
+        let row = table.row(at: point)
+        guard row >= 0 && table.hitTest(point) != nil else { return false }
+        if table.selectedRow == row {
+            table.reselectRow(row)
+        } else {
+            table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        }
+        return true
+    }
+
+    func sendSidebarKey(_ keyCode: UInt16) {
+        guard
+            let event = NSEvent.keyEvent(
+                with: .keyDown, location: .zero, modifierFlags: [],
+                timestamp: 0, windowNumber: window.windowNumber, context: nil, characters: "",
+                charactersIgnoringModifiers: "", isARepeat: false, keyCode: keyCode)
+        else { return }
+        shell.sidebarController.table.keyDown(with: event)
     }
 
     func clickSidebar(
@@ -185,6 +181,19 @@ final class SettingsRootNativeProbe {
         refresh()
         guard let frame = SoundPacksLayoutRecorder.frames[identifier] else { return false }
         return clickContent(x: frame.maxX - 16, yFromTop: frame.midY)
+    }
+
+    func changeNativeSwitch(_ identifier: String, isOn: Bool) -> Bool {
+        refresh()
+        func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+        guard
+            let control = descendants(hostingView).compactMap({ $0 as? NSSwitch })
+                .first(where: { $0.accessibilityIdentifier() == identifier })
+        else { return false }
+        control.state = isOn ? .on : .off
+        let sent = control.sendAction(control.action, to: control.target)
+        refresh()
+        return sent
     }
 
     func sendKey(
@@ -223,7 +232,9 @@ final class SettingsRootNativeProbe {
 
     func close() {
         if let sheet = window.attachedSheet { window.endSheet(sheet) }
+        session.send(.windowWillClose)
         window.orderOut(nil)
+        window.contentViewController = nil
         window.close()
     }
 
@@ -259,6 +270,7 @@ final class SettingsRootNativeProbe {
 
     private func refresh() {
         hostingView.layoutSubtreeIfNeeded()
+        shell.synchronizeLayout()
         window.displayIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
     }

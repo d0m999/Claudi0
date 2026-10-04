@@ -4,7 +4,15 @@
 
 2026-10-02 同步索引：[原生迁移记录](../docs/validation/macos-settings-native-2026-10-02.md) 保留其候选与验证边界；[当前 UI／实现／SoT 对齐记录](../docs/validation/sot-implementation-alignment-2026-10-02.md) 列出后续工作树实现、待修复偏离与未验证项。本规格中的“不新增字段／公共 API”约束 #215 迁移范围；后续 [#216 事件动画规格](PLAN-EVENT-ANIMATION.md) 明确新增动画偏好与子路由，继续复用原有 owner，不将该增量混入 C01–C48 的历史验收。
 
-## 呈现与领域基线
+## 2026-10-04 外壳与导航修订（现行）
+
+当前外壳与控件参照 [`Native Settings Alignment Prototype.html`](<../designs/macos-settings-native/Native Settings Alignment Prototype.html>)、`DESIGN.md` 现行原生外壳章节及 ADR 0008。采用真实 `NSSplitViewController`、`NSToolbar`、`NSTableView.style = .sourceList`；取消正文固定页头。窗口尺寸、侧栏宽度与断点保持原值，正文 section/group 间距改为 20/12 pt，普通/多行最低行高为 38/51 pt，背景与强调色由系统绘制。下文旧固定 RGB、页头、间距和行高仅是历史基线。
+
+`SettingsPresentationSession` 持有窗口打开期间最多 64 个 `SettingsLocation`。侧栏、详情和显式深链共用 Back/Forward；重复当前位置保留前进分支。位置捕获目录身份、查看包、焦点书签与阅读锚点，不捕获配置或写入能力。已知失效目标保留错误页与历史；格式错误输入拒绝进入历史。sheet/文件选择器禁用外层导航，关闭清空历史。包复制与生成的迟到结果不得改写较新的导航；历史遍历不重放复制、应用或采用。
+
+此修订只增加 package 层的呈现接口，不改变公共 `SettingsRoute`、raw values、磁盘合同及写入 owner。C01–C48 领域能力仍需保持；此轮人工、VoiceOver、窗口交接及 macOS 12 真机验收须独立记录。
+
+## 上一轮呈现与领域基线（历史）
 
 源码基线：`7ca63a4af0497b74b53e89225ccf4de30d900c12`。
 设置呈现：[`claudi0 macOS Settings Prototype.html`](<../designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)。

@@ -19,6 +19,7 @@ struct IntegrationsSettingsDestinationView: View {
     let onAnnouncement: @MainActor (String) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.settingsSuppressesAutomaticContentFocus) private var suppressesContentFocus
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedTarget: IntegrationDestinationFocusTarget?
     @State private var receiptHistoryTarget: ReceiptHistoryTarget?
@@ -56,26 +57,6 @@ struct IntegrationsSettingsDestinationView: View {
     var body: some View {
         AnyView(
             VStack(spacing: 0) {
-                SettingsPageHeader {
-                    if detailsHost != nil {
-                        Button {
-                            if let route {
-                                onIntegrationsRoute(
-                                    IntegrationsSettingsRoute(surface: route.surface))
-                            }
-                            focusedTarget = .title
-                        } label: {
-                            Label(l10n.text(.settingsNativeBack), systemImage: "chevron.left")
-                        }
-                        .labelStyle(.iconOnly).buttonStyle(.plain)
-                        .accessibilityIdentifier("integrations.destination.detail.back")
-                    }
-                    Text(detailsHost?.displayName ?? l10n.text(.settingsDestinationIntegrations))
-                        .font(SettingsAppearance.pageTitle)
-                        .accessibilityAddTraits(.isHeader)
-                        .focusable().focused($focusedTarget, equals: .title)
-                        .accessibilityIdentifier("integrations.destination.title")
-                }
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
                         if let detailsHost {
@@ -106,7 +87,6 @@ struct IntegrationsSettingsDestinationView: View {
                                         IntegrationsSettingsRoute(
                                             surface: facts.host.surfaceID,
                                             detailsHost: facts.host))
-                                    focusedTarget = .title
                                 } label: {
                                     HStack {
                                         Text(l10n.text(.settingsNativeCapabilities))
@@ -227,7 +207,7 @@ struct IntegrationsSettingsDestinationView: View {
                         .accessibilityHidden(true)
                 }
                 Button {
-                    _ = model.selectHost(agent.host)
+                    onIntegrationsRoute(IntegrationsSettingsRoute(surface: agent.host.surfaceID))
                 } label: {
                     Text(agent.title)
                         .font(SettingsAppearance.font(.body).weight(.semibold))
@@ -269,7 +249,7 @@ struct IntegrationsSettingsDestinationView: View {
                         })
                 )
                 .labelsHidden()
-                .toggleStyle(.switch)
+                .toggleStyle(.switch).controlSize(.mini)
                 .tint(SettingsAppearance.accent(colorScheme))
                 .disabled(!agent.isToggleEnabled)
                 .focused($focusedTarget, equals: .toggle(agent.host))
@@ -485,14 +465,8 @@ struct IntegrationsSettingsDestinationView: View {
     }
 
     private func capabilitySection(_ facts: IntegrationDestinationHostFacts) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(l10n.text(.settingsNativeCapabilities)).font(
-                SettingsAppearance.font(.sectionTitle)
-            )
-            .accessibilityAddTraits(.isHeader)
-            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-            .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
-            .frame(minHeight: SettingsAppearance.controlRowHeight)
+        SettingsSectionCard(title: l10n.text(.settingsNativeCapabilities), padding: 0) {
+            VStack(alignment: .leading, spacing: 0) {
             ForEach(Event.allCases, id: \.self) { event in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(localizedEventName(event, language: languageStore.language))
@@ -517,8 +491,8 @@ struct IntegrationsSettingsDestinationView: View {
                     Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                 }
             }
+            }
         }
-        .settingsSectionSurface(padding: 0)
         .accessibilityIdentifier("integrations.destination.capabilities")
     }
 

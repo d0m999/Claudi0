@@ -247,7 +247,10 @@ private func soundEditorLifecycleOpenLocalEvent(
     await Task.yield()
     let mounted = SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil
     expect(mounted, "点击事件行后必须实际挂载事件详情")
-    expect(fixture.session.state.routeResolution.route == .sounds(.overview), "本地事件详情不得改写外层 route")
+    expect(
+        fixture.session.state.routeResolution.route
+            == .sounds(.editEvent(packID: "settings-fixture-pack", event: .stop)),
+        "本地事件详情通过统一位置进入历史")
     return opened && mounted
 }
 
@@ -285,13 +288,9 @@ private func soundEditorLifecycleExpectOverview() async {
 
 @MainActor
 private func soundEditorLifecycleClickSoundsSidebar(_ probe: SettingsRootNativeProbe) async {
-    let sidebarFrame = SoundPacksLayoutRecorder.frames["settings.sidebar.item.sounds"]
-    expect(sidebarFrame != nil, "必须记录真实声音侧栏位置")
-    guard let sidebarFrame else { return }
-    SoundPacksLayoutRecorder.reset()
-    expect(
-        probe.clickContent(x: sidebarFrame.midX, yFromTop: sidebarFrame.midY),
-        "必须投递真实声音侧栏点击")
+    await probe.settle()
+    expect(probe.selectSidebar(.sounds, horizontalFraction: 0.5), "原生列表单选必须发布一次统一导航事务")
+    await probe.settle()
     await soundEditorLifecycleExpectOverview()
 }
 

@@ -48,10 +48,10 @@ func runSettingsPresentationLifecycleSuites() async {
             "AppKit controller 不得持有 destination model/publisher 或 raw Sound Pack owner")
         expect(
             controllerCode.contains(
-                "let content = SettingsRootView(session: settingsPresentationSession)")
-                && controllerCode.contains("NSHostingController(rootView: content)")
+                "SettingsNativeShellController(session: settingsPresentationSession)")
+                && controllerCode.contains("window.contentViewController = content")
                 && !controllerCode.contains("SettingsWindowView"),
-            "唯一 native Settings controller 必须挂 production SettingsRootView(session:)，不得回退旧树")
+            "唯一 native Settings controller 必须挂会话投影的原生外壳，不得回退旧树")
         expect(
             !navigationCode.contains("SettingsWindowPresentationModel<")
                 && !navigationCode.contains("pendingHandback")
@@ -172,10 +172,10 @@ func runSettingsPresentationLifecycleSuites() async {
         expect(
             session.send(.route(.destination(.eventsAndSounds))) == .routed
                 && session.state.eventPresentation.route.event == .stop
-                && session.state.eventPresentation.focusTarget == .title
+                && session.state.eventPresentation.focusTarget == .scope(selected)
                 && settingsWindowRequestedFocusTarget(resolution: session.state.routeResolution)
                     == nil,
-            "旧事件深链后从集成通用入口返回必须聚焦页面标题")
+            "旧事件深链后从集成通用入口返回必须聚焦当前作用域")
         expect(
             session.send(.route(.events(scope: selected, event: nil))) == .routed
                 && session.state.eventPresentation.focusTarget == .scope(selected),
@@ -193,7 +193,7 @@ func runSettingsPresentationLifecycleSuites() async {
                     && session.state.eventPresentation.route.scope == selected
                     && fixture.integrationsModel.selectedHost == host
                     && fixture.eventSettingsModel.selectedSoundScope == selected
-                    && session.state.eventPresentation.focusTarget == .title
+                    && session.state.eventPresentation.focusTarget == .scope(selected)
                     && fixture.eventSettingsModel.configState == configBefore,
                 "集成所选 Host 不得重选或写入手动声音作用域")
         }
@@ -205,11 +205,13 @@ func runSettingsPresentationLifecycleSuites() async {
                 events: Set(Event.allCases)))
         _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .codex))))
         expect(
-            session.send(.route(.destination(.eventsAndSounds))) == .routed
+            session.send(.route(.destination(.eventsAndSounds)))
+                == .rejected(.staleSoundScope(selected))
                 && session.state.eventPresentation.route.scope == selected
                 && session.state.eventPresentation.route
                     .unavailableRequestedScopeStoredValue == selected.storedValue
-                && session.state.eventPresentation.focusTarget == .unavailableScope
+                && settingsWindowRequestedFocusTarget(resolution: session.state.routeResolution)
+                    == .routeFailure(.eventsAndSounds)
                 && fixture.eventSettingsModel.selectedSoundScope == selected
                 && fixture.eventSettingsModel.configState == configBefore,
             "失效工作区由普通入口保留为不可用目标，不静默切到可写默认组")
@@ -441,16 +443,19 @@ func runSettingsPresentationLifecycleSuites() async {
             model.reload()
             expect(
                 model.soundScopeSelection.projection.staleness == .invalidRule
-                    && selection.route.event == .stop && selection.route.workspaceTarget == nil
+                    && selection.route.event == .stop && selection.route.workspaceTarget == target
                     && selection.route.detail == .scope(target)
                     && selection.unavailableRequestedScopeStoredValue == workspace.storedValue,
-                "无额外 pin 的合法事件入口随共享状态失效，但不能丢失事件与目录详情")
+                "合法入口捕获当前目录；共享状态失效不能丢失事件与目录详情")
             writeFixture(repairedBytes, to: configFile)
             model.reload()
             expect(
                 model.soundScopeSelection.projection.staleness == .current
-                    && selection.route == detailRoute
-                    && session.state.eventPresentation.route == detailRoute
+                    && selection.route
+                        == EventSettingsWindowRoute(
+                            scope: workspace, event: .stop,
+                            workspaceTarget: target, detail: .scope(target))
+                    && session.state.eventPresentation.route == selection.route
                     && session.state.focusDebt == detailFocusDebt
                     && session.state.explicitRouteRequestRevision == detailRouteRevision
                     && (try? Data(contentsOf: configFile)) == repairedBytes,
@@ -535,11 +540,13 @@ func runSettingsPresentationLifecycleSuites() async {
             scope: .workspace(id), event: .stop, workspaceTarget: oldTarget)
         expect(
             fixture.session.send(.present(.eventShortcut(delayed)))
-                == .presented(wasAlreadyPresented: true)
+                == .rejected(.staleSoundScope(delayed.scope))
                 && fixture.session.state.eventPresentation.route.workspaceTarget == oldTarget
                 && fixture.session.state.eventPresentation.route
                     .unavailableRequestedScopeStoredValue == delayed.scope.storedValue
-                && fixture.session.state.eventPresentation.focusTarget == .unavailableScope
+                && settingsWindowRequestedFocusTarget(
+                    resolution: fixture.session.state.routeResolution)
+                    == .routeFailure(.eventsAndSounds)
                 && fixture.eventSettingsModel.selectedSoundScope == .global,
             "面板旧目录快捷入口不能把新目录选成可写目标，并须聚焦可见失败说明")
 
@@ -610,7 +617,7 @@ func runSettingsPresentationLifecycleSuites() async {
         }
     }
 
-    suite("Settings mounted sound entrance：失效工作区显示重选入口") {
+    await suite("Settings mounted sound entrance：失效工作区显示重选入口") {
         let rule = WorkspaceSoundRule(
             directory: WorkspaceDirectory(kind: .directory, path: "/fixture/stale-entrance"),
             surfaces: [.codex],
@@ -632,21 +639,20 @@ func runSettingsPresentationLifecycleSuites() async {
         SettingsMountRecorder.reset()
         _ = fixture.session.send(.route(.destination(.eventsAndSounds)))
         for _ in 0..<3 {
+            await Task.yield()
             hostingView.layoutSubtreeIfNeeded()
-            _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.03))
+            settingsPumpLayoutRunLoop()
         }
         expect(
-            SettingsMountRecorder.identifiers.contains("settings.destination.events-and-sounds")
-                && SettingsMountRecorder.identifiers.contains("settings.title.events-and-sounds")
-                && SettingsMountRecorder.identifiers.contains("workspace.scope.unavailable")
+            SettingsMountRecorder.identifiers.contains("settings.route.failure.events-and-sounds")
                 && SettingsMountRecorder.identifiers.contains("workspace.choose-default-group")
                 && fixture.session.state.eventPresentation.route.scope == selected,
             "production root 应挂载不可写说明与显式默认组重选按钮")
-        SettingsMountRecorder.reset()
         _ = fixture.session.send(.route(.events(scope: selected, event: .stop)))
         for _ in 0..<3 {
+            await Task.yield()
             hostingView.layoutSubtreeIfNeeded()
-            _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.03))
+            settingsPumpLayoutRunLoop()
         }
         expect(
             SettingsMountRecorder.identifiers.contains("settings.route.failure.events-and-sounds"),
@@ -668,7 +674,7 @@ func runSettingsPresentationLifecycleSuites() async {
             let result = fixture.session.send(.route(route))
             for _ in 0..<3 {
                 hostingView.layoutSubtreeIfNeeded()
-                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.03))
+                settingsPumpLayoutRunLoop()
             }
             let requestedFocus = settingsWindowRequestedFocusTarget(
                 resolution: fixture.session.state.routeResolution)
@@ -712,10 +718,11 @@ func runSettingsPresentationLifecycleSuites() async {
                 && session.state.focusDebt?.destination == .eventsAndSounds,
             "explicit deep link 必须覆盖 generic destination 并发布精确 focus debt")
         let firstExplicitRevision = session.state.explicitRouteRequestRevision
+        let firstFocusRevision = session.state.focusDebt!.revision
         expect(
             session.send(.route(explicit)) == .routed
                 && session.state.explicitRouteRequestRevision == firstExplicitRevision + 1
-                && session.state.focusDebt?.revision == firstExplicitRevision + 1,
+                && session.state.focusDebt?.revision == firstFocusRevision + 1,
             "相同 explicit deep link 每次仍必须只推进一个 request/focus revision")
     }
 
@@ -730,36 +737,23 @@ func runSettingsPresentationLifecycleSuites() async {
         let priorSoundMode = fixture.soundPacksEditor.presentation.mode
         let firstFailedRoute = SettingsRoute.integrations(
             IntegrationsSettingsRoute(surface: .chatGPTDesktopAX))
-        let firstFailedRevision = session.state.explicitRouteRequestRevision
-
-        expect(
-            session.send(.route(firstFailedRoute))
-                == .rejected(.invalidSurface(.chatGPTDesktopAX))
-                && session.state.routeResolution
-                    == SettingsRouteResolution(
-                        route: firstFailedRoute,
-                        failure: .invalidSurface(.chatGPTDesktopAX))
-                && session.state.activeDestination == .integrations
-                && session.state.explicitRouteRequestRevision == firstFailedRevision + 1
-                && session.state.focusDebt?.revision == firstFailedRevision + 1
-                && session.state.focusDebt?.destination == .integrations
+        let beforeInvalid = session.state
+        let historyBeforeInvalid = session.navigationHistory
+        for _ in 0..<2 {
+            expect(
+                session.send(.route(firstFailedRoute))
+                    == .rejected(.invalidSurface(.chatGPTDesktopAX))
+                    && session.state == beforeInvalid
+                    && session.navigationHistory == historyBeforeInvalid
                 && fixture.integrationsModel.selectedHost == priorHost
                 && fixture.eventSettingsModel.selectedSurface == priorSurface
                 && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
-            "visible invalid route 必须发布 requested destination/failure/focus，且不得选择失败 Host 或触碰其他 owner"
-        )
-        let repeatedFailureRevision = session.state.explicitRouteRequestRevision
-        expect(
-            session.send(.route(firstFailedRoute))
-                == .rejected(.invalidSurface(.chatGPTDesktopAX))
-                && session.state.routeResolution.route == firstFailedRoute
-                && session.state.explicitRouteRequestRevision == repeatedFailureRevision + 1
-                && session.state.focusDebt?.revision == repeatedFailureRevision + 1,
-            "同一 failed explicit route 每次仍必须形成一个新的可观察 revision/focus debt")
+                "不可解析的输入及重复请求保持路由、历史、焦点和领域 owner 不变")
+        }
 
         _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .workBuddy))))
         _ = session.send(
-            .acknowledgeFocus(revision: session.state.explicitRouteRequestRevision))
+            .acknowledgeFocus(revision: session.state.focusDebt!.revision))
         let explicitRevision = session.state.explicitRouteRequestRevision
         fixture.session.replaceAvailabilityForTesting(
             SettingsRouteAvailability(
@@ -799,35 +793,17 @@ func runSettingsPresentationLifecycleSuites() async {
         _ = session.send(.windowWillClose)
         let invalidWhileClosed = SettingsRoute.sounds(
             .editEvent(surface: nil, packID: "   ", event: .stop))
-        let closedRevision = session.state.explicitRouteRequestRevision
-        let closedInvalidResult = session.send(.present(.route(invalidWhileClosed)))
-        expect(
-            closedInvalidResult == .rejected(.invalidSoundPackID)
-                && session.state.routeResolution
-                    == SettingsRouteResolution(
-                        route: invalidWhileClosed,
-                        failure: .invalidSoundPackID)
-                && session.state.activeDestination == .sounds
-                && session.state.windowPhase == .hidden
-                && session.state.explicitRouteRequestRevision == closedRevision + 1
-                && session.state.focusDebt?.revision == closedRevision + 1
-                && session.state.focusDebt?.destination == .sounds
+        let closedState = session.state
+        let closedHistory = session.navigationHistory
+        for _ in 0..<2 {
+            expect(
+                session.send(.present(.route(invalidWhileClosed))) == .rejected(.invalidSoundPackID)
+                    && session.state == closedState && session.navigationHistory == closedHistory
                 && fixture.integrationsModel.selectedHost == priorHost
                 && fixture.eventSettingsModel.selectedSurface == priorSurface
                 && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
-            "closed invalid explicit 必须发布 requested Sounds failure/focus，但在 native phase 前保持 hidden 且零 target mutation"
-        )
-        let repeatedClosedFailureRevision = session.state.explicitRouteRequestRevision
-        expect(
-            session.send(.present(.route(invalidWhileClosed)))
-                == .rejected(.invalidSoundPackID)
-                && session.state.explicitRouteRequestRevision
-                    == repeatedClosedFailureRevision + 1
-                && session.state.focusDebt?.revision == repeatedClosedFailureRevision + 1
-                && fixture.integrationsModel.selectedHost == priorHost
-                && fixture.eventSettingsModel.selectedSurface == priorSurface
-                && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
-            "closed phase 的同一 failed explicit route 也必须可重复观察且不触碰 domain owner")
+                "关闭期间不可解析输入不能创建窗口会话或历史位置，也不能触碰领域 owner")
+        }
 
         _ = session.send(.windowWillClose)
         expect(
@@ -982,7 +958,22 @@ func runSettingsPresentationLifecycleSuites() async {
             let initialPreference = fixture.lastSettingsDestination
             let initialRevision = session.state.explicitRouteRequestRevision
 
+            let stateBefore = session.state
+            let historyBefore = session.navigationHistory
             let result = session.send(.route(testCase.route))
+            if testCase.failure == .invalidSoundPackID
+                || testCase.failure == .invalidSurface(.chatGPTDesktopAX)
+            {
+                expect(
+                    result == .rejected(testCase.failure) && session.state == stateBefore
+                        && session.navigationHistory == historyBefore
+                        && fixture.integrationsModel.selectedHost == initialHost
+                        && fixture.eventSettingsModel.selectedSurface == initialEventSurface
+                        && fixture.soundPacksEditor.presentation == initialSoundPresentation
+                        && fixture.lastSettingsDestination == initialPreference,
+                    "格式错误请求保留当前页面和历史，领域状态与偏好均不变")
+                continue
+            }
             expect(
                 result == .rejected(testCase.failure)
                     && session.state.routeResolution
@@ -996,7 +987,14 @@ func runSettingsPresentationLifecycleSuites() async {
                     && fixture.integrationsModel.isWindowVisible == initialHostVisibility
                     && fixture.integrationsModel.isWindowKey == initialHostKeyState
                     && fixture.eventSettingsModel.selectedSurface == initialEventSurface
-                    && session.state.eventPresentation == initialEventPresentation
+                    && (session.state.eventPresentation == initialEventPresentation
+                        || (testCase.failure == .staleSoundScope(.global)
+                            && session.state.eventPresentation.route.scope == .global
+                            && session.state.eventPresentation.route
+                                .unavailableRequestedScopeStoredValue
+                                == PanelSoundScopeID.global.storedValue
+                            && session.navigationHistory.current?.location.workspaceRoute?.scope
+                                == .global))
                     && fixture.soundPacksEditor.presentation == initialSoundPresentation
                     && fixture.lastSettingsDestination == initialPreference,
                 "\(testCase.failure) 必须保留 requested destination/failure，同时保持 Host/Event/Sound/preference 零 mutation"
@@ -1004,7 +1002,7 @@ func runSettingsPresentationLifecycleSuites() async {
         }
     }
 
-    suite("Settings failed route：保留真实 lifecycle owner，后续 success/close 各 cleanup 一次") {
+    suite("Settings failed route：错误页卸载旧 lifecycle，后续 success/close 不重复 cleanup") {
         let availability = SettingsRouteAvailability(
             integrationSurfaces: Set(HostID.productVisibleCases.map(\.surfaceID)),
             eventScopes: [.global],
@@ -1020,16 +1018,16 @@ func runSettingsPresentationLifecycleSuites() async {
                 availability: availability)
             fixture.beginEventTransientActivity()
             let beforeFailure = fixture.session.state.eventPresentation
-            let soundBeforeFailure = fixture.soundPacksEditor.presentation
 
             expect(
                 fixture.session.send(.route(failedRoute))
                     == .rejected(.staleSoundPack("missing-pack"))
                     && fixture.session.state.activeDestination == .sounds
-                    && fixture.session.state.eventPresentation == beforeFailure
-                    && fixture.soundPacksEditor.presentation == soundBeforeFailure
-                    && fixture.aiCueViewModel.session != nil,
-                "failed Sounds request 只能换 presentation failure；不得提前结束真实 Events lifecycle"
+                    && fixture.session.state.eventPresentation.previewStopRequestRevision
+                        == beforeFailure.previewStopRequestRevision + 1
+                    && fixture.soundPacksEditor.presentation.mode == .inactive
+                    && fixture.aiCueViewModel.session == nil,
+                "已知失效目标进入错误页，卸载旧 Events 并清理试听与 AI 会话"
             )
 
             if exitsThroughClose {
@@ -1139,29 +1137,25 @@ func runSettingsPresentationLifecycleSuites() async {
         expect(
             session.state.soundsDetail
                 == .event(packID: "settings-fixture-pack", event: .stop)
-                && session.state.routeResolution.route == .sounds(.overview),
-            "本地详情不得改写外层 route")
+                && session.state.routeResolution.route
+                    == .sounds(.editEvent(packID: "settings-fixture-pack", event: .stop))
+                && session.navigationHistory.entries.count == 2,
+            "本地详情发布统一路由与历史位置")
         expect(
-            session.send(.requestSoundsDetail(.audio(packID: "missing-pack"))) == .routed,
-            "失效包音频意图仍须仲裁为页内详情")
-        guard case .sounds(let soundsPresentation) = fixture.soundPacksEditor.presentation.mode
-        else {
-            expect(false, "Sounds 目的页必须保留 owner presentation")
-            return
-        }
+            session.send(.requestSoundsDetail(.audio(packID: "missing-pack")))
+                == .rejected(.staleSoundPack("missing-pack"))
+                && session.state.routeResolution.route
+                    == .sounds(
+                        SoundPacksWindowRoute(
+                            scope: .global, destination: .audio(packID: "missing-pack")))
+                && session.navigationHistory.current?.location.viewedPackID == "missing-pack"
+                && fixture.soundPacksEditor.presentation.mode == .inactive,
+            "已知失效包进入统一错误页，保留身份和历史并撤销编辑能力")
+        _ = fixture.soundPacksEditor.send(.activate(.sounds(route: .overview, requestRevision: 1)))
         expect(
-            session.state.soundsDetail == .audio(packID: "missing-pack")
-                && session.state.soundsDetail.unavailableFocusTarget(in: soundsPresentation)
-                    != nil,
-            "失效包音频详情必须呈现页内不可用原因而不是被导航离开")
-        _ = fixture.soundPacksEditor.send(
-            .activate(
-                .sounds(
-                    route: .overview,
-                    requestRevision: soundsPresentation.requestRevision)))
-        expect(
-            session.state.soundsDetail == .audio(packID: "missing-pack"),
-            "相同 requestRevision 的投影重放不得退出本地详情")
+            session.state.routeResolution.failure == .staleSoundPack("missing-pack")
+                && session.navigationHistory.current?.location.viewedPackID == "missing-pack",
+            "旧 owner 发布不能覆盖当前历史错误页的捕获身份")
         _ = session.send(.route(.destination(.general)))
         expect(
             session.state.soundsDetail == .overview,
@@ -1610,4 +1604,9 @@ private func settingsReplacingFirstOccurrence(
     var result = source
     result.replaceSubrange(range, with: replacement)
     return result
+}
+
+@MainActor
+private func settingsPumpLayoutRunLoop() {
+    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.03))
 }

@@ -98,13 +98,13 @@ package struct SettingsSoundsDetailCopyTransition: Equatable, Sendable {
 
 /// Session-owned arbitration for the Sounds destination's visible detail. Owner snapshot
 /// publications may repeat the same editor request: only a new request replaces the retained
-/// detail, and an initially pending deep link may still finish resolving once. Local open/back
-/// intents arrive through `requestDetail` and never rewrite the retained outer route.
+/// detail, and an initially pending deep link may still finish resolving once. Detail intents arrive through the session and its typed route history.
 package struct SettingsSoundsDetailArbitration {
     package private(set) var detail: SoundPacksSettingsDetail = .overview
     private var requestRevision: UInt64?
     private var awaitsInitialResolution = false
     private var copyTransition: SettingsSoundsDetailCopyTransition?
+    private var copyNavigationStamp: SettingsNavigationStamp?
     private var unavailableDetailIdentity: SoundPacksSettingsDetail?
     private var lastPublication: SoundPacksEditorPresentation?
     /// A copy transition may only start on the publication where its busy activity first
@@ -114,36 +114,21 @@ package struct SettingsSoundsDetailArbitration {
 
     package init() {}
 
+    package mutating func invalidateNavigationTransition() {
+        copyTransition = nil
+        copyNavigationStamp = nil
+    }
+
     /// Destination unmount parity with the retired view-local state: the next activation
     /// re-derives the detail from its own route request.
     package mutating func reset() {
         self = SettingsSoundsDetailArbitration()
     }
 
-    /// A local open/back intent from the rendered destination. The intent is already validated
-    /// by the session against the live destination; anything stale renders as the in-page
-    /// unavailable reason instead of navigating away.
-    @discardableResult
-    package mutating func requestDetail(
-        _ destination: SoundPacksWindowRoute.Destination,
-        publication: SoundPacksEditorPresentation
-    ) -> SettingsSoundsDetailEffects {
-        let target = settingsSoundsImpliedDetail(destination)
-        guard target != detail else { return SettingsSoundsDetailEffects() }
-        var effects = SettingsSoundsDetailEffects(
-            detailChanged: true, stopPreviewAndEndAISession: true)
-        if case .sounds(let sounds) = publication.mode, sounds.draft != nil {
-            effects.cancelAICueDraft = true
-        }
-        copyTransition = nil
-        unavailableDetailIdentity = nil
-        detail = target
-        return effects
-    }
-
     @discardableResult
     package mutating func consume(
-        _ publication: SoundPacksEditorPresentation
+        _ publication: SoundPacksEditorPresentation,
+        navigationStamp: SettingsNavigationStamp? = nil
     ) -> SettingsSoundsDetailEffects {
         defer { lastPublication = publication }
         guard case .sounds(let sounds) = publication.mode else {
@@ -208,6 +193,7 @@ package struct SettingsSoundsDetailArbitration {
                     && !seenBusyOperationIDs.contains($0.operationID)
             })
         {
+            copyNavigationStamp = navigationStamp
             copyTransition = SettingsSoundsDetailCopyTransition(
                 detail: next,
                 operationID: activity.operationID,
@@ -218,11 +204,13 @@ package struct SettingsSoundsDetailArbitration {
             seenBusyOperationIDs.insert(activity.operationID)
         }
 
-        if let transition = copyTransition {
+        if let transition = copyTransition, copyNavigationStamp == navigationStamp {
             next = transition.reconciledDetail(next, in: publication)
             if next != transition.detail || !transition.isPending(in: publication) {
                 copyTransition = nil
             }
+        } else if copyTransition != nil {
+            copyTransition = nil
         }
 
         let previousDraftID: String? = {

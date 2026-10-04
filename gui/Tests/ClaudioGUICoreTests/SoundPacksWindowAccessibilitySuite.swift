@@ -623,10 +623,10 @@ func runSoundPacksWindowAccessibilitySuites() {
                 && view.contains("packActionRow("),
             "声音页使用设置专用单列，详情与操作行长文本自然增高")
         expect(
-            view.contains("ClaudioTheme.Metrics.regularControlHeight")
-                && view.contains(".accessibilityLabel(packAccessibilityLabel(card))")
+            view.contains("SettingsAppearance.controlRowHeight")
+                && view.contains("accessibilityLabel: packAccessibilityLabel(")
                 && view.contains("localizedSoundPacksEventAccessibilityLabel("),
-            "macOS 32pt 控件目标、包行状态与事件失败状态必须真正接进窗口视图")
+            "统一原生设置行高度、包行状态与事件失败状态必须真正接进窗口视图")
 
         guard
             let responderIndex = controller.range(of: "makeFirstResponder")?.lowerBound,

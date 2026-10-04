@@ -54,7 +54,7 @@ struct EventSettingsAICueServiceCard: View {
             }
 
             SettingsControlRow(title: l10n.text(.aiCueProviderLabel)) {
-                Picker(
+                SettingsNativePopUp(
                     l10n.text(.aiCueProviderLabel),
                     selection: Binding(
                         get: { viewModel.providerProfileID },
@@ -63,13 +63,12 @@ struct EventSettingsAICueServiceCard: View {
                             Task {
                                 await viewModel.refreshCredentialStatus()
                             }
-                        })
-                ) {
-                    ForEach(viewModel.availableProviderProfiles, id: \.id) { profile in
-                        Text(l10n.text(profile.displayNameKey))
-                            .tag(profile.id)
-                    }
-                }
+                        }),
+                    options: viewModel.availableProviderProfiles.map {
+                        SettingsMenuOption($0.id, l10n.text($0.displayNameKey))
+                    }, identifier: "event-settings.ai-cue.provider-profile"
+                )
+                .fixedSize(horizontal: true, vertical: false)
                 .disabled(
                     viewModel.phase == .adopting
                         || viewModel.credentialActivity != .idle

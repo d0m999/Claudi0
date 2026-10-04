@@ -320,42 +320,32 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 "本地详情意图必须被 session 仲裁接受")
             expect(
                 session.state.soundsDetail == detail
-                    && session.state.routeResolution.route == .sounds(.overview),
-                "本地事件详情必须经 session 发布且不改写外层 route")
-            var observedDetails: [SoundPacksSettingsDetail] = []
-            let observation = session.$state.sink { observedDetails.append($0.soundsDetail) }
-            defer { observation.cancel() }
+                    && session.state.routeResolution.route
+                        == .sounds(.editEvent(packID: "pack-a", event: .stop)),
+                "本地事件详情必须经 session 发布统一历史位置")
+            let entryID = session.navigationHistory.current!.id
             let configBefore = try? Data(contentsOf: fixture.configFile)
             try! FileManager.default.moveItem(
                 at: root.appendingPathComponent("packs/pack-a"),
                 to: root.appendingPathComponent("removed-pack-a"))
-            _ = await fixture.library.refreshSnapshot(trigger: .retry)
-            await waitForSoundEditorPackAbsence(fixture.owner, packID: "pack-a")
-            guard case .sounds(let fallback) = fixture.owner.presentation.mode else {
-                expect(false, "刷新必须保留 Sounds presentation"); return
+            let libraryState = await fixture.library.refreshSnapshot(trigger: .retry)
+            for _ in 0..<512 where session.state.routeResolution.failure == nil {
+                await Task.yield()
+            }
+            if case .ready(let snapshot) = libraryState {
+                expect(
+                    !snapshot.facts.contains { $0.id == "pack-a" }
+                        && snapshot.facts.contains { $0.id == "pack-b" }, "真实库刷新证明 A 删除、B 仍存在")
+            } else {
+                expect(false, "删除后必须获得真实库的终态快照")
             }
             expect(
-                fallback.routeState == .resolved(.overview)
-                    && fallback.selectedPack?.id == "pack-b",
-                "复现必须经过真实库刷新和 overview 的自动选择回落 B")
-            expect(
-                session.state.soundsDetail == detail,
-                "普通 selection 回落不得替换详情捕获的包 A 身份")
-            expect(
-                observedDetails.allSatisfy { $0 == detail },
-                "库 pending／resolved 引发的同代次重发布不得关闭或重定向本地详情")
-            expect(
-                !detail.targetIsAvailable(in: fallback)
-                    && detail.visibleEventRows(in: fallback).isEmpty,
-                "原包失效后必须隐藏 B 的全部事件编辑和试听 capability")
-            expect(
-                detail.unavailableFocusTarget(in: fallback) == .managedScopeFailure,
-                "原包失效必须把焦点路由到当前可见的不可用原因")
-            expect(
-                SoundPacksSettingsDetail.audio(packID: "pack-a").unavailableFocusTarget(
-                    in: fallback)
-                    == .managedScopeFailure,
-                "音频详情必须遵守同一捕获身份和不可用焦点 gate")
+                session.state.routeResolution.failure == .staleSoundPack("pack-a")
+                    && session.navigationHistory.current?.id == entryID
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-a"
+                    && fixture.owner.presentation.mode == .inactive,
+                "刷新不追加历史；原包失效进入统一错误页，保留 A 身份并撤销 B 的全部编辑和试听能力")
+            expect(session.state.chrome.canGoBack, "失效位置仍保留统一前后导航")
             expect(
                 (try? Data(contentsOf: fixture.configFile)) == configBefore,
                 "查看、进入详情和磁盘刷新均不得改写当前使用组")
@@ -436,8 +426,9 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                             == .routed,
                         "本地详情意图必须被 session 仲裁接受")
                     expect(
-                        session.state.routeResolution.route == .sounds(.overview),
-                        "本地事件详情不得改写外层 route")
+                        session.state.routeResolution.route
+                            == .sounds(.editEvent(packID: "factory-a", event: .stop)),
+                        "本地事件详情发布统一历史位置")
                 }
                 expect(
                     session.state.soundsDetail == detail, "复制前必须打开原包事件详情")
@@ -459,6 +450,8 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 guard let action,
                     case .accepted(let operationID) = owner.send(.invoke(action))
                 else { expect(false, "复制必须产生显式 accepted operation"); return }
+                let acceptedEntryID = session.navigationHistory.current!.id
+                let acceptedHistoryCount = session.navigationHistory.entries.count
                 expect(
                     session.state.soundsDetail == detail,
                     "busy 操作尚无副本结果时必须保留原包身份")
@@ -472,6 +465,11 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 expect(
                     session.state.soundsDetail.targetIsAvailable(in: copied),
                     "成功结果的精确 packID 必须恢复同一事件详情的能力")
+                expect(
+                    session.navigationHistory.current?.id == acceptedEntryID
+                        && session.navigationHistory.entries.count == acceptedHistoryCount
+                        && session.navigationHistory.current?.location.viewedPackID == copiedID,
+                    "匹配的实际复制结果只转换当前历史条目，不增加浏览位置")
                 if kind != .copyAndApply || failsApplying {
                     expect(
                         (try? Data(contentsOf: fixture.configFile)) == configBefore,
@@ -495,8 +493,11 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
 
     await suite("Sound editor detail：离开原事件详情后迟到 copy 结果不得重定向新详情") {
         await withTempDirectory { root in
+            let publicationGate = SettingsCopyPublicationGate()
+            defer { publicationGate.release() }
             let fixture = makeSoundEditorFixture(
-                root: root, packIDs: ["factory-a"], builtinPackIDs: ["factory-a"])
+                root: root, packIDs: ["factory-a"], builtinPackIDs: ["factory-a"],
+                beforeReadyPublication: { publicationGate.pauseNextPublication() })
             let factory = root.appendingPathComponent("factory-packs/factory-a")
             writeFixture(
                 #"{"id":"factory-a","name":"Factory A","events":{"stop":"stop.mp3"}}"#,
@@ -520,25 +521,44 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
             guard case .accepted(let operationID) = owner.send(.invoke(copyAction)) else {
                 expect(false, "复制必须产生显式 accepted operation"); return
             }
+            publicationGate.arm()
+            await owner.waitForScheduledOperationExitForTesting(operationID)
+            expect(publicationGate.waitUntilPaused(), "实际磁盘复制结束后的库发布必须停在确定性边界")
             expect(
                 session.send(
                     .requestSoundsDetail(.editEvent(packID: "factory-a", event: .notification)))
                     == .routed,
-                "busy 期间离开原事件详情必须被仲裁接受")
-            await owner.waitForScheduledOperationExitForTesting(operationID)
+                "磁盘事务完成但库结果尚未发布时，新详情仍可进入")
+            publicationGate.release()
             await owner.waitForMutationTransactionsToQuiesceForTesting()
-            guard case .sounds(let settled) = owner.presentation.mode,
-                let copiedID = settled.selectedPack?.id, copiedID != "factory-a"
-            else { expect(false, "复制必须收敛到已发布副本"); return }
+            await fixture.library.waitUntilIdleForTesting()
+            let terminalLibrary = await fixture.library.stateForTesting()
+            guard case .ready(let snapshot) = terminalLibrary,
+                snapshot.facts.contains(where: { $0.id != "factory-a" })
+            else { expect(false, "真实磁盘复制必须完成并发布副本"); return }
             await Task.yield()
             expect(
                 session.state.soundsDetail
                     == .event(packID: "factory-a", event: .notification),
                 "离开原事件详情后迟到 copy 不得劫持新的详情")
+            let diskPackIDs = snapshot.facts.map(\.id)
+            let configBytes = try? Data(contentsOf: fixture.configFile)
+            session.send(.goBack)
+            session.send(.goForward)
+            await owner.waitForMutationTransactionsToQuiesceForTesting()
+            guard case .ready(let afterTraversal) = await fixture.library.stateForTesting() else {
+                expect(false, "历史遍历后共享库仍须可读"); return
+            }
+            expect(
+                afterTraversal.facts.map(\.id) == diskPackIDs
+                    && (try? Data(contentsOf: fixture.configFile)) == configBytes
+                    && session.state.soundsDetail
+                        == .event(packID: "factory-a", event: .notification),
+                "Back/Forward 不重放复制、应用或旧结果，磁盘与新详情保持不变")
         }
     }
 
-    await suite("Sound editor detail：仅看到新 selection 和旧终态结果不得授权任意详情重定向") {
+    await suite("Sound editor detail：写入开始前的新导航保留 owner 的陈旧操作拒绝") {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(
                 root: root, packIDs: ["factory-a"], builtinPackIDs: ["factory-a"])
@@ -565,9 +585,14 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 "busy 起点之后才打开的详情不携带过渡授权")
             await owner.waitForScheduledOperationExitForTesting(operationID)
             await owner.waitForMutationTransactionsToQuiesceForTesting()
-            guard case .sounds(let settled) = owner.presentation.mode,
-                let copiedID = settled.selectedPack?.id, copiedID != "factory-a"
-            else { expect(false, "复制必须收敛到已发布副本"); return }
+            await fixture.library.waitUntilIdleForTesting()
+            let terminalLibrary = await fixture.library.stateForTesting()
+            guard case .ready(let snapshot) = terminalLibrary,
+                snapshot.facts.map(\.id) == ["factory-a"],
+                owner.presentation.activities.contains(where: {
+                    $0.operationID == operationID && $0.phase == .failed(.staleAction)
+                })
+            else { expect(false, "进入写者前的导航保留原 freshness 校验及真实失败结果"); return }
             await Task.yield()
             expect(
                 session.state.soundsDetail == .event(packID: "factory-a", event: .stop),
@@ -691,6 +716,27 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
         }
     }
     #endif
+}
+
+/// Holds only the library's post-write publication. The original writer and capability checks
+/// run unchanged, so navigation cannot turn an unstarted queued operation into disk evidence.
+private final class SettingsCopyPublicationGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private let entered = DispatchSemaphore(value: 0)
+    private let resumed = DispatchSemaphore(value: 0)
+    private var armed = false
+    func arm() { lock.lock(); armed = true; lock.unlock() }
+    func pauseNextPublication() {
+        lock.lock()
+        let pauses = armed
+        armed = false
+        lock.unlock()
+        guard pauses else { return }
+        entered.signal()
+        _ = resumed.wait(timeout: .now() + 5)
+    }
+    func waitUntilPaused() -> Bool { entered.wait(timeout: .now() + 5) == .success }
+    func release() { resumed.signal() }
 }
 
 #if DEBUG

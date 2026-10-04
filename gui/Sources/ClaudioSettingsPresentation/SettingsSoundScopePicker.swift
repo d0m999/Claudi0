@@ -29,7 +29,7 @@ struct SettingsSoundScopePicker: View {
             title: l10n.text(.settingsNativeManagementScope),
             subtitle: l10n.text(.settingsNativeViewDoesNotApply)
         ) {
-            Picker(
+            SettingsNativePopUp(
                 l10n.text(.settingsNativeManagementScope),
                 selection: Binding(
                     get: { scope },
@@ -40,13 +40,16 @@ struct SettingsSoundScopePicker: View {
                         }.map(WorkspaceSoundWriteTarget.init(rule:))
                         _ = session.send(
                             .route(.sounds(.overview(scope: newScope, workspaceTarget: target))))
-                    })
-            ) {
-                if !scopes.contains(where: { $0.scope == scope }) {
-                    Text(l10n.text(.workspaceUnavailable)).tag(scope)
-                }
-                ForEach(scopes) { item in Text(item.name).tag(item.scope) }
-            }
+                    }),
+                options: (scopes.contains(where: { $0.scope == scope })
+                    ? []
+                    : [
+                        SettingsMenuOption(
+                            scope, l10n.text(.workspaceUnavailable), isEnabled: false)
+                    ]) + scopes.map { SettingsMenuOption($0.scope, $0.name) },
+                identifier: "settings.sounds.management-scope"
+            )
+            .fixedSize(horizontal: true, vertical: false)
             .accessibilityLabel(l10n.text(.settingsNativeManagementScope))
             .accessibilityIdentifier("settings.sounds.management-scope")
             .soundPacksLayoutProbe("settings.sounds.management-scope.control")

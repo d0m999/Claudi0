@@ -83,6 +83,8 @@ package final class SettingsPresentationFixture: ObservableObject {
         session.dependencies.preferences.lastSettingsDestination
     }
 
+    package var preferences: ClaudioPreferences { session.dependencies.preferences }
+
     package var eventSettingsSelection: EventSettingsWindowSelection {
         session.eventSettingsSelection
     }

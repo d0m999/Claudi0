@@ -113,6 +113,19 @@ func runSettingsNativeStatesSuites() async {
                     )
                 }
                 recordNativeState(probe, name: "\(scenario.id)-\(language.rawValue)")
+                if scenario.rendersCredentialSheet {
+                    let stamp = fixture.session.navigationHistory.stamp
+                    expect(
+                        fixture.session.send(.route(.destination(.general))) == .unchanged
+                            && fixture.session.navigationHistory.stamp == stamp,
+                        "credential sheet disables outer navigation without changing history")
+                    fixture.eventSettingsSelection.dismissCredentialSheet()
+                    await probe.settle()
+                    expect(
+                        !probe.hasAttachedSheet && fixture.session.state.chrome.navigationEnabled
+                            && fixture.session.navigationHistory.stamp == stamp,
+                        "cancelling the sheet restores navigation and leaves the cursor unchanged")
+                }
                 _ = fixture.session.send(.route(.destination(.general)))
                 expect(
                     !fixture.session.state.eventPresentation.credentialSheetIsPresented

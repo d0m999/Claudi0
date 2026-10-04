@@ -47,9 +47,20 @@ package enum SettingsPresentationRequest: Equatable, Sendable {
 package enum SettingsPresentationCommand: Equatable, Sendable {
     case present(SettingsPresentationRequest)
     case route(SettingsRoute)
-    /// Local open/back inside the Sounds destination. This never rewrites the retained outer
-    /// route; it only re-arbitrates the session-published detail against the live editor.
+    case selectSidebar(SettingsDestination)
+    case navigateWorkspace(EventSettingsWindowRoute)
+    case goBack
+    case goForward
+    case setNavigationBlocked(id: String, blocked: Bool)
+    case rememberReading(SettingsReadingBookmark, stamp: SettingsNavigationStamp)
+    case destinationReady(SettingsNavigationStamp)
+    case restoreFailureFocus(SettingsNavigationStamp)
+    case acknowledgeRestoration(SettingsNavigationStamp)
+    case goBackFromEventAnimation
+    case goForwardToEventAnimation
+    /// A detail intent enters the same browsing history as a sidebar or explicit deep link.
     case requestSoundsDetail(SoundPacksWindowRoute.Destination)
+    case inspectSoundPack(String)
     case setLanguageMode(ClaudioLanguageMode)
     case setLoginItemEnabled(Bool)
     case refreshLoginItemState
@@ -77,6 +88,14 @@ package enum SettingsPresentationResult: Equatable, Sendable {
 /// semantic delivery debt.
 package struct SettingsPresentationState: Equatable, Sendable {
     package let routeResolution: SettingsRouteResolution
+    package let chrome: SettingsChromeProjection
+    package let navigationRestoration: SettingsNavigationRestoration?
+    package let navigationFocus: SettingsNavigationFocus
+    package let canGoForwardToEventAnimation: Bool
+    package var canGoBackFromEventAnimation: Bool {
+        routeResolution.route == .notifications(.eventAnimation) && routeResolution.failure == nil
+            && chrome.canGoBack
+    }
     package let explicitRouteRequestRevision: UInt64
     /// The Sounds destination's visible detail, arbitrated by the session from typed routes,
     /// local intents and editor publications.
