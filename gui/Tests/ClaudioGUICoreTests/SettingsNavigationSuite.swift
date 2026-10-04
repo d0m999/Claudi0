@@ -143,6 +143,94 @@ func runSettingsNavigationSuites() {
             "声音编辑的陈旧 Event 不得静默选择其他事件")
     }
 
+    suite("Settings Sounds 详情路由：audio/service/panel 的稳定身份、校验与焦点让位") {
+        let availability = SettingsRouteAvailability(
+            integrationSurfaces: [.workBuddy],
+            eventScopes: [.global, .surface(.workBuddy)],
+            soundScopes: [.global, .surface(.workBuddy)],
+            soundPackIDs: ["orbit-pack"],
+            events: Set(Event.allCases))
+        let audio = SettingsRoute.sounds(
+            SoundPacksWindowRoute(
+                scope: .surface(.workBuddy), destination: .audio(packID: "orbit-pack")))
+        expect(
+            audio.stableIdentityComponents == ["sounds", "workbuddy", "orbit-pack", "audio"],
+            "音频详情深链接必须携带 scope、pack 与稳定 audio 段")
+        expect(
+            resolveSettingsRoute(audio, availability: availability).failure == nil,
+            "已存在声音包的音频详情必须解析")
+
+        let service = SettingsRoute.sounds(
+            SoundPacksWindowRoute(scope: .surface(.workBuddy), destination: .service))
+        let panel = SettingsRoute.sounds(
+            SoundPacksWindowRoute(scope: .surface(.workBuddy), destination: .panel))
+        expect(
+            service.stableIdentityComponents == ["sounds", "workbuddy", "service"]
+                && panel.stableIdentityComponents == ["sounds", "workbuddy", "panel"],
+            "服务与面板详情必须携带各自的稳定身份段")
+        expect(
+            resolveSettingsRoute(service, availability: availability).failure == nil
+                && resolveSettingsRoute(panel, availability: availability).failure == nil,
+            "服务与面板详情不要求具体声音包")
+
+        let staleAudio = resolveSettingsRoute(
+            .sounds(
+                SoundPacksWindowRoute(
+                    scope: .surface(.workBuddy), destination: .audio(packID: "removed-pack"))),
+            availability: availability)
+        expect(
+            staleAudio.destination == .sounds
+                && staleAudio.failure == .staleSoundPack("removed-pack"),
+            "音频详情的陈旧 pack 必须留在声音目的页且不得回退")
+
+        let unfresh = SettingsRouteAvailability(
+            integrationSurfaces: [.workBuddy],
+            eventScopes: [.global, .surface(.workBuddy)],
+            soundScopes: [.global, .surface(.workBuddy)],
+            soundPackIDs: [],
+            soundPackSnapshotIsFresh: false,
+            events: Set(Event.allCases))
+        expect(
+            resolveSettingsRoute(
+                .sounds(
+                    SoundPacksWindowRoute(
+                        scope: .surface(.workBuddy),
+                        destination: .audio(packID: "removed-pack"))),
+                availability: unfresh
+            ).failure == nil,
+            "快照尚未 fresh 时音频详情必须保持 pending 而非拒绝")
+
+        let blankAudio = resolveSettingsRoute(
+            .sounds(
+                SoundPacksWindowRoute(
+                    scope: .surface(.workBuddy), destination: .audio(packID: "  "))),
+            availability: availability)
+        expect(
+            blankAudio.failure == .invalidSoundPackID,
+            "空 pack 身份必须 fail closed")
+
+        expect(
+            resolveSoundPacksWindowRoute(
+                SoundPacksWindowRoute(
+                    scope: .surface(.workBuddy), destination: .audio(packID: "removed-pack")),
+                availablePackIDs: [], libraryState: .ready)
+                == .resolved(.overview(scope: .surface(.workBuddy))),
+            "缺包音频详情降级仍须保留 scope 目标")
+
+        for destination in [
+            SoundPacksWindowRoute.Destination.audio(packID: "orbit-pack"), .service, .panel,
+        ] {
+            expect(
+                settingsWindowRequestedFocusTarget(
+                    resolution: resolveSettingsRoute(
+                        .sounds(
+                            SoundPacksWindowRoute(
+                                scope: .surface(.workBuddy), destination: destination)),
+                        availability: availability)) == nil,
+                "非 overview 的 Sounds 详情焦点必须让位给嵌入编辑器")
+        }
+    }
+
     suite("Settings Integrations route：detailsHost 身份、路径组件与 fail-closed 解析") {
         let availability = SettingsRouteAvailability(
             integrationSurfaces: [.workBuddy, .codex],

@@ -271,6 +271,10 @@ package struct SettingsRootView: View {
                     route: soundsRoute,
                     routeRequestRevision:
                         settingsPresentationSession.state.explicitRouteRequestRevision,
+                    detail: settingsPresentationSession.state.soundsDetail,
+                    onDetailIntent: {
+                        settingsPresentationSession.send(.requestSoundsDetail($0))
+                    },
                     languageStore: preferences,
                     nativeEffects: soundPacksEditorNativeEffects,
                     pageHeader: destinationTitle,

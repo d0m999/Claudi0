@@ -1122,6 +1122,57 @@ func runSettingsPresentationLifecycleSuites() async {
         withExtendedLifetime((stateCancellable, soundCancellable)) {}
     }
 
+    suite("Settings Sounds detail lifecycle：本地意图经 session 仲裁且离开 destination 重置") {
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .sounds(.overview),
+            availability: PreviewFixtures.settingsRouteAvailability)
+        let session = fixture.session
+        expect(
+            session.state.soundsDetail == .overview
+                && session.state.routeResolution.route == .sounds(.overview),
+            "初始 Sounds 呈现必须从 overview 详情开始")
+        expect(
+            session.send(
+                .requestSoundsDetail(
+                    .editEvent(packID: "settings-fixture-pack", event: .stop))) == .routed,
+            "本地事件详情意图必须被 session 仲裁接受")
+        expect(
+            session.state.soundsDetail
+                == .event(packID: "settings-fixture-pack", event: .stop)
+                && session.state.routeResolution.route == .sounds(.overview),
+            "本地详情不得改写外层 route")
+        expect(
+            session.send(.requestSoundsDetail(.audio(packID: "missing-pack"))) == .routed,
+            "失效包音频意图仍须仲裁为页内详情")
+        guard case .sounds(let soundsPresentation) = fixture.soundPacksEditor.presentation.mode
+        else {
+            expect(false, "Sounds 目的页必须保留 owner presentation")
+            return
+        }
+        expect(
+            session.state.soundsDetail == .audio(packID: "missing-pack")
+                && session.state.soundsDetail.unavailableFocusTarget(in: soundsPresentation)
+                    != nil,
+            "失效包音频详情必须呈现页内不可用原因而不是被导航离开")
+        _ = fixture.soundPacksEditor.send(
+            .activate(
+                .sounds(
+                    route: .overview,
+                    requestRevision: soundsPresentation.requestRevision)))
+        expect(
+            session.state.soundsDetail == .audio(packID: "missing-pack"),
+            "相同 requestRevision 的投影重放不得退出本地详情")
+        _ = session.send(.route(.destination(.general)))
+        expect(
+            session.state.soundsDetail == .overview,
+            "离开 Sounds destination 必须重置详情")
+        _ = session.send(.route(.sounds(.overview)))
+        expect(
+            session.state.soundsDetail == .overview
+                && session.state.routeResolution.route == .sounds(.overview),
+            "返回 Sounds 必须从新 route request 重新推导详情")
+    }
+
     await suite("Settings mounted root：visible explicit route 必须消费 emitted focus debt") {
         let fixture = SettingsPresentationFixtures.generalLogin(
             route: .destination(.general),

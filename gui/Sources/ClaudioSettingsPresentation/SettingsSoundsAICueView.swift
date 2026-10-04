@@ -42,6 +42,8 @@ struct SettingsSoundsAICueView: View {
     let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
     let route: SoundPacksWindowRoute
     let routeRequestRevision: UInt64
+    let detail: SoundPacksSettingsDetail
+    let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
     var pageHeader: AnyView = AnyView(EmptyView())
     var scopePicker: AnyView = AnyView(EmptyView())
     var returnToScope: (@MainActor () -> Void)? = nil
@@ -85,6 +87,8 @@ struct SettingsSoundsAICueView: View {
             routeRequestRevision: routeRequestRevision,
             languageStore: languageStore,
             nativeEffects: nativeEffects,
+            detail: detail,
+            onDetailIntent: onDetailIntent,
             supplement: editorSupplement
         )
         .onAppear {

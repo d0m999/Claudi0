@@ -270,7 +270,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                         workspaceTarget: route.workspaceTarget)
                     let seed = model.editorProjectionSeed()
                     if case .ready = seed.library,
-                        let packID = route.editTarget?.packID,
+                        let packID = route.destinationPackID,
                         seed.installedPackIDs.contains(packID)
                     {
                         _ = model.selectPackForInspection(packID)
@@ -1751,7 +1751,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             : nil
         let routeState: SoundPacksEditorRouteState
         if case .ready = seed.library {
-            if let packID = route.editTarget?.packID {
+            if let packID = route.destinationPackID {
                 routeState =
                     seed.installedPackIDs.contains(packID)
                     ? .resolved(route)

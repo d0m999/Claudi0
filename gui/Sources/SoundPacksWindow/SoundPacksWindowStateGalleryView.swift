@@ -349,7 +349,9 @@ private struct SoundPacksWindowGalleryScene: View {
             editorOwner: owner,
             focusCoordinator: focusCoordinator,
             languageStore: languageStore,
-            nativeEffects: nativeEffects
+            nativeEffects: nativeEffects,
+            detail: .overview,
+            onDetailIntent: { _ in }
         )
         .id(id)
     }

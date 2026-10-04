@@ -70,12 +70,20 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
                 + (event.map { [$0.cliName] } ?? [])
         case .sounds(let route):
             let scope = route.scope.storedValue
-            guard let target = route.editTarget else {
+            switch route.destination {
+            case .overview:
                 return [SettingsDestination.sounds.rawValue, scope]
+            case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
+                return [
+                    SettingsDestination.sounds.rawValue, scope, packID, event.cliName,
+                ]
+            case .audio(let packID):
+                return [SettingsDestination.sounds.rawValue, scope, packID, "audio"]
+            case .service:
+                return [SettingsDestination.sounds.rawValue, scope, "service"]
+            case .panel:
+                return [SettingsDestination.sounds.rawValue, scope, "panel"]
             }
-            return [
-                SettingsDestination.sounds.rawValue, scope, target.packID, target.event.cliName,
-            ]
         }
     }
     #endif
@@ -231,12 +239,12 @@ public func resolveSettingsRoute(
             availableScopes: availability.soundScopes)
         {
             failure = scopeFailure
-        } else if let packID = soundsRoute.editTarget?.packID,
+        } else if let packID = soundsRoute.destinationPackID,
             packID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             failure = .invalidSoundPackID
         } else if availability.soundPackSnapshotIsFresh,
-            let packID = soundsRoute.editTarget?.packID,
+            let packID = soundsRoute.destinationPackID,
             !availability.soundPackIDs.contains(packID)
         {
             failure = .staleSoundPack(packID)
@@ -408,7 +416,7 @@ public func settingsWindowRequestedFocusTarget(
     case .integrations, .eventsAndSounds:
         return nil
     case .sounds:
-        if case .sounds(let route) = resolution.route, route.editTarget != nil { return nil }
+        if case .sounds(let route) = resolution.route, !route.isOverview { return nil }
         return .title(.sounds)
     case .general, .notifications, .usage, .shortcuts, .about:
         return .title(resolution.destination)

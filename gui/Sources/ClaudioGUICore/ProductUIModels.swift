@@ -293,6 +293,9 @@ public struct SoundPacksWindowRoute: Sendable, Equatable, Hashable {
         /// Missing-sound entry from Events. The route carries the same explicit scope as the
         /// outer route, so the copy flow can apply the new user pack only to that target.
         case copyAndApply(packID: String, event: Event)
+        case audio(packID: String)
+        case service
+        case panel
     }
 
     public let scope: PanelSoundScopeID
@@ -401,7 +404,19 @@ public struct SoundPacksWindowRoute: Sendable, Equatable, Hashable {
         switch destination {
         case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
             return (packID, event)
-        case .overview:
+        case .overview, .audio, .service, .panel:
+            return nil
+        }
+    }
+
+    /// Every destination that pins a pack identity. Pack validation, inspection selection and
+    /// pending/stale resolution consume this single fact; only event destinations additionally
+    /// carry an ``editTarget``.
+    public var destinationPackID: String? {
+        switch destination {
+        case .editEvent(let packID, _), .copyAndApply(let packID, _), .audio(let packID):
+            return packID
+        case .overview, .service, .panel:
             return nil
         }
     }
@@ -426,7 +441,7 @@ public func resolveSoundPacksWindowRoute(
     availablePackIDs: Set<String>,
     libraryState: SoundPackLibraryPresentationState
 ) -> SoundPacksWindowRouteResolution {
-    guard let packID = route.editTarget?.packID else { return .resolved(route) }
+    guard let packID = route.destinationPackID else { return .resolved(route) }
     if availablePackIDs.contains(packID) { return .resolved(route) }
     if libraryState == .ready {
         return .resolved(.overview(scope: route.scope, workspaceTarget: route.workspaceTarget))

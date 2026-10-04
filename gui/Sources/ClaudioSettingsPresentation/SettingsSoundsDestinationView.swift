@@ -10,6 +10,8 @@ struct SettingsSoundsDestinationView<Header: View, ScopePicker: View>: View {
     let editorOwner: SoundPacksEditorOwner
     let route: SoundPacksWindowRoute
     let routeRequestRevision: UInt64
+    let detail: SoundPacksSettingsDetail
+    let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
     let languageStore: ClaudioPreferences
     let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
     let pageHeader: Header
@@ -27,6 +29,8 @@ struct SettingsSoundsDestinationView<Header: View, ScopePicker: View>: View {
             nativeEffects: nativeEffects,
             route: route,
             routeRequestRevision: routeRequestRevision,
+            detail: detail,
+            onDetailIntent: onDetailIntent,
             pageHeader: AnyView(pageHeader),
             scopePicker: AnyView(scopePicker),
             returnToScope: returnToScope,

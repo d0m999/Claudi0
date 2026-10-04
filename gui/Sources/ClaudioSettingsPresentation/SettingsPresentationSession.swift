@@ -45,8 +45,12 @@ package final class SettingsPresentationSession: ObservableObject {
     private var isPerformingTransaction = false
     private var isPublishingProjection = false
     private var projectionRepublishRequested = false
+    private var soundsDetailArbitration = SettingsSoundsDetailArbitration()
+    private var isArbitratingSoundsDetail = false
+    private var pendingSoundEditorPublication: SoundPacksEditorPresentation?
     private var preferenceCancellable: AnyCancellable?
     private var soundPackProjectionCancellable: AnyCancellable?
+    private var soundPackEditorCancellable: AnyCancellable?
     private var aboutSurfaceCancellable: AnyCancellable?
     private var aiGenerationCancellable: AnyCancellable?
     private var eventPresentationCancellable: AnyCancellable?
@@ -77,6 +81,7 @@ package final class SettingsPresentationSession: ObservableObject {
         state = Self.makeState(
             routeResolution: routeResolution,
             explicitRouteRequestRevision: 0,
+            soundsDetail: .overview,
             focusDebt: nil,
             windowPhase: .hidden,
             activeDestination: nil,
@@ -116,6 +121,14 @@ package final class SettingsPresentationSession: ObservableObject {
                 self?.applyAvailabilityProjection(projection)
             }
         }
+        // No value dedup here: activation republishes an unchanged snapshot on the
+        // failure→recovery path, and every emission must still reach the detail reducer.
+        soundPackEditorCancellable = dependencies.soundPacksEditorOwner.$presentation
+            .sink { [weak self] publication in
+                MainActor.assumeIsolated {
+                    self?.applySoundEditorPublication(publication)
+                }
+            }
         aboutSurfaceCancellable = dependencies.hostIntegrations.$safeSurfaceFacts
             .removeDuplicates()
             .sink { [weak self] surfaceFacts in
@@ -222,6 +235,8 @@ package final class SettingsPresentationSession: ObservableObject {
             return present(request)
         case .route(let route):
             return routeTransaction(.route(route))
+        case .requestSoundsDetail(let destination):
+            return requestSoundsDetail(destination)
         case .setLanguageMode(let languageMode):
             dependencies.preferences.setLanguageMode(languageMode)
             return .routed
@@ -304,6 +319,67 @@ package final class SettingsPresentationSession: ObservableObject {
             return
         }
         enqueueAnnouncement(.loginItemStatus(loginProjection.registration))
+    }
+
+    /// The Sounds destination renders this session's published detail; every open/back click is
+    /// an intent against the retained arbitration, never a rewrite of the outer route.
+    private func requestSoundsDetail(
+        _ destination: SoundPacksWindowRoute.Destination
+    ) -> SettingsPresentationResult {
+        guard lifecycleDestination == .sounds, routeResolution.failure == nil,
+            case .sounds = dependencies.soundPacksEditorOwner.presentation.mode,
+            !isArbitratingSoundsDetail
+        else { return .unchanged }
+        var didChange = false
+        pumpSoundsDetailArbitration {
+            let effects = soundsDetailArbitration.requestDetail(
+                destination, publication: dependencies.soundPacksEditorOwner.presentation)
+            didChange = effects.detailChanged
+            return effects
+        }
+        return didChange ? .routed : .unchanged
+    }
+
+    private func applySoundEditorPublication(_ publication: SoundPacksEditorPresentation) {
+        guard lifecycleDestination == .sounds else { return }
+        if isArbitratingSoundsDetail {
+            // Effect execution synchronously republishes the owner; fold that emission into the
+            // running pass instead of recursing.
+            pendingSoundEditorPublication = publication
+            return
+        }
+        pumpSoundsDetailArbitration { soundsDetailArbitration.consume(publication) }
+    }
+
+    private func pumpSoundsDetailArbitration(
+        _ firstPass: () -> SettingsSoundsDetailEffects
+    ) {
+        isArbitratingSoundsDetail = true
+        defer { isArbitratingSoundsDetail = false }
+        runSoundsDetailEffects(firstPass())
+        while let queued = pendingSoundEditorPublication {
+            pendingSoundEditorPublication = nil
+            runSoundsDetailEffects(soundsDetailArbitration.consume(queued))
+        }
+    }
+
+    private func runSoundsDetailEffects(_ effects: SettingsSoundsDetailEffects) {
+        guard !effects.isEmpty else { return }
+        if effects.stopPreviewAndEndAISession {
+            dependencies.soundPacksEditorNativeEffects.stopPreview(
+                owner: dependencies.soundPacksEditorOwner)
+            eventSettingsSelection.noteCandidatePreviewStopped()
+            dependencies.aiCueViewModel.endSession()
+            dependencies.soundPacksEditorOwner.updateAICueComposer(
+                session: nil,
+                generation: nil)
+        }
+        if effects.cancelAICueDraft {
+            dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
+        }
+        if effects.detailChanged {
+            publishProjection()
+        }
     }
 
     private func setLoginItemEnabled(_ enabled: Bool) {
@@ -401,6 +477,10 @@ package final class SettingsPresentationSession: ObservableObject {
             routeResolution.route == .notifications(.eventAnimation)
             && requestedRoute == .destination(.notifications)
         routeResolution = resolved
+        if resolved.failure != nil, resolved.destination == .sounds {
+            // The destination view unmounts behind the failure explanation; drop its detail.
+            soundsDetailArbitration.reset()
+        }
         if resolved.failure == nil {
             applyRoute(requestedRoute, eventShortcut: eventShortcut)
         }
@@ -692,6 +772,9 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.soundPacksEditorOwner.updateAICueComposer(
                 session: nil,
                 generation: nil)
+            // The unmounted destination drops its detail exactly like the retired view-local
+            // state; the next activation re-derives it from the retained route.
+            soundsDetailArbitration.reset()
         case .usage:
             dependencies.eventNoticeModel.closeReading(.diagnostics)
         case .general, .notifications, .shortcuts, .about:
@@ -771,6 +854,12 @@ package final class SettingsPresentationSession: ObservableObject {
         let wasPerformingTransaction = isPerformingTransaction
         isPerformingTransaction = true
         routeResolution = resolved
+        if previousResolution.failure == nil, resolved.failure != nil,
+            resolved.destination == .sounds
+        {
+            // The destination view unmounts behind the failure explanation; drop its detail.
+            soundsDetailArbitration.reset()
+        }
         if previousResolution.failure != nil, resolved.failure == nil, isPresented {
             applyRoute(resolved.route, eventShortcut: nil)
             if let lifecycleDestination,
@@ -887,6 +976,7 @@ package final class SettingsPresentationSession: ObservableObject {
         Self.makeState(
             routeResolution: routeResolution,
             explicitRouteRequestRevision: explicitRouteRequestRevision,
+            soundsDetail: soundsDetailArbitration.detail,
             focusDebt: focusDebt,
             windowPhase: windowPhase,
             activeDestination: activeDestination,
@@ -901,6 +991,7 @@ package final class SettingsPresentationSession: ObservableObject {
     private static func makeState(
         routeResolution: SettingsRouteResolution,
         explicitRouteRequestRevision: UInt64,
+        soundsDetail: SoundPacksSettingsDetail,
         focusDebt: SettingsFocusDebt?,
         windowPhase: SettingsWindowPhase,
         activeDestination: SettingsDestination?,
@@ -914,6 +1005,7 @@ package final class SettingsPresentationSession: ObservableObject {
         SettingsPresentationState(
             routeResolution: routeResolution,
             explicitRouteRequestRevision: explicitRouteRequestRevision,
+            soundsDetail: soundsDetail,
             focusDebt: focusDebt,
             windowPhase: windowPhase,
             activeDestination: activeDestination,

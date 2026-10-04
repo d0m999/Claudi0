@@ -57,13 +57,16 @@ package struct SoundPacksEditorSupplement {
 
 }
 
-/// Unified Settings presentation of the app-lifetime editor owner. Route/focus state is local to
-/// the embedded destination; every disk/config mutation stays behind `SoundPacksEditorOwner`.
+/// Unified Settings presentation of the app-lifetime editor owner. The session owns the typed
+/// route and the published detail; this view only renders them and forwards local intents.
+/// Every disk/config mutation stays behind `SoundPacksEditorOwner`.
 @MainActor
 public struct EmbeddedSoundPacksEditorView: View {
     @ObservedObject private var editorOwner: SoundPacksEditorOwner
     private let route: SoundPacksWindowRoute
     private let routeRequestRevision: UInt64
+    private let detail: SoundPacksSettingsDetail
+    private let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
     private let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
     private let supplement: SoundPacksEditorSupplement
     @ObservedObject private var languageStore: ClaudioPreferences
@@ -77,6 +80,8 @@ public struct EmbeddedSoundPacksEditorView: View {
         routeRequestRevision: UInt64,
         languageStore: ClaudioPreferences,
         nativeEffects: SoundPacksEditorNativeEffectsDispatcher,
+        detail: SoundPacksSettingsDetail,
+        onDetailIntent: @escaping @MainActor (SoundPacksWindowRoute.Destination) -> Void,
         supplement: SoundPacksEditorSupplement = .empty
     ) {
         self.editorOwner = editorOwner
@@ -84,6 +89,8 @@ public struct EmbeddedSoundPacksEditorView: View {
         self.routeRequestRevision = routeRequestRevision
         self.languageStore = languageStore
         self.nativeEffects = nativeEffects
+        self.detail = detail
+        self.onDetailIntent = onDetailIntent
         self.supplement = supplement
     }
 
@@ -93,6 +100,8 @@ public struct EmbeddedSoundPacksEditorView: View {
             focusCoordinator: focusCoordinator,
             languageStore: languageStore,
             nativeEffects: nativeEffects,
+            detail: detail,
+            onDetailIntent: onDetailIntent,
             supplement: supplement
         )
         .onAppear {
@@ -162,6 +171,8 @@ package struct SoundPacksWindowView: View {
     private let focusCoordinator: SoundPacksWindowFocusCoordinator
     @ObservedObject private var languageStore: ClaudioPreferences
     private let nativeEffects: SoundPacksEditorNativeEffectsDispatcher
+    private let detail: SoundPacksSettingsDetail
+    private let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
     private let supplement: SoundPacksEditorSupplement
 
     package init(
@@ -169,12 +180,16 @@ package struct SoundPacksWindowView: View {
         focusCoordinator: SoundPacksWindowFocusCoordinator,
         languageStore: ClaudioPreferences,
         nativeEffects: SoundPacksEditorNativeEffectsDispatcher,
+        detail: SoundPacksSettingsDetail,
+        onDetailIntent: @escaping @MainActor (SoundPacksWindowRoute.Destination) -> Void,
         supplement: SoundPacksEditorSupplement = .empty
     ) {
         self.editorOwner = editorOwner
         self.focusCoordinator = focusCoordinator
         self.languageStore = languageStore
         self.nativeEffects = nativeEffects
+        self.detail = detail
+        self.onDetailIntent = onDetailIntent
         self.supplement = supplement
     }
 
@@ -189,6 +204,8 @@ package struct SoundPacksWindowView: View {
                     focusCoordinator: focusCoordinator,
                     languageStore: languageStore,
                     nativeEffects: nativeEffects,
+                    detail: detail,
+                    onDetailIntent: onDetailIntent,
                     supplement: supplement)
             } else {
                 ProgressView()
@@ -231,6 +248,10 @@ private struct SoundPacksWindowContentView: View {
     @ObservedObject var focusCoordinator: SoundPacksWindowFocusCoordinator
     @ObservedObject var languageStore: ClaudioPreferences
     @ObservedObject private var nativeEffects: SoundPacksEditorNativeEffectsDispatcher
+    /// The session-published detail this render pass displays; local open/back clicks are
+    /// intents delivered to the session arbitration, never local navigation state.
+    private let detail: SoundPacksSettingsDetail
+    private let onDetailIntent: @MainActor (SoundPacksWindowRoute.Destination) -> Void
     private let supplement: SoundPacksEditorSupplement
 
     @Environment(\.colorScheme) private var colorScheme
@@ -240,10 +261,6 @@ private struct SoundPacksWindowContentView: View {
     @State private var dropTargetEvent: Event?
     @State private var requestedRoute: SoundPacksWindowRoute = .overview
     @State private var awaitsDeepLinkFocus = false
-    @State private var settingsDetail: SoundPacksSettingsDetail = .overview
-    @State private var detailRouteTracker = SoundPacksSettingsDetailRouteTracker()
-    @State private var detailCopyTransition: SoundPacksSettingsDetailCopyTransition?
-    @State private var unavailableDetail: SoundPacksSettingsDetail?
     @State private var copyConfirmation: SettingsPackCopyConfirmation?
     @FocusState private var detailTitleFocused: Bool
 
@@ -254,6 +271,8 @@ private struct SoundPacksWindowContentView: View {
         focusCoordinator: SoundPacksWindowFocusCoordinator,
         languageStore: ClaudioPreferences,
         nativeEffects: SoundPacksEditorNativeEffectsDispatcher,
+        detail: SoundPacksSettingsDetail,
+        onDetailIntent: @escaping @MainActor (SoundPacksWindowRoute.Destination) -> Void,
         supplement: SoundPacksEditorSupplement
     ) {
         self.editorOwner = editorOwner
@@ -261,6 +280,8 @@ private struct SoundPacksWindowContentView: View {
         self.focusCoordinator = focusCoordinator
         self.languageStore = languageStore
         self.nativeEffects = nativeEffects
+        self.detail = detail
+        self.onDetailIntent = onDetailIntent
         self.supplement = supplement
     }
 
@@ -272,7 +293,7 @@ private struct SoundPacksWindowContentView: View {
         AnyView(
             VStack(spacing: 0) {
                 SettingsPageHeader {
-                    if settingsDetail != .overview {
+                    if detail != .overview {
                         Button {
                             leaveDetail()
                         } label: {
@@ -318,11 +339,11 @@ private struct SoundPacksWindowContentView: View {
                         .settingsReadingColumn()
                     }
                     .soundPacksLayoutProbe("sound-packs.detail-scroll")
-                    .onChange(of: settingsDetail) { _ in
+                    .onChange(of: detail) { newDetail in
                         proxy.scrollTo("detail-top", anchor: .top)
                         detailTitleFocused =
-                            settingsDetail != .overview
-                            && settingsDetail.targetIsAvailable(in: activeSounds)
+                            newDetail != .overview
+                            && newDetail.targetIsAvailable(in: activeSounds)
                     }
                     .onChange(of: handledFocusRequestRevision) { _ in
                         proxy.scrollTo("detail-top", anchor: .top)
@@ -336,18 +357,8 @@ private struct SoundPacksWindowContentView: View {
         .onReceive(focusCoordinator.$requestRevision) { revision in
             guard focusCoordinator.consumeRequest(revision) else { return }
             requestedRoute = focusCoordinator.requestedTarget ?? .overview
-            if detailRouteTracker.requestRevision != activeSounds.requestRevision {
-                detailCopyTransition = nil
-            }
-            let nextDetail = detailRouteTracker.detailAfterFocusRequest(
-                route: requestedRoute, sounds: activeSounds, currentDetail: settingsDetail)
-            // Initial route resolution may already have a composer; only leaving a detail cleans it.
-            if settingsDetail != .overview, nextDetail != settingsDetail {
-                openDetail(nextDetail)
-            } else {
-                settingsDetail = nextDetail
-            }
-            // Scroll trigger only; the request dedup itself lives in the coordinator.
+            // Scroll trigger only; the request dedup itself lives in the coordinator, and the
+            // session arbitration derives the detail from the same route request.
             handledFocusRequestRevision = revision
             applyInitialFocus()
             reconcileFocusWithVisibleControls()
@@ -359,11 +370,9 @@ private struct SoundPacksWindowContentView: View {
             reconcileFocusWithVisibleControls()
         }
         .onChange(of: presentation) { _ in
-            reconcileDetailCopyTransition()
             reconcileFocusWithVisibleControls()
         }
-        .onChange(of: activeSounds.draft?.packID) { id in
-            if let id { settingsDetail = .event(packID: id, event: .taskStart) }
+        .onChange(of: activeSounds.draft?.packID) { _ in
             reconcileFocusWithVisibleControls()
         }
         .onChange(of: activeSounds.inventory) { _ in
@@ -373,7 +382,7 @@ private struct SoundPacksWindowContentView: View {
             reconcileFocusWithVisibleControls()
         }
         .onChange(of: activeSounds.recoveryActions.map(\.packID)) { _ in
-            if settingsDetail == .overview, activeSounds.packs.isEmpty,
+            if detail == .overview, activeSounds.packs.isEmpty,
                 focusedTarget != nil || requestedRoute.editTarget != nil,
                 let packID = activeSounds.recoveryActions.first?.packID
             {
@@ -662,7 +671,7 @@ private struct SoundPacksWindowContentView: View {
     }
 
     private var detailTitle: String {
-        switch settingsDetail {
+        switch detail {
         case .overview: l10n.text(.settingsDestinationSounds)
         case .event(_, let event): localizedEventName(event, language: languageStore.language)
         case .audio: l10n.text(.settingsNativeAudioFiles)
@@ -671,24 +680,18 @@ private struct SoundPacksWindowContentView: View {
         }
     }
 
-    private func openDetail(_ detail: SoundPacksSettingsDetail) {
-        nativeEffects.stopPreview(owner: editorOwner)
-        supplement.onLeaveEvent()
-        if activeSounds.draft != nil { editorOwner.cancelAICuePackDraft() }
-        detailCopyTransition = nil
-        unavailableDetail = nil
-        settingsDetail = detail
+    private func requestDetail(_ next: SoundPacksSettingsDetail) {
+        onDetailIntent(next.routeDestination)
     }
 
     private func leaveDetail() {
-        openDetail(.overview)
-        editorOwner.cancelAICuePackDraft()
+        requestDetail(.overview)
         focusedTarget = .packList
     }
 
     // Keep the detail routing seam shallow; every branch retains its native controls and owner.
     private var detailContent: AnyView {
-        switch settingsDetail {
+        switch detail {
         case .overview: AnyView(overviewDetail)
         case .event(let packID, let event): AnyView(eventDetail(packID: packID, event: event))
         case .audio(let packID): AnyView(audioDetail(packID: packID))
@@ -802,7 +805,7 @@ private struct SoundPacksWindowContentView: View {
         @ViewBuilder caption: () -> Content
     ) -> some View {
         Button {
-            openDetail(detail)
+            requestDetail(detail)
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -853,7 +856,7 @@ private struct SoundPacksWindowContentView: View {
                     .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).preview")
                     Button {
                         guard let packID = selectedCard?.id else { return }
-                        openDetail(.event(packID: packID, event: row.event))
+                        requestDetail(.event(packID: packID, event: row.event))
                     } label: {
                         Label(l10n.text(.settingsNativeEditCue), systemImage: "chevron.right")
                     }
@@ -1192,23 +1195,7 @@ private struct SoundPacksWindowContentView: View {
     private func invoke(_ action: SoundPackEditorAction?) {
         guard let action else { return }
         let result = editorOwner.send(.invoke(action))
-        if case .accepted(let operationID) = result,
-            let transition = SoundPacksSettingsDetailCopyTransition(
-                detail: settingsDetail, actionKind: action.kind, operationID: operationID,
-                previousPresentation: presentation)
-        {
-            detailCopyTransition = transition
-        }
         nativeEffects.consume(result, owner: editorOwner)
-    }
-
-    private func reconcileDetailCopyTransition() {
-        guard let transition = detailCopyTransition else { return }
-        settingsDetail = settingsDetail.reconciled(
-            with: presentation, copyTransition: transition)
-        if settingsDetail != transition.detail || !transition.isPending(in: presentation) {
-            detailCopyTransition = nil
-        }
     }
 
     private func dropTargetBinding(for event: Event) -> Binding<Bool> {
@@ -1821,14 +1808,14 @@ private struct SoundPacksWindowContentView: View {
     private var selectedCard: SoundPackEditorPackPresentation? { activeSounds.selectedPack }
 
     private var focusScope: SoundPacksWindowFocusScope {
-        let overview = settingsDetail == .overview
+        let overview = detail == .overview
         let audio: Bool
-        if case .audio = settingsDetail {
-            audio = settingsDetail.targetIsAvailable(in: activeSounds)
+        if case .audio = detail {
+            audio = detail.targetIsAvailable(in: activeSounds)
         } else {
             audio = false
         }
-        let eventRows = settingsDetail.visibleEventRows(in: activeSounds)
+        let eventRows = detail.visibleEventRows(in: activeSounds)
         let hasLibraryFailure: Bool
         if case .failed = presentation.library {
             hasLibraryFailure = true
@@ -1855,7 +1842,7 @@ private struct SoundPacksWindowContentView: View {
             packIDs: overview ? activeSounds.packs.map(\.id) : [],
             selectedPackID: activeSounds.selectedPack?.id,
             hasManagedScopeFailure: localizedManagedScopeFailure != nil
-                || settingsDetail.unavailableFocusTarget(in: activeSounds) != nil,
+                || detail.unavailableFocusTarget(in: activeSounds) != nil,
             editableEvents: !overview && canEditSelectedPack ? eventRows.map(\.event) : [],
             previewableEvents: eventRows.filter {
                 $0.previewAction != nil
@@ -1897,24 +1884,20 @@ private struct SoundPacksWindowContentView: View {
             activeSounds.selectedPack?.id == requestedRoute.editTarget?.packID
         else { return nil }
         switch requestedRoute.destination {
-        case .overview: return nil
+        case .overview, .audio, .service, .panel: return nil
         case .editEvent(_, let event), .copyAndApply(_, let event): return event
         }
     }
 
     private func reconcileFocusWithVisibleControls(assignFirstIfNil: Bool = false) {
-        if let failureFocus = settingsDetail.unavailableFocusTarget(in: activeSounds) {
-            if unavailableDetail != settingsDetail {
-                unavailableDetail = settingsDetail
-                nativeEffects.stopPreview(owner: editorOwner)
-                supplement.onLeaveEvent()
-            }
+        // The session arbitration fires the matching cleanup once per unavailable identity;
+        // this pass only routes focus to the visible reason.
+        if let failureFocus = detail.unavailableFocusTarget(in: activeSounds) {
             awaitsDeepLinkFocus = false
             detailTitleFocused = false
             focusedTarget = failureFocus
             return
         }
-        unavailableDetail = nil
         if case .unavailable = activeSounds.scope {
             awaitsDeepLinkFocus = false
             if let focusedTarget, soundPacksWindowFocusOrder(focusScope).contains(focusedTarget) {
@@ -2044,7 +2027,11 @@ package func soundPacksWindowDeepLinkFocusTarget(
 ) -> SoundPacksWindowFocusTarget? {
     if case .unavailable = scopeAvailability { return .managedScopeFailure }
     return switch route.destination {
-    case .overview: nil
+    case .overview, .service, .panel: nil
+    case .audio:
+        // The detail title takes focus through the detail-change handler; there is no single
+        // inventory control to preselect.
+        nil
     case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
         selectedPackID == packID && visibleEvents.contains(event)
             ? .eventAudio(event) : fallback
