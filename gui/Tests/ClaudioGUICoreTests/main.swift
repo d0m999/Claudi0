@@ -350,6 +350,12 @@ if CommandLine.arguments.contains("--settings-product-images") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-menu-layout") {
+    runSettingsMenuLayoutSuites()
+    print("Settings menu layout: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--settings-sounds-layout") {
     runSettingsNativeMigrationSuites()
     runSettingsSoundsLayoutSuites()

@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import ClaudioCore
 import ClaudioGUICore
 import ClaudioLocalization
@@ -152,68 +153,7 @@ func runSettingsSoundsLayoutSuites() {
         }
     }
 
-    suite("设置原生菜单：长包名仍在紧凑行右侧且不挤出内容") {
-        let temporaryRoot = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "claudio-long-menu-layout-\(UUID().uuidString)", isDirectory: true)
-        defer { try? FileManager.default.removeItem(at: temporaryRoot) }
-        for language in [ClaudioAppLanguage.zhHans, .english] {
-            for dark in [false, true] {
-                let packName =
-                    language == .zhHans
-                    ? "这是一个用于确认声音包名称很长时仍然保持紧凑且不会挤出设置内容区域的名称"
-                    : "A deliberately long sound pack name that stays within its compact settings row"
-                let owner = SoundPacksEditorOwner.stateGalleryFixture(
-                    previewConfig: ClaudioConfig(selectedPack: "long-pack"),
-                    packCards: [
-                        PackCard(
-                            id: "long-pack", name: packName, isCC0: true,
-                            presentEvents: Set(Event.allCases), state: .complete,
-                            isSelected: true)
-                    ],
-                    selectedPackID: "long-pack",
-                    selectedEventRows: Event.allCases.map {
-                        EventRow(
-                            event: $0, coverage: .present(fileName: "\($0.cliName).mp3"),
-                            enabled: true)
-                    },
-                    environment: makeAudioImportEnvironment(
-                        userPacksDirectory: temporaryRoot.appendingPathComponent("packs")))
-                let fixture = SettingsPresentationFixtures.generalLogin(
-                    language: language, route: .sounds(.overview), soundPacksEditor: owner)
-                let probe = SettingsSoundsNativeLayoutProbe(
-                    session: fixture.session, size: NSSize(width: 960, height: 640),
-                    appearance: dark ? .darkAqua : .aqua)
-                defer { probe.close() }
-                expectSettingsMenuLayout(
-                    probe: probe, identifier: "sound-packs.pack-list",
-                    name: "长包名 \(language.rawValue) \(dark)", minimumHeight: 38,
-                    exactHeight: 38)
-                let selectedTitle = probe.menuSelectedTitle(identifier: "sound-packs.pack-list")
-                expect(
-                    selectedTitle == packName,
-                    "长包名可视觉截断，但原生菜单当前项仍保留完整名称，\(language.rawValue) \(dark)：\(String(describing: selectedTitle))"
-                )
-            }
-        }
-    }
-
-    suite("设置原生菜单：不可用服务选择仍保留中性紧凑呈现") {
-        for dark in [false, true] {
-            let fixture = SettingsPresentationFixtures.generalLogin(aiCueScenario: .adopting)
-            let probe = SettingsSoundsNativeLayoutProbe(
-                session: fixture.session, size: NSSize(width: 960, height: 640),
-                appearance: dark ? .darkAqua : .aqua)
-            defer { probe.close() }
-            expect(fixture.aiCueViewModel.phase == .adopting, "fixture 必须处于禁止更换服务的采用阶段")
-            expectSettingsMenuLayout(
-                probe: probe, identifier: "event-settings.ai-cue.provider-profile",
-                name: "不可用服务选择 \(dark)", minimumHeight: 38, exactHeight: 38,
-                scrollIntoView: true)
-            expect(
-                probe.menuIsEnabled(identifier: "event-settings.ai-cue.provider-profile") == false,
-                "采用期间实际挂载的服务下拉控件必须不可操作")
-        }
-    }
+    runSettingsMenuLayoutSuites()
 
     suite("声音详情：未发布草稿与只读深链保持真实可编辑边界") {
         let draftFixture = SettingsPresentationFixtures.generalLogin(
@@ -334,6 +274,88 @@ func runSettingsSoundsLayoutSuites() {
 }
 
 @MainActor
+func runSettingsMenuLayoutSuites() {
+    suite("设置原生菜单：长包名仍在紧凑行右侧且不挤出内容") {
+        let temporaryRoot = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-long-menu-layout-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: temporaryRoot) }
+        for language in [ClaudioAppLanguage.zhHans, .english] {
+            for dark in [false, true] {
+                let packName =
+                    language == .zhHans
+                    ? "这是一个用于确认声音包名称很长时仍然保持紧凑且不会挤出设置内容区域的名称"
+                    : "A deliberately long sound pack name that stays within its compact settings row"
+                let owner = SoundPacksEditorOwner.stateGalleryFixture(
+                    previewConfig: ClaudioConfig(selectedPack: "long-pack"),
+                    packCards: [
+                        PackCard(
+                            id: "long-pack", name: packName, isCC0: true,
+                            presentEvents: Set(Event.allCases), state: .complete,
+                            isSelected: true)
+                    ],
+                    selectedPackID: "long-pack",
+                    selectedEventRows: Event.allCases.map {
+                        EventRow(
+                            event: $0, coverage: .present(fileName: "\($0.cliName).mp3"),
+                            enabled: true)
+                    },
+                    environment: makeAudioImportEnvironment(
+                        userPacksDirectory: temporaryRoot.appendingPathComponent("packs")))
+                let fixture = SettingsPresentationFixtures.generalLogin(
+                    language: language, route: .sounds(.overview), soundPacksEditor: owner)
+                let probe = SettingsSoundsNativeLayoutProbe(
+                    session: fixture.session, size: NSSize(width: 960, height: 640),
+                    appearance: dark ? .darkAqua : .aqua)
+                defer { probe.close() }
+                expectSettingsMenuLayout(
+                    probe: probe, identifier: "sound-packs.pack-list",
+                    name: "长包名 \(language.rawValue) \(dark)", minimumHeight: 38,
+                    exactHeight: 38)
+                expect(
+                    probe.menuIsEnabled(identifier: "sound-packs.pack-list") == true,
+                    "实际挂载的长名称菜单必须仍可操作")
+                if language == .zhHans && !dark {
+                    expect(
+                        probe.menuAccessibilityValue(identifier: "missing.menu") == nil,
+                        "不存在的菜单身份不能匹配其他控件的名称")
+                    expect(
+                        probe.menuIsEnabled(identifier: "missing.menu") == nil,
+                        "不存在的菜单身份不能被误报为禁用")
+                }
+                let selectedValue = probe.menuAccessibilityValue(
+                    identifier: "sound-packs.pack-list")
+                // Backends may expose the selected title or its richer accessibility label.
+                let expectedLabel = localizedSoundPacksPackAccessibilityLabel(
+                    displayName: packName, isActivePack: true, state: .complete,
+                    license: .cc0, language: language)
+                expect(
+                    selectedValue == packName || selectedValue == expectedLabel,
+                    "长包名可视觉截断，但挂载菜单的无障碍当前值仍保留完整名称，\(language.rawValue) \(dark)：\(String(describing: selectedValue))"
+                )
+            }
+        }
+    }
+
+    suite("设置原生菜单：不可用服务选择仍保留中性紧凑呈现") {
+        for dark in [false, true] {
+            let fixture = SettingsPresentationFixtures.generalLogin(aiCueScenario: .adopting)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session, size: NSSize(width: 960, height: 640),
+                appearance: dark ? .darkAqua : .aqua)
+            defer { probe.close() }
+            expect(fixture.aiCueViewModel.phase == .adopting, "fixture 必须处于禁止更换服务的采用阶段")
+            expectSettingsMenuLayout(
+                probe: probe, identifier: "event-settings.ai-cue.provider-profile",
+                name: "不可用服务选择 \(dark)", minimumHeight: 38, exactHeight: 38,
+                scrollIntoView: true)
+            expect(
+                probe.menuIsEnabled(identifier: "event-settings.ai-cue.provider-profile") == false,
+                "采用期间实际挂载的服务下拉控件必须不可操作")
+        }
+    }
+}
+
+@MainActor
 private func expectSettingsMenuLayout(
     probe: SettingsSoundsNativeLayoutProbe,
     identifier: String,
@@ -377,6 +399,7 @@ private func expectSettingsMenuLayout(
 
 @MainActor
 final class SettingsSoundsNativeLayoutProbe {
+    private static var hasPreparedMenuAccessibility = false
     private let window: UnconstrainedProbeWindow
     private let hostingView: NSHostingView<SettingsRootView>
     private let requestedSize: NSSize
@@ -435,29 +458,53 @@ final class SettingsSoundsNativeLayoutProbe {
     var hasAttachedSheet: Bool { window.attachedSheet != nil }
 
     func menuIsEnabled(identifier: String) -> Bool? {
-        nativeMenu(identifier: identifier)?.isEnabled
+        menuAccessibilityElement(identifier: identifier)?.isAccessibilityEnabled?()
     }
 
-    func menuSelectedTitle(identifier: String) -> String? {
-        nativeMenu(identifier: identifier)?.titleOfSelectedItem
+    func menuAccessibilityValue(identifier: String) -> String? {
+        guard let menu = menuAccessibilityElement(identifier: identifier) else { return nil }
+        let value: String? = menu.accessibilityValue?()
+        return value
     }
 
-    private func nativeMenu(identifier: String) -> NSPopUpButton? {
-        guard let frame = SoundPacksLayoutRecorder.frames["\(identifier).control"] else {
-            return nil
-        }
-        func find(in view: NSView) -> NSPopUpButton? {
-            if let button = view as? NSPopUpButton {
-                let buttonFrame = hostingView.convert(button.bounds, from: button)
-                if frame.insetBy(dx: -1, dy: -1).contains(
-                    CGPoint(x: buttonFrame.midX, y: buttonFrame.midY))
-                {
-                    return button
-                }
+    private func menuAccessibilityElement(identifier: String) -> AnyObject? {
+        prepareMenuAccessibility()
+        var matches: [AnyObject] = []
+        var visited: Set<ObjectIdentifier> = []
+        // SwiftUI can draw menus without an NSControl. Its AX proxies implement the public
+        // Objective-C getters without declaring NSAccessibilityProtocol conformance.
+        func visit(_ element: AnyObject) {
+            guard visited.insert(ObjectIdentifier(element)).inserted else { return }
+            if element.accessibilityIdentifier?() == identifier { matches.append(element) }
+            for child in element.accessibilityChildren?() ?? [] {
+                visit(child as AnyObject)
             }
-            return view.subviews.lazy.compactMap { find(in: $0) }.first
         }
-        return find(in: hostingView)
+        visit(hostingView)
+        return matches.count == 1 ? matches[0] : nil
+    }
+
+    private func prepareMenuAccessibility() {
+        guard !Self.hasPreparedMenuAccessibility else { return }
+        Self.hasPreparedMenuAccessibility = true
+        // A CLI harness has no external AX client. Query only this process to initialize
+        // AppKit/SwiftUI accessibility; pump the main run loop while AppKit serves the request.
+        NSApplication.shared.finishLaunching()
+        let completed = DispatchSemaphore(value: 0)
+        let processID = ProcessInfo.processInfo.processIdentifier
+        DispatchQueue.global().async {
+            let application = AXUIElementCreateApplication(processID)
+            AXUIElementSetMessagingTimeout(application, 1)
+            var children: CFTypeRef?
+            _ = AXUIElementCopyAttributeValue(
+                application, kAXChildrenAttribute as CFString, &children)
+            completed.signal()
+        }
+        let deadline = Date().addingTimeInterval(2)
+        while completed.wait(timeout: .now()) != .success && Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.025))
+        }
+        refresh()
     }
 
     func scrollToVisible(_ frame: CGRect) -> Bool {
