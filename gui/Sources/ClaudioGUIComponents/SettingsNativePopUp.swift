@@ -47,8 +47,13 @@ package struct SettingsNativePopUp<Value: Hashable>: NSViewRepresentable {
         context.coordinator.options = options
         let selected = options.firstIndex { $0.value == selection }
         if control.itemTitles != options.map(\.title) {
-            control.removeAllItems()
-            control.addItems(withTitles: options.map(\.title))
+            let menu = NSMenu()
+            menu.autoenablesItems = false
+            for option in options {
+                // Pop-up convenience APIs coalesce titles; option identity belongs to its value.
+                menu.addItem(NSMenuItem(title: option.title, action: nil, keyEquivalent: ""))
+            }
+            control.menu = menu
         }
         for (index, option) in options.enumerated() {
             control.item(at: index)?.isEnabled = option.isEnabled

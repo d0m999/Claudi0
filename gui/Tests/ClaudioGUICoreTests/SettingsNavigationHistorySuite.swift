@@ -201,6 +201,147 @@ func runSettingsNavigationHistorySuites() async {
         }
     }
 
+    await suite("Settings history: restoring a refreshed overview retains its viewed pack") {
+        await withTempDirectory { root in
+            let editor = makeSoundEditorFixture(
+                root: root, packIDs: ["pack-a", "pack-b"],
+                config: ClaudioConfig(selectedPack: "pack-a"))
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(.overview), soundPacksEditor: editor.owner)
+            let session = fixture.session
+            await waitForSoundEditorReady(editor.owner, library: editor.library)
+            expect(
+                session.send(.inspectSoundPack("pack-b")) == .routed,
+                "The overview explicitly inspects B while the Default Group continues using A")
+            guard case .sounds(let inspected) = editor.owner.presentation.mode else {
+                expect(false, "Inspection must retain the Sounds presentation")
+                return
+            }
+            expect(
+                inspected.selectedPack?.id == "pack-b"
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-b",
+                "The visible overview and history capture B before any refresh")
+            let entryID = session.navigationHistory.current!.id
+            let entryCount = session.navigationHistory.entries.count
+            let configBefore = try! Data(contentsOf: editor.configFile)
+            let packDirectory = root.appendingPathComponent("packs/pack-b")
+            let removedDirectory = root.appendingPathComponent("removed-pack-b")
+            try! FileManager.default.moveItem(at: packDirectory, to: removedDirectory)
+            _ = await editor.library.refreshSnapshot(trigger: .retry)
+            for _ in 0..<512 where session.state.routeResolution.failure == nil {
+                await Task.yield()
+            }
+            expect(
+                session.state.routeResolution.failure == .staleSoundPack("pack-b")
+                    && session.navigationHistory.current?.id == entryID
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-b"
+                    && editor.owner.presentation.mode == .inactive,
+                "A missing viewed pack becomes unavailable without adopting the owner's fallback")
+            expect(
+                (try? Data(contentsOf: editor.configFile)) == configBefore,
+                "Refresh removal must preserve the Default Group's configuration bytes")
+
+            try! FileManager.default.moveItem(at: removedDirectory, to: packDirectory)
+            _ = await editor.library.refreshSnapshot(trigger: .retry)
+            for _ in 0..<512 {
+                if session.state.routeResolution.failure == nil,
+                    editor.owner.presentation.library.isFresh,
+                    case .sounds(let sounds) = editor.owner.presentation.mode,
+                    sounds.packs.contains(where: { $0.id == "pack-b" })
+                {
+                    break
+                }
+                await Task.yield()
+            }
+            guard case .sounds(let restored) = editor.owner.presentation.mode else {
+                expect(false, "Restoring the captured pack must reactivate the overview")
+                return
+            }
+            expect(
+                session.state.routeResolution.failure == nil
+                    && editor.owner.presentation.library.isFresh
+                    && session.state.soundsDetail == .overview
+                    && restored.selectedPack?.id == "pack-b"
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-b"
+                    && session.navigationHistory.current?.id == entryID
+                    && session.navigationHistory.entries.count == entryCount,
+                "Refresh recovery restores captured B in place; it cannot turn fallback A into a browsing choice: selected=\(restored.selectedPack?.id ?? "nil"), location=\(session.navigationHistory.current!.location)"
+            )
+            expect(
+                (try? Data(contentsOf: editor.configFile)) == configBefore,
+                "Restoring viewing B must not apply it to the Default Group or replay a write")
+            session.send(.windowWillClose)
+        }
+    }
+
+    await suite("Settings history: a newer inspection cancels a pending viewed pack recovery") {
+        await withTempDirectory { root in
+            let gate = SettingsViewedPackRecoveryPublicationGate()
+            defer { gate.release() }
+            let editor = makeSoundEditorFixture(
+                root: root, packIDs: ["pack-a", "pack-b", "pack-c"],
+                config: ClaudioConfig(selectedPack: "pack-a"),
+                beforeReadyPublication: { gate.pauseNextPublication() })
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(.overview), soundPacksEditor: editor.owner)
+            let session = fixture.session
+            await waitForSoundEditorReady(editor.owner, library: editor.library)
+            session.send(.inspectSoundPack("pack-b"))
+            let configBefore = try! Data(contentsOf: editor.configFile)
+            let packDirectory = root.appendingPathComponent("packs/pack-b")
+            let removedDirectory = root.appendingPathComponent("removed-pack-b")
+            try! FileManager.default.moveItem(at: packDirectory, to: removedDirectory)
+            _ = await editor.library.refreshSnapshot(trigger: .retry)
+            for _ in 0..<512 where session.state.routeResolution.failure == nil {
+                await Task.yield()
+            }
+            expect(
+                session.state.routeResolution.failure == .staleSoundPack("pack-b"),
+                "B must become unavailable before its recovery can be pending")
+
+            try! FileManager.default.moveItem(at: removedDirectory, to: packDirectory)
+            gate.arm()
+            let library = editor.library
+            let refresh = Task.detached { await library.refreshSnapshot(trigger: .retry) }
+            expect(
+                gate.waitUntilPaused(), "The recovered B snapshot pauses before ready publication")
+            for _ in 0..<512
+            where session.state.routeResolution.failure != nil
+                || editor.owner.presentation.mode == .inactive
+            {
+                await Task.yield()
+            }
+            expect(
+                !editor.owner.presentation.library.isFresh
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-b",
+                "Loading retains B while the fresh recovery capability is not yet published")
+            expect(
+                session.send(.inspectSoundPack("pack-c")) == .routed,
+                "An explicit inspection of C supersedes the pending recovery of B")
+            let newerStamp = session.navigationHistory.stamp
+            gate.release()
+            _ = await refresh.value
+            for _ in 0..<512 where !editor.owner.presentation.library.isFresh {
+                await Task.yield()
+            }
+            guard case .sounds(let restored) = editor.owner.presentation.mode else {
+                expect(false, "The newer inspection must remain active after recovery")
+                return
+            }
+            expect(
+                editor.owner.presentation.library.isFresh
+                    && restored.packs.contains(where: { $0.id == "pack-b" })
+                    && restored.selectedPack?.id == "pack-c"
+                    && session.navigationHistory.current?.location.viewedPackID == "pack-c"
+                    && session.navigationHistory.stamp == newerStamp,
+                "A late fresh B snapshot cannot override the newer C browsing identity")
+            expect(
+                (try? Data(contentsOf: editor.configFile)) == configBefore,
+                "Neither deferred recovery nor the newer inspection writes Default Group settings")
+            session.send(.windowWillClose)
+        }
+    }
+
     suite("Settings history: compatibility roots refer to the same visible position") {
         let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.sounds))
         let session = fixture.session
@@ -218,4 +359,27 @@ func runSettingsNavigationHistorySuites() async {
             session.send(.destinationReady(staleReady)) == .unchanged,
             "A late destination mount cannot authorize focus for a newer navigation")
     }
+}
+
+/// Holds the real library's terminal publication so a newer navigation can supersede recovery.
+private final class SettingsViewedPackRecoveryPublicationGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private let entered = DispatchSemaphore(value: 0)
+    private let resumed = DispatchSemaphore(value: 0)
+    private var armed = false
+
+    func arm() { lock.lock(); armed = true; lock.unlock() }
+
+    func pauseNextPublication() {
+        lock.lock()
+        let pauses = armed
+        armed = false
+        lock.unlock()
+        guard pauses else { return }
+        entered.signal()
+        _ = resumed.wait(timeout: .now() + 5)
+    }
+
+    func waitUntilPaused() -> Bool { entered.wait(timeout: .now() + 5) == .success }
+    func release() { resumed.signal() }
 }

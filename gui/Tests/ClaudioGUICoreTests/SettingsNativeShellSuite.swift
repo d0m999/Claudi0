@@ -85,6 +85,8 @@ func runSettingsNativeShellSuites() async {
         fixture.session.send(.setNavigationBlocked(id: "fixture-sheet", blocked: false))
     }
 
+    await runSettingsNativeReadingSuites()
+
     await suite("Native settings shell: 64 basic layout combinations") {
         for destination in SettingsDestination.allCases {
             for language in ClaudioAppLanguage.allCases {
@@ -137,7 +139,97 @@ func runSettingsNativeShellSuites() async {
 }
 
 @MainActor
-final class NativeSettingsShellProbe {
+func runSettingsNativeReadingSuites() async {
+    await suite("Native settings shell: later activity groups retain reading position") {
+        let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.usage))
+        let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
+        defer { probe.close() }
+        await probe.presentAndSettle()
+        expect(probe.window.isKeyWindow, "Reading restoration exercises a real key window")
+        guard probe.window.isKeyWindow, let maximum = probe.maximumReadingOffset,
+            let viewportHeight = probe.readingScrollView?.contentView.bounds.height
+        else { return }
+        let groups = probe.readingFrames(identifier: "settings.semantic-surface.group")
+            .sorted { $0.minY < $1.minY }
+        expect(groups.count > 1, "The actual activity page contains repeated group backgrounds")
+        guard let first = groups.first,
+            let later = groups.dropFirst().last(where: {
+                $0.minY > first.minY + 100 && $0.minY < maximum + viewportHeight
+            })
+        else {
+            expect(false, "The native activity fixture exposes a later scrollable functional group")
+            return
+        }
+        expect(probe.scrollReading(to: min(maximum, later.minY - 1)), "Scroll to a later group")
+        await probe.presentAndSettle()
+        guard let originalOffset = probe.readingOffset,
+            let bookmark = fixture.session.captureReadingPosition?()
+        else {
+            expect(false, "The shell captures the mounted page's reading bookmark")
+            return
+        }
+        expect(originalOffset > first.minY + 100, "The reading position is beyond the first group")
+        if let identifier = bookmark.scrollAnchorIdentifier {
+            expect(
+                probe.readingFrames(identifier: identifier).count == 1
+                    && !identifier.hasPrefix("settings.semantic-surface."),
+                "A captured scroll anchor identifies one semantic view: \(identifier)")
+        }
+        probe.shell.sidebarController.focusSelection()
+        expect(
+            probe.window.firstResponder === probe.shell.sidebarController.table,
+            "Leaving via the sidebar establishes the actual native list responder")
+        fixture.session.send(.selectSidebar(.general))
+        await probe.presentAndSettle()
+        fixture.session.send(.goBack)
+        await probe.presentAndSettle()
+        expect(
+            fixture.session.state.chrome.destination == .usage
+                && fixture.session.state.navigationRestoration == nil,
+            "Back consumes the activity page's actual ready restoration request: \(probe.readingRestorationStatus)"
+        )
+        expect(
+            abs((probe.readingOffset ?? -1) - originalOffset) < 2,
+            "Back retains later activity reading position: before=\(originalOffset), after=\(probe.readingOffset ?? -1)"
+        )
+    }
+
+    await suite("Native settings shell: ambiguous saved anchors use the relative fallback") {
+        let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.usage))
+        let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
+        defer { probe.close() }
+        await probe.presentAndSettle()
+        expect(probe.window.isKeyWindow, "Ambiguous-anchor restoration exercises a real key window")
+        guard probe.window.isKeyWindow, let maximum = probe.maximumReadingOffset,
+            let stamp = fixture.session.navigationHistory.stamp
+        else { return }
+        expect(maximum > 100, "The real activity page has a scrollable reading range")
+        expect(
+            probe.readingFrames(identifier: "settings.semantic-surface.group").count > 1,
+            "A saved decorative identifier is ambiguous on the mounted page")
+        fixture.session.send(.setNavigationBlocked(id: "reading-fixture", blocked: true))
+        fixture.session.send(
+            .rememberReading(
+                .init(
+                    scrollAnchorIdentifier: "settings.semantic-surface.group", anchorOffset: 0,
+                    relativeScrollPosition: 0.72), stamp: stamp))
+        expect(probe.scrollReading(to: 0), "Move away from the saved reading position")
+        fixture.session.send(.setNavigationBlocked(id: "reading-fixture", blocked: false))
+        await probe.presentAndSettle()
+        let expected = (probe.maximumReadingOffset ?? maximum) * 0.72
+        expect(
+            fixture.session.state.navigationRestoration == nil,
+            "Cancel consumes the mounted page's restoration request: \(probe.readingRestorationStatus)"
+        )
+        expect(
+            abs((probe.readingOffset ?? -1) - expected) < 2,
+            "An ambiguous anchor restores the normalized position: expected=\(expected), actual=\(probe.readingOffset ?? -1)"
+        )
+    }
+}
+
+@MainActor
+final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
     let window: RetainedSettingsWindow
     let shell: SettingsNativeShellController
     let session: SettingsPresentationSession
@@ -148,6 +240,8 @@ final class NativeSettingsShellProbe {
             contentRect: NSRect(x: 0, y: 0, width: width, height: width == 960 ? 640 : 820),
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered,
             defer: false)
+        super.init()
+        window.delegate = self
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.contentViewController = shell
@@ -155,7 +249,18 @@ final class NativeSettingsShellProbe {
         window.setContentSize(NSSize(width: width, height: width == 960 ? 640 : 820))
         window.title = ClaudioL10n(language: session.state.language).text(.settingsWindowTitle)
         window.presentForUserRequest()
+    }
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let changedWindow = notification.object as? NSWindow, changedWindow === window else {
+            return
+        }
         session.send(.windowPhaseChanged(.key))
+    }
+    func windowDidResignKey(_ notification: Notification) {
+        guard let changedWindow = notification.object as? NSWindow, changedWindow === window else {
+            return
+        }
+        session.send(.windowPhaseChanged(.visibleNonKey))
     }
     func settle() async {
         for _ in 0..<4 {
@@ -163,6 +268,61 @@ final class NativeSettingsShellProbe {
             window.contentView?.layoutSubtreeIfNeeded()
             pumpNativeRunLoop()
         }
+    }
+    func presentAndSettle() async {
+        // Match an explicit foreground Settings request; do not bypass native key/readiness guards.
+        window.presentForUserRequest()
+        await settle()
+        for _ in 0..<32 {
+            if window.isKeyWindow,
+                session.renderedNavigationStamp == session.navigationHistory.stamp,
+                session.state.navigationRestoration == nil
+            {
+                return
+            }
+            // SwiftUI can clear its prior FocusState while mounting a new destination. Wait for
+            // that real mount, then repeat the probe's explicit native foreground request.
+            if session.renderedNavigationStamp == session.navigationHistory.stamp,
+                !window.isKeyWindow
+            {
+                window.makeKey()
+            }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+            window.contentView?.layoutSubtreeIfNeeded()
+        }
+    }
+    var readingRestorationStatus: String {
+        let request = session.state.navigationRestoration
+        return
+            "key=\(window.isKeyWindow), canKey=\(window.canBecomeKey), visible=\(window.isVisible), deferred=\(window.defersAutomaticFocusForPanel), appKey=\(NSApp.keyWindow === window), shellWindow=\(shell.view.window === window), stamp=\(request?.stamp == session.navigationHistory.stamp), ready=\(session.renderedNavigationStamp == session.navigationHistory.stamp), requestReady=\(request?.stamp == session.renderedNavigationStamp), enabled=\(session.state.chrome.navigationEnabled), sheet=\(window.attachedSheet != nil), request=\(String(describing: request?.focus))"
+    }
+    var readingScrollView: NSScrollView? {
+        guard shell.splitViewItems.count == 2 else { return nil }
+        return descendants(shell.splitViewItems[1].viewController.view)
+            .compactMap { $0 as? NSScrollView }
+            .max { $0.bounds.height < $1.bounds.height }
+    }
+    var readingOffset: CGFloat? { readingScrollView?.contentView.bounds.minY }
+    var maximumReadingOffset: CGFloat? {
+        guard let scroll = readingScrollView, let document = scroll.documentView else { return nil }
+        return max(0, document.bounds.height - scroll.contentView.bounds.height)
+    }
+    func readingFrames(identifier: String) -> [CGRect] {
+        guard let document = readingScrollView?.documentView else { return [] }
+        return descendants(document).filter { $0.accessibilityIdentifier() == identifier }
+            .map { document.convert($0.bounds, from: $0) }
+    }
+    func scrollReading(to offset: CGFloat) -> Bool {
+        guard let scroll = readingScrollView, let maximum = maximumReadingOffset else {
+            return false
+        }
+        let target = min(maximum, max(0, offset))
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: target))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        return abs(scroll.contentView.bounds.minY - target) < 2
+    }
+    private func descendants(_ view: NSView) -> [NSView] {
+        [view] + view.subviews.flatMap(descendants)
     }
     private func pumpNativeRunLoop() { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.015)) }
     func capture(to url: URL) {
@@ -177,6 +337,7 @@ final class NativeSettingsShellProbe {
         }
     }
     func close() {
+        window.delegate = nil
         session.send(.windowWillClose)
         window.orderOut(nil)
         window.contentViewController = nil

@@ -9,6 +9,60 @@ import SwiftUI
 
 @MainActor
 func runSettingsNativeControlsSuites() async {
+    await suite("Native settings controls: duplicate titles preserve stable option identity") {
+        let model = NativeDuplicateSettingsControlFixture()
+        let host = NSHostingView(rootView: NativeDuplicateSettingsControlFixtureView(model: model))
+        host.frame = NSRect(x: 0, y: 0, width: 400, height: 70)
+        host.layoutSubtreeIfNeeded()
+        await Task.yield()
+        guard let popup = allNativeSettingsViews(host).compactMap({ $0 as? NSPopUpButton }).first
+        else {
+            expect(false, "Duplicate-title fixture must mount the production NSPopUpButton")
+            return
+        }
+        expect(
+            popup.itemTitles == ["Shared name", "Shared name"] && popup.indexOfSelectedItem == 1,
+            "Equal labels retain two menu items and select the second stable value")
+        expect(
+            popup.item(at: 0)?.isEnabled == false && popup.item(at: 1)?.isEnabled == true
+                && popup.item(at: 0)?.accessibilityLabel() == "First pack"
+                && popup.item(at: 1)?.accessibilityLabel() == "Second pack",
+            "Each duplicate retains its own enabled state and accessibility identity")
+        _ = popup.sendAction(popup.action, to: popup.target)
+        expect(
+            model.value == "second" && model.changes == 1, "The second duplicate emits its value")
+        popup.selectItem(at: 0)
+        _ = popup.sendAction(popup.action, to: popup.target)
+        expect(model.changes == 1, "The disabled duplicate cannot write another value")
+
+        model.options.reverse()
+        await Task.yield()
+        host.layoutSubtreeIfNeeded()
+        expect(
+            popup.numberOfItems == 2 && popup.indexOfSelectedItem == 0
+                && popup.item(at: 0)?.accessibilityLabel() == "Second pack"
+                && popup.item(at: 1)?.isEnabled == false,
+            "Reordering equal labels follows stable values and updates per-item metadata")
+        model.options[1].isEnabled = true
+        await Task.yield()
+        host.layoutSubtreeIfNeeded()
+        popup.selectItem(at: 1)
+        _ = popup.sendAction(popup.action, to: popup.target)
+        await Task.yield()
+        host.layoutSubtreeIfNeeded()
+        expect(
+            model.value == "first" && model.changes == 2
+                && (popup.accessibilityValue() as? String) == "First pack",
+            "The other duplicate selects its own value and full accessibility label")
+        model.options = [SettingsMenuOption("first", "Renamed pack")]
+        await Task.yield()
+        host.layoutSubtreeIfNeeded()
+        expect(
+            popup.itemTitles == ["Renamed pack"] && popup.indexOfSelectedItem == 0
+                && model.changes == 2,
+            "A later menu rebuild preserves selection without emitting a binding mutation")
+    }
+
     await suite("Native settings controls: full names, content width, disabled and publication") {
         let model = NativeSettingsControlFixture()
         let long =
@@ -171,4 +225,30 @@ private struct NativeSettingsControlFixtureView: View {
 @MainActor
 private func allNativeSettingsViews(_ view: NSView) -> [NSView] {
     [view] + view.subviews.flatMap(allNativeSettingsViews)
+}
+
+@MainActor
+private final class NativeDuplicateSettingsControlFixture: ObservableObject {
+    @Published var value = "second"
+    @Published var options = [
+        SettingsMenuOption(
+            "first", "Shared name", isEnabled: false, accessibilityLabel: "First pack"),
+        SettingsMenuOption("second", "Shared name", accessibilityLabel: "Second pack"),
+    ]
+    var changes = 0
+}
+
+@MainActor
+private struct NativeDuplicateSettingsControlFixtureView: View {
+    @ObservedObject var model: NativeDuplicateSettingsControlFixture
+    var body: some View {
+        SettingsNativePopUp(
+            "Viewed sound pack",
+            selection: Binding(
+                get: { model.value },
+                set: {
+                    model.changes += 1; model.value = $0
+                }),
+            options: model.options)
+    }
 }

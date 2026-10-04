@@ -33,9 +33,12 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         contentController.view.setContentCompressionResistancePriority(
             .defaultLow, for: .horizontal)
         session.captureReadingPosition = { [weak self] in self?.captureReadingPosition() }
-        presentationSubscription = session.$state.sink { [weak self] state in
-            MainActor.assumeIsolated { self?.update(state) }
-        }
+        // Mount readiness can advance without changing the visible projection.
+        presentationSubscription = session.$state
+            .combineLatest(session.$renderedNavigationStamp)
+            .sink { [weak self] state, _ in
+                MainActor.assumeIsolated { self?.update(state) }
+            }
     }
 
     required init?(coder: NSCoder) { nil }
@@ -341,8 +344,7 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         }
         let offset = scroll.contentView.bounds.minY
         let maximum = max(0, document.bounds.height - scroll.contentView.bounds.height)
-        let anchor = document.settingsDescendants.first { candidate in
-            guard !candidate.accessibilityIdentifier().isEmpty else { return false }
+        let anchor = document.settingsReadingAnchors.first { candidate in
             let frame = document.convert(candidate.bounds, from: candidate)
             return frame.minY >= offset && frame.minY <= offset + scroll.contentView.bounds.height
         }
@@ -358,7 +360,7 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         let maximum = max(0, document.bounds.height - scroll.contentView.bounds.height)
         var offset = CGFloat(bookmark.relativeScrollPosition) * maximum
         if let identifier = bookmark.scrollAnchorIdentifier,
-            let anchor = document.settingsDescendants.first(where: {
+            let anchor = document.settingsReadingAnchors.first(where: {
                 $0.accessibilityIdentifier() == identifier
             })
         {
@@ -394,5 +396,16 @@ private final class SettingsSafeAreaContentController: NSViewController {
 extension NSView {
     fileprivate var settingsDescendants: [NSView] {
         [self] + subviews.flatMap(\.settingsDescendants)
+    }
+
+    fileprivate var settingsReadingAnchors: [NSView] {
+        let candidates = settingsDescendants.filter {
+            let identifier = $0.accessibilityIdentifier()
+            return !identifier.isEmpty && !identifier.hasPrefix("settings.semantic-surface.")
+        }
+        let identifiers = Dictionary(grouping: candidates) { $0.accessibilityIdentifier() }
+        // Decoration names describe roles, and repeated identifiers cannot identify one anchor.
+        // Both capture and restore use the normalized fallback when no unique semantic view exists.
+        return candidates.filter { identifiers[$0.accessibilityIdentifier()]?.count == 1 }
     }
 }

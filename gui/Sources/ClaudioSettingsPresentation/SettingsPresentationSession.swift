@@ -33,9 +33,10 @@ package final class SettingsPresentationSession: ObservableObject {
     package var captureReadingPosition: (@MainActor () -> SettingsReadingBookmark?)?
     private var navigationFocus: SettingsNavigationFocus = .content
     private var navigationRestoration: SettingsNavigationRestoration?
-    package private(set) var renderedNavigationStamp: SettingsNavigationStamp?
+    @Published package private(set) var renderedNavigationStamp: SettingsNavigationStamp?
     private var modalNavigationBlockers: Set<String> = []
     private var lastViewedSoundPackID: String?
+    private var pendingViewedSoundPackRestoration: (packID: String, stamp: SettingsNavigationStamp)?
     private var activeSoundsRequestRevision: UInt64?
     private var workspaceDeletionNavigation:
         (request: WorkspaceDeletionRequest, stamp: SettingsNavigationStamp)?
@@ -428,9 +429,11 @@ package final class SettingsPresentationSession: ObservableObject {
             pendingSoundEditorPublication = publication
             return
         }
+        restorePendingViewedSoundPack(from: publication)
         pumpSoundsDetailArbitration {
             soundsDetailArbitration.consume(publication, navigationStamp: navigationHistory.stamp)
         }
+        guard pendingViewedSoundPackRestoration == nil else { return }
         if case .sounds(let sounds) = publication.mode, sounds.draft == nil,
             sounds.routeState != .pendingFreshSnapshot, routeResolution.failure == nil,
             let packID = soundsDetailArbitration.detail.capturedPackID ?? sounds.selectedPack?.id
@@ -579,6 +582,7 @@ package final class SettingsPresentationSession: ObservableObject {
             }
         }
         if entry == nil { rememberCurrentReadingPosition() }
+        pendingViewedSoundPackRestoration = nil
         workspaceDeletionNavigation = nil
         if requestedRoute.destination != .sounds { soundReturnContext = nil }
         if entry == nil { navigationHistory.visit(requestedLocation) }
@@ -634,13 +638,9 @@ package final class SettingsPresentationSession: ObservableObject {
                 resolved.destination,
                 route: requestedRoute,
                 requestsFocus: focus == .content)
-            if let viewedPackID = requestedLocation.viewedPackID,
-                case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode,
-                sounds.draft == nil,
-                let action = sounds.packs.first(where: { $0.id == viewedPackID })?.inspectAction
-            {
-                _ = dependencies.soundPacksEditorOwner.send(.invoke(action))
-            }
+            restoreViewedSoundPack(
+                requestedLocation.viewedPackID,
+                in: dependencies.soundPacksEditorOwner.presentation)
         }
         explicitRouteRequestRevision &+= 1
         if focus == .sidebar || focus == .restore {
@@ -667,6 +667,36 @@ package final class SettingsPresentationSession: ObservableObject {
             return .rejected(failure)
         }
         return .routed
+    }
+
+    private func restoreViewedSoundPack(
+        _ viewedPackID: String?, in publication: SoundPacksEditorPresentation
+    ) {
+        guard let viewedPackID,
+            case .sounds(let sounds) = publication.mode,
+            sounds.draft == nil,
+            let action = sounds.packs.first(where: { $0.id == viewedPackID })?.inspectAction
+        else { return }
+        _ = dependencies.soundPacksEditorOwner.send(.invoke(action))
+    }
+
+    private func restorePendingViewedSoundPack(from publication: SoundPacksEditorPresentation) {
+        guard let pending = pendingViewedSoundPackRestoration else { return }
+        guard pending.stamp == navigationHistory.stamp,
+            pending.packID == navigationHistory.current?.location.viewedPackID
+        else {
+            pendingViewedSoundPackRestoration = nil
+            return
+        }
+        guard case .sounds(let sounds) = publication.mode else { return }
+        if sounds.selectedPack?.id == pending.packID {
+            pendingViewedSoundPackRestoration = nil
+            return
+        }
+        guard publication.library.isFresh else { return }
+        // Owner publications arrive before its @Published property is committed. Invoke the
+        // matching incoming capability; a reentrant activation may still be queued by the owner.
+        restoreViewedSoundPack(pending.packID, in: publication)
     }
 
     private func applyRoute(
@@ -1017,6 +1047,7 @@ package final class SettingsPresentationSession: ObservableObject {
         windowPhase = .closing
         animationPreview.deactivate()
         navigationHistory.clear()
+        pendingViewedSoundPackRestoration = nil
         workspaceDeletionNavigation = nil
         navigationRestoration = nil
         renderedNavigationStamp = nil
@@ -1094,6 +1125,9 @@ package final class SettingsPresentationSession: ObservableObject {
                 deactivate(lifecycleDestination)
             }
             lifecycleDestination = resolved.destination
+            if let packID = location.viewedPackID, let stamp = navigationHistory.stamp {
+                pendingViewedSoundPackRestoration = (packID, stamp)
+            }
             activate(resolved.destination, route: resolved.route, requestsFocus: false)
         }
         isPerformingTransaction = wasPerformingTransaction
