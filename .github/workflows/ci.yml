@@ -88,6 +88,13 @@ jobs:
       - name: Run helper harness
         run: swift run --package-path helper claudio-tests
 
+      - name: Verify OpenCode plugin contracts
+        run: |
+          python3 scripts/embed-opencode-plugin.py --check
+          node scripts/test-opencode-plugin.mjs
+          bash scripts/test-hook-cli-contract.sh
+          python3 scripts/test-additional-host-cli-contract.py
+
   gui:
     name: GUI and bundle
     runs-on: macos-15

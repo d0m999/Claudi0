@@ -10,8 +10,9 @@ extension Claudio {
         static let configuration = CommandConfiguration(
             abstract: "宿主 hook 回调：严格映射、宿主级去抖、写最小真实回执并立即退出。")
 
-        @Argument(help: "宿主：claude-code / codex / workbuddy") var host: String
-        @Argument(help: "宿主原生事件名") var nativeEvent: String
+        @Argument(help: "宿主：claude-code / codex / workbuddy / opencode / kimi-code") var host:
+            String
+        @Argument(help: "宿主原生或 Claudio 桥接事件名") var nativeEvent: String
         @Option(name: .long, help: "当前连接 installation UUID") var installationID: String
 
         func run() throws {
@@ -28,6 +29,7 @@ extension Claudio {
             let hookInput: HookInputReadResult? = HookInputReader.read()
             guard
                 HostQuestionTrigger.binding(host: parsedHost, nativeEvent: nativeEvent) == nil
+                    && parsedHost != .opencode && parsedHost != .kimiCode
                     || hookInput?.status == .data
             else { return }
             guard
@@ -96,7 +98,8 @@ extension Claudio {
             static let configuration = CommandConfiguration(
                 abstract: "连接指定宿主；先幂等自举共享 runtime。")
 
-            @Argument(help: "claude-code / codex / workbuddy") var host: String
+            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code") var host:
+                String
 
             mutating func run() async throws {
                 guard let hostID = HostID(rawValue: host) else {
@@ -127,7 +130,8 @@ extension Claudio {
             static let configuration = CommandConfiguration(
                 abstract: "只摘除指定宿主的 claudi0 条目，保留共享 runtime 与第三方配置。")
 
-            @Argument(help: "claude-code / codex / workbuddy") var host: String
+            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code") var host:
+                String
 
             mutating func run() async throws {
                 guard let hostID = HostID(rawValue: host) else {
@@ -358,6 +362,7 @@ private func makeSystemIntegrationManager(
         adapters: [
             ClaudeCodeIntegrationAdapter(), CodexIntegrationAdapter(),
             WorkBuddyIntegrationAdapter(),
+            OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
         ],
         bootstrapper: SystemSharedRuntimeBootstrapper(
             environment: SetupEnvironment(executablePath: executablePath)))

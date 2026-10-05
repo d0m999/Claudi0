@@ -302,6 +302,7 @@ public struct HostHookReceiptStore: Sendable {
             }
             // WorkBuddy 的版本身份在安装锁内重读；迟到回执不得激活同 UUID 的旧 scope。
             if receipt.host == .workBuddy
+                || receipt.host == .opencode || receipt.host == .kimiCode
                 || HostQuestionTrigger.binding(host: receipt.host, nativeEvent: receipt.nativeEvent)
                     != nil
             {

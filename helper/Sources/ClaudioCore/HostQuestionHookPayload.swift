@@ -7,6 +7,11 @@ public struct HostQuestionHookPayload: Sendable, Equatable {
     public let sessionID: String
     public let requestID: String
 
+    public init(sessionID: String, requestID: String) {
+        self.sessionID = sessionID
+        self.requestID = requestID
+    }
+
     public static func parse(host: HostID, nativeEvent: String, data: Data?) -> Self? {
         guard let trigger = HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent),
             let data, !data.isEmpty, data.count <= HookInputReader.defaultMaximumBytes,

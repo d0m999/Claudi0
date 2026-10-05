@@ -33,13 +33,17 @@ _Avoid_: 已安装声音包、Bundled Lookup Pack
 _Avoid_: 用产品名代替具体 surface
 
 **事件来源（Host Surface）**:
-一个具有独立原生事件协议、配置位置、授权状态和回执代次的宿主表面。每个来源由稳定 `HostSurfaceID` 标识，并可归属于一个宿主产品。
+一个具有独立事件协议、配置位置、授权状态和回执代次的宿主表面。协议可来自原生 hooks 或由 Claudio 定义的插件桥接；每个来源由稳定 `HostSurfaceID` 标识，并可归属于一个宿主产品。
 _Avoid_: App、来源行、把 Chat 与 Codex view 合并
 
 **事件绑定（Host Event Binding）**:
-一个来源的原生事件到 claudi0 公共 `Event` 的稳定、可版本化映射，由 `HostEventBindingID` 标识；
+一个来源的原生事件或桥接事件到 claudi0 公共 `Event` 的稳定、可版本化映射，由 `HostEventBindingID` 标识；
 `HostCapabilityBinding` 投影的来源支持、当前实现和当前激活是三个独立事实。
 _Avoid_: 只用原生事件字符串作为身份
+
+**桥接事件（Bridge Event）**:
+Claudio 适配器根据宿主消息、会话关系和执行证据定义的事件事实。桥接事件具有独立名称与版本，不能与宿主上游的原始事件混用。
+_Avoid_: 把 idle 当作响应结束、把工具返回当作子任务结束
 
 **当前激活（Current Activation）**:
 当前 installation、surface、事件绑定和版本 scope 下，由真实宿主回调生成的脱敏回执。静态配置、接口文档、测试通过或旧代次回执都不构成当前激活。

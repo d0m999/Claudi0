@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Resolves host CLIs without assuming a Finder/LaunchServices process inherited the user's shell
@@ -40,6 +41,7 @@ public struct HostExecutableLocator: Sendable {
             "bin",
             ".claude/local",
             ".codex/bin",
+            ".kimi-code/bin",
             ".volta/bin",
             ".asdf/shims",
         ].map { homeDirectory.appendingPathComponent($0, isDirectory: true) }
@@ -50,6 +52,8 @@ public struct HostExecutableLocator: Sendable {
             homeDirectory.appendingPathComponent(".local/share/mise", isDirectory: true),
             homeDirectory.appendingPathComponent(".mise", isDirectory: true),
         ].compactMap { $0?.appendingPathComponent("shims", isDirectory: true) }
+        let kimiDirectories = [absoluteDirectory(environment["KIMI_CODE_HOME"])]
+            .compactMap { $0?.appendingPathComponent("bin", isDirectory: true) }
         let remainingUserDirectories = [
             ".fnm/current/bin",
             ".npm-global/bin",
@@ -67,7 +71,8 @@ public struct HostExecutableLocator: Sendable {
         ]
         return HostExecutableLocator(
             searchDirectories:
-                pathDirectories + userDirectories + miseDirectories + remainingUserDirectories
+                pathDirectories + kimiDirectories + userDirectories + miseDirectories
+                + remainingUserDirectories
                 + nvmDirectories + systemDirectories)
     }
 
@@ -166,6 +171,77 @@ public enum HostActivationScope {
     public static func workBuddy() -> String? {
         guard let version = bundleVersion(at: "/Applications/WorkBuddy.app") else { return nil }
         return fingerprint(host: .workBuddy, hostVersion: "app=\(version)")
+    }
+
+    public static func additionalHost(
+        _ host: HostID,
+        configurationRoot: URL?,
+        executableLocator: HostExecutableLocator = .standard(),
+        commandRunner: (any CommandRunning)? = nil
+    ) -> String? {
+        guard host == .opencode || host == .kimiCode, let configurationRoot,
+            let version = additionalHostVersion(
+                host, executableLocator: executableLocator,
+                commandRunner: commandRunner),
+            // The new Kimi CLI is distinct from the Python 1.x CLI with the same command name.
+            let parsed = SemanticVersion(parsing: version),
+            (host == .opencode && parsed >= SemanticVersion(major: 1, minor: 18, patch: 34))
+                || (host == .kimiCode && parsed >= SemanticVersion(major: 2, minor: 1, patch: 1)),
+            let base = fingerprint(host: host, hostVersion: version)
+        else { return nil }
+        let rootDigest = SHA256.hash(
+            data: Data(
+                configurationRoot.resolvingSymlinksInPath()
+                    .standardizedFileURL.path.utf8)
+        ).map { String(format: "%02x", $0) }.joined()
+        return base
+            + ";config=\(rootDigest);acceptance=\(AdditionalHostReleasePolicy.isAcceptanceBuild)"
+    }
+
+    private static func additionalHostVersion(
+        _ host: HostID,
+        executableLocator: HostExecutableLocator, commandRunner: (any CommandRunning)?
+    ) -> String? {
+        guard host == .kimiCode else {
+            return commandVersion(
+                command: "opencode", executableLocator: executableLocator,
+                commandRunner: commandRunner)
+        }
+        // Both CLI generations use `kimi`. A Python 1.x shim must not hide a separately
+        // installed 2.x binary from a Finder-launched GUI. Inspect at most four real candidates.
+        var checkedPaths: Set<String> = []
+        let runner: any CommandRunning =
+            commandRunner
+            ?? SystemCommandRunner(
+                environmentOverrides: ["PATH": executableLocator.executableSearchPath])
+        for directory in executableLocator.searchDirectories {
+            let candidate = HostExecutableLocator(searchDirectories: [directory])
+            guard let path = candidate.executablePath(command: "kimi") else { continue }
+            guard
+                checkedPaths.insert(URL(fileURLWithPath: path).resolvingSymlinksInPath().path)
+                    .inserted
+            else { continue }
+            if let version = commandVersion(
+                command: "kimi", executableLocator: candidate,
+                commandRunner: runner), let parsed = SemanticVersion(parsing: version),
+                parsed >= SemanticVersion(major: 2, minor: 1, patch: 1)
+            {
+                return version
+            }
+            if checkedPaths.count >= 4 { break }
+        }
+        return nil
+    }
+
+    public static func current(for host: HostID) -> String? {
+        switch host {
+        case .claudeCode: claudeCode()
+        case .codex: codex()
+        case .workBuddy: workBuddy()
+        case .opencode, .kimiCode:
+            additionalHost(host, configurationRoot: AdditionalHostPaths.currentRoot(host: host))
+        case .chatGPTDesktopAX, .claudeDesktopAX: nil
+        }
     }
 
     private static func bundleVersion(at path: String) -> String? {

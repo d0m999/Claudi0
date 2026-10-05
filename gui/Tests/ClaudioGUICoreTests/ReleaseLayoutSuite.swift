@@ -87,6 +87,12 @@ private func isReleaseGUIBuildCommand(_ command: String) -> Bool {
         && command.contains("--product ClaudioGUI")
 }
 
+private func isReleaseHelperBuildCommand(_ command: String) -> Bool {
+    command.contains("swift build")
+        && command.contains("-c release")
+        && command.range(of: "--product claudio(?:\\s|$)", options: .regularExpression) != nil
+}
+
 private func usesSwiftSizeOptimization(_ command: String) -> Bool {
     command.contains("-Xswiftc -Osize")
 }
@@ -624,7 +630,7 @@ func runReleaseLayoutSuites() {
             "release workflow 必须在签名前执行可执行负载体积门禁")
     }
 
-    suite("分发脚本只对 Release ClaudioGUI 完整依赖图启用体积优化") {
+    suite("分发脚本对 Release GUI 与 helper 启用体积优化，GUI 使用 full LTO") {
         let root = guiTestRepositoryRoot()
         guard
             let dev = try? String(
@@ -646,6 +652,8 @@ func runReleaseLayoutSuites() {
         let devReleaseGUICommands = devCommands.filter(isReleaseGUIBuildCommand)
         let ciReleaseGUICommands = ciCommands.filter(isReleaseGUIBuildCommand)
         let releaseGUICommands = releaseCommands.filter(isReleaseGUIBuildCommand)
+        let devHelperCommands = devCommands.filter(isReleaseHelperBuildCommand)
+        let releaseHelperCommands = releaseCommands.filter(isReleaseHelperBuildCommand)
         expect(
             devReleaseGUICommands.count == 2
                 && devReleaseGUICommands.allSatisfy(usesSwiftSizeOptimization),
@@ -660,15 +668,23 @@ func runReleaseLayoutSuites() {
                 && releaseGUICommands.contains { $0.contains("--arch arm64") }
                 && releaseGUICommands.contains { $0.contains("--arch x86_64") },
             "双架构 release GUI 构建必须使用同一 -Osize 合同")
+        expect(
+            devHelperCommands.count == 2
+                && devHelperCommands.allSatisfy(usesSwiftSizeOptimization)
+                && releaseHelperCommands.count == 2
+                && releaseHelperCommands.allSatisfy(usesSwiftSizeOptimization),
+            "本地 helper 构建／路径查询及双架构分发必须使用 -Osize，维持新增插件后的原体积预算")
 
         let optimizedCommands = [devCommands, ciCommands, releaseCommands]
             .flatMap { $0 }
             .filter(usesSwiftSizeOptimization)
         expect(
-            optimizedCommands.count == 5
-                && optimizedCommands.allSatisfy(isReleaseGUIBuildCommand),
-            "-Osize 只能出现在五条 Release ClaudioGUI 命令，不能扩散到 Debug、harness、"
-                + "LoginItem 或 helper；实际命令：\(optimizedCommands)")
+            optimizedCommands.count == 9
+                && optimizedCommands.allSatisfy {
+                    isReleaseGUIBuildCommand($0) || isReleaseHelperBuildCommand($0)
+                },
+            "-Osize 只允许五条 Release GUI 与四条 helper 分发命令，不能扩散到 Debug、harness、"
+                + "LoginItem；实际命令：\(optimizedCommands)")
 
         expect(
             devReleaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
@@ -740,21 +756,27 @@ func runReleaseLayoutSuites() {
                 swift build -Xswiftc -Osize -c release \
                     --product claudio --arch arm64
                 swift build --product ClaudioGUI -Xswiftc -Osize -c debug
+                swift build --product claudio-tests -Xswiftc -Osize -c release
+                swift build --product ClaudioLoginItem -Xswiftc -Osize -c release
+                swift build --product claudio -Xswiftc -Osize -c debug
                 """
         )
         .filter(usesSwiftSizeOptimization)
 
-        guard commands.count == 3 else {
-            expect(false, "fixture 的三条体积优化命令都必须被归一化，实得 \(commands)")
+        guard commands.count == 6 else {
+            expect(false, "fixture 的六条体积优化命令都必须被归一化，实得 \(commands)")
             return
         }
         expect(
             isReleaseGUIBuildCommand(commands[0]),
-            "跨行且参数调序后的 Release ClaudioGUI 必须仍被识别为唯一允许目标")
+            "跨行且参数调序后的 Release ClaudioGUI 必须仍被识别")
         expect(
-            !isReleaseGUIBuildCommand(commands[1])
-                && !isReleaseGUIBuildCommand(commands[2]),
-            "跨行 helper 与 Debug ClaudioGUI 的 -Osize 必须被识别为错误扩散")
+            isReleaseHelperBuildCommand(commands[1]) && !isReleaseGUIBuildCommand(commands[1]),
+            "Release helper 是独立允许的体积优化目标")
+        expect(
+            commands.dropFirst(2).allSatisfy {
+                !isReleaseGUIBuildCommand($0) && !isReleaseHelperBuildCommand($0)
+            }, "Debug、harness 和 LoginItem 的 -Osize 必须被识别为错误扩散")
     }
 
     suite("full LTO 合同跨行与参数调序仍会拒绝错误目标和模式") {

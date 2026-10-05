@@ -43,7 +43,7 @@ func runActivityOverviewSuites() {
             projection.surfaces[.codex]?.event(.subagentStop)?.availability == .unsupported,
             "unsupported Surface events must remain unsupported rather than zero")
         expect(
-            projection.global.event(.subagentStop)?.coverage.fractionText == "2/3",
+            projection.global.event(.subagentStop)?.coverage.fractionText == "4/5",
             "Global coverage must show the real supporting Surface count")
         expect(
             projection.global.todaySubtasks == 5,
@@ -126,6 +126,9 @@ func runActivityOverviewSuites() {
 private func previewActivityCapabilities() -> [HostID: [HostCapabilityBinding]] {
     Dictionary(
         uniqueKeysWithValues: HostID.productVisibleCases.map { host in
+            if host == .opencode || host == .kimiCode {
+                return (host, HostCapabilityCatalog.bindings(for: host))
+            }
             let events: [Event]
             switch host {
             case .claudeCode: events = [.taskStart, .stop, .notification, .subagentStop]

@@ -236,8 +236,13 @@ public func playSoundEvent(
 /// identical to ordinary automatic sounds. Spawn success is reported through the environment's
 /// observer; `.played` alone retains the legacy meaning of a spawn attempt.
 public func playConsumedQuestion(environment: PlayEnvironment) -> PlayOutcome {
+    playConsumedHostEvent(.notification, environment: environment)
+}
+
+/// Identity-scoped callbacks have already reserved their request/turn in the bounded ledger.
+/// Distinct sessions must not suppress each other through the legacy host-wide time window.
+public func playConsumedHostEvent(_ event: Event, environment: PlayEnvironment) -> PlayOutcome {
     guard environment.playbackAuthorized() else { return .notReady }
-    let event = Event.notification
     switch preparePlay(event: event, environment: environment) {
     case .silent(let outcome): return outcome
     case .ready(let volume, let audioFile):

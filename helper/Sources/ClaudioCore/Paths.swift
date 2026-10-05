@@ -334,6 +334,14 @@ public enum ClaudioPaths {
             .appendingPathComponent("settings.json")
     }
 
+    public static var opencodeConfigRoot: URL? {
+        AdditionalHostPaths.configurationRoot(host: .opencode, homeDirectory: home)
+    }
+
+    public static var kimiCodeConfigRoot: URL? {
+        AdditionalHostPaths.configurationRoot(host: .kimiCode, homeDirectory: home)
+    }
+
     public static var legacyCodexNotifyWrapper: URL {
         binDirectory.appendingPathComponent("codex-notify")
     }

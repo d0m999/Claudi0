@@ -149,7 +149,14 @@ final class MenuBarController: NSObject {
                     .claudeCode: ClaudioPaths.claudeSettingsFile.path,
                     .codex: ClaudioPaths.codexHooksFile.path,
                     .workBuddy: ClaudioPaths.workBuddySettingsFile.path,
-                ],
+                ].merging(
+                    Dictionary(
+                        uniqueKeysWithValues: AdditionalHostReleasePolicy.visibleHosts.compactMap {
+                            host in
+                            AdditionalHostPaths.currentRoot(host: host).map { root in
+                                (host, AdditionalHostPaths.file(host: host, root: root).path)
+                            }
+                        }), uniquingKeysWith: { _, source in source }),
                 integrationMatrixProvider: integrationMatrixProvider,
                 integrationActionProvider: integrationActionProvider),
             adapters: PanelAppComposition.Adapters(

@@ -170,11 +170,20 @@ if CommandLine.arguments.contains("--question-intent") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--additional-hosts") {
+    runAdditionalHostPresentationSuites()
+    runActivityOverviewSuites()
+    runLocalPreRCSuites()
+    print("Additional hosts: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--question-integration-contract") {
     runLocalizationSuites()
     runHostIntegrationPresentationSuites()
     runHostSourceRowLocalizationSuites()
     runIntegrationDestinationPresentationSuites()
+    runAdditionalHostPresentationSuites()
     runWorkBuddyVisualStateBaselineSuites()
     await runHostIntegrationManagerBridgeSuites()
     print("Question integration: \(totalChecks) checks, \(failures) failures")
@@ -627,6 +636,7 @@ runPanelAccessibilitySuites()
 runHostIntegrationPresentationSuites()
 runHostSourceRowLocalizationSuites()
 runIntegrationDestinationPresentationSuites()
+runAdditionalHostPresentationSuites()
 await runIntegrationDestinationModelSuites()
 runWorkBuddyVisualStateBaselineSuites()
 runWorkBuddyKeyboardAccessibilitySuites()

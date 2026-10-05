@@ -708,6 +708,7 @@ struct IntegrationsSettingsDestinationView: View {
     private func localizedMechanism(_ mechanism: HostIntegrationMechanism) -> String {
         switch mechanism {
         case .nativeHooks: return l10n.text(.integrationsMechanismNativeHooks)
+        case .pluginBridge: return l10n.text(.integrationsMechanismPluginBridge)
         case .accessibilityBeta: return l10n.text(.integrationsMechanismAccessibilityBeta)
         }
     }

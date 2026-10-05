@@ -97,9 +97,11 @@ func runHostIntegrationPresentationSuites() {
 
     suite("宿主来源共享 presentation：产品 registry 永久出现，AX identity 只留在诊断层") {
         let rows = hostSourceRowPresentations(from: hostPresentationMatrix())
-        expect(rows.map(\.host) == [.codex, .claudeCode, .workBuddy], "共享来源仍保持 Product 分组顺序")
         expect(
-            rows.map(\.supportedCount) == [4, 5, 4]
+            rows.map(\.host) == [.codex, .claudeCode, .workBuddy]
+                + AdditionalHostReleasePolicy.visibleHosts, "共享来源仍保持 Product 分组顺序")
+        expect(
+            rows.map(\.supportedCount) == [4, 5, 4] + [5, 3]
                 && rows.allSatisfy { $0.totalCount == Event.allCases.count },
             "能力数量必须来自 adapter/catalog 事实")
         expect(
@@ -107,7 +109,8 @@ func runHostIntegrationPresentationSuites() {
                 from: hostPresentationMatrix(
                     snapshots: [hostPresentationSnapshot(.claudeCode)])
             )
-            .map(\.host) == [.codex, .claudeCode, .workBuddy],
+            .map(\.host) == [.codex, .claudeCode, .workBuddy]
+                + AdditionalHostReleasePolicy.visibleHosts,
             "缺少快照也不能隐藏其他产品宿主")
         expect(
             Set(rows.map(\.host)).isDisjoint(with: [.chatGPTDesktopAX, .claudeDesktopAX]),

@@ -242,6 +242,19 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let hostLegacy: Self = "host.legacy"
     public static let hostNotConnected: Self = "host.not-connected"
     public static let hostNeedsAttention: Self = "host.needs-attention"
+    public static let hostOpenCodeReadyDetail: Self = "host.opencode.ready-detail"
+    public static let hostKimiCodeReadyDetail: Self = "host.kimi-code.ready-detail"
+    public static let hostAdditionalAwaitingDetail: Self = "host.additional.awaiting-detail"
+    public static let qualificationBridgeTerminalEvidence: Self =
+        "qualification.bridge-terminal-evidence"
+    public static let qualificationBridgeExecutionEvidence: Self =
+        "qualification.bridge-execution-evidence"
+    public static let qualificationUserOriginOnly: Self = "qualification.user-origin-only"
+    public static let qualificationMainAgentUnavailable: Self =
+        "qualification.main-agent-unavailable"
+    public static let qualificationSubagentUnavailable: Self = "qualification.subagent-unavailable"
+    public static let integrationsMechanismPluginBridge: Self =
+        "integrations.destination.mechanism.plugin-bridge"
     public static let hostCodexReadyDetail: Self = "host.codex.ready-detail"
     public static let hostCodexAwaitingDetail: Self = "host.codex.awaiting-detail"
     public static let hostClaudeAwaitingDetail: Self = "host.claude.awaiting-detail"
@@ -1827,6 +1840,15 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .soundPacksStatusPackTrashed,
         .hostReady, .hostConfigured, .hostLegacy, .hostNotConnected, .hostNeedsAttention,
         .hostCodexReadyDetail, .hostCodexAwaitingDetail,
+        .hostOpenCodeReadyDetail,
+        .hostKimiCodeReadyDetail,
+        .hostAdditionalAwaitingDetail,
+        .qualificationBridgeTerminalEvidence,
+        .qualificationBridgeExecutionEvidence,
+        .qualificationUserOriginOnly,
+        .qualificationMainAgentUnavailable,
+        .qualificationSubagentUnavailable,
+        .integrationsMechanismPluginBridge,
         .hostClaudeAwaitingDetail, .hostClaudeLegacyDetail, .hostCodexLegacyDetail,
         .hostWorkBuddyReadyDetail, .hostWorkBuddyAwaitingDetail,
         .qualificationAccessibilityBetaUnavailable,

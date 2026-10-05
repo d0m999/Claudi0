@@ -331,6 +331,7 @@ public struct DoctorIntegrationsEnvironment: Sendable {
     public let claudeScopeFingerprint: @Sendable () -> String?
     public let codexScopeFingerprint: @Sendable () -> String?
     public let workBuddyScopeFingerprint: @Sendable () -> String?
+    public let additionalHosts: [AdditionalHostIntegrationEnvironment]
 
     public init(
         claudeSettingsFile: URL = ClaudioPaths.claudeSettingsFile,
@@ -373,7 +374,8 @@ public struct DoctorIntegrationsEnvironment: Sendable {
             HostActivationScope.codex()
         },
         workBuddyScopeFingerprint: @escaping @Sendable () -> String? = HostActivationScope
-            .workBuddy
+            .workBuddy,
+        additionalHosts: [AdditionalHostIntegrationEnvironment]? = nil
     ) {
         self.claudeSettingsFile = claudeSettingsFile
         self.codexHooksFile = codexHooksFile
@@ -397,6 +399,21 @@ public struct DoctorIntegrationsEnvironment: Sendable {
         self.claudeScopeFingerprint = claudeScopeFingerprint
         self.codexScopeFingerprint = codexScopeFingerprint
         self.workBuddyScopeFingerprint = workBuddyScopeFingerprint
+        let additionalBinary = self.claudioBinaryPath
+        self.additionalHosts =
+            additionalHosts
+            ?? [HostID.opencode, .kimiCode].map { host in
+                if claudioRoot == ClaudioPaths.root.path {
+                    return AdditionalHostIntegrationEnvironment(host: host)
+                }
+                return AdditionalHostIntegrationEnvironment(
+                    host: host,
+                    configurationRoot: URL(fileURLWithPath: claudioRoot)
+                        .appendingPathComponent("diagnostic-fixtures/\(host.rawValue)"),
+                    claudioBinaryPath: additionalBinary, claudioRoot: claudioRoot,
+                    receiptStore: receiptStore, scopeFingerprint: { nil },
+                    availability: { .unavailable(reason: "未检测到 \(host.displayName) CLI") })
+            }
     }
 }
 
@@ -546,6 +563,10 @@ public func hostIntegrationDoctorResults(
         doctorHostResult(snapshot: codex),
         doctorHostResult(snapshot: workBuddy),
     ]
+        + environment.additionalHosts.filter { HostID.productVisibleCases.contains($0.host) }.map {
+            doctorHostResult(
+                snapshot: inspectAdditionalHostSnapshot(environment: $0, runtime: runtime))
+        }
 }
 
 private func sharedRuntimeDoctorResult(
@@ -659,6 +680,8 @@ private func doctorHostResult(
                     "⚠ Claude Code 已配置，请提交一次提示词以确认连接"
                 case .workBuddy:
                     "⚠ WorkBuddy 已配置，请提交一次提示词以确认 task_start 回执"
+                case .opencode, .kimiCode:
+                    "⚠ \(host.displayName) 已配置；请重新启动 CLI 并提交用户请求以确认当前回执"
                 case .chatGPTDesktopAX, .claudeDesktopAX:
                     "⚠ \(host.displayName) 尚未提供可激活的 adapter"
                 }
@@ -673,6 +696,8 @@ private func doctorHostResult(
             switch host {
             case .codex: "；执行中断暂无事件，待响应仅授权请求"
             case .workBuddy: ""
+            case .opencode: "；按会话身份与执行／终态证据桥接"
+            case .kimiCode: "；仅用户开始、授权、提问意图及成功子任务；主响应终态未启用"
             case .claudeCode: ""
             case .chatGPTDesktopAX, .claudeDesktopAX: "；Beta 候选尚未实现"
             }

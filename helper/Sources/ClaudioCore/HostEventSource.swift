@@ -207,8 +207,15 @@ public enum HostEventSourceParser {
         }
         guard
             host == .claudeCode || host == .codex
+                || host == .opencode || host == .kimiCode
                 || (host == .workBuddy && nativeEvent == "Notification")
         else { return unavailable(.unsupportedHost) }
+        if host == .opencode || host == .kimiCode {
+            guard let nativeEvent,
+                AdditionalHostHookPayload.parse(host: host, nativeEvent: nativeEvent, data: data)
+                    != nil
+            else { return unavailable(.invalidFieldType) }
+        }
         guard
             let object = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
         else { return unavailable(.invalidJSON) }
@@ -245,6 +252,11 @@ public enum HostEventSourceParser {
             return dictionary == nil ? nil : .questionIntent
         }
         if host == .codex, nativeEvent == "PermissionRequest" { return .permission }
+        if host == .kimiCode, nativeEvent == "PermissionRequest" { return .permission }
+        if host == .opencode {
+            if nativeEvent == "PermissionRequested" { return .permission }
+            if nativeEvent == "QuestionAsked" { return .needsInput }
+        }
         if host == .workBuddy, nativeEvent == "Notification" {
             guard dictionary?["hook_event_name"] as? String == nativeEvent else { return .review }
             return WorkBuddyNotification.noticeReason(
@@ -341,6 +353,16 @@ public enum HostEventSourceParser {
     private static func parentSessionField(
         host: HostID, nativeEvent: String?, in object: [String: Any]
     ) -> (value: Bool, mainKnown: Bool, invalid: Bool) {
+        if host == .opencode {
+            return (
+                object["session_kind"] as? String == "child",
+                object["session_kind"] as? String == "main", false
+            )
+        }
+        if host == .kimiCode {
+            // Main and child agents share session_id, and agent_id alone does not identify either.
+            return (nativeEvent == "SubagentStop", false, false)
+        }
         var child = nativeEvent == "SubagentStop"
         if let value = object["agent_id"] {
             guard let identifier = value as? String,

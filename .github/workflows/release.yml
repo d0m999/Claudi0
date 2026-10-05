@@ -201,16 +201,19 @@ jobs:
           swift run --package-path helper claudio-tests
           swift run --package-path gui claudio-gui-tests
           bash scripts/test-hook-cli-contract.sh
+          python3 scripts/embed-opencode-plugin.py --check
+          node scripts/test-opencode-plugin.mjs
+          python3 scripts/test-additional-host-cli-contract.py
           bash scripts/test-legacy-install-cli-contract.sh
           jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 
       - name: Build helper (arm64)
         working-directory: helper
-        run: swift build -c release --arch arm64 --product claudio
+        run: swift build -c release --arch arm64 --product claudio -Xswiftc -Osize
 
       - name: Build helper (x86_64)
         working-directory: helper
-        run: swift build -c release --arch x86_64 --product claudio
+        run: swift build -c release --arch x86_64 --product claudio -Xswiftc -Osize
 
       - name: Merge universal helper
         shell: bash
@@ -332,6 +335,8 @@ jobs:
           bash scripts/copy-bundled-packs.sh packs "$APP/Contents/Resources/packs"
           cp LICENSE "$APP/Contents/Resources/LICENSE"
           cp PRIVACY.md "$APP/Contents/Resources/PRIVACY.md"
+          mkdir -p "$APP/Contents/Resources/integrations/opencode"
+          cp integrations/opencode/claudio.js "$APP/Contents/Resources/integrations/opencode/claudio.js"
           cp assets/branding/claudi0.icns "$APP/Contents/Resources/claudi0.icns"
 
           cat > "$APP/Contents/Info.plist" <<PLIST

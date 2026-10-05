@@ -1,6 +1,159 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "host.additional.awaiting-detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart the CLI and submit a user request to confirm the current installation receipt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新启动 CLI，再提交用户请求以确认当前安装回执。"
+          }
+        }
+      }
+    },
+    "host.kimi-code.ready-detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supports user turns, permission requests, question intent and successful subagents; main response completion and failure remain disabled."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持用户开始、授权请求、提问意图及成功子任务；主响应结束与中断暂未启用。"
+          }
+        }
+      }
+    },
+    "host.opencode.ready-detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Claudio plugin checks session identity and execution or terminal evidence before bridging events."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio 插件按会话身份与执行／终态证据桥接事件。"
+          }
+        }
+      }
+    },
+    "integrations.destination.mechanism.plugin-bridge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio plugin bridge"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio 插件桥接"
+          }
+        }
+      }
+    },
+    "qualification.bridge-execution-evidence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio bridge event; requires confirmed main-session identity and actual execution"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio 桥接事件；仅确认主会话身份并实际执行后触发"
+          }
+        }
+      }
+    },
+    "qualification.bridge-terminal-evidence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio bridge event; requires confirmed session identity and terminal evidence"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claudio 桥接事件；仅确认会话身份与终态后触发"
+          }
+        }
+      }
+    },
+    "qualification.main-agent-unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main/subagent identity is unavailable; disabled in the first release"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少主／子 agent 身份，首版暂未启用"
+          }
+        }
+      }
+    },
+    "qualification.subagent-unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Successful completion only; cannot locate a specific subagent task"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅成功结束；无法定位具体子任务"
+          }
+        }
+      }
+    },
+    "qualification.user-origin-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-origin TurnStarted only"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅用户发起的 TurnStarted"
+          }
+        }
+      }
+    },
     "common.cancel": {
       "localizations": {
         "en": {

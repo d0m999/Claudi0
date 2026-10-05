@@ -223,12 +223,14 @@ func runHostIntegrationModelSuites() {
         }
     }
 
-    suite("宿主 registry：正常产品只列三项，AX identity 仅保留兼容解码与隔离诊断") {
+    suite("宿主 registry：基础来源稳定，新增来源仅由验收策略开放") {
+        let stableHosts: [HostID] = [.claudeCode, .codex, .workBuddy]
         expect(
-            HostID.productVisibleCases == [.claudeCode, .codex, .workBuddy],
-            "正常产品 registry 必须固定为三个 native-hook surface")
+            HostID.productVisibleCases == [.claudeCode, .codex, .workBuddy]
+                + AdditionalHostReleasePolicy.visibleHosts,
+            "可见来源遵循基础顺序与显式验收策略")
         expect(
-            HostID.productVisibleCases.allSatisfy {
+            stableHosts.allSatisfy {
                 $0.descriptor.mechanism == .nativeHooks
                     && $0.descriptor.maturity == .stable
                     && $0.descriptor.controlSurface == .shared

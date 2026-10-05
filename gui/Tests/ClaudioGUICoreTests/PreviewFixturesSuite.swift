@@ -43,7 +43,8 @@ func runPreviewFixturesSuites() {
             PreviewFixtures.aboutSurfaceFacts.map(\.surface)
                 == HostID.productVisibleCases.map(\.surfaceID)
                 && PreviewFixtures.aboutSurfaceFacts.map(\.state)
-                    == [.ready, .awaitingActivation, .legacy],
+                    == [.ready, .awaitingActivation, .legacy]
+                    + AdditionalHostReleasePolicy.visibleHosts.map { _ in .awaitingActivation },
             "About Surface fixtures must follow the product registry and cover distinct states")
     }
 
@@ -490,8 +491,10 @@ func runPreviewFixturesSuites() {
             let presentation = hostCapabilityMatrixPresentation(from: scenario.state.matrix)
             expect(
                 presentation.hostColumns == [.codex, .claudeCode, .workBuddy]
+                    + AdditionalHostReleasePolicy.visibleHosts
                     && presentation.rows.allSatisfy {
                         $0.cells.map(\.host) == [.codex, .claudeCode, .workBuddy]
+                            + AdditionalHostReleasePolicy.visibleHosts
                     },
                 "\(scenario.id) preview 必须服从生产 Product → Surface 视觉序")
             expect(

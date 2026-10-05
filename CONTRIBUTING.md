@@ -15,6 +15,7 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 - Xcode Command Line Tools with Swift 6.
 - `jq` for validating the string catalog.
 - Node.js for the standalone sound-pack selector state regression.
+- Python 3 and Node.js for the embedded OpenCode plugin and additional-host CLI contracts.
 - `ffmpeg` and `ffprobe` for curated sound-pack measurements.
 
 Clone the repository and run commands from its root. The helper and GUI are separate Swift packages; always pass the explicit package path and product shown below.
@@ -26,6 +27,9 @@ swift run --package-path helper claudio-tests
 swift run --package-path gui claudio-gui-tests
 node scripts/test-sound-pack-selector-state.js
 python3 scripts/test-sound-pack-candidates.py
+python3 scripts/embed-opencode-plugin.py --check
+node scripts/test-opencode-plugin.mjs
+python3 scripts/test-additional-host-cli-contract.py
 
 swift build -c debug --package-path gui --product ClaudioGUI
 swift build -c release --package-path gui --product ClaudioGUI
@@ -37,6 +41,23 @@ git diff --check
 ```
 
 `scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
+
+OpenCode and Kimi Code remain acceptance candidates until the binding evidence in ADR 0024 is
+complete. Debug builds expose the candidates; ordinary Release builds keep unverified bindings
+closed. Use `bash scripts/dev-bundle.sh --additional-host-acceptance` for an explicit local
+acceptance bundle. It compiles the same flag into GUI and helper and marks the app plist.
+The plugin source is embedded in the helper and copied to `Resources/integrations/opencode/`;
+after editing `integrations/opencode/claudio.js`, regenerate with
+`python3 scripts/embed-opencode-plugin.py` and run the check above.
+Bundle builds use `-Osize` for the helper, preserving the existing executable-size budget.
+
+On a Command Line Tools installation whose current SDK requires unavailable SwiftUI macro
+plugins, select a compatible installed SDK explicitly for local checks, for example
+`--build-system native --sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk`.
+Set `SDKROOT` to that same path when running the GUI harness so its compiler probes use it too.
+`CLAUDIO_BUILD_SDK=/absolute/path/to/compatible.sdk bash scripts/dev-bundle.sh` passes that same
+SDK to all local bundle builds. This is local toolchain evidence and does not replace the CI
+Xcode, architecture, signing or native acceptance gates.
 
 For changes that affect the unified settings experience, run the fixed-baseline integration gate:
 

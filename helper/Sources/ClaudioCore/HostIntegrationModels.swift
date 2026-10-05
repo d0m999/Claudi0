@@ -8,17 +8,23 @@ public enum HostID: String, CaseIterable, Codable, Sendable, Hashable {
     case claudeCode = "claude-code"
     case codex = "codex"
     case workBuddy = "workbuddy"
+    case opencode = "opencode"
+    case kimiCode = "kimi-code"
     case chatGPTDesktopAX = "chatgpt-desktop-ax"
     case claudeDesktopAX = "claude-desktop-ax"
 
     /// 正常产品表面唯一真相源。AX identity 继续可解码，但不会进入 manager、矩阵或普通 UI。
-    public static let productVisibleCases: [HostID] = [.claudeCode, .codex, .workBuddy]
+    public static let productVisibleCases: [HostID] =
+        [.claudeCode, .codex, .workBuddy]
+        + AdditionalHostReleasePolicy.visibleHosts
 
     public var displayName: String {
         switch self {
         case .claudeCode: "Claude Code"
         case .codex: "Codex"
         case .workBuddy: "WorkBuddy"
+        case .opencode: "OpenCode"
+        case .kimiCode: "Kimi Code"
         case .chatGPTDesktopAX: "ChatGPT Desktop (AX Beta)"
         case .claudeDesktopAX: "Claude Desktop (AX Beta)"
         }
@@ -42,6 +48,14 @@ public enum HostID: String, CaseIterable, Codable, Sendable, Hashable {
             HostIntegrationDescriptor(
                 host: self, product: .workBuddy, surface: .workBuddy,
                 mechanism: .nativeHooks, maturity: .stable, controlSurface: .shared)
+        case .opencode:
+            HostIntegrationDescriptor(
+                host: self, product: .opencode, surface: .opencode,
+                mechanism: .pluginBridge, maturity: .beta, controlSurface: .shared)
+        case .kimiCode:
+            HostIntegrationDescriptor(
+                host: self, product: .kimiCode, surface: .kimiCode,
+                mechanism: .nativeHooks, maturity: .beta, controlSurface: .shared)
         case .chatGPTDesktopAX:
             HostIntegrationDescriptor(
                 host: self, product: .chatGPT, surface: .chatGPTDesktopAX,
@@ -59,12 +73,16 @@ public enum HostProductID: String, CaseIterable, Codable, Sendable, Hashable {
     case chatGPT
     case claude
     case workBuddy = "workbuddy"
+    case opencode = "opencode"
+    case kimiCode = "kimi-code"
 
     public var displayName: String {
         switch self {
         case .chatGPT: "ChatGPT"
         case .claude: "Claude"
         case .workBuddy: "WorkBuddy"
+        case .opencode: "OpenCode"
+        case .kimiCode: "Kimi Code"
         }
     }
 }
@@ -74,12 +92,15 @@ public enum HostSurfaceID: String, CaseIterable, Codable, Sendable, Hashable {
     case claudeCode = "claude-code"
     case codex = "codex"
     case workBuddy = "workbuddy"
+    case opencode = "opencode"
+    case kimiCode = "kimi-code"
     case chatGPTDesktopAX = "chatgpt-desktop-ax"
     case claudeDesktopAX = "claude-desktop-ax"
 }
 
 public enum HostIntegrationMechanism: String, Codable, Sendable, Equatable {
     case nativeHooks = "native_hooks"
+    case pluginBridge = "plugin_bridge"
     case accessibilityBeta = "accessibility_beta"
 }
 
@@ -142,6 +163,11 @@ public enum HostCapabilityQualificationID: String, Codable, Sendable, Equatable,
     case interfacePartiallySupportedNotImplemented = "interface_partially_supported_not_implemented"
     case undeclaredCapability = "undeclared_capability"
     case accessibilityBetaUnavailable = "accessibility_beta_unavailable"
+    case bridgeTerminalEvidenceOnly = "bridge_terminal_evidence_only"
+    case bridgeExecutionEvidenceOnly = "bridge_execution_evidence_only"
+    case userOriginOnly = "user_origin_only"
+    case mainAgentIdentityUnavailable = "main_agent_identity_unavailable"
+    case subagentIdentityUnavailable = "subagent_identity_unavailable"
 }
 
 /// receipt 的稳定主键。schema revision 进入 raw value，binding 语义变化后旧证据自然失效。
@@ -188,6 +214,7 @@ public struct HostCapabilityBinding: Codable, Sendable, Equatable, Hashable {
 
     public var isAudibleCapability: Bool {
         nativeEvent != nil && support != .unsupported && implementation == .implemented
+            && AdditionalHostReleasePolicy.permits(self)
     }
 
     public var isDeclaredCapability: Bool {
@@ -195,7 +222,7 @@ public struct HostCapabilityBinding: Codable, Sendable, Equatable, Hashable {
     }
 }
 
-/// 原生事件名只存在于这里；``Event`` 只保留声音语义和文件键。
+/// 原生与 Claudio 桥接事件名只存在于这里；``Event`` 只保留声音语义和文件键。
 public enum HostCapabilityCatalog {
     public static func bindings(for host: HostID) -> [HostCapabilityBinding] {
         switch host {
@@ -251,6 +278,56 @@ public enum HostCapabilityCatalog {
                 HostCapabilityBinding(
                     host: host, event: .subagentStop, nativeEvent: "SubagentStop",
                     support: .supported),
+            ]
+        case .opencode:
+            // These names belong to Claudio's bridge, not to the upstream event namespace.
+            return [
+                HostCapabilityBinding(
+                    host: host, event: .taskStart,
+                    nativeEvent: "UserTurnStarted", support: .partial,
+                    qualification: .bridgeExecutionEvidenceOnly),
+                HostCapabilityBinding(
+                    host: host, event: .stop,
+                    nativeEvent: "ResponseCompleted", support: .partial,
+                    qualification: .bridgeTerminalEvidenceOnly),
+                HostCapabilityBinding(
+                    host: host, event: .stopFailure,
+                    nativeEvent: "ResponseFailed", support: .partial,
+                    qualification: .bridgeTerminalEvidenceOnly),
+                HostCapabilityBinding(
+                    host: host, event: .notification,
+                    nativeEvent: "PermissionRequested", support: .partial,
+                    qualification: .permissionRequestOnly),
+                HostCapabilityBinding(
+                    host: host, event: .notification,
+                    nativeEvent: "QuestionAsked", support: .partial),
+                HostCapabilityBinding(
+                    host: host, event: .subagentStop,
+                    nativeEvent: "SubagentCompleted", support: .partial,
+                    qualification: .bridgeTerminalEvidenceOnly),
+            ]
+        case .kimiCode:
+            return [
+                HostCapabilityBinding(
+                    host: host, event: .taskStart,
+                    nativeEvent: "TurnStarted", support: .partial, qualification: .userOriginOnly),
+                HostCapabilityBinding(
+                    host: host, event: .stop,
+                    nativeEvent: "Stop", support: .partial, implementation: .notImplemented,
+                    qualification: .mainAgentIdentityUnavailable),
+                HostCapabilityBinding(
+                    host: host, event: .stopFailure,
+                    nativeEvent: "StopFailure", support: .partial, implementation: .notImplemented,
+                    qualification: .mainAgentIdentityUnavailable),
+                HostCapabilityBinding(
+                    host: host, event: .notification,
+                    nativeEvent: "PermissionRequest", support: .partial,
+                    qualification: .permissionRequestOnly),
+                HostQuestionTrigger.kimiCode.capability,
+                HostCapabilityBinding(
+                    host: host, event: .subagentStop,
+                    nativeEvent: "SubagentStop", support: .partial,
+                    qualification: .subagentIdentityUnavailable),
             ]
         case .chatGPTDesktopAX, .claudeDesktopAX:
             return Event.allCases.map { event in
@@ -439,7 +516,9 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
     #if DEBUG
     public static func connectedForTesting(host: HostID) -> HostIntegrationSnapshot {
         let id = UUID(uuidString: "00000000-0000-4000-8000-000000000001")!
-        let firstNativeEvent = "UserPromptSubmit"
+        let firstNativeEvent =
+            HostCapabilityCatalog.binding(host: host, event: .taskStart)?
+            .nativeEvent ?? "UserPromptSubmit"
         let event = Event.taskStart
         let evidence = HostReceiptEvidence(
             bindingID: HostCapabilityCatalog.binding(host: host, nativeEvent: firstNativeEvent)?.id

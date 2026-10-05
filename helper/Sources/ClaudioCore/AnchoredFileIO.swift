@@ -218,6 +218,46 @@ public final class AnchoredFileIO {
         try publish(bytes, expected: expected, beforeRename: {})
     }
 
+    /// Uninstall removes only the exact entry read by the transaction. Move first, inspect the
+    /// displaced inode, then unlink; a racing external replacement remains recoverable.
+    public func remove(expected: AnchoredFileSnapshot) throws {
+        guard try read(maxBytes: max(expected.data?.count ?? 0, 1 << 20)) == expected else {
+            throw AnchoredFileError.changed(file.path)
+        }
+        guard expected.data != nil else { return }
+        guard linkIdentity == nil else { throw AnchoredFileError.unsafePath(file.path) }
+        let stageName = ".claudio-remove-\(UUID().uuidString)"
+        guard
+            renameatx_np(
+                targetDirectory.fd, targetName, targetDirectory.fd, stageName,
+                UInt32(RENAME_EXCL)) == 0
+        else { throw AnchoredFileError.changed(file.path) }
+        let displaced = try? readNamedFile(
+            in: targetDirectory.fd, name: stageName,
+            maxBytes: max(expected.data?.count ?? 0, 1 << 20))
+        let recovery = targetDirectory.url.appendingPathComponent(stageName).path
+        guard displaced?.data == expected.data,
+            displaced?.identity?.device == expected.identity?.device,
+            displaced?.identity?.inode == expected.identity?.inode
+        else {
+            if directoriesAreCurrent(),
+                renameatx_np(
+                    targetDirectory.fd, stageName,
+                    targetDirectory.fd, targetName, UInt32(RENAME_EXCL)) == 0
+            {
+                throw AnchoredFileError.changed(file.path)
+            }
+            throw AnchoredFileError.publishedWithConflict(recoveryPath: recovery)
+        }
+        guard directoriesAreCurrent() else {
+            throw AnchoredFileError.publishedButPathChanged(location: recovery)
+        }
+        guard unlinkat(targetDirectory.fd, stageName, 0) == 0 else {
+            throw AnchoredFileError.publishedWithConflict(recoveryPath: recovery)
+        }
+        _ = fsync(targetDirectory.fd)
+    }
+
     /// Audio imports use this entry point: the final name must remain absent from the
     /// initial check through the kernel's exclusive publication.
     public func publishNew(_ bytes: Data) throws {

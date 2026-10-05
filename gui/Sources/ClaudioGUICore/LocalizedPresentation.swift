@@ -72,6 +72,12 @@ public func localizedHostSourceRowDetail(
         return l10n.text(.hostCodexReadyDetail)
     case .workBuddyNotificationScopeOnly:
         return l10n.text(.hostWorkBuddyReadyDetail)
+    case .opencodeReliableEventsOnly:
+        return l10n.text(.hostOpenCodeReadyDetail)
+    case .kimiCodeReliableEventsOnly:
+        return l10n.text(.hostKimiCodeReadyDetail)
+    case .additionalHostAwaitingFirstTurn:
+        return l10n.text(.hostAdditionalAwaitingDetail)
     case .claudeCodeAwaitingFirstPrompt:
         return l10n.text(.hostClaudeAwaitingDetail)
     case .codexAwaitingHooksConfirmation:
@@ -180,6 +186,14 @@ func localizedQualification(
     if value == "提问前置信号只表示调用意图，不表示已等待回答" {
         return ClaudioL10n(language: language).text(.qualificationQuestionIntentOnly)
     }
+    let additionalKeys: [String: ClaudioL10nKey] = [
+        "Claudio 桥接事件；仅确认会话身份与终态后触发": .qualificationBridgeTerminalEvidence,
+        "Claudio 桥接事件；仅确认主会话身份并实际执行后触发": .qualificationBridgeExecutionEvidence,
+        "仅用户发起的 TurnStarted": .qualificationUserOriginOnly,
+        "缺少主／子 agent 身份，首版暂未启用": .qualificationMainAgentUnavailable,
+        "仅成功结束；无法定位具体子任务": .qualificationSubagentUnavailable,
+    ]
+    if let key = additionalKeys[value] { return ClaudioL10n(language: language).text(key) }
     let english: [String: String] = [
         "Codex 暂无执行中断事件": "Codex has no interruption event",
         "仅授权请求": "Authorization request only",

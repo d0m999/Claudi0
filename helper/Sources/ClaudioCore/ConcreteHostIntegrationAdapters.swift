@@ -701,10 +701,13 @@ func makeIntegrationSnapshot(
     installationID: UUID?,
     file: URL,
     receiptStore: HostHookReceiptStore,
-    scopeFingerprint: String?
+    scopeFingerprint: String?,
+    writabilityOverride: HostConfigWritability? = nil
 ) -> HostIntegrationSnapshot {
     let writability: HostConfigWritability
-    if leafNodeIsSymbolicLink(at: file),
+    if let writabilityOverride {
+        writability = writabilityOverride
+    } else if leafNodeIsSymbolicLink(at: file),
         !FileManager.default.fileExists(atPath: file.path)
     {
         writability = .notWritable(reason: danglingIntegrationConfigReason(file))
