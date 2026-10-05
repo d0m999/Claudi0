@@ -1634,6 +1634,8 @@ func runReleaseLayoutSuites() {
 
         let xcodeDeveloperDirectory =
             "DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer"
+        let guiDeveloperDirectory =
+            "DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer"
         let swift6VersionPattern = #"Apple\ Swift\ version\ 6\."#
         guard let helperJob = ci.range(of: "\n  helper:\n"),
             let guiJob = ci.range(of: "\n  gui:\n"),
@@ -1645,13 +1647,13 @@ func runReleaseLayoutSuites() {
             return
         }
         let macOSJobs = [
-            ci[helperJob.upperBound..<guiJob.lowerBound],
-            ci[guiJob.upperBound..<verifyJob.lowerBound],
+            (ci[helperJob.upperBound..<guiJob.lowerBound], xcodeDeveloperDirectory),
+            (ci[guiJob.upperBound..<verifyJob.lowerBound], guiDeveloperDirectory),
         ]
         expect(
-            macOSJobs.allSatisfy { job in
+            macOSJobs.allSatisfy { job, developerDirectory in
                 job.contains("runs-on: macos-15")
-                    && job.contains(xcodeDeveloperDirectory)
+                    && job.contains(developerDirectory)
                     && job.contains(swift6VersionPattern)
                     && job.contains("::error::Swift 6 is required")
             }
@@ -1661,7 +1663,7 @@ func runReleaseLayoutSuites() {
                 && release.contains(xcodeDeveloperDirectory)
                 && release.contains(swift6VersionPattern)
                 && release.contains("::error::Swift 6 is required"),
-            "CI 的 Helper/GUI 与 release 构建必须固定 macos-15/Xcode 16.4，"
+            "CI 的 Helper/GUI 必须固定 macos-15 与 Xcode 16.4/26.3，release 保留 Xcode 16.4，"
                 + "并在执行 SwiftPM 前失败关闭非 Swift 6 工具链")
     }
 

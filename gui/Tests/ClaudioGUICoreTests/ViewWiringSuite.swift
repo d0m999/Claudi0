@@ -143,6 +143,21 @@ private func closureBody(after marker: String, in source: String) -> String? {
     return nil  // 没配平（marker 后面根本没有闭包，或文件被截断）—— 围栏判红，不判绿
 }
 
+/// Compiler boundaries stay transparent to the wiring guard only when every hop is reachable.
+private func soundPacksReadingContent(in contentView: String) -> String? {
+    guard var body = closureBody(after: "var body: some View", in: contentView) else { return nil }
+    for member in [
+        "contentWithDeletePackConfirmation", "contentWithOrphanConfirmation",
+        "contentWithCopyConfirmation", "focusAwareContent", "readingContent",
+    ] {
+        guard body.contains(member),
+            let next = closureBody(after: "private var \(member): some View", in: contentView)
+        else { return nil }
+        body = next
+    }
+    return body
+}
+
 /// `marker` 所在位置的花括号嵌套深度。输入必须是 ``codeWithoutStrings(_:)`` 的结果。
 ///
 /// T7 的 `.manageSounds` 双向诚实性不能只靠「出现一次 + 相对顺序」：把
@@ -2562,14 +2577,19 @@ func runViewWiringSuites() {
         guard
             let contentView = closureBody(
                 after: "private struct SoundPacksWindowContentView: View", in: flat),
-            let rootBody = closureBody(after: "var body: some View", in: contentView),
-            let scrollBody = closureBody(after: "ScrollView(.vertical", in: rootBody),
+            let readingContent = soundPacksReadingContent(in: contentView),
+            let scrollBody = closureBody(after: "ScrollView(.vertical", in: readingContent),
             let statusRegionAt = scrollBody.range(of: "activeSounds.windowStatuses")?.lowerBound,
             let detailAt = scrollBody.range(of: "detailContent")?.lowerBound
         else {
             expect(false, "必须挂载共享 ScrollView、统一窗口状态及详情内容")
             return
         }
+        expect(
+            soundPacksReadingContent(
+                in: contentView.replacingOccurrences(
+                    of: "readingContent .frame(", with: "EmptyView() .frame(")) == nil,
+            "定义仍在但从 body 断开的阅读列必须被接线护栏拒绝")
         expect(
             statusRegionAt < detailAt,
             "音频错误必须在详情条件之外：唯一包被外部移走时仍显示失败和恢复入口")
@@ -2779,8 +2799,8 @@ func runViewWiringSuites() {
         guard
             let contentView = closureBody(
                 after: "private struct SoundPacksWindowContentView: View", in: flat),
-            let rootBody = closureBody(after: "var body: some View", in: contentView),
-            let scrollBody = closureBody(after: "ScrollView(.vertical", in: rootBody),
+            let readingContent = soundPacksReadingContent(in: contentView),
+            let scrollBody = closureBody(after: "ScrollView(.vertical", in: readingContent),
             let detailBody = closureBody(
                 after: "private var detailContent: AnyView", in: contentView),
             let overviewBody = closureBody(

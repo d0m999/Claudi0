@@ -671,12 +671,16 @@ final class SettingsSoundsNativeLayoutProbe {
             {
                 // Compare the rendered system color, including its system-provided alpha,
                 // over the page surface. Comparing only the RGB ignores native compositing.
-                let alpha = rgb.alphaComponent
-                result = zip(
-                    [rgb.redComponent, rgb.greenComponent, rgb.blueComponent],
-                    [background.redComponent, background.greenComponent, background.blueComponent]
-                ).map { foreground, behind in
-                    Int(((foreground * alpha + behind * (1 - alpha)) * 255).rounded())
+                let alpha: CGFloat = rgb.alphaComponent
+                let foreground: [CGFloat] = [
+                    rgb.redComponent, rgb.greenComponent, rgb.blueComponent,
+                ]
+                let behind: [CGFloat] = [
+                    background.redComponent, background.greenComponent, background.blueComponent,
+                ]
+                result = zip(foreground, behind).map { channel, backgroundChannel -> Int in
+                    let blended: CGFloat = channel * alpha + backgroundChannel * (1 - alpha)
+                    return Int((blended * 255).rounded())
                 }
             }
         }
