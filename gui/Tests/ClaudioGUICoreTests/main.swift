@@ -148,6 +148,25 @@ if CommandLine.arguments.contains("--settings-native-states") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--event-notice-reader") {
+    runEventNoticeReaderSuites()
+    print("Event notice reader: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+// Live reading timers need AppKit's event loop rather than the synchronous layout harness.
+if CommandLine.arguments.contains("--event-reading-live") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runEventReadingLiveSuites()
+        print("Event reading live: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--event-animation")
     || CommandLine.arguments.contains("--event-animation-layout")
 {
@@ -200,6 +219,7 @@ if CommandLine.arguments.contains("--review-repairs") {
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
     await runSettingsPresentationLifecycleSuites()
+    runEventNoticeReaderSuites()
     print("Review repairs: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -244,6 +264,7 @@ if CommandLine.arguments.contains("--event-attention") {
     // Swift's async-main drain queue after synthetic window tracking can end the harness early.
     runEventNoticePresentationSuites()
     runEventBannerLayoutSuites()
+    runEventNoticeReaderSuites()
     print("Event attention: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -552,6 +573,7 @@ await runSharedWriteContractSuites()
 await runNativeRegressionCompositionSuites()
 await runMenuBarCompositionSuites()
 await runReviewRepairSuites()
+await runSettingsNotificationNavigationSuites()
 await runEventAnimationIntegrationSuites()
 runLocalizationSuites()
 runAboutInformationSuites()
@@ -685,6 +707,7 @@ runAICueDescriptionSuites()
 // Keep the native AppKit suite after every async suite; see the targeted ordering above.
 runEventNoticePresentationSuites()
 runEventBannerLayoutSuites()
+    runEventNoticeReaderSuites()
 runQuestionIntentPresentationSuites()
 runCodexDevelopmentNoticeSuites()
 runCodexQuestionObservationSuites()

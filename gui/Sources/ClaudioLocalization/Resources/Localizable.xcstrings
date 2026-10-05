@@ -16174,6 +16174,22 @@
         }
       }
     },
+    "event-animation.forward": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forward to Event Animation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前进到事件动画"
+          }
+        }
+      }
+    },
     "event-animation.preview": {
       "localizations": {
         "en": {

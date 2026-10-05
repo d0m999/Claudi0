@@ -2,7 +2,8 @@
 import ClaudioGUICore
 import Foundation
 
-/// Advancing this clock affects only the fixture model and navigation timeout.
+/// The default manual clock keeps fixed fixture scenarios deterministic. Live fixtures use the
+/// production scheduler and monotonic clock directly, without advancing a second timer.
 final class NativeRegressionClock: @unchecked Sendable {
     private struct Item {
         let id: UUID
@@ -11,10 +12,18 @@ final class NativeRegressionClock: @unchecked Sendable {
     }
     private let lock = NSLock()
     private var items: [Item] = []
-    @MainActor var time = ProcessInfo.processInfo.systemUptime
+    let isLive: Bool
+    @MainActor private var manualTime = ProcessInfo.processInfo.systemUptime
+
+    init(live: Bool = false) { isLive = live }
+
+    @MainActor var time: TimeInterval {
+        isLive ? ProcessInfo.processInfo.systemUptime : manualTime
+    }
 
     @MainActor func scheduler() -> EventNoticeScheduler {
-        EventNoticeScheduler { [weak self] delay, callback in
+        if isLive { return .live }
+        return EventNoticeScheduler { [weak self] delay, callback in
             guard let self else { return EventNoticeCancellation {} }
             let item = Item(id: UUID(), deadline: self.time + delay, callback: callback)
             self.lock.lock(); self.items.append(item); self.lock.unlock()
@@ -22,9 +31,10 @@ final class NativeRegressionClock: @unchecked Sendable {
         }
     }
     @MainActor func advance(_ seconds: TimeInterval) {
-        let target = time + seconds
-        while let item = take(until: target) { time = item.deadline; item.callback() }
-        time = target
+        guard !isLive else { return }
+        let target = manualTime + seconds
+        while let item = take(until: target) { manualTime = item.deadline; item.callback() }
+        manualTime = target
     }
     private func remove(_ id: UUID) {
         lock.lock(); defer { lock.unlock() }

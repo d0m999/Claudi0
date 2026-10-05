@@ -47,8 +47,11 @@ public final class PanelFocusCoordinator: ObservableObject {
 
     @Published public var noticeIsExpanded = false
     @Published public var noticeSelection: EventNoticeAction?
+    /// Set only by the native close boundary after a verified navigation key handoff.
+    public private(set) var preservesNoticeNavigationOnHide = false
 
     public func requestNotice(_ action: EventNoticeAction?) {
+        preservesNoticeNavigationOnHide = false
         noticeSelection = action
         noticeIsExpanded = true
     }
@@ -64,6 +67,7 @@ public final class PanelFocusCoordinator: ObservableObject {
 
     /// Records one more "the popover just showed" event.
     public func requestFocus(target: PanelFocusTarget? = nil) {
+        preservesNoticeNavigationOnHide = false
         requestedTarget = target
         if !isPanelVisible { isPanelVisible = true }
         showCount += 1
@@ -74,7 +78,8 @@ public final class PanelFocusCoordinator: ObservableObject {
     /// ⚠️ 调用点在 `MenuBarController.popoverDidClose` 的**第一行**，必须在那句
     /// `guard NSApp.isActive` **之前** —— 那句 guard 在「用户切到别的 app 导致 popover 关闭」
     /// 这条路径上会提前 return，而那恰恰是本信号最需要覆盖的一条路径。
-    public func notePanelHidden() {
+    public func notePanelHidden(preservingNoticeNavigation: Bool = false) {
+        preservesNoticeNavigationOnHide = preservingNoticeNavigation
         if isPanelVisible { isPanelVisible = false }
         noticeIsExpanded = false
         noticeSelection = nil

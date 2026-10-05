@@ -25,6 +25,10 @@ claudi0 使用一个由 AppKit controller 持有并在 app 生命周期内复用
 
 八页设置及详情／sheet 的呈现引用改为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡与双栏／固定操作栏；原整合原型继续拥有面板与横幅。上述历史记录与领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。
 
+## 原生会话导航修订（2026-10-04）
+
+上述“正文静态”及 App 激活即收起的历史规则由 [ADR 0023](0023-return-to-verified-local-sessions.md) 替代。现有外观与唯一窗口 owner 保留；正文、主按钮、面板和活动诊断共用导航入口，仅精确返回消除对应提醒版本。自动检查与真实宿主验收分别记录。
+
 ## 系统原生设置外壳与浏览历史修订（2026-10-04）
 
 设置继续由唯一非激活 retained window 承载，改用原生 split sidebar、source-list 和 unified toolbar；右侧复用现有 SwiftUI 目的页。八页及详情共享一个由 `SettingsPresentationSession` 持有的窗口期历史，最多 64 个位置，关闭清空。选择这一形态是为了统一跨页前后导航、系统侧栏键盘行为和工具栏 safe area，同时保持 macOS 12 及现有 `.accessory` handback。

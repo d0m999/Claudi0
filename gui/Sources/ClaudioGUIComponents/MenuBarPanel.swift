@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioGUICore
 
 /// A transient menu surface that borrows keyboard focus without activating its application.
 /// Settings and other applications retain their window ordering throughout presentation.
@@ -7,6 +8,14 @@ package final class MenuBarPanel: NSPanel {
     package enum Dismissal {
         case explicit
         case outsideInteraction
+        case keyResignation
+
+        @MainActor
+        package func preservesNoticeNavigation(
+            _ navigation: SessionNavigationCoordinator, frontmostPID: Int32?
+        ) -> Bool {
+            self == .keyResignation && navigation.permitsFocusHandoff(to: frontmostPID)
+        }
     }
 
     package var onEscape: (() -> Bool)?
@@ -140,7 +149,7 @@ package final class MenuBarPanel: NSPanel {
                 // whether focus left this menu; app activation is independent of a nonactive panel.
                 DispatchQueue.main.async { [weak self] in
                     guard let self, !self.containsWindow(NSApp.keyWindow) else { return }
-                    self.dismiss(.outsideInteraction)
+                    self.dismiss(.keyResignation)
                 }
             }
         }

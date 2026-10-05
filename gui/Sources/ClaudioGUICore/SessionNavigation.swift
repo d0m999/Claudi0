@@ -68,7 +68,7 @@ public enum SessionNavigationActionResult: Sendable, Equatable {
 
 /// One request at a time, with a cancellable adapter and an independent deadline. Late callbacks
 /// contain only version identities, and never keep a task or source alive in this coordinator.
-/// Production injects no exact route. A generic success never removes a reminder.
+/// Production injects verified host adapters. A generic success never removes a reminder.
 @MainActor
 public final class SessionNavigationCoordinator: ObservableObject {
     public static let timeout: TimeInterval = 3
@@ -250,6 +250,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         }
         let complete: @MainActor (SessionNavigationActionResult) -> Void = { [weak self] outcome in
             guard let self, current() else { return }
+            let outcome = self.uptime() < deadline ? outcome : .timedOut
             self.finish(outcome, id: id, action: action, generation: generation)
             self.applicationResult =
                 outcome == .applicationFallback
@@ -260,9 +261,13 @@ public final class SessionNavigationCoordinator: ObservableObject {
             completion(outcome)
         }
         timeoutTask = scheduler.schedule(after: Self.timeout) { complete(.timedOut) }
+        var didFallBack = false
         let fallback: @MainActor () -> Void = { [weak self] in
-            guard let self, current() else { return }
+            guard let self, current(), !didFallBack else { return }
             guard beforeAction() else { complete(.timedOut); return }
+            didFallBack = true
+            self.operation?.cancel()
+            self.operation = nil
             self.expectedFocusHandoff = true
             let cancellation = self.openApplication(application, beforeAction) { outcome in
                 switch outcome {
@@ -278,7 +283,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
             fallback(); return
         }
         let cancellation = navigateHost(target, application, beforeAction, deadline) { outcome in
-            guard current() else { return }
+            guard current(), !didFallBack else { return }
             guard beforeAction() else { complete(.timedOut); return }
             if outcome == .focusHandoffStarted { self.expectedFocusHandoff = true; return }
             if outcome == .failed || outcome == .unavailable {

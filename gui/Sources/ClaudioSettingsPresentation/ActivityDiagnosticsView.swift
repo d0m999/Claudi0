@@ -119,10 +119,6 @@ struct ActivityDiagnosticsView: View {
                 EventNoticeReadingView(
                     model: eventNoticeModel, preferences: preferences,
                     navigation: noticeNavigation, selected: $selectedNotice,
-                    openSource: { action in
-                        noticeNavigation.openSourceApplication(
-                            action, generation: noticeNavigation.capabilityGeneration)
-                    },
                     copySession: { action in
                         noticeNavigation.copy(action) { session in
                             performPlatformAction(.copyToPasteboard(session))

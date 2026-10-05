@@ -12,6 +12,9 @@ func runEventNoticeFocusSuites() {
             return
         }
         let controller = strippingComments(source).codeWithoutStringLiterals
+        expect(
+            controller.contains("window.onEscape = { [weak self] in self?.close() }"),
+            "原生取消命令调用同一个关闭和取消所属请求入口")
         guard
             let openStart = controller.range(of: "func openSourceApplication(_ action:"),
             let openEnd = controller.range(
@@ -25,8 +28,11 @@ func runEventNoticeFocusSuites() {
             !callback.contains("self.model.viewSource(action)")
                 && !callback.contains("self.becomeInteractive()"), "失败在横幅就地反馈，不抢回键盘或进入详情")
         expect(
-            callback.contains("self.focusRestoration = nil")
-                && callback.contains("outcome == .opened"), "成功消费焦点归还责任")
+            callback.contains("navigation.navigateSource(")
+                && callback.contains("self.focusRestoration = nil")
+                && callback.contains(
+                    "[.exactReturnConfirmed, .applicationFallback, .requestSent].contains(outcome)"),
+            "三类成功均消费焦点归还责任，只有协调器精确确认收起横幅")
         guard
             let resign = controller.range(of: "func windowDidResignKey("),
             let render = controller.range(
@@ -37,9 +43,11 @@ func runEventNoticeFocusSuites() {
         }
         let resignBody = controller[resign.lowerBound..<render.lowerBound]
         expect(
-            resignBody.contains("navigation.applicationResult == .started")
+            resignBody.contains("navigation.permitsFocusHandoff(")
+                && resignBody.contains("DispatchQueue.main.async")
+                && resignBody.contains("navigation.result == .started")
                 && resignBody.contains("isInteractive = false")
                 && resignBody.contains("close()"),
-            "来源 App 打开在途失焦要撤销交互资格，普通失焦要关闭面板")
+            "预期交接释放焦点；在途主动切走取消，普通失焦关闭")
     }
 }

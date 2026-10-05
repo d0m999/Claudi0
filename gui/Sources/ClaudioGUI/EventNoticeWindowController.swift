@@ -61,6 +61,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         window.ignoresMouseEvents = false
         window.delegate = self
         window.title = "claudi0 event notice"
+        window.onEscape = { [weak self] in self?.close() }
         window.contentView = EventNoticeHostingView(
             rootView: EventNoticeView(
                 model: model,
@@ -84,7 +85,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         snapshotCancellable = model.$bannerSnapshot.sink { [weak self] snapshot in
             self?.render(snapshot)
         }
-        navigationCancellable = navigation.$applicationResult.sink { [weak self] _ in
+        navigationCancellable = navigation.$result.sink { [weak self] _ in
             DispatchQueue.main.async { self?.repositionIfVisible() }
         }
         screenCancellable = NotificationCenter.default
@@ -117,19 +118,18 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func openSourceApplication(_ action: EventNoticeAction) {
-        guard model.isCurrent(action) else { return }
+        guard model.isCurrent(action), navigation.result != .started else { return }
         becomeInteractive()
-        navigation.openSourceApplication(
+        navigation.navigateSource(
             action, generation: navigation.capabilityGeneration, owner: navigationOwner
         ) {
             [weak self] outcome in
             guard let self else { return }
-            if outcome == .opened {
+            if [.exactReturnConfirmed, .applicationFallback, .requestSent].contains(outcome) {
                 self.focusRestoration = nil
                 self.isInteractive = false
                 self.window.allowsKeyboardInteraction = false
                 self.model.setKeyboardFocused(false)
-                if self.model.bannerSnapshot.current?.action == action { self.model.dismiss() }
             }
         }
     }
@@ -177,7 +177,24 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        if navigation.applicationResult == .started {
+        // AppKit can send resign-key before NSWorkspace publishes the new frontmost app.
+        // Resolve after that transaction, without requesting focus again.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.window.isKeyWindow else { return }
+            self.finishResigningKey()
+        }
+    }
+
+    private func finishResigningKey() {
+        if navigation.action == model.bannerSnapshot.current?.action,
+            navigation.permitsFocusHandoff(
+                to: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        {
+            focusRestoration = nil
+            isInteractive = false
+            window.allowsKeyboardInteraction = false
+            model.setKeyboardFocused(false)
+        } else if navigation.result == .started {
             navigation.cancelSourceApplication(owner: navigationOwner)
             focusRestoration = nil
             isInteractive = false

@@ -3,7 +3,7 @@ import ClaudioGUICore
 import ClaudioLocalization
 import SwiftUI
 
-/// The banner is a static summary with explicit actions. Reading lives in the menu panel.
+/// The body and primary button share one action; close and the reading track stay independent.
 @MainActor
 public struct EventNoticeView: View {
     @ObservedObject private var model: EventNoticeModel
@@ -17,6 +17,7 @@ public struct EventNoticeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedControl: String?
+    @State private var bodyHasFocus = false
 
     public init(
         model: EventNoticeModel, languageStore: ClaudioPreferences,
@@ -44,11 +45,9 @@ public struct EventNoticeView: View {
         let base: CGFloat = snapshot.current?.kind.isAttention == true ? 75 : 67
         guard let record = snapshot.current else { return base }
         let hasFeedback =
-            !record.isActionable
-            || (navigation?.action == record.action
-                && [.started, .failed, .unavailable, .timedOut].contains(
-                    navigation?.applicationResult ?? .idle))
-        return base + (record.kind.isAttention && hasFeedback ? 55 : 0)
+            EventNoticeProjection.navigationFeedbackKey(
+                for: record, action: navigation?.action, result: navigation?.result ?? .idle) != nil
+        return base + (hasFeedback ? 55 : 0)
     }
 
     public var body: some View {
@@ -70,21 +69,21 @@ public struct EventNoticeView: View {
                                 isPaused: true, budget: 4),
                         isVisible: animationVisibility.isVisible
                             && (snapshot.phase == .entering || snapshot.phase == .visible),
-                        uptime: { model.presentationUptime }
+                        uptime: { model.presentationUptime },
+                        onActivate: { activate(record) },
+                        isNavigationEnabled: canActivate(record),
+                        navigationHint: actionTitle(record),
+                        onBodyFocusChange: { focused in
+                            bodyHasFocus = focused
+                            model.setKeyboardFocused(focused || focusedControl != nil)
+                        }
                     ) {
                         if record.kind.isAttention {
                             Button(actionTitle(record)) {
-                                guard let action = record.action else { return }
-                                if record.sourceApplication != nil {
-                                    onOpenSourceApplication(action)
-                                } else {
-                                    onViewSource(action)
-                                }
+                                activate(record)
                             }
                             .buttonStyle(EventNoticeActionStyle(event: record.event))
-                            .disabled(
-                                !record.isActionable || navigation.applicationResult == .started
-                            )
+                            .disabled(!canActivate(record))
                             .focused($focusedControl, equals: "open")
                             .accessibilityIdentifier(
                                 "event-notice.open-source.\(record.id.uuidString)")
@@ -95,7 +94,7 @@ public struct EventNoticeView: View {
                             .focused($focusedControl, equals: "close")
                             .accessibilityIdentifier("event-notice.close")
                     }
-                    if record.kind.isAttention, let feedback = feedback(record) {
+                    if let feedback = feedback(record) {
                         Text(feedback).font(.caption).fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("event-notice.open-feedback")
                     }
@@ -122,7 +121,7 @@ public struct EventNoticeView: View {
         .onAppear { model.setReducedMotion(reduceMotion) }
         .onChange(of: reduceMotion) { model.setReducedMotion($0) }
         .onHover { model.setHovering($0) }
-        .onChange(of: focusedControl) { model.setKeyboardFocused($0 != nil) }
+        .onChange(of: focusedControl) { model.setKeyboardFocused($0 != nil || bodyHasFocus) }
         .onDisappear {
             model.setHovering(false); model.setKeyboardFocused(false)
         }
@@ -131,24 +130,33 @@ public struct EventNoticeView: View {
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
 
+    private func canActivate(_ record: EventNoticeRecord) -> Bool {
+        EventNoticeProjection.canNavigate(record, result: navigation.result)
+    }
+
+    private func activate(_ record: EventNoticeRecord) {
+        guard canActivate(record), let action = record.action, model.isCurrent(action) else {
+            return
+        }
+        if record.sourceApplication != nil {
+            onOpenSourceApplication(action)
+        } else {
+            onViewSource(action)
+        }
+    }
+
     private func feedback(_ record: EventNoticeRecord) -> String? {
-        guard record.isActionable else {
-            return l10n.text(record.isExpired ? .eventNoticeExpired : .eventNoticeStale)
-                + " " + l10n.text(.eventNoticeRetryAtNeedsYou)
-        }
-        guard navigation.action == record.action else { return nil }
-        switch navigation.applicationResult {
-        case .started: return l10n.text(.eventNoticeOpenStarted)
-        case .failed: return l10n.text(.eventNoticeOpenFailed)
-        case .unavailable: return l10n.text(.eventNoticeOpenUnavailable)
-        case .timedOut: return l10n.text(.eventNoticeOpenTimeout)
-        case .idle, .opened, .cancelled: return nil
-        }
+        guard
+            let key = EventNoticeProjection.navigationFeedbackKey(
+                for: record, action: navigation.action, result: navigation.result)
+        else { return nil }
+        return l10n.text(key)
+            + (record.isActionable ? "" : " " + l10n.text(.eventNoticeRetryAtNeedsYou))
     }
 
     private func actionTitle(_ record: EventNoticeRecord) -> String {
         if record.isActionable, navigation.action == record.action,
-            [.failed, .unavailable, .timedOut].contains(navigation.applicationResult)
+            [.failed, .unavailable, .timedOut].contains(navigation.result)
         {
             return l10n.text(.commonRetry)
         }

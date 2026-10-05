@@ -45,13 +45,16 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     private var statusItem: NSStatusItem?
     private var controls: NSWindow?
     private var keyMonitor: Any?
+    private var lastPlainKeyDown: [String: Any] = [:]
     private var observations: Set<AnyCancellable> = []
     private let focus = PanelFocusCoordinator()
     @Published private(set) var captureRevision = 0
     @Published private(set) var handbacks = 0
 
     init(isolated: Void) throws {
-        let clock = NativeRegressionClock()
+        let clock = NativeRegressionClock(
+            live: Bundle.main.object(forInfoDictionaryKey: "ClaudioUIRegressionLiveClock") as? Bool
+                == true)
         self.clock = clock
         root = FileManager.default.temporaryDirectory.appendingPathComponent(
             "claudio-ui-regression-\(UUID().uuidString)", isDirectory: true)
@@ -400,7 +403,18 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             // Let native file panels own their Go to Folder shortcut.
             guard !(event.window is NSSavePanel) else { return event }
-            guard event.modifierFlags.contains([.command, .shift]) else { return event }
+            guard event.modifierFlags.contains([.command, .shift]) else {
+                MainActor.assumeIsolated {
+                    self?.lastPlainKeyDown = [
+                        "keyCode": Int(event.keyCode),
+                        "characters": event.characters ?? "",
+                        "window": event.window?.title ?? "none",
+                    ]
+                    // Observe after normal dispatch; the fixture never consumes ordinary keys.
+                    Task { @MainActor [weak self] in self?.capture() }
+                }
+                return event
+            }
             let keyCode = event.keyCode
             let handled = MainActor.assumeIsolated {
                 switch keyCode {
@@ -479,25 +493,35 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         panel.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         capture()
     }
-    func notice(verified: Bool = false, updated: Bool = false) {
+    func notice(verified: Bool = false, updated: Bool = false, transient: Bool = false) {
+        if clock.isLive {
+            // Keep the automatic banner nonactivating and independently capturable. These are
+            // fixture-owned windows; no user settings or host windows are affected.
+            _ = settings.closeForMutualExclusion()
+            panel.close()
+            controls?.orderOut(nil)
+        }
         sourceBehavior.verified = verified
+        let native = transient ? "Stop" : "PermissionRequest"
         let binding = HostCapabilityCatalog.bindings(for: .codex).first {
-            $0.nativeEvent == "PermissionRequest"
+            $0.nativeEvent == native
         }!
         _ = notices.accept(
             HostEventNotice(
                 id: UUID(), receiverEpoch: notices.receiverEpoch, surface: .codex,
                 bindingID: binding.id, installationID: installation,
-                nativeEvent: "PermissionRequest", event: binding.event, occurredAt: Date(),
+                nativeEvent: native, event: binding.event, occurredAt: Date(),
                 source: HostEventSource(
                     projectLabel: updated ? "Fixture updated" : "Fixture workspace",
                     projectKey: "fixture-key", sessionID: "fixture-session",
-                    mainSessionIsKnown: true), reason: .permission, observedUptime: clock.time,
+                    mainSessionIsKnown: true), reason: transient ? nil : .permission,
+                observedUptime: clock.time,
                 processAncestors: verified
                     ? [HostProcessIdentity(pid: 42, startSeconds: 1, startMicroseconds: 0)] : nil))
-        clock.advance(0.18)
+        if !clock.isLive { clock.advance(0.18) }
         capture()
     }
+
     func scenario(_ scenario: String) {
         do {
             switch scenario {
@@ -550,6 +574,15 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     func advance(_ seconds: TimeInterval) { clock.advance(seconds); capture() }
     func capture() {
         captureRevision += 1
+        let currentUptime = clock.time
+        let readingTime = notices.bannerSnapshot.readingTime
+        let pauseReasons: [String] = [
+            (EventNoticePauseReason.hover, "hover"), (.keyboardFocus, "keyboardFocus"),
+        ].compactMap { reason, name in
+            notices.bannerSnapshot.pauseReasons.contains(reason) ? name : nil
+        }
+        let bannerWindow = NSApp.windows.first { $0.title == "claudi0 event notice" }
+        let bannerFrame = bannerWindow?.frame ?? .zero
         let inspectedPack: String?
         if case .sounds(let sounds) = fixture.soundPacksEditor.presentation.mode {
             inspectedPack = sounds.selectedPack?.id
@@ -587,7 +620,29 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "readingOpen": notices.readingSnapshot.isOpen,
             "banner": notices.bannerSnapshot.phase.rawValue,
             "remaining": notices.bannerSnapshot.remainingTime ?? 0,
-            "navigation": String(describing: navigation.applicationResult),
+            "clockMode": clock.isLive ? "live" : "manual",
+            "readingTime": [
+                "available": readingTime != nil,
+                "fraction": readingTime?.fraction(at: currentUptime) ?? 0,
+                "sampledUptime": readingTime?.sampledUptime ?? 0,
+                "currentUptime": currentUptime,
+                "remaining": readingTime?.remaining ?? 0,
+                "budget": readingTime?.budget ?? 0,
+                "isPaused": readingTime?.isPaused ?? false,
+            ],
+            "pauseReasons": pauseReasons,
+            "readingExpanded": notices.snapshot.isExpanded,
+            "bannerWindow": [
+                "available": bannerWindow != nil,
+                "visible": bannerWindow?.isVisible ?? false,
+                "key": bannerWindow?.isKeyWindow ?? false,
+                "frame": [
+                    "x": bannerFrame.origin.x, "y": bannerFrame.origin.y,
+                    "width": bannerFrame.size.width, "height": bannerFrame.size.height,
+                ],
+            ],
+            "navigation": String(describing: navigation.result),
+            "bannerKeyboardPaused": notices.bannerSnapshot.pauseReasons.contains(.keyboardFocus),
             "aiPhase": String(describing: fixture.aiCueViewModel.phase),
             "generationRequests": generationFacts.requestCount,
             "libraryFresh": fixture.eventSettingsModel.libraryPresentationState == .ready,
@@ -601,6 +656,13 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "settingsLayout": settings.regressionLayoutEvidence,
             "panelVisible": panel.isVisible, "panelKey": panel.isKeyWindow,
             "keyWindow": NSApp.keyWindow?.title ?? "none",
+            "isActive": NSApp.isActive,
+            "keyWindowFirstResponder": NSApp.keyWindow?.firstResponder.map {
+                String(reflecting: type(of: $0))
+            } ?? "none",
+            "keyWindowFirstResponderIdentifier": (NSApp.keyWindow?.firstResponder as? NSView)?
+                .accessibilityIdentifier() ?? "none",
+            "lastPlainKeyDown": lastPlainKeyDown,
             "receiptHistories": receiptHistoryReadback(),
             "activity": activityReadback(),
             "diagnosticLog": diagnosticLogReadback(),
@@ -745,6 +807,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 Button("Restart animation fixture") { owner.restartAnimationFixture() }
                 Button("Unknown-source reminder") { owner.notice() }
                 Button("Verified-source reminder") { owner.notice(verified: true) }
+                Button("Verified-source ordinary notice") {
+                    owner.notice(verified: true, transient: true)
+                }
                 Button("Update reminder") { owner.notice(updated: true) }
                 Button("Source failure") { owner.source("failure") }
                 Button("Source success") { owner.source("success") }

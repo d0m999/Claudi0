@@ -1,3 +1,4 @@
+import AppKit
 import ClaudioGUICore
 import ClaudioLocalization
 import SwiftUI
@@ -9,33 +10,32 @@ public struct EventNoticeReadingView: View {
     @ObservedObject private var preferences: ClaudioPreferences
     @ObservedObject private var navigation: SessionNavigationCoordinator
     @Binding private var selected: EventNoticeAction?
-    private let openSource: @MainActor (EventNoticeAction) -> Void
+    @State private var navigationOwner = UUID()
     private let showsRecordMetadata: Bool
     private let copySession: @MainActor (EventNoticeAction) -> Bool
+    private let preservesNavigationOnDismissal: @MainActor () -> Bool
     @State private var copyResult: Bool?
 
     public init(
         model: EventNoticeModel, preferences: ClaudioPreferences,
         navigation: SessionNavigationCoordinator, selected: Binding<EventNoticeAction?>,
-        openSource: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         copySession: @escaping @MainActor (EventNoticeAction) -> Bool = { _ in false },
-        showsRecordMetadata: Bool = false
+        showsRecordMetadata: Bool = false,
+        preservesNavigationOnDismissal: @escaping @MainActor () -> Bool = { false }
     ) {
         self.model = model
         self.preferences = preferences
         self.navigation = navigation
         self._selected = selected
-        self.openSource = openSource
         self.copySession = copySession
         self.showsRecordMetadata = showsRecordMetadata
+        self.preservesNavigationOnDismissal = preservesNavigationOnDismissal
     }
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var selectedRecord: EventNoticeRecord? {
         guard let selected else { return nil }
-        return model.readingSnapshot.records.first {
-            $0.id == selected.id && $0.version == selected.version
-        }
+        return model.readingRecord(for: selected)
     }
 
     public var body: some View {
@@ -43,6 +43,7 @@ public struct EventNoticeReadingView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if model.readingSnapshot.needsRefresh {
                     Button(l10n.text(.eventNoticeRefresh)) {
+                        navigation.cancelSourceApplication(owner: navigationOwner)
                         selected = nil
                         model.refreshReading()
                     }
@@ -50,6 +51,7 @@ public struct EventNoticeReadingView: View {
                 }
                 if let record = selectedRecord {
                     Button(l10n.text(.eventNoticeBack), systemImage: "chevron.left") {
+                        navigation.cancelSourceApplication(owner: navigationOwner)
                         selected = nil
                     }
                     .accessibilityIdentifier("event-notice.back")
@@ -101,12 +103,23 @@ public struct EventNoticeReadingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onChange(of: selected) { _ in copyResult = nil }
+        .onChange(of: selected) { _ in
+            copyResult = nil
+            cancelNavigationOnDismissal()
+        }
+        .onDisappear { cancelNavigationOnDismissal() }
         .onChange(of: model.readingSnapshot.receiverEpoch) { _ in
             selected = nil; copyResult = nil
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("event-notice.reader")
+    }
+
+    private func cancelNavigationOnDismissal() {
+        // The native owner supplies the actual dismissal cause. A source app that was already
+        // frontmost does not turn Escape, collapse, selection changes or unmount into a handoff.
+        guard !preservesNavigationOnDismissal() else { return }
+        navigation.cancelSourceApplication(owner: navigationOwner)
     }
 
     private func detail(_ record: EventNoticeRecord, now: Date) -> some View {
@@ -139,31 +152,39 @@ public struct EventNoticeReadingView: View {
                     .accessibilityIdentifier("event-notice.copy-session")
                 }
                 if record.sourceApplication != nil {
-                    Button(l10n.text(.eventNoticeOpenSource)) {
-                        if let action = record.action { openSource(action) }
+                    Button(
+                        l10n.text(
+                            record.navigationTarget?.isParentSession == true
+                                ? .eventNoticeReturnParent : .eventNoticeOpenSource)
+                    ) {
+                        guard EventNoticeProjection.canNavigate(record, result: navigation.result),
+                            let action = record.action
+                        else { return }
+                        navigation.navigateSource(
+                            action, generation: navigation.capabilityGeneration,
+                            owner: navigationOwner)
                     }
-                    .disabled(!record.isActionable || navigation.applicationResult == .started)
+                    .disabled(!EventNoticeProjection.canNavigate(record, result: navigation.result))
                     .accessibilityIdentifier("event-notice.reader.open-source")
                 }
-                if navigation.action == record.action {
-                    switch navigation.applicationResult {
-                    case .failed: Text(l10n.text(.eventNoticeOpenFailed))
-                    case .unavailable: Text(l10n.text(.eventNoticeOpenUnavailable))
-                    case .timedOut: Text(l10n.text(.eventNoticeOpenTimeout))
-                    case .started: Text(l10n.text(.eventNoticeOpenStarted))
-                    case .idle, .opened, .cancelled: EmptyView()
-                    }
+                if let key = EventNoticeProjection.navigationFeedbackKey(
+                    for: record, action: navigation.action, result: navigation.result)
+                {
+                    Text(l10n.text(key))
+                        .accessibilityIdentifier("event-notice.open-feedback")
                 }
                 if let copyResult, record.isActionable {
                     Text(l10n.text(copyResult ? .eventNoticeCopied : .eventNoticeCopyFailed))
                         .accessibilityIdentifier("event-notice.copy-result")
                 }
-                Button(l10n.text(.eventNoticeRemove), systemImage: "minus.circle") {
-                    if let action = record.action { _ = model.remove(action) }
-                    selected = nil
+                if record.kind.isAttention {
+                    Button(l10n.text(.eventNoticeRemove), systemImage: "minus.circle") {
+                        if let action = record.action { _ = model.remove(action) }
+                        selected = nil
+                    }
+                    .frame(minHeight: 28).disabled(!record.isActionable)
+                    .accessibilityIdentifier("event-notice.remove")
                 }
-                .frame(minHeight: 28).disabled(!record.isActionable)
-                .accessibilityIdentifier("event-notice.remove")
             }
         }
         .fixedSize(horizontal: false, vertical: true)

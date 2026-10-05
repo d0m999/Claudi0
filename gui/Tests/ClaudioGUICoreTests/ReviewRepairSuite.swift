@@ -90,41 +90,47 @@ func runReviewRepairSuites() async {
                 return EventNoticeCancellation { cancellations += 1 }
             })
         let bannerOwner = UUID()
-        navigation.openSourceApplication(
+        navigation.navigateSource(
             action, generation: navigation.capabilityGeneration, owner: bannerOwner
         ) { _ in feedbackCount += 1 }
         expect(
-            EventNoticeView.preferredHeight(for: model.bannerSnapshot, navigation: navigation)
-                > EventNoticeView.preferredHeight(for: model.bannerSnapshot), "反馈占用额外窗口高度")
+            navigation.result == .started
+                && EventNoticeView.preferredHeight(
+                    for: model.bannerSnapshot, navigation: navigation)
+                    > EventNoticeView.preferredHeight(for: model.bannerSnapshot),
+            "反馈占用额外窗口高度")
         navigation.cancelSourceApplication(owner: UUID())
         expect(valid?() == true && cancellations == 0, "其他入口关闭不取消横幅请求")
         navigation.cancelSourceApplication(owner: bannerOwner)
         expect(valid?() == false && cancellations == 1, "关闭请求发起方取消激活资格")
         finish?(.opened)
         expect(
-            feedbackCount == 0 && navigation.applicationResult == .cancelled,
+            feedbackCount == 0 && navigation.result == .cancelled,
             "迟到打开不更新反馈或调用完成动作")
-        navigation.openSourceApplication(action, generation: navigation.capabilityGeneration)
+        navigation.navigateSource(action, generation: navigation.capabilityGeneration)
         navigation.cancelSourceApplication(owner: bannerOwner)
         expect(
-            valid?() == true && navigation.applicationResult == .started,
+            valid?() == true && navigation.result == .started,
             "横幅关闭不影响无横幅所有者的面板请求")
         finish?(.failed)
         expect(
-            EventNoticeView.preferredHeight(for: model.bannerSnapshot, navigation: navigation)
-                > EventNoticeView.preferredHeight(for: model.bannerSnapshot), "失败原因占用额外窗口高度")
-        navigation.openSourceApplication(action, generation: navigation.capabilityGeneration)
+            navigation.result == .failed
+                && EventNoticeView.preferredHeight(
+                    for: model.bannerSnapshot, navigation: navigation)
+                    > EventNoticeView.preferredHeight(for: model.bannerSnapshot),
+            "失败原因占用额外窗口高度")
+        navigation.navigateSource(action, generation: navigation.capabilityGeneration)
         clock.advance(SessionNavigationCoordinator.timeout)
         expect(
-            navigation.applicationResult == .timedOut
+            navigation.result == .timedOut
                 && EventNoticeView.preferredHeight(
                     for: model.bannerSnapshot, navigation: navigation)
                     > EventNoticeView.preferredHeight(for: model.bannerSnapshot),
             "超时原因占用额外窗口高度")
-        navigation.openSourceApplication(action, generation: navigation.capabilityGeneration)
+        navigation.navigateSource(action, generation: navigation.capabilityGeneration)
         finish?(.opened)
         expect(
-            navigation.applicationResult == .opened && model.isCurrent(action),
+            navigation.result == .applicationFallback && model.isCurrent(action),
             "面板请求正常完成且保留提醒")
     }
     await suite("Review repair: pack drift stops the remaining preview sequence") {

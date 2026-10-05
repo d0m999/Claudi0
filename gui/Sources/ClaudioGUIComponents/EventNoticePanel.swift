@@ -5,6 +5,12 @@ import AppKit
 @MainActor
 public final class EventNoticePanel: NSPanel {
     public var allowsKeyboardInteraction = false
+    public var onEscape: (@MainActor () -> Void)?
     public override var canBecomeKey: Bool { allowsKeyboardInteraction }
     public override var canBecomeMain: Bool { false }
+
+    public override func cancelOperation(_ sender: Any?) {
+        guard allowsKeyboardInteraction else { return }
+        onEscape?()
+    }
 }

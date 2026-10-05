@@ -95,11 +95,40 @@ public enum EventNoticeProjection {
     {
         let l10n = ClaudioL10n(language: language)
         guard record.sourceApplication != nil else { return l10n.text(.eventNoticeViewInPanel) }
+        if record.navigationTarget?.isParentSession == true {
+            return l10n.text(.eventNoticeReturnParent)
+        }
         switch record.kind {
         case .permission: return l10n.text(.eventNoticeActPermission)
         case .needsInput: return l10n.text(.eventNoticeActNeedsInput)
         case .interrupted, .review: return l10n.text(.eventNoticeActReview)
         case .transient: return l10n.text(.eventNoticeOpenSource)
+        }
+    }
+
+    public static func canNavigate(
+        _ record: EventNoticeRecord, result: SessionNavigationActionResult
+    ) -> Bool {
+        record.isActionable && result != .started
+    }
+
+    /// Banner height and all three native surfaces consume the same result projection.
+    public static func navigationFeedbackKey(
+        for record: EventNoticeRecord, action: EventNoticeAction?,
+        result: SessionNavigationActionResult
+    ) -> ClaudioL10nKey? {
+        guard record.isActionable else {
+            return record.isExpired ? .eventNoticeExpired : .eventNoticeStale
+        }
+        guard let action, action == record.action else { return nil }
+        switch result {
+        case .started: return .eventNoticeOpenStarted
+        case .failed: return .eventNoticeOpenFailed
+        case .unavailable: return .eventNoticeOpenUnavailable
+        case .timedOut: return .eventNoticeOpenTimeout
+        case .applicationFallback: return .eventNoticeNavigationFallback
+        case .requestSent: return .eventNoticeNavigationRequested
+        default: return nil
         }
     }
 

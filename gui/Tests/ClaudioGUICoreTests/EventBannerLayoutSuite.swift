@@ -22,6 +22,24 @@ func runEventBannerLayoutSuites() {
         expect(!panel.canBecomeKey, "收起和隐私清空撤回资格")
         panel.close()
     }
+    suite("Event Banner：原生取消命令仅关闭显式交互横幅") {
+        _ = NSApplication.shared
+        let panel = EventNoticePanel(
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 75),
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+        panel.isReleasedWhenClosed = false
+        defer { panel.close() }
+        var closes = 0
+        panel.onEscape = { closes += 1 }
+        panel.cancelOperation(nil)
+        expect(closes == 0, "自动展示不消费键盘取消命令")
+        panel.allowsKeyboardInteraction = true
+        panel.cancelOperation(nil)
+        expect(closes == 1, "无按钮焦点时原生取消命令仍派发关闭一次")
+        panel.allowsKeyboardInteraction = false
+        panel.cancelOperation(nil)
+        expect(closes == 1, "撤回交互资格后不再次关闭")
+    }
     suite("Event Banner：快照不变时，实际彩色阅读轨遵守当前动态偏好") {
         _ = NSApplication.shared
         let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -274,9 +292,11 @@ func runEventBannerLayoutSuites() {
                             window.sendEvent(pending)
                         }
                     }
-                    let previousDetails = details
                     click(NSPoint(x: 100, y: height * 0.7))
-                    expect(details == previousDetails, "静态正文不进入详情")
+                    expect(
+                        kind == "unknown" ? details == 1 : opens == 1,
+                        "正文实际点击按同一能力分流且仅派发一次：\(kind)")
+                    expect(closes == 0, "正文不触发独立关闭")
                     if kind == "transient" {
                         click(NSPoint(x: width - 28, y: height / 2))
                     } else {
@@ -284,10 +304,111 @@ func runEventBannerLayoutSuites() {
                     }
                     expect(
                         kind == "transient"
-                            ? closes == 1 : kind == "unknown" ? details == 1 : opens == 1,
+                            ? closes == 1 && opens == 1
+                            : kind == "unknown" ? details == 2 : opens == 2,
                         "语义动作实际点击按能力分流：\(kind)")
 
                 }
+            }
+        }
+    }
+}
+
+@MainActor
+func runEventReadingLiveSuites() async {
+    let appearances: [(NSAppearance.Name, ColorScheme)] = [(.aqua, .light), (.darkAqua, .dark)]
+    for native in ["Stop", "PermissionRequest"] {
+        for (appearance, scheme) in appearances {
+            await suite("Event Banner：\(native) / \(appearance.rawValue) 入场挂载后真实阅读轨连续缩短") {
+                _ = NSApplication.shared
+                guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+                    print("  SKIP：系统 Reduce Motion 已开启，真实时钟缩短动效不适用")
+                    return
+                }
+                let model = EventNoticeModel(receiverEpoch: UUID())
+                let notice = attentionNotice(epoch: model.receiverEpoch, native: native)
+                let reference = EventBannerTrackFixture(reference: notice.event, scheme: scheme)
+                let expectedColor = reference.trackColor(at: 0.5)
+                reference.close()
+                var visibleSince: TimeInterval?
+                let subscription = model.$bannerSnapshot.sink { snapshot in
+                    if snapshot.phase == .visible, visibleSince == nil {
+                        visibleSince = ProcessInfo.processInfo.systemUptime
+                    }
+                }
+                defer { subscription.cancel(); model.clearForPrivacy() }
+                expect(
+                    model.accept(notice) == .accepted,
+                    "真实时钟\(native)事件有效")
+                expect(model.bannerSnapshot.phase == .entering, "生产视图在入场采样仍暂停时挂载")
+                let hosting = EventNoticeHostingView(
+                    rootView: EventNoticeView(
+                        model: model, languageStore: ClaudioPreferences(previewLanguage: .english)))
+                let width: CGFloat = 440
+                let height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
+                let visible = NSScreen.main?.visibleFrame
+                    ?? NSRect(x: 0, y: 0, width: 1024, height: 768)
+                let pointer = NSEvent.mouseLocation
+                let frame = NSRect(
+                    x: pointer.x < visible.midX ? visible.maxX - width - 40 : visible.minX + 40,
+                    y: pointer.y < visible.midY ? visible.maxY - height - 40 : visible.minY + 40,
+                    width: width, height: height)
+                let window = EventNoticePanel(
+                    contentRect: frame, styleMask: [.borderless, .nonactivatingPanel],
+                    backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                // Keep the reference swatch and mounted pixels in the same window color space.
+                window.colorSpace = .sRGB
+                window.appearance = NSAppearance(named: appearance)
+                window.contentView = hosting
+                window.setFrame(frame, display: true)
+                window.orderFront(nil)
+                defer { window.orderOut(nil); window.close() }
+                let entranceDeadline = Date(timeIntervalSinceNow: 2)
+                while visibleSince == nil, Date() < entranceDeadline {
+                    try? await Task.sleep(nanoseconds: 20_000_000)
+                }
+                guard let visibleSince else {
+                    expect(false, "真实入场计时器必须进入 visible")
+                    return
+                }
+                var samples: [(span: CGFloat, fraction: Double)] = []
+                for (index, offset) in [0.3, 1.3, 2.3].enumerated() {
+                    let delay = max(0, visibleSince + offset - ProcessInfo.processInfo.systemUptime)
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    guard let reading = model.bannerSnapshot.readingTime else {
+                        expect(false, "真实阅读阶段必须有阅读采样：\(offset)s")
+                        return
+                    }
+                    let span = eventBannerTrackSpan(
+                        hosting, expectedColor: expectedColor,
+                        name: "track-live-\(native)-\(appearance.rawValue)-\(index)-\(offset)s")
+                    let uptime = ProcessInfo.processInfo.systemUptime
+                    let fraction = reading.fraction(at: uptime)
+                    print(
+                        "  live reading: elapsed=\(uptime - visibleSince)s paused=\(reading.isPaused)"
+                            + " fraction=\(fraction) colored=\(span)pt")
+                    expect(model.bannerSnapshot.phase == .visible, "真实阅读尚未收起：\(offset)s")
+                    expect(!frame.contains(NSEvent.mouseLocation), "测试指针保持在横幅外")
+                    expect(!window.isKeyWindow && !reading.isPaused, "自动展示无键盘或悬停暂停")
+                    expect(span > 0, "真实时钟彩色轨持续可见：\(offset)s")
+                    expect(
+                        abs(Double(span / (width - 30)) - fraction) < 0.04,
+                        "实际彩色长度与当时阅读预算一致：\(offset)s")
+                    samples.append((span, fraction))
+                }
+                for index in 1..<samples.count {
+                    expect(
+                        samples[index - 1].span - samples[index].span > 60,
+                        "无需手动推进或模型重发，真实彩色轨每秒明显缩短")
+                    expect(
+                        samples[index - 1].fraction - samples[index].fraction > 0.18,
+                        "同一真实时钟的阅读预算同步递减")
+                }
+                let expiryDelay = max(0, visibleSince + 4.4 - ProcessInfo.processInfo.systemUptime)
+                try? await Task.sleep(nanoseconds: UInt64(expiryDelay * 1_000_000_000))
+                expect(model.bannerSnapshot.phase == .hidden, "真实四秒阅读预算及淡出后自动收起")
+                expect(model.bannerSnapshot.readingTime == nil, "收起后不残留阅读采样")
             }
         }
     }
@@ -313,6 +434,38 @@ private func eventBannerGreenTrackSpan(_ hosting: NSView, name: String) -> CGFlo
     let pixels = eventBannerGreenTrackPixels(bitmap, scale: scale)
     let longest = Dictionary(grouping: pixels, by: \.y).values.map(\.count).max() ?? 0
     return CGFloat(longest) / scale
+}
+
+/// Compare mounted native pixels with an independently rendered sRGB event-color swatch.
+/// Saved bitmaps are harness artifacts, not Computer Use screenshots or real-host evidence.
+@MainActor
+private func eventBannerTrackSpan(
+    _ hosting: NSView, expectedColor: NSColor, name: String
+) -> CGFloat {
+    hosting.layoutSubtreeIfNeeded()
+    guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
+        expect(false, "原生阅读轨位图不可用")
+        return 0
+    }
+    hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+    if let directory = ProcessInfo.processInfo.environment["CLAUDIO_ATTENTION_SCREENSHOT_DIR"] {
+        let output = URL(fileURLWithPath: directory, isDirectory: true)
+        try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        try? bitmap.representation(using: .png, properties: [:])?.write(
+            to: output.appendingPathComponent("\(name).png"))
+    }
+    let scale = CGFloat(bitmap.pixelsWide) / hosting.bounds.width
+    var rowCounts: [Int: Int] = [:]
+    for y in max(0, bitmap.pixelsHigh - Int(8 * scale))..<bitmap.pixelsHigh {
+        for x in 0..<bitmap.pixelsWide {
+            guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
+                color.alphaComponent > 0.5,
+                eventBannerColorDistance(color, expectedColor) < 0.06
+            else { continue }
+            rowCounts[y, default: 0] += 1
+        }
+    }
+    return CGFloat(rowCounts.values.max() ?? 0) / scale
 }
 
 @MainActor

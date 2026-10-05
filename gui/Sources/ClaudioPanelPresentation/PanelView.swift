@@ -309,15 +309,14 @@ public struct PanelView: View {
                 EventNoticeReadingView(
                     model: eventNoticeModel, preferences: languageStore,
                     navigation: noticeNavigation, selected: $focusCoordinator.noticeSelection,
-                    openSource: { action in
-                        noticeNavigation.openSourceApplication(
-                            action, generation: noticeNavigation.capabilityGeneration)
-                    },
                     copySession: { action in
                         noticeNavigation.copy(action) { session in
                             NSPasteboard.general.clearContents()
                             return NSPasteboard.general.setString(session, forType: .string)
                         }
+                    },
+                    preservesNavigationOnDismissal: {
+                        focusCoordinator.preservesNoticeNavigationOnHide
                     })
             } else if let latest = eventNoticeModel.readingSnapshot.latest {
                 Text(

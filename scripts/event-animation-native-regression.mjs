@@ -142,9 +142,17 @@ export async function createEventAnimationRegression(options) {
     const bytes=Buffer.from(data.replace(/\s/g,''),'base64');
     return {preferences:JSON.parse(bytes.toString('utf8')),language,SHA256:crypto.createHash('sha256').update(bytes).digest('hex')};
   }
+  async function navigateBack() {
+    const label=(await preferences()).language==='zh-Hans'?'返回通知':'Back to Notifications';
+    const current=await run.state();
+    const matches=current.split('\n').filter(line=>/^\s*\d+\b/.test(line)&&line.includes(label));
+    assert(matches.length===1&&!/disabled|已停用/i.test(matches[0]),'Native Back segment must be unique and enabled');
+    await app.click(Number(matches[0].match(/^\s*(\d+)/)[1]));
+    return run.state();
+  }
   async function enter() {
     let state=await run.state();
-    if(!state.includes('ID: settings.animation.back')) {
+    if(!state.includes('settings.notifications.event-animation-detail')) {
       await run.clickID('settings.sidebar.notifications');
       await run.clickID('settings.notifications.event-animation');
     }
@@ -204,7 +212,7 @@ export async function createEventAnimationRegression(options) {
       await run.waitUntil(async()=> (await preferences()).eventAnimation.usesStaticExpression===true,'Static preference');
       await requireSettingsKey();
       await scrollToTop();
-      await run.pointerID('settings.animation.back',{text:language==='zh-Hans'?'返回通知':'Back to Notifications'});
+      await navigateBack();
       const returnState=await run.waitUntil(async state=>(await preferences()).eventAnimation.previewActive===false&&state.split('The focused UI element is ')[1]?.includes('settings.notifications.event-animation'),'Back must stop preview and restore entry focus');
       assert(returnState.split('The focused UI element is ')[1]?.includes('settings.notifications.event-animation'),'Back did not restore entry focus');
       await run.clickID('settings.notifications.event-animation');
@@ -277,10 +285,11 @@ export async function createEventAnimationRegression(options) {
       let backFocused=false;
       for(let count=0;count<36;count++) {
         const state=await run.key('Tab');
-        const id=(state.split('The focused UI element is ')[1]??'').match(/ID: ([^,\n]+)/)?.[1];
+        const focused=state.split('The focused UI element is ')[1]??'';
+        const id=focused.match(/ID: ([^,\n]+)/)?.[1];
         if(id)returnVisited.push(id);
-        if(id==='settings.animation.back') {
-          assert(/\bbutton\b/.test(lineForID(state,id)),'Keyboard Back is not a native button');
+        const backLabel=initial.language==='zh-Hans'?'返回通知':'Back to Notifications';
+        if(focused.includes('settings.notifications.navigation')||focused.includes(backLabel)) {
           backFocused=true;
           await run.key('space');
           await run.waitUntil(async current=>(await preferences()).eventAnimation.previewActive===false&&current.split('The focused UI element is ')[1]?.includes('ID: settings.notifications.event-animation'),'Keyboard Back must stop preview and restore entry focus');
@@ -306,7 +315,7 @@ export async function createEventAnimationRegression(options) {
       await run.observe('event-animation-resource-fallback');
       await requireSettingsKey();
       await scrollToTop();
-      await run.pointerID('settings.animation.back',{text:language==='zh-Hans'?'返回通知':'Back to Notifications'});
+      await navigateBack();
       await run.waitUntil(state=>valueIs(lineForID(state,'settings.notifications.event-animation'),styleLabels[language].original),'Overview must show the resource fallback style');
       await run.observe('event-animation-resource-overview-fallback');
       await enter();
@@ -318,7 +327,7 @@ export async function createEventAnimationRegression(options) {
       assert((await preferences()).eventAnimation.style==='mechanicalDuck','Retry lost the selected character');
       await requireSettingsKey();
       await scrollToTop();
-      await run.pointerID('settings.animation.back',{text:language==='zh-Hans'?'返回通知':'Back to Notifications'});
+      await navigateBack();
       await run.waitUntil(state=>valueIs(lineForID(state,'settings.notifications.event-animation'),styleLabels[language].mechanicalDuck),'Overview must show the recovered character');
       return {fallbackReason:true,selectionKept:true,overviewFallback:true,explicitRetry:true,overviewRecovery:true,driverSHA256};
     });
