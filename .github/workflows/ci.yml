@@ -101,7 +101,8 @@ jobs:
   gui:
     name: GUI and bundle
     runs-on: macos-15
-    timeout-minutes: 15
+    # Cold SDK 26 builds include native harnesses, standard Release and LTO bundle variants.
+    timeout-minutes: 25
     env:
       # GUI consumes SDK 26 APIs and needs the newer SwiftUI isolation compiler.
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
