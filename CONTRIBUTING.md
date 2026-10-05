@@ -20,6 +20,8 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 
 CI keeps the Helper lane on Xcode 16.4 and pins GUI/bundle checks to Xcode 26.3 for
 SDK 26 APIs and SwiftUI compiler compatibility. The macOS deployment target remains 12.
+The GUI lane configures its disposable runner's virtual display to 1920×1080 before
+native layout checks, preserving the 1240×820 settings-window test premise.
 
 Clone the repository and run commands from its root. The helper and GUI are separate Swift packages; always pass the explicit package path and product shown below.
 

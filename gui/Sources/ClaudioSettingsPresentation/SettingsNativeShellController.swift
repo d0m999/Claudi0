@@ -188,8 +188,8 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
 
     package func toolbarDefaultItemIdentifiers(_: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
-            .sidebarTrackingSeparator, .init("settings.navigation"), .init("settings.page-title"),
-            .flexibleSpace,
+            .sidebarTrackingSeparator, .init("settings.navigation"), .space,
+            .init("settings.page-title"), .flexibleSpace,
         ]
     }
     package func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {

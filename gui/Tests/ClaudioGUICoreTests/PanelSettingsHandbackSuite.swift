@@ -110,10 +110,20 @@ func runPanelSettingsHandbackSuites() async {
         }
         expect(!panel.isShown && closes.last == .keyResignation, "键盘真正离开菜单树时收起菜单")
         settings.presentForUserRequest()
-        let beforeOutsideClick = focusTestNormalWindowOrder()
-        print(
-            "[DEBUG-ci-native] before outside click: order=\(beforeOutsideClick), "
-                + "settings=\(settings.windowNumber), other=\(other.windowNumber)")
+        // The explicit foreground request must reach WindowServer before the menu's baseline.
+        var beforeOutsideClick = focusTestNormalWindowOrder()
+        let orderDeadline = Date().addingTimeInterval(0.5)
+        while !focusTestIsBefore(settings, other, in: beforeOutsideClick)
+            && Date() < orderDeadline
+        {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+            beforeOutsideClick = focusTestNormalWindowOrder()
+        }
+        guard focusTestIsBefore(settings, other, in: beforeOutsideClick), settings.isKeyWindow
+        else {
+            expect(false, "点外关闭夹具必须先完成显式前置：\(beforeOutsideClick)")
+            return
+        }
         panel.show(relativeTo: anchor.bounds, of: anchor)
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = NSEvent.mouseEvent(
@@ -321,4 +331,12 @@ private func focusTestNormalWindowOrder() -> [Int] {
 private func focusTestSameWindowOrder(_ before: [Int], _ after: [Int]) -> Bool {
     let common = Set(before).intersection(after)
     return before.filter { common.contains($0) } == after.filter { common.contains($0) }
+}
+
+@MainActor
+private func focusTestIsBefore(_ front: NSWindow, _ behind: NSWindow, in order: [Int]) -> Bool {
+    guard let frontIndex = order.firstIndex(of: front.windowNumber),
+        let behindIndex = order.firstIndex(of: behind.windowNumber)
+    else { return false }
+    return frontIndex < behindIndex
 }

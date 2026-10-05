@@ -98,6 +98,11 @@ func runSettingsNativeShellSuites() async {
                             session: fixture.session, width: width, dark: dark)
                         await probe.settle()
                         expect(
+                            probe.window.contentView?.bounds.size
+                                == NSSize(width: width, height: width == 960 ? 640 : 820),
+                            "Layout fixture must retain the requested content size; actual=\(String(describing: probe.window.contentView?.bounds.size))"
+                        )
+                        expect(
                             probe.shell.pageTitle.stringValue
                                 == destination.localizedName(language: language),
                             "\(destination)/\(language)/\(dark)/\(width) title=\(probe.shell.pageTitle.stringValue), route=\(fixture.session.state.routeResolution.route)"
