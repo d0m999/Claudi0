@@ -340,7 +340,7 @@ struct EventSettingsWindowView: View {
                 l10n.text(.settingsDestinationEventsAndSounds),
                 selection: Binding(
                     get: { selection.route.scope },
-                    set: selectScope
+                    set: { @MainActor scope in selectScope(scope) }
                 ),
                 options: (current == nil
                     ? [

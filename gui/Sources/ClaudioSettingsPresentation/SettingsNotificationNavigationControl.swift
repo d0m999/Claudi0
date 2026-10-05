@@ -19,7 +19,9 @@ struct SettingsNotificationNavigationControl: NSViewRepresentable {
         control.trackingMode = .momentary
         control.segmentStyle = .rounded
         control.controlSize = .large
+        #if compiler(>=6.2)
         if #available(macOS 26.0, *) { control.borderShape = .capsule }
+        #endif
         control.segmentDistribution = .fillEqually
         control.target = context.coordinator
         control.action = #selector(Coordinator.navigate(_:))
