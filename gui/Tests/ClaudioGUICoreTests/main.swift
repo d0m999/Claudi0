@@ -423,6 +423,13 @@ if CommandLine.arguments.contains("--settings-sounds-layout") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--ai-cue-transports") {
+    await runAICueHTTPTransportSuites()
+    await runAICueSSETransportSuites()
+    print("AI cue transports: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--ai-cue-provider-contracts") {
     runAICueProviderContractsSuites()
     print("AI cue provider contracts: \(totalChecks) checks, \(failures) failures")

@@ -60,6 +60,34 @@ private final class AICueHangingTransportURLProtocol: URLProtocol, @unchecked Se
     override func stopLoading() {}
 }
 
+private final class AICueBoundaryTimeoutURLProtocol: URLProtocol, @unchecked Sendable {
+    static let recorder = AICueRedirectRequestRecorder()
+    private let lock = NSLock()
+    private var stopped = false
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        Self.recorder.record(request)
+        guard let value = request.value(forHTTPHeaderField: "x-fixture-deadline"),
+            let deadline = UInt64(value)
+        else { return }
+        let now = DispatchTime.now().uptimeNanoseconds
+        if now < deadline, deadline - now > 500_000 {
+            Thread.sleep(forTimeInterval: Double(deadline - now - 500_000) / 1_000_000_000)
+        }
+        while DispatchTime.now().uptimeNanoseconds < deadline {}
+        guard lock.withLock({ !stopped }) else { return }
+        client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+    }
+
+    override func stopLoading() {
+        lock.withLock { stopped = true }
+    }
+}
+
 private final class AICueDelayedBodyTransportURLProtocol: URLProtocol, @unchecked Sendable {
     private var delivery: DispatchWorkItem?
 
@@ -432,7 +460,9 @@ func runAICueHTTPTransportSuites() async {
         } catch let error as AICueTransportError {
             expiringError = error
         } catch {}
-        expect(expiringError == .deadlineExceeded, "临界过期 unary request 必须立即结束")
+        expect(
+            expiringError == .deadlineExceeded,
+            "临界过期 unary request 必须立即结束；observed=\(String(describing: expiringError))")
         expect(
             AICueHangingTransportURLProtocol.recorder.facts().totalRequests <= 1,
             "临界过期最多只能启动可被立即取消的单一 request")
@@ -492,6 +522,56 @@ func runAICueHTTPTransportSuites() async {
             cancelError = error
         } catch {}
         expect(cancelError == .cancelled, "调用方取消必须同步取消 URLSession task")
+    }
+
+    await suite("AI 提示音 unary/SSE transport：按绝对截止时间分类 Foundation timeout") {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AICueBoundaryTimeoutURLProtocol.self]
+        let transport = AICueURLSessionUnaryTransport(configuration: configuration)
+        let sseTransport = AICueURLSessionSSETransport(configuration: configuration)
+        for usesSSE in [false, true] {
+            AICueBoundaryTimeoutURLProtocol.recorder.reset()
+            for attempt in 0..<21 {
+                // The final case times out before the generation budget, preserving inactivity.
+                let isDeadlineBoundary = attempt < 20
+                let deadline = AICueGenerationDeadline(
+                    startedAtUptimeNanoseconds: DispatchTime.now().uptimeNanoseconds,
+                    durationNanoseconds: isDeadlineBoundary
+                        ? 20_000_000 : AICueGenerationDeadline.durationNanoseconds)
+                let callbackDeadline = isDeadlineBoundary ? deadline.expiresAtUptimeNanoseconds : 0
+                let request = AICueTransportRequest(
+                    method: .get,
+                    url: URL(string: "https://fixture.transport/deadline-race")!,
+                    expectedOrigin: try! AICueOrigin(
+                        scheme: "https", host: "fixture.transport", port: nil),
+                    expectedPath: "/deadline-race",
+                    headers: ["x-fixture-deadline": String(callbackDeadline)],
+                    body: nil, acceptedMediaTypes: ["application/json"], maximumWireBytes: 64,
+                    deadline: deadline)
+                var observed: AICueTransportError?
+                do {
+                    if usesSSE {
+                        for try await _ in sseTransport.events(
+                            for: request, authentication: .bearerAPIKey,
+                            credential: try SensitiveCredentialInput("fixture-secret"))
+                        {}
+                    } else {
+                        _ = try await transport.send(
+                            request, authentication: .bearerAPIKey,
+                            credential: try SensitiveCredentialInput("fixture-secret"))
+                    }
+                } catch let error as AICueTransportError { observed = error } catch {}
+                let expectedError: AICueTransportError =
+                    isDeadlineBoundary ? .deadlineExceeded : .inactivityTimeout
+                expect(
+                    observed == expectedError,
+                    "Foundation timeout 必须按原始 deadline 分类；SSE=\(usesSSE)，boundary=\(isDeadlineBoundary)，observed=\(String(describing: observed))"
+                )
+            }
+            expect(
+                AICueBoundaryTimeoutURLProtocol.recorder.facts().totalRequests > 0,
+                "边界回归必须实际启动 URLSession request，不能只覆盖发送前过期")
+        }
     }
 
     await suite("AI 提示音 unary transport：长计算 POST 在响应头前只受 generation deadline") {

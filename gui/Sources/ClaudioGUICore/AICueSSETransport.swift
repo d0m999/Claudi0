@@ -304,7 +304,11 @@ private final class AICueSSEDataTask: NSObject, URLSessionDataDelegate, @uncheck
         didCompleteWithError error: Error?
     ) {
         lock.lock()
-        let storedError = terminalError
+        // Foundation and our deadline timer can reach the same ceiling in either callback order.
+        let storedError: AICueTransportError? =
+            transportRequest.deadline.remainingNanoseconds(at: DispatchTime.now().uptimeNanoseconds)
+                == nil
+            ? .deadlineExceeded : terminalError
         let finalEvents: [AICueSSEEvent]
         do {
             finalEvents = storedError == nil ? try parser.finish() : []

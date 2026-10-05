@@ -206,7 +206,12 @@ private final class AICueUnaryDataTask: NSObject, URLSessionDataDelegate, @unche
         didCompleteWithError error: Error?
     ) {
         lock.lock()
-        let storedError = terminalError
+        // Foundation can complete at the absolute ceiling before our utility-queue timer runs.
+        // Consult the original deadline so that race cannot downgrade an exhausted budget.
+        let storedError: AICueTransportError? =
+            transportRequest.deadline.remainingNanoseconds(at: DispatchTime.now().uptimeNanoseconds)
+                == nil
+            ? .deadlineExceeded : terminalError
         let response = self.response
         let body = self.body
         lock.unlock()
