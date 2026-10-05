@@ -122,6 +122,63 @@ await check("recoverable compaction may continue to a normal response", async ()
   await f.hooks.dispose();
 });
 
+for (const outcome of ["failure", "success", "incomplete"]) {
+  await check("automatic compaction " + outcome + " never reuses the previous response terminal", async () => {
+    const f = await fixture();
+    await f.session(); await f.user(); await f.complete();
+    // OpenCode aec0b9a6: compaction.ts creates these users directly with updateMessage,
+    // bypassing chat.message; the synthetic continuation has no confirmed user-turn identity.
+    const storedUser = (id, created) => f.event("message.updated", {
+      info: { role: "user", id, sessionID: "s", time: { created } },
+    });
+    await storedUser("compaction-user", 1002);
+    await f.complete({ id: "summary", parentID: "compaction-user", summary: true,
+      time: { created: 1003, completed: 1004 } });
+    await storedUser("auto-user", 1005);
+    await f.assistant({ id: "auto-response", parentID: "auto-user", time: { created: 1006 } });
+    await f.event("session.status", { sessionID: "s", status: { type: "busy" } });
+    if (outcome === "failure") {
+      // processor.ts halt publishes error and idle before cleanup publishes completed.
+      await f.event("session.error", { sessionID: "s", error: { name: "APIError" } });
+      await f.idle();
+      assert.deepEqual(f.names(), ["UserTurnStarted"]);
+      await f.complete({ id: "auto-response", parentID: "auto-user",
+        time: { created: 1006, completed: 1007 }, error: { name: "APIError" } });
+    } else if (outcome === "success") {
+      await f.complete({ id: "auto-response", parentID: "auto-user",
+        time: { created: 1006, completed: 1007 } });
+    }
+    await f.idle();
+    assert.deepEqual(f.names(), ["UserTurnStarted"]);
+    // A late update of the retired response cannot restore its old terminal/idle pairing.
+    await f.complete(); await f.idle();
+    assert.deepEqual(f.names(), ["UserTurnStarted"]);
+    await f.user("next-user");
+    await f.complete({ id: "next-response", parentID: "next-user",
+      time: { created: 1008, completed: 1009 } });
+    await f.idle();
+    assert.deepEqual(f.names(), ["UserTurnStarted", "UserTurnStarted", "ResponseCompleted"]);
+    assert.equal(f.events.at(-1).payload.turn_id, "next-user");
+    assert.equal(f.events.at(-1).payload.message_id, "next-response");
+    await f.hooks.dispose();
+  });
+}
+
+await check("compaction failure idle cannot complete the response before compaction", async () => {
+  const f = await fixture();
+  await f.session(); await f.user(); await f.complete();
+  await f.assistant({ id: "summary", parentID: "compaction-user", summary: true,
+    time: { created: 1002 } });
+  await f.event("session.error", { sessionID: "s", error: { name: "APIError" } });
+  await f.idle();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await f.complete({ id: "summary", parentID: "compaction-user", summary: true,
+    time: { created: 1002, completed: 1003 }, error: { name: "APIError" } });
+  await f.idle();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await f.hooks.dispose();
+});
+
 await check("session.error without a terminal message or session identity is insufficient", async () => {
   const f = await fixture();
   await f.event("session.error", { error: { name: "UnknownError" } });

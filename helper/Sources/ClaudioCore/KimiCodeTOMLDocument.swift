@@ -13,6 +13,7 @@ struct KimiCodeTOMLDocument {
 
     struct Hook {
         let start: Int
+        // End of the last field statement; trailing comments do not extend hook semantics.
         var end: Int
         var fields: [String: Value]
     }
@@ -59,7 +60,6 @@ struct KimiCodeTOMLDocument {
                 if index == bytes.count { break }
                 if bytes[index] == 91 {
                     let start = index
-                    if let activeHook { hooks[activeHook].end = start }
                     self.activeHook = nil
                     index += 1
                     let array = take(91)
@@ -71,7 +71,7 @@ struct KimiCodeTOMLDocument {
                     guard !path.isEmpty else { throw rejected() }
                     if path.first == "hooks" {
                         guard array, path == ["hooks"] else { throw rejected() }
-                        hooks.append(Hook(start: start, end: bytes.count, fields: [:]))
+                        hooks.append(Hook(start: start, end: index, fields: [:]))
                         activeHook = hooks.count - 1
                     }
                     let token = identity(path)
@@ -124,6 +124,7 @@ struct KimiCodeTOMLDocument {
                                 .contains(path[0])
                         else { throw rejected() }
                         hooks[activeHook].fields[path[0]] = value
+                        hooks[activeHook].end = index
                     }
                 }
             }

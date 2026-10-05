@@ -148,14 +148,21 @@ enum OpenCodePluginSource {
           async function message(info) {
             if (!info || info.role !== \"assistant\" || !identifier(info.id) ||
                 !identifier(info.parentID) || !finiteTime(info.time?.created) ||
-                info.time.created < bootTime || info.summary === true) return;
+                info.time.created < bootTime) return;
             const state = await session(info.sessionID);
             if (!state) return;
             state.touched = now();
-            const candidate = state.candidates.get(info.parentID);
-            if (!state.parentID && !candidate) return;
             const key = JSON.stringify([state.id, info.parentID]);
             if (completed.has(key)) return;
+            if (state.active && state.active.userID !== info.parentID) {
+              // Compaction and automatic continuation create new parents without chat.message.
+              // Their idle cannot finish the old response, even when the new turn is ineligible.
+              state.candidates.delete(state.active.userID);
+              state.active = undefined;
+            }
+            if (info.summary === true) return;
+            const candidate = state.candidates.get(info.parentID);
+            if (!state.parentID && !candidate) return;
             if (state.active?.userID !== info.parentID) {
               // A new main response must belong to a confirmed non-synthetic live user message.
               state.active = {

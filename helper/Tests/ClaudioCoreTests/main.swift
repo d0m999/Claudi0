@@ -53,6 +53,12 @@ func asyncSuite(_ name: String, _ body: @MainActor () async -> Void) async {
     await body()
 }
 
+if CommandLine.arguments.contains("--host-integration-model") {
+    runHostIntegrationModelSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--additional-hosts") {
     await runAdditionalHostIntegrationSuites()
     runAdditionalHostHookSuites()

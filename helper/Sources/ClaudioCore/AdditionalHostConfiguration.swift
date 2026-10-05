@@ -137,7 +137,8 @@ enum AdditionalHostConfiguration {
                 return false
             })
         else { throw rejected("检测到重复的 Claudio Kimi Code hook，已拒绝写入") }
-        guard let first = ownHooks.first,
+        guard ownHooks.allSatisfy({ $0.end <= range.upperBound }),
+            let first = ownHooks.first,
             case .string(let command) = first.fields["command"],
             let match = matchedHostHookCommand(inHookCommand: command, claudioRoot: claudioRoot),
             match.host == .kimiCode,
