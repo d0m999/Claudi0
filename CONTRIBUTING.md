@@ -18,6 +18,9 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 - Python 3 and Node.js for the embedded OpenCode plugin and additional-host CLI contracts.
 - `ffmpeg` and `ffprobe` for curated sound-pack measurements.
 
+CI keeps the Helper lane on Xcode 16.4 and pins GUI/bundle checks to Xcode 26.3 for
+SDK 26 APIs and SwiftUI compiler compatibility. The macOS deployment target remains 12.
+
 Clone the repository and run commands from its root. The helper and GUI are separate Swift packages; always pass the explicit package path and product shown below.
 
 ## Build and test

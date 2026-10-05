@@ -33,7 +33,7 @@ struct SettingsSoundScopePicker: View {
                 l10n.text(.settingsNativeManagementScope),
                 selection: Binding(
                     get: { scope },
-                    set: { @MainActor newScope, _ in
+                    set: { newScope in
                         guard scopes.contains(where: { $0.scope == newScope }) else { return }
                         let target = newScope.workspaceID.flatMap { id in
                             model.workspaceRules.first(where: { $0.id == id })
