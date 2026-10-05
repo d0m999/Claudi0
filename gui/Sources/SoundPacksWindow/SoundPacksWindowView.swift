@@ -293,6 +293,39 @@ private struct SoundPacksWindowContentView: View {
     private var activeSounds: SoundsEditorPresentation { sounds }
 
     var body: some View {
+        contentWithDeletePackConfirmation
+            .confirmationDialog(
+                restoreConfirmation.map {
+                    l10n.format(.soundPacksRestoreTitle, confirmationPackDisplayName($0))
+                } ?? l10n.text(.soundPacksRestore),
+                isPresented: Binding(
+                    get: { restoreConfirmation != nil },
+                    set: { if !$0 { cancelConfirmation(restoreConfirmation) } }),
+                titleVisibility: .visible,
+                presenting: restoreConfirmation
+            ) { confirmation in
+                Button(l10n.text(.soundPacksRestoreButton), role: .destructive) {
+                    invoke(confirmation.confirmAction)
+                }
+                .accessibilityLabel(
+                    l10n.format(.soundPacksRestoreLabel, confirmationPackDisplayName(confirmation))
+                )
+                .accessibilityHint(l10n.text(.soundPacksRestoreHint))
+                .accessibilityIdentifier("sound-packs.confirm-factory-restore")
+                Button(l10n.text(.commonCancel), role: .cancel) {
+                    invoke(confirmation.cancelAction)
+                }
+                .accessibilityLabel(l10n.text(.commonCancel))
+                .accessibilityIdentifier("sound-packs.cancel-factory-restore")
+            } message: { confirmation in
+                Text(factoryRestoreConfirmationMessage(confirmation))
+            }
+            .disabled(isPerformingWrite)
+    }
+
+    // Opaque boundaries keep Swift 6.1 from solving the full modifier chain at once.
+    // State and actions remain on this view and the existing editor owner.
+    private var readingContent: some View {
         AnyView(
             VStack(spacing: 0) {
                 ScrollViewReader { proxy in
@@ -331,152 +364,141 @@ private struct SoundPacksWindowContentView: View {
                 }
             }
         )
-        .frame(minWidth: 0, minHeight: 0)
-        .soundPacksLayoutProbe("sound-packs.editor")
-        .background(SettingsAppearance.background(colorScheme))
-        .onReceive(focusCoordinator.$requestRevision) { revision in
-            guard focusCoordinator.consumeRequest(revision) else { return }
-            requestedRoute = focusCoordinator.requestedTarget ?? .overview
-            // Scroll trigger only; the request dedup itself lives in the coordinator, and the
-            // session arbitration derives the detail from the same route request.
-            handledFocusRequestRevision = revision
-            applyInitialFocus()
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.packs.map(\.id)) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.selectedPack?.id) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: presentation) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.draft?.packID) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.inventory) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.eventRows) { _ in
-            reconcileFocusWithVisibleControls()
-        }
-        .onChange(of: activeSounds.recoveryActions.map(\.packID)) { _ in
-            if detail == .overview, activeSounds.packs.isEmpty,
-                focusedTarget != nil || requestedRoute.editTarget != nil,
-                let packID = activeSounds.recoveryActions.first?.packID
-            {
-                focusedTarget = .retryFactoryRestore(packID: packID)
-            } else {
+    }
+
+    private var focusAwareContent: some View {
+        readingContent
+            .frame(minWidth: 0, minHeight: 0)
+            .soundPacksLayoutProbe("sound-packs.editor")
+            .background(SettingsAppearance.background(colorScheme))
+            .onReceive(focusCoordinator.$requestRevision) { revision in
+                guard focusCoordinator.consumeRequest(revision) else { return }
+                requestedRoute = focusCoordinator.requestedTarget ?? .overview
+                // Scroll trigger only; the request dedup itself lives in the coordinator, and the
+                // session arbitration derives the detail from the same route request.
+                handledFocusRequestRevision = revision
+                applyInitialFocus()
                 reconcileFocusWithVisibleControls()
             }
-        }
-        .onChange(of: presentation.library) { _ in
-            reconcileFocusWithVisibleControls(assignFirstIfNil: true)
-        }
-        .confirmationDialog(
-            copyConfirmation.map { l10n.format(.soundPacksCopyLabel, $0.packName) }
-                ?? l10n.text(.soundPacksCopy),
-            isPresented: Binding(
-                get: { copyConfirmation != nil },
-                set: { if !$0 { copyConfirmation = nil } }),
-            titleVisibility: .visible,
-            presenting: copyConfirmation
-        ) { confirmation in
-            Button(l10n.text(.commonCopy)) {
-                copyConfirmation = nil
-                invoke(confirmation.action)
+            .onChange(of: activeSounds.packs.map(\.id)) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityIdentifier("sound-packs.confirm-copy")
-            Button(l10n.text(.commonCancel), role: .cancel) { copyConfirmation = nil }
-                .accessibilityIdentifier("sound-packs.cancel-copy")
-        } message: { confirmation in
-            Text(copyConfirmationMessage(confirmation))
-        }
-        .confirmationDialog(
-            deleteOrphanConfirmation.map {
-                l10n.format(.soundPacksDeleteTitle, $0.fileName ?? "")
-            } ?? l10n.text(.soundPacksDeleteButton),
-            isPresented: Binding(
-                get: { deleteOrphanConfirmation != nil },
-                set: { if !$0 { cancelConfirmation(deleteOrphanConfirmation) } }),
-            titleVisibility: .visible,
-            presenting: deleteOrphanConfirmation
-        ) { confirmation in
-            let fileName = confirmation.fileName ?? ""
-            Button(l10n.text(.soundPacksDeleteButton), role: .destructive) {
-                invoke(confirmation.confirmAction)
+            .onChange(of: activeSounds.selectedPack?.id) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityLabel(l10n.format(.soundPacksOrphanDeleteLabel, fileName))
-            .accessibilityHint(l10n.text(.soundPacksDeleteHint))
-            .accessibilityIdentifier("sound-packs.confirm-delete")
-            Button(l10n.text(.commonCancel), role: .cancel) {
-                invoke(confirmation.cancelAction)
+            .onChange(of: presentation) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityLabel(l10n.text(.commonCancel))
-            .accessibilityIdentifier("sound-packs.cancel-delete")
-        } message: { confirmation in
-            Text(l10n.format(.soundPacksDeleteMessage, confirmation.fileName ?? ""))
-        }
-        .confirmationDialog(
-            deletePackConfirmation.map {
-                l10n.format(
-                    .soundPacksPackDeleteTitle,
-                    confirmationPackDisplayName($0))
-            } ?? l10n.text(.soundPacksPackDelete),
-            isPresented: Binding(
-                get: { deletePackConfirmation != nil },
-                set: { if !$0 { cancelConfirmation(deletePackConfirmation) } }),
-            titleVisibility: .visible,
-            presenting: deletePackConfirmation
-        ) { confirmation in
-            let displayName = confirmationPackDisplayName(confirmation)
-            Button(l10n.text(.soundPacksPackDelete), role: .destructive) {
-                invoke(confirmation.confirmAction)
+            .onChange(of: activeSounds.draft?.packID) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityLabel(
-                l10n.format(.soundPacksPackDeleteLabel, displayName)
-            )
-            .accessibilityHint(l10n.text(.soundPacksPackDeleteHint))
-            .accessibilityIdentifier("sound-packs.confirm-pack-delete")
-            Button(l10n.text(.commonCancel), role: .cancel) {
-                invoke(confirmation.cancelAction)
+            .onChange(of: activeSounds.inventory) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityLabel(l10n.text(.commonCancel))
-            .accessibilityIdentifier("sound-packs.cancel-pack-delete")
-        } message: { confirmation in
-            Text(
-                l10n.format(
-                    .soundPacksPackDeleteMessage, confirmationPackDisplayName(confirmation))
-            )
-        }
-        .confirmationDialog(
-            restoreConfirmation.map {
-                l10n.format(.soundPacksRestoreTitle, confirmationPackDisplayName($0))
-            } ?? l10n.text(.soundPacksRestore),
-            isPresented: Binding(
-                get: { restoreConfirmation != nil },
-                set: { if !$0 { cancelConfirmation(restoreConfirmation) } }),
-            titleVisibility: .visible,
-            presenting: restoreConfirmation
-        ) { confirmation in
-            Button(l10n.text(.soundPacksRestoreButton), role: .destructive) {
-                invoke(confirmation.confirmAction)
+            .onChange(of: activeSounds.eventRows) { _ in
+                reconcileFocusWithVisibleControls()
             }
-            .accessibilityLabel(
-                l10n.format(.soundPacksRestoreLabel, confirmationPackDisplayName(confirmation))
-            )
-            .accessibilityHint(l10n.text(.soundPacksRestoreHint))
-            .accessibilityIdentifier("sound-packs.confirm-factory-restore")
-            Button(l10n.text(.commonCancel), role: .cancel) {
-                invoke(confirmation.cancelAction)
+            .onChange(of: activeSounds.recoveryActions.map(\.packID)) { _ in
+                if detail == .overview, activeSounds.packs.isEmpty,
+                    focusedTarget != nil || requestedRoute.editTarget != nil,
+                    let packID = activeSounds.recoveryActions.first?.packID
+                {
+                    focusedTarget = .retryFactoryRestore(packID: packID)
+                } else {
+                    reconcileFocusWithVisibleControls()
+                }
             }
-            .accessibilityLabel(l10n.text(.commonCancel))
-            .accessibilityIdentifier("sound-packs.cancel-factory-restore")
-        } message: { confirmation in
-            Text(factoryRestoreConfirmationMessage(confirmation))
-        }
-        .disabled(isPerformingWrite)
+            .onChange(of: presentation.library) { _ in
+                reconcileFocusWithVisibleControls(assignFirstIfNil: true)
+            }
+    }
+
+    private var contentWithCopyConfirmation: some View {
+        focusAwareContent
+            .confirmationDialog(
+                copyConfirmation.map { l10n.format(.soundPacksCopyLabel, $0.packName) }
+                    ?? l10n.text(.soundPacksCopy),
+                isPresented: Binding(
+                    get: { copyConfirmation != nil },
+                    set: { if !$0 { copyConfirmation = nil } }),
+                titleVisibility: .visible,
+                presenting: copyConfirmation
+            ) { confirmation in
+                Button(l10n.text(.commonCopy)) {
+                    copyConfirmation = nil
+                    invoke(confirmation.action)
+                }
+                .accessibilityIdentifier("sound-packs.confirm-copy")
+                Button(l10n.text(.commonCancel), role: .cancel) { copyConfirmation = nil }
+                    .accessibilityIdentifier("sound-packs.cancel-copy")
+            } message: { confirmation in
+                Text(copyConfirmationMessage(confirmation))
+            }
+    }
+
+    private var contentWithOrphanConfirmation: some View {
+        contentWithCopyConfirmation
+            .confirmationDialog(
+                deleteOrphanConfirmation.map {
+                    l10n.format(.soundPacksDeleteTitle, $0.fileName ?? "")
+                } ?? l10n.text(.soundPacksDeleteButton),
+                isPresented: Binding(
+                    get: { deleteOrphanConfirmation != nil },
+                    set: { if !$0 { cancelConfirmation(deleteOrphanConfirmation) } }),
+                titleVisibility: .visible,
+                presenting: deleteOrphanConfirmation
+            ) { confirmation in
+                let fileName = confirmation.fileName ?? ""
+                Button(l10n.text(.soundPacksDeleteButton), role: .destructive) {
+                    invoke(confirmation.confirmAction)
+                }
+                .accessibilityLabel(l10n.format(.soundPacksOrphanDeleteLabel, fileName))
+                .accessibilityHint(l10n.text(.soundPacksDeleteHint))
+                .accessibilityIdentifier("sound-packs.confirm-delete")
+                Button(l10n.text(.commonCancel), role: .cancel) {
+                    invoke(confirmation.cancelAction)
+                }
+                .accessibilityLabel(l10n.text(.commonCancel))
+                .accessibilityIdentifier("sound-packs.cancel-delete")
+            } message: { confirmation in
+                Text(l10n.format(.soundPacksDeleteMessage, confirmation.fileName ?? ""))
+            }
+    }
+
+    private var contentWithDeletePackConfirmation: some View {
+        contentWithOrphanConfirmation
+            .confirmationDialog(
+                deletePackConfirmation.map {
+                    l10n.format(
+                        .soundPacksPackDeleteTitle,
+                        confirmationPackDisplayName($0))
+                } ?? l10n.text(.soundPacksPackDelete),
+                isPresented: Binding(
+                    get: { deletePackConfirmation != nil },
+                    set: { if !$0 { cancelConfirmation(deletePackConfirmation) } }),
+                titleVisibility: .visible,
+                presenting: deletePackConfirmation
+            ) { confirmation in
+                let displayName = confirmationPackDisplayName(confirmation)
+                Button(l10n.text(.soundPacksPackDelete), role: .destructive) {
+                    invoke(confirmation.confirmAction)
+                }
+                .accessibilityLabel(
+                    l10n.format(.soundPacksPackDeleteLabel, displayName)
+                )
+                .accessibilityHint(l10n.text(.soundPacksPackDeleteHint))
+                .accessibilityIdentifier("sound-packs.confirm-pack-delete")
+                Button(l10n.text(.commonCancel), role: .cancel) {
+                    invoke(confirmation.cancelAction)
+                }
+                .accessibilityLabel(l10n.text(.commonCancel))
+                .accessibilityIdentifier("sound-packs.cancel-pack-delete")
+            } message: { confirmation in
+                Text(
+                    l10n.format(
+                        .soundPacksPackDeleteMessage, confirmationPackDisplayName(confirmation))
+                )
+            }
     }
 
     private var importResultRegion: AnyView {

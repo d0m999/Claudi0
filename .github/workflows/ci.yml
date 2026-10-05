@@ -36,14 +36,17 @@ jobs:
             echo "::error::Swift 6 is required; selected toolchain reported: $SWIFT_VERSION"
             exit 1
           fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; } | shasum -a 256 | awk '{ print $1 }' )"
+          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
           echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+
+      - name: Verify build-cache identity
+        run: python3 scripts/test-ci-cache-identity.py
 
       - name: Restore SwiftPM build cache
         uses: actions/cache@v5
         with:
           path: helper/.build
-          key: helper-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift') }}-v1
+          key: helper-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift') }}-v2
 
       - name: Check patch whitespace
         shell: bash
@@ -117,7 +120,7 @@ jobs:
             echo "::error::Swift 6 is required; selected toolchain reported: $SWIFT_VERSION"
             exit 1
           fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; } | shasum -a 256 | awk '{ print $1 }' )"
+          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
           echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
 
       - name: Restore SwiftPM build cache
@@ -127,7 +130,7 @@ jobs:
           path: |
             gui/.build
             helper/.build
-          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v2
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v3
 
       - name: Validate string catalog JSON
         run: jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
@@ -183,7 +186,7 @@ jobs:
           path: |
             gui/.build
             helper/.build
-          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v2
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v3
 
   verify:
     name: Test and build
