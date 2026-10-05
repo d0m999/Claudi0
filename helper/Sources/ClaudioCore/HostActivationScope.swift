@@ -41,6 +41,7 @@ public struct HostExecutableLocator: Sendable {
             "bin",
             ".claude/local",
             ".codex/bin",
+            ".opencode/bin",
             ".kimi-code/bin",
             ".volta/bin",
             ".asdf/shims",

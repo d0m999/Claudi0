@@ -282,6 +282,85 @@ func runAdditionalHostIntegrationSuites() async {
         }
     }
 
+    await asyncSuite("Kimi Code：托管标记外的字段不能改变自有或第三方 hook") {
+        await withAdditionalHostTempDirectory { root in
+            for (index, suffix) in [
+                "matcher = '^child$'\n",
+                "# trailing edit\nmatcher = '^child$'\n[future]\nenabled = true\n",
+            ].enumerated() {
+                let f = AdditionalIntegrationFixture(
+                    root: root.appendingPathComponent("boundary\(index)"), host: .kimiCode)
+                let original = Data(
+                    ("[[hooks]]\r\nevent = 'PermissionRequest'\r\n"
+                        + "command = 'third-party-hook'\r\ntimeout = 30\r\n").utf8)
+                writeFixture(String(decoding: original, as: UTF8.self), to: f.file)
+                _ = try! await f.adapter.connect(runtime: .ready).get()
+                var edited = try! Data(contentsOf: f.file)
+                edited.append(Data(suffix.utf8))
+                try! edited.write(to: f.file)
+                let snapshot = await f.adapter.inspect(runtime: .ready)
+                if case .conflict = snapshot.configuration {
+                } else {
+                    expect(false, "结束注释不结束 TOML 表，越界 matcher 应报告配置冲突")
+                }
+                f.scope.value = "additional-scope-v2"
+                if case .failure(.transaction(.mutationRejected)) = await f.adapter.connect(
+                    runtime: .ready)
+                {
+                } else {
+                    expect(false, "修复必须拒绝迁移越界 matcher 到前面的第三方 hook")
+                }
+                expect(try! Data(contentsOf: f.file) == edited, "拒绝修复后保留配置原字节")
+                if case .failure(.transaction(.mutationRejected)) = await f.adapter.disconnect(
+                    runtime: .ready)
+                {
+                } else {
+                    expect(false, "断开必须拒绝把越界 matcher 转交给第三方 hook")
+                }
+                expect(try! Data(contentsOf: f.file) == edited, "拒绝断开后保留配置原字节")
+                expect(
+                    try! Data(contentsOf: f.file.appendingPathExtension("claudio.bak"))
+                        == original, "拒绝操作不改变原始第三方配置备份")
+                expect(
+                    f.receipts.currentInstallationID(host: .kimiCode) == nil,
+                    "拒绝删除越界配置仍须撤销旧回调")
+            }
+        }
+    }
+
+    await asyncSuite("Kimi Code：托管块后的注释和独立表可安全修复与断开") {
+        await withAdditionalHostTempDirectory { root in
+            for (index, suffix) in [
+                "\n# matcher = '^child$' is only a comment\n",
+                "\n# separate settings\n[future]\nmatcher = '^child$'\n",
+                "\n[[hooks]]\nevent = 'PermissionRequest'\n"
+                    + "command = 'later-third-party-hook'\nmatcher = '^child$'\n",
+            ].enumerated() {
+                let f = AdditionalIntegrationFixture(
+                    root: root.appendingPathComponent("safe-boundary\(index)"), host: .kimiCode)
+                let original = Data(
+                    ("[[hooks]]\nevent = 'PermissionRequest'\n"
+                        + "command = 'first-third-party-hook'\n").utf8)
+                writeFixture(String(decoding: original, as: UTF8.self), to: f.file)
+                let first = try! await f.adapter.connect(runtime: .ready).get()
+                var edited = try! Data(contentsOf: f.file)
+                edited.append(Data(suffix.utf8))
+                try! edited.write(to: f.file)
+                let snapshot = await f.adapter.inspect(runtime: .ready)
+                expect(snapshot.configuration == .configured, "注释或新表不扩展 Claudio hook 字段")
+                f.scope.value = "additional-scope-v2"
+                let repaired = try! await f.adapter.connect(runtime: .ready).get()
+                expect(repaired.configuration == .configured, "独立的外部表不阻止修复")
+                expect(repaired.installationID != first.installationID, "安全修复更换安装代次")
+                let disconnected = try! await f.adapter.disconnect(runtime: .ready).get()
+                expect(disconnected.configuration == .notConfigured, "安全断开只移除托管块")
+                var retained = original
+                retained.append(Data(suffix.utf8))
+                expect(try! Data(contentsOf: f.file) == retained, "第三方表和注释保持全部原字节")
+            }
+        }
+    }
+
     await asyncSuite("新增来源：操作锁只阻塞本来源，另一来源仍能连接") {
         await withAdditionalHostTempDirectory { root in
             let open = AdditionalIntegrationFixture(root: root, host: .opencode)

@@ -72,6 +72,36 @@ func runHostIntegrationModelSuites() {
         }
     }
 
+    suite("activation scope：精简 GUI PATH 仍发现 OpenCode 官方安装且尊重显式 PATH") {
+        withTempDirectory { root in
+            let binary = root.appendingPathComponent(".opencode/bin/opencode")
+            writeFixture("#!/bin/sh\nprintf '1.18.34\\n'\n", to: binary)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o755], ofItemAtPath: binary.path)
+            let locator = HostExecutableLocator.standard(
+                environmentPath: "/usr/bin:/bin", environment: [:], homeDirectory: root)
+            expect(
+                locator.executablePath(command: "opencode") == binary.path,
+                "Finder 启动的 GUI 必须发现 ~/.opencode/bin/opencode")
+            expect(
+                HostActivationScope.additionalHost(
+                    .opencode, configurationRoot: root.appendingPathComponent(".config/opencode"),
+                    executableLocator: locator)?.contains("host=1.18.34") == true,
+                "官方安装的版本必须进入 activation scope")
+
+            let preferred = root.appendingPathComponent("preferred-bin/opencode")
+            writeFixture("#!/bin/sh\nprintf '1.18.35\\n'\n", to: preferred)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o755], ofItemAtPath: preferred.path)
+            let explicitPath = HostExecutableLocator.standard(
+                environmentPath: preferred.deletingLastPathComponent().path + ":/usr/bin:/bin",
+                environment: [:], homeDirectory: root)
+            expect(
+                explicitPath.executablePath(command: "opencode") == preferred.path,
+                "显式 PATH 中的 OpenCode 仍优先于默认安装目录")
+        }
+    }
+
     suite("activation scope：Volta/mise dispatcher 必须通过原始 shim 路径执行") {
         withTempDirectory { root in
             let shimDirectory = root.appendingPathComponent(".volta/bin", isDirectory: true)
