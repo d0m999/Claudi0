@@ -1,3 +1,5 @@
+# Historical reference: superseded by the native implementation on 2026-10-04.
+# Do not apply. See docs/adr/0023-return-to-verified-local-sessions.md.
 --- a/gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift
 +++ b/gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift
 @@ -14,6 +14,10 @@

@@ -110,6 +110,86 @@ func runEventBannerActionSuites() {
                 == "在面板查看", "无法识别应用时提供面板入口")
     }
 
+    suite("Event Banner：只有可信目标的明确父会话绑定才使用返回父会话") {
+        for parent in [false, true] {
+            let clock = ManualEventNoticeScheduler()
+            let m = EventNoticeModel(
+                receiverEpoch: UUID(), now: { clock.time }, scheduler: clock.scheduler(),
+                resolveSourceApplication: { _, action in
+                    SourceApplicationTarget(
+                        action: action, process: identity,
+                        bundleIdentifier: "com.apple.Terminal", applicationURL: appURL,
+                        name: "Terminal")
+                })
+            let notice = attentionNotice(
+                epoch: m.receiverEpoch, native: "SubagentStop",
+                source: HostEventSource(
+                    projectLabel: "project", projectKey: "key", sessionID: "parent-session",
+                    isParentSession: parent), processAncestors: [identity]
+            )
+            .replacingNavigationEvidence(
+                HostNavigationEvidence(
+                    process: identity,
+                    terminalProcess: identity, tty: "/dev/ttys001"), ancestors: [identity])
+            _ = m.accept(notice)
+            for language in [ClaudioAppLanguage.english, .zhHans] {
+                expect(
+                    (EventNoticeProjection.actionTitle(
+                        for: m.bannerSnapshot.current!, language: language)
+                        == ClaudioL10n(language: language).text(.eventNoticeReturnParent))
+                        == parent,
+                    "不能从子任务事件本身猜测父会话：\(language)")
+            }
+        }
+    }
+
+    suite("Event Banner：正文、主操作和阅读器共用完整导航反馈投影") {
+        for native in ["Stop", "PermissionRequest"] {
+            let clock = ManualEventNoticeScheduler()
+            let m = model(clock)
+            let action = accept(m, native: native)
+            let record = m.bannerSnapshot.current!
+            let cases: [(SessionNavigationActionResult, ClaudioL10nKey?)] = [
+                (.idle, nil), (.started, .eventNoticeOpenStarted),
+                (.failed, .eventNoticeOpenFailed), (.unavailable, .eventNoticeOpenUnavailable),
+                (.timedOut, .eventNoticeOpenTimeout),
+                (.requestSent, .eventNoticeNavigationRequested),
+                (.applicationFallback, .eventNoticeNavigationFallback),
+                (.exactReturnConfirmed, nil), (.cancelled, nil), (.copied, nil),
+            ]
+            for (result, key) in cases {
+                expect(
+                    EventNoticeProjection.navigationFeedbackKey(
+                        for: record, action: action, result: result) == key,
+                    "所有呈现消费同一完整结果：\(native) \(result)")
+                expect(
+                    EventNoticeProjection.canNavigate(record, result: result)
+                        == (result != .started),
+                    "仅在途禁用可用的记录")
+                expect(
+                    EventNoticeProjection.navigationFeedbackKey(
+                        for: record, action: nil, result: result) == nil, "反馈不能串到其他记录")
+            }
+            var finish: (@MainActor (SourceApplicationOpenResult) -> Void)?
+            let navigation = SessionNavigationCoordinator(
+                model: m, scheduler: clock.scheduler(),
+                openApplication: { _, _, callback in
+                    finish = callback; return EventNoticeCancellation {}
+                })
+            let base = EventNoticeView.preferredHeight(for: m.bannerSnapshot)
+            navigation.navigateSource(action, generation: navigation.capabilityGeneration)
+            expect(
+                EventNoticeView.preferredHeight(for: m.bannerSnapshot, navigation: navigation)
+                    == base + 55,
+                "普通与待接手横幅均为反馈预留既有高度")
+            finish?(.opened)
+            expect(
+                EventNoticeView.preferredHeight(for: m.bannerSnapshot, navigation: navigation)
+                    == base + 55,
+                "应用回退反馈仍完整可见")
+        }
+    }
+
     suite("Event Banner：4秒采样、交叠暂停、版本替代与隐私期限") {
         let clock = ManualEventNoticeScheduler()
         let m = model(clock)

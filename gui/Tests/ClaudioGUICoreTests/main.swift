@@ -150,6 +150,19 @@ if CommandLine.arguments.contains("--settings-native-states") {
     exit(1)
 }
 
+// Live reading timers need AppKit's event loop rather than the synchronous layout harness.
+if CommandLine.arguments.contains("--event-reading-live") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runEventReadingLiveSuites()
+        print("Event reading live: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--event-animation")
     || CommandLine.arguments.contains("--event-animation-layout")
 {
@@ -481,6 +494,7 @@ let fullHarnessApplication = NSApplication.shared
 fullHarnessApplication.setActivationPolicy(.accessory)
 Task { @MainActor in
 await runReviewRepairSuites()
+await runSettingsNotificationNavigationSuites()
 await runEventAnimationIntegrationSuites()
 runOnboardingStateSuites()
 runLocalizationSuites()

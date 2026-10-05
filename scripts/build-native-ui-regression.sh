@@ -4,6 +4,10 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_root="$(cd -- "$script_dir/.." && pwd -P)"
 cd "$repo_root"
+case "${CLAUDIO_UI_REGRESSION_LIVE_CLOCK:-0}" in
+    0|1) ;;
+    *) echo "CLAUDIO_UI_REGRESSION_LIVE_CLOCK must be 0 or 1" >&2; exit 1 ;;
+esac
 regression_output="$(mktemp -d "${TMPDIR:-/tmp}/claudio-native-ui-build.XXXXXX")"
 regression_scratch="${CLAUDIO_UI_REGRESSION_SCRATCH:-$regression_output/swift}"
 regression_args=(--package-path gui --scratch-path "$regression_scratch" -c debug -Xswiftc -DCLAUDIO_UI_REGRESSION --product ClaudioGUI)
@@ -23,7 +27,8 @@ swiftc "${regression_ocr_args[@]}" "$repo_root/scripts/native-ui-screenshot-ocr.
 python3 - "$regression_app" "$regression_output" <<'PY'
 import hashlib,json,os,pathlib,platform,plistlib,subprocess,sys
 app=pathlib.Path(sys.argv[1]); output=pathlib.Path(sys.argv[2])
-info={'CFBundleIdentifier':'com.claudio.app.ui-regression','CFBundleName':'Claudio UI Regression','CFBundleExecutable':'ClaudioGUI','CFBundlePackageType':'APPL','CFBundleVersion':'1','CFBundleShortVersionString':'0.0.0','LSUIElement':True,'NSHighResolutionCapable':True,'ClaudioUIRegressionFixture':'v1'}
+live_clock=os.environ.get('CLAUDIO_UI_REGRESSION_LIVE_CLOCK','0')=='1'
+info={'CFBundleIdentifier':'com.claudio.app.ui-regression','CFBundleName':'Claudio UI Regression','CFBundleExecutable':'ClaudioGUI','CFBundlePackageType':'APPL','CFBundleVersion':'1','CFBundleShortVersionString':'0.0.0','LSUIElement':True,'NSHighResolutionCapable':True,'ClaudioUIRegressionFixture':'v1','ClaudioUIRegressionLiveClock':live_clock}
 (app/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 def git(*args): return subprocess.check_output(['git',*args])
 tracked=git('ls-files','-z').split(b'\0'); untracked=git('ls-files','--others','--exclude-standard','-z').split(b'\0')
@@ -37,6 +42,8 @@ prototype=pathlib.Path('designs/macos-settings-native/claudi0 macOS Settings Pro
 prototype_sha=hashlib.sha256(prototype.read_bytes()).hexdigest()
 if prototype_sha!='f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91': raise SystemExit('Settings prototype fingerprint mismatch')
 manifest={'settingsPrototypeSHA256':prototype_sha,'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
+manifest['clockMode']='live' if live_clock else 'manual'
+manifest['liveClock']=live_clock
 alignment_prototype=pathlib.Path('designs/macos-settings-native/Native Settings Alignment Prototype.html')
 if alignment_prototype.is_file():
  manifest['settingsNativeAlignmentPrototype']={'path':str(alignment_prototype),'sha256':hashlib.sha256(alignment_prototype.read_bytes()).hexdigest()}

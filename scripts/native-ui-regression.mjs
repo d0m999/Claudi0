@@ -453,7 +453,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       const remaining=(await readback()).remaining;
       await key('super+shift+s');
       await pointerID((await state()).split('\n').find(line=>/^\s*\d+ button/.test(line)&&line.includes('ID: event-notice.open-source.'))?.match(/ID: (\S+)/)?.[1]??'missing-banner-action',{returnToControls:true});
-      assert((await readback()).reminders===1 && (await readback()).navigation==='opened','Substitute open success removed the reminder or failed');
+      assert((await readback()).reminders===1 && (await readback()).navigation==='applicationFallback','Substitute open success removed the reminder or failed');
       assert((await readback()).remaining<=remaining,'Retry reset the remaining budget');
       await key('super+shift+r');
       await control('Show settings');

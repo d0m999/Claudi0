@@ -362,7 +362,7 @@ func runViewWiringSuites() {
         guard
             let controller = codeWithoutStrings(
                 "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift"),
-            let resignKey = closureBody(after: "func windowDidResignKey", in: controller)
+            let resignKey = closureBody(after: "private func finishResigningKey", in: controller)
         else {
             expect(false, "必须能解析 EventNoticeWindowController 的失焦接线")
             return

@@ -1436,6 +1436,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventAnimationPixelGhost: Self = "event-animation.pixel-ghost"
     public static let eventAnimationBitcoin: Self = "event-animation.bitcoin"
     public static let eventAnimationBack: Self = "event-animation.back"
+    package static let eventAnimationForward: Self = "event-animation.forward"
     public static let eventAnimationPreview: Self = "event-animation.preview"
     public static let eventAnimationPreviewSubtitle: Self = "event-animation.preview-subtitle"
     public static let eventAnimationPreviewIsolation: Self = "event-animation.preview-isolation"
@@ -1466,6 +1467,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventAnimationPixelGhost,
         .eventAnimationBitcoin,
         .eventAnimationBack,
+        .eventAnimationForward,
         .eventAnimationPreview,
         .eventAnimationPreviewSubtitle,
         .eventAnimationPreviewIsolation,
