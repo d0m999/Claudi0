@@ -19,6 +19,14 @@ dist/
 # Personal/IP-protected sound packs (e.g. game character cries) — never commit or distribute
 local-packs/
 
+# Version only the default Factory Pack; keep other curated packs local.
+/packs/*
+!/packs/minimal-chime/
+!/packs/README.md
+!/packs/LICENSES.md
+!/packs/bundled-pack-selection.json
+!/packs/license-snapshots/
+
 # Workflow 用的临时 worktree（Agent isolation: worktree）
 .claude/worktrees/
 

@@ -8,6 +8,7 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 - Use an issue for user-visible behavior changes, new host integrations, sound-pack format changes, or release/distribution changes.
 - Never include private prompts, responses, project paths, host configuration, receipts, logs, signing credentials, or licensed personal sound packs in an issue or commit.
 - Keep `local-packs/`, `dist/`, `.build/`, and machine-specific artifacts out of Git.
+- Version only the default Factory Pack, `packs/minimal-chime/`; other directories of sound packs under `packs/` stay local and are ignored. Keep the distribution selection and `.gitignore` allowlist aligned when changing the default pack.
 
 ## Development environment
 
@@ -44,6 +45,8 @@ bash scripts/dev-bundle.sh
 bash scripts/check-release-size.sh dist/claudi0.app
 git diff --check
 ```
+
+`scripts/test-sound-pack-candidates.py` always checks generators and license records; audio checks for local candidate packs report a skip when their pack directories are absent. Present candidate packs retain all existing audio and ledger checks.
 
 `scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
 

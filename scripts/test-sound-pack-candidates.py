@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for curated sound-pack generators and committed candidates."""
+"""Regression checks for curated sound-pack generators and local-only candidates."""
 
 from __future__ import annotations
 
@@ -172,6 +172,11 @@ def decoded_f32_samples(path: Path) -> tuple[float, ...]:
 
 
 class SoundPackCandidateRegressionTests(unittest.TestCase):
+    def require_local_packs(self, *pack_ids: str) -> None:
+        missing = [pack_id for pack_id in pack_ids if not (ROOT / "packs" / pack_id).exists()]
+        if missing:
+            self.skipTest("Local-only candidate packs are absent: " + ", ".join(missing))
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.resonant = load_script(
@@ -183,6 +188,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
         )
 
     def test_station_chimes_curated_pack_has_five_bounded_events(self) -> None:
+        self.require_local_packs("station-chimes")
         pack = ROOT / "packs/station-chimes"
         manifest = json.loads((pack / "manifest.json").read_text())
         self.assertEqual(manifest["schema"], 1)
@@ -257,6 +263,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
             )
 
     def test_station_copy_includes_only_five_event_wavs(self) -> None:
+        self.require_local_packs("station-chimes")
         with tempfile.TemporaryDirectory() as parent:
             source = Path(parent) / "source"
             source.mkdir()
@@ -339,6 +346,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
         self.assertLess(abs(samples[guard_start] - samples[guard_start - 1]), 1.0e-8)
 
     def test_resonant_distribution_has_no_old_boundary_jump(self) -> None:
+        self.require_local_packs("resonant-bowl")
         samples = decoded_f32_samples(ROOT / "packs/resonant-bowl/task_start.mp3")
         window_start = round(0.79 * self.resonant.SAMPLE_RATE)
         window_end = round(0.86 * self.resonant.SAMPLE_RATE)
@@ -363,6 +371,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
         self.assertLessEqual(tail, TAIL_LIMIT_SECONDS, f"tail={tail:.6f}s")
 
     def test_reviewed_distribution_tails_meet_pack_standard(self) -> None:
+        self.require_local_packs("night-console", "resonant-bowl", "soft-mallet")
         paths = [
             ROOT / "packs/night-console/notification.mp3",
             ROOT / "packs/resonant-bowl/task_start.mp3",
@@ -379,6 +388,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
         self.assertEqual(failures, {})
 
     def test_resonant_distribution_lifecycle_peaks_use_one_method(self) -> None:
+        self.require_local_packs("resonant-bowl")
         for event_id in ["stop", "stop_failure", "notification", "subagent_stop"]:
             path = ROOT / f"packs/resonant-bowl/{event_id}.mp3"
             peak = decoded_peak_dbfs(path)
@@ -386,6 +396,7 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
             self.assertLessEqual(peak, -1.0, event_id)
 
     def test_changed_distribution_duration_and_true_peak(self) -> None:
+        self.require_local_packs("night-console", "resonant-bowl", "soft-mallet")
         paths = [
             ROOT / "packs/night-console/notification.mp3",
             *sorted((ROOT / "packs/resonant-bowl").glob("*.mp3")),
@@ -396,12 +407,14 @@ class SoundPackCandidateRegressionTests(unittest.TestCase):
             self.assertLessEqual(decoded_peak_dbfs(path), -1.0, path.name)
 
     def test_soft_mallet_lifecycle_distribution_uses_lufs_method(self) -> None:
+        self.require_local_packs("soft-mallet")
         for event_id in ["stop", "stop_failure", "notification", "subagent_stop"]:
             loudness = decoded_lufs(ROOT / f"packs/soft-mallet/{event_id}.wav")
             self.assertGreaterEqual(loudness, -17.0, event_id)
             self.assertLessEqual(loudness, -15.0, event_id)
 
     def test_ledger_contains_current_changed_artifact_hashes(self) -> None:
+        self.require_local_packs("night-console", "resonant-bowl", "soft-mallet", "station-chimes")
         ledger = (ROOT / "packs/LICENSES.md").read_text(encoding="utf-8")
         paths = [
             ROOT / "packs/night-console/notification.mp3",

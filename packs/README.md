@@ -1,12 +1,12 @@
 # Claudio 声音素材目录
 
-本文说明仓库内声音素材目录的用途，以及声音包目录和事件音频的命名方式。仓库中的 `packs/` 是策展工作区；只有 `bundled-pack-selection.json` 明确列出的包会随应用分发。
+本文说明声音素材目录的用途，以及声音包目录和事件音频的命名方式。`packs/` 是本机策展工作区；Git 只跟踪默认出厂声音包 `minimal-chime/`，其他声音包全部忽略并保留在本机。默认包的分发选择由 `bundled-pack-selection.json` 记录；调整默认包时须同步更新该清单与根目录 `.gitignore` 的白名单。说明文档、分发清单及许可证据继续跟踪。
 
 ## 目录用途
 
 | 路径 | 存放内容 | 用途与边界 |
 |---|---|---|
-| `packs/<pack-id>/` | 一套声音包的 `manifest.json` 和事件音频 | 策展声音包。目录名就是包 ID；是否随应用分发由 `bundled-pack-selection.json` 决定。 |
+| `packs/<pack-id>/` | 一套声音包的 `manifest.json` 和事件音频 | 策展声音包。目录名就是包 ID；仅默认包 `minimal-chime/` 进入 Git，其他包为本机候选。 |
 | `packs/license-snapshots/` | 来源网页、许可证文本和页面截图 | 为 `packs/LICENSES.md` 中的授权记录保存来源证据。新增或替换分发音频时，同步补齐来源和许可记录。 |
 | `../pack-drafts/` | 尚在制作或试听的包、生成脚本和草稿音频 | 工作草稿；定稿并完成来源/许可核对后，再整理到 `packs/<pack-id>/`。 |
 | `../local-packs/` | 本机个人使用的角色音包及 raw、processed、archive 候选素材 | 个人/IP 素材目录，已由 Git 忽略；不要提交或随应用分发。候选音频不是已安装用户声音包。 |
@@ -15,7 +15,7 @@
 | `~/.claudio/packs/<pack-id>/` | 应用运行时安装的用户声音包 | 用户导入或安装后的本机数据目录，位于仓库之外。 |
 | `dist/claudi0.app/Contents/Resources/packs/` | 构建应用中的内置包副本 | 构建产物，不是素材源目录；应从仓库的 `packs/` 重新生成。 |
 
-当前 `packs/` 下的包目录包括 `minimal-chime/`、`night-console/`、`pizzicato-cadence/`、`resonant-bowl/`、`soft-mallet/` 和 `station-chimes/`；每个子目录是一套独立的声音包。`station-chimes` 的 64 条试听变体和未完成五事件映射的 `magic-chime` 留在 `pack-drafts/`。`license-snapshots/` 不是声音包，不要把音频放进其中。
+全新克隆只包含默认包 `minimal-chime/`。本机可以保留 `night-console/`、`pizzicato-cadence/`、`resonant-bowl/`、`soft-mallet/`、`station-chimes/` 等候选包；每个子目录是一套独立的声音包，新增非默认包也自动被 Git 忽略。`station-chimes` 的 64 条试听变体和未完成五事件映射的 `magic-chime` 留在 `pack-drafts/`。`license-snapshots/` 不是声音包，不要把音频放进其中。
 
 ## 命名规则
 

@@ -38,7 +38,7 @@ supported local environment does not assume XCTest or Swift Testing.
 | `scripts/local-pre-rc.sh` | Run the commit-bound local pre-RC gates and write `dist/local-pre-rc-report.json` |
 | `scripts/copy-bundled-packs.sh SOURCE DEST` | Validate the approved selection and license ledger, then copy only approved bundled packs |
 | `node scripts/test-sound-pack-selector-state.js` | Execute selector catalog, persistence, blind-reset, and redraw-order regressions |
-| `python3 scripts/test-sound-pack-candidates.py` | Verify candidate audio duration, continuity, normalization, trailing silence, and ledger hashes |
+| `python3 scripts/test-sound-pack-candidates.py` | Verify generators and license records; verify local candidate audio and ledger hashes when those packs are present, otherwise report skips |
 | `scripts/test-hook-cli-contract.sh` | Run Debug/Release hook subprocess contract checks |
 | `scripts/test-legacy-install-cli-contract.sh` | Test legacy install with isolated `CLAUDIO_TEST_*` roots |
 | `scripts/test-host-card-height.sh` | Native AppKit screenshot regression probe |
