@@ -136,9 +136,6 @@ jobs:
       - name: Validate string catalog JSON
         run: jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 
-      - name: Diagnose scope-binding compiler
-        run: python3 scripts/diagnose-scope-binding-compiler.py
-
       - name: Diagnose event-attention harness
         shell: bash
         env:

@@ -533,6 +533,18 @@ if CommandLine.arguments.contains("--settings-review-repairs") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--settings-scope-pickers") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsScopePickerSuites()
+        print("Settings scope pickers: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-native-alignment") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -715,6 +727,7 @@ runCodexQuestionObservationSuites()
     await runSettingsNavigationHistorySuites()
     await runSettingsNativeShellSuites()
     await runSettingsNativeControlsSuites()
+    await runSettingsScopePickerSuites()
     await runSettingsNotificationNavigationSuites()
 
     // MARK: - Summary

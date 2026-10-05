@@ -25,6 +25,16 @@ struct SettingsSoundScopePicker: View {
         let scopes = panelSoundScopePresentations(
             sourceRows: [], config: model.configState.resolvedConfig,
             language: session.state.language)
+        // Keep the actor-isolated setter typed before passing it to Binding (Swift 6.1–6.2).
+        let scopeSetter: @isolated(any) @Sendable (PanelSoundScopeID) -> Void = {
+            @MainActor newScope in
+            guard scopes.contains(where: { $0.scope == newScope }) else { return }
+            let target = newScope.workspaceID.flatMap { id in
+                model.workspaceRules.first(where: { $0.id == id })
+            }.map(WorkspaceSoundWriteTarget.init(rule:))
+            _ = session.send(
+                .route(.sounds(.overview(scope: newScope, workspaceTarget: target))))
+        }
         SettingsControlRow(
             title: l10n.text(.settingsNativeManagementScope),
             subtitle: l10n.text(.settingsNativeViewDoesNotApply)
@@ -33,14 +43,7 @@ struct SettingsSoundScopePicker: View {
                 l10n.text(.settingsNativeManagementScope),
                 selection: Binding(
                     get: { scope },
-                    set: { newScope in
-                        guard scopes.contains(where: { $0.scope == newScope }) else { return }
-                        let target = newScope.workspaceID.flatMap { id in
-                            model.workspaceRules.first(where: { $0.id == id })
-                        }.map(WorkspaceSoundWriteTarget.init(rule:))
-                        _ = session.send(
-                            .route(.sounds(.overview(scope: newScope, workspaceTarget: target))))
-                    }),
+                    set: scopeSetter),
                 options: (scopes.contains(where: { $0.scope == scope })
                     ? []
                     : [

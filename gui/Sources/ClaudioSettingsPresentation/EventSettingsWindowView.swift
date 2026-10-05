@@ -335,12 +335,14 @@ struct EventSettingsWindowView: View {
     }
 
     private var scopeSelector: some View {
-        SettingsControlRow(title: l10n.text(.settingsDestinationEventsAndSounds)) {
+        // An explicit function type avoids Swift 6.1–6.2's isolation-erasure IRGen crash.
+        let scopeSetter: @isolated(any) @Sendable (PanelSoundScopeID) -> Void = selectScope
+        return SettingsControlRow(title: l10n.text(.settingsDestinationEventsAndSounds)) {
             SettingsNativePopUp(
                 l10n.text(.settingsDestinationEventsAndSounds),
                 selection: Binding(
                     get: { selection.route.scope },
-                    set: selectScope
+                    set: scopeSetter
                 ),
                 options: (current == nil
                     ? [
