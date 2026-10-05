@@ -39,8 +39,10 @@ jobs:
           FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
           echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
 
-      - name: Verify build-cache identity
-        run: python3 scripts/test-ci-cache-identity.py
+      - name: Verify CI Git and cache contracts
+        run: |
+          python3 scripts/test-ci-cache-identity.py
+          python3 scripts/test-ci-whitespace.py
 
       - name: Restore SwiftPM build cache
         uses: actions/cache@v5
@@ -75,6 +77,10 @@ jobs:
           if [[ "$base" =~ ^0+$ ]]; then
             git diff-tree --check --root -r "$head"
           else
+            # A rewritten branch may no longer advertise the push event's exact baseline.
+            if ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+              git fetch --no-tags --depth=1 origin "$base"
+            fi
             git diff --check "$base" "$head"
           fi
 
