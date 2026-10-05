@@ -60,7 +60,8 @@ func runSettingsNotificationNavigationSuites() async {
                             navigation.maxX < title.minX
                                 && abs(navigation.midY - title.midY) < 2
                                 && navigation.maxY < reading.minY,
-                            "前后控件必须在工具栏标题左侧，不能占用正文行")
+                            "前后控件必须在工具栏标题左侧，不能占用正文行：navigation=\(navigation), "
+                                + "title=\(title), reading=\(reading)")
                         expect(navigation.width < 100, "原生导航保持紧凑，不再是长条文字按钮")
                     } else {
                         expect(false, "页头、标题与正文布局均须可测量")

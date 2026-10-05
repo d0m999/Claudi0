@@ -136,6 +136,11 @@ jobs:
       - name: Validate string catalog JSON
         run: jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 
+      - name: Diagnose native CI regressions
+        run: |
+          swift -e 'import AppKit; import CoreGraphics; print("[DEBUG-ci-native] screens:", NSScreen.screens.map { $0.frame }); let modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), nil) as? [CGDisplayMode] ?? []; print("[DEBUG-ci-native] display modes:", modes.map { "\($0.width)x\($0.height)" })'
+          swift run --package-path gui claudio-gui-tests --ci-native-regressions
+
       - name: Diagnose event-attention harness
         shell: bash
         env:

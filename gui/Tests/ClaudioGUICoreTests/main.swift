@@ -537,8 +537,25 @@ if CommandLine.arguments.contains("--settings-scope-pickers") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
     Task { @MainActor in
+        runSettingsPresentationTargetSuites()
         await runSettingsScopePickerSuites()
         print("Settings scope pickers: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--ci-native-regressions") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runPanelSettingsHandbackSuites()
+        await runStatusItemWindowOrderGuardSuites()
+        await runSettingsNativeShellSuites()
+        await runSettingsNotificationNavigationSuites()
+        runSettingsPresentationTargetSuites()
+        print("CI native regressions: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }
     application.run()

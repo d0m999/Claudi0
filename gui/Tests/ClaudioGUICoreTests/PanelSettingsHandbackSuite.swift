@@ -111,6 +111,9 @@ func runPanelSettingsHandbackSuites() async {
         expect(!panel.isShown && closes.last == .keyResignation, "键盘真正离开菜单树时收起菜单")
         settings.presentForUserRequest()
         let beforeOutsideClick = focusTestNormalWindowOrder()
+        print(
+            "[DEBUG-ci-native] before outside click: order=\(beforeOutsideClick), "
+                + "settings=\(settings.windowNumber), other=\(other.windowNumber)")
         panel.show(relativeTo: anchor.bounds, of: anchor)
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = NSEvent.mouseEvent(
@@ -121,9 +124,12 @@ func runPanelSettingsHandbackSuites() async {
             NSApp.sendEvent(event)
         }
         expect(!panel.isShown && closes.last == .outsideInteraction, "真实点外鼠标事件必须经本地监视器收起菜单")
+        let afterOutsideClick = focusTestNormalWindowOrder()
         expect(
-            focusTestSameWindowOrder(beforeOutsideClick, focusTestNormalWindowOrder()),
-            "点击前台设置的空白处收起菜单时保持原有普通窗口顺序")
+            focusTestSameWindowOrder(beforeOutsideClick, afterOutsideClick),
+            "点击前台设置的空白处收起菜单时保持原有普通窗口顺序："
+                + "before=\(beforeOutsideClick), after=\(afterOutsideClick), "
+                + "settings=\(settings.windowNumber), other=\(other.windowNumber)")
         expect(settings.accessibilityPerformRaise(), "显式辅助功能 Raise 必须前置设置")
         expect(settings.isKeyWindow, "主动前置设置后必须拥有键盘焦点")
     }
