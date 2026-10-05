@@ -346,7 +346,8 @@ func runEventReadingLiveSuites() async {
                         model: model, languageStore: ClaudioPreferences(previewLanguage: .english)))
                 let width: CGFloat = 440
                 let height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
-                let visible = NSScreen.main?.visibleFrame
+                let visible =
+                    NSScreen.main?.visibleFrame
                     ?? NSRect(x: 0, y: 0, width: 1024, height: 768)
                 let pointer = NSEvent.mouseLocation
                 let frame = NSRect(
