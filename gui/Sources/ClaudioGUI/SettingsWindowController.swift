@@ -243,7 +243,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         }
         var colors: [String: Any] = [:]
         if let region = frames["settings.content"] {
-            colors["background"] = [40.0, region.height / 2, region.height - 20].map {
+            colors["background"] = [region.minY + 8, region.midY, region.maxY - 20].map {
                 rgb(CGPoint(x: region.minX + 8, y: $0))
             }
         }
@@ -257,7 +257,37 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             colors["card"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 5))
             colors["border"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 0.25))
         }
-        return ["frames": recordedFrames, "colors": colors, "sampleColorSpace": "sRGB"]
+        func groupSurface(in view: NSView) -> NSView? {
+            if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
+            return view.subviews.lazy.compactMap { groupSurface(in: $0) }.first
+        }
+        func semanticRGB(_ color: NSColor) -> [Int] {
+            var result: [Int] = []
+            let appearance =
+                color == .underPageBackgroundColor
+                ? (groupSurface(in: content)?.effectiveAppearance ?? content.effectiveAppearance)
+                : content.effectiveAppearance
+            appearance.performAsCurrentDrawingAppearance {
+                guard let foreground = color.usingColorSpace(.sRGB),
+                    let behind = NSColor.windowBackgroundColor.usingColorSpace(.sRGB)
+                else { return }
+                let alpha = foreground.alphaComponent
+                result = zip(
+                    [foreground.redComponent, foreground.greenComponent, foreground.blueComponent],
+                    [behind.redComponent, behind.greenComponent, behind.blueComponent]
+                ).map {
+                    Int(($0 * alpha + $1 * (1 - alpha)) * 255 + 0.5)
+                }
+            }
+            return result
+        }
+        return [
+            "frames": recordedFrames, "colors": colors, "sampleColorSpace": "sRGB",
+            "semanticColors": [
+                "window": semanticRGB(.windowBackgroundColor),
+                "group": semanticRGB(.underPageBackgroundColor),
+            ],
+        ]
     }
 
     func applyRegressionGeometry(minimum: Bool, dark: Bool) {

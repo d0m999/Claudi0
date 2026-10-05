@@ -27,9 +27,10 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     let generator: NativeRegressionGenerator
     let eventAnimations: EventAnimationResources
     private let generationFacts = NativeRegressionGenerationFacts()
-    private let library: SoundPackLibrary
-    private let refreshes: SoundPacksRefreshCoordinator
-    private let environment: AudioImportEnvironment
+    private let composition: PanelAppComposition
+    private var library: SoundPackLibrary { composition.soundPackLibrary }
+    private var refreshes: SoundPacksRefreshCoordinator { composition.soundPacksRefreshCoordinator }
+    private var environment: AudioImportEnvironment { composition.audioEnvironment }
     private let configFile: URL
     private let receiptStore: HostHookReceiptStore
     private let activityStore: LocalActivitySummaryStore
@@ -96,53 +97,41 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             historyRoot: integrations.appendingPathComponent("receipt-history", isDirectory: true))
         self.receiptStore = receiptStore
         let hostSnapshots = try Self.seedReceiptHistories(in: receiptStore)
-        let hostIntegrations = HostIntegrationPresentationStore(
-            state: Self.receiptPresentationState(store: receiptStore, snapshots: hostSnapshots),
-            configurationSources: Dictionary(
-                uniqueKeysWithValues: HostID.productVisibleCases.map {
-                    ($0, integrations.appendingPathComponent("\($0.rawValue)-fixture.json").path)
-                }))
-        let refreshReceiptContent: @MainActor @Sendable () async -> IntegrationDestinationContent =
+        let integrationState = Self.receiptPresentationState(
+            store: receiptStore, snapshots: hostSnapshots)
+        let configurationSources = Dictionary(
+            uniqueKeysWithValues: HostID.productVisibleCases.map {
+                ($0, integrations.appendingPathComponent("\($0.rawValue)-fixture.json").path)
+            })
+        let refreshReceiptState: @MainActor @Sendable () async -> HostIntegrationPresentationState =
             {
-                let state = await Task.detached {
+                await Task.detached {
                     Self.receiptPresentationState(store: receiptStore, snapshots: hostSnapshots)
                 }.value
-                return hostIntegrations.replace(state: state)
             }
-        let integrationsModel = IntegrationDestinationModel(
-            content: hostIntegrations.content,
-            refreshHandler: IntegrationDestinationRefreshHandler {
-                IntegrationDestinationActionOutcome(
-                    content: await refreshReceiptContent(), feedbackKind: .information,
-                    feedbackText: .localized(key: .feedbackHostStateUpdated, arguments: []))
-            },
-            actionHandler: IntegrationDestinationActionHandler { action in
-                guard case .clearReceiptHistory(let host) = action else {
-                    return IntegrationDestinationActionOutcome(
-                        content: await refreshReceiptContent(), feedbackKind: .information,
-                        feedbackMessage:
-                            "Fixture host connection operation; no external host changed")
-                }
-                let result = await Task.detached {
-                    receiptStore.clearReceiptHistory(host: host)
-                }.value
-                let kind: IntegrationsFeedbackKind
-                let text: IntegrationsFeedbackText
-                switch result {
-                case .success:
-                    kind = .information
-                    text = .localized(
-                        key: .feedbackReceiptHistoryCleared, arguments: [host.displayName])
-                case .failure(let error):
-                    kind = .failure
-                    text = .localized(key: .feedbackOperationFailed, arguments: [error.description])
-                }
-                return IntegrationDestinationActionOutcome(
-                    content: await refreshReceiptContent(), feedbackKind: kind, feedbackText: text)
-            },
-            preferences: preferences,
-            clipboardWriter: IntegrationDestinationClipboardWriter { _ in true },
-            onContentChanged: { hostIntegrations.replace(content: $0) })
+        let integrationActions = HostIntegrationActionProvider { action in
+            guard case .clearReceiptHistory(let host) = action else {
+                return HostIntegrationMutationOutcome(
+                    state: await refreshReceiptState(), feedbackKind: .information,
+                    feedbackMessage: "Fixture host connection operation; no external host changed")
+            }
+            let result = await Task.detached {
+                receiptStore.clearReceiptHistory(host: host)
+            }.value
+            let kind: IntegrationsFeedbackKind
+            let text: IntegrationsFeedbackText
+            switch result {
+            case .success:
+                kind = .information
+                text = .localized(
+                    key: .feedbackReceiptHistoryCleared, arguments: [host.displayName])
+            case .failure(let error):
+                kind = .failure
+                text = .localized(key: .feedbackOperationFailed, arguments: [error.description])
+            }
+            return HostIntegrationMutationOutcome(
+                state: await refreshReceiptState(), feedbackKind: kind, feedbackText: text)
+        }
         let packs = root.appendingPathComponent("packs", isDirectory: true)
         let factory = root.appendingPathComponent("factory", isDirectory: true)
         for directory in [packs, factory] {
@@ -178,19 +167,10 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 profile: WorkspaceSoundProfile(selectedPack: "regression-pack", volume: 0.6))
         ]
         try JSONEncoder().encode(config).write(to: configFile, options: .atomic)
-        environment = AudioImportEnvironment(
+        let environment = AudioImportEnvironment(
             userPacksDirectory: packs, factoryPacksDirectory: factory,
             durationProbe: RegressionDurationProbe(),
             packsLockFile: root.appendingPathComponent("packs.lock"))
-        library = SoundPackLibrary(environment: environment)
-        refreshes = SoundPacksRefreshCoordinator()
-        let eventModel = PanelConfigController(
-            configFile: configFile, lockFile: root.appendingPathComponent("config.lock"),
-            environment: environment, soundPackLibrary: library,
-            soundPacksRefreshCoordinator: refreshes)
-        let editor = SoundPacksEditorOwner(
-            configFile: configFile, lockFile: root.appendingPathComponent("config.lock"),
-            environment: environment, soundPackLibrary: library, refreshCoordinator: refreshes)
         let behavior = RegressionSourceBehavior()
         sourceBehavior = behavior
         notices = EventNoticeModel(
@@ -212,11 +192,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 }
                 return EventNoticeCancellation {}
             })
-        generator = NativeRegressionGenerator(
+        let generator = NativeRegressionGenerator(
             root: root.appendingPathComponent("candidates"), facts: generationFacts)
-        let ai = AICueGenerationViewModel(
-            credentialManager: NativeRegressionCredentials(), generator: generator,
-            providerPreferences: AICueProviderPreferences(defaults: defaults))
+        self.generator = generator
         let activity = LocalActivitySummaryStore(
             summaryFile: root.appendingPathComponent("activity.json"),
             lockFile: root.appendingPathComponent("activity.lock"),
@@ -260,14 +238,47 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                     case .failure: .failure(.logClearFailed)
                     }
                 }, revealLog: { false }, copyLogPath: { false }))
+        let composition = try PanelAppComposition(
+            environment: PanelAppComposition.Environment(
+                configFile: configFile, configLockFile: root.appendingPathComponent("config.lock"),
+                audioEnvironment: environment, preferences: preferences,
+                soundScopeDefaults: defaults,
+                aiCueTemporaryRoot: root.appendingPathComponent("candidates"),
+                hostIntegrationState: integrationState, configurationSources: configurationSources,
+                integrationMatrixProvider: HostIntegrationMatrixProvider(
+                    refresh: refreshReceiptState, bootstrap: refreshReceiptState),
+                integrationActionProvider: integrationActions,
+                integrationRefreshFeedback: .localized(
+                    key: .feedbackHostStateUpdated, arguments: [])),
+            adapters: PanelAppComposition.Adapters(
+                globalHotKeys: GlobalHotKeyAdapter(
+                    register: { _ in }, unregister: { _ in }, setActionHandler: { _ in }),
+                shortcutPersistence: .userDefaults(defaults),
+                clipboardWriter: IntegrationDestinationClipboardWriter { _ in true },
+                makeAICueViewModel: { _, _ in
+                    AICueGenerationViewModel(
+                        credentialManager: NativeRegressionCredentials(), generator: generator,
+                        providerPreferences: AICueProviderPreferences(defaults: defaults))
+                },
+                makeActivityDiagnostics: { diagnostics },
+                makeAboutSettings: { _ in makeSettingsFixtureAboutSettings(for: nil) }),
+            actions: PanelAppComposition.Actions(
+                audibilityInputsChanged: {}, performGlobalShortcut: { _ in },
+                publishHostIntegrationState: { _ in nil }))
+        self.composition = composition
         fixture = SettingsPresentationFixtures.generalLogin(
             temporaryParent: root, route: .destination(.eventsAndSounds),
-            workspaceRules: config.workspaceRules, eventSettingsModel: eventModel,
-            soundPacksEditor: editor, aiCueViewModel: ai,
-            hostIntegrations: hostIntegrations, integrationsModel: integrationsModel,
+            workspaceRules: config.workspaceRules,
+            eventSettingsModel: composition.eventSettingsModel,
+            soundPacksEditor: composition.soundPacksEditorOwner,
+            aiCueViewModel: composition.aiCueViewModel,
+            hostIntegrations: composition.hostIntegrations,
+            integrationsModel: composition.integrationsModel,
             preferences: preferences,
             eventNoticeModel: notices, noticeNavigation: navigation,
-            activityDiagnostics: diagnostics, productImages: makeSettingsProductImages(),
+            activityDiagnostics: composition.activityDiagnostics,
+            globalShortcutSettings: composition.globalShortcutSettings,
+            aboutSettings: composition.aboutSettings, productImages: makeSettingsProductImages(),
             eventAnimations: eventAnimations,
             nativeEffects: SoundPacksEditorNativeEffectsDispatcher(
                 adapter: SystemSoundPacksEditorNativeEffectsAdapter()))
@@ -547,6 +558,20 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         }
         let readback: [String: Any] = [
             "revision": captureRevision,
+            "coreOwners": [
+                "preferences": fixture.preferences === composition.preferences,
+                "eventSettings": fixture.eventSettingsModel === composition.eventSettingsModel,
+                "soundScope": fixture.eventSettingsModel.soundScopeSelection
+                    === composition.soundScopeSelection,
+                "editor": fixture.soundPacksEditor === composition.soundPacksEditorOwner,
+                "aiCue": fixture.aiCueViewModel === composition.aiCueViewModel,
+                "hostIntegrations": fixture.hostIntegrations === composition.hostIntegrations,
+                "integrations": fixture.integrationsModel === composition.integrationsModel,
+                "activity": fixture.activityDiagnostics === composition.activityDiagnostics,
+                "shortcuts": fixture.globalShortcutSettings
+                    === composition.globalShortcutSettings,
+                "about": fixture.aboutSettings === composition.aboutSettings,
+            ],
             "destination": fixture.session.state.routeResolution.destination.rawValue,
             "language": preferences.language.rawValue, "reminders": notices.snapshot.totalCount,
             "eventAnimation": [

@@ -47,25 +47,34 @@ package struct SharedMasterVolumeSlider: View {
     }
 
     package var body: some View {
-        HStack(spacing: 7) {
-            Slider(
-                value: Binding(
-                    get: { session.draft },
-                    set: { value in
-                        if session.isDragging {
-                            session.drag(to: value)
-                        } else {
-                            commit(session.adjust(to: value))
-                        }
-                    }),
-                in: 0...1,
-                onEditingChanged: { editing in
-                    if editing {
-                        session.begin()
-                    } else {
-                        commit(session.end())
-                    }
-                })
+        let value = Binding(
+            get: { session.draft },
+            set: { value in
+                if session.isDragging {
+                    session.drag(to: value)
+                } else {
+                    commit(session.adjust(to: value))
+                }
+            })
+        let editingChanged: (Bool) -> Void = { editing in
+            if editing {
+                session.begin()
+            } else {
+                commit(session.end())
+            }
+        }
+        return HStack(spacing: 7) {
+            Slider(value: value, in: 0...1, onEditingChanged: editingChanged)
+                #if DEBUG
+            .onAppear {
+                SharedVolumeMountRecorder.register(
+                    identifier: accessibilityIdentifier, value: value,
+                    editingChanged: editingChanged)
+            }
+            .onDisappear {
+                SharedVolumeMountRecorder.remove(identifier: accessibilityIdentifier)
+            }
+                #endif
             Text("\(Int((session.draft * 100).rounded()))%")
                 .font(.system(size: 10.5 * typeScale, design: .monospaced))
                 .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
@@ -105,3 +114,41 @@ package struct SharedMasterVolumeSlider: View {
         }
     }
 }
+
+#if DEBUG
+/// Records the actual mounted Slider input callbacks, without another volume state or executor.
+/// Harness callers still drive SwiftUI's Binding/editing entry; lifecycle signals use the real
+/// modifiers and NotificationCenter subscription. Physical mouse/keyboard input is a separate gate.
+@MainActor
+package enum SharedVolumeMountRecorder {
+    private struct Input {
+        let value: Binding<Double>
+        let editingChanged: (Bool) -> Void
+    }
+    private static var recording = false
+    private static var inputs: [String: Input] = [:]
+
+    package static func reset() { inputs = [:]; recording = true }
+    package static func stopRecording() { inputs = [:]; recording = false }
+    fileprivate static func register(
+        identifier: String, value: Binding<Double>, editingChanged: @escaping (Bool) -> Void
+    ) {
+        guard recording else { return }
+        inputs[identifier] = Input(value: value, editingChanged: editingChanged)
+    }
+    fileprivate static func remove(identifier: String) { inputs[identifier] = nil }
+    package static func edit(_ editing: Bool, identifier: String) -> Bool {
+        guard let input = inputs[identifier] else { return false }
+        input.editingChanged(editing)
+        return true
+    }
+    package static func setValue(_ value: Double, identifier: String) -> Bool {
+        guard let input = inputs[identifier] else { return false }
+        input.value.wrappedValue = value
+        return true
+    }
+    package static func draft(identifier: String) -> Double? {
+        inputs[identifier]?.value.wrappedValue
+    }
+}
+#endif

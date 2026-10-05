@@ -14,10 +14,10 @@ import Foundation
 //
 // `main.swift` is the only file allowed top-level executable statements, so it stays a
 // thin orchestrator: shared `expect`/`suite` primitives + calls into per-area suite
-// functions defined in sibling files (`OnboardingStateSuite.swift`,
-// `OnboardingCopySuite.swift`, `OnboardingDetectorSuite.swift`,
-// `OnboardingViewModelSuite.swift`, `AudioFormatSniffSuite.swift`, `AudioImportSuite.swift`,
-// `AudioImportBatchSuite.swift`, `AudioImportViewModelSuite.swift`,
+// functions defined in sibling files (
+//
+// `AudioFormatSniffSuite.swift`, `AudioImportSuite.swift`,
+// `AudioImportBatchSuite.swift`,
 // `CoverageStateSuite.swift`, `ManifestBindingSuite.swift`,
 // `PackGallerySuite.swift`, `PackAudioInventorySuite.swift`, `PackForkSuite.swift`,
 // `PackRestoreSuite.swift`,
@@ -27,7 +27,7 @@ import Foundation
 // `ContrastHexParsingSuite.swift`,
 // `PanelTypeSizeSuite.swift`, `PanelAccessibilitySuite.swift`, `PanelConfigSuite.swift`,
 // `PanelFocusCoordinatorSuite.swift`,
-// `PreviewFixturesSuite.swift`, `OnboardingActionsSuite.swift`, `ReleaseLayoutSuite.swift`,
+// `PreviewFixturesSuite.swift`, `ReleaseLayoutSuite.swift`,
 // `MultiProviderPrototypeContractSuite.swift`,
 // `ReleaseCandidateArtifactSuite.swift`,
 // `ChatAXTracerSuite.swift`, `ChatAXTracerWiringSuite.swift`,
@@ -57,10 +57,8 @@ func suite(_ name: String, _ body: @MainActor () -> Void) {
     body()
 }
 
-/// Async overload of ``suite(_:_:)`` — for suites whose body must `await` (the
-/// `AudioImportViewModel` drop handlers became `async` so their import pipeline runs off
-/// the `@MainActor`, a T8 swift-review follow-up). Sync suites keep using the overload
-/// above; the presence/absence of `await` at the call site selects the overload.
+/// Async overload of ``suite(_:_:)`` for asynchronous core operations.
+/// The presence of `await` at the call site selects this overload.
 @MainActor
 func suite(_ name: String, _ body: @MainActor () async -> Void) async {
     print("• \(name)")
@@ -407,6 +405,64 @@ if CommandLine.arguments.contains("--senseaudio-provider") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--mounted-panel-contracts") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runPanelMountedContractSuites()
+        runPanelPresentationMountSuites()
+        print("Mounted Panel contracts: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--mounted-lifecycle-contracts") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runMountedVolumeLifecycleSuites()
+        await runSoundEditorAILifecycleSuites()
+        await runSettingsPresentationLifecycleSuites()
+        await runPanelAnnouncementSuites()
+        print("Mounted lifecycle contracts: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--shared-write-contracts") {
+    await runSharedWriteContractSuites()
+    await runMenuBarCompositionSuites()
+    await runNativeRegressionCompositionSuites()
+    runGlobalShortcutsSuites()
+    print("Shared write contracts: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--native-regression-composition") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runNativeRegressionCompositionSuites()
+        await runMenuBarCompositionSuites()
+        await runSoundEditorAILifecycleSuites()
+        print("Native regression composition: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--menu-bar-composition") {
+    await runMenuBarCompositionSuites()
+    await runNativeRegressionCompositionSuites()
+    print("Menu bar composition: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--panel-announcement") {
     await runPanelAnnouncementSuites()
     print("Panel announcement: \(totalChecks) checks, \(failures) failures")
@@ -414,6 +470,7 @@ if CommandLine.arguments.contains("--panel-announcement") {
 }
 
 if CommandLine.arguments.contains("--release-layout") {
+    runBundledHelperResourcesSuites()
     runReleaseLayoutSuites()
     print("Release layout: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
@@ -480,24 +537,19 @@ if CommandLine.arguments.contains("--settings-native-regressions") {
 let fullHarnessApplication = NSApplication.shared
 fullHarnessApplication.setActivationPolicy(.accessory)
 Task { @MainActor in
+await runPanelMountedContractSuites()
+await runMountedVolumeLifecycleSuites()
+await runSharedWriteContractSuites()
+await runNativeRegressionCompositionSuites()
+await runMenuBarCompositionSuites()
 await runReviewRepairSuites()
 await runEventAnimationIntegrationSuites()
-runOnboardingStateSuites()
 runLocalizationSuites()
 runAboutInformationSuites()
 runLoginItemManagementSuites()
-runOnboardingCopySuites()
-runOnboardingDetectorSuites()
-await runOnboardingViewModelSuites()
-await runOnboardingViewModelDetailSuites()
-await runOnboardingFailureLifecycleSuites()
-await runSetupNoticeLifecycleSuites()
-await runPanelAnnouncementLifecycleSuites()
-runOnboardingActionsSuites()
-runOnboardingActionsFixSuites()
-runSetupNoticeSuites()
 await runPanelAnnouncementSuites()
 runLocalPreRCSuites()
+runBundledHelperResourcesSuites()
 runReleaseLayoutSuites()
 runReleaseCandidateArtifactSuites()
 runReleaseSignatureSuites()
@@ -531,7 +583,6 @@ await runSenseAudioIsolationSuites()
 await runSoundEditorAILifecycleSuites()
 runAudioImportSuites()
 runAudioImportBatchSuites()
-await runAudioImportViewModelSuites()
 runCoverageStateSuites()
 await runManifestBindingSuites()
 runPackGallerySuites()

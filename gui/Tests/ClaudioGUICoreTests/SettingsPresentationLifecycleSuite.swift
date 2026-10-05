@@ -1498,10 +1498,11 @@ private func settingsMenuRequestOwnsOnlyTypedRoute(_ source: String) -> Bool {
             after: "fileprivate func requestIntegrationsSettingsPresentation(",
             in: scanned.code)
     else { return false }
-    return request.contains("host ?? integrationsModel.selectedHost ?? .claudeCode")
-        && request.contains(
-            ".route(.integrations(IntegrationsSettingsRoute(surface: selectedHost.surfaceID)))")
-        && !request.contains("integrationsModel.selectHost")
+    let compact = request.filter { !$0.isWhitespace }
+    return compact.contains("host??integrationsModel.selectedHost??.claudeCode")
+        && compact.contains(
+            ".route(.integrations(IntegrationsSettingsRoute(surface:selectedHost.surfaceID)))")
+        && !compact.contains("integrationsModel.selectHost")
 }
 
 private func settingsPlatformEffectViewWiringIsSound(events: String, activity: String) -> Bool {

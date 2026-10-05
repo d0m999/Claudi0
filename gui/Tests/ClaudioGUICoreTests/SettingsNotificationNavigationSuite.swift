@@ -68,16 +68,16 @@ func runSettingsNotificationNavigationSuites() async {
                     captureSettingsNavigation(probe, language, appearance, width, "detail")
 
                     expect(pressNavigationSegment(control, index: 0), "原生返回动作可投递")
-                    await probe.settle()
-                    expect(
-                        session.state.routeResolution.route == .destination(.notifications)
-                            && !session.animationPreview.isActive,
-                        "返回通知总览并停止预览")
                     expect(
                         session.state.navigationRestoration?.focus == .restore
                             && session.navigationHistory.current?.location.route
                                 == .destination(.notifications),
                         "返回从统一历史恢复总览与阅读位置")
+                    await probe.settle()
+                    expect(
+                        session.state.routeResolution.route == .destination(.notifications)
+                            && !session.animationPreview.isActive,
+                        "返回通知总览并停止预览")
                     expect(
                         !control.isEnabled(forSegment: 0) && control.isEnabled(forSegment: 1),
                         "返回后只能前进到刚离开的详情")

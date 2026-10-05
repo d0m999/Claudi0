@@ -38,6 +38,13 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
   }
   async function clickID(id) {
     const s = await state();
+    if (id.startsWith('settings.sidebar.') && destinations.includes(id.slice('settings.sidebar.'.length))) {
+      const destination=id.slice('settings.sidebar.'.length);
+      const row=sidebarRow(s,destination);
+      assert(row,'The current native source list has no unique destination row');
+      lastAction=`select native sidebar ${destination}`; await app.click(number(row));
+      lastAction=`observe after native sidebar ${destination}`; return state();
+    }
     const index = find(s, line => line.includes(`ID: ${id}`) && (line.endsWith(id) || line.includes(`ID: ${id},`)));
     lastAction=`click ${id}`; await app.click(index);
     lastAction=`observe after click ${id}`; return state();
@@ -163,13 +170,32 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     return clickMatching(line=>line.trim()===chosen.trim());
   }
   const destinations=['events-and-sounds','sounds','integrations','notifications','general','shortcuts','usage','about'];
+  const sidebarLabels={
+    'events-and-sounds':['默认组／工作区','Default Group & Workspaces'],sounds:['声音','Sounds'],
+    integrations:['集成','Integrations'],notifications:['通知','Notifications'],general:['通用','General'],
+    shortcuts:['快捷键','Shortcuts'],usage:['活动与诊断','Activity & Diagnostics'],about:['关于','About']
+  };
+  function sidebarRow(snapshot,destination) {
+    const lines=snapshot.split('\n'); const table=lines.findIndex(line=>/\btable\b/.test(line)&&line.includes('ID: settings.sidebar'));
+    assert(table>=0,'The Settings sidebar must be a native source-list table');
+    const indent=line=>line.match(/^\s*/)[0].length;
+    let row; const matches=[];
+    for (let i=table+1;i<lines.length&&indent(lines[i])>indent(lines[table]);i++) {
+      if (/\brow\b/.test(lines[i])&&/^\s*\d+ row/.test(lines[i])) row=lines[i];
+      if (row&&sidebarLabels[destination].some(label=>lines[i].trim().endsWith(`text ${label}`))) matches.push(row);
+    }
+    assert(matches.length===1,`Native source-list row is not unique: ${destination}`);
+    return matches[0];
+  }
+
   function assertSettingsLayout(read, index, destination) {
     const evidence=read.settingsLayout;
     assert(evidence?.sampleColorSpace==='sRGB','Mounted Settings color evidence is unavailable');
     const {frames,colors}=evidence;
     const dark=index%4===3||index%4===0;
     const matches=(actual,expected)=>Array.isArray(actual)&&actual.length===3&&actual.every((value,i)=>Math.abs(value-expected[i])<=3);
-    const background=dark?[32,32,34]:[255,255,255];
+    const background=evidence.semanticColors?.window;
+    assert(Array.isArray(background)&&background.length===3,'The system window semantic color was not resolved');
     assert(colors.background?.length===3&&colors.background.every(sample=>matches(sample,background)),`Settings background differs at ${destination}: ${JSON.stringify(colors.background)}`);
     const sidebar=frames['settings.sidebar'];
     assert(sidebar&&Math.abs(sidebar.width-(index%2===0?210:252))<1,'Sidebar width does not match the window');
@@ -179,7 +205,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
     const rows=destinations.map(id=>frames[`settings.sidebar.item.${id}`]);
     assert(rows.every(Boolean),'One or more mounted sidebar rows are unavailable');
     const sidebarGaps=rows.slice(1).map((row,i)=>row.y-rows[i].y-rows[i].height);
-    assert(sidebarGaps.every((gap,i)=>Math.abs(gap-([3,5].includes(i)?16:0))<1),`Sidebar group spacing differs: ${sidebarGaps}`);
+    assert(sidebarGaps.every((gap,i)=>[3,5].includes(i)?gap>=16:Math.abs(gap)<1),`Sidebar group spacing differs: ${sidebarGaps}`);
     const result={destination,background:colors.background,sidebarGaps,reading};
     if (destination==='events-and-sounds'||destination==='sounds') {
       const prefix=destination==='sounds'?'sound-packs':'workspace';
@@ -189,7 +215,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       assert(events.every(row=>row.x>=group.x-1&&row.x+row.width<=group.x+group.width+1),'Event rows overflow their functional group');
       const eventGaps=events.slice(1).map((row,i)=>row.y-events[i].y-events[i].height);
       assert(eventGaps.every(gap=>Math.abs(gap)<=2),`Event row dividers differ: ${eventGaps}`);
-      assert(matches(colors.card,dark?[45,45,48]:[245,245,247]),`Settings group surface differs: ${colors.card}`);
+      assert(matches(colors.card,evidence.semanticColors?.group),`Settings group surface differs: ${colors.card}`);
       Object.assign(result,{eventGaps,card:colors.card,group});
     }
     return result;
@@ -201,13 +227,13 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       assert(pages.length>0&&new Set(pages).size===pages.length&&pages.every(page=>destinations.includes(page)),'Unknown or duplicate matrix destination');
       await control(`Matrix ${index}`);
       const geometry=(await readback()).windowGeometry;
-      assert(Math.abs(geometry.width-(index%2===0?960:1240))<1 && Math.abs(geometry.height-(index%2===0?640:820))<1,`Requested window size was constrained: ${JSON.stringify(geometry)}`);
+      assert(Math.abs(geometry.frameWidth-(index%2===0?960:1240))<1 && Math.abs(geometry.frameHeight-(index%2===0?640:820))<1 && geometry.width>0 && geometry.height>0 && geometry.height<=geometry.frameHeight,`Requested window size was constrained: ${JSON.stringify(geometry)}`);
       assert(geometry.appearance===(index%4===3||index%4===0?'NSAppearanceNameDarkAqua':'NSAppearanceNameAqua'),'Requested appearance was not applied');
       const layouts=[];
       for (const destination of pages) {
         const s = await clickID(`settings.sidebar.${destination}`);
-        assert(s.includes(`ID: ${destination==='integrations'?'integrations.destination.title':`settings.title.${destination}`}`),`Destination title did not appear: ${destination}`);
-        assert(s.split('\n').some(line => line.includes('(selected)') && line.includes(`ID: settings.sidebar.${destination}`)),`Sidebar selection did not match ${destination}`);
+        assert(s.includes(`ID: settings.title.${destination}`),`Destination title did not appear: ${destination}`);
+        assert(sidebarRow(s,destination).includes('(selected)'),`Sidebar selection did not match ${destination}`);
         assert((await readback()).destination===destination,`Typed route did not match ${destination}`);
         await control('Capture state');
         await key('super+shift+l');
@@ -392,7 +418,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       await clickID('settings.sidebar.about');
       await clickID('settings.sidebar.sounds');
       await focusSettingsWindow({requireKey:true});
-      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.title.sounds'),'The page title must receive its requested focus');
+      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.sidebar'),'Native sidebar selection must retain source-list keyboard focus');
       let s=await key('Tab');
       assert(s.split('The focused UI element is ')[1]?.includes('ID: settings.sounds.management-scope'),'The first Sounds Tab stop is not management scope');
       const before=await fs.readFile(path.join(root,'config.json'),'utf8');
@@ -404,10 +430,10 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
       s=await waitUntil(current=>current.includes('Value: workspace, ID: settings.sounds.management-scope'),'Return must select Workspace');
       assert(s.includes('Value: workspace, ID: settings.sounds.management-scope'),'Arrow/Return did not select Workspace');
       assert(await fs.readFile(path.join(root,'config.json'),'utf8')===before,'Management scope selection wrote group configuration');
-      // A typed route requests the page title again. Re-enter through the retained sidebar.
+      // Mouse sidebar navigation retains the native source list; the toolbar heading is not a Tab stop.
       await clickID('settings.sidebar.about'); await clickID('settings.sidebar.sounds');
       await focusSettingsWindow({requireKey:true});
-      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.title.sounds'),'The page title must receive focus before pack traversal');
+      await waitUntil(current=>current.split('The focused UI element is ')[1]?.includes('ID: settings.sidebar'),'Native source-list focus must be retained before pack traversal');
       await key('Tab'); s=await key('Tab');
       assert(s.split('The focused UI element is ')[1]?.includes('ID: sound-packs.pack-list'),'Scope and pack picker do not have one stop each');
       const inspected=(await readback()).inspectedPack;

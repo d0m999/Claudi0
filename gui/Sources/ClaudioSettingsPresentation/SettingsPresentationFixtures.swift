@@ -85,6 +85,12 @@ package final class SettingsPresentationFixture: ObservableObject {
 
     package var preferences: ClaudioPreferences { session.dependencies.preferences }
 
+    package var globalShortcutSettings: GlobalShortcutSettingsModel {
+        session.dependencies.globalShortcutSettings
+    }
+
+    package var aboutSettings: AboutSettingsModel { session.dependencies.aboutSettings }
+
     package var eventSettingsSelection: EventSettingsWindowSelection {
         session.eventSettingsSelection
     }
@@ -146,6 +152,8 @@ package enum SettingsPresentationFixtures {
         eventNoticeModel: EventNoticeModel? = nil,
         noticeNavigation: SessionNavigationCoordinator? = nil,
         activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil,
+        globalShortcutSettings injectedGlobalShortcutSettings: GlobalShortcutSettingsModel? = nil,
+        aboutSettings injectedAboutSettings: AboutSettingsModel? = nil,
         productImages: SettingsProductImages = .empty,
         eventAnimations: EventAnimationResources? = nil,
         nativeEffects injectedNativeEffects: SoundPacksEditorNativeEffectsDispatcher? = nil
@@ -275,9 +283,11 @@ package enum SettingsPresentationFixtures {
         let activityDiagnostics =
             injectedActivityDiagnostics
             ?? makeSettingsFixtureActivityDiagnostics(for: experienceProfile)
-        let globalShortcutSettings = makeSettingsFixtureShortcutSettings(
-            for: experienceProfile)
-        let aboutSettings = makeSettingsFixtureAboutSettings(for: experienceProfile)
+        let globalShortcutSettings =
+            injectedGlobalShortcutSettings
+            ?? makeSettingsFixtureShortcutSettings(for: experienceProfile)
+        let aboutSettings =
+            injectedAboutSettings ?? makeSettingsFixtureAboutSettings(for: experienceProfile)
         let integrationOutcome = IntegrationDestinationActionOutcome(
             content: hostIntegrations.content,
             feedbackKind: .success,
@@ -592,7 +602,7 @@ private func makeSettingsFixtureShortcutSettings(
 }
 
 @MainActor
-private func makeSettingsFixtureAboutSettings(
+package func makeSettingsFixtureAboutSettings(
     for profile: PreviewFixtures.SettingsExperienceProfile?
 ) -> AboutSettingsModel {
     let state = profile?.about ?? .ready

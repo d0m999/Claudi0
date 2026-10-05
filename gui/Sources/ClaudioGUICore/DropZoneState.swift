@@ -1,21 +1,5 @@
 import Foundation
 
-/// The drop-zone's UI state (ENGINEERING.md T8 · "拖入导入" 交互状态覆盖表 + DoD "拖入
-/// idle/hover/reject×3/success"): idle (nothing happening) / hover (a drag is currently
-/// over the zone) / reject (the last drop failed, carrying its specific reason) /
-/// success (the last drop copied a file into the user pack).
-///
-/// A **pure value type** — the SwiftUI view renders off of it, but every state
-/// *decision* lives in ``importAudioFile(sourceURL:suggestedFileName:packID:environment:)``
-/// / ``AudioImportViewModel``, asserted by fixture tests, per the DoD requirement "状态
-/// 正确性下沉 view-model / state fixture 测，非像素快照".
-public enum DropZoneState: Sendable, Equatable {
-    case idle
-    case hover
-    case reject(DropRejectionReason)
-    case success(ImportedAudioFile)
-}
-
 /// Why a drop was refused. The first five cases are T8's five named hardening checks
 /// (ENGINEERING.md T8 acceptance: "oversize / nonWhitelistFormat / pathTraversal /
 /// overDuration / builtinReadOnly each trigger the correct human refusal"); ``copyFailed``

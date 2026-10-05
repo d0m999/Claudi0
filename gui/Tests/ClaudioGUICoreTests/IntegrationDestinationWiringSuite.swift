@@ -8,24 +8,30 @@ private func integrationDestinationSource(_ relativePath: String) -> String? {
 
 @MainActor
 func runIntegrationDestinationWiringSuites() {
-    suite("集成 destination executable wiring：系统 adapter 与唯一 composition 留在 ClaudioGUI") {
+    suite("集成 destination executable wiring：系统 adapter 留在 ClaudioGUI，核心 owner 由唯一组合根持有") {
         guard
             let menu = integrationDestinationSource(
-                "gui/Sources/ClaudioGUI/MenuBarController.swift")
+                "gui/Sources/ClaudioGUI/MenuBarController.swift"),
+            let composition = integrationDestinationSource(
+                "gui/Sources/ClaudioGUICore/PanelAppComposition.swift")
         else {
             expect(false, "缺少 MenuBar composition source")
             return
         }
         let stripped = strippingComments(menu)
-        expect(stripped.unmodeledConstructs.isEmpty, "MenuBar source scanner 必须完成解析")
-        let code = stripped.codeWithoutStringLiterals
+        let composed = strippingComments(composition)
         expect(
-            code.components(separatedBy: "IntegrationDestinationModel(").count - 1 == 1
-                && code.contains("IntegrationDestinationRefreshHandler")
-                && code.contains("IntegrationDestinationActionHandler")
-                && code.contains("HostIntegrationPresentationStore")
+            stripped.unmodeledConstructs.isEmpty && composed.unmodeledConstructs.isEmpty,
+            "MenuBar 与核心组合根 source scanner 必须完成解析")
+        let code = stripped.codeWithoutStringLiterals
+        let composedCode = composed.codeWithoutStringLiterals
+        expect(
+            composedCode.components(separatedBy: "IntegrationDestinationModel(").count - 1 == 1
+                && code.components(separatedBy: "PanelAppComposition(").count - 1 == 1
+                && !code.contains("IntegrationDestinationModel(")
+                && code.contains("IntegrationDestinationClipboardAdapter.system")
                 && !code.contains("IntegrationsWindowController"),
-            "executable 必须只组合一个 Integration model/manager adapter，且不得恢复第二窗口")
+            "唯一构造与系统 adapter 普查保留；refresh/action 和 store 发布由组合行为检查保护")
         expect(
             menu.contains("ClaudioPaths.claudeSettingsFile.path")
                 && menu.contains("ClaudioPaths.codexHooksFile.path")

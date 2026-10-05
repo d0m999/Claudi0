@@ -2151,7 +2151,9 @@ func runSoundPacksRefreshSuites() async {
                 "gui/Sources/ClaudioGUICore/SoundPacksWindowAccessibility.swift"),
             let gallery = soundPacksCode(
                 "gui/Sources/SoundPacksWindow/SoundPacksWindowStateGalleryView.swift"),
-            let menu = soundPacksCode("gui/Sources/ClaudioGUI/MenuBarController.swift")
+            let menu = soundPacksCode("gui/Sources/ClaudioGUI/MenuBarController.swift"),
+            let composition = soundPacksCode(
+                "gui/Sources/ClaudioGUICore/PanelAppComposition.swift")
         else {
             expect(
                 false,
@@ -2256,7 +2258,9 @@ func runSoundPacksRefreshSuites() async {
                 && owner.contains("private let model: SoundPacksWindowModel")
                 && !owner.contains("public let model: SoundPacksWindowModel")
                 && !owner.contains("public let userPacksDirectory: URL")
-                && menu.components(separatedBy: "SoundPacksEditorOwner(").count - 1 == 1,
+                && composition.components(separatedBy: "SoundPacksEditorOwner(").count - 1 == 1
+                && !menu.contains("SoundPacksEditorOwner(")
+                && menu.contains("let soundPacksEditorOwner = composition.soundPacksEditorOwner"),
             "package-local owner 必须隐藏 raw model/directory，并保持 production 唯一可写来源")
         expect(
             !owner.contains("public func apply(")
@@ -2284,17 +2288,13 @@ func runSoundPacksRefreshSuites() async {
 
         let panelFlat = collapsingWhitespace(panel)
         expect(
-            panelFlat.contains("Button(action: onOpenSettings)")
-                && panelFlat.contains(".focused($focusedTarget, equals: .headerSettings)"),
-            "Panel 设置入口必须通过统一 session action，并认领 headerSettings 焦点")
+            panelFlat.contains(".focused($focusedTarget, equals: .headerSettings)"),
+            "设置入口的焦点归还接线仍保留；实际 AX 身份与动作由挂载回归保护")
         expect(
             !panel.contains(
                 "NSWorkspace.shared.activateFileViewerSelecting([audioEnvironment.userPacksDirectory])"
             ),
             "T7 的 Finder 中间态必须被真窗口替换")
-        expect(
-            panel.contains("accessibilityIdentifier(\"panel.settings\")"),
-            "打开设置必须认领稳定的 Panel AX identifier")
         expect(
             requestBody.contains(
                 "request: .eventShortcut(route)")

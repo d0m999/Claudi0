@@ -852,7 +852,7 @@ func withTempDirectory<T>(_ body: (URL) throws -> T) rethrows -> T {
 }
 
 /// Async overload of ``withTempDirectory(_:)`` — identical setup/teardown, but for suites
-/// whose body must `await` (the `AudioImportViewModel` drop handlers are `async`, T8). The
+/// whose body awaits asynchronous core operations. The
 /// sync overload above stays for every non-async suite; an async closure at the call site
 /// selects this one.
 @MainActor

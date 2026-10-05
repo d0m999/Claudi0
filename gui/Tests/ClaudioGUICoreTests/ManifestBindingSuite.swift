@@ -793,26 +793,21 @@ func runManifestBindingSuites() async {
 
     // MARK: - import → bind, wired end to end
 
-    await suite("AudioImportViewModel + bindEventToManifest: a successful drop imports AND binds to the event") {
-        await withTempDirectory { root in
+    suite("importAudioFiles + bindEventToManifest: a successful import binds to the event") {
+        withTempDirectory { root in
             let userPacks = root.appendingPathComponent("packs")
             writeFixture(
                 #"{ "id": "my-pack", "events": {} }"#,
                 to: userPacks.appendingPathComponent("my-pack/manifest.json"))
             let environment = makeEnvironment(userPacksDirectory: userPacks)
-            let importViewModel = AudioImportViewModel(packID: "my-pack", environment: environment)
 
             let sourceURL = root.appendingPathComponent("source/chime.wav")
             writeFixture(validWAVData(), to: sourceURL)
-            let dropResult = await importViewModel.handleDrop(
-                requests: [
+            let dropResult = importAudioFiles(
+                [
                     AudioImportRequest(sourceURL: sourceURL, suggestedFileName: "chime.wav")
-                ])
+                ], packID: "my-pack", environment: environment)
 
-            guard case .success = importViewModel.state else {
-                expect(false, "expected the import itself to succeed, got \(importViewModel.state)")
-                return
-            }
             guard let file = dropResult.accepted.first else {
                 expect(false, "expected the drop to accept the file")
                 return

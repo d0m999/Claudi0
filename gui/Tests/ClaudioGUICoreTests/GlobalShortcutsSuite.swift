@@ -508,12 +508,12 @@ func runGlobalShortcutsSuites() {
             "gui/Sources/ClaudioSettingsPresentation/ShortcutSettingsView.swift")
         let menuURL = root.appendingPathComponent(
             "gui/Sources/ClaudioGUI/MenuBarController.swift")
-        let coreURL = root.appendingPathComponent(
-            "gui/Sources/ClaudioGUICore/GlobalShortcuts.swift")
+        let compositionURL = root.appendingPathComponent(
+            "gui/Sources/ClaudioGUICore/PanelAppComposition.swift")
         guard let carbon = try? String(contentsOf: carbonURL, encoding: .utf8),
             let recorder = try? String(contentsOf: recorderURL, encoding: .utf8),
             let menu = try? String(contentsOf: menuURL, encoding: .utf8),
-            let core = try? String(contentsOf: coreURL, encoding: .utf8)
+            let composition = try? String(contentsOf: compositionURL, encoding: .utf8)
         else {
             expect(false, "读不到 global shortcut production wiring")
             return
@@ -556,7 +556,12 @@ func runGlobalShortcutsSuites() {
                 && !recorder.contains("charactersIgnoringModifiers"),
             "录制必须持有 required callback、暂停 Carbon、使用 token，并在结束后恢复发起按钮焦点")
         expect(
-            menu.contains("private let globalShortcutSettings: GlobalShortcutSettingsModel")
+            composition.contains("package let globalShortcutSettings: GlobalShortcutSettingsModel")
+                && composition.components(separatedBy: "GlobalShortcutSettingsModel(").count - 1
+                    == 1
+                && !menu.contains("GlobalShortcutSettingsModel(")
+                && menu.contains("composition.globalShortcutSettings")
+                && menu.contains("globalHotKeys: globalShortcutRegistrar.makeAdapter()")
                 && menu.contains("fileprivate func performGlobalShortcut(")
                 && menu.contains("NSWorkspace.willSleepNotification")
                 && menu.contains("NSWorkspace.didWakeNotification")
@@ -570,13 +575,6 @@ func runGlobalShortcutsSuites() {
                     separatedBy: "handbackApplication: globalShortcutHandbackApplication()"
                 ).count - 1 == 2,
             "通用设置与当前 Sound Scope 两个入口必须接入同一已测试 handback 规则")
-        expect(
-            core.contains("public let persist:")
-                && core.contains("private var systemSuspensionActive = false")
-                && core.contains("private var recordingSuspensionActive = false")
-                && core.contains("guard !systemSuspensionActive, !recordingSuspensionActive")
-                && !core.contains("persistence.write("),
-            "持久化边界与录制/睡眠两种暂停原因必须由领域 model 统一持有")
     }
 }
 

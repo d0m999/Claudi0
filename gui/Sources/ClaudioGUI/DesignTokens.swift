@@ -134,19 +134,6 @@ enum ClaudioColor {
     }
 }
 
-/// Maps an ``OnboardingAccent`` (from `ClaudioGUICore`, a Foundation-only semantic token
-/// name) to its actual `Color`, per-`ColorScheme` — the one place `OnboardingAccent`
-/// meets an actual pixel value, kept out of `ClaudioGUICore` so that module never needs
-/// to import SwiftUI (see `gui/Package.swift`'s target-layout note).
-func stateAccentColor(_ accent: OnboardingAccent, _ scheme: ColorScheme) -> Color {
-    switch accent {
-    case .neutral: ClaudioColor.textSecondary(scheme)
-    case .error: ClaudioColor.error(scheme)
-    case .brand: ClaudioColor.clay(scheme)
-    case .success: ClaudioColor.success(scheme)
-    }
-}
-
 // MARK: - T16: per-event color + glyph tokens
 //
 // 同上：值全部来自 ``ClaudioColorHex``（DESIGN.md「五事件语义色」表的唯一真相源），

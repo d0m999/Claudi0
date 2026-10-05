@@ -70,25 +70,31 @@ extension PanelHandbackApplication {
 /// Both native surfaces borrow keyboard focus without activating the app or reordering its peers.
 @MainActor
 final class MenuBarController: NSObject {
+    private let composition: PanelAppComposition
     private let statusItem: NSStatusItem
     private let panelWindow: MenuBarPanel
     private let hostingController: NSHostingController<PanelView>
-    private let soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator
-    private let soundPackLibrary: SoundPackLibrary
+    private var soundPacksRefreshCoordinator: SoundPacksRefreshCoordinator {
+        composition.soundPacksRefreshCoordinator
+    }
+    private var soundPackLibrary: SoundPackLibrary { composition.soundPackLibrary }
     private let settingsWindowController: SettingsWindowController
-    private let eventSettingsModel: PanelConfigController
+    private var eventSettingsModel: PanelConfigController { composition.eventSettingsModel }
     /// C1：app 生命周期声音作用域选择的唯一事实 —— 面板、设置窗口与全局快捷键共享同一个
     /// owner（注入 `eventSettingsModel`，并直接传给 `PanelView`）。持久化字节仍在
     /// `panelSoundScopeDefaultsKey`，但读写只经这个 owner。
-    private let soundScopeSelection: SoundScopeSelection
+    private var soundScopeSelection: SoundScopeSelection { composition.soundScopeSelection }
     private let globalShortcutRegistrar: CarbonGlobalShortcutRegistrar
-    private let globalShortcutSettings: GlobalShortcutSettingsModel
-    private let languageStore: ClaudioPreferences
-    private let integrationsModel: IntegrationDestinationModel
+    private var globalShortcutSettings: GlobalShortcutSettingsModel {
+        composition.globalShortcutSettings
+    }
+    private var languageStore: ClaudioPreferences { composition.preferences }
+    private var integrationsModel: IntegrationDestinationModel { composition.integrationsModel }
     private let actionRouter: MenuBarActionRouter
-    private let hostIntegrations: HostIntegrationPresentationStore
-    private let hostIntegrationMatrixProvider: HostIntegrationMatrixProvider
-    private let bootstrapReports: BootstrapReportPresentationStore
+    private var hostIntegrations: HostIntegrationPresentationStore { composition.hostIntegrations }
+    private var hostIntegrationMatrixProvider: HostIntegrationMatrixProvider {
+        composition.integrationMatrixProvider
+    }
     private let dynamicQuietObserver: DynamicQuietSystemObserver
     private let eventNoticeRuntime: EventNoticeRuntime
     private let eventNoticeWindowController: EventNoticeWindowController
@@ -123,92 +129,64 @@ final class MenuBarController: NSObject {
         integrationMatrixProvider: HostIntegrationMatrixProvider,
         integrationActionProvider: HostIntegrationActionProvider
     ) {
-        let languageStore = preferences
-        let soundPacksRefreshCoordinator = SoundPacksRefreshCoordinator()
         var audioEnvironment = audioEnvironment
         audioEnvironment.systemSoundSelectionAllowed = {
             installedHelperMatchesBundledRuntime(bundledHelper: bundledHelper)
         }
-        let soundPackLibrary = SoundPackLibrary(environment: audioEnvironment)
-        let soundPacksEditorOwner = SoundPacksEditorOwner(
-            configFile: ClaudioPaths.configFile,
-            environment: audioEnvironment,
-            soundPackLibrary: soundPackLibrary,
-            refreshCoordinator: soundPacksRefreshCoordinator)
         let actionRouter = MenuBarActionRouter()
-        let hostIntegrations = HostIntegrationPresentationStore(
-            state: hostIntegrationState,
-            configurationSources: [
-                .claudeCode: ClaudioPaths.claudeSettingsFile.path,
-                .codex: ClaudioPaths.codexHooksFile.path,
-                .workBuddy: ClaudioPaths.workBuddySettingsFile.path,
-            ])
-        let bootstrapReports = BootstrapReportPresentationStore()
-        let integrationsModel = IntegrationDestinationModel(
-            content: hostIntegrations.content,
-            refreshHandler: IntegrationDestinationRefreshHandler {
-                [weak actionRouter, weak hostIntegrations] in
-                let state = try await integrationMatrixProvider()
-                guard let hostIntegrations else {
-                    throw HostIntegrationPresentationError.storeUnavailable
-                }
-                let content =
-                    actionRouter?.publishHostIntegrationState(state)
-                    ?? hostIntegrations.replace(state: state)
-                return IntegrationDestinationActionOutcome(
-                    content: content,
-                    feedbackKind: .information,
-                    feedbackText: .localized(key: .feedbackRedetectedSources, arguments: []))
-            },
-            actionHandler: IntegrationDestinationActionHandler {
-                [weak actionRouter, weak hostIntegrations] action in
-                let managerOutcome = try await integrationActionProvider(action)
-                guard let hostIntegrations else {
-                    throw HostIntegrationPresentationError.storeUnavailable
-                }
-                let content =
-                    actionRouter?.publishHostIntegrationState(managerOutcome.state)
-                    ?? hostIntegrations.replace(state: managerOutcome.state)
-                return IntegrationDestinationActionOutcome(
-                    content: content,
-                    feedbackKind: managerOutcome.feedbackKind,
-                    feedbackText: managerOutcome.feedbackText)
-            },
-            preferences: languageStore,
-            clipboardWriter: IntegrationDestinationClipboardAdapter.system,
-            onContentChanged: { [weak hostIntegrations] content in
-                hostIntegrations?.replace(content: content)
-            })
-        let soundScopeSelection = SoundScopeSelection(defaults: .standard)
-        let eventSettingsModel = makeEventSettingsConfigController(
-            configFile: ClaudioPaths.configFile,
-            environment: audioEnvironment,
-            soundPackLibrary: soundPackLibrary,
-            bundledHelper: bundledHelper,
-            soundPacksRefreshCoordinator: soundPacksRefreshCoordinator,
-            soundScopeSelection: soundScopeSelection,
-            afterFullReload: { [weak actionRouter] _ in
-                actionRouter?.audibilityInputsChanged()
-            })
         let globalShortcutRegistrar = CarbonGlobalShortcutRegistrar()
-        let globalShortcutSettings = GlobalShortcutSettingsModel(
-            adapter: globalShortcutRegistrar.makeAdapter(),
-            persistence: .userDefaults(),
-            actionHandler: { [weak actionRouter] action in
-                actionRouter?.performGlobalShortcut(action)
-            })
-        let aiCueTemporaryRoot = ClaudioPaths.root.appendingPathComponent(
-            "ai-cue-temporary",
-            isDirectory: true)
-        let aiCueRuntime = try! AICueRuntime(
-            vault: AICueAppCredentialVault(),
-            temporaryRoot: aiCueTemporaryRoot,
-            durationProbe: audioEnvironment.durationProbe)
-        let aiCueViewModel = AICueGenerationViewModel(
-            credentialManager: aiCueRuntime.credentialManager,
-            generator: aiCueRuntime.dispatcher,
-            registry: aiCueRuntime.registry,
-            providerPreferences: aiCueRuntime.providerPreferences)
+        let composition = try! PanelAppComposition(
+            environment: PanelAppComposition.Environment(
+                configFile: ClaudioPaths.configFile,
+                configLockFile: ClaudioPaths.configLockFile,
+                audioEnvironment: audioEnvironment,
+                preferences: preferences,
+                soundScopeDefaults: .standard,
+                aiCueTemporaryRoot: ClaudioPaths.root.appendingPathComponent(
+                    "ai-cue-temporary", isDirectory: true),
+                hostIntegrationState: hostIntegrationState,
+                configurationSources: [
+                    .claudeCode: ClaudioPaths.claudeSettingsFile.path,
+                    .codex: ClaudioPaths.codexHooksFile.path,
+                    .workBuddy: ClaudioPaths.workBuddySettingsFile.path,
+                ],
+                integrationMatrixProvider: integrationMatrixProvider,
+                integrationActionProvider: integrationActionProvider),
+            adapters: PanelAppComposition.Adapters(
+                globalHotKeys: globalShortcutRegistrar.makeAdapter(),
+                shortcutPersistence: .userDefaults(),
+                clipboardWriter: IntegrationDestinationClipboardAdapter.system,
+                makeAICueViewModel: { temporaryRoot, durationProbe in
+                    let runtime = try AICueRuntime(
+                        vault: AICueAppCredentialVault(),
+                        temporaryRoot: temporaryRoot,
+                        durationProbe: durationProbe)
+                    return AICueGenerationViewModel(
+                        credentialManager: runtime.credentialManager,
+                        generator: runtime.dispatcher,
+                        registry: runtime.registry,
+                        providerPreferences: runtime.providerPreferences)
+                },
+                makeActivityDiagnostics: makeActivityDiagnosticsModel,
+                makeAboutSettings: { makeSystemAboutSettingsModel(surfaceFacts: $0) }),
+            actions: PanelAppComposition.Actions(
+                audibilityInputsChanged: { [weak actionRouter] in
+                    actionRouter?.audibilityInputsChanged()
+                },
+                performGlobalShortcut: { [weak actionRouter] in
+                    actionRouter?.performGlobalShortcut($0)
+                },
+                publishHostIntegrationState: { [weak actionRouter] in
+                    actionRouter?.publishHostIntegrationState($0)
+                }))
+        let languageStore = composition.preferences
+        let soundPacksEditorOwner = composition.soundPacksEditorOwner
+        let soundScopeSelection = composition.soundScopeSelection
+        let eventSettingsModel = composition.eventSettingsModel
+        let globalShortcutSettings = composition.globalShortcutSettings
+        let hostIntegrations = composition.hostIntegrations
+        let integrationsModel = composition.integrationsModel
+        let aiCueViewModel = composition.aiCueViewModel
         let dynamicQuietObserver = DynamicQuietSystemObserver()
         let eventNoticeRuntime = EventNoticeRuntime()
         let eventAnimations = makeEventAnimationResources()
@@ -233,7 +211,7 @@ final class MenuBarController: NSObject {
             onWillBecomeInteractive: { [weak actionRouter] in
                 actionRouter?.closeSettingsForEventNoticeInteraction()
             })
-        let activityDiagnostics = makeActivityDiagnosticsModel()
+        let activityDiagnostics = composition.activityDiagnostics
         let soundPacksEditorNativeEffects = SoundPacksEditorNativeEffectsDispatcher(
             adapter: SystemSoundPacksEditorNativeEffectsAdapter())
         let settingsPresentationSession = SettingsPresentationSession(
@@ -243,8 +221,7 @@ final class MenuBarController: NSObject {
                 dynamicQuietPolicy: dynamicQuietObserver.policy,
                 activityDiagnostics: activityDiagnostics,
                 globalShortcutSettings: globalShortcutSettings,
-                aboutSettings: makeSystemAboutSettingsModel(
-                    surfaceFacts: hostIntegrations.safeSurfaceFacts),
+                aboutSettings: composition.aboutSettings,
                 soundPacksEditorOwner: soundPacksEditorOwner,
                 soundPacksEditorNativeEffects: soundPacksEditorNativeEffects,
                 eventSettingsModel: eventSettingsModel,
@@ -322,19 +299,10 @@ final class MenuBarController: NSObject {
 
         panelWindow.contentViewController = hostingController
         self.panelWindow = panelWindow
-        self.soundPacksRefreshCoordinator = soundPacksRefreshCoordinator
-        self.soundPackLibrary = soundPackLibrary
+        self.composition = composition
         self.settingsWindowController = settingsWindowController
-        self.eventSettingsModel = eventSettingsModel
-        self.soundScopeSelection = soundScopeSelection
         self.globalShortcutRegistrar = globalShortcutRegistrar
-        self.globalShortcutSettings = globalShortcutSettings
-        self.languageStore = languageStore
-        self.integrationsModel = integrationsModel
         self.actionRouter = actionRouter
-        self.hostIntegrations = hostIntegrations
-        self.hostIntegrationMatrixProvider = integrationMatrixProvider
-        self.bootstrapReports = bootstrapReports
         self.dynamicQuietObserver = dynamicQuietObserver
         self.eventNoticeRuntime = eventNoticeRuntime
         self.eventNoticeWindowController = eventNoticeWindowController
@@ -504,7 +472,6 @@ final class MenuBarController: NSObject {
                 // opening the Panel while bootstrap is in flight cancels this task and starts a
                 // newer refresh, but cancellation must not discard the completed disk mutation.
                 if bootstrapSharedRuntime {
-                    self?.bootstrapReports.reload()
                     self?.soundPackLibrary.invalidate(packIDs: [])
                     self?.soundPacksRefreshCoordinator.completeSharedRuntimeBootstrap()
                 }
@@ -640,7 +607,8 @@ final class MenuBarController: NSObject {
     ) {
         let selectedHost = host ?? integrationsModel.selectedHost ?? .claudeCode
         requestSettingsPresentation(
-            request: .route(.integrations(IntegrationsSettingsRoute(surface: selectedHost.surfaceID))),
+            request: .route(
+                .integrations(IntegrationsSettingsRoute(surface: selectedHost.surfaceID))),
             returnFocusTo: target)
     }
 

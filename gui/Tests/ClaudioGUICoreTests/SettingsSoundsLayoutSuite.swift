@@ -698,9 +698,17 @@ final class SettingsSoundsNativeLayoutProbe {
         }
     }
 
-    /// Inspect all drawn text, arrow and background pixels without depending on glyph positions.
-    /// The inset excludes the system focus ring, which remains allowed to use the accent color.
+    /// Inspect the resting text, arrow and body. The system focus ring may use the accent color
+    /// and can extend inside a popup's AX frame on newer macOS; sample without that ring, then
+    /// restore the exact responder. Thresholds still reject an accent-colored control body.
     func controlColorFractions(in frame: CGRect) -> (neutral: Double, accentBlue: Double)? {
+        let responder = window.firstResponder
+        window.makeFirstResponder(nil)
+        refresh()
+        defer {
+            window.makeFirstResponder(responder)
+            refresh()
+        }
         guard let bitmap = renderedBitmap()?.converting(to: .sRGB, renderingIntent: .default)
         else { return nil }
         let scaleX = CGFloat(bitmap.pixelsWide) / hostingView.bounds.width

@@ -444,7 +444,7 @@ public final class PanelConfigController: ObservableObject {
             configFile: configFile, lockFile: lockFile)
         self.soundPacksRefreshCoordinator = soundPacksRefreshCoordinator
         self.afterFullReload = afterFullReload
-        // C1：生产经 `makeEventSettingsConfigController` 注入 app 生命周期 owner；nil 只发生在
+        // C1：生产经 `PanelAppComposition` 注入 app 生命周期 owner；nil 只发生在
         // 测试 / 预览，落一个绝不碰 `.standard` 的隔离 fixture owner。
         self.soundScopeSelection =
             soundScopeSelection ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())

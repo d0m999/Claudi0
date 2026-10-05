@@ -1,13 +1,9 @@
 import ClaudioCore
 import Foundation
 
-/// 面板内稳定可聚焦控件身份。旧来源卡、事件编辑按钮、包卡和“管理声音包”不再属于
-/// 生产面板的焦点空间；保留的 legacy cases 只供已拆出的可复用旧组件/State Gallery 编译。
+/// 面板内稳定可聚焦控件身份。来源卡、包卡和“管理声音包”不属于
+/// 生产面板的焦点空间；兼容身份只供可复用声音包组件/State Gallery 编译。
 public enum PanelFocusTarget: Sendable, Hashable {
-    case onboardingPrimaryAction
-    case onboardingSecondaryAction
-    case revealDetail
-    case disconnect
 
     case headerSettings
     case recentNotices
@@ -34,8 +30,6 @@ public enum PanelFocusTarget: Sendable, Hashable {
 
     // 非生产面板兼容身份。`PanelView` 与 `panelFocusOrder` 均不会生成它们。
     case hostSource(HostID)
-    case eventSound(Event)
-    case eventAction(Event)
     case packCard(id: String)
     case manageSounds
 }

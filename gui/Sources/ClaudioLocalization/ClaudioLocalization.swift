@@ -260,20 +260,12 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventStopFailure: Self = "event.stop-failure"
     public static let eventNotification: Self = "event.notification"
     public static let eventSubagentStop: Self = "event.subagent-stop"
-    public static let eventEditorHint: Self = "event.editor.hint"
-    public static let eventCoveragePresent: Self = "event.coverage.present"
-    public static let eventCoverageUnmapped: Self = "event.coverage.unmapped"
-    public static let eventCoverageBroken: Self = "event.coverage.broken"
-    public static let eventCoveragePresentFile: Self = "event.coverage.present-file"
-    public static let eventCoverageBrokenFile: Self = "event.coverage.broken-file"
     public static let workspaceSystemSoundFile: Self = "workspace.system-sound.file"
     public static let workspaceSystemSoundMissing: Self = "workspace.system-sound.missing"
     public static let eventPreviewLabel: Self = "event.preview.label"
     public static let eventPreviewStarted: Self = "event.preview.started"
     public static let eventPreviewAvailableEnabled: Self = "event.preview.available-enabled"
     public static let eventPreviewAvailableMuted: Self = "event.preview.available-muted"
-    public static let eventPreviewUnavailable: Self = "event.preview.unavailable"
-    public static let eventMuteHint: Self = "event.mute.hint"
     public static let eventMute: Self = "event.mute"
     public static let eventUnmute: Self = "event.unmute"
     public static let eventEnabled: Self = "event.enabled"
@@ -1266,43 +1258,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let soundPacksStatusPackUsed: Self = "sound-packs.status.pack-used"
     public static let soundPacksStatusPackTrashed: Self = "sound-packs.status.pack-trashed"
 
-    public static let onboardingClaudeCodeNotInstalledTitle: Self =
-        "onboarding.claude-code-not-installed.title"
-    public static let onboardingClaudeCodeNotInstalledBody: Self =
-        "onboarding.claude-code-not-installed.body"
-    public static let onboardingHelperMissingTitle: Self = "onboarding.helper-missing.title"
-    public static let onboardingHelperMissingBody: Self = "onboarding.helper-missing.body"
-    public static let onboardingSettingsNotWritableTitle: Self =
-        "onboarding.settings-not-writable.title"
-    public static let onboardingSettingsNotWritableBody: Self =
-        "onboarding.settings-not-writable.body"
-    public static let onboardingSettingsParseFailureTitle: Self =
-        "onboarding.settings-parse-failure.title"
-    public static let onboardingSettingsParseFailureBody: Self =
-        "onboarding.settings-parse-failure.body"
-    public static let onboardingNotInstalledTitle: Self = "onboarding.not-installed.title"
-    public static let onboardingNotInstalledBody: Self = "onboarding.not-installed.body"
-    public static let onboardingInstalledTitle: Self = "onboarding.installed.title"
-    public static let onboardingInstalledBody: Self = "onboarding.installed.body"
-    public static let onboardingActionRedetect: Self = "onboarding.action.redetect"
-    public static let onboardingActionRepair: Self = "onboarding.action.repair"
-    public static let onboardingActionTakeOver: Self = "onboarding.action.take-over"
-    public static let onboardingActionDisconnect: Self = "onboarding.action.disconnect"
-    public static let onboardingActionRevealReason: Self = "onboarding.action.reveal-reason"
-    public static let onboardingReasonExpand: Self = "onboarding.reason.expand"
-    public static let onboardingReasonCollapse: Self = "onboarding.reason.collapse"
-    public static let onboardingActionRunningTakeOver: Self = "onboarding.action.running.take-over"
-    public static let onboardingActionRunningDisconnect: Self =
-        "onboarding.action.running.disconnect"
-    public static let onboardingFailureHelperUnavailable: Self =
-        "onboarding.failure.helper-unavailable"
-    public static let onboardingFailureSetup: Self = "onboarding.failure.setup"
-    public static let onboardingFailureDisconnect: Self = "onboarding.failure.disconnect"
-    public static let onboardingFailureDisconnectNothing: Self =
-        "onboarding.failure.disconnect-nothing"
-    public static let onboardingNoticeSalvaged: Self = "onboarding.notice.salvaged"
-    public static let onboardingNoticeRepaired: Self = "onboarding.notice.repaired"
-
     public static let feedbackRedetectedSources: Self = "feedback.redetected-sources"
     public static let feedbackCopyHooksSucceeded: Self = "feedback.copy-hooks.succeeded"
     public static let feedbackCopyHooksFailed: Self = "feedback.copy-hooks.failed"
@@ -1886,12 +1841,12 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .panelGlobalDefaults, .panelGlobalName, .panelGlobalStatus,
         .panelResetSurface, .panelResetSurfaceHint,
         .eventTaskStart, .eventStop, .eventStopFailure, .eventNotification, .eventSubagentStop,
-        .eventEditorHint, .eventCoveragePresent, .eventCoverageUnmapped, .eventCoverageBroken,
-        .eventCoveragePresentFile, .eventCoverageBrokenFile, .eventPreviewLabel,
+
+        .eventPreviewLabel,
         .workspaceSystemSoundFile, .workspaceSystemSoundMissing,
         .eventPreviewStarted,
-        .eventPreviewAvailableEnabled, .eventPreviewAvailableMuted, .eventPreviewUnavailable,
-        .eventMuteHint, .eventMute, .eventUnmute, .eventEnabled, .eventMuted, .eventPreviewHint,
+        .eventPreviewAvailableEnabled, .eventPreviewAvailableMuted,
+        .eventMute, .eventUnmute, .eventEnabled, .eventMuted, .eventPreviewHint,
         .eventPreviewMasterVolumeZero, .eventPreviewUnmapped, .eventPreviewMissing,
         .eventPreviewUnsafe, .eventPreviewUnsafeFile, .eventPreviewUnreadableFile,
         .eventPreviewAssetChanged, .eventPreviewPlaybackFailed,
@@ -1979,19 +1934,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .actionRepairInProgress, .actionDisconnectInProgress,
         .actionClearReceiptHistoryInProgress, .integrationsClearReceiptHistoryConfirm,
         .integrationsClearReceiptHistoryTitle, .integrationsClearReceiptHistoryMessage,
-        .onboardingClaudeCodeNotInstalledTitle, .onboardingClaudeCodeNotInstalledBody,
-        .onboardingHelperMissingTitle, .onboardingHelperMissingBody,
-        .onboardingSettingsNotWritableTitle, .onboardingSettingsNotWritableBody,
-        .onboardingSettingsParseFailureTitle, .onboardingSettingsParseFailureBody,
-        .onboardingNotInstalledTitle, .onboardingNotInstalledBody,
-        .onboardingInstalledTitle, .onboardingInstalledBody,
-        .onboardingActionRedetect, .onboardingActionRepair, .onboardingActionTakeOver,
-        .onboardingActionDisconnect, .onboardingActionRevealReason,
-        .onboardingReasonExpand, .onboardingReasonCollapse,
-        .onboardingActionRunningTakeOver, .onboardingActionRunningDisconnect,
-        .onboardingFailureHelperUnavailable, .onboardingFailureSetup,
-        .onboardingFailureDisconnect, .onboardingFailureDisconnectNothing,
-        .onboardingNoticeSalvaged, .onboardingNoticeRepaired,
         .feedbackRedetectedSources, .feedbackCopyHooksSucceeded, .feedbackCopyHooksFailed,
         .feedbackMuteCancelled, .feedbackOpenSoundMapping,
         .feedbackCopyConfigurationPathSucceeded, .feedbackCopyConfigurationPathFailed,

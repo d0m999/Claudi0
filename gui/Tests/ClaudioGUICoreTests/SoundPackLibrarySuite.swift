@@ -512,27 +512,35 @@ func runSoundPackLibrarySuites() async {
     }
 
     suite("SoundPackLibrary composition root：生产只构造一个实例并接入双消费者与激活刷新") {
-        let sourceURL = soundPackLibraryRepositoryRoot()
-            .appendingPathComponent("gui/Sources/ClaudioGUI/MenuBarController.swift")
-        let source = (try? String(contentsOf: sourceURL, encoding: .utf8)) ?? ""
-        expect(!source.isEmpty, "必须能读取真实 composition root")
+        let root = soundPackLibraryRepositoryRoot()
+        let source =
+            (try? String(
+                contentsOf: root.appendingPathComponent(
+                    "gui/Sources/ClaudioGUI/MenuBarController.swift"),
+                encoding: .utf8)) ?? ""
+        let composition =
+            (try? String(
+                contentsOf: root.appendingPathComponent(
+                    "gui/Sources/ClaudioGUICore/PanelAppComposition.swift"),
+                encoding: .utf8)) ?? ""
+        expect(!source.isEmpty && !composition.isEmpty, "必须能读取 executable 和核心组合根")
         expect(
-            source.components(separatedBy: "SoundPackLibrary(environment: audioEnvironment)")
-                .count - 1 == 1,
-            "MenuBarController 必须只构造一个 app-lifetime SoundPackLibrary")
+            composition.components(
+                separatedBy: "SoundPackLibrary(environment: environment.audioEnvironment)"
+            ).count - 1 == 1
+                && source.components(separatedBy: "PanelAppComposition(").count - 1 == 1
+                && !source.contains("SoundPackLibrary("),
+            "核心组合根必须只构造一个 app-lifetime SoundPackLibrary，executable 只借用它")
         expect(
-            source.contains(
-                "SoundPacksEditorOwner(\n            configFile: ClaudioPaths.configFile,\n            environment: audioEnvironment,\n            soundPackLibrary: soundPackLibrary"
-            )
+            source.contains("let soundPacksEditorOwner = composition.soundPacksEditorOwner")
+                && source.contains("let eventSettingsModel = composition.eventSettingsModel")
+                && source.contains("let soundScopeSelection = composition.soundScopeSelection")
                 && source.contains("soundPacksEditorOwner: soundPacksEditorOwner")
                 && !source.contains("SoundPacksWindowController(")
                 && source.contains(
-                    "makeEventSettingsConfigController(\n            configFile: ClaudioPaths.configFile,\n            environment: audioEnvironment,\n            soundPackLibrary: soundPackLibrary"
-                )
-                && source.contains(
                     "PanelView(\n            audioEnvironment: audioEnvironment,\n            panelModel: eventSettingsModel,\n            soundScopeSelection: soundScopeSelection,"
                 ),
-            "同一个 library 必须经唯一 eventSettingsModel 注入面板与唯一 editor owner，并只由 Settings 共享该 owner；面板与设置必须共享同一个 C1 选择 owner")
+            "executable 仍借用组合根 owner 接入面板与 Settings；核心共享由组合行为检查保护")
         expect(
             source.contains("NSApplication.didBecomeActiveNotification")
                 && source.contains("soundPackLibrary.requestRefresh(")

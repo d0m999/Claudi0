@@ -8,8 +8,7 @@ import Foundation
 //
 // `PreviewFixtures` (`ClaudioGUICore`) is the ONE place every sample state VALUE the state
 // gallery (`ClaudioGUI/StateGalleryView.swift`, T14 D2) renders is constructed. This suite
-// pins the RUNTIME shape of each fixture array — that every case (and, for the two-level
-// DropZoneState/DropRejectionReason pair, every reason) actually appears — on top of
+// pins the RUNTIME shape of each fixture array — that every maintained case appears — on top of
 // `PreviewFixtures`'s own compile-time exhaustive `switch`es (which only guarantee "a human
 // wrote a branch for this case somewhere", not "the fixture ARRAY itself includes a sample of
 // it"). Together (T14 acceptance criterion 3): a new enum case fails THIS PACKAGE's build
@@ -17,9 +16,9 @@ import Foundation
 // types), and even if a human adds just enough of a branch to compile without also adding a
 // fixture, this suite's counts/combinations catch that gap at runtime.
 //
-// Local label functions below (`onboardingStateLabel`, etc.) are deliberately this suite's
+// Local label functions below (coverage and pack-state labels) are deliberately this suite's
 // OWN small exhaustive mappings — not a reuse of `PreviewFixtures`'s internal
-// `_coverage(_:)` helpers — mirroring `OnboardingStateSuite.swift`'s own `debugLabel(for:)`
+// `_coverage(_:)` helpers — independently checking the catalog
 // pattern already established in this file's neighbors: production code never needs a
 // state → debug-string mapping, so it stays test-only, duplicated per suite rather than
 // promoted to `ClaudioGUICore`'s public surface just for a test to consume.
@@ -58,28 +57,6 @@ func runPreviewFixturesSuites() {
     suite("PreviewFixtures.assertExhaustive() visits every case plus all-product scenarios") {
         let visited = PreviewFixtures.assertExhaustive()
         let expected: Set<String> = [
-            "onboarding.claudeCodeNotInstalled", "onboarding.helperMissing",
-            "onboarding.settingsNotWritable", "onboarding.settingsParseFailure",
-            "onboarding.notInstalled", "onboarding.installed",
-            // T17 —— 第五族：CTA 动作自身的状态。少了它，「进行中的 CTA」与「失败的 CTA」这两个
-            // 新视觉态**从来不会被任何一帧渲染**，而这条断言仍然全绿（因为 onboardingStates 依然
-            // 完美覆盖它自己那六个 case）——正是 /ship 收口记录 ③ 那次翻车的形状。
-            "onboardingAction.idle",
-            "onboardingAction.running.takeOver", "onboardingAction.running.disconnect",
-            "onboardingAction.failed.withDetail", "onboardingAction.failed.noDetail",
-            // T17f —— 「我替你做主」的告知。三个变体各渲染出不同的东西（一行搬走 / 一行换包 /
-            // 两行叠着），所以是三个 label、三帧。**注意这份名册是唯一真正的闸门**：
-            // `assertExhaustive()` 的比较是 `visited == expected`，若我只加了 coverage 分支（编译器
-            // 强制的）而**没加 fixture**，新 label 压根不会进 `visited`，`expected` 不变 → 全绿，
-            // 而那三个视觉态一帧都没渲染过。名册与 fixture 必须同时加，缺一个就红。
-            "onboardingAction.reported.salvaged",
-            "onboardingAction.reported.repaired",
-            "onboardingAction.reported.multiple",
-            "dropZone.idle", "dropZone.hover", "dropZone.success",
-            "dropZone.reject.oversize", "dropZone.reject.nonWhitelistFormat",
-            "dropZone.reject.pathTraversal", "dropZone.reject.overDuration",
-            "dropZone.reject.builtinReadOnly", "dropZone.reject.copyFailed",
-            "dropZone.reject.lockBusy", "dropZone.reject.lockFailed",
             "coverage.present", "coverage.unmapped", "coverage.broken",
             "packCard.complete", "packCard.partial", "packCard.broken",
             "panelPack.loading", "panelPack.pinned.one", "panelPack.pinned.four",
@@ -165,75 +142,12 @@ func runPreviewFixturesSuites() {
             "workBuddyVisual.workbuddy.conflict",
             "workBuddyVisual.workbuddy.repaired-awaiting",
             "workBuddyVisual.workbuddy.disconnected-after-action",
-            "eventHostIndicator.full-color",
-            "eventHostIndicator.mixed",
-            "eventHostIndicator.all-gray",
-            "eventHostIndicator.legacy",
-            "eventHostIndicator.awaiting-narrow",
-            "eventRowLayout.zh-Hans",
-            "eventRowLayout.en",
         ]
         expect(
             visited == expected,
             "the shipped fixtures must exercise every state case and all-product scenario;"
                 + " missing \(expected.subtracting(visited)), unexpected \(visited.subtracting(expected))"
         )
-    }
-
-    // MARK: - OnboardingState: all 6 cases
-
-    suite("PreviewFixtures.onboardingStates covers all 6 OnboardingState cases exactly") {
-        expect(
-            PreviewFixtures.onboardingStates.count == 6,
-            "expected exactly 6 onboarding fixtures (one per case), got"
-                + " \(PreviewFixtures.onboardingStates.count)")
-        let labels = Set(PreviewFixtures.onboardingStates.map(onboardingStateLabel))
-        expect(
-            labels
-                == [
-                    "claudeCodeNotInstalled", "helperMissing", "settingsNotWritable",
-                    "settingsParseFailure", "notInstalled", "installed",
-                ],
-            "onboardingStates must cover exactly the 6 OnboardingState cases, got \(labels)")
-    }
-
-    // MARK: - DropZoneState: idle/hover/success + a .reject for each of 6 reasons
-
-    suite(
-        "PreviewFixtures.dropZoneStates covers .idle/.hover/.success and every DropRejectionReason case"
-    ) {
-        let states = PreviewFixtures.dropZoneStates
-        expect(states.contains(.idle), "dropZoneStates must include .idle")
-        expect(states.contains(.hover), "dropZoneStates must include .hover")
-        expect(
-            states.contains { if case .success = $0 { return true } else { return false } },
-            "dropZoneStates must include a .success case")
-
-        let rejectReasonLabels = Set(
-            states.compactMap { state -> String? in
-                guard case .reject(let reason) = state else { return nil }
-                return dropRejectionReasonLabel(reason)
-            })
-        expect(
-            rejectReasonLabels
-                == [
-                    "oversize", "nonWhitelistFormat", "pathTraversal", "overDuration",
-                    "builtinReadOnly", "copyFailed", "lockBusy", "lockFailed",
-                ],
-            "dropZoneStates must include a .reject for every DropRejectionReason case, got"
-                + " \(rejectReasonLabels)")
-    }
-
-    suite("PreviewFixtures.dropZoneStates' .success payload is exactly sampleImportedAudioFile") {
-        guard case .success(let file) = PreviewFixtures.dropZoneStates.last else {
-            expect(false, "the last dropZoneStates fixture must be .success(...)")
-            return
-        }
-        expect(
-            file == PreviewFixtures.sampleImportedAudioFile,
-            "the gallery's .success frame must render the SAME ImportedAudioFile value this"
-                + " suite (and any other consumer) reads from PreviewFixtures — single source,"
-                + " not a second copy")
     }
 
     // MARK: - EventRow: CoverageState × enabled, every combination
@@ -271,111 +185,6 @@ func runPreviewFixturesSuites() {
             "eventRows must render every Event at least once; missing"
                 + " \(Set(Event.allCases).subtracting(events).map(\.cliName).sorted())")
     }
-
-    suite(
-        "PreviewFixtures.eventHostIndicatorScenarios covers full/mixed/gray/legacy/awaiting chip states"
-    ) {
-        let scenarios = PreviewFixtures.eventHostIndicatorScenarios
-        expect(
-            scenarios.map(\.id)
-                == ["full-color", "mixed", "all-gray", "legacy", "awaiting-narrow"],
-            "宿主 Logo 展柜必须精确覆盖五个批准状态，实得 \(scenarios.map(\.id))")
-
-        func indicators(_ id: String) -> [EventHostIndicatorPresentation] {
-            guard let scenario = scenarios.first(where: { $0.id == id }) else { return [] }
-            return eventHostIndicatorPresentations(
-                event: scenario.row.event,
-                matrix: hostCapabilityMatrixPresentation(from: scenario.state.matrix))
-        }
-
-        expect(
-            indicators("full-color").allSatisfy(\.state.usesActiveColor),
-            "full-color 帧必须三枚产品 Logo 都彩色")
-        expect(
-            indicators("mixed").map(\.state) == [.unsupported, .connected, .unsupported],
-            "mixed 帧必须按视觉序显示 Codex 灰色、Claude 彩色、WorkBuddy 灰色")
-        expect(
-            indicators("all-gray").allSatisfy { !$0.state.usesActiveColor },
-            "all-gray 帧必须三枚产品 Logo 都灰色")
-        expect(
-            indicators("legacy").contains(where: { $0.state == .legacy }),
-            "legacy 帧必须真的投影旧版连接")
-        expect(
-            indicators("awaiting-narrow").contains(where: { $0.state == .awaitingActivation }),
-            "awaiting 帧必须真的投影待激活")
-        expect(
-            scenarios.first(where: { $0.id == "full-color" })?.adaptation.rowWrapsToTwoLines
-                == false,
-            "全彩帧必须检查标准单行布局")
-        expect(
-            scenarios.first(where: { $0.id == "awaiting-narrow" })?.adaptation
-                == panelLayoutAdaptation(),
-            "待激活帧必须消费固定紧凑布局")
-        expect(
-            scenarios.first(where: { $0.id == "full-color" })?.title.contains("Logo 12pt") == true
-                && scenarios.first(where: { $0.id == "awaiting-narrow" })?.title
-                    .contains("Logo 12pt") == true
-                && scenarios.allSatisfy {
-                    !$0.title.contains("22pt") && !$0.title.contains("19pt")
-                        && !$0.title.contains("18pt")
-                },
-            "Preview fixture 描述必须统一使用小标签 12pt Logo，不能留下旧尺寸")
-    }
-
-    suite(
-        "PreviewFixtures.eventRowLayoutScenarios covers 2 languages × 3 coverage states at fixed density"
-    ) {
-        let scenarios = PreviewFixtures.eventRowLayoutScenarios
-        expect(scenarios.count == ClaudioAppLanguage.allCases.count, "事件行布局每种语言恰好一帧")
-
-        let languages = Set(scenarios.map(\.language))
-        expect(
-            languages == Set(ClaudioAppLanguage.allCases),
-            "事件行布局必须覆盖两种产品语言")
-
-        for scenario in scenarios {
-            expect(
-                Set(scenario.samples.map { coverageStateLabel($0.row.coverage) })
-                    == ["present", "unmapped", "broken"],
-                "每个固定密度面板必须同帧混排 present/unmapped/broken：\(scenario.id)")
-            expect(
-                scenario.samples.first?.row.event == .stopFailure,
-                "每个语言帧都必须渲染最长英文标题 Execution interrupted")
-
-            let disconnectedSample = scenario.samples.first {
-                if case .unmapped = $0.row.coverage { return true }
-                return false
-            }
-            let disconnectedIndicators =
-                disconnectedSample.map {
-                    eventHostIndicatorPresentations(
-                        event: $0.row.event,
-                        matrix: hostCapabilityMatrixPresentation(from: $0.state.matrix))
-                } ?? []
-            expect(
-                !disconnectedIndicators.isEmpty
-                    && disconnectedIndicators.allSatisfy { indicator in
-                        let implemented =
-                            HostCapabilityCatalog.binding(
-                                host: indicator.host,
-                                event: disconnectedSample!.row.event)?.isAudibleCapability == true
-                        return indicator.state == (implemented ? .notConnected : .unsupported)
-                    },
-                "unmapped 样例必须区分已实现能力未连接与未实现能力：\(scenario.id)")
-        }
-
-        expect(
-            scenarios.allSatisfy {
-                $0.adaptation == panelLayoutAdaptation()
-            },
-            "所有事件行画廊帧必须消费同一固定紧凑布局")
-    }
-
-    // MARK: - PackCard: PackCardState × isSelected, every combination — plus the coverage
-    // track's own event axis (T4: `PackGalleryView` renders `Event.allCases` on every card whose
-    // `packRowTrailingSlot(for:)` resolves to `.track` — i.e. `.complete`/`.partial` — styled
-    // present-or-absent; a `.broken` card renders a status row instead and reaches no track at
-    // all, so its `presentEvents` must NOT count toward this exhaustiveness check).
 
     suite(
         "PreviewFixtures.packCards' coverage track renders every Event in BOTH present and absent styles (scoped to .track-resolving cards — .broken renders no track at all)"
@@ -791,33 +600,6 @@ func runPreviewFixturesSuites() {
             oneSideFailure?.state.matrix.summary(for: .codex)
                 == .ready(supported: 4, total: 5),
             "单侧连接失败不得传染另一侧")
-    }
-}
-
-/// Exhaustive over every ``OnboardingState`` case — no `default:` (test-only, mirrors
-/// `OnboardingStateSuite.swift`'s own `debugLabel(for:)`).
-private func onboardingStateLabel(_ state: OnboardingState) -> String {
-    switch state {
-    case .claudeCodeNotInstalled: "claudeCodeNotInstalled"
-    case .helperMissing: "helperMissing"
-    case .settingsNotWritable: "settingsNotWritable"
-    case .settingsParseFailure: "settingsParseFailure"
-    case .notInstalled: "notInstalled"
-    case .installed: "installed"
-    }
-}
-
-/// Exhaustive over every ``DropRejectionReason`` case — no `default:`.
-private func dropRejectionReasonLabel(_ reason: DropRejectionReason) -> String {
-    switch reason {
-    case .oversize: "oversize"
-    case .nonWhitelistFormat: "nonWhitelistFormat"
-    case .pathTraversal: "pathTraversal"
-    case .overDuration: "overDuration"
-    case .builtinReadOnly: "builtinReadOnly"
-    case .copyFailed: "copyFailed"
-    case .lockBusy: "lockBusy"
-    case .lockFailed: "lockFailed"
     }
 }
 

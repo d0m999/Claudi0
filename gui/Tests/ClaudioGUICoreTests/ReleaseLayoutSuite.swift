@@ -808,14 +808,15 @@ func runReleaseLayoutSuites() {
     suite("HostIcons：SwiftPM、开发 bundle 与双架构 release 都 fail closed 复制同一资源 bundle") {
         let root = guiTestRepositoryRoot()
         let packageURL = root.appendingPathComponent("gui/Package.swift")
-        let eventRowURL = root.appendingPathComponent("gui/Sources/ClaudioGUI/EventRowView.swift")
+        let resourceBundleURL = root.appendingPathComponent(
+            "gui/Sources/ClaudioGUI/GUIResourceBundle.swift")
         let devURL = root.appendingPathComponent("scripts/dev-bundle.sh")
         let releaseURL = root.appendingPathComponent(".github/workflows/release.yml")
         let resourceURL = root.appendingPathComponent(
             "gui/Sources/ClaudioGUI/Resources/HostIcons", isDirectory: true)
         guard
             let package = try? String(contentsOf: packageURL, encoding: .utf8),
-            let eventRow = try? String(contentsOf: eventRowURL, encoding: .utf8),
+            let resourceBundle = try? String(contentsOf: resourceBundleURL, encoding: .utf8),
             let dev = try? String(contentsOf: devURL, encoding: .utf8),
             let release = try? String(contentsOf: releaseURL, encoding: .utf8),
             let resources = try? FileManager.default.contentsOfDirectory(
@@ -831,13 +832,11 @@ func runReleaseLayoutSuites() {
             package.contains(#".process("Resources/HostIcons")"#),
             "ClaudioGUI executable target 必须显式声明 HostIcons SwiftPM 资源")
         expect(
-            eventRow.contains("Bundle.main.bundleURL.pathExtension == \"app\"")
-                && eventRow.contains("return .module")
-                && eventRow.contains("Bundle.main.resourceURL")
-                && eventRow.contains(#"hasSuffix("_ClaudioGUI.bundle")"#)
-                && eventRow.contains("guard candidates.count == 1")
-                && eventRow.contains("hostIconResourceBundle.image(forResource:")
-                && eventRow.contains("image.isTemplate = true"),
+            resourceBundle.contains("Bundle.main.bundleURL.pathExtension == \"app\"")
+                && resourceBundle.contains("return .module")
+                && resourceBundle.contains("Bundle.main.resourceURL")
+                && resourceBundle.contains(#"hasSuffix("_ClaudioGUI.bundle")"#)
+                && resourceBundle.contains("guard candidates.count == 1"),
             "只有真实 macOS app 才能从 Contents/Resources 解析唯一 GUI resource bundle；"
                 + "Xcode Preview 与 SwiftPM 开发进程必须回退到 Bundle.module；改名 app 也必须可用")
         let pdfNames =

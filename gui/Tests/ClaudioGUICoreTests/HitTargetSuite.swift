@@ -222,17 +222,14 @@ func runHitTargetSuites() {
             "条件胶囊卸载再恢复时不得复活陈旧 action hover")
     }
 
-    suite("生产接线：声音包与 onboarding 使用显式命中合同") {
+    suite("生产接线：声音包使用显式命中合同") {
         let packGallery = productionSource(
             "gui/Sources/ClaudioPanelPresentation/PackGalleryView.swift")
-        let panelRows = productionSource("gui/Sources/ClaudioGUI/PanelRows.swift")
 
         expect(
             packGallery?.contains(".buttonStyle(ClaudioFullRowButtonStyle())") == true,
             "可复用声音包整行按钮必须使用显式整行命中合同")
-        expect(
-            panelRows?.contains(".buttonStyle(ClaudioFullRowButtonStyle())") == true,
-            "onboarding 可展开失败行必须使用至少 28pt 的共享整行合同")
+
     }
 }
 
