@@ -108,7 +108,7 @@ func runPanelSettingsHandbackSuites() async {
         while panel.isShown && Date() < focusDeadline {
             try? await Task.sleep(nanoseconds: 10_000_000)
         }
-        expect(!panel.isShown && closes.last == .outsideInteraction, "键盘真正离开菜单树时收起菜单")
+        expect(!panel.isShown && closes.last == .keyResignation, "键盘真正离开菜单树时收起菜单")
         settings.presentForUserRequest()
         let beforeOutsideClick = focusTestNormalWindowOrder()
         panel.show(relativeTo: anchor.bounds, of: anchor)

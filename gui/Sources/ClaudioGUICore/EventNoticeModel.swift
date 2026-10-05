@@ -757,6 +757,19 @@ public final class EventNoticeModel: ObservableObject {
         publish()
     }
 
+    /// Detail resolves a frozen reminder or the one live transient slot, without retaining
+    /// ordinary progress in the attention list or creating a second content owner.
+    public func readingRecord(for action: EventNoticeAction) -> EventNoticeRecord? {
+        guard action.epoch == receiverEpoch else { return nil }
+        if let record = readingSnapshot.records.first(where: {
+            $0.id == action.id && $0.version == action.version
+        }) {
+            return record
+        }
+        guard let transient, transient.matches(action), isCurrent(action) else { return nil }
+        return record(transient)
+    }
+
     public func openAttentionReminders() {
         isExpanded = true
         isDetail = false

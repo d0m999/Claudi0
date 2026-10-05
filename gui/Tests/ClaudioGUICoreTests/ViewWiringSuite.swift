@@ -2074,7 +2074,7 @@ func runViewWiringSuites() {
         // 不能让它们的条件分支或早返绕过隐藏信号。
         expect(
             close.trimmingCharacters(in: .whitespacesAndNewlines)
-                .hasPrefix("focusCoordinator.notePanelHidden()"),
+                .hasPrefix("focusCoordinator.notePanelHidden("),
             "panelDidClose 的首个操作必须是 notePanelHidden()；MasterVolumeRow 的 pending"
                 + "拖动值必须在设置路由、焦点恢复或任何早返前冲刷（D22/D37）")
     }

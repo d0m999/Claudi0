@@ -13,13 +13,15 @@ public struct EventNoticeReadingView: View {
     @State private var navigationOwner = UUID()
     private let showsRecordMetadata: Bool
     private let copySession: @MainActor (EventNoticeAction) -> Bool
+    private let preservesNavigationOnDismissal: @MainActor () -> Bool
     @State private var copyResult: Bool?
 
     public init(
         model: EventNoticeModel, preferences: ClaudioPreferences,
         navigation: SessionNavigationCoordinator, selected: Binding<EventNoticeAction?>,
         copySession: @escaping @MainActor (EventNoticeAction) -> Bool = { _ in false },
-        showsRecordMetadata: Bool = false
+        showsRecordMetadata: Bool = false,
+        preservesNavigationOnDismissal: @escaping @MainActor () -> Bool = { false }
     ) {
         self.model = model
         self.preferences = preferences
@@ -27,14 +29,13 @@ public struct EventNoticeReadingView: View {
         self._selected = selected
         self.copySession = copySession
         self.showsRecordMetadata = showsRecordMetadata
+        self.preservesNavigationOnDismissal = preservesNavigationOnDismissal
     }
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var selectedRecord: EventNoticeRecord? {
         guard let selected else { return nil }
-        return model.readingSnapshot.records.first {
-            $0.id == selected.id && $0.version == selected.version
-        }
+        return model.readingRecord(for: selected)
     }
 
     public var body: some View {
@@ -104,9 +105,9 @@ public struct EventNoticeReadingView: View {
         }
         .onChange(of: selected) { _ in
             copyResult = nil
-            cancelNavigationUnlessHandingOff()
+            cancelNavigationOnDismissal()
         }
-        .onDisappear { cancelNavigationUnlessHandingOff() }
+        .onDisappear { cancelNavigationOnDismissal() }
         .onChange(of: model.readingSnapshot.receiverEpoch) { _ in
             selected = nil; copyResult = nil
         }
@@ -114,11 +115,10 @@ public struct EventNoticeReadingView: View {
         .accessibilityIdentifier("event-notice.reader")
     }
 
-    private func cancelNavigationUnlessHandingOff() {
-        guard
-            !navigation.permitsFocusHandoff(
-                to: NSWorkspace.shared.frontmostApplication?.processIdentifier)
-        else { return }
+    private func cancelNavigationOnDismissal() {
+        // The native owner supplies the actual dismissal cause. A source app that was already
+        // frontmost does not turn Escape, collapse, selection changes or unmount into a handoff.
+        guard !preservesNavigationOnDismissal() else { return }
         navigation.cancelSourceApplication(owner: navigationOwner)
     }
 
@@ -177,12 +177,14 @@ public struct EventNoticeReadingView: View {
                     Text(l10n.text(copyResult ? .eventNoticeCopied : .eventNoticeCopyFailed))
                         .accessibilityIdentifier("event-notice.copy-result")
                 }
-                Button(l10n.text(.eventNoticeRemove), systemImage: "minus.circle") {
-                    if let action = record.action { _ = model.remove(action) }
-                    selected = nil
+                if record.kind.isAttention {
+                    Button(l10n.text(.eventNoticeRemove), systemImage: "minus.circle") {
+                        if let action = record.action { _ = model.remove(action) }
+                        selected = nil
+                    }
+                    .frame(minHeight: 28).disabled(!record.isActionable)
+                    .accessibilityIdentifier("event-notice.remove")
                 }
-                .frame(minHeight: 28).disabled(!record.isActionable)
-                .accessibilityIdentifier("event-notice.remove")
             }
         }
         .fixedSize(horizontal: false, vertical: true)

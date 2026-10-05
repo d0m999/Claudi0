@@ -150,6 +150,12 @@ if CommandLine.arguments.contains("--settings-native-states") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--event-notice-reader") {
+    runEventNoticeReaderSuites()
+    print("Event notice reader: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 // Live reading timers need AppKit's event loop rather than the synchronous layout harness.
 if CommandLine.arguments.contains("--event-reading-live") {
     let application = NSApplication.shared
@@ -206,6 +212,7 @@ if CommandLine.arguments.contains("--review-repairs") {
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
     await runSettingsPresentationLifecycleSuites()
+    runEventNoticeReaderSuites()
     print("Review repairs: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -250,6 +257,7 @@ if CommandLine.arguments.contains("--event-attention") {
     // Swift's async-main drain queue after synthetic window tracking can end the harness early.
     runEventNoticePresentationSuites()
     runEventBannerLayoutSuites()
+    runEventNoticeReaderSuites()
     print("Event attention: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -638,6 +646,7 @@ runAICueDescriptionSuites()
 // Keep the native AppKit suite after every async suite; see the targeted ordering above.
 runEventNoticePresentationSuites()
 runEventBannerLayoutSuites()
+    runEventNoticeReaderSuites()
 runQuestionIntentPresentationSuites()
 runCodexDevelopmentNoticeSuites()
 runCodexQuestionObservationSuites()

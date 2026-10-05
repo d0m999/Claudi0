@@ -91,6 +91,7 @@ final class MenuBarController: NSObject {
     private let bootstrapReports: BootstrapReportPresentationStore
     private let dynamicQuietObserver: DynamicQuietSystemObserver
     private let eventNoticeRuntime: EventNoticeRuntime
+    private let noticeNavigation: SessionNavigationCoordinator
     private let eventNoticeWindowController: EventNoticeWindowController
     private var hostIntegrationRefreshTask: Task<Void, Never>?
     private var appActivationCancellable: AnyCancellable?
@@ -337,6 +338,7 @@ final class MenuBarController: NSObject {
         self.bootstrapReports = bootstrapReports
         self.dynamicQuietObserver = dynamicQuietObserver
         self.eventNoticeRuntime = eventNoticeRuntime
+        self.noticeNavigation = noticeNavigation
         self.eventNoticeWindowController = eventNoticeWindowController
 
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -763,7 +765,10 @@ final class MenuBarController: NSObject {
     }
 
     private func panelDidClose(_ reason: MenuBarPanel.Dismissal) {
-        focusCoordinator.notePanelHidden()
+        focusCoordinator.notePanelHidden(
+            preservingNoticeNavigation: reason.preservesNoticeNavigation(
+                noticeNavigation,
+                frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier))
         defer { settingsWindowController.finishPanelPresentation() }
         // A nonactivating panel releases keyboard focus itself. Only an explicit dismissal
         // may restore Settings' prior key target; outside interaction belongs to its recipient.

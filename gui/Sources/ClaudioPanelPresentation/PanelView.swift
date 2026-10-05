@@ -314,6 +314,9 @@ public struct PanelView: View {
                             NSPasteboard.general.clearContents()
                             return NSPasteboard.general.setString(session, forType: .string)
                         }
+                    },
+                    preservesNavigationOnDismissal: {
+                        focusCoordinator.preservesNoticeNavigationOnHide
                     })
             } else if let latest = eventNoticeModel.readingSnapshot.latest {
                 Text(
