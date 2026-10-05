@@ -1427,7 +1427,31 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventAnimationResourceInvalidAtlas: Self =
         "event-animation.resource-invalid-atlas"
 
+    public static let integrationsAutoIntentUnavailable: Self =
+        "integrations.automatic.intent-unavailable"
+    public static let integrationsAutoRetry: Self = "integrations.automatic.retry"
+    public static let integrationsAutoCleaning: Self = "integrations.automatic.cleaning"
+    public static let integrationsAutoNoInstallation: Self =
+        "integrations.automatic.no-installation"
+    public static let integrationsAutoNotInstalled: Self = "integrations.automatic.not-installed"
+    public static let integrationsAutoDisabled: Self = "integrations.automatic.disabled"
+    public static let integrationsAutoPreparing: Self = "integrations.automatic.preparing"
+    public static let integrationsAutoUpdating: Self = "integrations.automatic.updating"
+    public static let integrationsAutoPrepared: Self = "integrations.automatic.prepared"
+    public static let integrationsAutoReceived: Self = "integrations.automatic.received"
+    public static let integrationsAutoSupported: Self = "integrations.automatic.supported"
+    public static let integrationsAutoSoundScopes: Self = "integrations.automatic.sound-scopes"
+    public static let integrationsAutoDiagnostics: Self = "integrations.automatic.diagnostics"
+    public static let integrationsAutoDiagnosticsTitle: Self =
+        "integrations.automatic.diagnostics-title"
+
     public static let allKnown: [Self] = [
+        .integrationsAutoIntentUnavailable, .integrationsAutoRetry, .integrationsAutoCleaning,
+        .integrationsAutoNoInstallation,
+        .integrationsAutoNotInstalled, .integrationsAutoDisabled, .integrationsAutoPreparing,
+        .integrationsAutoUpdating, .integrationsAutoPrepared, .integrationsAutoReceived,
+        .integrationsAutoSupported, .integrationsAutoSoundScopes, .integrationsAutoDiagnostics,
+        .integrationsAutoDiagnosticsTitle,
         .eventAnimationTitle,
         .eventAnimationDescription,
         .eventAnimationOriginal,

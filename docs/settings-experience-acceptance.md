@@ -4,6 +4,21 @@
 `plan/PLAN-SETTINGS-EXPERIENCE.md`、`CONTEXT.md`、ADR 0005–0009 或 release 流程，也不把
 fixture、源代码扫描、构建或 ad-hoc bundle 升格为原生 UI、真实系统、真实 Provider 或发布证据。
 
+## 当前集成合同（2026-10-06）
+
+依据 ADR 0025 与 [集成自动化实施规格](../plan/PLAN-INTEGRATION-AUTOMATION.md)，集成呈现为应用列表 →
+应用详情 → 诊断详情。首页不展示四行连接组、覆盖数、配置路径或手动修复流程；复用现有产品图标。
+开关只反映可靠保存的意愿，关闭无需确认，逐来源保存与维护，其他来源继续可操作。
+明确 OFF 优先于升级、重新安装、修复；退出暂停新活动/回执/声音/通知，hooks 与意愿保留。
+没有真实回执只显示“接入已准备好”，不能推断授权要求。清除回执历史仍需确认且不改当前激活。
+下文旧截图或旧连接确认步骤保留历史参考，不能作为这次新合同的接受标准。
+
+自动回归为 `HostIntegrationAutomationSuite`、`IntegrationAutomationSuite` 与
+`IntegrationAutomationNativeSuite`；当前结果及 baseline 原生问题见
+[本次验证记录](validation/integration-automation-2026-10-06.md)。
+真实宿主需逐来源检查首启/升级、恢复 hooks、关闭、退出/崩溃、重启、真实回调与听音；
+原生键盘/VoiceOver、sheet 与真实导航必须独立记录，不能由自动布局或构建代替。
+
 ## 自动门禁
 
 从仓库根目录传入实施前固定 commit：

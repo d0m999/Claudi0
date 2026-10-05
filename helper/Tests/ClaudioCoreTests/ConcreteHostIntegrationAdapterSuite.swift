@@ -1233,11 +1233,10 @@ func runConcreteHostIntegrationAdapterSuites() async {
             expect(markerLock.attemptLock() == .acquired, "测试前提：占住 marker lock")
             let result = await adapter.disconnect(runtime: .ready)
             markerLock.unlock()
-            guard case .failure(.configuration(let reason)) = result else {
-                expect(false, "marker lock 争用必须让 disconnect 失败")
+            guard case .failure(.transaction(.lockBusy)) = result else {
+                expect(false, "marker lock 争用必须让 disconnect 返回可重试锁忙")
                 return
             }
-            expect(reason.contains("代次撤销失败"), "错误必须指向 marker 撤销")
             expect(
                 try! Data(contentsOf: paths.claudeSettings) == configuredBytes,
                 "marker 撤销失败后 settings.json 必须一字节不变")

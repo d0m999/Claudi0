@@ -163,6 +163,18 @@ public actor HostIntegrationManager {
 
     private let adapters: [HostID: any HostIntegrationAdapter]
     private let bootstrapper: any SharedRuntimeBootstrapping
+    private let authorization: HostEventAuthorization?
+    private let maintenanceDelay: @Sendable (TimeInterval) async -> Void
+    private var runIdentity: HostGUIRunIdentity?
+    private var startupInProgress = false
+    private var startupFailed = false
+    private var lifecycleRevision: UInt64 = 0
+    private var maintenanceTasks: [HostID: Task<Void, Never>] = [:]
+    private var maintenanceDirty: Set<HostID> = []
+    private var failures: [HostID: HostIntegrationActionError] = [:]
+    private var observers: [UUID: AsyncStream<[HostIntegrationSnapshot]>.Continuation] = [:]
+    public static let automaticHosts: [HostID] = [.claudeCode, .codex, .workBuddy]
+
     private var runtime: SharedRuntimeHealth
     private var cachedSnapshots: [HostID: HostIntegrationSnapshot]
     private var nextOperationRevision: UInt64
@@ -172,10 +184,16 @@ public actor HostIntegrationManager {
 
     public init(
         adapters: [any HostIntegrationAdapter],
-        bootstrapper: any SharedRuntimeBootstrapping
+        bootstrapper: any SharedRuntimeBootstrapping,
+        authorization: HostEventAuthorization? = nil,
+        maintenanceDelay: @escaping @Sendable (TimeInterval) async -> Void = { seconds in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        }
     ) {
         self.adapters = Dictionary(uniqueKeysWithValues: adapters.map { ($0.host, $0) })
         self.bootstrapper = bootstrapper
+        self.authorization = authorization
+        self.maintenanceDelay = maintenanceDelay
         self.runtime = bootstrapper.inspect()
         self.cachedSnapshots = [:]
         self.nextOperationRevision = 0
@@ -220,22 +238,36 @@ public actor HostIntegrationManager {
 
     public func snapshots() -> [HostIntegrationSnapshot] {
         HostID.productVisibleCases.map { host in
-            cachedSnapshots[host]
-                ?? HostIntegrationSnapshot(
-                    host: host,
-                    runtime: runtime,
-                    availability: .unavailable(reason: "尚未检测"),
-                    configuration: .notConfigured,
-                    writability: .unknown,
-                    activation: .none,
-                    operation: inFlightOperations[host]?.state ?? .idle)
+            projected(
+                cachedSnapshots[host]
+                    ?? HostIntegrationSnapshot(
+                        host: host,
+                        runtime: runtime,
+                        availability: .unavailable(reason: "尚未检测"),
+                        configuration: .notConfigured,
+                        writability: .unknown,
+                        activation: .none,
+                        operation: inFlightOperations[host]?.state ?? .idle))
         }
     }
 
     public func connect(
         _ host: HostID
     ) async -> Result<HostIntegrationSnapshot, HostIntegrationActionError> {
-        await connect(host, repairingSharedRuntime: false)
+        if authorization != nil {
+            if runtime != .ready { _ = await bootstrapSharedRuntime() }
+            guard runtime == .ready else {
+                return .failure(.runtimeUnavailable(reason: runtimeReason(runtime)))
+            }
+            guard
+                case .success = await setEnabled(
+                    surface: host.surfaceID, enabled: true, schedule: false)
+            else {
+                return .failure(.configuration(reason: "接入启用意愿保存失败"))
+            }
+            return await maintainOnce(host)
+        }
+        return await connect(host, repairingSharedRuntime: false)
     }
 
     /// An explicit repair checks the bundled helper even when the installed copy still runs.
@@ -243,7 +275,15 @@ public actor HostIntegrationManager {
     public func repair(
         _ host: HostID
     ) async -> Result<HostIntegrationSnapshot, HostIntegrationActionError> {
-        await connect(host, repairingSharedRuntime: true)
+        if let authorization {
+            guard authorization.intents.intent(for: host.surfaceID)?.enabled == true else {
+                return .failure(.configuration(reason: "来源已关闭；重新配置不会开启来源"))
+            }
+            _ = await bootstrapSharedRuntime()
+            failures[host] = nil
+            return await maintainOnce(host, force: true)
+        }
+        return await connect(host, repairingSharedRuntime: true)
     }
 
     private func connect(
@@ -300,6 +340,15 @@ public actor HostIntegrationManager {
         _ host: HostID
     ) async -> Result<HostIntegrationSnapshot, HostIntegrationActionError> {
         if let error = productActionError(for: host) { return .failure(error) }
+        if authorization != nil {
+            guard
+                case .success = await setEnabled(
+                    surface: host.surfaceID, enabled: false, schedule: false)
+            else {
+                return .failure(.configuration(reason: "关闭意愿保存失败；来源未关闭"))
+            }
+            return await maintainOnce(host)
+        }
         let operationRevision = beginOperation(.disconnecting, host: host)
         guard let adapter = adapters[host] else {
             let error = HostIntegrationActionError.hostUnavailable(
@@ -326,6 +375,239 @@ public actor HostIntegrationManager {
             }
             return .failure(error)
         }
+    }
+
+    public func snapshotStream() -> AsyncStream<[HostIntegrationSnapshot]> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            observers[id] = continuation
+            continuation.yield(snapshots())
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.removeObserver(id) }
+            }
+        }
+    }
+
+    private func removeObserver(_ id: UUID) { observers[id] = nil }
+    private func publish() { for observer in observers.values { observer.yield(snapshots()) } }
+
+    private func projected(_ snapshot: HostIntegrationSnapshot) -> HostIntegrationSnapshot {
+        guard let authorization else { return snapshot }
+        var result = snapshot
+        result.intent = authorization.intents.intent(for: snapshot.host.surfaceID)
+        if case .failure = authorization.intents.read() { result.intentUnavailable = true }
+        result.eventReceptionEligible =
+            authorization.capture(surface: snapshot.host.surfaceID) != nil
+        if let failure = failures[snapshot.host], inFlightOperations[snapshot.host] == nil {
+            result = snapshotWithOperation(result, operation: .failed(reason: failure.description))
+        }
+        return result
+    }
+
+    /// The app, rather than a destination/window, owns this coordination lifecycle.
+    public func startAutomaticMaintenance(trigger: HostMaintenanceTrigger = .startup) async
+        -> [HostIntegrationSnapshot]
+    {
+        guard !startupInProgress else { return snapshots() }
+        if runIdentity != nil { return snapshots() }
+        if startupFailed, trigger == .discoveryFallback { return snapshots() }
+        startupInProgress = true
+        startupFailed = true
+        let revision = lifecycleRevision
+        defer { startupInProgress = false }
+        _ = await bootstrapSharedRuntime()
+        guard revision == lifecycleRevision else { return snapshots() }
+        guard runtime == .ready, let authorization else { return snapshots() }
+        let installed = Set(
+            snapshots().filter {
+                Self.automaticHosts.contains($0.host) && $0.availability == .available
+            }.map { $0.host.surfaceID })
+        var migration = authorization.intents.migrate(installedSurfaces: installed)
+        for delay in [1.0, 3.0, 10.0] {
+            guard case .failure(.transaction(.lockBusy)) = migration else { break }
+            await maintenanceDelay(delay)
+            guard revision == lifecycleRevision else { return snapshots() }
+            migration = authorization.intents.migrate(installedSurfaces: installed)
+        }
+        guard case .success = migration else {
+            publish()
+            return snapshots()
+        }
+        var registration = authorization.runs.register()
+        for delay in [1.0, 3.0, 10.0] {
+            guard case .failure(.lockBusy) = registration else { break }
+            await maintenanceDelay(delay)
+            guard revision == lifecycleRevision else { return snapshots() }
+            registration = authorization.runs.register()
+        }
+        guard case .success(let run) = registration else {
+            runtime = .damaged(reason: "GUI 运行资格注册失败")
+            for host in Self.automaticHosts {
+                failures[host] = .runtimeUnavailable(reason: "GUI 运行资格注册失败")
+            }
+            publish()
+            return snapshots()
+        }
+        runIdentity = run
+        startupFailed = false
+        requestMaintenance(trigger: .startup)
+        publish()
+        return snapshots()
+    }
+
+    public func stopAutomaticMaintenance() {
+        lifecycleRevision &+= 1
+        for task in maintenanceTasks.values { task.cancel() }
+        maintenanceTasks.removeAll()
+        maintenanceDirty.removeAll()
+        if let runIdentity { _ = authorization?.runs.revoke(runID: runIdentity.runID) }
+        runIdentity = nil
+    }
+
+    public func setEnabled(surface: HostSurfaceID, enabled: Bool)
+        async -> Result<HostIntegrationSnapshot, HostIntegrationActionError>
+    {
+        if authorization == nil, let host = HostID(rawValue: surface.rawValue) {
+            return enabled ? await connect(host) : await disconnect(host)
+        }
+        return await setEnabled(surface: surface, enabled: enabled, schedule: true)
+    }
+
+    private func setEnabled(surface: HostSurfaceID, enabled: Bool, schedule: Bool)
+        async -> Result<HostIntegrationSnapshot, HostIntegrationActionError>
+    {
+        guard let host = HostID(rawValue: surface.rawValue),
+            productActionError(for: host) == nil, let authorization, let adapter = adapters[host]
+        else { return .failure(.hostUnavailable(reason: "来源不可用")) }
+        if enabled {
+            let fact = await adapter.inspect(runtime: runtime)
+            guard fact.availability == .available else {
+                return .failure(.hostUnavailable(reason: "来源未安装或版本不可用"))
+            }
+        }
+        switch authorization.intents.setEnabled(surface: surface, enabled: enabled) {
+        case .failure(let error):
+            return .failure(.configuration(reason: "启用意愿保存失败：\(error)"))
+        case .success:
+            failures[host] = nil
+            publish()
+            if schedule { requestMaintenance(trigger: .intentChanged, surface: surface) }
+            return .success(snapshots().first { $0.host == host }!)
+        }
+    }
+
+    public func retryMaintenance(surface: HostSurfaceID) async {
+        if runIdentity == nil { _ = await startAutomaticMaintenance(trigger: .userRetry) }
+        if let host = HostID(rawValue: surface.rawValue) { failures[host] = nil }
+        requestMaintenance(trigger: .userRetry, surface: surface)
+    }
+
+    public func requestMaintenance(trigger: HostMaintenanceTrigger, surface: HostSurfaceID? = nil) {
+        guard authorization != nil, runIdentity != nil else { return }
+        let hosts =
+            surface.flatMap { HostID(rawValue: $0.rawValue) }.map { [$0] }
+            ?? Self.automaticHosts
+        for host in hosts {
+            // Discovery fallback must not repeatedly retry a permanent failure. File/wake/user
+            // triggers represent changed facts and may re-evaluate it.
+            if trigger == .discoveryFallback, failures[host] != nil { continue }
+            if trigger != .discoveryFallback { failures[host] = nil }
+            maintenanceDirty.insert(host)
+            guard maintenanceTasks[host] == nil else { continue }
+            let delay = maintenanceDelay
+            maintenanceTasks[host] = Task { [weak self] in
+                await delay(0.25)
+                guard !Task.isCancelled else { return }
+                await self?.drainMaintenance(host)
+            }
+        }
+    }
+
+    public func waitForMaintenance() async {
+        let pending = Array(maintenanceTasks.values)
+        for task in pending { await task.value }
+    }
+
+    private func drainMaintenance(_ host: HostID) async {
+        defer { maintenanceTasks[host] = nil; publish() }
+        while maintenanceDirty.remove(host) != nil, !Task.isCancelled {
+            _ = await refresh()
+            if runtime != .ready { _ = await bootstrapSharedRuntime() }
+            guard !Task.isCancelled, authorization != nil, runIdentity != nil, runtime == .ready
+            else { return }
+            var result = await maintainOnce(host)
+            for delay in [1, 3, 10] {
+                guard case .failure(.transaction(.lockBusy)) = result else { break }
+                await maintenanceDelay(TimeInterval(delay))
+                guard !Task.isCancelled else { return }
+                result = await maintainOnce(host)
+            }
+        }
+    }
+
+    private func maintainOnce(_ host: HostID, force: Bool = false)
+        async -> Result<HostIntegrationSnapshot, HostIntegrationActionError>
+    {
+        guard let authorization, let adapter = adapters[host] else {
+            return .failure(.configuration(reason: "接入意愿不可读取"))
+        }
+        if runtime == .ready, Self.automaticHosts.contains(host),
+            cachedSnapshots[host]?.availability == .available,
+            authorization.intents.intent(for: host.surfaceID) == nil,
+            case .failure(let error) = authorization.intents.migrate(
+                installedSurfaces: [host.surfaceID])
+        {
+            let failure: HostIntegrationActionError
+            switch error {
+            case .transaction(let error): failure = .transaction(error)
+            case .damaged: failure = .configuration(reason: "接入启用意愿损坏，未自动改写")
+            }
+            failures[host] = failure
+            publish()
+            return .failure(failure)
+        }
+        guard let captured = authorization.capture(surface: host.surfaceID, requiresGUI: false)
+        else { return .failure(.configuration(reason: "接入意愿不可读取")) }
+        let token = HostEventAuthorizationToken(
+            surface: captured.surface, intent: captured.intent, run: runIdentity)
+        let inspected = await adapter.inspect(runtime: runtime)
+        if token.intent.enabled {
+            guard runtime == .ready else {
+                return .failure(.runtimeUnavailable(reason: runtimeReason(runtime)))
+            }
+            guard inspected.availability == .available else {
+                cachedSnapshots[host] = inspected
+                publish()
+                return .success(projected(inspected))
+            }
+            if inspected.configuration == .configured, !force {
+                cachedSnapshots[host] = inspected
+                publish()
+                return .success(projected(inspected))
+            }
+        } else if inspected.configuration == .notConfigured, inspected.installationID == nil {
+            cachedSnapshots[host] = inspected
+            publish()
+            return .success(projected(inspected))
+        }
+        let revision = beginOperation(
+            token.intent.enabled ? .connecting : .disconnecting, host: host)
+        let boundary = HostPublicationContext(authorization: authorization, token: token)
+        let result = await HostPublicationContext.$current.withValue(boundary) {
+            token.intent.enabled
+                ? await adapter.connect(runtime: runtime)
+                : await adapter.disconnect(runtime: runtime)
+        }
+        boundary.release()
+        if latestOperationRevisions[host] == revision {
+            inFlightOperations[host] = nil
+            switch result {
+            case .success(let snapshot): cachedSnapshots[host] = snapshot; failures[host] = nil
+            case .failure(let error): failures[host] = error
+            }
+        }
+        publish()
+        return result.map(projected)
     }
 
     private func productActionError(for host: HostID) -> HostIntegrationActionError? {
@@ -372,7 +654,8 @@ public actor HostIntegrationManager {
             refreshed[host] = snapshotWithOperation(snapshot, operation: .idle)
         }
         cachedSnapshots = refreshed
-        return HostID.productVisibleCases.compactMap { refreshed[$0] }
+        publish()
+        return snapshots()
     }
 
     private func beginOperation(
@@ -393,6 +676,7 @@ public actor HostIntegrationManager {
                 writability: .unknown,
                 activation: .none)
         cachedSnapshots[host] = snapshotWithOperation(base, operation: operation)
+        publish()
         return revision
     }
 
@@ -421,7 +705,7 @@ private func snapshotWithOperation(
     _ snapshot: HostIntegrationSnapshot,
     operation: HostOperationState
 ) -> HostIntegrationSnapshot {
-    HostIntegrationSnapshot(
+    var result = HostIntegrationSnapshot(
         host: snapshot.host,
         runtime: snapshot.runtime,
         availability: snapshot.availability,
@@ -433,6 +717,10 @@ private func snapshotWithOperation(
         latestReceipt: snapshot.latestReceipt,
         operation: operation,
         installationID: snapshot.installationID)
+    result.intent = snapshot.intent
+    result.intentUnavailable = snapshot.intentUnavailable
+    result.eventReceptionEligible = snapshot.eventReceptionEligible
+    return result
 }
 
 private func runtimeReason(_ health: SharedRuntimeHealth) -> String {

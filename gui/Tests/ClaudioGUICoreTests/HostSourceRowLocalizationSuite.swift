@@ -128,8 +128,8 @@ func runHostSourceRowLocalizationSuites() {
                 "Submit a prompt to Claude Code to confirm the connection"
             ),
             (
-                .codexAwaitingHooksConfirmation, "在 Codex 输入 /hooks，确认后再提交一次提示词",
-                "Enter /hooks in Codex, confirm it, then submit another prompt"
+                .codexAwaitingHooksConfirmation, "接入已准备好；收到真实事件后会更新状态。",
+                "The connection is prepared. A real event will confirm reception."
             ),
             (
                 .workBuddyAwaitingFirstPrompt, "请向 WorkBuddy 提交一次提示词以确认连接",

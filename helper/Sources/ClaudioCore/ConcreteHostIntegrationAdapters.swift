@@ -26,11 +26,7 @@ public struct ClaudeCodeIntegrationEnvironment: Sendable {
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
         scopeFingerprint: (@Sendable () -> String?)? = nil,
         availability: @escaping @Sendable () -> HostAvailability = {
-            let directory = ClaudioPaths.claudeSettingsFile.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: directory.path, isDirectory: &isDirectory) && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 Claude Code 配置目录")
+            HostDiscovery.detect(.claudeCode).availability
         }
     ) {
         self.settingsFile = settingsFile
@@ -84,11 +80,7 @@ public struct CodexIntegrationEnvironment: Sendable {
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
         scopeFingerprint: (@Sendable () -> String?)? = nil,
         availability: @escaping @Sendable () -> HostAvailability = {
-            let directory = ClaudioPaths.codexHooksFile.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: directory.path, isDirectory: &isDirectory) && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 Codex 配置目录")
+            HostDiscovery.detect(.codex).availability
         },
         beforeLegacyWrapperFinalPublish: @escaping @Sendable () -> Void = {}
     ) {
@@ -142,7 +134,7 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
         guard runtime == .ready else {
             return .failure(.runtimeUnavailable(reason: integrationRuntimeReason(runtime)))
         }
-        if case .unavailable(let reason) = environment.availability() {
+        if let reason = environment.availability().unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
         guard let scopeFingerprint = environment.scopeFingerprint() else {
@@ -153,7 +145,10 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
         let reusableInstallationID =
             environment.receiptStore.currentInstallationScopeFingerprint(host: .claudeCode)
                 == scopeFingerprint
-                ? activeID : nil
+            ? activeID : nil
+        do {
+            try ensurePrivateDirectoryTree(at: environment.settingsFile.deletingLastPathComponent())
+        } catch { return .failure(.configuration(reason: "宿主配置目录不可写")) }
         let transaction = ConfigFileTransaction(
             file: environment.settingsFile,
             lockFile: environment.lockFile,
@@ -199,8 +194,10 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
             scopeFingerprint: scopeFingerprint)
         {
             return .failure(
-                .configuration(reason: "Claude Code 当前连接代次发布失败：\(error.description)"))
+                maintenanceReceiptActionError(
+                    error, reason: "Claude Code 当前连接代次发布失败：\(error.description)"))
         }
+        HostPublicationContext.current?.release()
         return .success(inspectClaudeSnapshot(environment: environment, runtime: runtime))
     }
 
@@ -228,9 +225,11 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
                 host: .claudeCode, installationID: installationID)
         {
             return .failure(
-                .configuration(reason: "Claude Code 当前连接代次撤销失败：\(error.description)"))
+                maintenanceReceiptActionError(
+                    error, reason: "Claude Code 当前连接代次撤销失败：\(error.description)"))
         }
         guard FileManager.default.fileExists(atPath: environment.settingsFile.path) else {
+            HostPublicationContext.current?.release()
             return .success(inspectClaudeSnapshot(environment: environment, runtime: runtime))
         }
         let transaction = ConfigFileTransaction(
@@ -252,6 +251,7 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
             return .failure(.configuration(reason: transformError.description))
         }
         if case .failure(let error) = result { return .failure(.transaction(error)) }
+        HostPublicationContext.current?.release()
         return .success(inspectClaudeSnapshot(environment: environment, runtime: runtime))
     }
 }
@@ -285,7 +285,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
         guard runtime == .ready else {
             return .failure(.runtimeUnavailable(reason: integrationRuntimeReason(runtime)))
         }
-        if case .unavailable(let reason) = environment.availability() {
+        if let reason = environment.availability().unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
         guard let scopeFingerprint = environment.scopeFingerprint() else {
@@ -296,7 +296,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
         let reusableInstallationID =
             environment.receiptStore.currentInstallationScopeFingerprint(host: .codex)
                 == scopeFingerprint
-                ? activeID : nil
+            ? activeID : nil
         let wrapperContext = inspectLegacyWrapperContext(environment: environment)
         if case .conflict(let reason) = wrapperContext {
             return .failure(.migrationConflict(reason: reason))
@@ -336,11 +336,15 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
             case .success:
                 appliedWrapperMutation = AppliedLegacyWrapperMutation(
                     original: wrapperPlan.expectedWrapper, replacement: replacement)
+            case .failure(.lockBusy): return .failure(.transaction(.lockBusy))
             case .failure(.failed(let reason)):
                 return .failure(.migrationConflict(reason: reason))
             }
         }
 
+        do {
+            try ensurePrivateDirectoryTree(at: environment.hooksFile.deletingLastPathComponent())
+        } catch { return .failure(.configuration(reason: "宿主配置目录不可写")) }
         let transaction = ConfigFileTransaction(
             file: environment.hooksFile,
             lockFile: environment.lockFile,
@@ -419,8 +423,10 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
             scopeFingerprint: scopeFingerprint)
         {
             return .failure(
-                .configuration(reason: "Codex 当前连接代次发布失败：\(error.description)"))
+                maintenanceReceiptActionError(
+                    error, reason: "Codex 当前连接代次发布失败：\(error.description)"))
         }
+        HostPublicationContext.current?.release()
         return .success(inspectCodexSnapshot(environment: environment, runtime: runtime))
     }
 
@@ -449,7 +455,8 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
                 host: .codex, installationID: installationID)
         {
             return .failure(
-                .configuration(reason: "Codex 当前连接代次撤销失败：\(error.description)"))
+                maintenanceReceiptActionError(
+                    error, reason: "Codex 当前连接代次撤销失败：\(error.description)"))
         }
         var appliedWrapperMutation: AppliedLegacyWrapperMutation?
         if case .known(_, let configData, let wrapperData) = wrapperContext {
@@ -472,6 +479,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
                 case .success:
                     appliedWrapperMutation = AppliedLegacyWrapperMutation(
                         original: wrapperData, replacement: replacement)
+                case .failure(.lockBusy): return .failure(.transaction(.lockBusy))
                 case .failure(.failed(let reason)):
                     return .failure(.migrationConflict(reason: reason))
                 }
@@ -480,6 +488,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
             }
         }
         guard FileManager.default.fileExists(atPath: environment.hooksFile.path) else {
+            HostPublicationContext.current?.release()
             return .success(inspectCodexSnapshot(environment: environment, runtime: runtime))
         }
         let transaction = ConfigFileTransaction(
@@ -520,6 +529,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
                 appliedMutation: appliedWrapperMutation,
                 environment: environment)
         }
+        HostPublicationContext.current?.release()
         return .success(inspectCodexSnapshot(environment: environment, runtime: runtime))
     }
 }
@@ -711,7 +721,7 @@ func makeIntegrationSnapshot(
         !FileManager.default.fileExists(atPath: file.path)
     {
         writability = .notWritable(reason: danglingIntegrationConfigReason(file))
-    } else if case .unavailable = availability,
+    } else if availability.unavailabilityReason != nil,
         !FileManager.default.fileExists(atPath: file.path)
     {
         writability = .unknown
@@ -1083,6 +1093,7 @@ private func readLegacyWrapperData(at file: URL) -> LegacyWrapperRead {
 
 private enum LegacyWrapperWriteError: Error {
     case failed(String)
+    case lockBusy
 }
 
 private struct AppliedLegacyWrapperMutation {
@@ -1108,6 +1119,8 @@ private func codexFailureAfterRollingBackWrapper(
     {
     case .success:
         return .failure(failure)
+    case .failure(.lockBusy):
+        return .failure(.migrationConflict(reason: "\(failure.description)；旧 codex-notify 回滚锁正忙"))
     case .failure(.failed(let rollbackReason)):
         return .failure(
             .migrationConflict(
@@ -1150,6 +1163,13 @@ private func atomicallyReplaceLegacyWrapper(
             return .failure(
                 .failed("旧 codex-notify 在 staging 与最终迁移之间发生变化，已停止写入"))
         }
+        let boundary = HostPublicationContext.current
+        switch boundary?.acquire() ?? .allowed {
+        case .allowed: break
+        case .busy: return .failure(.lockBusy)
+        case .stale, .unavailable: return .failure(.failed("接入发布许可已失效或不可用"))
+        }
+        defer { boundary?.release() }
         let renamed = staging.withUnsafeFileSystemRepresentation { source in
             file.withUnsafeFileSystemRepresentation { destination in
                 guard let source, let destination else { return Int32(-1) }
@@ -1165,7 +1185,7 @@ private func atomicallyReplaceLegacyWrapper(
     }
     switch locked {
     case .ran(let result): return result
-    case .skipped: return .failure(.failed("Codex integration lock 正忙，请重试"))
+    case .skipped: return .failure(.lockBusy)
     case .failed(let code):
         return .failure(.failed("Codex integration lock 获取失败（errno \(code)）"))
     }

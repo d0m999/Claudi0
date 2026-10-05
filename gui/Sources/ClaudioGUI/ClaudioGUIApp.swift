@@ -29,6 +29,7 @@ enum ClaudioGUIApp {
 final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
     lazy var preferences = ClaudioPreferences()
     private var menuBarController: MenuBarController?
+    private var maintenanceRuntime: HostIntegrationMaintenanceRuntime?
     private var hostIntegrationBridge: HostIntegrationManagerBridge?
     #if DEBUG && CLAUDIO_UI_REGRESSION
     private var nativeRegression: NativeUIRegressionController?
@@ -125,7 +126,8 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
                 WorkBuddyIntegrationAdapter(),
                 OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
             ],
-            bootstrapper: SystemSharedRuntimeBootstrapper(environment: setupEnvironment))
+            bootstrapper: SystemSharedRuntimeBootstrapper(environment: setupEnvironment),
+            authorization: HostEventAuthorization())
         let integrationBridge = HostIntegrationManagerBridge(
             manager: integrationManager,
             configFile: ClaudioPaths.configFile,
@@ -142,7 +144,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         } else {
             integrationMatrixProvider = HostIntegrationMatrixProvider(
                 refresh: { await integrationBridge.refresh() },
-                bootstrap: { await integrationBridge.bootstrapSharedRuntime() })
+                bootstrap: { await integrationBridge.startAutomaticMaintenance() })
         }
         let integrationActionProvider = HostIntegrationActionProvider { action in
             try await integrationBridge.perform(action)
@@ -158,6 +160,11 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
             hostIntegrationState: initialIntegrationState,
             integrationMatrixProvider: integrationMatrixProvider,
             integrationActionProvider: integrationActionProvider)
+        if nativeProbeState == nil {
+            maintenanceRuntime = HostIntegrationMaintenanceRuntime(
+                manager: integrationManager, bridge: integrationBridge
+            ) { [weak self] state in self?.menuBarController?.applyMaintenanceState(state) }
+        }
         #if DEBUG
         chatAXTracer = startExplicitChatAXTracerIfConfigured(
             environment: ProcessInfo.processInfo.environment)
@@ -168,6 +175,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         #if DEBUG && CLAUDIO_UI_REGRESSION
         nativeRegression?.finish()
         #endif
+        maintenanceRuntime?.stop()
         menuBarController?.applicationWillTerminate()
         #if DEBUG
         chatAXTracer?.guiWillTerminate()

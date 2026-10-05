@@ -109,9 +109,10 @@ func integrationDestinationTestState(
     masterVolumeIsZero: Bool = false
 ) -> HostIntegrationPresentationState {
     let snapshots = HostID.productVisibleCases.map { host in
-        integrationDestinationTestSnapshot(
-            host: host,
-            status: statuses[host] ?? .ready)
+        let status = statuses[host] ?? .ready
+        var snapshot = integrationDestinationTestSnapshot(host: host, status: status)
+        snapshot.intent = HostIntegrationIntent(enabled: status != .notConnected)
+        return snapshot
     }
     let capabilities = Dictionary(
         uniqueKeysWithValues: HostID.productVisibleCases.map {

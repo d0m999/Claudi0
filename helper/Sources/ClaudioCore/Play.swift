@@ -67,6 +67,8 @@ public struct PlayEnvironment: Sendable {
     public let surfaceID: HostSurfaceID?
     public let workingDirectory: String?
     public let playbackAuthorized: @Sendable () -> Bool
+    /// Bounded marker/intent checks only; discovery and subprocesses stay in playbackAuthorized.
+    public let publicationAuthorized: @Sendable () -> Bool
     public let afplayPath: String
     public let lockFile: URL
     public let configFile: URL
@@ -114,6 +116,7 @@ public struct PlayEnvironment: Sendable {
         surfaceID: HostSurfaceID? = nil,
         workingDirectory: String? = nil,
         playbackAuthorized: @escaping @Sendable () -> Bool = { true },
+        publicationAuthorized: (@Sendable () -> Bool)? = nil,
         afplayPath: String = "/usr/bin/afplay",
         lockFile: URL = ClaudioPaths.playLockFile,
         configFile: URL = ClaudioPaths.configFile,
@@ -133,6 +136,7 @@ public struct PlayEnvironment: Sendable {
         self.surfaceID = surfaceID
         self.workingDirectory = workingDirectory
         self.playbackAuthorized = playbackAuthorized
+        self.publicationAuthorized = publicationAuthorized ?? playbackAuthorized
         self.afplayPath = afplayPath
         self.lockFile = lockFile
         self.configFile = configFile
@@ -313,8 +317,14 @@ private func performDebouncedPlay(
     // most one process's `body` is ever running at a time, so there is no TOCTOU window
     // between "read last-played" and "write now" across concurrent `claudio play`
     // processes (ENGINEERING.md「工程落地细节 ⑤ 跨进程并发」's exact race decision 5 calls out).
+    guard environment.playbackAuthorized() else { return .notReady }
     let lockResult = withNonBlockingLock(path: environment.lockFile.path) { () -> PlayOutcome in
         guard environment.playbackAuthorized() else { return .notReady }
+        let boundary = HostPublicationContext.current
+        boundary?.willPublish(.deduplication)
+        guard boundary?.acquire() ?? .allowed == .allowed else { return .notReady }
+        defer { boundary?.release() }
+        guard environment.publicationAuthorized() else { return .notReady }
         let now = environment.now()
         if let lastPlayed = readLastPlayedTimestamp(from: environment.debounceStateFile),
             now.timeIntervalSince(lastPlayed) < environment.debounceInterval
@@ -322,7 +332,7 @@ private func performDebouncedPlay(
             return .skippedRecentPlay(event: event)
         }
         if case .silent(let outcome) = preparation {
-            guard environment.playbackAuthorized() else { return .notReady }
+            guard environment.publicationAuthorized() else { return .notReady }
             writeLastPlayedTimestamp(now, to: environment.debounceStateFile)
             return outcome
         }
@@ -333,7 +343,7 @@ private func performDebouncedPlay(
         // string) — `Process.arguments` passes each array element through as its own argv
         // entry, so `["-v value", path]` would make afplay see `-v value` as a single
         // malformed argument instead of a flag + its value (T9).
-        guard environment.playbackAuthorized() else { return .notReady }
+        guard environment.publicationAuthorized() else { return .notReady }
         writeLastPlayedTimestamp(now, to: environment.debounceStateFile)
         return spawnPreparedPlay(
             event: event, volume: volume, audioFile: audioFile, environment: environment)
@@ -357,7 +367,17 @@ private func performDebouncedPlay(
 private func spawnPreparedPlay(
     event: Event, volume: Double, audioFile: URL, environment: PlayEnvironment
 ) -> PlayOutcome {
+    let boundary = HostPublicationContext.current
+    // The testable boundary precedes the spawn lease. Debounced callers release their earlier
+    // timestamp permit before this independently authorized effect.
+    boundary?.release()
+    boundary?.willPublish(.audio)
     guard environment.playbackAuthorized() else { return .notReady }
+    let alreadyHeld = boundary?.acquire() ?? .allowed
+    guard alreadyHeld == .allowed else { return .notReady }
+    // Debounced callers retain their permit until timestamp and spawn have both completed.
+    defer { boundary?.release() }
+    guard environment.publicationAuthorized() else { return .notReady }
     let volumeArgument = AfplayVolume.afplayArgument(forMasterVolume: volume)
     let spawned = environment.spawner.spawn(
         executablePath: environment.afplayPath,

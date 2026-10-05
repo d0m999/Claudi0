@@ -70,7 +70,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
             guard runtime == .ready else {
                 return .failure(.runtimeUnavailable(reason: "共享 helper 未就绪"))
             }
-            if case .unavailable(let reason) = environment.availability() {
+            if let reason = environment.availability().unavailabilityReason {
                 return .failure(.hostUnavailable(reason: reason))
             }
             guard let file = environment.file, let scope = environment.scopeFingerprint(),

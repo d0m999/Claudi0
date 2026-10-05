@@ -125,7 +125,7 @@ public func integrationDestinationContent(
             bindingReceipts: HostCapabilityCatalog.bindings(for: host)
                 .filter(\.isAudibleCapability).map {
                     IntegrationBindingReceiptPresentation(binding: $0, snapshot: snapshot)
-                })
+                }, snapshot: snapshot)
         facts.receiptHistory = state.receiptHistories[host].map {
             IntegrationReceiptHistoryPresentation(host: host, snapshot: snapshot, history: $0)
         }

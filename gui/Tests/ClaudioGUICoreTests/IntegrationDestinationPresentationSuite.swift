@@ -71,7 +71,8 @@ func runIntegrationDestinationPresentationSuites() {
                         case .copyHooksCommand: IntegrationConnectionRowAction.copyHooks
                         case .redetect: .redetect
                         case .repair(let host): .repair(host)
-                        case .connect, .disconnect, .clearReceiptHistory: fatalError()
+                        case .connect, .disconnect, .retryMaintenance, .clearReceiptHistory:
+                            fatalError()
                         }
                     },
                 "\(status) status row 必须来自同一个五态 action projection")

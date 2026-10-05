@@ -303,7 +303,7 @@ func runDualHostDoctorSuites() {
         }
     }
 
-    suite("双宿主 doctor：Codex 四条 hook 无回执时要求 /hooks 后再提交提示词") {
+    suite("双宿主 doctor：Codex 四条 hook 无回执时已准备好，不猜测授权") {
         withTempDirectory { root in
             let fixture = makeDualHostDoctorFixture(under: root)
             writeCompleteCodexDoctorHooks(fixture)
@@ -313,15 +313,15 @@ func runDualHostDoctorSuites() {
                 expect(false, "必须保留 Codex doctor 行")
                 return
             }
-            expect(codex.severity == .warning, "配置完成但未激活必须是待确认 warning")
+            expect(codex.severity == .warning, "配置与真实回执仍是两条不同事实")
             expect(
-                codex.message.contains("在 Codex 输入 /hooks")
-                    && codex.message.contains("再提交一次提示词"),
-                "待确认文案必须给出固定状态与可执行 /hooks 指令，got \(codex.message)")
+                codex.message.contains("接入已准备好")
+                    && !codex.message.contains("/hooks") && !codex.message.contains("确认"),
+                "不能从缺少回执推断授权或要求确认，got \(codex.message)")
         }
     }
 
-    suite("双宿主 doctor：当前 installation 的任务开始回执点亮 Codex 中性 4/5") {
+    suite("双宿主 doctor：当前回执与 Codex 声明支持 4/5 分别说明") {
         withTempDirectory { root in
             let fixture = makeDualHostDoctorFixture(under: root)
             writeCompleteCodexDoctorHooks(fixture)
@@ -342,7 +342,9 @@ func runDualHostDoctorSuites() {
                 return
             }
             expect(codex.severity == .ok, "真实回执后 Codex 4/5 是正常能力事实")
-            expect(codex.message.contains("4/5 已就绪"), "必须诚实显示 Codex 4/5")
+            expect(
+                codex.message.contains("已收到事件；支持 4/5 类提醒")
+                    && !codex.message.contains("4/5 已就绪"), "不能用单条回执点亮所有 binding")
             expect(
                 codex.message.contains("仅授权请求"),
                 "待响应的 Codex 限定语必须进入 doctor 可见文案")
@@ -388,7 +390,7 @@ func runDualHostDoctorSuites() {
                 host: .claudeCode)
             expect(claude?.severity == .ok, "当前回执后 Claude 应为已就绪")
             expect(
-                claude?.message == "✓ Claude Code 5/5 已就绪",
+                claude?.message == "✓ Claude Code 已收到事件；支持 5/5 类提醒",
                 "提问与通知共享公共 Event，doctor 不得报 6/5，got \(String(describing: claude))")
         }
     }
@@ -469,8 +471,8 @@ func runDualHostDoctorSuites() {
             expect(claude?.severity == .warning, "Claude legacy 不应假装有回执，也不应 hard fail")
             expect(
                 claude?.message.contains("旧版连接") == true
-                    && claude?.message.contains("暂无真实回执") == true,
-                "legacy 文案必须同时表达可听与证据限制")
+                    && claude?.message.contains("尚无当前真实回执") == true,
+                "legacy 文案说明配置与证据限制，不声称已经可听")
         }
     }
 
@@ -571,8 +573,8 @@ func runDualHostDoctorSuites() {
             let staleCodex = dualHostDoctorResult(staleResults, host: .codex)
             expect(staleCodex?.severity == .warning, "旧代次回执不得点亮当前配置")
             expect(
-                staleCodex?.message.contains("再提交一次提示词") == true,
-                "旧代次存在时仍必须显示当前代次待确认")
+                staleCodex?.message.contains("接入已准备好，尚无当前真实回执") == true,
+                "旧代次不能点亮当前代次，也不能推断授权")
 
             guard
                 let receiptFile = fixture.receiptStore.receiptFile(
@@ -586,8 +588,8 @@ func runDualHostDoctorSuites() {
             let damagedCodex = dualHostDoctorResult(damagedResults, host: .codex)
             expect(damagedCodex?.severity == .warning, "损坏回执必须失败关闭，不能点亮 Codex")
             expect(
-                damagedCodex?.message.contains("再提交一次提示词") == true,
-                "损坏回执存在时仍必须给出 /hooks 激活路径")
+                damagedCodex?.message.contains("接入已准备好，尚无当前真实回执") == true,
+                "损坏回执不制造当前激活或授权要求")
         }
     }
 
@@ -664,9 +666,9 @@ func runDualHostDoctorSuites() {
 
             let results = hostIntegrationDoctorResults(environment: fixture.environment)
             let codex = dualHostDoctorResult(results, host: .codex)
-            expect(codex?.severity == .warning, "无真实回执时应等待确认，而不是误报缺 Stop")
+            expect(codex?.severity == .warning, "无回执仅说明证据缺失，不误报缺 Stop")
             expect(
-                codex?.message.contains("再提交一次提示词") == true,
+                codex?.message.contains("接入已准备好，尚无当前真实回执") == true,
                 "doctor 必须复用 adapter 对 migrated wrapper 的判定，got \(String(describing: codex))")
         }
     }

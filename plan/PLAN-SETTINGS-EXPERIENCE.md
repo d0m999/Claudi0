@@ -251,33 +251,15 @@ macOS 13+ 的主 app 登录项入口见 Apple 的
 
 ### 5.2 集成
 
-用户结果：在统一设置里查看和管理每个**事件来源**的连接、事件能力与当前代次回执；连接与回执
-动作只影响明确选择的 Surface，共享声音入口按当前手动声音作用域打开。
+2026-10-06 现行合同由 [PLAN-INTEGRATION-AUTOMATION.md](PLAN-INTEGRATION-AUTOMATION.md) 和 ADR 0025
+替代旧四行首页。应用列表使用现有产品图标、名称、自然状态、意愿开关及详情入口；应用详情显示五类
+支持的提醒及限定，声音仍指向默认组／工作区；诊断详情承接原有配置、机制、安装身份、逐 binding
+与回执历史、显式重新检测/重新配置。清除历史保留确认且不改变当前 activation。
 
-内容与行为：
-
-- Agent 固定消费 `HostID.productVisibleCases`，基础顺序为 Claude Code → Codex → WorkBuddy；
-  OpenCode → Kimi Code 由 ADR 0024 的验收／正式启用策略追加。未取得真实证据时只出现在验收构建；不显示宿主 Logo，
-  名称选择与 Toggle 是两个独立控件。每行显示 manager 投影的五态 badge、`supported/total` 和真实 Toggle；
-  `4/5`、`2/5` 保持中性能力事实。
-- 选中 Agent 后只显示四行 typed connection section，顺序固定为「连接状态、接入方式、默认组／工作区、
-  脱敏回执历史」。连接状态合并现有诊断与最新当前 installation receipt；无回执明确显示「暂无当前安装实例回执」。
-- 接入方式消费 `HostIntegrationDescriptor.mechanism`；配置来源不是 manager 提供时不渲染复制动作。
-  声音入口为「默认组／工作区…」（English: “Default Group & Workspaces…”），双语无障碍提示说明
-  声音按默认组与工作区管理。入口走普通 `.events` 目的页路由，保留有效的会话手动选择；首次显示默认组，
-  所选 host 不决定声音作用域。失效选择显示不可用和明确选择入口；清除回执只在第四行确认。
-- Toggle 关闭统一进入已有 disconnect 确认，取消无副作用；`notConnected` 开启 Toggle 调用 connect。其余连接、
-  升级/修复和重新检测继续经既有 manager bridge，不添加第二个写入路径。
-- 五态连接动作纯投影：ready 重新检测；awaitingActivation 的 Codex 额外复制 `/hooks`；legacy 升级连接；
-  notConnected 重新检测；needsAttention 修复连接并重新检测。
-- in-flight 保留旧快照、不乐观翻转 Toggle、不显示 skeleton；只禁用冲突动作，允许切换 Agent，进度绑定原 action.host。
-  反馈保持 5 秒、代次保护、逐条回执与 Reduce Motion，改为右下 Toast，仅在目的页可见且窗口为 key 时播报。
-- `IntegrationDestinationModel`、`IntegrationDestinationContent`、四行 presentation、偏好恢复/重协调与 focus
-  coordinator 住在 Foundation-only `ClaudioGUICore`；GUI 仅注入 `NSPasteboard` adapter。共享
-  `HostCapabilityMatrixPresentation` 继续服务 Panel/Events/diagnostics，但不再由集成目的页渲染。
-
-验收：迁移前后 manager action、receipt transition、错误恢复和 accessibility label 保持等价；
-Codex `4/5` 与 WorkBuddy 从能力目录计算的覆盖数是诚实正常能力，不得为了填满原型显示假支持。
+开关读取已保存意愿，保存成功后切换；关闭无需确认。未安装禁开但已有开启意愿可关闭。每来源维护
+独立，离页/关窗口不停止；后台成功不反复 Toast。退出暂停新事件，重启恢复，不补播。准备就绪与当前
+真实回执分别表达，不因无回执或等待时间要求 Codex 授权。统一窗口、typed route、窗口期历史、来源
+身份和焦点归还沿用现有 owner，不复制状态或声音写入链。
 
 ### 5.3 默认组／工作区（原「事件与提示音」）
 

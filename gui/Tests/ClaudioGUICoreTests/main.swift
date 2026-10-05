@@ -76,6 +76,25 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--integration-automation-native") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runIntegrationAutomationNativeSuites()
+        print("\(totalChecks) checks, \(failures) failures")
+        application.stop(nil)
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+}
+
+if CommandLine.arguments.contains("--integration-automation") {
+    runIntegrationAutomationSuites()
+    await runIntegrationDestinationModelSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--settings-notification-navigation") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -252,6 +271,7 @@ if CommandLine.arguments.contains("--event-attention") {
     runCodexQuestionObservationSuites()
     runNativePrototypeMigrationSuites()
     runEventNoticeModelSuites()
+    runIntegrationAutomationSuites()
     runEventBannerActionSuites()
     runEventNoticeFocusSuites()
     await runSessionNavigationSuites()
@@ -416,6 +436,7 @@ if CommandLine.arguments.contains("--settings-sounds-layout") {
     Task { @MainActor in
         runSettingsNativeMigrationSuites()
         await runSettingsSoundsLayoutSuites()
+        await runIntegrationAutomationNativeSuites()
         print("Settings sounds layout: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }
@@ -674,6 +695,7 @@ runFocusRequestCoordinatorSuites()
 runPanelFocusOrderSuites()
 runNativePrototypeMigrationSuites()
 runEventNoticeModelSuites()
+    runIntegrationAutomationSuites()
 runEventBannerActionSuites()
 runEventNoticeFocusSuites()
 await runSessionNavigationSuites()
@@ -731,6 +753,7 @@ runSettingsPresentationSliceSuites()
     await runSettingsRootInteractionSuites()
 runSettingsProductImagesSuites()
     await runSettingsSoundsLayoutSuites()
+    await runIntegrationAutomationNativeSuites()
 runSettingsNativeMigrationSuites()
 runPreviewFixturesSuites()
 runMultiProviderPrototypeContractSuites()

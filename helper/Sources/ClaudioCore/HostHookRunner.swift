@@ -28,6 +28,9 @@ public struct HostEventNoticeChannel: Sendable {
 /// lock/state；构造器显式携带 host，以免测试或未来调用方误把两宿主又接回 legacy 全局去抖。
 public struct HostHookEnvironment: Sendable {
     public let host: HostID
+    public let authorization: HostEventAuthorization?
+    public let authorizationToken: HostEventAuthorizationToken?
+    public let beforePublication: @Sendable (HostPublicationEffect) -> Void
     public let playEnvironment: PlayEnvironment
     public let taskStartDebounceStateFile: URL
     public let taskStartDebounceInterval: TimeInterval
@@ -43,6 +46,9 @@ public struct HostHookEnvironment: Sendable {
 
     public init(
         host: HostID,
+        authorization: HostEventAuthorization? = nil,
+        authorizationToken: HostEventAuthorizationToken? = nil,
+        beforePublication: @escaping @Sendable (HostPublicationEffect) -> Void = { _ in },
         playEnvironment: PlayEnvironment,
         taskStartDebounceStateFile: URL? = nil,
         taskStartDebounceInterval: TimeInterval = 0.25,
@@ -59,6 +65,9 @@ public struct HostHookEnvironment: Sendable {
         uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     ) {
         self.host = host
+        self.authorization = authorization
+        self.authorizationToken = authorizationToken
+        self.beforePublication = beforePublication
         self.playEnvironment = playEnvironment
         self.taskStartDebounceStateFile =
             taskStartDebounceStateFile
@@ -87,11 +96,14 @@ public struct HostHookEnvironment: Sendable {
 public func systemHostHookEnvironment(
     for host: HostID,
     eventNoticeChannel: HostEventNoticeChannel? = nil,
-    sourcePayload: Data? = nil
+    sourcePayload: Data? = nil,
+    authorizationToken: HostEventAuthorizationToken? = nil
 ) -> HostHookEnvironment {
     let questionScope = HookQuestionScopeSnapshot(host: host)
     return HostHookEnvironment(
         host: host,
+        authorization: HostEventAuthorization(),
+        authorizationToken: authorizationToken,
         playEnvironment: PlayEnvironment(
             surfaceID: host.surfaceID,
             lockFile: ClaudioPaths.hostPlayLockFile(host),
@@ -168,6 +180,21 @@ public func handleHostHook(
     environment: HostHookEnvironment,
     eventID: UUID = UUID()
 ) -> HostHookHandlingOutcome? {
+    if let authorization = environment.authorization, HostPublicationContext.current == nil {
+        guard
+            let token = environment.authorizationToken
+                ?? authorization.capture(surface: host.surfaceID),
+            token.surface == host.surfaceID, token.intent.enabled, authorization.isCurrent(token)
+        else { return nil }
+        let boundary = HostPublicationContext(
+            authorization: authorization, token: token,
+            beforePublication: environment.beforePublication)
+        return HostPublicationContext.$current.withValue(boundary) {
+            handleHostHook(
+                host: host, nativeEvent: nativeEvent, installationID: installationID,
+                environment: environment, eventID: eventID)
+        }
+    }
     guard environment.host == host,
         let event = HostCapabilityCatalog.semanticEvent(host: host, nativeEvent: nativeEvent)
     else { return nil }
@@ -188,14 +215,23 @@ public func handleHostHook(
     let observedUptime = environment.eventNoticeChannel?.observedUptime ?? environment.uptime()
     let currentScope =
         isQuestion ? environment.questionScopeFingerprint : environment.scopeFingerprint
-    let requiresScope = host == .workBuddy || isQuestion || isAdditionalHost
+    let requiresScope =
+        environment.authorization != nil || host == .workBuddy || isQuestion || isAdditionalHost
     let scope = requiresScope ? currentScope() : nil
-    let installationIsCurrent: @Sendable () -> Bool = {
-        if requiresScope {
-            guard let scope, currentScope() == scope else { return false }
+    let installationMarkerIsCurrent: @Sendable () -> Bool = {
+        if requiresScope, scope == nil { return false }
+        if let boundary = HostPublicationContext.current,
+            let token = boundary.token, let authorization = environment.authorization,
+            !authorization.isCurrent(token)
+        {
+            return false
         }
         return environment.receiptStore.isCurrentInstallation(
             host: host, installationID: installationID, scopeFingerprint: scope)
+    }
+    let installationIsCurrent: @Sendable () -> Bool = {
+        if requiresScope { guard let scope, currentScope() == scope else { return false } }
+        return installationMarkerIsCurrent()
     }
     guard installationIsCurrent() else {
         return HostHookHandlingOutcome(
@@ -204,12 +240,17 @@ public func handleHostHook(
     }
     let activityRecordOutcome: LocalActivityRecordOutcome
     if let activityStore = environment.activityStore {
-        activityRecordOutcome = activityStore.record(
-            host: host,
-            event: event,
-            installationID: installationID,
-            activeInstallationID: installationID,
-            occurredAt: occurredAt)
+        let record = {
+            activityStore.record(
+                host: host,
+                event: event,
+                installationID: installationID,
+                activeInstallationID: installationID,
+                occurredAt: occurredAt)
+        }
+        activityRecordOutcome =
+            HostPublicationContext.current?.perform(effect: .activity, rejected: .failed, record)
+            ?? record()
     } else {
         activityRecordOutcome = .failed
     }
@@ -224,6 +265,9 @@ public func handleHostHook(
         playbackAuthorized: {
             base.playbackAuthorized()
                 && installationIsCurrent()
+        },
+        publicationAuthorized: {
+            base.publicationAuthorized() && installationMarkerIsCurrent()
         },
         afplayPath: base.afplayPath,
         lockFile: base.lockFile,
@@ -247,9 +291,16 @@ public func handleHostHook(
     let playbackResult: HostHookPlaybackResult
     let shouldSendNotice: Bool
     if let questionPayload = additionalPayload?.identity ?? questionPayload {
-        switch environment.questionDeduplicationStore.consume(
-            host: host, installationID: installationID, payload: questionPayload,
-            now: occurredAt, isCurrent: installationIsCurrent)
+        let scopeIsCurrent = installationIsCurrent()
+        let consume = { () -> HostQuestionConsumption in
+            guard scopeIsCurrent else { return .unavailable }
+
+            return environment.questionDeduplicationStore.consume(
+                host: host, installationID: installationID, payload: questionPayload,
+                now: occurredAt, isCurrent: installationMarkerIsCurrent)
+        }
+        switch HostPublicationContext.current?.perform(
+            effect: .deduplication, rejected: .unavailable, consume) ?? consume()
         {
         case .consumed:
             let outcome = playConsumedHostEvent(event, environment: observedPlayEnvironment)
@@ -305,6 +356,7 @@ public func handleHostHook(
         let notice = HostEventNotice(
             id: eventID,
             receiverEpoch: channel.receiverEpoch,
+            intentRevision: HostPublicationContext.current?.token?.intent.revision,
             surface: host.surfaceID,
             bindingID: binding.id,
             installationID: installationID,
@@ -318,7 +370,10 @@ public func handleHostHook(
             navigationEvidence: HostNavigationEvidence.capture(ancestors: ancestors))
         // The send is best effort, but a known failure still earns one fixed redacted
         // diagnostic code on the existing log path; the payload never leaves this process.
-        if case .dropped(let failure) = channel.sender(notice) {
+        let send = { channel.sender(notice) }
+        if case .dropped(let failure) = HostPublicationContext.current?.perform(
+            effect: .notice, rejected: .dropped(.invalidNotice), send) ?? send()
+        {
             appendLogLine(
                 event: event.cliName,
                 reason: "事件提示发送失败（\(failure.rawValue)）",

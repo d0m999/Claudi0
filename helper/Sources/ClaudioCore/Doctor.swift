@@ -347,25 +347,13 @@ public struct DoctorIntegrationsEnvironment: Sendable {
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
         claudeAvailability: @escaping @Sendable () -> HostAvailability = {
-            let directory = ClaudioPaths.claudeSettingsFile.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: directory.path, isDirectory: &isDirectory) && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 Claude Code 配置目录")
+            HostDiscovery.detect(.claudeCode).availability
         },
         codexAvailability: @escaping @Sendable () -> HostAvailability = {
-            let directory = ClaudioPaths.codexHooksFile.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: directory.path, isDirectory: &isDirectory) && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 Codex 配置目录")
+            HostDiscovery.detect(.codex).availability
         },
         workBuddyAvailability: @escaping @Sendable () -> HostAvailability = {
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: "/Applications/WorkBuddy.app", isDirectory: &isDirectory)
-                && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 WorkBuddy Desktop")
+            HostDiscovery.detect(.workBuddy).availability
         },
         claudeScopeFingerprint: @escaping @Sendable () -> String? = {
             HostActivationScope.claudeCode()
@@ -519,7 +507,7 @@ public func runDoctorChecks(environment: DoctorEnvironment = DoctorEnvironment()
     return DoctorReport(results: results)
 }
 
-/// 宿主 doctor 事实层。未安装/未连接、健康 runtime 上的 legacy/待确认是 warning；完整连接是 ok；
+/// 宿主 doctor 事实层。未安装/未连接、legacy/尚无真实回执是 warning；完整连接且有回执是 ok；
 /// 已连接侧的配置损坏、缺 hook、不可写或共享 runtime 不可用是 failure。始终按 catalog 顺序返回一行。
 public func hostIntegrationDoctorResults(
     environment: DoctorIntegrationsEnvironment,
@@ -601,12 +589,12 @@ private func doctorHostResult(
     let host = snapshot.host
     let configuration = snapshot.configuration
     let name = "host-\(host.rawValue)"
-    if case .unavailable(let reason) = snapshot.availability, configuration == .notConfigured {
+    if let reason = snapshot.availability.unavailabilityReason, configuration == .notConfigured {
         return DoctorCheckResult(
             name: name, severity: .warning,
             message: "⚠ \(host.displayName) 未安装或不可用：\(reason)")
     }
-    if case .unavailable(let reason) = snapshot.availability {
+    if let reason = snapshot.availability.unavailabilityReason {
         return DoctorCheckResult(
             name: name, severity: .failure,
             message: "✗ \(host.displayName) 已有 claudi0 连接但宿主不可用：\(reason)")
@@ -645,7 +633,7 @@ private func doctorHostResult(
         }
         return DoctorCheckResult(
             name: name, severity: .warning,
-            message: "⚠ \(host.displayName) 是旧版连接：可听，但暂无真实回执；可显式升级连接")
+            message: "⚠ \(host.displayName) 是旧版连接，等待自动更新；尚无当前真实回执")
     case .incomplete(let missing):
         return DoctorCheckResult(
             name: name, severity: .failure,
@@ -672,22 +660,9 @@ private func doctorHostResult(
                 message: "✗ \(host.displayName) 已配置但缺少 installation ID")
         }
         guard case .observed = snapshot.activation else {
-            let pendingMessage =
-                switch host {
-                case .codex:
-                    "⚠ Codex：在 Codex 输入 /hooks，确认后再提交一次提示词"
-                case .claudeCode:
-                    "⚠ Claude Code 已配置，请提交一次提示词以确认连接"
-                case .workBuddy:
-                    "⚠ WorkBuddy 已配置，请提交一次提示词以确认 task_start 回执"
-                case .opencode, .kimiCode:
-                    "⚠ \(host.displayName) 已配置；请重新启动 CLI 并提交用户请求以确认当前回执"
-                case .chatGPTDesktopAX, .claudeDesktopAX:
-                    "⚠ \(host.displayName) 尚未提供可激活的 adapter"
-                }
             return DoctorCheckResult(
                 name: name, severity: .warning,
-                message: pendingMessage)
+                message: "⚠ \(host.displayName) 接入已准备好，尚无当前真实回执")
         }
         let supported = Set(
             HostCapabilityCatalog.bindings(for: host).filter(\.isAudibleCapability).map(\.event)
@@ -703,7 +678,9 @@ private func doctorHostResult(
             }
         return DoctorCheckResult(
             name: name, severity: .ok,
-            message: "✓ \(host.displayName) \(supported)/\(Event.allCases.count) 已就绪\(qualifier)")
+            message:
+                "✓ \(host.displayName) 已收到事件；支持 \(supported)/\(Event.allCases.count) 类提醒\(qualifier)"
+        )
     }
 }
 

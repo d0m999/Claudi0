@@ -428,7 +428,7 @@ final class MenuBarController: NSObject {
                 }
             }
 
-        // GUI 首启只运行共享 bootstrap + 双侧 inspect。宿主连接必须始终来自详情窗里的显式动作。
+        // App provider 先准备共享 runtime，再启动持久意愿驱动的 app-lifetime 自动维护。
         eventNoticeRuntime.setEnabled(languageStore.showsEventSourcePrompts)
         eventNoticeRuntime.model.setAutomaticallySuppressed(
             dynamicQuietObserver.policy.presentation.suppressesAutomaticPresentations)
@@ -462,6 +462,14 @@ final class MenuBarController: NSObject {
 
     /// 声音包、manifest 或静音配置变化后重算同一份可听矩阵。代次保护避免较慢的旧 refresh
     /// 覆盖集成目的页动作刚发布的新状态；失败时保留最后一份诚实状态，不伪造 ready。
+    func applyMaintenanceState(_ state: HostIntegrationPresentationState) {
+        let content = hostIntegrations.replace(state: state)
+        integrationsModel.replaceExternalContent(content)
+        for snapshot in state.snapshots where snapshot.intent?.enabled == false {
+            eventNoticeRuntime.model.hideBanner(for: snapshot.host.surfaceID)
+        }
+    }
+
     fileprivate func requestHostIntegrationRefresh(
         bootstrapSharedRuntime: Bool = false
     ) {

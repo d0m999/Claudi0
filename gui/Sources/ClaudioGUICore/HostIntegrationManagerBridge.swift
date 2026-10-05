@@ -97,6 +97,24 @@ public actor HostIntegrationManagerBridge {
         return await presentationState(snapshots: snapshots)
     }
 
+    public func startAutomaticMaintenance() async -> HostIntegrationPresentationState {
+        await presentationState(snapshots: manager.startAutomaticMaintenance())
+    }
+
+    public func presentationStream() async -> AsyncStream<HostIntegrationPresentationState> {
+        let upstream = await manager.snapshotStream()
+        return AsyncStream { continuation in
+            let task = Task {
+                for await snapshots in upstream {
+                    guard !Task.isCancelled else { break }
+                    continuation.yield(await self.presentationState(snapshots: snapshots))
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     public func refresh() async -> HostIntegrationPresentationState {
         let snapshots = await manager.refresh()
         return await presentationState(snapshots: snapshots)
@@ -125,11 +143,16 @@ public actor HostIntegrationManagerBridge {
 
         switch action {
         case .connect(let requestedHost):
-            result = await manager.connect(requestedHost)
+            result = await manager.setEnabled(surface: requestedHost.surfaceID, enabled: true)
+        case .retryMaintenance(let requestedHost):
+            await manager.retryMaintenance(surface: requestedHost.surfaceID)
+            return HostIntegrationMutationOutcome(
+                state: await refresh(), feedbackKind: .information,
+                feedbackText: .localized(key: .feedbackHostStateUpdated, arguments: []))
         case .repair(let requestedHost):
             result = await manager.repair(requestedHost)
         case .disconnect(let requestedHost):
-            result = await manager.disconnect(requestedHost)
+            result = await manager.setEnabled(surface: requestedHost.surfaceID, enabled: false)
         case .copyHooksCommand, .redetect, .clearReceiptHistory:
             throw HostIntegrationManagerBridgeError.unsupportedAction
         }
@@ -229,7 +252,7 @@ private func mutationFeedbackText(
         if let snapshot, case .observed = snapshot.activation {
             return .localized(key: .feedbackConnectedReceipt, arguments: [host.displayName])
         }
-        return .localized(key: .feedbackAwaitingConfirmation, arguments: [host.displayName])
+        return .localized(key: .feedbackConfiguredWaiting, arguments: [host.displayName])
     }
 
     if let snapshot, case .observed = snapshot.activation {

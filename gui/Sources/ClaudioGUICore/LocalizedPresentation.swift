@@ -146,6 +146,7 @@ public func localizedHostIntegrationUserActionTitle(
         return hostStatus == .legacy
             ? l10n.text(.actionUpgrade)
             : l10n.format(.actionRepair, host.displayName)
+    case .retryMaintenance: return l10n.text(.integrationsAutoRetry)
     case .disconnect(let host): return l10n.format(.actionDisconnect, host.displayName)
     case .clearReceiptHistory(let host):
         return l10n.format(.actionClearReceiptHistory, host.displayName)

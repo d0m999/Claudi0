@@ -77,6 +77,7 @@ public struct IntegrationConnectionSectionPresentation: Sendable, Equatable {
 /// configuration source, and current-installation redacted receipt evidence.
 public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable {
     public var id: HostID { host }
+    public var snapshot: HostIntegrationSnapshot?
     public let host: HostID
     public let row: HostSourceRowPresentation
     public let configurationSource: String?
@@ -93,8 +94,10 @@ public struct IntegrationDestinationHostFacts: Identifiable, Sendable, Equatable
         latestReceiptText: String?,
         latestReceiptEvidence: HostReceiptEvidence?,
         mechanism: HostIntegrationMechanism? = nil,
-        bindingReceipts: [IntegrationBindingReceiptPresentation] = []
+        bindingReceipts: [IntegrationBindingReceiptPresentation] = [],
+        snapshot: HostIntegrationSnapshot? = nil
     ) {
+        self.snapshot = snapshot
         self.host = host
         self.row = row
         self.configurationSource = configurationSource
@@ -160,14 +163,15 @@ public struct IntegrationAgentConnectionControlPresentation: Identifiable, Senda
     public init(
         row: HostSourceRowPresentation,
         isToggleEnabled: Bool = true,
-        isInFlight: Bool = false
+        isInFlight: Bool = false,
+        intentEnabled: Bool? = nil
     ) {
         host = row.host
         title = row.title
         status = row.status
         badgeText = hostIntegrationStatusBadgeText(row.status)
         coverageText = row.coverageText
-        isOn = row.status != .notConnected
+        isOn = intentEnabled ?? (row.status != .notConnected)
         self.isToggleEnabled = isToggleEnabled
         self.isInFlight = isInFlight
     }
@@ -195,7 +199,11 @@ public struct IntegrationDestinationContent: Sendable, Equatable {
         }
         self.hostFacts = orderedHostFacts
         self.agents = orderedHostFacts.map {
-            IntegrationAgentConnectionControlPresentation(row: $0.row)
+            IntegrationAgentConnectionControlPresentation(
+                row: $0.row,
+                isToggleEnabled: $0.snapshot?.intent?.enabled == true
+                    || $0.snapshot?.availability == .available,
+                intentEnabled: $0.snapshot?.intent?.enabled == true)
         }
         self.unavailableReason = unavailableReason
     }
@@ -250,7 +258,7 @@ public func integrationConnectionStatusActions(
         case .copyHooksCommand: .copyHooks
         case .redetect: .redetect
         case .repair(let host): .repair(host)
-        case .connect, .disconnect, .clearReceiptHistory: nil
+        case .connect, .disconnect, .retryMaintenance, .clearReceiptHistory: nil
         }
     }
 }

@@ -476,6 +476,7 @@ public final class EventNoticeModel: ObservableObject {
     private let resolveSourceApplication:
         @MainActor ([HostProcessIdentity], EventNoticeAction) -> SourceApplicationTarget?
     /// Empty in production. Only adapters with real submission-order evidence may opt in.
+    private let noticeAuthorized: @MainActor (HostEventNotice) -> Bool
     private let verifiedSubmissionSurfaces: Set<HostSurfaceID>
     private var epochStartedAt: TimeInterval
     private var entries: [Entry] = []  // oldest update first
@@ -513,6 +514,7 @@ public final class EventNoticeModel: ObservableObject {
         now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         scheduler: EventNoticeScheduler = .live,
         verifiedSubmissionSurfaces: Set<HostSurfaceID> = [],
+        noticeAuthorized: @escaping @MainActor (HostEventNotice) -> Bool = { _ in true },
         resolveSourceApplication:
             @escaping @MainActor ([HostProcessIdentity], EventNoticeAction) ->
             SourceApplicationTarget? = { _, _ in nil }
@@ -522,6 +524,7 @@ public final class EventNoticeModel: ObservableObject {
         self.scheduler = scheduler
         self.resolveSourceApplication = resolveSourceApplication
         self.verifiedSubmissionSurfaces = verifiedSubmissionSurfaces
+        self.noticeAuthorized = noticeAuthorized
         epochStartedAt = now()
         let initialSnapshot = EventNoticeModelSnapshot(
             phase: .hidden, current: nil, attentionReminders: [], pendingCount: 0,
@@ -534,12 +537,22 @@ public final class EventNoticeModel: ObservableObject {
             receiverEpoch: receiverEpoch, isOpen: false)
     }
 
+    public func isNoticeAuthorized(_ notice: HostEventNotice) -> Bool { noticeAuthorized(notice) }
+
+    /// Closing a surface affects ingress and its banner, never accepted attention/read versions.
+    public func hideBanner(for surface: HostSurfaceID) {
+        guard currentEntry?.content?.notice?.surface == surface else { return }
+        invalidatePresentationTimer()
+        finishDismissal()
+    }
+
     private func isVerifiedSubmissionStart(_ notice: HostEventNotice) -> Bool {
         notice.event == .taskStart && verifiedSubmissionSurfaces.contains(notice.surface)
     }
 
     @discardableResult
     public func accept(_ notice: HostEventNotice) -> EventNoticeAcceptance {
+        guard noticeAuthorized(notice) else { return .ignoredDisabled }
         expireEntries()
         defer { publish() }
         guard canReceive else { return .ignoredDisabled }

@@ -1423,13 +1423,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter /hooks in Codex, confirm it, then submit another prompt"
+            "value": "The connection is prepared. A real event will confirm reception."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在 Codex 输入 /hooks，确认后再提交一次提示词"
+            "value": "接入已准备好；收到真实事件后会更新状态。"
           }
         }
       }
@@ -8881,13 +8881,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "claudi0 is ready; waiting for %@ to confirm"
+            "value": "%@ The connection is prepared. A real event will confirm reception."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "claudi0 已写好，等待 %@ 确认"
+            "value": "%@ 接入已准备好；收到真实事件后会更新状态。"
           }
         }
       }
@@ -9601,13 +9601,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage the apps Claudio connects to, how it connects, and which events it can hear."
+            "value": "Installed sources connect automatically. Disabled sources stay disabled until you enable them again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理 Claudio 连接的应用、连接方式和事件能力。"
+            "value": "已安装的来源会自动接入。关闭后保持关闭，直到你再次开启。"
           }
         }
       }
@@ -9633,13 +9633,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage each app's connection here. Sound packs, volume, and event switches belong to the Default Group or individual workspaces."
+            "value": "Quitting Claudio pauses new events; they resume on the next launch."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在此管理各应用的连接。声音包、音量与事件开关由默认组或各工作区分别保存。"
+            "value": "退出 Claudio 会暂停新事件；下次启动恢复。"
           }
         }
       }
@@ -16506,6 +16506,240 @@
           "stringUnit": {
             "state": "translated",
             "value": "返回父会话"
+          }
+        }
+      }
+    },
+    "integrations.automatic.not-installed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not installed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安装"
+          }
+        }
+      }
+    },
+    "integrations.automatic.disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已关闭"
+          }
+        }
+      }
+    },
+    "integrations.automatic.preparing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在准备"
+          }
+        }
+      }
+    },
+    "integrations.automatic.updating": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在更新连接"
+          }
+        }
+      }
+    },
+    "integrations.automatic.prepared": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integration prepared"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入已准备好"
+          }
+        }
+      }
+    },
+    "integrations.automatic.received": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Events received"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已收到事件"
+          }
+        }
+      }
+    },
+    "integrations.automatic.supported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supported reminders"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的提醒"
+          }
+        }
+      }
+    },
+    "integrations.automatic.sound-scopes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure sounds in Default Group & Workspaces…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在默认组／工作区中设置声音…"
+          }
+        }
+      }
+    },
+    "integrations.automatic.diagnostics": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "诊断详情…"
+          }
+        }
+      }
+    },
+    "integrations.automatic.diagnostics-title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Diagnostics"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 诊断"
+          }
+        }
+      }
+    },
+    "integrations.automatic.retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry maintenance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试维护"
+          }
+        }
+      }
+    },
+    "integrations.automatic.cleaning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在清理连接"
+          }
+        }
+      }
+    },
+    "integrations.automatic.no-installation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No installation identity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无安装身份"
+          }
+        }
+      }
+    },
+    "integrations.automatic.intent-unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to read integration intent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取接入启用意愿"
           }
         }
       }

@@ -200,7 +200,16 @@ public struct HostHookReceiptStore: Sendable {
             return .failure(.encodingFailure(reason: error.localizedDescription))
         }
         let locked = withNonBlockingLock(path: installationLockFile(host: host).path) {
-            publish(data, to: installationFile(host: host)).map { _ in () }
+            if let boundary = HostPublicationContext.current {
+                switch boundary.acquire() {
+                case .allowed: break
+                case .busy: return Result<Void, HostHookReceiptStoreError>.failure(.lockBusy)
+                case .stale: return .failure(.staleInstallation)
+                case .unavailable: return .failure(.lockFailed(errno: EIO))
+                }
+            }
+            // Retain the configuration publication lease until its marker is activated.
+            return publish(data, to: installationFile(host: host)).map { _ in () }
         }
         return flattenInstallationLock(locked)
     }
@@ -215,6 +224,14 @@ public struct HostHookReceiptStore: Sendable {
             guard currentInstallationIDUnlocked(host: host) == installationID else {
                 return Result<Void, HostHookReceiptStoreError>.success(())
             }
+            let boundary = HostPublicationContext.current
+            switch boundary?.acquire() ?? .allowed {
+            case .allowed: break
+            case .busy: return .failure(.lockBusy)
+            case .stale: return .failure(.staleInstallation)
+            case .unavailable: return .failure(.lockFailed(errno: EIO))
+            }
+            defer { boundary?.release() }
             let file = installationFile(host: host)
             guard Darwin.unlink(file.path) == 0 || errno == ENOENT else {
                 return .failure(
@@ -301,7 +318,7 @@ public struct HostHookReceiptStore: Sendable {
                     .staleInstallation)
             }
             // WorkBuddy 的版本身份在安装锁内重读；迟到回执不得激活同 UUID 的旧 scope。
-            if receipt.host == .workBuddy
+            if expectedScopeFingerprint != nil || receipt.host == .workBuddy
                 || receipt.host == .opencode || receipt.host == .kimiCode
                 || HostQuestionTrigger.binding(host: receipt.host, nativeEvent: receipt.nativeEvent)
                     != nil
@@ -311,6 +328,13 @@ public struct HostHookReceiptStore: Sendable {
                 else { return .failure(.staleInstallation) }
             }
             let eventLocked = withNonBlockingLock(path: lock.path) {
+                let boundary = HostPublicationContext.current
+                boundary?.willPublish(.receipt)
+                guard boundary?.acquire() ?? .allowed == .allowed else {
+                    return Result<HostHookReceiptWriteOutcome, HostHookReceiptStoreError>.failure(
+                        .staleInstallation)
+                }
+                defer { boundary?.release() }
                 switch publish(data, to: destination) {
                 case .failure(let error):
                     return Result<HostHookReceiptWriteOutcome, HostHookReceiptStoreError>.failure(

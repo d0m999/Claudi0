@@ -23,11 +23,10 @@ struct IntegrationsSettingsDestinationView: View {
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var focusedTarget: IntegrationDestinationFocusTarget?
     @State private var receiptHistoryTarget: ReceiptHistoryTarget?
-    @State private var pendingConnect: HostID?
     @State private var feedbackAnnouncer = IntegrationsFeedbackAnnouncementModel()
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
-    private var detailsHost: HostID? { route?.detailsHost }
+    private var detailsHost: HostID? { route.flatMap { HostID(rawValue: $0.surface.rawValue) } }
 
     private struct ReceiptHistoryTarget: Identifiable {
         let host: HostID
@@ -61,9 +60,25 @@ struct IntegrationsSettingsDestinationView: View {
                     VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
                         if let detailsHost {
                             if let facts = model.selectedHostFacts, facts.host == detailsHost {
-                                connectionSection(facts)
-                                capabilitySection(facts)
-                                infoCallout
+                                if route?.level == .diagnostics {
+                                    connectionSection(facts)
+                                    capabilitySection(facts)
+                                    infoCallout
+                                } else {
+                                    if let agent = model.agent(for: facts.host) { agentRow(agent) }
+                                    supportedReminders(facts)
+                                    Button(l10n.text(.integrationsAutoSoundScopes)) {
+                                        onManageSoundScopes()
+                                    }
+                                    Button(l10n.text(.integrationsAutoDiagnostics)) {
+                                        onIntegrationsRoute(
+                                            IntegrationsSettingsRoute(
+                                                surface: facts.host.surfaceID,
+                                                detailsHost: facts.host, level: .diagnostics))
+                                    }
+                                    .accessibilityIdentifier(
+                                        "integrations.destination.open-diagnostics")
+                                }
                             } else {
                                 FailureRow(message: l10n.text(.settingsNativeTargetUnavailable))
                                     .focusable().focused($focusedTarget, equals: .title)
@@ -80,36 +95,7 @@ struct IntegrationsSettingsDestinationView: View {
                             Text(l10n.text(.integrationsAgentHint))
                                 .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            if !model.content.isUnavailable, let facts = model.selectedHostFacts {
-                                connectionSection(facts)
-                                Button {
-                                    onIntegrationsRoute(
-                                        IntegrationsSettingsRoute(
-                                            surface: facts.host.surfaceID,
-                                            detailsHost: facts.host))
-                                } label: {
-                                    HStack {
-                                        Text(l10n.text(.settingsNativeCapabilities))
-                                        Spacer(minLength: 12)
-                                        Image(systemName: "chevron.right").foregroundStyle(
-                                            .secondary)
-                                    }
-                                    .padding(
-                                        .horizontal, SettingsAppearance.controlRowHorizontalPadding
-                                    )
-                                    .padding(
-                                        .vertical, SettingsAppearance.controlRowVerticalPadding
-                                    )
-                                    .frame(minHeight: SettingsAppearance.controlRowHeight)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain).settingsSectionSurface(padding: 0)
-                                .accessibilityIdentifier(
-                                    "integrations.destination.open-capabilities")
-                                infoCallout
-                            } else {
-                                unavailableSection
-                            }
+                            if model.content.isUnavailable { unavailableSection }
                         }
                         if let feedback = model.feedback { feedbackToast(feedback) }
                     }
@@ -149,24 +135,8 @@ struct IntegrationsSettingsDestinationView: View {
         .onChange(of: model.selectedHost) { _ in
             receiptHistoryTarget = nil; reconcileFocus()
         }
-        .alert(
-            l10n.text(.settingsNativeConnectTitle),
-            isPresented: Binding(
-                get: { pendingConnect != nil }, set: { if !$0 { pendingConnect = nil } }),
-            presenting: pendingConnect
-        ) { host in
-            Button(l10n.text(.commonCancel), role: .cancel) { pendingConnect = nil }
-                .keyboardShortcut(.cancelAction)
-            Button(l10n.format(.integrationsEnable, host.displayName)) {
-                pendingConnect = nil
-                guard model.content.facts(for: host)?.status == .notConnected else { return }
-                perform(.connect(host))
-            }
-        } message: { host in
-            Text(l10n.format(.settingsNativeConnectMessage, host.displayName))
-        }
         .onDisappear {
-            receiptHistoryTarget = nil; pendingConnect = nil; model.cancelPendingAction()
+            receiptHistoryTarget = nil; model.cancelPendingAction()
         }
         .onChange(of: model.feedback?.revision) { _ in
             announceFeedbackIfNeeded()
@@ -224,29 +194,23 @@ struct IntegrationsSettingsDestinationView: View {
                 .focused($focusedTarget, equals: .agent(agent.host))
                 .accessibilityLabel(agent.title)
                 .accessibilityValue(
-                    "\(localizedAgentStatus(agent.status))，\(agent.coverageText)"
+                    automaticStatus(for: agent.host)
                 )
                 .accessibilityAddTraits(model.selectedHost == agent.host ? .isSelected : [])
                 .accessibilityIdentifier("integrations.destination.agent.\(agent.host.rawValue)")
 
-                SettingsStatusCapsule(localizedAgentStatus(agent.status), isEmphasized: agent.isOn)
-                    .fixedSize()
-                Text(agent.coverageText)
-                    .font(SettingsAppearance.font(.technical))
+                Text(automaticStatus(for: agent.host))
+                    .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                     .monospacedDigit()
-                    .accessibilityLabel(l10n.text(.integrationsCoverage))
+
                 Toggle(
                     "",
                     isOn: Binding(
                         get: { agent.isOn },
-                        set: { _ in
-                            if agent.isOn {
-                                model.requestToggle(for: agent.host)
-                            } else {
-                                pendingConnect = agent.host
-                            }
-                        })
+                        set: { _ in model.requestToggle(for: agent.host) }
+                    )
                 )
                 .labelsHidden()
                 .toggleStyle(.switch).controlSize(.mini)
@@ -260,7 +224,18 @@ struct IntegrationsSettingsDestinationView: View {
                 )
                 .accessibilityIdentifier("integrations.destination.toggle.\(agent.host.rawValue)")
 
-                if agent.isInFlight, let operation = model.inFlightOperation {
+                if let snapshot = model.content.facts(for: agent.host)?.snapshot,
+                    snapshot.operation == .disconnecting
+                {
+                    ProgressView().controlSize(.small).accessibilityHidden(true)
+                    Text(l10n.text(.integrationsAutoCleaning)).font(
+                        SettingsAppearance.font(.caption))
+                }
+                if route == nil {
+                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+                if let operation = model.activeOperations[agent.host] {
                     ProgressView()
                         .controlSize(.small)
                         .accessibilityHidden(true)
@@ -277,7 +252,40 @@ struct IntegrationsSettingsDestinationView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(
                         model.selectedHost == agent.host
-                            ? Color.primary.opacity(0.06) : Color.clear)))
+                            ? Color.primary.opacity(0.06) : Color.clear)
+            )
+            .soundPacksLayoutProbe("integrations.agent.\(agent.host.rawValue)"))
+    }
+
+    private func automaticStatus(for host: HostID) -> String {
+        guard let snapshot = model.content.facts(for: host)?.snapshot else {
+            return l10n.text(.integrationsAutoPreparing)
+        }
+        return IntegrationAutomaticState(snapshot: snapshot).text(language: languageStore.language)
+    }
+
+    private func supportedReminders(_ facts: IntegrationDestinationHostFacts) -> some View {
+        SettingsSectionCard(title: l10n.text(.integrationsAutoSupported), padding: 0) {
+            VStack(spacing: 0) {
+                ForEach(Event.allCases, id: \.self) { event in
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(localizedEventName(event, language: languageStore.language))
+                            .font(SettingsAppearance.font(.body).weight(.semibold))
+                        ForEach(facts.capabilityReceipts.filter { $0.binding.event == event }) {
+                            receipt in
+                            Text(receipt.capabilityText(language: languageStore.language))
+                                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    if event != Event.allCases.last { Divider() }
+                }
+            }
+        }
+        .soundPacksLayoutProbe("integrations.reminders.\(facts.host.rawValue)")
+        .accessibilityIdentifier("integrations.destination.supported-reminders")
     }
 
     private func connectionSection(_ facts: IntegrationDestinationHostFacts) -> some View {
@@ -293,6 +301,7 @@ struct IntegrationsSettingsDestinationView: View {
                 }
             }
         }
+        .soundPacksLayoutProbe("integrations.diagnostics.\(facts.host.rawValue)")
         .accessibilityIdentifier("integrations.destination.connection-group")
     }
 
@@ -316,13 +325,24 @@ struct IntegrationsSettingsDestinationView: View {
                 VStack(alignment: .trailing, spacing: 7) {
                     if row.kind == .connectionStatus {
                         SettingsStatusCapsule(
-                            localizedAgentStatus(facts.status), isEmphasized: facts.status == .ready
+                            automaticStatus(for: facts.host), isEmphasized: facts.status == .ready
                         )
-                    } else if row.kind == .mechanism, let value = row.value {
-                        Text(value)
-                            .font(SettingsAppearance.font(.technical))
-                            .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
-                            .monospacedDigit()
+                    } else if row.kind == .mechanism {
+                        Text(
+                            facts.snapshot?.installationID?.uuidString
+                                ?? l10n.text(.integrationsAutoNoInstallation)
+                        )
+                        .font(SettingsAppearance.font(.technical))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+                        .monospacedDigit()
+                    }
+                    if row.kind == .connectionStatus,
+                        case .failed(let reason) = facts.snapshot?.operation
+                    {
+                        Text(reason).font(SettingsAppearance.font(.caption)).foregroundStyle(
+                            .secondary
+                        )
+                        .fixedSize(horizontal: false, vertical: true)
                     }
                     if row.kind == .receiptHistory {
                         Button(l10n.text(.integrationsReceiptHistoryView)) {
@@ -333,17 +353,32 @@ struct IntegrationsSettingsDestinationView: View {
                         .accessibilityIdentifier(
                             "integrations.destination.open-history.\(facts.host.rawValue)")
                     }
+                    if row.kind == .connectionStatus, canRetryMaintenance(facts) {
+                        Button(l10n.text(.integrationsAutoRetry)) {
+                            perform(.retryMaintenance(facts.host))
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(model.isPerformingAction(for: facts.host))
+                    }
                     ForEach(row.actions, id: \.self) { action in
                         connectionActionButton(action, facts: facts)
                     }
                 }
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: 280, alignment: .trailing)
+                .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
             .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
             .frame(minHeight: SettingsAppearance.multilineControlRowHeight, alignment: .center)
+            .focusable()
             .focused($focusedTarget, equals: .connectionRow(row.kind))
             .accessibilityIdentifier("integrations.destination.row.\(row.kind.rawValue)"))
+    }
+
+    private func canRetryMaintenance(_ facts: IntegrationDestinationHostFacts) -> Bool {
+        guard let snapshot = facts.snapshot else { return false }
+        if case .failed = snapshot.operation { return true }
+        return snapshot.runtime != .ready || snapshot.intentUnavailable
     }
 
     private func receiptHistorySheet(_ host: HostID) -> AnyView {
@@ -421,6 +456,7 @@ struct IntegrationsSettingsDestinationView: View {
                         hostStatus: facts.status,
                         language: languageStore.language)
                 ) { perform(.repair(host)) }
+                .disabled(facts.snapshot?.intent?.enabled != true)
             case .copyConfigurationSource(let host):
                 Button(l10n.format(.integrationsCopyPathLabel, host.displayName)) {
                     _ = model.copyConfigurationSource(for: host)
@@ -445,7 +481,7 @@ struct IntegrationsSettingsDestinationView: View {
             }
         }
         .buttonStyle(.borderless)
-        .disabled(model.isPerformingAction)
+        .disabled(model.isPerformingAction(for: facts.host))
     }
 
     private var unavailableSection: some View {
@@ -467,30 +503,36 @@ struct IntegrationsSettingsDestinationView: View {
     private func capabilitySection(_ facts: IntegrationDestinationHostFacts) -> some View {
         SettingsSectionCard(title: l10n.text(.settingsNativeCapabilities), padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
-            ForEach(Event.allCases, id: \.self) { event in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(localizedEventName(event, language: languageStore.language))
-                        .font(SettingsAppearance.font(.sectionTitle))
-                    ForEach(facts.capabilityReceipts.filter { $0.binding.event == event }) {
-                        receipt in
-                        Text(receipt.binding.nativeEvent ?? l10n.text(.panelCapabilityUnsupported))
+                ForEach(Event.allCases, id: \.self) { event in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localizedEventName(event, language: languageStore.language))
+                            .font(SettingsAppearance.font(.sectionTitle))
+                        ForEach(facts.capabilityReceipts.filter { $0.binding.event == event }) {
+                            receipt in
+                            Text(
+                                receipt.binding.nativeEvent
+                                    ?? l10n.text(.panelCapabilityUnsupported)
+                            )
                             .font(SettingsAppearance.font(.caption))
-                        Text(receipt.capabilityText(language: languageStore.language))
-                            .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
-                        Text(receipt.text(language: languageStore.language))
-                            .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
-                            .accessibilityIdentifier(
-                                "integrations.destination.capability.\(receipt.id.rawValue)")
+                            Text(receipt.capabilityText(language: languageStore.language))
+                                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                            Text(receipt.text(language: languageStore.language))
+                                .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                                .accessibilityIdentifier(
+                                    "integrations.destination.capability.\(receipt.id.rawValue)")
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    .frame(
+                        minHeight: SettingsAppearance.multilineControlRowHeight, alignment: .leading
+                    )
+                    if event != Event.allCases.last {
+                        Divider().padding(
+                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
                     }
                 }
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
-                .frame(minHeight: SettingsAppearance.multilineControlRowHeight, alignment: .leading)
-                if event != Event.allCases.last {
-                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                }
-            }
             }
         }
         .accessibilityIdentifier("integrations.destination.capabilities")
@@ -733,6 +775,7 @@ struct IntegrationsSettingsDestinationView: View {
             return operation.isUpgrade
                 ? l10n.text(.actionUpgradeInProgress)
                 : l10n.text(.actionRepairInProgress)
+        case .retryMaintenance: return l10n.text(.integrationsAutoUpdating)
         case .disconnect: return l10n.text(.actionDisconnectInProgress)
         case .clearReceiptHistory: return l10n.text(.actionClearReceiptHistoryInProgress)
         case .copyHooksCommand: return l10n.text(.actionCopyHooks)

@@ -15,6 +15,10 @@
   grey grouped forms; blue native controls. One reading column, no dashboard grid.
   Native mapping + sources: APPLE-DESIGN-RESEARCH.md / IMPLEMENTATION-MAP.md.
   Values below are proposal tokens inferred from the supplied reference, NOT HIG mandates.
+  2026-10-05 integration revision: application intent switches, automatic maintenance,
+  plain-language reminder capabilities, and secondary diagnostics. Supersedes this
+  prototype's former connection rows. Maintenance and incoming events are in-memory
+  demonstrations; this does not implement or verify production host integration.
 -->
 <style>
 :root {
@@ -114,6 +118,16 @@ svg { width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke
 .value { color:var(--secondary); font-size:12px; }
 .value.good { color:var(--success); }
 .value.warning { color:var(--warning); }
+.host-summary { flex:1; min-width:0; text-align:left; padding:4px 0; line-height:1.4; }
+.host-summary strong { display:block; font-size:13px; font-weight:400; }
+.host-summary small { display:block; color:var(--secondary); font-size:11px; margin-top:4px; }
+.host-status { font-size:11px; color:var(--secondary); text-align:right; max-width:180px; }
+.host-status.attention { color:var(--warning); }
+.host-action { margin-left:53px; padding-top:0; min-height:0; }
+.host-action::before { display:none; }
+.integration-review { max-width:1240px; margin:0 auto 12px; display:flex; flex-wrap:wrap; align-items:center; gap:12px; font-size:11px; color:var(--secondary); }
+.integration-review button { color:var(--accent); font-size:11px; padding:3px 0; }
+body.clean .integration-review { display:none; }
 .link { color:var(--accent); padding:0; font-size:12px; }
 .link:hover { text-decoration:underline; }
 .small-button { background:var(--button); padding:5px 12px; min-height:26px; border-radius:6px; font-size:12px; color:var(--text); white-space:nowrap; }
@@ -320,6 +334,15 @@ dialog p { overflow-wrap:anywhere; }
   <label><span id="review-scene">场景</span><select id="preview-scene"><option value="normal">正常</option><option value="zero">零音量</option><option value="missing">缺少提示音</option><option value="stale">工作区已失效</option><option value="partial">AI · 2/3 候选</option><option value="failure">AI · 生成失败</option><option value="writeFailure">映射写入失败</option><option value="empty">空声音包库</option></select></label>
   <button id="reset-demo">重置演示</button>
 </div>
+<div class="integration-review" id="integration-review" hidden>
+  <span id="integration-review-label"></span>
+  <button data-action="demo-host-event" id="demo-host-event"></button>
+  <button data-action="demo-host-update" id="demo-host-update"></button>
+  <button data-action="demo-host-exit" id="demo-host-exit"></button>
+  <button data-action="demo-host-restart" id="demo-host-restart"></button>
+  <button data-action="demo-host-race" id="demo-host-race"></button>
+  <button data-action="demo-host-confirm" id="demo-host-confirm" hidden></button>
+</div>
 <div class="stage">
 <section class="window" id="settings-window" aria-label="claudi0 设置窗口">
   <aside class="sidebar" id="sidebar" aria-label="设置侧栏">
@@ -335,7 +358,7 @@ dialog p { overflow-wrap:anywhere; }
   <main class="detail">
     <header class="toolbar">
       <div class="navigation" role="group"><button id="detail-back" aria-label="返回"><svg><use href="#i-back"/></svg></button><button id="detail-forward" aria-label="前进"><svg style="transform:rotate(180deg)"><use href="#i-back"/></svg></button></div>
-      <h1 id="page-title">默认组 / 工作区</h1>
+      <h1 id="page-title" tabindex="-1">默认组 / 工作区</h1>
     </header>
     <div class="scroll" id="page-scroll"><div class="content" id="page-content"></div></div>
   </main>
@@ -396,10 +419,10 @@ function freshState(){return {
  stars:['minimal','soft','night','studio'],referencesComplete:true,library:'ready',inventory:'ready',faults:{},invalidScope:null,
  profile:'elevenlabs-global',credentials:{'elevenlabs-global':{status:'verified'},'minimax-global':{status:'missing'},'qwen-singapore':{status:'deferred'},'qwen-beijing':{status:'missing'},'senseaudio-cn':{status:'verified'}},
  description:'清脆、温柔的两声木质敲击，短促，适合专注工作。',adoptionName:'',generation:null,candidates:[],expandedEvent:null,draft:null,
- hosts:[{id:'claude-code',icon:'claude',name:'Claude Code',state:'ready',enabled:true,receipts:[{event:1,result:'played',time:'18:30:00',current:true}]},
- {id:'codex',icon:'codex',name:'Codex',state:'needsAttention',enabled:true,receipts:[{event:0,result:'played',time:'18:25:00',current:false}]},
- {id:'workbuddy',icon:'workbuddy',name:'WorkBuddy',state:'awaitingActivation',enabled:true,receipts:[]}],selectedHost:'codex',
- notifications:true,receiver:'ready',focusQuiet:false,calendarQuiet:false,focusAuth:'notRequested',calendarAuth:'notRequested',focusObservedActive:false,calendarObservedBusy:false,quietReason:'policiesDisabled',quietHealth:'current',
+ hosts:[{id:'claude-code',icon:'claude',name:'Claude Code',state:'ready',enabled:true,receipts:[{event:0,result:'played',time:'18:30:00',current:true}]},
+ {id:'codex',icon:'codex',name:'Codex',state:'ready',enabled:true,receipts:[{event:0,result:'played',time:'18:25:00',current:true}]},
+ {id:'workbuddy',icon:'workbuddy',name:'WorkBuddy',state:'ready',enabled:true,receipts:[{event:0,result:'played',time:'18:20:00',current:true}]}],selectedHost:'codex',
+ guiRunning:true,notifications:true,receiver:'ready',focusQuiet:false,calendarQuiet:false,focusAuth:'notRequested',calendarAuth:'notRequested',focusObservedActive:false,calendarObservedBusy:false,quietReason:'policiesDisabled',quietHealth:'current',
  login:'enabled',loginFailure:null,preferenceIssues:[],keys:['⌃ ⌥ C','⌃ ⌥ ,',null],keyErrors:[null,null,null],keyRegistered:[true,true,false],
  activity:'ready',counts:[18,96,2,8,24],weekCounts:[109,520,11,47,186],sources:[{id:'claude-code',today:48,week:292,subtasks:102},{id:'codex',today:41,week:238,subtasks:52},{id:'workbuddy',today:25,week:99,subtasks:32}],
  log:{state:'available',bytes:4096,path:'~/.claudio/claudio.log',failures:[{event:2,code:'PLAYBACK_FAILED',time:'18:21:00'},{event:3,code:'HOST_CONFIG_UNREADABLE',time:'18:19:00'}]},
@@ -409,6 +432,7 @@ function freshState(){return {
  operation:null,epoch:0,serial:0
 };}
 let S=freshState();
+const hostTimers=new Map();
 let audioContext=null,audioNodes=[],audioTimer=null,audioEpoch=0,workTimer=null,generationTimer=null,modalReturn=null,sheetModel=null,modalEpoch=0,scrollByRoute={};
 const scope=()=>S.invalidScope||S.ruleBroken||S.scope===S.brokenRuleID?null:S.scopes.find(g=>g.id===S.scope);
 const pack=()=>S.packs.find(p=>p.id===S.pack)||(S.draft?.id===S.pack?S.draft:null);
@@ -446,6 +470,7 @@ function title(){
  if(S.detail==='workspaces')return T('工作区','Workspaces');if(S.detail==='scope-details')return scopeName(scope());
  if(S.detail==='service')return T('AI 提示音服务','AI cue services');if(S.detail==='audio')return T('音频文件','Audio files');
  if(S.detail==='panel')return T('面板显示集','Panel display set');if(S.detail==='host')return host().name;
+ if(S.detail==='host-diagnostics')return host().name+' · '+T('诊断详情','Diagnostics');
  if(editorIndex()>=0)return events[editorIndex()].name();return pages.find(p=>p.id===S.page).title();
 }
 function localizeShell(){
@@ -454,7 +479,18 @@ function localizeShell(){
  $('settings-nav').setAttribute('aria-label',T('设置类别','Settings categories'));$('sidebar').setAttribute('aria-label',T('设置侧栏','Settings sidebar'));
  $('window-close').setAttribute('aria-label',T('关闭设置窗口','Close settings window'));$('window-minimize').setAttribute('aria-label',T('最小化设置窗口','Minimize settings window'));$('window-maximize').setAttribute('aria-label',T('切换窗口尺寸','Change window size'));
  $('brand-subtitle').textContent=T('Agent 提示音','Agent cues');$('sidebar-note').innerHTML=T('声音留在本机。<br>AI 生成由你主动发起。','Sounds stay on this Mac.<br>You start AI generation.');
- $('prototype-message').textContent=T('独立设置原型 · 固定演示数据 · 合成试听 · 不接收真实 Key，不访问用户配置或服务','Standalone settings prototype · Fixed demo data · Synthetic previews · No real keys, user configuration, or services');
+ $('prototype-message').textContent=T('独立设置原型 · 接入维护与事件到达均为演示 · 不访问真实配置或服务','Standalone settings prototype · Integration maintenance and incoming events are simulated · No real configuration or services');
+ $('integration-review').hidden=S.page!=='integrations';
+ $('integration-review-label').textContent=T('原型演示（不属于应用）','Prototype controls (outside the app)');
+ $('demo-host-event').textContent=T('模拟 '+host().name+' 事件到达','Simulate an event from '+host().name);
+ $('demo-host-event').disabled=!S.guiRunning||host().installed===false||!host().enabled||!!host().maintenance||host().manualRequired||!['ready','awaitingActivation'].includes(host().state);
+ $('demo-host-update').textContent=T('模拟 '+host().name+' 版本更新','Simulate a '+host().name+' update');
+ $('demo-host-update').disabled=!host().enabled||!!host().maintenance||!!host().manualRequired;
+ $('demo-host-exit').textContent=T('模拟退出／崩溃','Simulate quit/crash');$('demo-host-exit').disabled=!S.guiRunning;
+ $('demo-host-restart').textContent=T('模拟重启','Simulate restart');$('demo-host-restart').disabled=S.guiRunning;
+ $('demo-host-race').textContent=T('模拟关闭竞争','Simulate OFF race');$('demo-host-race').disabled=!S.guiRunning||host().installed===false;
+ $('demo-host-confirm').hidden=!host().manualRequired||!host().enabled;
+ $('demo-host-confirm').textContent=T('模拟已在 '+host().name+' 确认','Simulate confirmation in '+host().name);
  $('review-title').textContent=T('claudi0 · 设置提案','claudi0 · Settings proposal');$('review-appearance').textContent=T('外观','Appearance');$('review-size').textContent=T('窗口','Window');$('review-scene').textContent=T('演示场景','Demo scenario');
  $('reset-demo').textContent=T('重置演示','Reset demo');$('research-link').textContent=T('Apple 设计研究','Apple design research');$('map-link').textContent=T('原生实现映射','Native implementation map');
  $('preview-theme').options[0].text=T('浅色','Light');$('preview-theme').options[1].text=T('深色','Dark');$('preview-theme').options[2].text=T('跟随系统','System');
@@ -572,12 +608,37 @@ function renderGeneration(i){const p=profile(),busy=S.generation==='busy',adopti
  return section(T('描述生成','Generate from description'),`<div class="event-expanded"><div class="event-target">${esc(packName(pack()))} / ${events[i].name()}<br>${profileName(p)} · ${credentialText(credential())}</div><div class="form-stack"><label for="cue-description">${T('描述','Description')}</label><textarea id="cue-description" class="field" data-maximum-characters="1000" ${busy||adopting?'disabled':''}>${esc(S.description)}</textarea><small>${T('描述是唯一必填创作输入；名称不发送给服务。','The description is the only required creative input. The name is not sent to the service.')}</small></div>${row(T('描述类型','Description type'),T('根据描述自动确定。','Inferred from the description.'),`<span class="value" id="cue-route-label">${route.label}</span>`)}<p class="caption" id="cue-route-reason">${esc(route.message)}</p>${busy?`<div class="progress" role="progressbar" aria-label="${T('正在生成提示音','Generating cues')}"><span></span></div>${reason(T('正在生成，描述保留并锁定。','Generating. The description is retained and locked.'))}`:''}${S.generation==='failed'?reason(T('生成失败，没有可用候选。原绑定保留，可重试或修改描述。','Generation failed; no usable candidates. The previous binding remains. Retry or edit the description.'),'error'):''}<div class="section-actions">${busy?button(T('取消生成','Cancel generation'),'cancel-generation'):button(S.candidates.length?T('重新生成','Generate again'):T('生成候选','Generate candidates'),'generate','small-button primary',!hasCredential()||!route.supported||!S.description.trim()||adopting)}${S.candidates.length?button(T('修改描述','Edit description'),'modify-description','small-button',adopting):''}</div>${S.candidates.length?`<div class="form-stack"><label for="adoption-name">${T('采用后的提示音名称','Cue name on adoption')}</label><input id="adoption-name" class="field" data-maximum-characters="40" value="${esc(S.adoptionName)}" ${adopting?'disabled':''}><small>${T('所有候选共用这个名称；它不改变候选身份或重新生成。','All candidates share this name. It does not change their identities or regenerate audio.')}</small><small id="adoption-name-error" class="error" role="alert">${nameError(S.adoptionName,40)}</small></div><div class="section-heading"><h2>${T('候选提示音','Cue candidates')}</h2><span class="value">${S.candidates.length}/3 ${S.candidates.length<3?T('部分可用','partially available'):''}</span></div>${S.candidates.map((c,n)=>`<div class="candidate"><button class="round-button" data-action="candidate-preview:${n}" aria-label="${esc(T('试听','Preview')+' '+candidateName(c))}" aria-pressed="false" ${adopting?'disabled':''}>${icon('play')}</button><span class="candidate-label">${esc(candidateName(c))}<small>${c.duration}s · ${profileName(p)}</small></span>${button(T('采用','Adopt'),`adopt:${n}`,'small-button',adopting||!!nameError(S.adoptionName,40))}</div>`).join('')}${reason(T('采用会替换此事件的绑定，并移除该用户包的整包 license / author 声明；独立归属资料和其他未知字段保留。','Adoption replaces this event binding and removes whole-pack license / author claims. Separate attribution files and other unknown metadata remain.'))}`:''}</div>`);
 }
 function candidateName(c){return c.style?T(...c.style):T(`候选 ${c.number}`,`Candidate ${c.number}`);}
-const hostState = h => ({ready:T('已激活','Activated'),legacy:T('旧接入','Legacy connection'),awaitingActivation:T('等待当前回执','Awaiting current receipt'),needsAttention:T('需处理','Needs attention'),notConnected:T('未连接','Not connected')})[h.state];
+function hostState(h){
+ if(h.installed===false)return T('未安装','Not installed');
+ if(!S.guiRunning)return T('Claudio 已退出，事件已暂停','Claudio quit; events paused');
+ if(!h.enabled)return T('已关闭','Off');
+ if(h.maintenance)return h.maintenance==='preparing'?T('正在准备…','Preparing…'):T('正在更新连接…','Updating connection…');
+ if(h.manualRequired)return T('需要确认','Confirmation needed');
+ return {ready:T('已收到事件','Events received'),awaitingActivation:T('接入已准备好','Ready to receive events'),needsAttention:T('暂时无法接收提醒','Unable to receive events'),legacy:T('连接需要更新','Connection update needed'),notConnected:T('接入尚未准备好','Integration not ready')}[h.state];
+}
 const hostPath=h=>h.id==='codex'?'~/.codex/hooks.json':h.id==='claude-code'?'~/.claude/settings.json':'WorkBuddy · /hooks';
-function hostActions(h){return button(T('重新检测','Detect again'),'detect-host','small-button',!!S.operation)+(['needsAttention','legacy'].includes(h.state)?button(h.state==='legacy'?T('升级接入…','Upgrade connection…'):T('修复接入…','Repair connection…'),'repair-host','small-button',!!S.operation):'');}
-function renderIntegrations(){const h=host();if(S.detail==='host')return renderHostDetails();return section('Agent',S.hosts.map(v=>row(v.name,'',button(T('选择','Select'),`select-host:${v.id}`,'link',S.selectedHost===v.id)+`<span class="value">${hostState(v)}</span>`+toggle(v.name+' '+T('连接','connection'),`host-enabled:${v.id}`,v.enabled,!!S.operation),{host:v.icon})).join(''),T('名称选择和连接开关相互独立。各来源接入互不影响。','Selection and connection switches are independent. Each surface connection is isolated.'))+
- section(`${h.name} · ${T('连接','Connection')}`,row(T('连接状态','Connection status'),hostState(h),hostActions(h))+row(T('接入方式','Integration method'),h.id==='workbuddy'?'Desktop hooks':'Native hooks')+disclosure(T('事件能力与回执','Event capabilities and receipts'),T('支持、已实现和当前激活分别显示。','Supported, implemented, and currently activated are separate facts.'),'','host-detail',{host:h.icon})+feedback())+
- section(T('声音配置','Sound configuration'),disclosure(T('默认组 / 工作区','Default group / Workspaces'),T('保留当前手动声音作用域，不随所选 Agent 切换。','Keep the manually chosen sound scope when selecting an Agent.'),'','to-events'))+operationStatus();}
+function hostIssue(h){
+ if(h.installed===false)return T('安装后会自动准备；已保存的关闭意愿保留。','Preparation starts after installation; saved OFF intent is retained.');
+ if(!h.enabled||h.maintenance)return '';
+ if(h.manualRequired)return T('需要在 Codex 中确认接入，之后会自动接收提醒。','Confirm integration in Codex to start receiving events.');
+ if(h.state==='needsAttention')return T('配置文件正被另一个程序占用，自动恢复未能完成。','Another program is using the configuration file. Automatic recovery could not finish.');
+ return '';
+}
+function hostIntervention(h){
+ if(!h.enabled||h.maintenance)return '';
+ if(h.manualRequired)return button(T('查看步骤','View steps'),`host-steps:${h.id}`,'small-button');
+ if(h.state==='needsAttention')return button(T('重试连接','Retry connection'),`retry-host:${h.id}`,'small-button');
+ return '';
+}
+function integrationHostRow(h){
+ const issue=hostIssue(h),intervention=hostIntervention(h);
+ return `<div class="row integration-host-row" id="host-${h.id}">${hostIcon(h.icon)}<button class="host-summary" data-action="open-host:${h.id}" aria-label="${esc(h.name+' '+T('详情','details'))}"><strong>${h.name}</strong>${issue?`<small>${issue}</small>`:''}</button><span class="host-status ${issue?'attention':''}">${hostState(h)}</span>${toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled)}<button class="chevron-button" data-action="open-host:${h.id}" aria-label="${esc(T('查看 '+h.name+' 详情','View '+h.name+' details'))}">${icon('next','chevron')}</button></div>${intervention?`<div class="row host-action">${intervention}</div>`:''}`;
+}
+function renderIntegrations(){
+ if(S.detail==='host')return renderHostDetails();
+ if(S.detail==='host-diagnostics')return renderHostDiagnostics();
+ return `<p class="intro">${T('自动接收已启用应用的事件，并按声音设置播放提示音。','Automatically receive events from enabled apps and play cues using your sound settings.')}</p>`+section('',S.hosts.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「默认组 / 工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Default group / Workspaces.'));
+}
 function hostBindings(h,i){
  const native=['UserPromptSubmit','Stop','StopFailure','Notification','SubagentStop'][i];
  const bindings=[];const add=(nativeEvent,support='supported',implemented=true,qualifier='none',key='')=>bindings.push({event:i,nativeEvent,support,implemented,id:`${h.id}:${nativeEvent||'none'}:${events[i].id}:${qualifier}:v1`,key});
@@ -588,15 +649,26 @@ function hostBindings(h,i){
  else if(i===3&&h.id==='workbuddy')add('Notification','partial',true,'notification_matchers_only');
  else add(native);return bindings;
 }
-function bindingCurrent(h,b){return h.enabled&&h.state==='ready'&&b.nativeEvent!==null&&b.support!=='unsupported'&&b.implemented&&h.receipts.some(r=>r.current&&r.event===b.event&&r.nativeEvent===b.nativeEvent&&r.bindingID===b.id&&r.installationID===h.installationID);}
+function bindingCurrent(h,b){return h.enabled&&h.state==='ready'&&b.nativeEvent!==null&&b.support!=='unsupported'&&b.implemented&&(h.activationReceipts||h.receipts).some(r=>r.current&&r.event===b.event&&r.nativeEvent===b.nativeEvent&&r.bindingID===b.id&&r.installationID===h.installationID);}
 function capability(h,i){const bs=hostBindings(h,i),audible=bs.filter(b=>b.implemented&&b.support!=='unsupported');return {supported:bs.some(b=>b.support!=='unsupported'),partial:bs.every(b=>b.support==='partial'),implemented:audible.length>0,current:audible.length>0&&audible.every(b=>bindingCurrent(h,b)),someCurrent:audible.some(b=>bindingCurrent(h,b))};}
 function receiptFixture(h,event,current=true,native=null){const binding=hostBindings(h,event).find(b=>!native||b.nativeEvent===native);return {event,current,time:'18:30:00',result:'played',nativeEvent:binding.nativeEvent,bindingID:binding.id,installationID:current?h.installationID:'demo-old-installation'};}
-function attachReceiptFacts(){for(const h of S.hosts){h.installationID='demo-installation-'+h.id;h.receipts=h.receipts.map(r=>({...receiptFixture(h,r.event,r.current),time:r.time,result:r.result}));}}
+function attachReceiptFacts(){for(const h of S.hosts){h.installationID??='demo-installation-'+h.id;h.receipts=h.receipts.map(r=>({...receiptFixture(h,r.event,r.current),time:r.time,result:r.result}));h.activationReceipts??=structuredClone(h.receipts);}}
 function bindingRows(h,i){return hostBindings(h,i).map(b=>row(b.nativeEvent||T('无原生事件','No native event'),b.key==='claude-question'?T('AskUserQuestion；只表示提问意图，不确认已等待回答。','AskUserQuestion; question intent does not confirm an outstanding input request.'):b.support==='partial'?T('接口部分支持；按限定语义映射。','Interface partially supported; mapped under its qualification.'):'',`<span class="value capability">${T('支持','Support')}: ${b.support==='partial'?T('部分','partial'):b.support==='unsupported'?T('不支持','unsupported'):T('支持','supported')}<br>${T('实现','Implemented')}: ${b.implemented?T('是','yes'):T('否','no')}<br>${T('当前回执','Current receipt')}: ${bindingCurrent(h,b)?T('已确认','confirmed'):T('未确认','unconfirmed')}</span>`,{id:b.key?'binding-'+b.key:undefined})).join('');}
 
-function renderHostDetails(){const h=host();return section('',row(h.name,hostState(h),hostActions(h),{host:h.icon})+row(T('配置来源','Configuration source'),hostPath(h),button(h.id==='workbuddy'?T('复制 /hooks','Copy /hooks'):T('复制路径','Copy path'),'copy-host-path'))+row(T('声音作用域','Sound scope'),scopeName(scope()),button(T('默认组 / 工作区','Default group / Workspaces'),'to-events')))+
- section(T('五事件能力','Five event capabilities'),events.map((e,i)=>{const c=capability(h,i);return row(e.name(),i===3?(h.id==='codex'?T('仅授权请求','Permission requests only'):h.id==='workbuddy'?T('仅 permission_prompt / idle_prompt','Only permission_prompt / idle_prompt'):T('Notification；提问前置信号不表示已等待回答。','Notification; question intent does not confirm an outstanding question.')):'',`<span class="value capability">${T('支持','Supported')}: ${c.partial?T('部分支持','partial'):c.supported?T('是','yes'):T('否','no')}<br>${T('实现','Implemented')}: ${c.implemented?T('是','yes'):T('否','no')}<br>${T('当前激活','Current activation')}: ${c.current?T('已确认','confirmed'):c.someCurrent?T('部分绑定已确认','some bindings confirmed'):T('未确认','unconfirmed')}</span>`,{id:`capability-${e.id}`,icon:e.icon,color:e.color})+bindingRows(h,i);}).join(''),T('只有当前安装代次的对应绑定真实回执确认激活。修复配置不会制造回执。','Only a real receipt for the current installation and binding confirms activation. Repairing configuration does not create receipts.'))+
- section(T('回执','Receipts'),row(T('最新回执','Latest receipt'),h.receipts.length?`${events[h.receipts[0].event].name()} · ${h.receipts[0].time} · ${h.receipts[0].current?T('当前安装','current installation'):T('旧代次','old installation')}`:T('尚无回执','No receipts yet'))+disclosure(T('脱敏历史','Redacted history'),T('只保存事件、结果、时间和安装身份判定。','Only events, outcomes, times, and installation identity classification.'),`${h.receipts.length}`,'receipt-history')+row(T('清除当前来源回执','Clear selected surface receipts'),T('不清活动统计、日志或提醒。','Activity counts, logs, and reminders are unaffected.'),button(T('清除…','Clear…'),'clear-receipts','small-button destructive',!!S.operation)))+feedback()+operationStatus();}
+function reminderQualification(h,i){
+ const c=capability(h,i);
+ if(!c.supported)return T('当前应用没有提供此类事件。','This app does not provide this event.');
+ if(!c.implemented)return T('当前接入暂不支持此类提醒。','This reminder is not yet available in this integration.');
+ if(i===3)return h.id==='codex'?T('请求操作授权时提醒。','Notifies you when permission is requested.'):h.id==='workbuddy'?T('请求授权或需要关注时提醒。','Notifies you about permission requests and attention signals.'):T('需要关注时提醒；即将提问的信号不代表已等待回答。','Notifies you about attention signals; question intent does not confirm an unanswered question.');
+ return '';
+}
+function renderHostDetails(){const h=host();return section('',row(h.name,hostIssue(h),`<span class="host-status">${hostState(h)}</span>`+toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled),{host:h.icon})+(hostIntervention(h)?row(T('需要你的操作','Your action is needed'),'',hostIntervention(h)):''))+
+ section(T('支持的提醒','Supported reminders'),events.map((e,i)=>{const c=capability(h,i);return row(e.name(),reminderQualification(h,i),`<span class="value">${c.supported&&c.implemented?T('支持','Supported'):T('暂不支持','Unavailable')}</span>`,{id:`reminder-${e.id}`,icon:e.icon,color:e.color});}).join(''),T('按此应用提供的事件自动提醒；各类提醒可在声音设置中单独开关。','Events provided by this app trigger reminders automatically. Turn individual reminders on or off in sound settings.'))+
+ section('',disclosure(T('诊断详情…','Diagnostics…'),T('接入信息与排障记录。','Integration information and troubleshooting records.'),'','host-diagnostics'));}
+function renderHostDiagnostics(){const h=host();return `<p class="intro">${T('这些信息用于排查接入问题，日常使用无需调整。','These details help troubleshoot integration issues. No changes are needed for everyday use.')}</p>`+
+ section(T('接入信息','Integration information'),row(T('连接状态','Connection status'),hostState(h),button(T('重新检测','Check again'),'detect-host','small-button',!!h.maintenance))+row(T('接入方式','Integration method'),h.id==='workbuddy'?'Desktop hooks':'Native hooks')+row(T('配置来源','Configuration source'),hostPath(h),button(h.id==='workbuddy'?T('复制 /hooks','Copy /hooks'):T('复制路径','Copy path'),'copy-host-path'))+row(T('安装代次','Installation identity'),esc(h.installationID))+row(T('维护连接','Maintain connection'),T('重新配置此应用的接入。','Prepare this app’s integration again.'),button(T('重新配置','Prepare again'),'repair-host','small-button',!h.enabled||!!h.maintenance)))+
+ section(T('事件接入证据','Event integration evidence'),events.map((e,i)=>row(e.name(),'','',{icon:e.icon,color:e.color})+bindingRows(h,i)).join(''),T('配置就绪与真实事件验证分别记录。每个事件只由当前安装的对应回执确认；更新配置不会制造回执。','Configuration readiness and real-event verification are recorded separately. Each event requires its corresponding current-installation receipt; updating configuration does not create one.'))+
+ section(T('排障记录','Troubleshooting records'),disclosure(T('回执历史','Receipt history'),T('仅包含脱敏的事件、时间与播放结果。','Contains only redacted events, times, and playback outcomes.'),`${h.receipts.length}`,'receipt-history'))+feedback()+operationStatus();}
 const authText=(state)=>({notRequested:T('尚未请求授权','Permission not requested'),authorized:T('已授权','Authorized'),denied:T('授权被拒绝','Permission denied'),restricted:T('受系统限制','Restricted by the system'),unavailable:T('当前系统不可用','Unavailable on this system')})[state];
 const quietNames={policiesDisabled:['策略均已关闭','Both policies are disabled'],permissionRequired:['需要系统授权','System permission is required'],noDynamicQuiet:['没有动态静默原因','No dynamic quiet reason'],focusActive:['专注模式正在生效','Focus mode is active'],calendarBusy:['当前日历忙碌','Calendar is busy'],focusAndCalendarBusy:['专注模式与日历忙碌','Focus mode and calendar are busy'],observerFailure:['系统观察失败','System observation failed']};
 const healthNames={current:['快照有效','Snapshot current'],publicationFailed:['快照发布失败','Snapshot publication failed'],expired:['快照已过期','Snapshot expired']};
@@ -742,8 +814,44 @@ async function playTone(index,control,sequence=false){if(!sequence)stopAudio();c
  try{const epoch=audioEpoch;audioContext??=new(window.AudioContext||window.webkitAudioContext)();await audioContext.resume();if(epoch!==audioEpoch)return;const gain=audioContext.createGain(),osc=audioContext.createOscillator(),now=audioContext.currentTime;osc.type=index===2?'triangle':'sine';osc.frequency.value=[650,780,320,570,940][index];gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.07*(S.page==='events'?g.volume/100:.6),now+.025);gain.gain.exponentialRampToValueAtTime(.0001,now+.65);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+.7);audioNodes.push(osc);if(control){control.classList.add('playing');control.setAttribute('aria-pressed','true');control.innerHTML=icon('stop');}if(!sequence)audioTimer=setTimeout(()=>{if(epoch!==audioEpoch)return;stopAudio();announce('合成示意声音试听结束。','Synthetic demo preview finished.');},760);}catch(_){setNotice('浏览器无法启动合成试听。配置未改变。','The browser could not start the synthetic preview. Configuration is unchanged.','error');render();}}
 async function playAll(){if(S.page!=='events')return;stopAudio();const g=scope(),p=S.packs.find(p=>p.id===g?.pack);if(!g||!p||!p.healthy||g.volume===0)return;const indexes=events.map((_,i)=>i).filter(i=>p.sounds[i]),epoch=audioEpoch;let n=0;const next=async()=>{if(epoch!==audioEpoch||S.page!=='events'||scope()?.id!==g.id||g.pack!==p.id)return;await playTone(indexes[n++],null,true);if(epoch!==audioEpoch)return;audioTimer=setTimeout(n<indexes.length?next:stopAudio,900);};if(indexes.length)await next();}
 async function copyText(text,zh,en){const captured=text,epoch=S.epoch,token=modalEpoch;try{if(S.faults.clipboard)throw Error('demo-copy-failure');await navigator.clipboard.writeText(captured);if(epoch!==S.epoch||token!==modalEpoch)return;setNotice(zh+'已复制。',en+' copied.');if($('sheet').open)$('sheet-error').textContent=T(zh+'已复制。',en+' copied.');render();}catch(_){if(epoch!==S.epoch||token!==modalEpoch)return;setNotice('复制失败；内容保留，可选择文本手工复制。','Copy failed. Content remains selectable for manual copying.','error');render();if($('sheet').open)sheetError('复制失败，请选择已显示文本手工复制。','Copy failed. Select the displayed text to copy manually.');else if(S.page!=='about')openSheet('复制失败','Copy failed',()=>`<p>${T('浏览器未允许写入剪贴板。','The browser did not allow clipboard writes.')}</p><textarea class="field mono" aria-label="${T('手工复制内容','Content for manual copy')}" readonly>${esc(captured)}</textarea>`);}}
-function hostOperation(h,kind){const id=h.id;perform('host-'+kind,'正在处理来源接入','Updating surface integration',()=>{const current=S.hosts.find(v=>v.id===id);if(!current)return;if(S.faults.host){setNotice(`${current.name} 操作失败，原接入状态保留；其他来源未改变。`,`${current.name} operation failed. Previous integration state retained; other surfaces unchanged.`,'error');S.retry={fault:'host',run:()=>hostOperation(current,kind)};return;}if(kind==='disconnect'){current.enabled=false;current.state='notConnected';}else if(kind==='connect'||kind==='repair'){current.enabled=true;current.state='awaitingActivation';current.installationID='demo-installation-'+current.id+'-'+(++S.serial);current.receipts.forEach(r=>r.current=false);}setNotice(kind==='detect'?'重新检测完成；激活仍以当前真实回执为准。':kind==='disconnect'?'当前来源已断开，声音配置与其他来源保留。':'接入配置已更新；等待当前安装的新回执，尚未确认激活。',kind==='detect'?'Detection complete. Activation still requires current real receipts.':kind==='disconnect'?'Selected surface disconnected; sound configuration and other surfaces remain.':'Integration configuration updated. Awaiting a receipt for the current installation; activation is unconfirmed.');S.retry=null;});}
-function requestConnection(h,desired){confirmAction(desired?'连接此来源？':'断开此来源？',desired?'Connect this surface?':'Disconnect this surface?',()=>`${h.name} · `+T('仅修改 claudi0 自有接入，保留第三方 hooks 和声音配置。','Change only claudi0-owned integration. Third-party hooks and sound configuration remain.'),()=>desired?T('连接','Connect'):T('断开','Disconnect'),()=>hostOperation(h,desired?'connect':'disconnect'));}
+function cancelHostMaintenance(h){clearTimeout(hostTimers.get(h.id));hostTimers.delete(h.id);h.maintenanceRevision=(h.maintenanceRevision||0)+1;h.maintenance=null;}
+function stopHostMaintenance(){for(const h of S.hosts)cancelHostMaintenance(h);}
+function refreshHostPresentation(){if(['integrations','usage','about'].includes(S.page))render();}
+function maintainHost(h,kind='recovering'){
+ if(!h||!h.enabled)return;
+ cancelHostMaintenance(h);const owner=S,revision=h.maintenanceRevision;
+ h.maintenance=kind;h.manualRequired=false;h.state='awaitingActivation';
+ h.installationID='demo-installation-'+h.id+'-'+(++S.serial);h.receipts.forEach(r=>r.current=false);h.activationReceipts=[];
+ refreshHostPresentation();
+ hostTimers.set(h.id,setTimeout(()=>{
+  if(S!==owner||h.maintenanceRevision!==revision||!h.enabled)return;
+  hostTimers.delete(h.id);h.maintenance=null;
+  if(S.faults.host===h.id||S.faults.host===true){h.state='needsAttention';if(S.page==='integrations')announce(h.name+' 自动恢复未能完成，请重试连接。',h.name+' could not recover automatically. Retry the connection.');}
+  else{h.state='awaitingActivation';h.manualRequired=!!h.requiresConfirmation;}
+  refreshHostPresentation();
+ },2200));
+}
+function receiveDemoHostEvent(h){
+ if(!S.guiRunning||h?.installed===false||!h?.enabled||h.maintenance||h.manualRequired||!['ready','awaitingActivation'].includes(h.state))return;
+ h.state='ready';const receipt=receiptFixture(h,0);h.receipts.unshift(receipt);h.activationReceipts=[receipt,...(h.activationReceipts||[])];refreshHostPresentation();
+}
+function hostOperation(h,kind){
+ if(kind==='detect'){setNotice('接入检查完成，事件验证记录保留。','Integration check complete. Event verification records are retained.','information');render();return;}
+ if(kind==='disconnect')return requestConnection(h,false);
+ return maintainHost(h,kind==='connect'?'preparing':'recovering');
+}
+function requestConnection(h,desired){
+ if(!h||desired&&h.installed===false)return;S.notice=null;h.enabled=desired;h.intentRevision=(h.intentRevision||0)+1;
+ if(desired)maintainHost(h,'preparing');
+ else{cancelHostMaintenance(h);h.manualRequired=false;h.state='notConnected';render();}
+}
+function hostSteps(h){
+ openSheet('在 Codex 中确认接入','Confirm integration in Codex',()=>`<p>${T('Codex 要求在应用内确认接入，完成后 claudi0 会自动接收事件。','Codex requires confirmation inside the app. claudi0 will receive events automatically afterwards.')}</p><ol><li>${T('进入正在使用的 Codex 会话，输入 /hooks。','Open your Codex session and enter /hooks.')}</li><li>${T('确认启用 claudi0 的提示事件，然后继续正常使用。','Confirm claudi0 events, then continue working as usual.')}</li></ol>`,'',()=>{$('sheet').querySelector('[data-action="sheet-cancel"]').textContent=T('关闭','Close');});
+}
+function receiptHistorySheet(h){
+ const id=h.id;
+ openSheet('回执历史','Receipt history',()=>`<p>${h.name}</p><div class="group">${h.receipts.map(r=>row(events[r.event].name(),`${r.time} · ${r.current?T('当前代次','current installation'):T('旧代次','old installation')} · ${r.result}`)).join('')||`<div class="empty">${T('暂无历史回执','No receipt history')}</div>`}</div><p>${T('清除这些排障记录不影响当前连接或声音设置。','Clearing troubleshooting records does not affect the current connection or sound settings.')}</p>`,()=>button(T('清除历史…','Clear history…'),'history-clear','small-button destructive',!h.receipts.length||!!S.operation),()=>{$('sheet').querySelector('[data-action="sheet-cancel"]').textContent=T('关闭','Close');$('sheet').querySelector('[data-action="history-clear"]').onclick=()=>{closeSheet();action('clear-receipts:'+id);};});
+}
 function quietRecompute(){
  const focused=S.focusQuiet&&S.focusAuth==='authorized'&&S.focusObservedActive===true;
  const busy=S.calendarQuiet&&S.calendarAuth==='authorized'&&S.calendarObservedBusy===true;
@@ -802,11 +910,20 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='modify-description'){stopAudio();clearGeneration();render();$('cue-description')?.focus();return;}
  if(a==='adopt')return adoptCandidate(Number(id));if(a==='profile'){if(S.operation)return;stopAudio();clearGeneration();S.profile=id;S.expandedEvent=null;render();return;}
  if(a==='credential')return credentialSheet();
- if(a==='select-host'){S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='surface');S.selectedHost=id;S.notice=null;render();return;}if(a==='host-detail')return navigate('integrations','host');
- if(a==='detect-host')return hostOperation(host(),'detect');if(a==='repair-host'){const h=host();return confirmAction(h.state==='legacy'?'升级此来源接入？':'修复此来源接入？',h.state==='legacy'?'Upgrade this integration?':'Repair this integration?',()=>T('配置更新成功后只进入等待当前回执。','A successful configuration update enters the awaiting-current-receipt state.'),()=>T('继续','Continue'),()=>hostOperation(h,'repair'));}
+ if(a==='select-host'){S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='surface');S.selectedHost=id;S.notice=null;render();return;}
+ if(a==='open-host'){return navigate('integrations','host',{host:id});}
+ if(a==='host-detail')return navigate('integrations','host');if(a==='host-diagnostics')return navigate('integrations','host-diagnostics');
+ if(a==='demo-host-event')return receiveDemoHostEvent(host());if(a==='demo-host-update')return maintainHost(host(),'recovering');
+ if(a==='demo-host-confirm'){const h=host();if(!h.enabled||!h.manualRequired)return;h.requiresConfirmation=false;h.manualRequired=false;render();return;}
+ if(a==='demo-host-exit'){S.guiRunning=false;S.hosts.forEach(cancelHostMaintenance);render();return;}
+ if(a==='demo-host-restart'){S.guiRunning=true;S.hosts.filter(h=>h.enabled&&h.installed!==false).forEach(h=>maintainHost(h,'recovering'));render();return;}
+ if(a==='demo-host-race'){const h=host(),before=h.receipts.length;maintainHost(h,'recovering');requestConnection(h,false);setTimeout(()=>{receiveDemoHostEvent(h);setNotice('关闭竞争：迟到更新和事件被拒绝；历史 '+before+' 条保留。','OFF race: late updates and events rejected; '+before+' history entries retained.','information');render();},2400);return;}
+ if(a==='host-steps')return hostSteps(S.hosts.find(h=>h.id===id));
+ if(a==='retry-host'){S.faults.host=false;return maintainHost(S.hosts.find(h=>h.id===id),'recovering');}
+ if(a==='detect-host')return hostOperation(host(),'detect');if(a==='repair-host')return maintainHost(host(),'recovering');
  if(a==='copy-host-path')return copyText(host().id==='workbuddy'?'/hooks':hostPath(host()),'接入路径','Integration path');
- if(a==='receipt-history')return openSheet('脱敏回执历史','Redacted receipt history',()=>`<p>${host().name}</p><div class="group">${host().receipts.map(r=>row(events[r.event].name(),`${r.time} · ${r.current?T('当前代次','current installation'):T('旧代次','old installation')} · ${r.result}`)).join('')||`<div class="empty">${T('暂无历史回执','No receipt history')}</div>`}</div>`);
- if(a==='clear-receipts'){const h=host();return confirmAction('清除当前来源回执？','Clear selected surface receipts?',()=>h.name+' · '+T('仅清当前来源回执，其他来源、计数、日志和提醒保留。','Only this surface’s receipts are cleared. Other surfaces, counts, logs, and reminders remain.'),()=>T('清除','Clear'),()=>perform('clear-receipts','正在清除回执','Clearing receipts',()=>{if(S.faults.receiptClear){setNotice('回执清除失败，原回执保留。','Receipt clear failed. Previous receipts remain.','error');return;}h.receipts=[];if(h.enabled&&h.state==='ready')h.state='awaitingActivation';setNotice('当前来源回执已清除；当前激活需要新回执。','Selected surface receipts cleared; activation requires a new receipt.');}));}
+ if(a==='receipt-history')return receiptHistorySheet(host());
+ if(a==='clear-receipts'){const h=S.hosts.find(v=>v.id===(id||S.selectedHost));return confirmAction('清除回执历史？','Clear receipt history?',()=>h.name+' · '+T('只清除这个应用的排障历史，当前连接、声音设置和其他记录保留。','Clear only this app’s troubleshooting history. Keep its current connection, sound settings, and other records.'),()=>T('清除历史','Clear history'),()=>perform('clear-receipts','正在清除历史','Clearing history',()=>{if(S.faults.receiptClear){setNotice('历史清除失败，原记录保留。','History could not be cleared. Existing records are retained.','error');return;}h.receipts=[];setNotice('回执历史已清除，当前连接与声音设置保留。','Receipt history cleared. Current integration and sound settings are retained.');}));}
  if(a==='open-focus-settings')return platformAction('Focus privacy settings');if(a==='open-calendar-settings')return platformAction('Calendar privacy settings');if(a==='open-login-settings')return platformAction('Login Items settings');
  if(a==='refresh-login'){setNotice('已重新检测，显示当前系统演示状态。','Rechecked; showing the current demo system state.');render();return;}if(a==='retry-login'&&S.loginFailure){S.faults.login=false;return loginChange(S.loginFailure.desired);}
  if(a==='record-key')return recordKey(Number(id));if(a==='clear-key')return clearKey(Number(id));
@@ -835,7 +952,7 @@ const scenes=[
  ['libraryLoading','声音包库加载中','Library loading'],['libraryRefreshing','声音包库刷新中','Library refreshing'],['libraryFailure','声音包库首次失败','Initial library failure'],['libraryStale','声音包库旧结果','Stale library results'],['empty','声音包库为空','Empty library'],['referenceIncomplete','包引用不完整','Incomplete pack references'],['copyApplyFailure','副本应用失败','Copy application failure'],['copyFailure','包复制失败','Copy failure'],['deleteRetained','删除后隔离文件保留','Deletion retained isolated files'],['restoreFailure','工厂恢复部分失败','Partial factory restore failure'],['fifthStar','已有第五颗星标','Existing fifth star'],['brokenStar','损坏包已有星标','Existing star on broken pack'],
  ['manifestFailure','manifest 损坏','Damaged manifest'],['inventoryFailure','音频清单失败','Inventory failure'],['inventoryLoading','音频清单加载中','Inventory loading'],['bindingFailure','映射写入失败','Binding write failure'],['duplicateBinding','既有重复绑定','Existing duplicate bindings'],['importBindFailure','导入成功但绑定失败','Import succeeds, binding fails'],['importPartial','多文件部分成功','Partial multi-file import'],['fileDeleteFailure','音频删除失败','Audio deletion failure'],['draft','未发布草稿','Unpublished draft'],['partial','AI 2/3 候选','AI 2/3 candidates'],['generationFailure','AI 生成失败','AI generation failure'],['adoptionFailure','AI 采用失败','AI adoption failure'],
  ['credentialChecking','凭据检查中','Credential checking'],['credentialMissing','凭据缺失','Missing credential'],['credentialRejected','凭据被拒绝','Rejected credential'],['credentialUnavailable','凭据不可用','Credential unavailable'],['credentialPending','Qwen 待替换','Qwen replacement pending'],['credentialDeleteFailure','凭据删除失败','Credential deletion failure'],
- ['hostNotConnected','来源未连接','Surface not connected'],['hostLegacy','来源旧接入','Legacy integration'],['hostAwaiting','来源等待回执','Awaiting surface receipt'],['hostReady','来源已激活','Surface activated'],['hostFailure','来源操作失败','Integration operation failure'],['receiptClearFailure','回执清理失败','Receipt clear failure'],
+ ['hostNotInstalled','接入 · 未安装（可关闭已有意愿）','Integration · not installed (saved ON can turn OFF)'],['hostOffUninstalled','接入 · 未安装且已关闭','Integration · not installed and OFF'],['hostPreparing','接入 · 自动准备','Integration · automatic preparation'],['hostRecovering','接入 · 自动更新连接','Integration · automatic recovery'],['hostManual','接入 · Codex 授权夹具','Integration · Codex authorization fixture'],['hostNotConnected','接入 · 用户已关闭','Integration · turned off'],['hostLegacy','接入 · 旧连接自动更新','Integration · automatic legacy update'],['hostAwaiting','接入 · 已准备好','Integration · ready to receive events'],['hostReady','接入 · 已收到事件','Integration · events received'],['hostFailure','接入 · 自动恢复失败','Integration · automatic recovery failed'],['receiptClearFailure','回执历史清理失败','Receipt history clear failure'],
  ['receiverFailure','接收器失败','Receiver failure'],['receiverDisabled','接收器停用','Receiver disabled'],['permissionDenied','专注与日历拒绝授权','Focus and Calendar permissions denied'],['permissionRestricted','专注与日历受限','Focus and Calendar restricted'],['permissionUnavailable','系统观察不可用','System observation unavailable'],
  ...Object.entries(quietNames).map(([id,n])=>['quiet-'+id,...n]),...Object.entries(healthNames).map(([id,n])=>['health-'+id,...n]),
  ...Object.entries(loginNames).map(([id,n])=>['login-'+id,...n]),['loginFailure','登录项操作失败','Login-item operation failure'],['preferenceCorrupt','保存的偏好损坏','Damaged preferences'],['systemEnglish','跟随系统解析为 English','System resolves to English'],
@@ -843,7 +960,7 @@ const scenes=[
  ...Object.entries(activityNames).map(([id,n])=>['activity-'+id,...n]),...['missing','damaged','unreadable'].map(id=>['log-'+id,{missing:'日志缺失',damaged:'日志损坏',unreadable:'日志不可读'}[id],`Log ${id}`]),['activityRefreshFailure','统计刷新失败','Statistics refresh failure'],['logClearFailure','日志清理失败','Log clear failure'],['countClearFailure','计数清理失败','Count clear failure'],['reminderStale','冻结提醒旧版本','Old frozen reminder revision'],['reminderExpired','提醒过期清空','Expired reminder erased'],['reminderNoSession','提醒无有效会话','Reminder without valid session'],['sourceFailure','来源打开失败','Source app open failure'],['sourceTimeout','来源打开超时','Source app open timeout'],
  ['aboutUnknown','版本信息未知','Unknown version facts'],['resourceMissing','随包资源缺失','Bundled resources missing'],['resourceFailure','资源打开失败','Resource open failure'],['clipboardFailure','剪贴板复制失败','Clipboard copy failure'],['platformFailure','系统入口打开失败','System action open failure']
 ].map(([id,zh,en])=>({id,zh,en}));
-function setScene(value){const pref={language:S.language,systemLanguage:S.systemLanguage};cleanup();if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
+function setScene(value){const pref={language:S.language,systemLanguage:S.systemLanguage};stopHostMaintenance();cleanup();if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
  attachReceiptFacts();const sounds=detail=>{S.page='sounds';S.pack='studio';S.detail=detail||null;};
  if(value==='zero')S.scopes[0].volume=0;
  else if(value==='missing'){S.scope='claudio';S.packs.find(p=>p.id==='studio').sounds[3]=null;}
@@ -871,7 +988,7 @@ function setScene(value){const pref={language:S.language,systemLanguage:S.system
  else if(value==='draft'){S.page='sounds';newPack();}
  else if(['partial','generationFailure','adoptionFailure'].includes(value)){sounds('edit:notification');S.expandedEvent=3;S.profile=value==='partial'?'senseaudio-cn':'elevenlabs-global';S.faults[{partial:'partial',generationFailure:'generation',adoptionFailure:'adopt'}[value]]=true;}
  else if(value.startsWith('credential')){sounds('service');if(value==='credentialPending'){S.profile='qwen-singapore';S.credentials[S.profile]={status:'pending',activeStatus:'verified'};}else if(value==='credentialDeleteFailure')S.faults.credentialDelete=true;else S.credentials[S.profile]={status:{credentialChecking:'checking',credentialMissing:'missing',credentialRejected:'rejected',credentialUnavailable:'unavailable'}[value]};}
- else if(value.startsWith('host')||value==='receiptClearFailure'){S.page='integrations';S.detail='host';host().state={hostNotConnected:'notConnected',hostLegacy:'legacy',hostAwaiting:'awaitingActivation',hostReady:'ready',hostFailure:'needsAttention'}[value]||'ready';host().enabled=host().state!=='notConnected';if(value==='hostReady'){host().receipts=events.map((_,event)=>receiptFixture(host(),event,event!==2)).filter(r=>r.current);}if(value==='hostFailure')S.faults.host=true;if(value==='receiptClearFailure')S.faults.receiptClear=true;}
+ else if(value.startsWith('host')||value==='receiptClearFailure'){S.page='integrations';const h=host();h.state={hostNotConnected:'notConnected',hostLegacy:'legacy',hostAwaiting:'awaitingActivation',hostPreparing:'awaitingActivation',hostRecovering:'awaitingActivation',hostManual:'awaitingActivation',hostReady:'ready',hostFailure:'needsAttention'}[value]||'ready';h.enabled=h.state!=='notConnected';h.receipts.forEach(r=>r.current=h.state==='ready');if(value==='hostReady')h.receipts=events.map((_,event)=>receiptFixture(h,event,event!==2)).filter(r=>r.current);if(value==='hostManual')h.manualRequired=h.requiresConfirmation=true;if(value==='hostNotInstalled')h.installed=false;if(value==='hostOffUninstalled'){h.installed=false;h.enabled=false;h.state='notConnected';}if(value==='hostFailure')S.faults.host=h.id;if(value==='receiptClearFailure'){S.faults.receiptClear=true;S.detail='host-diagnostics';}}
  else if(value==='receiverFailure'||value==='receiverDisabled'){S.page='notifications';S.receiver=value==='receiverFailure'?'unavailable':'disabled';}
  else if(value.startsWith('permission')){S.page='notifications';S.focusQuiet=true;S.calendarQuiet=true;S.focusAuth=S.calendarAuth={permissionDenied:'denied',permissionRestricted:'restricted',permissionUnavailable:'unavailable'}[value];S.quietReason='permissionRequired';}
  else if(value.startsWith('quiet-')){S.page='notifications';S.focusAuth=S.calendarAuth='authorized';S.focusQuiet=S.calendarQuiet=true;S.quietReason=value.slice(6);S.focusObservedActive=['focusActive','focusAndCalendarBusy'].includes(S.quietReason);S.calendarObservedBusy=['calendarBusy','focusAndCalendarBusy'].includes(S.quietReason);if(S.quietReason==='observerFailure')S.focusObservedActive=null;if(S.quietReason==='permissionRequired')S.focusAuth='denied';if(S.quietReason==='policiesDisabled')S.focusQuiet=S.calendarQuiet=false;}
@@ -887,7 +1004,8 @@ function setScene(value){const pref={language:S.language,systemLanguage:S.system
  else if(value.startsWith('reminder')||value.startsWith('source')){S.page='usage';S.pendingExpanded=true;S.reading=structuredClone(S.pending);if(value==='reminderStale')S.pending[0].revision=2;if(value==='reminderExpired'){S.pending=[];S.reading.forEach(eraseReminder);}if(value==='reminderNoSession'){delete S.pending[0].session;S.pending[0].capability='detailsOnly';S.reading=structuredClone(S.pending);}if(value==='sourceFailure')S.faults.sourceOpen=true;if(value==='sourceTimeout')S.faults.sourceTimeout=true;}
  else if(['aboutUnknown','resourceMissing','resourceFailure','clipboardFailure'].includes(value)){S.page='about';if(value==='aboutUnknown')Object.keys(S.about).forEach(k=>S.about[k]=null);if(value==='resourceMissing')Object.keys(S.resources).forEach(k=>S.resources[k]=false);if(value==='resourceFailure')S.faults.resource=true;if(value==='clipboardFailure')S.faults.clipboard=true;}
  else if(value==='platformFailure'){S.page='general';S.login='requiresApproval';S.faults.platform=true;}
- render();$('page-scroll').scrollTop=0;
+ attachReceiptFacts();render();$('page-scroll').scrollTop=0;
+ if(['hostPreparing','hostRecovering','hostLegacy'].includes(value))maintainHost(host(),value==='hostPreparing'?'preparing':'recovering');
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b&&!b.disabled)action(b.dataset.action,b);});
 document.addEventListener('change',e=>{const c=e.target,[type,id]=(c.dataset.control||'').split(':');if(!type)return;
@@ -896,7 +1014,7 @@ document.addEventListener('change',e=>{const c=e.target,[type,id]=(c.dataset.con
  if(type==='pack'){stopAudio();clearGeneration();S.pack=c.value;S.returnContext=null;S.notice=null;render();return;}
  if(type==='event'){groupWrite({type:'event',index:Number(id),value:c.checked});render();return;}
  if(type==='scope-surface'){const g=scope();if(!g||id==='workbuddy')return;groupWrite({type:'surface',value:c.checked?[...new Set([...g.surfaces,id])]:g.surfaces.filter(v=>v!==id)});render();return;}
- if(type==='host-enabled'){const h=S.hosts.find(h=>h.id===id);c.checked=h.enabled;return requestConnection(h,!h.enabled);}
+ if(type==='host-enabled'){const h=S.hosts.find(h=>h.id===id);return requestConnection(h,c.checked);}
  if(type==='notifications'){S.notifications=c.checked;S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='banner');render();return;}
  if(type==='focusQuiet'||type==='calendarQuiet')return quietToggle(type,c.checked);
  if(type==='login'){c.checked=['enabled','requiresApproval'].includes(S.login);return loginChange(!c.checked);}
@@ -922,7 +1040,7 @@ const params=new URLSearchParams(location.search);if(params.get('clean')==='1')d
  if(['zh','en','system'].includes(params.get('lang')))S.language=params.get('lang');if(params.get('systemLanguage')==='en')S.systemLanguage='en';
  if(scenes.some(s=>s.id===params.get('scene')))setScene(params.get('scene'));if(pages.some(p=>p.id===params.get('page')))S.page=params.get('page');
  attachReceiptFacts();applyTheme();applySize();render();matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if($('preview-theme').value==='system')applyTheme();});
-window.addEventListener('pagehide',()=>{cleanup();audioContext?.close();});
+window.addEventListener('pagehide',()=>{stopHostMaintenance();cleanup();audioContext?.close();});
 window.prototypeReview={getState:()=>JSON.parse(JSON.stringify(S)),setScene,expireReminders,getPlaying:()=>audioNodes.length,scenes:scenes.map(s=>s.id)};
 
 
@@ -931,7 +1049,7 @@ const browsing={entries:[],cursor:-1,version:0};
 const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action});
 const same=(a,b)=>a&&b&&['page','detail','scope','pack','host','directory'].every(k=>a[k]===b[k]);
 function recordPosition(p,replace=false){if(replace&&browsing.cursor>=0)browsing.entries[browsing.cursor]=p;else{browsing.entries.splice(browsing.cursor+1);browsing.entries.push(p);if(browsing.entries.length>64)browsing.entries.shift();browsing.cursor=browsing.entries.length-1;}browsing.version++;}
-function navigate(page,detail=null,options={}){if($('sheet').open)return;const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false)document.querySelector(`[data-action="nav:${page}"]`)?.focus();}
+function navigate(page,detail=null,options={}){if($('sheet').open)return;const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page}"]`)?.focus();}}
 function traverse(delta){if($('sheet').open)return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();document.querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
 const renderOriginal=render;
 render=function(){renderOriginal();if(S.page==='notifications'&&!S.detail)$('page-content').insertAdjacentHTML('beforeend',section('',disclosure(T('事件动画','Event animation'),'','','animation-detail')));if(S.page==='notifications'&&S.detail==='animation')renderAnimationAlignment();drawNavigation();};

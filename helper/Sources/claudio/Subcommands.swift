@@ -20,6 +20,8 @@ extension Claudio {
             guard let parsedHost = HostID(rawValue: host),
                 let parsedID = UUID(uuidString: installationID)
             else { return }
+            let authorization = HostEventAuthorization()
+            guard let token = authorization.capture(surface: parsedHost.surfaceID) else { return }
             // One bounded read serves directory resolution, the WorkBuddy input contract and
             // optional GUI notices. cwd never enters receipts or activity summaries.
             let descriptor = EventNoticeTransport.loadDescriptor()
@@ -47,7 +49,7 @@ extension Claudio {
             let environment = systemHostHookEnvironment(
                 for: parsedHost,
                 eventNoticeChannel: channel,
-                sourcePayload: hookInput?.data)
+                sourcePayload: hookInput?.data, authorizationToken: token)
             _ = handleHostHook(
                 host: parsedHost,
                 nativeEvent: nativeEvent,
@@ -59,7 +61,7 @@ extension Claudio {
     struct Integrations: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "查看、连接或断开已出货的声音来源。",
-            subcommands: [Status.self, Connect.self, Disconnect.self])
+            subcommands: [Status.self, Connect.self, Disconnect.self, Repair.self])
 
         struct Status: AsyncParsableCommand {
             static let configuration = CommandConfiguration(
@@ -116,12 +118,22 @@ extension Claudio {
                 switch await manager.connect(hostID) {
                 case .success(let snapshot):
                     print("✓ \(hostID.displayName)：\(integrationSnapshotText(snapshot))")
-                    if hostID == .codex, case .awaitingReceipt = snapshot.activation {
-                        print("  在 Codex 输入 /hooks，确认后再提交一次提示词。")
-                    }
                 case .failure(let error):
                     print("✗ \(error.description)")
                     throw ExitCode.failure
+                }
+            }
+        }
+
+        struct Repair: AsyncParsableCommand {
+            static let configuration = CommandConfiguration(abstract: "重新配置已开启的来源；不会开启已关闭来源。")
+            @Argument var host: String
+            mutating func run() async throws {
+                guard let hostID = HostID(rawValue: host) else { throw ValidationError("未知来源") }
+                let manager = try makeSystemIntegrationManager()
+                switch await manager.repair(hostID) {
+                case .success(let snapshot): print(integrationSnapshotText(snapshot))
+                case .failure(let error): print(error.description); throw ExitCode.failure
                 }
             }
         }
@@ -365,7 +377,8 @@ private func makeSystemIntegrationManager(
             OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
         ],
         bootstrapper: SystemSharedRuntimeBootstrapper(
-            environment: SetupEnvironment(executablePath: executablePath)))
+            environment: SetupEnvironment(executablePath: executablePath)),
+        authorization: HostEventAuthorization())
 }
 
 private func makeSystemIntegrationManager() throws -> HostIntegrationManager {
@@ -408,7 +421,9 @@ private func makeWorkBuddyAcceptancePreflight(
 }
 
 private func integrationSnapshotText(_ snapshot: HostIntegrationSnapshot) -> String {
-    if case .unavailable(let reason) = snapshot.availability {
+    if snapshot.intentUnavailable { return "接入启用意愿无法读取；事件处理已阻断" }
+    if snapshot.intent?.enabled == false { return "已关闭" }
+    if let reason = snapshot.availability.unavailabilityReason {
         if snapshot.configuration == .notConfigured {
             return "未安装或未连接：\(reason)"
         }
@@ -431,7 +446,7 @@ private func integrationSnapshotText(_ snapshot: HostIntegrationSnapshot) -> Str
     case .notConfigured:
         return "未连接"
     case .legacyConnected:
-        return "旧版连接，可听但暂无真实回执"
+        return "旧版连接，等待自动更新"
     case .incomplete(let missing):
         return "配置不完整，缺少 \(missing.joined(separator: ", "))"
     case .unreadable(let reason), .conflict(let reason):
@@ -443,11 +458,9 @@ private func integrationSnapshotText(_ snapshot: HostIntegrationSnapshot) -> Str
                 HostCapabilityCatalog.bindings(for: snapshot.host)
                     .filter(\.isAudibleCapability).map(\.event)
             ).count
-            return "\(supported)/\(Event.allCases.count) 已就绪"
+            return "已收到事件；支持 \(supported)/\(Event.allCases.count) 类提醒"
         case .none, .awaitingReceipt:
-            return snapshot.host == .codex
-                ? "在 Codex 输入 /hooks，确认后再提交一次提示词"
-                : "已配置，请提交一次提示词以确认连接"
+            return "接入已准备好，尚无当前真实回执"
         }
     }
 }

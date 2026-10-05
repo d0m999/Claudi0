@@ -5,7 +5,9 @@ status: accepted
 # 使用仅驻留内存的事件来源提示与辅助窗口
 
 全事件历史与消除规则已由 [ADR 0013](0013-separate-transient-notices-from-attention.md)
-部分替代；下述内存、声音独立、非激活窗口及隐私边界继续有效。
+部分替代；下述内存、非激活窗口及隐私边界继续有效。
+事件接收资格与退出行为由 [ADR 0025](0025-automatically-maintain-explicit-host-intent.md)
+替代本文旧的“GUI 未运行仍播放、写回执与计数”条款，见文末现行修订。
 
 来源应用身份、App 级打开与胶囊入口由 [ADR 0019](0019-open-verified-source-applications.md)
 修订；精确会话导航仍须独立验证。
@@ -30,3 +32,15 @@ endpoint 失效或队列已满时，既有播放、回执、活动计数和 CLI 
 
 精确会话跳转不是默认能力。没有经过宿主 adapter 证据的来源只提供来源详情和复制有效
 session ID；开发预览可以注入模拟成功/失败，不能作为生产导航证据。
+
+## 事件接收资格修订（现行 · 2026-10-06）
+
+[ADR 0025](0025-automatically-maintain-explicit-host-intent.md) 明确替代本文“GUI 未运行时既有播放、
+回执和活动计数保持不变”的旧合同。新版 helper 在入口捕获共享来源意愿 revision 和独立 GUI 运行身份，
+并在各发布边界复验；GUI 退出、崩溃、注册不可验证或来源关闭时，新事件安静返回且副作用为零。
+通知偏好关闭或 receiver 不可用与 GUI 退出不同：已开启来源仍可处理合法声音、活动和回执，通知继续
+best-effort。已启动声音自然结束，不补播暂停事件；运行身份不进入 installation/receipt。
+
+`intent_revision` 可选解码，生产接收门禁拒绝旧消息或错误 revision。关闭来源只收起该来源横幅，
+不执行全局隐私清空；已接受待接手提醒、冻结阅读及主动导航能力依原 TTL 保留。锁屏/睡眠的既有
+全局隐私边界仍独立有效。

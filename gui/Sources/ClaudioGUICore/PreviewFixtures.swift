@@ -1150,7 +1150,7 @@ public enum PreviewFixtures {
         _ phase: WorkBuddyVisualPhase
     ) -> WorkBuddyVisualScenario {
         let title: String
-        let snapshot: HostIntegrationSnapshot
+        var snapshot: HostIntegrationSnapshot
         let awaiting = HostActivationEvidence.awaitingReceipt(
             installationID: workBuddyVisualInstallationID)
 
@@ -1209,6 +1209,10 @@ public enum PreviewFixtures {
             snapshot = .disconnected(host: .workBuddy)
         }
 
+        // Fixture owns its saved intent explicitly; production never infers it from configuration.
+        snapshot.intent = HostIntegrationIntent(
+            enabled: phase != .disconnected && phase != .disconnectedAfterAction,
+            revision: workBuddyVisualInstallationID)
         let state = hostIntegrationScenario(
             id: phase.rawValue,
             title: title,

@@ -20,6 +20,7 @@ package final class EventNoticeNavigationIngress {
                 guard !Task.isCancelled, let self, self.model.receiverEpoch == epoch,
                     self.model.canReceive
                 else { break }
+                guard self.model.isNoticeAuthorized(notice) else { continue }
                 var prepared = notice
                 if let evidence = notice.navigationEvidence, let tmux = evidence.tmux,
                     let pane = await TmuxNavigationAdapter.pane(
@@ -38,6 +39,7 @@ package final class EventNoticeNavigationIngress {
                 }
                 guard !Task.isCancelled, self.model.receiverEpoch == epoch, self.model.canReceive
                 else { break }
+                guard self.model.isNoticeAuthorized(prepared) else { continue }
                 preparedNotices.append(prepared)
             }
             while !preparedNotices.isEmpty {

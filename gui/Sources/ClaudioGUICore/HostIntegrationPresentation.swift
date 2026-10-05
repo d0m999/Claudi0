@@ -627,12 +627,14 @@ public enum HostIntegrationUserAction: Sendable, Hashable {
     case redetect
     case connect(HostID)
     case repair(HostID)
+    case retryMaintenance(HostID)
     case disconnect(HostID)
     case clearReceiptHistory(HostID)
 
     public var host: HostID? {
         switch self {
-        case .connect(let host), .repair(let host), .disconnect(let host),
+        case .connect(let host), .repair(let host), .retryMaintenance(let host),
+            .disconnect(let host),
             .clearReceiptHistory(let host):
             host
         case .copyHooksCommand, .redetect: nil
@@ -684,6 +686,7 @@ public func hostIntegrationUserActionTitle(
     case .connect(let host): "连接 \(host.displayName)"
     case .repair(let host):
         hostStatus == .legacy ? "升级连接" : "修复 \(host.displayName) 连接"
+    case .retryMaintenance: "重试维护"
     case .disconnect(let host): "断开 \(host.displayName)"
     case .clearReceiptHistory(let host): "清除 \(host.displayName) 回执历史"
     }
@@ -1037,6 +1040,10 @@ public func integrationDestinationInFlightPresentation(
         host = target
         isUpgrade = hostStatus == .legacy
         statusText = isUpgrade ? "升级中" : "修复中"
+    case .retryMaintenance(let target):
+        host = target
+        statusText = "重试维护中"
+        isUpgrade = false
     case .disconnect(let target):
         host = target
         statusText = "断开中"
@@ -1052,4 +1059,13 @@ public func integrationDestinationInFlightPresentation(
         statusText: statusText,
         accessibilityLabel: "\(host.displayName)，\(statusText)",
         isUpgrade: isUpgrade)
+}
+
+extension HostIntegrationUserAction {
+    public var isIntentToggle: Bool {
+        switch self {
+        case .connect, .disconnect: true;
+        default: false
+        }
+    }
 }

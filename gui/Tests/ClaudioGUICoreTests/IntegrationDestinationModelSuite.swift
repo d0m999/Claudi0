@@ -171,7 +171,7 @@ func runIntegrationDestinationModelSuites() async {
             "AX deep link 必须保持 invalid-route failure")
     }
 
-    await suite("集成 destination Toggle/action lifecycle：确认取消、host 归属、in-flight 与无乐观翻转") {
+    await suite("集成 destination Toggle：直接关闭、逐来源并行、保存完成前无乐观翻转") {
         let initial = integrationDestinationTestContent()
         let updated = integrationDestinationTestContent(statuses: [.claudeCode: .notConnected])
         let gate = IntegrationDestinationTestGate()
@@ -179,77 +179,34 @@ func runIntegrationDestinationModelSuites() async {
         let model = IntegrationDestinationModel(
             content: initial,
             refreshHandler: IntegrationDestinationRefreshHandler {
-                await gate.wait()
-                return integrationDestinationTestOutcome(
-                    content: initial, message: "refresh complete")
+                integrationDestinationTestOutcome(content: initial)
             },
             actionHandler: IntegrationDestinationActionHandler { action in
                 await calls.append(action)
-                await gate.wait()
+                if action.host == .claudeCode { await gate.wait() }
                 return integrationDestinationTestOutcome(
-                    content: action == .disconnect(.claudeCode) ? updated : initial,
-                    kind: .information,
-                    message: "action complete")
+                    content: action.host == .claudeCode ? updated : initial)
             })
-        _ = model.selectHost(.claudeCode)
-
-        model.requestToggle(for: .claudeCode)
-        let callsBeforeConfirmation = await calls.all()
-        expect(
-            model.pendingConfirmation == .disconnect(.claudeCode)
-                && callsBeforeConfirmation.isEmpty,
-            "关闭 Toggle 必须先进入 disconnect confirmation，不能直接调用 manager")
-        model.cancelPendingAction()
-        expect(model.pendingConfirmation == nil, "取消 disconnect 必须零副作用")
         model.requestClearReceiptHistory(for: .claudeCode)
-        expect(model.pendingConfirmation == .clearReceiptHistory(.claudeCode), "第四行清除必须先确认")
+        expect(model.pendingConfirmation == .clearReceiptHistory(.claudeCode), "清除历史仍须确认")
+        expect(model.consumePendingAction(.clearReceiptHistory(.workBuddy)) == nil, "不匹配确认不能消费目标")
         model.cancelPendingAction()
-
-        model.requestToggle(for: .claudeCode)
-        let mismatchedAction = model.consumePendingAction(.disconnect(.workBuddy))
+        let task = Task { @MainActor in await model.toggleHost(.claudeCode) }
+        for _ in 0..<100 where !model.isPerformingAction(for: .claudeCode) { await Task.yield() }
+        expect(model.pendingConfirmation == nil, "关闭无需确认")
+        expect(model.agent(for: .claudeCode)?.isOn == true, "保存返回前不乐观翻转")
         expect(
-            mismatchedAction == nil
-                && model.pendingConfirmation == .disconnect(.claudeCode),
-            "不匹配的 typed confirmation 不得消费当前断开动作")
-        let disconnectAction = model.consumePendingAction(.disconnect(.claudeCode))
+            model.agent(for: .claudeCode)?.isToggleEnabled == false
+                && model.agent(for: .workBuddy)?.isToggleEnabled == true, "一个来源不阻断其他来源")
+        await model.toggleHost(.workBuddy)
+        let observed = await calls.all()
         expect(
-            disconnectAction == .disconnect(.claudeCode) && model.pendingConfirmation == nil,
-            "确认断开必须在异步执行前同步消费并捕获原 manager action")
-        let staleAction = model.consumePendingAction(.disconnect(.claudeCode))
-        let callsAfterStaleReplay = await calls.all()
-        expect(
-            staleAction == nil && callsAfterStaleReplay.isEmpty,
-            "已消费的 stale confirmation 不得再次生成或执行 manager action")
-        model.cancelPendingAction()
-        let disconnectTask = Task { @MainActor in
-            if let disconnectAction { await model.perform(disconnectAction) }
-        }
-        for _ in 0..<20 where model.inFlightOperation == nil {
-            await Task.yield()
-        }
-        expect(
-            model.inFlightOperation?.host == .claudeCode
-                && model.inFlightOperation?.action == .disconnect(.claudeCode),
-            "断开 in-flight 必须归属原 action.host")
-        expect(
-            model.content.agent(for: .claudeCode)?.isOn == true,
-            "断开进行中不得乐观翻转 Toggle")
-        expect(
-            model.agentControls.allSatisfy { !$0.isToggleEnabled },
-            "in-flight 期间所有冲突 Toggle 必须禁用")
-        _ = model.selectHost(.workBuddy)
-        expect(model.selectedHost == .workBuddy, "in-flight 期间仍允许切换 Agent 查看")
-        model.requestToggle(for: .workBuddy)
-        expect(model.pendingConfirmation == nil, "in-flight 期间不得提交新的冲突动作")
-        let callsWhileInFlight = await calls.all()
-        expect(callsWhileInFlight == [.disconnect(.claudeCode)], "重复提交不得重复调用 manager")
+            observed.contains(.disconnect(.claudeCode))
+                && observed.contains(.disconnect(.workBuddy)), "两个来源独立执行")
         await gate.open()
-        await disconnectTask.value
-        expect(
-            model.inFlightOperation == nil
-                && model.content.agent(for: .claudeCode)?.isOn == false
-                && model.feedback?.host == .claudeCode,
-            "断开完成后必须发布刷新快照、关闭 in-flight 并反馈原宿主")
+        await task.value
+        expect(model.agent(for: .claudeCode)?.isOn == false && !model.isPerformingAction, "保存成功后关闭")
+        expect(model.feedback == nil, "成功开关不反复弹 Toast")
     }
 
     await suite("集成 destination connect/clear：未连接 Toggle 执行 connect，清除确认归属第四行") {

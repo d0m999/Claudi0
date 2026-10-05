@@ -143,6 +143,16 @@ public enum HostActivationScope {
             + "claudio=\(ClaudioVersion.current);bindings=\(bindingSchema)"
     }
 
+    public static func discoveredVersion(
+        for host: HostID, executableLocator: HostExecutableLocator = .standard(),
+        commandRunner: (any CommandRunning)? = nil
+    ) -> String? {
+        guard host == .claudeCode || host == .codex else { return nil }
+        return commandVersion(
+            command: host == .claudeCode ? "claude" : "codex",
+            executableLocator: executableLocator, commandRunner: commandRunner)
+    }
+
     public static func claudeCode(
         executableLocator: HostExecutableLocator = .standard(),
         commandRunner: (any CommandRunning)? = nil
@@ -170,7 +180,9 @@ public enum HostActivationScope {
     }
 
     public static func workBuddy() -> String? {
-        guard let version = bundleVersion(at: "/Applications/WorkBuddy.app") else { return nil }
+        guard let application = HostDiscovery.workBuddyApplicationURL(),
+            let version = bundleVersion(at: application.path)
+        else { return nil }
         return fingerprint(host: .workBuddy, hostVersion: "app=\(version)")
     }
 

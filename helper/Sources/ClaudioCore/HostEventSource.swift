@@ -539,6 +539,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
     public let schema: Int
     public let id: UUID
     public let receiverEpoch: UUID
+    public let intentRevision: UUID?
     public let surface: HostSurfaceID
     public let bindingID: HostEventBindingID
     public let installationID: UUID
@@ -557,6 +558,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         schema: Int = HostEventNotice.currentSchema,
         id: UUID = UUID(),
         receiverEpoch: UUID,
+        intentRevision: UUID? = nil,
         surface: HostSurfaceID,
         bindingID: HostEventBindingID,
         installationID: UUID,
@@ -573,6 +575,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         self.schema = schema
         self.id = id
         self.receiverEpoch = receiverEpoch
+        self.intentRevision = intentRevision
         self.surface = surface
         self.bindingID = bindingID
         self.installationID = installationID
@@ -592,6 +595,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         schema = try values.decode(Int.self, forKey: .schema)
         id = try values.decode(UUID.self, forKey: .id)
         receiverEpoch = try values.decode(UUID.self, forKey: .receiverEpoch)
+        intentRevision = try? values.decode(UUID.self, forKey: .intentRevision)
         surface = try values.decode(HostSurfaceID.self, forKey: .surface)
         bindingID = try values.decode(HostEventBindingID.self, forKey: .bindingID)
         installationID = try values.decode(UUID.self, forKey: .installationID)
@@ -617,7 +621,8 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         ancestors: [HostProcessIdentity]
     ) -> Self {
         Self(
-            schema: schema, id: id, receiverEpoch: receiverEpoch, surface: surface,
+            schema: schema, id: id, receiverEpoch: receiverEpoch, intentRevision: intentRevision,
+            surface: surface,
             bindingID: bindingID, installationID: installationID, nativeEvent: nativeEvent,
             event: event, occurredAt: occurredAt, source: source,
             sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime,
@@ -626,7 +631,8 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
 
     public func removingProcessAncestors(keepingNavigationEvidence: Bool = false) -> Self {
         Self(
-            schema: schema, id: id, receiverEpoch: receiverEpoch, surface: surface,
+            schema: schema, id: id, receiverEpoch: receiverEpoch, intentRevision: intentRevision,
+            surface: surface,
             bindingID: bindingID, installationID: installationID, nativeEvent: nativeEvent,
             event: event, occurredAt: occurredAt, source: source,
             sourceCompleteness: sourceCompleteness, reason: reason, observedUptime: observedUptime,
@@ -661,6 +667,7 @@ public struct HostEventNotice: Codable, Sendable, Equatable, Hashable, Identifia
         case schema
         case id = "event_id"
         case receiverEpoch = "receiver_epoch"
+        case intentRevision = "intent_revision"
         case surface
         case bindingID = "binding_id"
         case installationID = "installation_id"

@@ -256,6 +256,7 @@ public struct ConfigFileTransaction {
                         bytes, expected: snapshot,
                         beforeRename: {
                             beforeFinalPublish()
+                            try HostPublicationContext.current?.require()
                             guard try anchored.read(maxBytes: maximumBytes) == snapshot else {
                                 throw ConfigFileTransactionError.concurrentModification(
                                     path: file.path)
@@ -263,6 +264,7 @@ public struct ConfigFileTransaction {
                         })
                 } else {
                     beforeFinalPublish()
+                    try HostPublicationContext.current?.require()
                     try anchored.remove(expected: snapshot)
                 }
                 return .success(.init(outcome: .written, backup: backup, value: value))
@@ -464,6 +466,7 @@ public struct ConfigFileTransaction {
                     // do not share Claudio's lock, so the CAS that authorizes replacement must run
                     // after all of that work, immediately beside the final rename boundary.
                     beforeFinalPublish?()
+                    try HostPublicationContext.current?.require()
                     if symlinkPolicy == .reject, isSymbolicLink(at: file) {
                         throw ConfigFileTransactionError.symlinkRejected(path: file.path)
                     }

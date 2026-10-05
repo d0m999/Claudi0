@@ -77,6 +77,9 @@ public func appendLogLine(
         "\(formatter.string(from: timestamp))\(logFieldSeparator)\(event)\(logFieldSeparator)\(reason)\n"
 
     let result = withNonBlockingLock(path: lockFile.path) { () -> Bool in
+        let boundary = HostPublicationContext.current
+        guard boundary?.acquire() ?? .allowed == .allowed else { return false }
+        defer { boundary?.release() }
         rotateIfNeeded(logFile: logFile, maxBytes: maxBytes)
         return rawAppend(line, to: logFile)
     }

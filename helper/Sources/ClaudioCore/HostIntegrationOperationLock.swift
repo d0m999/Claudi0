@@ -7,6 +7,7 @@ func withHostIntegrationOperationLock<T>(
     path: URL,
     _ operation: () -> Result<T, HostIntegrationActionError>
 ) -> Result<T, HostIntegrationActionError> {
+    defer { HostPublicationContext.current?.release() }
     switch withNonBlockingLock(path: path.path, operation) {
     case .ran(let result):
         return result
@@ -14,5 +15,15 @@ func withHostIntegrationOperationLock<T>(
         return .failure(.transaction(.lockBusy))
     case .failed(let code):
         return .failure(.transaction(.lockFailed(errno: code)))
+    }
+}
+
+func maintenanceReceiptActionError(
+    _ error: HostHookReceiptStoreError, reason: String
+) -> HostIntegrationActionError {
+    switch error {
+    case .lockBusy: .transaction(.lockBusy)
+    case .lockFailed(let code): .transaction(.lockFailed(errno: code))
+    default: .configuration(reason: reason)
     }
 }

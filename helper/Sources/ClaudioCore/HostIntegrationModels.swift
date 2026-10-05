@@ -371,7 +371,16 @@ public enum SharedRuntimeHealth: Codable, Sendable, Equatable {
 
 public enum HostAvailability: Codable, Sendable, Equatable {
     case available
+    case notInstalled
     case unavailable(reason: String)
+
+    public var unavailabilityReason: String? {
+        switch self {
+        case .available: nil
+        case .notInstalled: "未安装"
+        case .unavailable(let reason): reason
+        }
+    }
 }
 
 public enum HostConfigurationState: Codable, Sendable, Equatable {
@@ -464,6 +473,9 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
     public let latestReceipt: HostReceiptEvidence?
     public let operation: HostOperationState
     public let installationID: UUID?
+    public var intent: HostIntegrationIntent?
+    public var intentUnavailable: Bool = false
+    public var eventReceptionEligible: Bool = false
 
     public init(
         host: HostID,
@@ -525,7 +537,7 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
                 ?? HostEventBindingID(rawValue: "unavailable"),
             installationID: id, nativeEvent: firstNativeEvent, event: event,
             timestamp: Date(timeIntervalSince1970: 1), playbackResult: .played)
-        return HostIntegrationSnapshot(
+        var snapshot = HostIntegrationSnapshot(
             host: host, runtime: .ready, availability: .available,
             configuration: .configured, writability: .writable,
             activation: .observed(evidence),
@@ -544,6 +556,8 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
                     }),
             latestReceipt: evidence,
             installationID: id)
+        snapshot.intent = HostIntegrationIntent(enabled: true, revision: id)
+        return snapshot
     }
     #endif
 }
@@ -749,6 +763,12 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         snapshot: HostIntegrationSnapshot?, supported: Int, total: Int
     ) -> HostReadinessSummary {
         guard let snapshot else { return .notConnected(supported: supported, total: total) }
+        if snapshot.intent?.enabled == false {
+            return .notConnected(supported: supported, total: total)
+        }
+        if snapshot.intentUnavailable {
+            return .needsAttention(supported: supported, total: total, reason: "接入意愿无法读取")
+        }
         if case .unavailable(let reason) = snapshot.runtime {
             return .needsAttention(supported: supported, total: total, reason: reason)
         }
@@ -758,11 +778,11 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
         // 宿主尚未安装且用户也从未连接，是正常空态而不是 Claudio 故障。先按配置事实
         // 识别这一格，避免 availability 的“未检测到目录”把来源行染成 error。
         if case .notConfigured = snapshot.configuration,
-            case .unavailable = snapshot.availability
+            snapshot.availability.unavailabilityReason != nil
         {
             return .notConnected(supported: supported, total: total)
         }
-        if case .unavailable(let reason) = snapshot.availability {
+        if let reason = snapshot.availability.unavailabilityReason {
             return .needsAttention(supported: supported, total: total, reason: reason)
         }
         if case .notWritable(let reason) = snapshot.writability {
@@ -797,13 +817,15 @@ public struct AudibilityMatrix: Codable, Sendable, Equatable {
     ) -> AudibilityCellState {
         guard binding.isAudibleCapability else { return .unsupported }
         guard let snapshot else { return .notConnected }
+        if snapshot.intent?.enabled == false { return .notConnected }
+        if snapshot.intentUnavailable { return .degraded }
         guard snapshot.runtime == .ready else {
             return .degraded
         }
         // 与来源汇总同一顺序：不存在的宿主目录 + 没有配置只表示“未连接”。若已有
         // Claudio 配置却宿主不可用，才是需要处理的 degraded 状态。
         if case .notConfigured = snapshot.configuration,
-            case .unavailable = snapshot.availability
+            snapshot.availability.unavailabilityReason != nil
         {
             return .notConnected
         }

@@ -765,31 +765,31 @@ package final class SettingsPresentationSession: ObservableObject {
     }
 
     private func applySoundsRoute(_ soundRoute: SoundPacksWindowRoute) {
-            let requestedTarget = soundRoute.editTarget
-            let currentSession = dependencies.aiCueViewModel.session
-            let sessionMatches: Bool = {
-                guard let currentSession, let requestedTarget else { return false }
-                return currentSession.packID == requestedTarget.packID
-                    && currentSession.event == requestedTarget.event
-            }()
-            let hasDraft: Bool = {
-                guard
-                    case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode
-                else { return false }
-                return sounds.draft != nil
-            }()
-            let routeRequiresCopyGuidance = soundRoute.isCopyAndApply
-            if (currentSession != nil || hasDraft)
-                && (!sessionMatches || routeRequiresCopyGuidance)
-            {
-                dependencies.soundPacksEditorNativeEffects.stopPreview(
-                    owner: dependencies.soundPacksEditorOwner)
-                dependencies.aiCueViewModel.endSession()
-                dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
-                dependencies.soundPacksEditorOwner.updateAICueComposer(
-                    session: nil,
-                    generation: nil)
-            }
+        let requestedTarget = soundRoute.editTarget
+        let currentSession = dependencies.aiCueViewModel.session
+        let sessionMatches: Bool = {
+            guard let currentSession, let requestedTarget else { return false }
+            return currentSession.packID == requestedTarget.packID
+                && currentSession.event == requestedTarget.event
+        }()
+        let hasDraft: Bool = {
+            guard
+                case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode
+            else { return false }
+            return sounds.draft != nil
+        }()
+        let routeRequiresCopyGuidance = soundRoute.isCopyAndApply
+        if (currentSession != nil || hasDraft)
+            && (!sessionMatches || routeRequiresCopyGuidance)
+        {
+            dependencies.soundPacksEditorNativeEffects.stopPreview(
+                owner: dependencies.soundPacksEditorOwner)
+            dependencies.aiCueViewModel.endSession()
+            dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
+            dependencies.soundPacksEditorOwner.updateAICueComposer(
+                session: nil,
+                generation: nil)
+        }
     }
 
     private func synchronizeWorkspaceDeletion(_ deletion: WorkspaceDeletionPresentation) {
@@ -940,11 +940,18 @@ package final class SettingsPresentationSession: ObservableObject {
         }
     }
 
+    #if DEBUG
+    package var integrationRequestedFocusTarget: IntegrationDestinationFocusTarget? {
+        integrationsFocusCoordinator.requestedTarget
+    }
+    #endif
+
     private func requestIntegrationsFocus(route: SettingsRoute) {
         if case .integrations(let route) = route,
             let host = HostID.productVisibleCases.first(where: { $0.surfaceID == route.surface })
         {
-            integrationsFocusCoordinator.requestFocus(.agent(host))
+            integrationsFocusCoordinator.requestFocus(
+                route.level == .diagnostics ? .connectionRow(.connectionStatus) : .agent(host))
         } else {
             dependencies.integrationsModel.restorePreferredHost()
             integrationsFocusCoordinator.requestFocus(
@@ -1440,8 +1447,13 @@ extension SettingsPresentationSession {
             case .panel: title = l10n.text(.settingsNativePanelDisplaySet)
             }
         case .integrations:
-            if case .integrations(let route) = routeResolution.route, let host = route.detailsHost {
-                title = host.displayName
+            if case .integrations(let route) = routeResolution.route,
+                let host = HostID(rawValue: route.surface.rawValue)
+            {
+                title =
+                    route.level == .diagnostics
+                    ? l10n.format(.integrationsAutoDiagnosticsTitle, host.displayName)
+                    : host.displayName
             }
         case .eventsAndSounds:
             switch eventPresentation.route.detail {

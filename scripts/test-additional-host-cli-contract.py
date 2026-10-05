@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real helper subprocesses, isolated configuration, stub host versions and silent audio."""
 import argparse
+import ctypes
 import json
 import os
 from pathlib import Path
@@ -76,6 +77,32 @@ def bytes_on_disk(root):
     return {str(file.relative_to(root)): file.read_bytes() for file in root.rglob("*") if file.is_file()}
 
 
+def register_fixture_lifetime(root):
+    # This test process stands in for the GUI lifetime only inside its temporary root.
+    # Capture the kernel identity rather than bypassing the production event gate.
+    class ProcBSDInfo(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_uint32) for name in (
+            "flags", "status", "xstatus", "pid", "ppid", "uid", "gid", "ruid", "rgid", "svuid", "svgid", "reserved"
+        )] + [("comm", ctypes.c_char * 16), ("name", ctypes.c_char * 32),
+              ("nfiles", ctypes.c_uint32), ("pgid", ctypes.c_uint32), ("jobc", ctypes.c_uint32),
+              ("tty_device", ctypes.c_uint32), ("tty_pgid", ctypes.c_uint32),
+              ("nice", ctypes.c_int32), ("start_seconds", ctypes.c_uint64),
+              ("start_microseconds", ctypes.c_uint64)]
+
+    info = ProcBSDInfo()
+    library = ctypes.CDLL("/usr/lib/libproc.dylib")
+    library.proc_pidinfo.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]
+    library.proc_pidinfo.restype = ctypes.c_int
+    check(library.proc_pidinfo(os.getpid(), 3, 0, ctypes.byref(info), ctypes.sizeof(info)) == ctypes.sizeof(info)
+          and info.pid == os.getpid() and info.uid == os.getuid() and info.status != 5,
+          "fixture process has a verifiable live kernel identity")
+    (root / "gui-run.json").write_text(json.dumps({
+        "runID": str(uuid.uuid4()), "userID": os.getuid(),
+        "process": {"pid": os.getpid(), "startSeconds": info.start_seconds,
+                    "startMicroseconds": info.start_microseconds},
+    }))
+
+
 with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
     base = Path(temporary)
     tools = base / "tools"
@@ -117,6 +144,10 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
         installation = connect()
         installed = file.read_bytes()
         check(connect() == installation and file.read_bytes() == installed, f"{host}: idempotent bytes and generation")
+        prepared_status = invoke(debug, ["integrations", "status"], env)
+        check(prepared_status.returncode == 0 and "接入已准备好" in prepared_status.stdout.decode()
+              and "/hooks" not in prepared_status.stdout.decode(),
+              "prepared without receipts never infers an authorization requirement")
         if host == "opencode":
             check(installed.endswith((REPO / "integrations/opencode/claudio.js").read_bytes()), "compiled template equals shipped JS verbatim")
             check(protected.read_bytes() == original, "JSONC bytes preserved")
@@ -124,10 +155,18 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
             check(b"timeout = 2" in installed and b'event = "StopFailure"' not in installed,
                   "only supported hooks with timeout 2")
             check(file.with_suffix(".toml.claudio.bak").read_bytes() == original, "one-shot backup exact bytes")
+        inactive = bytes_on_disk(root)
+        hook(debug, host, events[0], installation, payload(host, events[0]), env)
+        check(bytes_on_disk(root) == inactive, "GUI lifetime absent: callbacks have zero state writes")
+        register_fixture_lifetime(root)
         for native in events:
             hook(debug, host, native, installation, payload(host, native), env)
             receipt = root / "integrations/receipts" / host / (native + ".json")
             check(receipt.is_file(), f"{host}/{native}: current receipt")
+        observed_status = invoke(debug, ["integrations", "status"], env)
+        check(observed_status.returncode == 0 and "已收到事件；支持" in observed_status.stdout.decode()
+              and "/5 已就绪" not in observed_status.stdout.decode(),
+              "received evidence and declared supported reminders stay separate")
         question = "QuestionAsked" if host == "opencode" else "PreToolUse"
         hook(debug, host, question, installation, payload(host, question), env)
         receipt = root / "integrations/receipts" / host / (question + ".json")

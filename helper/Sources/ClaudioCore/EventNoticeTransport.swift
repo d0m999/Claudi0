@@ -183,6 +183,7 @@ public final class EventNoticeReceiver: @unchecked Sendable {
     private let descriptorFile: URL
     private let callback: @Sendable (HostEventNotice) -> Void
     private let currentInstallationID: (@Sendable (HostID) -> UUID?)?
+    private let noticeAuthorized: @Sendable (HostEventNotice) -> Bool
     private let ioQueue: DispatchQueue
     private var socketFD: Int32 = -1
     private var readSource: DispatchSourceRead?
@@ -196,11 +197,13 @@ public final class EventNoticeReceiver: @unchecked Sendable {
         ownerLockFile: URL = ClaudioPaths.eventNoticeOwnerLockFile,
         epoch: UUID = UUID(),
         currentInstallationID: (@Sendable (HostID) -> UUID?)? = nil,
+        noticeAuthorized: @escaping @Sendable (HostEventNotice) -> Bool = { _ in true },
         callback: @escaping @Sendable (HostEventNotice) -> Void
     ) throws {
         self.descriptorFile = descriptorFile
         self.callback = callback
         self.currentInstallationID = currentInstallationID
+        self.noticeAuthorized = noticeAuthorized
         ioQueue = DispatchQueue(label: "com.orbitzero.claudio.event-notices", qos: .userInitiated)
 
         try ensurePrivateDirectoryTree(at: ownerLockFile.deletingLastPathComponent())
@@ -377,7 +380,7 @@ public final class EventNoticeReceiver: @unchecked Sendable {
                 installationIsCurrent = true
             }
             guard count <= EventNoticeTransport.maximumMessageBytes,
-                installationIsCurrent
+                noticeAuthorized(notice), installationIsCurrent
             else { continue }
             callback(notice)
         }

@@ -432,13 +432,13 @@ func runHostIntegrationManagerBridgeSuites() async {
         }
     }
 
-    await suite("HostIntegrationManagerBridge Codex 待确认：只在无当前代次回执时显示固定文案") {
+    await suite("HostIntegrationManagerBridge Codex 准备：无真实回执不推断授权要求") {
         await withTempDirectory { root in
             let fixture = bridgeFixture(root: root, codexObservesReceipt: false)
             let outcome = try? await fixture.bridge.perform(.connect(.codex))
             expect(
-                outcome?.feedbackMessage == "claudi0 已写好，等待 Codex 确认",
-                "Codex 配置完成但没有真实回执时，必须保留固定待确认文案")
+                outcome?.feedbackMessage == "已配置 Codex 连接，等待首个真实事件",
+                "Codex 配置完成但没有真实回执时，只描述准备事实")
             expect(
                 outcome?.state.snapshots.first(where: { $0.host == .codex })?.activation
                     == .awaitingReceipt(

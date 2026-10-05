@@ -64,6 +64,7 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
             return [SettingsDestination.notifications.rawValue, route.rawValue]
         case .integrations(let route):
             return [SettingsDestination.integrations.rawValue, route.surface.rawValue]
+                + (route.level == .diagnostics ? ["diagnostics"] : [])
                 + (route.detailsHost.map { [$0.rawValue] } ?? [])
         case .events(let scope, let event):
             return [SettingsDestination.eventsAndSounds.rawValue, scope.storedValue]
@@ -266,13 +267,22 @@ public enum NotificationsSettingsRoute: String, Sendable, Hashable {
 /// Integrations sub-navigation. `detailsHost` is retained only while it names the host that the
 /// route's surface currently selects; resolution drops any other identity to nil instead of
 /// navigating to a host the selection has left.
+public enum IntegrationSettingsLevel: Sendable, Equatable, Hashable {
+    case application, diagnostics
+}
+
 public struct IntegrationsSettingsRoute: Sendable, Equatable, Hashable {
     public let surface: HostSurfaceID
     public let detailsHost: HostID?
+    public let level: IntegrationSettingsLevel
 
-    public init(surface: HostSurfaceID, detailsHost: HostID? = nil) {
+    public init(
+        surface: HostSurfaceID, detailsHost: HostID? = nil,
+        level: IntegrationSettingsLevel = .application
+    ) {
         self.surface = surface
         self.detailsHost = detailsHost
+        self.level = level
     }
 }
 

@@ -513,6 +513,8 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // 事件提示 descriptor 只保存 epoch/path/inode；Data.atomic 写入后再收紧到 0600，
     // 只清理经过 inode/owner 校验的自有 endpoint，不承载来源内容，也不改变既有
     // config/receipt 写路径。
+    // O_EVTONLY reads directory change events; it never opens a write descriptor.
+    "gui/Sources/ClaudioGUI/HostIntegrationMaintenanceRuntime.swift": ["open("],
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": [".write(", "unlink("],
     // 锁文件。`flock(2)` 要一个 fd，而拿到 fd 的唯一办法就是 `open(2)`。它不写内容。
     "helper/Sources/ClaudioCore/FileLock.swift": ["open("],

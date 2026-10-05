@@ -23,7 +23,8 @@ final class EventNoticeRuntime {
 
     init() {
         let model = EventNoticeModel(
-            receiverEpoch: UUID(), resolveSourceApplication: SourceApplicationAdapter.resolve)
+            receiverEpoch: UUID(), noticeAuthorized: HostEventAuthorization().accepts,
+            resolveSourceApplication: SourceApplicationAdapter.resolve)
         self.model = model
         navigationIngress = EventNoticeNavigationIngress(model: model)
         health = EventNoticeHealthStore()
@@ -57,7 +58,8 @@ final class EventNoticeRuntime {
                 epoch: model.receiverEpoch,
                 currentInstallationID: { host in
                     receiptStore.currentInstallationID(host: host)
-                }
+                },
+                noticeAuthorized: HostEventAuthorization().accepts
             ) { [weak ingress] notice in
                 ingress?.enqueue(notice)
             }

@@ -101,6 +101,8 @@ public final class IntegrationDestinationModel: ObservableObject {
     @Published public private(set) var feedback: IntegrationsFeedback?
     @Published public private(set) var inFlightOperation:
         IntegrationDestinationInFlightPresentation?
+    @Published public private(set) var activeOperations:
+        [HostID: IntegrationDestinationInFlightPresentation] = [:]
     @Published public private(set) var pendingConfirmation: IntegrationDestinationConfirmation?
     @Published public private(set) var isWindowVisible = false
     @Published public private(set) var isWindowKey = false
@@ -141,7 +143,9 @@ public final class IntegrationDestinationModel: ObservableObject {
         feedbackExpiryTask?.cancel()
     }
 
-    public var isPerformingAction: Bool { inFlightOperation != nil }
+    public var isPerformingAction: Bool { !activeOperations.isEmpty }
+
+    public func isPerformingAction(for host: HostID) -> Bool { activeOperations[host] != nil }
 
     public var selectedHostFacts: IntegrationDestinationHostFacts? {
         selectedHost.flatMap(content.facts(for:))
@@ -161,8 +165,11 @@ public final class IntegrationDestinationModel: ObservableObject {
         content.hostFacts.compactMap { facts in
             IntegrationAgentConnectionControlPresentation(
                 row: facts.row,
-                isToggleEnabled: !isPerformingAction,
-                isInFlight: inFlightOperation?.host == facts.host)
+                isToggleEnabled: !isPerformingAction(for: facts.host)
+                    && (facts.snapshot?.intent?.enabled == true
+                        || facts.snapshot?.availability == .available),
+                isInFlight: activeOperations[facts.host] != nil,
+                intentEnabled: facts.snapshot?.intent?.enabled == true)
         }
     }
 
@@ -230,23 +237,13 @@ public final class IntegrationDestinationModel: ObservableObject {
     /// The Toggle is a real connection control. Turning off always opens confirmation; canceling
     /// only clears the typed pending action and cannot call the manager.
     public func requestToggle(for host: HostID) {
-        guard !isPerformingAction, let facts = content.facts(for: host) else { return }
-        if facts.status == .notConnected {
-            Task { @MainActor [weak self] in
-                await self?.perform(.connect(host))
-            }
-        } else {
-            pendingConfirmation = .disconnect(host)
-        }
+        Task { @MainActor [weak self] in await self?.toggleHost(host) }
     }
 
     public func toggleHost(_ host: HostID) async {
-        guard !isPerformingAction, let facts = content.facts(for: host) else { return }
-        if facts.status == .notConnected {
-            await perform(.connect(host))
-        } else {
-            pendingConfirmation = .disconnect(host)
-        }
+        guard !isPerformingAction(for: host), let agent = agent(for: host), agent.isToggleEnabled
+        else { return }
+        await perform(agent.isOn ? .disconnect(host) : .connect(host))
     }
 
     public func requestClearReceiptHistory(for host: HostID) {
@@ -290,8 +287,8 @@ public final class IntegrationDestinationModel: ObservableObject {
     }
 
     public func perform(_ action: HostIntegrationUserAction) async {
-        guard !isPerformingAction else { return }
         let host = action.host ?? selectedHost ?? .claudeCode
+        guard !isPerformingAction(for: host) else { return }
 
         if action == .copyHooksCommand {
             let didCopy = clipboardWriter?("/hooks") ?? false
@@ -305,11 +302,14 @@ public final class IntegrationDestinationModel: ObservableObject {
         }
 
         let hostStatus = content.facts(for: host)?.status
-        inFlightOperation = integrationDestinationInFlightPresentation(
-            action: action,
-            selectedHost: host,
-            hostStatus: hostStatus)
-        defer { inFlightOperation = nil }
+        let operation = integrationDestinationInFlightPresentation(
+            action: action, selectedHost: host, hostStatus: hostStatus)
+        activeOperations[host] = operation
+        inFlightOperation = operation
+        defer {
+            activeOperations[host] = nil
+            inFlightOperation = activeOperations.values.first
+        }
 
         do {
             let outcome =
@@ -323,6 +323,10 @@ public final class IntegrationDestinationModel: ObservableObject {
                 : []
             replaceContent(outcome.content)
             if receiptTransitions.isEmpty {
+                if outcome.feedbackKind != .failure {
+                    if action.isIntentToggle { return }
+                    if case .retryMaintenance = action { return }
+                }
                 presentFeedback(
                     host: host,
                     kind: outcome.feedbackKind,

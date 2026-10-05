@@ -25,11 +25,7 @@ public struct WorkBuddyIntegrationEnvironment: Sendable {
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
         scopeFingerprint: (@Sendable () -> String?)? = nil,
         availability: @escaping @Sendable () -> HostAvailability = {
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(
-                atPath: "/Applications/WorkBuddy.app", isDirectory: &isDirectory)
-                && isDirectory.boolValue
-                ? .available : .unavailable(reason: "未检测到 WorkBuddy Desktop")
+            HostDiscovery.detect(.workBuddy).availability
         }
     ) {
         self.settingsFile = settingsFile
@@ -72,7 +68,7 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
             guard runtime == .ready else {
                 return .failure(.runtimeUnavailable(reason: workBuddyRuntimeReason(runtime)))
             }
-            if case .unavailable(let reason) = environment.availability() {
+            if let reason = environment.availability().unavailabilityReason {
                 return .failure(.hostUnavailable(reason: reason))
             }
             guard let scopeFingerprint = environment.scopeFingerprint() else {
@@ -82,8 +78,12 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
             let activeID = environment.receiptStore.currentInstallationID(host: .workBuddy)
             let reusableInstallationID =
                 environment.receiptStore.currentInstallationScopeFingerprint(host: .workBuddy)
-                == scopeFingerprint
+                    == scopeFingerprint
                 ? activeID : nil
+            do {
+                try ensurePrivateDirectoryTree(
+                    at: environment.settingsFile.deletingLastPathComponent())
+            } catch { return .failure(.configuration(reason: "WorkBuddy 配置目录不可写")) }
             let transaction = ConfigFileTransaction(
                 file: environment.settingsFile,
                 lockFile: environment.lockFile,
@@ -135,8 +135,10 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
                 scopeFingerprint: scopeFingerprint)
             {
                 return .failure(
-                    .configuration(reason: "WorkBuddy 当前连接代次发布失败：\(error.description)"))
+                    maintenanceReceiptActionError(
+                        error, reason: "WorkBuddy 当前连接代次发布失败：\(error.description)"))
             }
+            HostPublicationContext.current?.release()
             return .success(inspectWorkBuddySnapshot(environment: environment, runtime: runtime))
         }
     }
@@ -154,13 +156,16 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
                     host: .workBuddy, installationID: installationID)
             {
                 return .failure(
-                    .configuration(reason: "WorkBuddy 当前连接代次撤销失败：\(error.description)"))
+                    maintenanceReceiptActionError(
+                        error, reason: "WorkBuddy 当前连接代次撤销失败：\(error.description)"))
             }
             guard FileManager.default.fileExists(atPath: environment.settingsFile.path) else {
+                HostPublicationContext.current?.release()
                 return .success(
                     inspectWorkBuddySnapshot(environment: environment, runtime: runtime))
             }
             guard let installationID else {
+                HostPublicationContext.current?.release()
                 return .success(
                     inspectWorkBuddySnapshot(environment: environment, runtime: runtime))
             }
@@ -187,6 +192,7 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
                 return .failure(.configuration(reason: transformError.description))
             }
             if case .failure(let error) = result { return .failure(.transaction(error)) }
+            HostPublicationContext.current?.release()
             return .success(inspectWorkBuddySnapshot(environment: environment, runtime: runtime))
         }
     }

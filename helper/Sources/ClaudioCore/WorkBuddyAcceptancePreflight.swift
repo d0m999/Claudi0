@@ -783,7 +783,7 @@ public struct WorkBuddyAcceptancePreflight: Codable, Sendable, Equatable {
     ) -> WorkBuddyPreflightAvailabilityState {
         switch availability {
         case .available: .available
-        case .unavailable: .unavailable
+        case .notInstalled, .unavailable: .unavailable
         }
     }
 
