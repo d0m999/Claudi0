@@ -248,7 +248,7 @@ func runEventAnimationIntegrationSuites() async {
                     "designs/pixel-motion/Pixel Motion Prototype.html"))
             let digest = SHA256.hash(data: html).map { String(format: "%02x", $0) }.joined()
             expect(reference.sourceSHA256 == digest, "参考必须绑定当前 HTML，不接受旧参考")
-            expect(reference.samples.count == 1_083, "全部帧边界、首轮及后续循环须覆盖")
+            expect(reference.samples.count == 2_809, "五类事件全部循环，须覆盖完整首轮及后续循环边界")
             for sample in reference.samples {
                 guard let frames = resources.loaded(sample.style, dark: false),
                     let timeline = frames.manifest.animations[sample.action]
@@ -348,9 +348,22 @@ func runEventAnimationIntegrationSuites() async {
         expect(resumed.animationElapsedMs(at: 81) == 3_000, "恢复不重置阅读预算")
         for style in EventAnimationStyle.allCases where style != .original {
             let manifest = resources.loaded(style, dark: false)!.manifest
-            expect(manifest.animations["stop"]!.frame(at: 10_000).index == 15, "单次动作保留末帧")
+            for event in Event.allCases {
+                let timeline = manifest.animations[event.manifestKey]!
+                expect(timeline.playback == "loop", "所有角色的五类事件在阅读期间循环")
+                let total = Double(timeline.durationMs)
+                expect(timeline.frame(at: total - 1).index == 15, "首轮完整播放至末帧")
+                expect(
+                    timeline.frame(at: total).index == timeline.loopStartFrame,
+                    "首轮结束进入声明的循环起始帧")
+                expect(
+                    timeline.frame(at: total + 1).nextBoundaryMs != nil,
+                    "首轮结束后继续调度而非停在末帧")
+            }
+            expect(manifest.animations["preview"]!.frame(at: 10_000).index == 15, "非产品试听小样仍保留末帧")
             expect(
-                manifest.animations["stop"]!.frame(at: 10_000).nextBoundaryMs == nil, "单次结束停止帧调度")
+                manifest.animations["preview"]!.frame(at: 10_000).nextBoundaryMs == nil,
+                "单次小样结束停止帧调度")
         }
     }
     suite("事件动画：生产设置会话预览隔离、重播与离页清理") {
@@ -418,7 +431,10 @@ func runEventAnimationIntegrationSuites() async {
         state.event = .stop
         state.action = "stop"
         state.resetReading(remaining: 1)
-        await expectAnimationClockStopped(state, "单次动作已结束时保留末帧且停止调度")
+        let beforeRepeat = state.clockReads
+        expect(
+            await waitForAnimationCondition { state.clockReads >= beforeRepeat + 3 },
+            "小鸭结束动作首轮结束后，在剩余阅读预算内继续循环调度")
 
         preferences.style = .bitcoin
         state.preferences = preferences
@@ -450,7 +466,7 @@ func runEventAnimationIntegrationSuites() async {
         expect(notices.snapshot == before, "结束与重播没有创建或更新真实通知")
         preview.deactivate()
     }
-    await suite("事件动画：生产播放器连续暂停恢复、外观切换与一次结束及循环接缝") {
+    await suite("事件动画：生产播放器连续暂停恢复、外观切换与完整重播及部分循环接缝") {
         let probe = AnimationPlaybackProbe(resources: resources)
         defer { probe.close() }
         let state = probe.state
@@ -459,7 +475,7 @@ func runEventAnimationIntegrationSuites() async {
         state.resetReading()
         guard let duck = resources.loaded(.mechanicalDuck, dark: false),
             let waiting = duck.manifest.animations["notification"],
-            let once = duck.manifest.animations["stop"],
+            let repeating = duck.manifest.animations["stop"],
             let looping = resources.loaded(.bitcoin, dark: false)?.manifest.animations["task_start"]
         else { expect(false, "连续播放必须具有完整的原生时序资源"); return }
         await expectAnimationRenderedFrame(probe, resources: resources, frame: 0, "实际播放从首帧开始")
@@ -501,22 +517,25 @@ func runEventAnimationIntegrationSuites() async {
         state.event = .stop
         state.action = "stop"
         state.resetReading()
-        let onceStart = state.currentUptime
-        await expectAnimationRenderedFrame(probe, resources: resources, frame: 0, "单次动作真实首帧挂载")
-        state.manualUptime = onceStart + Double(once.durationMs - 50) / 1_000
+        let repeatStart = state.currentUptime
+        await expectAnimationRenderedFrame(probe, resources: resources, frame: 0, "重播动作真实首帧挂载")
+        state.manualUptime = repeatStart + Double(repeating.durationMs - 50) / 1_000
         await expectAnimationRenderedFrame(
-            probe, resources: resources, frame: once.frames - 1, "单次动作在终点前实际进入末帧")
+            probe, resources: resources, frame: repeating.frames - 1, "首轮末尾实际呈现停顿帧")
         let readsBeforeEnd = state.clockReads
-        state.manualUptime = onceStart + Double(once.durationMs + 50) / 1_000
+        state.manualUptime = repeatStart + Double(repeating.durationMs + 1) / 1_000
         expect(
             await waitForAnimationCondition { state.clockReads > readsBeforeEnd },
-            "播放任务实际跨过单次动作终点")
+            "播放任务实际跨过完整重播接缝")
         await expectAnimationRenderedFrame(
-            probe, resources: resources, frame: once.frames - 1, "跨过终点后继续保留末帧")
-        await expectAnimationClockStopped(state, "实际跨过单次终点后停止调度")
+            probe, resources: resources, frame: 0, "首轮末帧停顿后实际重新播放首帧")
+        state.manualUptime =
+            repeatStart + Double(repeating.durationMs + repeating.durationsMs[0] + 10) / 1_000
+        await expectAnimationRenderedFrame(
+            probe, resources: resources, frame: 1, "第二轮实际推进下一帧")
         expect(
             state.reading.fraction(at: state.currentUptime) > 0,
-            "单次停止由动作结束触发，四秒阅读预算仍未用完")
+            "完整动作重播不重置四秒阅读预算")
 
         state.preferences = EventAnimationPreferences(style: .bitcoin)
         state.event = .taskStart

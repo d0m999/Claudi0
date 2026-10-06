@@ -69,4 +69,4 @@
 
 「通知 → 事件动画」及其四样式选择、角色显示、静态表情、隔离预览、资源回退和共享横幅播放由后续 [事件动画规格](../../plan/PLAN-EVENT-ANIMATION.md) 授权。八页顶层 route identity 保持不变；动画详情和 `Claudio.Notifications.EventAnimation` 是独立增量，不因 #215 原迁移的旧范围而被排除，也不改写旧 C01–C48 的能力数目、回归 ID 或 48/48 浏览器记录。
 
-角色画面、时序、循环与静态帧以 Pixel Motion Prototype（工作树待提交：`designs/pixel-motion/Pixel Motion Prototype.html`） 的 `d2b3cf0e8440785149a803e6927e72171bceb30892afdd218d31da2bd21529c4` 为唯一准据；设置布局沿现行原生合同及 A 并排布局。当前接缝见 [实现映射](IMPLEMENTATION-MAP.md)，新增功能验证、现场观察 `BLOCKED` 与 `EA-D01` 的发现及修正验证状态见 [当前对齐记录](../../docs/validation/sot-implementation-alignment-2026-10-02.md)。旧 C30–C32 的通知偏好／健康／静默用例不证明该动画入口或资源失败状态已通过。
+角色画面、时序、循环与静态帧以 Pixel Motion Prototype（工作树待提交：`designs/pixel-motion/Pixel Motion Prototype.html`） 的 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc` 为唯一准据；设置布局沿现行原生合同及 A 并排布局。当前接缝见 [实现映射](IMPLEMENTATION-MAP.md)，新增功能验证、现场观察 `BLOCKED` 与 `EA-D01` 的发现及修正验证状态见 [当前对齐记录](../../docs/validation/sot-implementation-alignment-2026-10-02.md)。旧 C30–C32 的通知偏好／健康／静默用例不证明该动画入口或资源失败状态已通过。

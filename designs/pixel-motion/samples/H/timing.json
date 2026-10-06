@@ -160,11 +160,13 @@
       ],
       "reducedMotionFrame": 15,
       "endPose": "expressive",
-      "playback": "once",
+      "playback": "loop",
+      "loopStartFrame": 0,
+      "loopEndFrame": 15,
       "apngAssets": {
         "primary": {
           "file": "stop.png",
-          "numPlays": 1,
+          "numPlays": 0,
           "sourceFrames": [
             0,
             15
@@ -247,11 +249,13 @@
       ],
       "reducedMotionFrame": 15,
       "endPose": "expressive",
-      "playback": "once",
+      "playback": "loop",
+      "loopStartFrame": 0,
+      "loopEndFrame": 15,
       "apngAssets": {
         "primary": {
           "file": "stop_failure.png",
-          "numPlays": 1,
+          "numPlays": 0,
           "sourceFrames": [
             0,
             15

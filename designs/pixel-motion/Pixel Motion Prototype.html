@@ -129,7 +129,7 @@ const bitcoinMotion={
  notification: {"action":"硬币边旋转边跳起，等待审批","still":4,"times":[85,90,60,55,65,95,95,65,50,50,60,70,80,80,85,85],"playback":"loop","loopStartFrame":0,"loopEndFrame":15},
  stop: {"action":"转速衰减、进动晃动，猛地放平","times":[85,100,120,145,170,185,190,120,100,80,65,55,70,80,140,520],"playback":"once"},
  subagent_stop: {"action":"转动中向右晃一下，回到原地继续旋转","still":4,"times":[80,70,65,75,100,90,80,80,70,70,70,70,70,70,70,70],"playback":"loop","loopStartFrame":8,"loopEndFrame":15},
- stop_failure: {"action":"币面出现裂纹，裂成两半并永久分开","times":[95,100,120,145,175,210,65,65,85,90,100,110,125,150,190,600],"playback":"once"},
+ stop_failure: {"action":"币面出现裂纹，裂成两半，短暂停留后重播","times":[95,100,120,145,175,210,65,65,85,90,100,110,125,150,190,600],"playback":"once"},
  preview: {"action":"完整旋转一圈，展示硬币厚边与币面","still":0,"times":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,350],"playback":"once"}
 };
 const variantStates={
@@ -137,6 +137,12 @@ const variantStates={
  G:states.map(s=>({...s,...ghostMotion[s.id]})),
  H:states.map(s=>({...s,...bitcoinMotion[s.id]}))
 };
+// Event motions repeat while the banner's reading budget runs. Retain the authored
+// final-frame hold between complete replays and Bitcoin's continuous subrange loops.
+for(const key of Object.keys(variantStates)){
+ variantStates[key]=variantStates[key].map(s=>['idle','preview'].includes(s.id)||s.playback==='loop'
+  ?s:{...s,playback:'loop',loopStartFrame:0,loopEndFrame:s.times.length-1});
+}
 const statesFor=key=>variantStates[key];
 const ids=Object.keys(variants),params=new URLSearchParams(location.search);
 let variant=ids.includes(params.get('variant'))?params.get('variant'):'H';
@@ -637,7 +643,7 @@ function update(){
  document.querySelector('#hero').setAttribute('aria-label',`${v.name}：${state.name}，${state.action}${isStatic()?'静态查看':'动画'}`);
  document.querySelectorAll('[data-variant]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.variant===variant));
  document.querySelectorAll('[data-state]').forEach(b=>{const s=statesFor(variant).find(s=>s.id===b.dataset.state);b.setAttribute('aria-pressed',s.id===state.id);const c=b.querySelector('canvas');if(c)drawSprite(c,variant,s,s.still);});
- document.querySelector('#playback-note').textContent=variant==='H'?'工作、待响应与子任务反馈持续转动；结束放平、中断裂开':'透明底，动作播放一次，保留事件表情';
+ document.querySelector('#playback-note').textContent=variant==='H'?'事件动作循环播放；工作与子任务反馈持续转动，结束与中断短暂停留后重播':'透明底，事件动作循环播放，每轮末尾短暂停留';
  document.querySelector('#status').textContent=`${v.name}，${state.name}，${state.action}${isStatic()?'，静态查看':state.playback==='loop'?'，持续动作':'，播放一次'}`;
  const url=new URL(location.href);url.searchParams.set('variant',variant);url.searchParams.set('state',state.id);url.searchParams.delete('revision');history.replaceState(null,'',url);replay();
 }

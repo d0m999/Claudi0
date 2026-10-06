@@ -15,7 +15,7 @@
 | [原生对齐原型](<Native Settings Alignment Prototype.html>) 与 [本轮实现记录](../../docs/validation/macos-native-settings-alignment-2026-10-04.md) | 2026-10-04 的八页、代表性详情、跨页历史、失效位置、阅读恢复及动画选择演示。HTML 仅模拟系统外壳；生产控件由 AppKit 绘制，原生验收与原型演示分别记录。 |
 | [DESIGN.md](../../DESIGN.md) 与 [#215 迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md) | 已固定的八页设置呈现合同、领域边界及验收要求。设置基线 HTML 为本目录的 `claudi0 macOS Settings Prototype.html`，指纹 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。 |
 | [整合原型](<../panel-and-settings/Panel and Settings Prototype.html>) | 菜单栏、面板和横幅的呈现基线；其中旧设置部分已由 #215 取代。 |
-| [#216 事件动画规格](../../plan/PLAN-EVENT-ANIMATION.md) 与 Pixel Motion Prototype（工作树待提交：`designs/pixel-motion/Pixel Motion Prototype.html`） | 后续授权的动画增量；角色画面、时序、循环与静态帧由 Pixel 原型拥有，指纹 `d2b3cf0e8440785149a803e6927e72171bceb30892afdd218d31da2bd21529c4`。新增通知详情及动画偏好不属于旧 C01–C48 的浏览器覆盖。 |
+| [#216 事件动画规格](../../plan/PLAN-EVENT-ANIMATION.md) 与 Pixel Motion Prototype（工作树待提交：`designs/pixel-motion/Pixel Motion Prototype.html`） | 后续授权的动画增量；角色画面、时序、循环与静态帧由 Pixel 原型拥有，指纹 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc`。新增通知详情及动画偏好不属于旧 C01–C48 的浏览器覆盖。 |
 | 动画设置原型（工作树待提交：`designs/macos-settings-native/Animation Settings Prototype.html`）、配套 CSS（工作树待提交：`designs/macos-settings-native/animation-settings-prototype.css`） 和 配套 JavaScript（工作树待提交：`designs/macos-settings-native/animation-settings-prototype.js`） | 动画设置布局比较及模拟交互；生产沿用 #216 指定的 A 并排布局和现行原生设置合同。原型读取 GUI 导出资源，不成为角色画面或时序的第二个来源。 |
 | [实现映射](IMPLEMENTATION-MAP.md) 与 [能力对照表](CAPABILITY-MATRIX.md) | 将合同和原型入口关联到既有领域 owner；源码描述实际实现，不因代码存在而自动改变合同或证明验收。 |
 | VERIFICATION.json（工作树待提交：`designs/macos-settings-native/VERIFICATION.json`）、`verification/` 与 `screenshots/` | 2026-10-01 的固定 HTML 浏览器证据；保留其日期、指纹、结果和当时交付状态。 |

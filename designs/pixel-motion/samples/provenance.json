@@ -61,7 +61,7 @@
   },
   "source": "Pixel Motion Prototype.html",
   "schema": 1,
-  "sourceSHA256": "d2b3cf0e8440785149a803e6927e72171bceb30892afdd218d31da2bd21529c4",
+  "sourceSHA256": "447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc",
   "styles": {
     "mechanicalDuck": {
       "variant": "E",
@@ -91,30 +91,30 @@
   "files": {
     "E/sprites-dark.png": "7c412b94bf6afe53a8abb5a8885fb30db5dc02905834971f9e6853cae367bd88",
     "E/sprites.png": "0225de0b1b0f6506d9482ca3b3163e8c53058ab9fd68805da3d430d7dba6d8c2",
-    "E/timing.json": "ab07c53360b32cb167a9c3baa71572c5b15094a1ccdaebf4f25fea82da770e35",
+    "E/timing.json": "d263f6aa0045e4322425e84b656ad4b08485102b45dffbcc51ef2b32ef2edd54",
     "G/sprites.png": "33229e3532d0288d44e40f1d94244c25828f860f30b737e6206d3a8fd93c2603",
-    "G/timing.json": "f1924ceba2163edcc743e7900d4a64dbd253653d05c9c21614553815c303f65c",
+    "G/timing.json": "66f1d78dc5bab418e54b6068589a129afcad46ad2179204faa4386b6aa5815a3",
     "H/sprites.png": "9fe289c64c169d60e431e0fe2ed3b190afd56fa9ee9ebda864fc0935f76bccb3",
-    "H/timing.json": "c5cf25d16bd5cbedaa441757f2ec80fbeb6dfd8723a19c29254d0f7151c898f7"
+    "H/timing.json": "d60a2a9a31a33e0ef1b2cad3eea48f6f1bbff130d25cd505d6555e55a78c113b"
   },
   "verifiedReferenceFrames": 480,
   "previewFiles": {
-    "prototype-preview.png": "10937af9a89d553cf4b7de5394b1b6439b41e0acdc7b4f5ed2085cdf4e72559b",
-    "dark-preview.png": "1f43f290889d82e2b63a0ff56f137c9dbc6d10d8fe2efe63fe45d7cb53f94f68",
-    "mobile-preview.png": "653e68640a3d25d0337370319ebe13c0b7560b9aaae1bc4f0ba7e8cfa2d35a79",
-    "event-meaning-preview.png": "88bba5d6218f4af7ce40f5ac1c9664e56d300ace4f2ea0e45075bcf48458e35c",
+    "prototype-preview.png": "e082425165164083464425e31997121eeb242886dc5b5b54b7f1347ec7cbee80",
+    "dark-preview.png": "62cc292a0e5c4934ff3ebc4c31e4bc97a05e367d8a6b8e7d9d5f12f141b9ca80",
+    "mobile-preview.png": "1f2123421bb6b540c047afb67bdbb429e1d595577abae0e030af5d56a69c433b",
+    "event-meaning-preview.png": "968518b1fab35e9af6306e1cda0d7799635b0ba4724bb1a7ce200c0584e0b2fd",
     "microduck-preview.png": "5b4e091431f447595367ca5e780034fcc5597699c1285397b895cc69c359f2a2",
-    "bitcoin-preview.png": "abde7dcb7e39e7bb0e7674a81daad4d4f1c24884800124dafce0659ddc7a693f",
-    "bitcoin-prototype-preview.png": "10937af9a89d553cf4b7de5394b1b6439b41e0acdc7b4f5ed2085cdf4e72559b",
+    "bitcoin-preview.png": "394e1ab78396a54a3362c5a86707bb13bcd31c29c0b1237904cbb7822a0092f5",
+    "bitcoin-prototype-preview.png": "e082425165164083464425e31997121eeb242886dc5b5b54b7f1347ec7cbee80",
     "ghost-preview.png": "f59389d1e6af0e9f7f5bdfe3a0c0ca7a0252aba082dacaf5d597e55d42231bbf",
-    "bitcoin-mobile-preview.png": "653e68640a3d25d0337370319ebe13c0b7560b9aaae1bc4f0ba7e8cfa2d35a79",
-    "microduck-mobile-preview.png": "578348b177b4230df522af5b32d468c08ac873d98287e5ad814380efd930e7d4",
-    "event-meaning-preview.gif": "75808db404e601a0762dcc2e1c1578ec55f11f6a44d1cd3cba3c32b1cdf8c84b",
-    "microduck-prototype-preview.png": "fe0e6d418d0bc3f4e013618237255b03a9f3841f755f0d2a0a5d9e62b78f1f46",
-    "ghost-mobile-preview.png": "f587e17b72094fd83efba1784a0d85e7aa29ccba9234e586e822812001558157",
-    "microduck-preview.gif": "7fe0e9c4710626a9706530bb1b27a6fb6d35c104453a6f40bc1718c652ad738a",
-    "bitcoin-preview.gif": "e1ecdbb036acd00f34b0bcac1126a68237f6d59c233fba689f073880aa370325",
-    "ghost-prototype-preview.png": "25a1bacd4490bb767bd5888be5124ce4581420503c7f1ed4ac393737a3568b2d",
-    "ghost-preview.gif": "53a01917d2547475e38b42532c5d66d808453109179d8d2fab4e42dfbbfdc8a2"
+    "bitcoin-mobile-preview.png": "6223d05cb86f18464fe7896630632cef3dc2e240e8fe9000aa85d04fb9b6b075",
+    "microduck-mobile-preview.png": "d7bc04a575f8903566c29667d043c2f38f7e62dabdcd2cc709a3d4c4603733a2",
+    "event-meaning-preview.gif": "cc61cbfe55cd4e937bbab2656271a99e4e2c049e325734c75c9c6b7dc0fa9091",
+    "microduck-prototype-preview.png": "610260916c60abc62ec3ce655791f2823051da1f56271e073c11ca6ca2832eb1",
+    "ghost-mobile-preview.png": "dcd178b0b852494b1820228753d0fdecabdd06748fc19ef3a2738a894e550b53",
+    "microduck-preview.gif": "5fa7cffa844a06868ac67e967afa7f92a42b3537058db1cebbc169e9e3b4b25b",
+    "bitcoin-preview.gif": "a9d33397e35919859617632d910c61bd442d3f94f113fd828634004fcbc32e69",
+    "ghost-prototype-preview.png": "aa75730bcab88473c81b38c9ae5abefb72fa68884d52472ab76d6979d427f778",
+    "ghost-preview.gif": "c32d45218e9377a5adcb105934cd8cfad1e9ad3c7df1403e1abf7673313bdff2"
   }
 }
