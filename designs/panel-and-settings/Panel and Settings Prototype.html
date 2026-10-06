@@ -473,14 +473,36 @@
 
   .banner .track { margin-bottom: 2px; }
   .banner-stack { position:absolute; top:34px; left:50%; transform:translateX(-50%);
-    width:440px; max-width:calc(100% - 32px); z-index:35; display:flex; flex-direction:column; gap:10px; }
+    width:440px; max-width:calc(100% - 32px); z-index:35; display:flex; flex-direction:column; gap:8px; }
   .banner-stack .banner { width:100%; max-width:none; flex:none; }
-  .banner-overflow { width:100%; padding:10px 14px; border:1px solid var(--hairline-strong); border-radius:13px;
-    background:var(--panel-b); color:var(--text); font-size:12px; cursor:pointer; }
-  .banner-queue { padding:4px 14px; border:1px solid var(--hairline-strong); border-radius:13px;
+  /* FIFO 先到在上；纱只覆盖背景和装饰。正文、按钮和阅读轨保留正常对比度。
+     层级写入卡片自身，退场快照脱离栈后仍保留原样式。 */
+  .banner::before { content:""; position:absolute; inset:0; border-radius:inherit;
+    background:var(--panel-b); opacity:var(--banner-veil,0); pointer-events:none; }
+  .banner .cap, .banner .track, .banner .banner-error { position:relative; }
+  .banner .glyph, .banner .spine { opacity:calc(1 - var(--banner-veil,0)); }
+  .banner .cap.is-info .spine { opacity:calc(.32 * (1 - var(--banner-veil,0))); }
+  .banner-capacity { font-size:11.5px; line-height:1.6; padding:10px 14px;
+    border:1px solid var(--hairline); border-radius:13px; background:var(--panel-a); color:var(--text); }
+  .banner-measure { position:absolute; visibility:hidden; pointer-events:none; width:100%; }
+  /* 待展示入口：叠层卡片 pill，露出后面排队卡片的上缘 */
+  .banner-overflow { display:flex; align-items:center; gap:9px; width:100%; margin-top:3px;
+    padding:9px 14px; border:1px solid var(--hairline-strong); border-radius:13px; position:relative;
+    background:var(--panel-b); color:var(--text); font:500 12px/1.4 var(--page-font); cursor:pointer; text-align:left; }
+  .banner-overflow::before, .banner-overflow::after { content:""; position:absolute; left:9px; right:9px;
+    height:12px; border:1px solid var(--hairline-strong); border-bottom:none; border-radius:12px 12px 0 0;
+    background:var(--panel-b); z-index:-1; pointer-events:none; }
+  .banner-overflow::before { bottom:calc(100% - 5px); opacity:.6; }
+  .banner-overflow::after { bottom:calc(100% - 2px); opacity:.32; }
+  .banner-overflow .qdots { display:inline-flex; gap:4px; flex:none; }
+  .banner-overflow .qdot { width:7px; height:7px; border-radius:50%; }
+  .banner-overflow .qcount { margin-left:auto; flex:none; font:600 11px/1 var(--page-font); font-variant-numeric:tabular-nums;
+    padding:3px 8px; border-radius:999px; background:var(--clay-soft); border:1px solid var(--hairline); color:var(--text); }
+  .banner-queue { padding:2px 14px; border:1px solid var(--hairline-strong); border-radius:13px;
     background:var(--panel-a); color:var(--text); max-height:220px; overflow-y:auto; }
   .banner-queue-row { display:flex; align-items:center; gap:10px; padding:10px 0; font-size:12px; }
   .banner-queue-row + .banner-queue-row { border-top:1px solid var(--hairline); }
+  .banner-queue-row .qspine { width:4px; height:18px; border-radius:2px; flex:none; opacity:.85; }
   .banner-queue-row .s { margin-left:auto; color:var(--text-2); font-size:11px; white-space:nowrap; }
   .window { height: min(820px, calc(100dvh - var(--prototype-nav-height) - 86px)); }
   .p-body { max-height: min(470px, calc(100dvh - var(--prototype-nav-height) - 130px)); overflow-anchor: none; }
@@ -1645,7 +1667,8 @@ function reminderDemand(r) { return r.demand[S.lang]; }
 
 var S = {
   bannerEvent: "permission", bannerReminderID: null, reminderSerial: 0, reminderScene: "list", reminderOverflow: 0,
-  popover: true, banners: [], bannerQueue: [], bannerQueueOpen: false,
+  popover: true, banners: [], bannerQueue: [], bannerQueueOpen: false, bannerVisibleCapacity: 3,
+  bannerDisplayOverflow: 0, bannerNavigationTimer: null, bannerNavigationTimeout: null,
   bannerNavigationOutcome: "fallback", bannerNavigationID: null, bannerNavigationSerial: 0, bannerInjectFailure: false, bannerSerial: 0,
   needs: "collapsed", reminder: null,
   scope: "default", scopeMenu: false,
@@ -1979,7 +2002,7 @@ var NOTICE_SCENARIOS = {
 };
 function demoReminder(kind, id, mins) {
   var e = NOTICE_SCENARIOS[kind];
-  return { id: id, kind: kind, host: kind === "needsInput" || kind === "interrupted" ? "Claude Code" : "Codex",
+  return { id: id, version: 1, kind: kind, host: kind === "needsInput" || kind === "interrupted" ? "Claude Code" : "Codex",
     event: e.event, demand: { zh: e.zh, en: e.en }, proj: "claudi0", mins: mins || 0,
     clock: "14:32", session: "demo-session-" + id };
 }
@@ -1989,10 +2012,24 @@ function showNoticeScene(kind, source) {
   S.bannerEvent = kind;
   document.getElementById("bannerEvent").value = kind;
   if (e.actionZh) {
-    var id = "demo-" + kind + "-" + (++S.reminderSerial);
+    var previous = source && source.reminderID && REMINDERS.find(function(r) { return r.id === source.reminderID; });
+    if (!previous && source && source.reminderID) {
+      var displayed = S.banners.concat(S.bannerQueue).find(function(n) { return n.attention && n.reminderID === source.reminderID; });
+      previous = displayed && displayed.reminderSnapshot;
+    }
+    var id = previous ? previous.id : "demo-" + kind + "-" + (++S.reminderSerial);
     var r = demoReminder(kind, id, 0);
     if (source) { r.host = source.host; r.proj = source.project; }
+    if (previous) {
+      r.version = (previous.version || 1) + 1;
+      var previousIndex = REMINDERS.indexOf(previous);
+      if (previousIndex >= 0) REMINDERS.splice(previousIndex, 1);
+    }
     REMINDERS.unshift(r);
+    if (REMINDERS.length > 50) {
+      S.reminderOverflow += REMINDERS.length - 50;
+      REMINDERS.length = 50;
+    }
     S.bannerReminderID = r.id;
   } else S.bannerReminderID = null;
   showBanner(!!e.actionZh, source);
@@ -2022,59 +2059,89 @@ function refreshReminder(id) {
 }
 /* ============ 横幅 ============ */
 function bannerFailureText(key) {
-  return key === "started" ? tr("正在定位会话…", "Locating session…") : key === "fallback" ? tr("已打开来源应用，未定位到会话", "Opened source app; session not located") : key === "requested" ? tr("已请求打开会话", "Requested opening session") : key === "unavailable" ? tr("来源应用未能打开，请重试。", "The source app could not be opened. Try again.")
+  return key === "timedOut" ? tr("定位会话超时，请重试。", "Locating the session timed out. Try again.") : key === "started" ? tr("正在定位会话…", "Locating session…") : key === "fallback" ? tr("已打开来源应用，未定位到会话", "Opened source app; session not located") : key === "requested" ? tr("已请求打开会话", "Requested opening session") : key === "unavailable" ? tr("来源应用未能打开，请重试。", "The source app could not be opened. Try again.")
     : tr("此提醒已更新或过期，请在面板的“需要你”查看最新事项。", "This reminder changed or expired. Check “Needs you” in the panel for the latest item.");
+}
+function captureBannerReminder(reminder) {
+  return reminder ? Object.assign({}, reminder, {version:reminder.version || 1,demand:Object.assign({}, reminder.demand)}) : null;
+}
+function reminderForBanner(notice) {
+  if (!notice.attention) return null;
+  var current = REMINDERS.find(function (r) { return r.id === notice.reminderID; });
+  var captured = notice.reminderSnapshot;
+  return current || (captured && captured.id === notice.reminderID && captured.version === notice.version ? captured : null);
 }
 function bannerHTML(notice) {
   notice = notice || S.banners[0];
   if (!notice) return "";
-  var r = notice.attention ? REMINDERS.find(function (x) { return x.id === notice.reminderID; }) : null;
+  var r = reminderForBanner(notice);
   var scene = NOTICE_SCENARIOS[notice.event] || NOTICE_SCENARIOS.permission;
   var e = eventById(r ? r.event : scene.event), color = e.color;
   var host = r ? r.host : notice.host, demand = r ? reminderDemand(r) : tr(scene.zh, scene.en);
   var action = r && NOTICE_SCENARIOS[r.kind] || scene;
-  var failure = notice.attention && (!r || r.updated) ? "stale" : notice.failure;
-  return '<div class="banner" id="banner-' + notice.id + '" data-notice="' + notice.id + '" style="--banner-color:var(--ev-' + color + ')" aria-label="' + esc(host + ' ' + demand) + '"><div class="cap' + (notice.attention ? '' : ' is-info') + '">' +
+  var failure = notice.attention && (!r || r.updated || (r.version || 1) !== notice.version) ? "stale" : notice.failure;
+  var index = S.banners.indexOf(notice), veil = index <= 0 ? 0 : index === 1 ? .2 : .32;
+  return '<div class="banner" id="banner-' + notice.id + '" data-notice="' + notice.id + '" style="--banner-color:var(--ev-' + color + ');--banner-veil:' + veil + '" aria-label="' + esc(host + ' ' + demand) + '"><div class="cap' + (notice.attention ? '' : ' is-info') + '">' +
     '<span class="spine" style="background:var(--ev-' + color + ')"></span>' + glyph(color, scene.glyph) +
-    '<button type="button" class="cap-text" id="bannerBody-' + notice.id + '" data-banner-body="' + notice.id + '"' + (failure === "started" || failure === "stale" ? ' disabled' : '') + '><span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
+    '<button type="button" class="cap-text" id="bannerBody-' + notice.id + '" data-banner-body="' + notice.id + '"' + (S.bannerNavigationID !== null || failure === "stale" ? ' disabled' : '') + '><span class="p"><span class="host">' + esc(host) + '</span>' + esc(demand) + '</span>' +
     '<span class="s">' + esc(r ? r.proj + ' · ' + t().age(r.mins) : notice.project + ' · ' + tr('<1分', '<1m')) + '</span></button>' +
-    (r ? '<button class="chip" id="bannerAct-' + notice.id + '" data-banner-action="' + notice.id + '"' + (r.updated || failure === "started" ? ' disabled' : '') + '>' + (failure === "unavailable" ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
+    (r ? '<button class="chip" id="bannerAct-' + notice.id + '" data-banner-action="' + notice.id + '"' + (r.updated || S.bannerNavigationID !== null ? ' disabled' : '') + '>' + (["unavailable", "timedOut"].indexOf(failure) >= 0 ? tr("重试", "Retry") : tr(action.actionZh || "去查看", action.actionEn || "Inspect")) + '</button>' : '') +
     '<button class="icon-btn" id="bannerClose-' + notice.id + '" data-banner-close="' + notice.id + '" aria-label="' + tr("收起横幅", "Dismiss banner") + '">' + G.x + '</button></div>' +
     (failure ? '<p class="banner-error" role="alert">' + bannerFailureText(failure) + '</p>' : '') +
     '<div class="track" aria-hidden="true"><i></i></div></div>';
 }
 function bannerStackHTML() {
   var html = S.banners.map(bannerHTML).join("");
-  if (!S.bannerQueue.length) return html;
+  var hint = S.bannerDisplayOverflow ? '<p class="banner-capacity" id="bannerCapacity">' +
+    tr("展示队列已满，另有 " + S.bannerDisplayOverflow + " 条提示未展示。待接手提醒可在面板查看。", "Display queue full: " + S.bannerDisplayOverflow + " more notices could not be shown. Check attention reminders in the panel.") + '</p>' : '';
+  if (!S.bannerQueue.length) return html + hint;
+  var queueColor = function (notice) {
+    var scene = NOTICE_SCENARIOS[notice.event] || NOTICE_SCENARIOS.permission;
+    var e = eventById(scene.event);
+    return "var(--ev-" + (e ? e.color : "clay") + ")";
+  };
   html += '<button class="banner-overflow" id="bannerOverflow" aria-expanded="' + S.bannerQueueOpen + '" aria-controls="bannerQueue">' +
-    (S.bannerQueueOpen ? tr("收起待展示列表", "Collapse waiting list") : tr("还有 " + S.bannerQueue.length + " 条，查看", S.bannerQueue.length + " more; view")) + '</button>';
+    '<span class="qdots" aria-hidden="true">' + S.bannerQueue.slice(0, 3).map(function (notice) {
+      return '<span class="qdot" style="background:' + queueColor(notice) + '"></span>';
+    }).join("") + '</span>' +
+    (S.bannerQueueOpen ? tr("收起待展示列表", "Collapse waiting list") : tr("还有 " + S.bannerQueue.length + " 条待展示", S.bannerQueue.length + " more waiting")) +
+    '<span class="qcount" aria-hidden="true">' + S.bannerQueue.length + '</span></button>';
   html += '<div class="banner-queue" id="bannerQueue"' + (S.bannerQueueOpen ? '' : ' hidden') + '>' + S.bannerQueue.map(function (notice) {
-    var scene = NOTICE_SCENARIOS[notice.event];
-    return '<div class="banner-queue-row"><span>' + esc(notice.host + ' ' + tr(scene.zh, scene.en) + ' · ' + notice.project) + '</span><span class="s">' + tr("待展示", "Waiting") + '</span></div>';
+    var scene = NOTICE_SCENARIOS[notice.event] || NOTICE_SCENARIOS.permission;
+    return '<div class="banner-queue-row"><span class="qspine" aria-hidden="true" style="background:' + queueColor(notice) + '"></span><span>' + esc(notice.host + ' ' + tr(scene.zh, scene.en) + ' · ' + notice.project) + '</span><span class="s">' + tr("待展示", "Waiting") + '</span></div>';
   }).join("") + '</div>';
-  return html;
+  return html + hint;
+}
+function cancelBannerNavigation() {
+  S.bannerNavigationSerial++; S.bannerNavigationID = null;
+  clearTimeout(S.bannerNavigationTimer); clearTimeout(S.bannerNavigationTimeout);
+  S.bannerNavigationTimer = null; S.bannerNavigationTimeout = null;
 }
 function openBannerSource(id) {
   var notice = id === undefined ? S.banners[0] : S.banners.find(function (x) { return x.id === id; });
-  if (!notice || notice.failure === "started") return;
-  var r = notice.attention ? REMINDERS.find(function (x) { return x.id === notice.reminderID; }) : null;
-  if (notice.attention && (!r || r.updated)) { notice.failure = "stale"; render(); return; }
-  S.banners.forEach(function (x) { if (x.failure === "started") x.failure = null; });
-  var serial = ++S.bannerNavigationSerial, reminderID = notice.reminderID;
+  if (!notice || S.bannerNavigationID !== null) return;
+  var r = reminderForBanner(notice);
+  if (notice.attention && (!r || r.updated || (r.version || 1) !== notice.version)) { notice.failure = "stale"; render(); return; }
+  var serial = ++S.bannerNavigationSerial, reminderID = notice.reminderID, version = notice.version;
+  var deadline = performance.now() + 3000;
   S.bannerNavigationID = notice.id;
   var outcome = S.bannerInjectFailure ? "failed" : S.bannerNavigationOutcome;
   S.bannerInjectFailure = false; notice.failure = "started"; render();
-  setTimeout(function () {
-    if (serial !== S.bannerNavigationSerial || S.banners.indexOf(notice) < 0) return;
-    S.bannerNavigationID = null;
-    if (r && (r.updated || REMINDERS.find(function (x) { return x.id === reminderID; }) !== r)) { notice.failure = "stale"; render(); return; }
+  function finish(outcome) {
+    if (serial !== S.bannerNavigationSerial || S.banners.indexOf(notice) < 0 || notice.version !== version) return;
+    if (performance.now() >= deadline) outcome = "timedOut";
+    cancelBannerNavigation();
+    var current = r && REMINDERS.find(function (x) { return x.id === reminderID; });
+    if (r && (r.updated || (current && current !== r))) { notice.failure = "stale"; render(); return; }
     if (outcome === "exact") {
-      if (r && !r.updated) REMINDERS.splice(REMINDERS.indexOf(r), 1);
+      if (r && !r.updated && REMINDERS.indexOf(r) >= 0) REMINDERS.splice(REMINDERS.indexOf(r), 1);
       closeBanner(notice.id); toast(tr("已返回会话", "Returned to session"));
     } else {
       notice.failure = outcome === "failed" ? "unavailable" : outcome; render();
     }
-  }, 450);
+  }
+  S.bannerNavigationTimeout = setTimeout(function () { finish("timedOut"); }, 3000);
+  S.bannerNavigationTimer = setTimeout(function () { finish(outcome); }, S.bannerNavigationDelay || 450);
 }
 
 /* ============ 面板 ============ */
@@ -3128,6 +3195,15 @@ function aiDemoScenario() {
 /* ============ 呈现协调器：只管理动画，不拥有配置或操作结果 ============ */
 var Motion = {
   active: new Map(), exits: new Map(), results: [], reduced: false, media: null, tokens: null,
+  bannerEnterSerial: 0, bannerCommitScheduled: false,
+  nextBannerDelay: function () {
+    var index = this.bannerEnterSerial++;
+    if (!this.bannerCommitScheduled) {
+      this.bannerCommitScheduled = true;
+      queueMicrotask(function () { Motion.bannerEnterSerial = 0; Motion.bannerCommitScheduled = false; });
+    }
+    return index * 90;
+  },
   init: function () {
     if (this.tokens) return;
     var css = getComputedStyle(document.documentElement);
@@ -3152,6 +3228,9 @@ var Motion = {
       this.exits.clear();
     }
     this.reduced = reduced;
+    if (reduced) NoticeClock.clocks.forEach(function(clock) {
+      clearTimeout(clock.entranceTimer); clock.pause("entrance", false);
+    });
     NoticeClock.paint();
   },
   cancel: function (el, clean) {
@@ -3165,7 +3244,7 @@ var Motion = {
       if (root === el || root.contains(el)) Motion.cancel(el, true);
     });
   },
-  play: function (el, frames, duration, easing, cleanup) {
+  play: function (el, frames, duration, easing, cleanup, opts) {
     if (!el) return;
     // Sample before cancelling, so repeated actions start at the current visual value.
     if (this.active.has(el)) {
@@ -3176,7 +3255,8 @@ var Motion = {
     }
     this.cancel(el, false);
     if (this.reduced || !el.animate) { if (cleanup) cleanup(); return; }
-    var entry = { animation: el.animate(frames, { duration: duration, easing: easing || this.enter }), cleanup: cleanup };
+    var entry = { animation: el.animate(frames, { duration: duration, easing: easing || this.enter,
+      delay: opts && opts.delay || 0, fill: opts && opts.fill || "none" }), cleanup: cleanup };
     this.active.set(el, entry);
     entry.animation.onfinish = function () {
       if (Motion.active.get(el) !== entry) return;
@@ -3185,14 +3265,14 @@ var Motion = {
     };
   },
   region: function (el) { return el.id || (el.classList.contains("sheet-overlay") ? "modal" : el); },
-  enterSurface: function (el, distance) {
+  enterSurface: function (el, distance, opts) {
     var key = this.region(el), ghost = this.exits.get(key), from = { opacity: 0, translate: "0 -" + distance + "px" };
     if (ghost) {
       from.opacity = getComputedStyle(ghost).opacity;
       from.translate = "0 " + (ghost.getBoundingClientRect().top - el.getBoundingClientRect().top) + "px";
       this.cancel(ghost, true); ghost.remove(); this.exits.delete(key);
     }
-    this.play(el, [from, { opacity: 1, translate: "0 0" }], this.tokens.short);
+    this.play(el, [from, { opacity: 1, translate: "0 0" }], this.tokens.short, null, null, opts);
   },
   exitSurface: function (el, distance, modal) {
     if (this.reduced || !el.getClientRects().length) { this.discard(el); return; }
@@ -3334,8 +3414,7 @@ function updateReveals(before) {
   });
 }
 
-/* 每张横幅拥有独立阅读预算；队列尚未获得展示位置时不创建计时器。
-   这是多横幅交互提案，未改变原生 ADR 0013 的单瞬时版本合同。 */
+/* ADR 0013 多横幅修订：队列不消耗预算，回队列的条目保存已读进度。 */
 function createNoticeClock(id) { return {
   key: null, node: null, budget: 4000, remaining: 0, runningAt: null, pauses: new Set(), timer: null, frame: null,
   left: function () { return Math.max(0, this.remaining - (this.runningAt === null ? 0 : performance.now() - this.runningAt)); },
@@ -3390,12 +3469,16 @@ var NoticeClock = {
   },
   sync:function (root, modalOpen) {
     this.clocks.forEach(function (clock, id) {
-      if (!S.banners.some(function (notice) { return notice.id === id; })) { clock.stop(); NoticeClock.clocks.delete(id); }
+      var visible = S.banners.some(function (notice) { return notice.id === id; });
+      var waiting = S.bannerQueue.some(function (notice) { return notice.id === id; });
+      if (!visible && !waiting) { clock.stop(); NoticeClock.clocks.delete(id); }
+      else if (waiting) { clock.pause("queued", true); clock.node = null; cancelAnimationFrame(clock.frame); }
     });
     if (!root) return;
     this.pause("hover", root.matches(":hover"));
     this.pause("focus", root.contains(document.activeElement));
     this.pause("modal", !!modalOpen);
+    this.pause("queueExpansion", S.bannerQueueOpen);
     S.banners.forEach(function (notice) {
       var node = document.getElementById("banner-" + notice.id), clock = NoticeClock.clocks.get(notice.id);
       if (!clock) {
@@ -3404,9 +3487,11 @@ var NoticeClock = {
         NoticeClock.pauses.forEach(function (reason) { clock.pause(reason, true); });
         if (node && !Motion.reduced) {
           clock.pause("entrance", true);
-          clock.entranceTimer = setTimeout(function () { if (clock.key === notice.id) clock.pause("entrance", false); }, Motion.tokens.short);
+          /* 入场暂停与级联延迟（90ms 步进，见 render）对齐，阅读预算不抢跑 */
+          var enterDelay = node._bannerEntranceDelay || 0;
+          clock.entranceTimer = setTimeout(function () { if (clock.key === notice.id) clock.pause("entrance", false); }, Motion.tokens.short + enterDelay);
         }
-      } else clock.sync(node, notice.id);
+      } else { clock.sync(node, notice.id); clock.pause("queued", false); }
     });
     root.onpointerenter = function () { NoticeClock.pause("hover", true); };
     root.onpointerleave = function () { NoticeClock.pause("hover", false); };
@@ -3421,7 +3506,7 @@ var NoticeClock = {
   }
 };
 function promoteBanners() {
-  while (S.banners.length < 3 && S.bannerQueue.length) S.banners.push(S.bannerQueue.shift());
+  while (S.banners.length < S.bannerVisibleCapacity && S.bannerQueue.length) S.banners.push(S.bannerQueue.shift());
   if (!S.bannerQueue.length) S.bannerQueueOpen = false;
 }
 function removeReminder(id) {
@@ -3429,15 +3514,21 @@ function removeReminder(id) {
   REMINDERS = REMINDERS.filter(function (r) { return r.id !== id; });
   S.banners = S.banners.filter(function (notice) { return notice.reminderID !== id; });
   S.bannerQueue = S.bannerQueue.filter(function (notice) { return notice.reminderID !== id; });
-  if (removedNavigation) { S.bannerNavigationSerial++; S.bannerNavigationID = null; }
+  if (removedNavigation) cancelBannerNavigation();
   if (S.reminder === id) { S.needs = "list"; S.reminder = null; }
   promoteBanners();
   setMenuState(REMINDERS.length ? "waiting" : "idle");
 }
-function closeBanner(id) {
-  if (id === undefined) { S.banners = []; S.bannerQueue = []; S.bannerQueueOpen = false; }
+function closeBanner(id, immediately) {
+  if (id === undefined) { S.banners = []; S.bannerQueue = []; S.bannerQueueOpen = false; S.bannerDisplayOverflow = 0; }
   else S.banners = S.banners.filter(function (notice) { return notice.id !== id; });
-  if (id === undefined || S.bannerNavigationID === id) { S.bannerNavigationSerial++; S.bannerNavigationID = null; }
+  if (id === undefined || S.bannerNavigationID === id) cancelBannerNavigation();
+  if (id === undefined && immediately) {
+    patchRegion(document.getElementById("bannerStack"), "");
+    Motion.exits.forEach(function (ghost, key) {
+      if (ghost.classList.contains("banner")) { Motion.discard(ghost); ghost.remove(); Motion.exits.delete(key); }
+    });
+  }
   promoteBanners();
   setMenuState(REMINDERS.length ? "waiting" : "idle"); render();
 }
@@ -3445,20 +3536,68 @@ function showBanner(attention, source) {
   var scene = NOTICE_SCENARIOS[S.bannerEvent];
   if (!scene || !!scene.actionZh !== attention) S.bannerEvent = attention ? "permission" : "stop";
   if (attention && !REMINDERS.some(function (r) { return r.id === S.bannerReminderID; })) S.bannerReminderID = REMINDERS.length ? REMINDERS[0].id : null;
-  if (!S.prefs.bannerOn) { toast(tr("横幅已关闭；提醒仍保留在面板。", "Banners are off; reminders remain in the panel.")); return; }
-  if (S.banners.length + S.bannerQueue.length >= 50) {
-    toast(tr("展示队列已满；待接手提醒仍保留在面板。", "The display queue is full; attention reminders remain in the panel.")); return;
+  var existing = attention && S.banners.concat(S.bannerQueue).find(function(n) { return n.reminderID === S.bannerReminderID; });
+  var reminder = attention && REMINDERS.find(function(r) { return r.id === S.bannerReminderID; });
+  if (existing && reminder) {
+    if (S.bannerNavigationID === existing.id) cancelBannerNavigation();
+    existing.version = reminder.version || 1; existing.event = S.bannerEvent; existing.failure = null;
+    existing.reminderSnapshot = captureBannerReminder(reminder);
+    existing.host = reminder.host; existing.project = reminder.proj;
+    var clock = NoticeClock.clocks.get(existing.id);
+    if (clock) { clock.remaining = clock.budget; clock.runningAt = clock.pauses.size ? null : performance.now(); clock.schedule(); clock.paint(); }
+    render(); return;
   }
-  S.bannerQueue.push({ id:++S.bannerSerial, event:S.bannerEvent, attention:attention,
-    reminderID:attention ? S.bannerReminderID : null, failure:null,
-    host:source ? source.host : "Codex", project:source ? source.project : "claudi0" });
-  promoteBanners();
-  setMenuState(attention ? "waiting" : "transient"); render();
+  var refusal = !S.prefs.bannerOn ? tr("横幅已关闭；提醒仍保留在面板。", "Banners are off; reminders remain in the panel.")
+    : S.banners.length + S.bannerQueue.length >= 50 ? tr("展示队列已满；待接手提醒仍保留在面板。", "The display queue is full; attention reminders remain in the panel.") : null;
+  if (refusal) {
+    if (S.prefs.bannerOn) S.bannerDisplayOverflow++;
+    setMenuState(REMINDERS.length ? "waiting" : "idle");
+  } else {
+    S.bannerQueue.push({ id:++S.bannerSerial, event:S.bannerEvent, attention:attention,
+      reminderID:attention ? S.bannerReminderID : null, reminderSnapshot:captureBannerReminder(reminder), version: reminder ? reminder.version || 1 : 1, failure:null,
+      host:reminder ? reminder.host : source ? source.host : "Codex", project:reminder ? reminder.proj : source ? source.project : "claudi0" });
+    promoteBanners();
+    setMenuState(attention ? "waiting" : "transient");
+  }
+  // Reminder publication is independent of whether the banner can be displayed.
+  render();
+}
+
+function fitBannerStack(root) {
+  var all = S.banners.concat(S.bannerQueue), measure = document.createElement("div");
+  if (!all.length) return false;
+  measure.className = "banner-measure"; measure.inert = true; measure.setAttribute("aria-hidden", "true");
+  measure.innerHTML = all.slice(0,3).map(bannerHTML).join("") +
+    '<button class="banner-overflow">' + tr("还有 " + all.length + " 条待展示", all.length + " more waiting") + '</button>';
+  root.appendChild(measure);
+  var heights = Array.from(measure.querySelectorAll(".banner")).map(function(node) { return node.getBoundingClientRect().height; });
+  var entry = measure.querySelector(".banner-overflow").getBoundingClientRect().height + 4;
+  var hint = root.querySelector(".banner-capacity"), hintHeight = hint ? hint.getBoundingClientRect().height + 8 : 0;
+  var available = Math.max(0, Math.min(window.innerHeight, root.parentElement.getBoundingClientRect().bottom) - root.getBoundingClientRect().top - 16);
+  measure.remove();
+  var count = Math.min(3, all.length), base = 0;
+  for (; count >= 0; count--) {
+    base = heights.slice(0,count).reduce(function(n,h) { return n+h; },0) + Math.max(0,count-1)*8 + hintHeight;
+    if (count < all.length) base += entry + (count ? 8 : 0);
+    if (!count || base <= available) break;
+  }
+  var changed = count !== S.banners.length;
+  S.bannerVisibleCapacity = count;
+  S.banners = all.slice(0,count); S.bannerQueue = all.slice(count);
+  if (!S.bannerQueue.length) S.bannerQueueOpen = false;
+  if (changed) patchRegion(root, bannerStackHTML());
+  var queue = root.querySelector(".banner-queue");
+  if (queue) {
+    var queueHeight = Math.max(0, Math.min(220, available-base-8));
+    queue.style.maxHeight = queueHeight + "px";
+    queue.hidden = !S.bannerQueueOpen || queueHeight === 0;
+  }
+  return changed;
 }
 
 /* ============ 按区域投影与立即焦点归还 ============ */
 var MacSettings = null;
-var modalWasOpen = false, modalFocusTarget = null, rendered = null;
+var modalWasOpen = false, modalFocusTarget = null, rendered = null, queueOpenWas = false;
 function canFocus(el) {
   return !!(el && el.isConnected && !el.disabled && !el.closest('[inert], [hidden], [aria-hidden="true"]') && el.getClientRects().length);
 }
@@ -3489,7 +3628,7 @@ function render() {
   win.hidden = !S.window; win.inert = !S.window; win.classList.toggle("open", S.window);
   if (S.popover) patchRegion(pop, panelHTML());
   if (MacSettings) MacSettings.syncReminders(REMINDERS.map(function(r){
-    return {id:r.id,revision:r.updated?2:1,event:EVENTS.findIndex(function(e){return e.id===r.event;}),source:r.host,
+    return {id:r.id,revision:r.version || (r.updated?2:1),event:EVENTS.findIndex(function(e){return e.id===r.event;}),source:r.host,
       time:r.clock,age:[r.mins+" 分钟前",r.mins+" minutes ago"],session:r.session,capability:"viewSource"};
   }));
   if (MacSettings) MacSettings.syncPresentation({visible:S.window, pane:S.pane, scope:S.ws, pack:S.soundPack, lang:S.lang, theme:S.theme});
@@ -3507,16 +3646,37 @@ function render() {
     bannerPositions.set(node.id, { node:node, top:node.getBoundingClientRect().top, offset:node.offsetTop });
     if (!S.banners.some(function (notice) { return node.id === "banner-" + notice.id; })) Motion.exitSurface(node, 6);
   });
-  patchRegion(bannerStack, bannerStackHTML()); bannerStack.inert = modalOpen;
+  patchRegion(bannerStack, bannerStackHTML());
+  fitBannerStack(bannerStack); bannerStack.inert = modalOpen;
+  /* 先后触发顺序的动效：新横幅按触发次序 90ms 步进级联入场（彩脊随之长出）；
+     被顶开的旧横幅按所在层级 45ms 步进依次让位；队列展开时逐行浮入。 */
   bannerStack.querySelectorAll(".banner").forEach(function (node) {
     var previous = bannerPositions.get(node.id);
-    if (!previous) Motion.enterSurface(node, 6);
-    else if (previous.offset !== node.offsetTop) {
+    if (!previous && !NoticeClock.clocks.has(Number(node.getAttribute("data-notice")))) {
+      var delay = Motion.reduced ? 0 : Motion.nextBannerDelay();
+      node._bannerEntranceDelay = delay;
+      Motion.enterSurface(node, 8, { delay: delay, fill: "backwards" });
+      var spine = node.querySelector(".cap > .spine");
+      if (spine && !Motion.reduced) Motion.play(spine,
+        [{ opacity: 0, transform: "scaleY(.3)" }, { opacity: 1, transform: "scaleY(1)" }],
+        Motion.tokens.medium, Motion.enter, null, { delay: delay, fill: "backwards" });
+    }
+    else if (previous && previous.offset !== node.offsetTop) {
       Motion.cancel(node, false);
+      var order = S.banners.findIndex(function (notice) { return node.id === "banner-" + notice.id; });
       var distance = previous.top - node.getBoundingClientRect().top;
-      Motion.play(node, [{ translate:"0 " + distance + "px" }, { translate:"0 0" }], Motion.tokens.medium, Motion.moveEase);
+      Motion.play(node, [{ translate:"0 " + distance + "px" }, { translate:"0 0" }],
+        Motion.tokens.medium, Motion.moveEase, null,
+        { delay: Motion.reduced ? 0 : Math.max(1, order) * 45, fill: "backwards" });
     }
   });
+  if (S.bannerQueueOpen && !queueOpenWas && !Motion.reduced) {
+    bannerStack.querySelectorAll(".banner-queue-row").forEach(function (row, i) {
+      Motion.play(row, [{ opacity: 0, translate: "0 -5px" }, { opacity: 1, translate: "0 0" }],
+        Motion.tokens.short, Motion.enter, null, { delay: i * 55, fill: "backwards" });
+    });
+  }
+  queueOpenWas = S.bannerQueueOpen;
   bind();
   Motion.syncBusy();
   if (!old || old.popover !== S.popover) { if (S.popover) Motion.enterSurface(pop, 6); }
@@ -3559,7 +3719,7 @@ function render() {
   modalWasOpen = modalOpen;
   rendered = { popover: S.popover, window: S.window, pane: S.pane, soundPack: S.soundPack, ws: S.ws, scope: S.scope,
     aiStage: S.ai.stage, generationID: S.ai.generationID };
-  NoticeClock.sync(bannerStack, modalOpen);
+  NoticeClock.sync(bannerStack, modalOpen || !!(MacSettings && document.getElementById("window").shadowRoot?.getElementById("sheet")?.open));
   Motion.flushResults();
 }
 
@@ -3778,7 +3938,11 @@ function bind() {
     });
   });
   var overflow = document.getElementById("bannerOverflow");
-  if (overflow) overflow.onclick = function () { S.bannerQueueOpen = !S.bannerQueueOpen; render(); };
+  if (overflow) overflow.onclick = function (e) {
+    if (!S.banners.length) { e.stopPropagation(); S.popover = true; S.needs = "list"; }
+    else S.bannerQueueOpen = !S.bannerQueueOpen;
+    render();
+  };
   var bo = document.getElementById("bannerNavigationOutcome"); if (bo) { bo.value = S.bannerNavigationOutcome; bo.onchange = function () { S.bannerNavigationOutcome = bo.value; }; }
 
   var nb = document.getElementById("needsBtn");
@@ -3798,7 +3962,8 @@ function bind() {
       var r = REMINDERS.filter(function (x) { return x.id === b.getAttribute("data-opensource"); })[0];
       if (!r || r.updated) return;
       var notice = S.banners.find(function (x) { return x.reminderID === r.id; });
-      if (notice) closeBanner(notice.id);
+      if (S.bannerNavigationID !== null) return;
+      if (notice) { openBannerSource(notice.id); return; }
       toast(tr("已打开来源应用：", "Opened source app: ") + r.host);
     };
   });
@@ -4229,10 +4394,10 @@ document.addEventListener("keydown", function (e) {
     }
     if (S.confirmation || S.workspaceForm) { S.confirmation = null; S.workspaceForm = null; render(); return; }
     if (S.ai.sheet) { S.ai.sheet = null; render(); return; }
-    var focusedBanner = document.activeElement.closest("[data-notice]");
-    if (focusedBanner) { closeBanner(Number(focusedBanner.getAttribute("data-notice"))); return; }
+    var focusedStack = document.activeElement.closest("#bannerStack");
+    if (focusedStack) { e.preventDefault(); e.stopImmediatePropagation(); closeBanner(); return; }
     if (S.window) { closeWindowWithHandback(); }
-    else if (S.banners.length) { closeBanner(); }
+    else if (S.banners.length || S.bannerQueue.length) { closeBanner(); }
     else if (S.needs !== "collapsed") { S.needs = "collapsed"; render(); }
     else if (S.scopeMenu) { S.scopeMenu = false; render(); }
     else if (S.popover) { S.popover = false; render(); }
@@ -5010,7 +5175,11 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
   bridgeReady=true;
   return {
     getState:()=>structuredClone(S), review:window.prototypeReview, sceneOptions:scenes,
-    syncReminders:values=>{S.pending=values;},
+    syncReminders:values=>{
+      S.pending=values;
+      const count=$('page-content').querySelector('[data-action="toggle-pending"] .controls');
+      if(count&&!S.pendingExpanded)count.firstChild.textContent=String(values.length);
+    },
     focusTitle:()=>$('page-title').focus({preventScroll:true}),
     suspend:()=>{cleanup();wasVisible=false;},
     selectScope,
@@ -5041,6 +5210,7 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
   };
 }
 function projectMacSettings(state) {
+  const bannersDisabled=S.prefs.bannerOn&&!state.notifications;
   if(state.language!=='system')S.lang=state.language;else S.lang=state.systemLanguage;
   const hostIDs={'claude-code':'claude',codex:'codex',workbuddy:'wb'};
   GROUPS=state.scopes.map(function(g){
@@ -5070,12 +5240,14 @@ function projectMacSettings(state) {
   S.system.focusActive=state.focusObservedActive;S.system.calendarBusy=state.calendarObservedBusy;
   if(S.prefs.focusAuth==='authorized')S.prefs.focusAuth='granted';
   updateQuietState();
+  if(bannersDisabled)closeBanner(undefined,true);
 }
 if(document.getElementById('window').attachShadow){
   MacSettings=createMacSettings(document.getElementById('window'),function(state){projectMacSettings(state);render();},closeWindowWithHandback,removeReminder);
   var initialSettingsPane = S.pane;
   projectMacSettings(MacSettings.getState()); S.pane = initialSettingsPane;
   window.macSettingsReview=MacSettings.review;
+  document.getElementById('window').shadowRoot.getElementById('sheet').addEventListener('toggle',function(e){NoticeClock.pause('modal',e.newState==='open');});
   document.getElementById('macSettingsScene').innerHTML=MacSettings.sceneOptions.map(function(scene){return '<option value="'+scene.id+'">'+scene.zh+'</option>';}).join('');
   document.getElementById('macSettingsScene').onchange=function(){MacSettings.review.setScene(this.value);setView('window');};
 }
@@ -5093,6 +5265,8 @@ function closeWindowWithHandback() {
   if (returnToPanel && gear) gear.focus({ preventScroll: true });
   else document.getElementById("mbIcon").focus({ preventScroll: true });
 }
+
+if (typeof window !== "undefined") window.addEventListener("resize", function () { render(); });
 
 /* URL 深链（复用同一套点击路径）：panel=1 · banner=atn|info|stack · win=1&pane=xxx · th=dark · lang=en · motion=reduced */
 (function () {

@@ -159,18 +159,19 @@ public struct EventNoticeReadingView: View {
                             record.navigationTarget?.isParentSession == true
                                 ? .eventNoticeReturnParent : .eventNoticeOpenSource)
                     ) {
-                        guard EventNoticeProjection.canNavigate(record, result: navigation.result),
+                        guard record.isActionable, !navigation.isNavigating,
                             let action = record.action
                         else { return }
                         navigation.navigateSource(
                             action, generation: navigation.capabilityGeneration,
                             owner: navigationOwner)
                     }
-                    .disabled(!EventNoticeProjection.canNavigate(record, result: navigation.result))
+                    .disabled(!record.isActionable || navigation.isNavigating)
                     .eventReaderActionIdentity("event-notice.reader.open-source")
                 }
                 if let key = EventNoticeProjection.navigationFeedbackKey(
-                    for: record, action: navigation.action, result: navigation.result)
+                    for: record, action: record.action,
+                    result: navigation.result(for: record.action))
                 {
                     Text(l10n.text(key))
                         .accessibilityIdentifier("event-notice.open-feedback")

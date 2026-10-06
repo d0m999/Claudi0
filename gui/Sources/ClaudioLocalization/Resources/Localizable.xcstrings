@@ -1,6 +1,91 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "event-notice.capacity-hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display queue full: %lld more notices could not be shown. Check attention reminders in the panel."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展示队列已满，另有 %lld 条提示未展示。待接手提醒可在面板查看。"
+          }
+        }
+      }
+    },
+    "event-notice.queue.status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待展示"
+          }
+        }
+      }
+    },
+    "event-notice.queue.collapse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse waiting list"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起待展示列表"
+          }
+        }
+      }
+    },
+    "event-notice.queue.waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more waiting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还有 %lld 条待展示"
+          }
+        }
+      }
+    },
+    "event-notice.stack": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event banners"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "事件横幅"
+          }
+        }
+      }
+    },
     "host.additional.awaiting-detail": {
       "extractionState": "manual",
       "localizations": {

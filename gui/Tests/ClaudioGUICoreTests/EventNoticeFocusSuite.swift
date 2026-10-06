@@ -29,7 +29,7 @@ func runEventNoticeFocusSuites() {
                 && !callback.contains("self.becomeInteractive()"), "失败在横幅就地反馈，不抢回键盘或进入详情")
         expect(
             callback.contains("navigation.navigateSource(")
-                && callback.contains("self.focusRestoration = nil")
+                && callback.contains("self.releaseInteraction()")
                 && callback.contains(
                     "[.exactReturnConfirmed, .applicationFallback, .requestSent].contains(outcome)"),
             "三类成功均消费焦点归还责任，只有协调器精确确认收起横幅")
@@ -44,9 +44,9 @@ func runEventNoticeFocusSuites() {
         let resignBody = controller[resign.lowerBound..<render.lowerBound]
         expect(
             resignBody.contains("navigation.permitsFocusHandoff(")
-                && resignBody.contains("DispatchQueue.main.async")
-                && resignBody.contains("navigation.result == .started")
-                && resignBody.contains("isInteractive = false")
+                && resignBody.contains("Task { @MainActor")
+                && resignBody.contains("navigation.isNavigating")
+                && resignBody.contains("releaseInteraction()")
                 && resignBody.contains("close()"),
             "预期交接释放焦点；在途主动切走取消，普通失焦关闭")
     }

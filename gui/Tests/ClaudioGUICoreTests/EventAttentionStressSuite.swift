@@ -67,9 +67,9 @@ func runEventAttentionStressSuites() async {
             withinBounds =
                 withinBounds && ingress.pendingCount <= 128
                 && usage.latestVersions <= 50 && usage.readingVersions <= 50
-                && usage.transientVersions <= 1
+                && usage.transientVersions <= EventNoticeModel.maximumBannerCount
                 && usage.deduplicationEntries <= 256 && usage.observationEntries <= 256
-                && usage.timers <= 3
+                && usage.timers <= 4
         }
         let drainDeadline = ProcessInfo.processInfo.systemUptime + 1
         while ingress.pendingCount > 0 && ProcessInfo.processInfo.systemUptime < drainDeadline {

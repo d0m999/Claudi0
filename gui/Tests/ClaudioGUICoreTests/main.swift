@@ -277,12 +277,25 @@ if CommandLine.arguments.contains("--event-reader") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--event-stack") {
+    runEventNoticeStackSuites()
+    print("Event stack: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--event-stack-native") {
+    runEventNoticeStackNativeSuites()
+    print("Event stack native: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
     runCodexQuestionObservationSuites()
     runNativePrototypeMigrationSuites()
     runEventNoticeModelSuites()
+    runEventNoticeStackSuites()
     runIntegrationAutomationSuites()
     runEventBannerActionSuites()
     runEventNoticeFocusSuites()
@@ -296,6 +309,7 @@ if CommandLine.arguments.contains("--event-attention") {
     // Swift's async-main drain queue after synthetic window tracking can end the harness early.
     runEventNoticePresentationSuites()
     runEventBannerLayoutSuites()
+    runEventNoticeStackNativeSuites()
     runEventNoticeReaderSuites()
     print("Event attention: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
@@ -707,6 +721,7 @@ runFocusRequestCoordinatorSuites()
 runPanelFocusOrderSuites()
 runNativePrototypeMigrationSuites()
 runEventNoticeModelSuites()
+runEventNoticeStackSuites()
     runIntegrationAutomationSuites()
 runEventBannerActionSuites()
 runEventNoticeFocusSuites()
@@ -778,6 +793,7 @@ runAICueDescriptionSuites()
 // Keep the native AppKit suite after every async suite; see the targeted ordering above.
 runEventNoticePresentationSuites()
 runEventBannerLayoutSuites()
+runEventNoticeStackNativeSuites()
     runEventNoticeReaderSuites()
 runQuestionIntentPresentationSuites()
 runCodexDevelopmentNoticeSuites()

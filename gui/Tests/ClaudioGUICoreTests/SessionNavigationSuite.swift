@@ -141,8 +141,9 @@ func runSessionNavigationSuites() async {
             coordinator.result == .exactReturnConfirmed,
             "瞬时项精确返回成功不得因 attention remove 不适用而降级")
         expect(
-            model.isCurrent(action) && model.snapshot.current?.kind == .transient,
-            "瞬时项成功不消费不存在的待接手提醒")
+            !model.isCurrent(action) && model.stackSnapshot.visible.isEmpty
+                && model.snapshot.totalCount == 0,
+            "瞬时项精确返回收起自身，不消费不存在的待接手提醒")
     }
 
     suite("Navigation：复制如实反馈、陈旧 ID 不写入、隐私清空不改主动导出") {

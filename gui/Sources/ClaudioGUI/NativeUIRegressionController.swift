@@ -575,11 +575,13 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     func capture() {
         captureRevision += 1
         let currentUptime = clock.time
-        let readingTime = notices.bannerSnapshot.readingTime
+        let stack = notices.stackSnapshot
+        let firstBanner = stack.visible.first ?? stack.exiting.first
+        let readingTime = firstBanner?.readingTime
         let pauseReasons: [String] = [
             (EventNoticePauseReason.hover, "hover"), (.keyboardFocus, "keyboardFocus"),
         ].compactMap { reason, name in
-            notices.bannerSnapshot.pauseReasons.contains(reason) ? name : nil
+            stack.pauseReasons.contains(reason) ? name : nil
         }
         let bannerWindow = NSApp.windows.first { $0.title == "claudi0 event notice" }
         let bannerFrame = bannerWindow?.frame ?? .zero
@@ -618,8 +620,10 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             ],
             "readingCount": notices.readingSnapshot.records.count,
             "readingOpen": notices.readingSnapshot.isOpen,
-            "banner": notices.bannerSnapshot.phase.rawValue,
-            "remaining": notices.bannerSnapshot.remainingTime ?? 0,
+            "banner": firstBanner?.phase.rawValue ?? "hidden",
+            "bannerCount": stack.visible.count,
+            "bannerQueuedCount": stack.queued.count,
+            "remaining": readingTime?.remaining ?? 0,
             "clockMode": clock.isLive ? "live" : "manual",
             "readingTime": [
                 "available": readingTime != nil,
@@ -642,7 +646,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 ],
             ],
             "navigation": String(describing: navigation.result),
-            "bannerKeyboardPaused": notices.bannerSnapshot.pauseReasons.contains(.keyboardFocus),
+            "bannerKeyboardPaused": !stack.pauseReasons.intersection([.keyboardFocus, .windowFocus])
+                .isEmpty,
             "aiPhase": String(describing: fixture.aiCueViewModel.phase),
             "generationRequests": generationFacts.requestCount,
             "libraryFresh": fixture.eventSettingsModel.libraryPresentationState == .ready,

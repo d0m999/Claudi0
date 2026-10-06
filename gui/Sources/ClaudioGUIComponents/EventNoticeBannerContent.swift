@@ -17,6 +17,8 @@ package struct EventNoticeBannerContent<Actions: View>: View {
     private let onActivate: (@MainActor () -> Void)?
     private let isNavigationEnabled: Bool
     private let navigationHint: String
+    private let bodyIdentifier: String
+    private let decorationVeil: Double
     private let onBodyFocusChange: @MainActor (Bool) -> Void
     @FocusState private var bodyFocused: Bool
     @ViewBuilder let actions: Actions
@@ -28,6 +30,7 @@ package struct EventNoticeBannerContent<Actions: View>: View {
         uptime: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         onActivate: (@MainActor () -> Void)? = nil, isNavigationEnabled: Bool = true,
         navigationHint: String = "",
+        bodyIdentifier: String = "event-notice.body", decorationVeil: Double = 0,
         onBodyFocusChange: @escaping @MainActor (Bool) -> Void = { _ in },
         @ViewBuilder actions: () -> Actions
     ) {
@@ -43,6 +46,8 @@ package struct EventNoticeBannerContent<Actions: View>: View {
         self.onActivate = onActivate
         self.isNavigationEnabled = isNavigationEnabled
         self.navigationHint = navigationHint
+        self.bodyIdentifier = bodyIdentifier
+        self.decorationVeil = decorationVeil
         self.onBodyFocusChange = onBodyFocusChange
         self.actions = actions()
     }
@@ -51,13 +56,15 @@ package struct EventNoticeBannerContent<Actions: View>: View {
         HStack(spacing: 10) {
             EventAnimationView(
                 resources: resources, preferences: preferences, event: event, action: action,
-                reading: reading, isVisible: isVisible, uptime: uptime)
+                reading: reading, isVisible: isVisible, uptime: uptime
+            )
+            .opacity(1 - decorationVeil)
             if let onActivate {
                 Button(action: onActivate) { summary.contentShape(Rectangle()) }
                     .buttonStyle(.plain)
                     .disabled(!isNavigationEnabled)
                     .focused($bodyFocused)
-                    .accessibilityIdentifier("event-notice.body")
+                    .accessibilityIdentifier(bodyIdentifier)
                     .accessibilityHint(navigationHint)
                     .onChange(of: bodyFocused) { onBodyFocusChange($0) }
                     .onDisappear { onBodyFocusChange(false) }

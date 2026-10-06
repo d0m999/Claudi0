@@ -402,6 +402,7 @@ private struct EventNoticeGalleryFrame: View {
     @StateObject private var model: EventNoticeModel
     @StateObject private var languageStore: ClaudioPreferences
     @StateObject private var navigationCoordinator: SessionNavigationCoordinator
+    @State private var noticeHeights: [String: Double] = [:]
     private let routeSimulation: RouteSimulationBox
 
     init(language: ClaudioAppLanguage, scenario: EventNoticeGalleryScenario) {
@@ -425,11 +426,14 @@ private struct EventNoticeGalleryFrame: View {
             EventNoticeView(
                 model: model,
                 languageStore: languageStore,
+                navigation: navigationCoordinator,
                 onViewSource: { _ = model.viewSource($0) },
-                onCopySessionID: { navigationCoordinator.copy($0) { _ in true } },
-                onClose: { model.dismiss() }
+                onMeasurements: { heights in
+                    Task { @MainActor in noticeHeights = heights }
+                },
+                onClose: { model.dismissStack() }
             )
-            .frame(width: 440, height: EventNoticeView.preferredHeight(for: model.snapshot))
+            .frame(width: 440, height: noticeStackHeight)
 
             HStack(spacing: 6) {
                 Button("One") { emit(count: 1) }
@@ -458,12 +462,26 @@ private struct EventNoticeGalleryFrame: View {
         .onAppear(perform: seed)
     }
 
+    private var noticeStackHeight: Double {
+        let stack = model.stackSnapshot
+        return max(
+            1,
+            EventNoticeStackLayout.resolve(
+                cardHeights: stack.candidates.map {
+                    noticeHeights["card.\($0.id.uuidString)"] ?? 75
+                },
+                totalCount: stack.totalCount, availableHeight: 600,
+                queueEntryHeight: noticeHeights["queue-entry"] ?? 44,
+                queueExpanded: stack.isQueueExpanded
+            ).height)
+    }
+
     /// S8 route simulation: builds a verified target from the current notice's own safe source
     /// fields, so success/failure is exercised without promising any real host navigation.
     private func simulateRoute(succeeds: Bool) {
         routeSimulation.succeeds = succeeds
         guard
-            let record = model.snapshot.current, let action = record.action,
+            let record = model.stackSnapshot.visible.first?.record, let action = record.action,
             let notice = record.notice,
             let source = notice.source,
             let sessionID = source.sessionID

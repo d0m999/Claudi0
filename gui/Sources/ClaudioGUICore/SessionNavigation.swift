@@ -75,6 +75,9 @@ public final class SessionNavigationCoordinator: ObservableObject {
     @Published public private(set) var result: SessionNavigationActionResult = .idle
     @Published public private(set) var action: EventNoticeAction?
     @Published public private(set) var applicationResult: SourceApplicationOpenResult = .idle
+    @Published public private(set) var feedback: [EventNoticeAction: SessionNavigationFeedback] =
+        [:]
+    public var isNavigating: Bool { requestID != nil }
     public private(set) var capabilityGeneration: UUID
 
     private let navigate:
@@ -100,6 +103,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
     private var requestID: UUID?
     private var applicationRequestOwner: UUID?
     private var expectedFocusHandoff = false
+    private var requiresDisplayPresence = false
     private var operation: EventNoticeCancellation?
     private var timeoutTask: EventNoticeCancellation?
     private weak var model: EventNoticeModel?
@@ -141,12 +145,50 @@ public final class SessionNavigationCoordinator: ObservableObject {
         self.navigate = navigate
         self.navigateHost = navigateHost
         self.openApplication = openApplication
-        observation = model?.$snapshot.sink { [weak self] snapshot in
-            guard let self, let action = self.action else { return }
-            if snapshot.receiverEpoch != action.epoch || self.model?.isCurrent(action) != true {
-                self.reset()
+        if let model {
+            observation = Publishers.Merge(
+                model.$stackSnapshot.map { _ in () }, model.$readingSnapshot.map { _ in () }
+            ).sink { [weak self] _ in
+                guard let self else { return }
+                self.pruneFeedback()
+                guard let action = self.action else { return }
+                if self.model?.receiverEpoch != action.epoch
+                    || self.model?.isCurrent(action) != true
+                {
+                    self.cancelRequest()
+                    self.action = nil
+                    self.result = .idle
+                    self.applicationResult = .idle
+                } else if self.requestID != nil, self.requiresDisplayPresence,
+                    let owner = self.applicationRequestOwner,
+                    self.model?.containsPresentation(owner) != true
+                {
+                    self.cancel()
+                }
             }
         }
+    }
+
+    public func feedback(for action: EventNoticeAction?) -> SessionNavigationFeedback {
+        guard let action else { return SessionNavigationFeedback() }
+        return feedback[action] ?? SessionNavigationFeedback()
+    }
+
+    public func result(for action: EventNoticeAction?) -> SessionNavigationActionResult {
+        feedback(for: action).result
+    }
+
+    private func retainFeedback(
+        for action: EventNoticeAction, result: SessionNavigationActionResult,
+        application: SourceApplicationOpenResult = .idle
+    ) {
+        guard model?.isCurrent(action) == true else { return }
+        feedback[action] = SessionNavigationFeedback(result: result, applicationResult: application)
+    }
+
+    private func pruneFeedback() {
+        let valid = feedback.filter { model?.isCurrent($0.key) == true }
+        if valid != feedback { feedback = valid }
     }
 
     public func openSession(
@@ -159,12 +201,17 @@ public final class SessionNavigationCoordinator: ObservableObject {
             let notice = model.sourceNotice(for: action),
             case .viewSession(let target) = capability,
             sessionNavigationCapability(for: notice, verifiedTarget: target) == capability
-        else { result = .unavailable; return }
+        else {
+            result = .unavailable
+            retainFeedback(for: action, result: .unavailable)
+            return
+        }
         let id = UUID()
         requestID = id
         self.action = action
         model.protect(action)
         result = .started
+        retainFeedback(for: action, result: .started)
         timeoutTask = scheduler.schedule(after: Self.timeout) { [weak self] in
             guard let self, self.requestID == id else { return }
             self.finish(.timedOut, id: id, action: action, generation: generation)
@@ -189,6 +236,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         else {
             self.action = action
             applicationResult = .unavailable
+            retainFeedback(for: action, result: .unavailable, application: .unavailable)
             completion(.unavailable)
             return
         }
@@ -197,8 +245,10 @@ public final class SessionNavigationCoordinator: ObservableObject {
         self.action = action
         applicationTarget = target
         applicationRequestOwner = owner
+        requiresDisplayPresence = owner.map(model.containsPresentation) ?? false
         model.protect(action)
         applicationResult = .started
+        retainFeedback(for: action, result: .started, application: .started)
         let isCurrent: @MainActor () -> Bool = { [weak self] in
             guard let self, self.requestID == id, self.capabilityGeneration == generation,
                 let target = self.applicationTarget,
@@ -210,9 +260,15 @@ public final class SessionNavigationCoordinator: ObservableObject {
             guard let self, isCurrent() else { return }
             self.cancelRequest()
             self.applicationResult = outcome
-            if outcome == .opened, self.model?.bannerSnapshot.current?.action == action {
-                self.model?.dismiss()
-            }
+            let result: SessionNavigationActionResult =
+                outcome == .opened
+                ? .applicationFallback
+                : outcome == .timedOut
+                    ? .timedOut
+                    : outcome == .cancelled
+                        ? .cancelled
+                        : outcome == .unavailable ? .unavailable : .failed
+            self.retainFeedback(for: action, result: result, application: outcome)
             completion(outcome)
         }
         timeoutTask = scheduler.schedule(after: Self.timeout) { finish(.timedOut) }
@@ -232,12 +288,16 @@ public final class SessionNavigationCoordinator: ObservableObject {
             let application = model.sourceApplication(for: action)
         else {
             self.action = action; result = .unavailable; applicationResult = .unavailable
+            retainFeedback(for: action, result: .unavailable, application: .unavailable)
             completion(.unavailable); return
         }
         let id = UUID()
         requestID = id; self.action = action; applicationTarget = application
-        applicationRequestOwner = owner; model.protect(action)
+        applicationRequestOwner = owner
+        requiresDisplayPresence = owner.map(model.containsPresentation) ?? false
+        model.protect(action)
         result = .started; applicationResult = .started
+        retainFeedback(for: action, result: .started, application: .started)
         let deadline = uptime() + Self.timeout
         let current: @MainActor () -> Bool = { [weak self] in
             guard let self else { return false }
@@ -258,6 +318,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
                 : (outcome == .timedOut
                     ? .timedOut
                     : outcome == .cancelled ? .cancelled : outcome == .failed ? .failed : .idle)
+            self.retainFeedback(for: action, result: outcome, application: self.applicationResult)
             completion(outcome)
         }
         timeoutTask = scheduler.schedule(after: Self.timeout) { complete(.timedOut) }
@@ -300,11 +361,13 @@ public final class SessionNavigationCoordinator: ObservableObject {
     /// to the captured action. Source browsing and copying never consume an attention version.
     @discardableResult
     public func copy(_ action: EventNoticeAction, write: (String) -> Bool) -> Bool {
+        if requestID != nil { cancel() }
         cancelRequest()
         applicationResult = .idle
         self.action = action
         let success = model?.copySessionID(action, write: write) == true
         result = success ? .copied : .copyFailed
+        retainFeedback(for: action, result: result)
         return success
     }
 
@@ -325,9 +388,13 @@ public final class SessionNavigationCoordinator: ObservableObject {
     }
 
     public func cancel() {
+        let captured = action
         cancelRequest()
         result = .cancelled
         applicationResult = .cancelled
+        if let captured {
+            retainFeedback(for: captured, result: .cancelled, application: .cancelled)
+        }
     }
 
     public func reset() {
@@ -335,6 +402,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         action = nil
         result = .idle
         applicationResult = .idle
+        feedback.removeAll()
     }
 
     private func finish(
@@ -347,7 +415,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         }
         cancelRequest()
         if outcome == .exactReturnConfirmed {
-            if model.bannerSnapshot.current?.action == action { model.dismiss() }
+            model.dismissBanner(action: action)
         }
         if outcome == .exactReturnConfirmed, model.isAttentionReminder(action) {
             // Removing this exact version may synchronously invalidate the observed action.
@@ -357,6 +425,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
             }
         }
         result = outcome
+        retainFeedback(for: action, result: outcome)
     }
 
     private func cancelRequest() {
@@ -364,6 +433,7 @@ public final class SessionNavigationCoordinator: ObservableObject {
         applicationTarget = nil
         applicationRequestOwner = nil
         expectedFocusHandoff = false
+        requiresDisplayPresence = false
         operation?.cancel()
         operation = nil
         timeoutTask?.cancel()

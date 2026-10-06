@@ -3,30 +3,30 @@ import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
+import ClaudioSettingsPresentation
 import Combine
 import Foundation
 import SwiftUI
 
-/// Retained, non-activating native surface for the C-direction prompt. Automatic delivery only
-/// orders the panel; explicit interaction is the only path that makes it key.
+/// One transparent retained panel. Automatic arrivals remain nonactivating; complete card
+/// measurements select the visible FIFO prefix and each card owns its presentation animation.
 @MainActor
 final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     let model: EventNoticeModel
-
     private let languageStore: ClaudioPreferences
     private let onWillBecomeInteractive: @MainActor () -> (@MainActor () -> Void)?
     private var focusRestoration: (@MainActor () -> Void)?
     private let onViewInPanel: @MainActor (EventNoticeAction?) -> Void
-    private let navigationOwner = UUID()
     private let navigation: SessionNavigationCoordinator
     private let window: EventNoticePanel
-    private var snapshotCancellable: AnyCancellable?
-    private var navigationCancellable: AnyCancellable?
-    private var screenCancellable: AnyCancellable?
-    private var animationRevision: UInt64 = 0
+    private let geometry = EventNoticeStackGeometry()
+    private var subscriptions: Set<AnyCancellable> = []
     private var presentationScreen: NSScreen?
     private var isInteractive = false
-    private var renderedPhase: EventNoticePresentationPhase = .hidden
+    private var isPositioning = false
+    private var measurements: [String: Double] = [:]
+    private var renderedEpoch: UUID
+    private var modalDepth: [String: Int] = [:]
     private let animationVisibility = EventAnimationVisibility(isVisible: false)
 
     init(
@@ -42,63 +42,77 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         self.onViewInPanel = onViewInPanel
         self.languageStore = languageStore
         self.onWillBecomeInteractive = onWillBecomeInteractive
+        renderedEpoch = model.receiverEpoch
         window = EventNoticePanel(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 92),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 44),
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
-            backing: .buffered,
-            defer: true)
-
+            backing: .buffered, defer: true)
         super.init()
-
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.hasShadow = true
+        window.hasShadow = false
         window.level = .floating
         window.hidesOnDeactivate = false
         window.becomesKeyOnlyIfNeeded = true
         window.isFloatingPanel = true
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        window.ignoresMouseEvents = false
         window.delegate = self
         window.title = "claudi0 event notice"
         window.onEscape = { [weak self] in self?.close() }
+        model.setVisibleCapacity(0, measuredIDs: [])
         window.contentView = EventNoticeHostingView(
             rootView: EventNoticeView(
-                model: model,
-                languageStore: languageStore,
-                navigation: navigation,
-                eventAnimations: eventAnimations,
-                animationVisibility: animationVisibility,
-                onViewSource: { [weak self] notice in
-                    self?.viewSource(notice)
+                model: model, languageStore: languageStore, navigation: navigation,
+                eventAnimations: eventAnimations, animationVisibility: animationVisibility,
+                geometry: geometry,
+                onViewSource: { [weak self] in self?.viewSource($0) },
+                onNavigate: { [weak self] action, id in
+                    self?.openSourceApplication(action, owner: id)
                 },
-                onOpenSourceApplication: { [weak self] action in
-                    self?.openSourceApplication(action)
-                },
-                onCopySessionID: { [weak self] sessionID in
-                    self?.copySessionID(sessionID) ?? false
-                },
-                onClose: { [weak self] in
-                    self?.close()
-                }))
-
-        snapshotCancellable = model.$bannerSnapshot.sink { [weak self] snapshot in
-            self?.render(snapshot)
-        }
-        navigationCancellable = navigation.$result.sink { [weak self] _ in
-            DispatchQueue.main.async { self?.repositionIfVisible() }
-        }
-        screenCancellable = NotificationCenter.default
-            .publisher(for: NSApplication.didChangeScreenParametersNotification)
-            .sink { [weak self] _ in
-                self?.repositionIfVisible()
+                onDismiss: { [weak self] in self?.closeBanner(id: $0) },
+                onQueueInteraction: { [weak self] in self?.toggleQueue() },
+                onMeasurements: { [weak self] in self?.receiveMeasurements($0) },
+                onClose: { [weak self] in self?.close() }))
+        // Published snapshots send before assignment; defer presentation until the model's
+        // transaction has committed, also coalescing redraws and one batch's new arrivals.
+        model.$stackSnapshot.sink { [weak self] snapshot in
+            if !snapshot.hasPresentation || self?.renderedEpoch != snapshot.receiverEpoch {
+                // Privacy and source removal must not leave a retired frame on screen while
+                // waiting for SwiftUI's next layout transaction.
+                self?.window.orderOut(nil)
+                self?.animationVisibility.isVisible = false
             }
+            Task { @MainActor [weak self] in self?.render() }
+        }.store(in: &subscriptions)
+        navigation.$feedback.sink { [weak self] _ in
+            Task { @MainActor [weak self] in self?.repositionIfVisible() }
+        }.store(in: &subscriptions)
+        NotificationCenter.default.publisher(
+            for: NSApplication.didChangeScreenParametersNotification
+        )
+        .sink { [weak self] _ in self?.repositionIfVisible() }.store(in: &subscriptions)
+        for (name, active, kind) in [
+            (Notification.Name.claudioSettingsModalWillBegin, true, "file-picker"),
+            (.claudioSettingsModalDidEnd, false, "file-picker"),
+            (NSWindow.willBeginSheetNotification, true, "sheet"),
+            (NSWindow.didEndSheetNotification, false, "sheet"),
+        ] {
+            NotificationCenter.default.publisher(for: name)
+                .sink { [weak self] notification in
+                    guard let self else { return }
+                    let key = kind + String((notification.object as? NSWindow)?.windowNumber ?? 0)
+                    let depth = max(0, (self.modalDepth[key] ?? 0) + (active ? 1 : -1))
+                    self.modalDepth[key] = depth > 0 ? depth : nil
+                    self.model.setPauseReason(
+                        .modal, active: self.modalDepth.values.contains { $0 > 0 })
+                }
+                .store(in: &subscriptions)
+        }
     }
 
     func openInteractive() { onViewInPanel(nil) }
 
     #if DEBUG && CLAUDIO_UI_REGRESSION
-    /// Fixed fixture action: focus the real banner without invoking its source action.
     func focusForRegression() { becomeInteractive() }
     #endif
 
@@ -107,9 +121,8 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         isInteractive = true
         window.allowsKeyboardInteraction = true
         positionWindow()
-        window.alphaValue = 1
         window.makeKeyAndOrderFront(nil)
-        model.setKeyboardFocused(true)
+        model.setPauseReason(.windowFocus, active: true)
     }
 
     func viewSource(_ action: EventNoticeAction) {
@@ -117,19 +130,16 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         onViewInPanel(action)
     }
 
-    func openSourceApplication(_ action: EventNoticeAction) {
-        guard model.isCurrent(action), navigation.result != .started else { return }
+    func openSourceApplication(_ action: EventNoticeAction, owner: UUID) {
+        guard model.isCurrent(action), model.containsPresentation(owner), !navigation.isNavigating
+        else { return }
         becomeInteractive()
-        navigation.navigateSource(
-            action, generation: navigation.capabilityGeneration, owner: navigationOwner
-        ) {
+        navigation.navigateSource(action, generation: navigation.capabilityGeneration, owner: owner)
+        {
             [weak self] outcome in
             guard let self else { return }
             if [.exactReturnConfirmed, .applicationFallback, .requestSent].contains(outcome) {
-                self.focusRestoration = nil
-                self.isInteractive = false
-                self.window.allowsKeyboardInteraction = false
-                self.model.setKeyboardFocused(false)
+                self.releaseInteraction()
             }
         }
     }
@@ -142,34 +152,58 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func toggleQueue() {
+        if model.stackSnapshot.visible.isEmpty {
+            onViewInPanel(model.stackSnapshot.queued.first?.record.action)
+        } else {
+            becomeInteractive()
+            model.setQueueExpanded(!model.stackSnapshot.isQueueExpanded)
+        }
+    }
+
+    private func closeBanner(id: UUID) {
+        navigation.cancelSourceApplication(owner: id)
+        model.dismissBanner(id: id)
+        if model.stackSnapshot.visible.isEmpty && model.stackSnapshot.queued.isEmpty {
+            handBackFocus()
+        }
+    }
+
     func close() {
-        navigation.cancelSourceApplication(owner: navigationOwner)
-        // Focus handback is only owed while this window still owns the key status; if the user
-        // already moved focus elsewhere, giving anything back would override their choice.
+        for item in model.stackSnapshot.visible {
+            navigation.cancelSourceApplication(owner: item.id)
+        }
+        model.dismissStack()
+        handBackFocus()
+    }
+
+    private func handBackFocus() {
         let owesHandback = isInteractive && window.isKeyWindow && NSApp.isActive
         let restoration = focusRestoration
+        releaseInteraction()
+        if owesHandback { restoration?() }
+    }
+
+    private func releaseInteraction() {
         focusRestoration = nil
         isInteractive = false
         window.allowsKeyboardInteraction = false
+        model.setPauseReason(.windowFocus, active: false)
         model.setKeyboardFocused(false)
-        model.dismiss()
-        if owesHandback { restoration?() }
     }
 
     func clearForPrivacy() {
         animationVisibility.isVisible = false
-        focusRestoration = nil
-        isInteractive = false
-        window.allowsKeyboardInteraction = false
+        releaseInteraction()
         presentationScreen = nil
+        measurements.removeAll()
         window.orderOut(nil)
         navigation.reset()
         model.clearForPrivacy()
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
-        guard isInteractive else { return }
-        model.setKeyboardFocused(true)
+        if isInteractive { model.setPauseReason(.windowFocus, active: true) }
     }
 
     func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -177,100 +211,68 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        // AppKit can send resign-key before NSWorkspace publishes the new frontmost app.
-        // Resolve after that transaction, without requesting focus again.
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self, !self.window.isKeyWindow else { return }
             self.finishResigningKey()
         }
     }
 
     private func finishResigningKey() {
-        if navigation.action == model.bannerSnapshot.current?.action,
-            navigation.permitsFocusHandoff(
-                to: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        if navigation.permitsFocusHandoff(
+            to: NSWorkspace.shared.frontmostApplication?.processIdentifier)
         {
-            focusRestoration = nil
-            isInteractive = false
-            window.allowsKeyboardInteraction = false
-            model.setKeyboardFocused(false)
-        } else if navigation.result == .started {
-            navigation.cancelSourceApplication(owner: navigationOwner)
-            focusRestoration = nil
-            isInteractive = false
-            window.allowsKeyboardInteraction = false
-            model.setKeyboardFocused(false)
+            releaseInteraction()
+        } else if navigation.isNavigating {
+            for item in model.stackSnapshot.visible {
+                navigation.cancelSourceApplication(owner: item.id)
+            }
+            releaseInteraction()
         } else if isInteractive {
             close()
         } else {
-            model.setKeyboardFocused(false)
+            model.setPauseReason(.windowFocus, active: false)
         }
     }
 
-    private func render(_ snapshot: EventNoticeModelSnapshot) {
-        let phaseChanged = renderedPhase != snapshot.phase
-        renderedPhase = snapshot.phase
-        guard (snapshot.current != nil || snapshot.isExpanded), snapshot.phase != .hidden else {
+    private func render() {
+        let snapshot = model.stackSnapshot
+        if renderedEpoch != snapshot.receiverEpoch {
+            renderedEpoch = snapshot.receiverEpoch
+            measurements.removeAll()
+            releaseInteraction()
+        }
+        guard snapshot.hasPresentation else {
             animationVisibility.isVisible = false
-            navigation.cancelSourceApplication(owner: navigationOwner)
-            // Privacy clears arrive through the runtime's shared model as well as this adapter.
-            // End the old interaction here so its return target cannot survive into a new epoch.
-            focusRestoration = nil
-            isInteractive = false
-            window.allowsKeyboardInteraction = false
-            if snapshot.phase == .hidden { presentationScreen = nil }
+            releaseInteraction()
+            model.setHovering(false)
+            presentationScreen = nil
             if window.isVisible { window.orderOut(nil) }
             return
         }
-        positionWindow(snapshot: snapshot)
-        animationRevision &+= 1
-        let revision = animationRevision
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        switch snapshot.phase {
-        case .entering, .visible:
-            if !window.isVisible {
-                window.alphaValue = reduceMotion ? 1 : 0; window.orderFront(nil)
-            }
-            animationVisibility.isVisible = window.occlusionState.contains(.visible)
-            if reduceMotion {
-                window.alphaValue = 1
-            } else if phaseChanged {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = EventNoticeModel.fadeDuration
-                    window.animator().alphaValue = 1
-                }
-            }
-        case .exiting:
-            animationVisibility.isVisible = false
-            if reduceMotion {
-                window.alphaValue = 0
-                window.orderOut(nil)
-            } else {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = EventNoticeModel.fadeDuration
-                    context.completionHandler = { [weak self] in
-                        guard let self, self.animationRevision == revision else { return }
-                        self.window.orderOut(nil)
-                    }
-                    window.animator().alphaValue = 0
-                }
-            }
-        case .hidden:
-            window.orderOut(nil)
+        let isModal = modalDepth.values.contains { $0 > 0 }
+        if model.stackSnapshot.pauseReasons.contains(.modal) != isModal {
+            model.setPauseReason(.modal, active: isModal)
         }
+        positionWindow()
+        window.alphaValue = 1
+        if !window.isVisible { window.orderFront(nil) }
+        animationVisibility.isVisible = window.occlusionState.contains(.visible)
+        // An exiting-only frame is immediately ineligible for mouse and keyboard interaction.
+        window.ignoresMouseEvents =
+            model.stackSnapshot.visible.isEmpty && model.stackSnapshot.queued.isEmpty
         #if DEBUG
-        if snapshot.current?.provenance == .developmentCodexRollout,
-            ProcessInfo.processInfo.environment["CLAUDIO_DEV_CODEX_QUESTION_OBSERVER"] == "1"
-        {
-            // Fixed state codes distinguish model acceptance from actual AppKit presentation.
-            // No session, question, path or window contents enter the development log.
-            let state: String
-            switch snapshot.phase {
-            case .entering: state = "entering"
-            case .visible: state = "visible"
-            case .exiting: state = "exiting"
-            case .hidden: state = "hidden"
-            }
+        logDevelopmentPresentation(model.stackSnapshot)
+        #endif
+    }
+
+    #if DEBUG
+    private func logDevelopmentPresentation(_ snapshot: EventNoticeStackSnapshot) {
+        guard ProcessInfo.processInfo.environment["CLAUDIO_DEV_CODEX_QUESTION_OBSERVER"] == "1"
+        else { return }
+        for item in snapshot.visible + snapshot.exiting
+        where item.record.provenance == .developmentCodexRollout {
+            // Preserve fixed AppKit observation codes without logging source contents or IDs.
+            let state = item.phase.rawValue
             let ordered = window.isVisible ? "ordered" : "not_ordered"
             let activeSpace = window.isOnActiveSpace ? "active_space" : "other_space"
             let occlusion = window.occlusionState.contains(.visible) ? "unoccluded" : "occluded"
@@ -281,56 +283,85 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
                     "claudio.codex-question-window \(state) \(ordered) \(activeSpace) \(occlusion) \(key) \(screens)\n"
                         .utf8))
         }
-        #endif
+    }
+    #endif
+
+    private func receiveMeasurements(_ values: [String: Double]) {
+        let current = model.stackSnapshot
+        let valid = Set((current.candidates + current.exiting).map { "card.\($0.id.uuidString)" })
+        for (key, height) in values where height.isFinite && height > 0 {
+            if !key.hasPrefix("card.") || valid.contains(key) { measurements[key] = height }
+        }
+        measurements = measurements.filter { !$0.key.hasPrefix("card.") || valid.contains($0.key) }
+        // Preferences arrive during SwiftUI layout; never publish model changes inside that pass.
+        Task { @MainActor [weak self] in self?.repositionIfVisible() }
     }
 
     private func repositionIfVisible() {
-        guard window.isVisible else { return }
+        guard model.stackSnapshot.hasPresentation else { return }
         positionWindow()
     }
 
-    private func positionWindow(snapshot: EventNoticeModelSnapshot? = nil) {
-        if let presentationScreen,
-            !NSScreen.screens.contains(where: { $0 === presentationScreen })
+    private func positionWindow() {
+        guard !isPositioning else { return }
+        isPositioning = true
+        defer { isPositioning = false }
+        if let presentationScreen, !NSScreen.screens.contains(where: { $0 === presentationScreen })
         {
             self.presentationScreen = nil
         }
-        let screen = presentationScreen ?? screenUnderPointer() ?? NSScreen.main
-        guard let screen else { return }
+        guard let screen = presentationScreen ?? screenUnderPointer() ?? NSScreen.main else {
+            return
+        }
         if presentationScreen == nil { presentationScreen = screen }
         let visible = screen.visibleFrame
-        let width = EventNoticePlacement.clampedWidth(visibleFrame: visible)
-        let preferredHeight = EventNoticeView.preferredHeight(
-            for: snapshot ?? model.bannerSnapshot, navigation: navigation)
-        let availableHeight = EventNoticePlacement.availableHeight(
-            screenFrame: screen.frame, visibleFrame: visible, safeAreaTop: screen.safeAreaInsets.top
-        )
-        let height = min(preferredHeight, availableHeight)
+        let width = Double(EventNoticePlacement.clampedWidth(visibleFrame: visible))
+        if geometry.width != width {
+            geometry.width = width
+            measurements.removeAll()
+        }
+        let available = Double(
+            EventNoticePlacement.availableHeight(
+                screenFrame: screen.frame, visibleFrame: visible,
+                safeAreaTop: screen.safeAreaInsets.top))
+        let snapshot = model.stackSnapshot
+        let candidates = snapshot.candidates
+        let heights = candidates.map { measurements["card.\($0.id.uuidString)"] ?? 0 }
+        let layout = EventNoticeStackLayout.resolve(
+            cardHeights: heights, totalCount: snapshot.totalCount, availableHeight: available,
+            queueEntryHeight: measurements["queue-entry"] ?? 44,
+            capacityHintHeight: snapshot.capacityHintCount > 0
+                ? measurements["capacity-hint"] ?? 60 : 0,
+            queueExpanded: snapshot.isQueueExpanded,
+            queueContentHeight: measurements["queue-content"] ?? 220)
+        let measuredIDs = Set(
+            candidates.enumerated().compactMap { index, item in
+                heights[index] > 0 ? item.id : nil
+            })
+        model.setVisibleCapacity(layout.visibleCapacity, measuredIDs: measuredIDs)
+        var positions: [UUID: Double] = [:]
+        var top: Double = 0
+        for item in model.stackSnapshot.visible {
+            positions[item.id] = top
+            top +=
+                (measurements["card.\(item.id.uuidString)"] ?? 0) + EventNoticeStackLayout.spacing
+        }
+        model.updateDisplayPositions(positions)
+        if geometry.queueHeight != layout.queueHeight { geometry.queueHeight = layout.queueHeight }
+        let exitHeight =
+            model.stackSnapshot.exiting.map {
+                $0.positionY + (measurements["card.\($0.id.uuidString)"] ?? 0) + 6
+            }.max() ?? 0
+        let height = min(available, max(1, layout.height, exitHeight))
         let x = EventNoticePlacement.clampedX(visibleFrame: visible, width: width)
         let y = EventNoticePlacement.topAnchorY(
-            screenFrame: screen.frame,
-            visibleFrame: visible,
-            safeAreaTop: screen.safeAreaInsets.top,
-            height: height)
+            screenFrame: screen.frame, visibleFrame: visible,
+            safeAreaTop: screen.safeAreaInsets.top, height: height)
         let frame = NSRect(x: x, y: y, width: width, height: height)
-        if window.frame != frame {
-            if window.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
-                abs(window.frame.height - frame.height) > 1
-            {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.26
-                    window.animator().setFrame(frame, display: true)
-                }
-            } else {
-                window.setFrame(frame, display: true)
-            }
-        }
+        if window.frame != frame { window.setFrame(frame, display: true) }
     }
 
-    /// The first notice of a burst pins to the display under the pointer (SPEC 原生呈现:
-    /// 首条固定落在指针所在显示器); the burst then stays on that screen.
     private func screenUnderPointer() -> NSScreen? {
-        let point = NSEvent.mouseLocation
-        return NSScreen.screens.first(where: { $0.frame.contains(point) })
+        NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
     }
 }

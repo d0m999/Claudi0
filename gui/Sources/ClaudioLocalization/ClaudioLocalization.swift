@@ -324,6 +324,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventNoticeRelativeHour: Self = "event-notice.relative.hour"
     public static let eventNoticeRelativeDay: Self = "event-notice.relative.day"
     public static let eventNoticeRecent: Self = "event-notice.recent"
+    public static let eventNoticeStack: Self = "event-notice.stack"
+    public static let eventNoticeQueueWaiting: Self = "event-notice.queue.waiting"
+    public static let eventNoticeQueueCollapse: Self = "event-notice.queue.collapse"
+    public static let eventNoticeQueueStatus: Self = "event-notice.queue.status"
+    public static let eventNoticeCapacityHint: Self = "event-notice.capacity-hint"
     public static let eventNoticeOtherCount: Self = "event-notice.other-count"
     public static let eventNoticeUnknownSource: Self = "event-notice.unknown-source"
     public static let eventNoticeUnknownProject: Self = "event-notice.unknown-project"
@@ -1929,6 +1934,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventNoticeRelativeHour,
         .eventNoticeRelativeDay,
         .eventNoticeRecent, .eventNoticeOtherCount,
+        .eventNoticeStack, .eventNoticeQueueWaiting, .eventNoticeQueueCollapse,
+        .eventNoticeQueueStatus, .eventNoticeCapacityHint,
         .eventNoticeUnknownSource, .eventNoticeUnknownProject, .eventNoticeUnknownSession,
         .eventNoticeSessionID, .eventNoticeExpired, .eventNoticeParentSession,
         .eventNoticeExpandHint,

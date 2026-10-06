@@ -205,7 +205,7 @@ func runHostSessionNavigationSuites() {
                 expect(
                     calls == 2 && coordinator.result == outcome, "可重试且如实区分成功：\(native) \(outcome)")
                 if outcome == .exactReturnConfirmed {
-                    expect(model.bannerSnapshot.phase == .exiting, "精确返回收起对应横幅")
+                    expect(model.stackSnapshot.visible.isEmpty, "精确返回收起对应横幅")
                     expect(model.snapshot.totalCount == 0, "只消费捕获的待接手版本，普通事件无提醒可消费")
                 } else {
                     expect(model.bannerSnapshot.remainingTime == remaining, "应用/请求成功不重置剩余阅读预算")

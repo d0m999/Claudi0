@@ -19,6 +19,9 @@ public struct EventNoticePauseReason: OptionSet, Sendable, Hashable {
 
     public static let hover = Self(rawValue: 1 << 0)
     public static let keyboardFocus = Self(rawValue: 1 << 1)
+    public static let windowFocus = Self(rawValue: 1 << 2)
+    public static let queueExpansion = Self(rawValue: 1 << 3)
+    public static let modal = Self(rawValue: 1 << 4)
 }
 
 public enum EventNoticeRecordStatus: String, Codable, Sendable, Equatable {
@@ -362,9 +365,13 @@ public final class EventNoticeModel: ObservableObject {
     public static let retentionDuration: TimeInterval = 30 * 60
     public static let maximumAttentionReminderCount = 50
     public static let maximumMetadataCount = 256
+    public static let maximumBannerCount = 50
+    public static let maximumVisibleBannerCount = 3
 
     @Published public private(set) var snapshot: EventNoticeModelSnapshot
+    /// Compatibility projection for old readers; production presentation uses stackSnapshot.
     @Published public private(set) var bannerSnapshot: EventNoticeModelSnapshot
+    @Published public private(set) var stackSnapshot: EventNoticeStackSnapshot
     @Published public private(set) var readingSnapshot: EventNoticeReadingSnapshot
     @Published public private(set) var badgeCount = 0
     public private(set) var receiverEpoch: UUID
@@ -377,10 +384,12 @@ public final class EventNoticeModel: ObservableObject {
         for entry in frozen where entry.content != nil { readingVersions += 1 }
         return EventNoticeResourceUsage(
             latestVersions: entries.count, readingVersions: readingVersions,
-            transientVersions: transient?.content == nil ? 0 : 1,
+            transientVersions: (presentations + exitingPresentations).filter {
+                $0.entry.kind == .transient && $0.entry.content != nil
+            }.count,
             deduplicationEntries: seen.count, observationEntries: observations.count,
             timers: (presentationTimer == nil ? 0 : 1) + (expiryTimer == nil ? 0 : 1)
-                + (badgeTimer == nil ? 0 : 1))
+                + (badgeTimer == nil ? 0 : 1) + (presentationCommitTimer == nil ? 0 : 1))
     }
     public var canReceive: Bool { isEnabled && privacyReasons.isEmpty }
 
@@ -455,6 +464,25 @@ public final class EventNoticeModel: ObservableObject {
         }
     }
 
+    @MainActor
+    private final class Presentation {
+        let id = UUID()
+        var entry: Entry
+        var phase: EventNoticePresentationPhase = .hidden
+        var remaining: TimeInterval = EventNoticeModel.displayDuration
+        var deadline: TimeInterval?
+        var entrance: EventNoticeMotionPlan?
+        var relocation: EventNoticeMotionPlan?
+        var exit: EventNoticeMotionPlan?
+        var retiredRecord: EventNoticeRecord?
+        var hasPresented = false
+        var hasMeasuredPosition = false
+        var positionY: Double = 0
+        var layerIndex = 0
+
+        init(_ entry: Entry) { self.entry = entry }
+    }
+
     private struct Observation {
         let identity: Identity
         let uptime: TimeInterval
@@ -481,23 +509,34 @@ public final class EventNoticeModel: ObservableObject {
     private var epochStartedAt: TimeInterval
     private var entries: [Entry] = []  // oldest update first
     private var frozen: [Entry] = []  // complete reading versions, newest first
-    private var transient: Entry?
-    private var bannerEntry: Entry?
+    private var presentations: [Presentation] = []  // FIFO, visible prefix then waiting
+    private var exitingPresentations: [Presentation] = []
+    private var visibleCapacity = EventNoticeModel.maximumVisibleBannerCount
+    private var measuredPresentations: Set<UUID>?
+    private var visibleCount: Int {
+        guard let measuredPresentations else { return min(visibleCapacity, presentations.count) }
+        return presentations.prefix(visibleCapacity).prefix {
+            measuredPresentations.contains($0.id)
+        }.count
+    }
+    private var isQueueExpanded = false
+    private var queueOpenedAt: TimeInterval?
+    private var displayOverflowCount = 0
+    private var capacityHintCount = 0
+    private var presentationCommitTimer: EventNoticeCancellation?
+    private var presentationCommitID: UUID?
+    private var presentationDeadline: TimeInterval?
     private var readingConsumers: Set<EventNoticeReadingConsumer> = []
     private var readingSelection: EventNoticeAction?
-    private var currentID: UUID?
     private var protectedAction: EventNoticeAction?
     private var seen: [(id: SeenIdentity, expiresAt: TimeInterval)] = []
     private var observations: [Observation] = []
     private var developmentObservationRun: UUID?
     private var developmentObservationStartedAt: TimeInterval?
-    private var phase: EventNoticePresentationPhase = .hidden
     private var pauseReasons: EventNoticePauseReason = []
     private var isExpanded = false
     private var isDetail = false
     private var usesReducedMotion = false
-    private var currentDeadline: TimeInterval?
-    private var pausedRemaining: TimeInterval?
     private var presentationTimer: EventNoticeCancellation?
     private var expiryTimer: EventNoticeCancellation?
     private var badgeTimer: EventNoticeCancellation?
@@ -532,6 +571,7 @@ public final class EventNoticeModel: ObservableObject {
             remainingTime: nil, isExpanded: false, droppedCount: 0, receiverEpoch: receiverEpoch)
         snapshot = initialSnapshot
         bannerSnapshot = initialSnapshot
+        stackSnapshot = EventNoticeStackSnapshot(receiverEpoch: receiverEpoch)
         readingSnapshot = EventNoticeReadingSnapshot(
             records: [], pendingCount: 0, droppedCount: 0,
             receiverEpoch: receiverEpoch, isOpen: false)
@@ -539,11 +579,13 @@ public final class EventNoticeModel: ObservableObject {
 
     public func isNoticeAuthorized(_ notice: HostEventNotice) -> Bool { noticeAuthorized(notice) }
 
-    /// Closing a surface affects ingress and its banner, never accepted attention/read versions.
+    /// OFF removes all display frames from this source. Accepted Attention and frozen reading
+    /// versions retain their own TTL and explicit navigation capability (ADR 0025).
     public func hideBanner(for surface: HostSurfaceID) {
-        guard currentEntry?.content?.notice?.surface == surface else { return }
-        invalidatePresentationTimer()
-        finishDismissal()
+        presentations.removeAll { $0.entry.notice?.surface == surface }
+        exitingPresentations.removeAll { $0.entry.notice?.surface == surface }
+        reconcilePresentation()
+        publish()
     }
 
     private func isVerifiedSubmissionStart(_ notice: HostEventNotice) -> Bool {
@@ -564,16 +606,24 @@ public final class EventNoticeModel: ObservableObject {
         guard !seen.contains(where: { $0.id == .hook(notice.id) }),
             !entries.contains(where: { $0.content?.notice?.id == notice.id }),
             !frozen.contains(where: { $0.content?.notice?.id == notice.id }),
-            transient?.content?.notice?.id != notice.id
+            !presentations.contains(where: { $0.entry.notice?.id == notice.id }),
+            !exitingPresentations.contains(where: { $0.entry.notice?.id == notice.id })
         else { return .duplicate }
         seen.append((.hook(notice.id), now() + Self.retentionDuration))
         if seen.count > Self.maximumMetadataCount { seen.removeFirst() }
 
+        let kind = EventNoticeKind.classify(notice)
         let identity = Identity(notice)
         let existingIndex = identity.flatMap { index(for: $0) }
-        let existing = existingIndex.map { entries[$0] }
+        let existing =
+            existingIndex.map { entries[$0] }
+            ?? (kind.isAttention
+                ? identity.flatMap { identity in
+                    presentations.first {
+                        $0.entry.kind.isAttention && $0.entry.identity == identity
+                    }?.entry
+                } : nil)
         let observation = validObservation(notice)
-        let kind = EventNoticeKind.classify(notice)
         let requiresOrderedObservation =
             kind.isAttention
             || isVerifiedSubmissionStart(notice)
@@ -607,48 +657,44 @@ public final class EventNoticeModel: ObservableObject {
         }
 
         if kind == .transient {
-            // No queue: ordinary sources live only in the currently displayed transient slot.
-            if canAutomaticallyDisplay {
-                let entry = makeEntry(notice, kind: kind, identity: identity)
-                transient = entry
-                beginDisplaying(entry)
-            }
-            return .accepted
+            return enqueue(makeEntry(notice, kind: kind, identity: identity))
+                ? .accepted : .droppedCapacity
         }
 
-        let entry: Entry
-        if let index = existingIndex {
-            let previous = entries.remove(at: index)
-            guard previous.version < UInt64.max else {
-                entries.insert(previous, at: index)
+        if let previous = existing, previous.version == UInt64.max {
+            droppedCount = saturatedIncrement(droppedCount)
+            return .droppedCapacity
+        }
+        if existingIndex == nil, entries.count >= Self.maximumAttentionReminderCount {
+            guard
+                let index = entries.firstIndex(where: { candidate in
+                    !presentations.prefix(visibleCount).contains {
+                        $0.entry.id == candidate.id
+                    } && candidate.id != protectedAction?.id
+                        && candidate.id != readingSelection?.id
+                })
+            else {
                 droppedCount = saturatedIncrement(droppedCount)
                 return .droppedCapacity
             }
+            eraseReadingVersion(id: entries[index].id)
+            entries.remove(at: index)
+            droppedCount = saturatedIncrement(droppedCount)
+            lastRemovalReason = .capacity
+        }
+        let entry: Entry
+        if let previous = existing {
+            if let index = existingIndex { entries.remove(at: index) }
             previous.isSuperseded = true
             entry = makeEntry(
                 notice, kind: kind, identity: identity, id: previous.id,
                 version: previous.version + 1)
         } else {
-            if entries.count >= Self.maximumAttentionReminderCount {
-                guard
-                    let index = entries.firstIndex(where: {
-                        $0.id != currentID && $0.id != protectedAction?.id
-                    })
-                else {
-                    droppedCount = saturatedIncrement(droppedCount)
-                    return .droppedCapacity
-                }
-                eraseReadingVersion(id: entries[index].id)
-                entries.remove(at: index)
-                droppedCount = saturatedIncrement(droppedCount)
-                lastRemovalReason = .capacity
-            }
             entry = makeEntry(notice, kind: kind, identity: identity)
         }
         entries.append(entry)
-        if canAutomaticallyDisplay {
-            beginDisplaying(entry)
-        }
+        // Reminder admission is independent of display overflow.
+        _ = enqueue(entry)
         return .accepted
     }
 
@@ -659,9 +705,9 @@ public final class EventNoticeModel: ObservableObject {
         developmentObservationRun = canReceive ? runID : nil
         developmentObservationStartedAt = developmentObservationRun == nil ? nil : now()
         seen.removeAll { $0.id.isDevelopment }
-        if transient?.content?.provenance == .developmentCodexRollout {
-            hideImmediately()
-        }
+        presentations.removeAll { $0.entry.content?.provenance == .developmentCodexRollout }
+        exitingPresentations.removeAll { $0.entry.content?.provenance == .developmentCodexRollout }
+        reconcilePresentation()
         publish()
     }
 
@@ -696,13 +742,12 @@ public final class EventNoticeModel: ObservableObject {
         guard !seen.contains(where: { $0.id == identity }) else { return .duplicate }
         seen.append((identity, now() + Self.retentionDuration))
         if seen.count > Self.maximumMetadataCount { seen.removeFirst() }
-        if canAutomaticallyDisplay {
+        if !isAutomaticallySuppressed {
             let entry = Entry(
                 id: UUID(), version: 1, event: .notification, kind: .transient,
                 expiresAt: now() + Self.retentionDuration,
                 content: EventNoticeContent(observation), identity: nil)
-            transient = entry
-            beginDisplaying(entry)
+            return enqueue(entry) ? .accepted : .droppedCapacity
         }
         return .accepted
     }
@@ -770,7 +815,7 @@ public final class EventNoticeModel: ObservableObject {
         publish()
     }
 
-    /// Detail resolves a frozen reminder or the one live transient slot, without retaining
+    /// Detail resolves a frozen reminder or a live display-only entry, without retaining
     /// ordinary progress in the attention list or creating a second content owner.
     public func readingRecord(for action: EventNoticeAction) -> EventNoticeRecord? {
         guard action.epoch == receiverEpoch else { return nil }
@@ -779,8 +824,10 @@ public final class EventNoticeModel: ObservableObject {
         }) {
             return record
         }
-        guard let transient, transient.matches(action), isCurrent(action) else { return nil }
-        return record(transient)
+        guard let presentation = presentations.first(where: { $0.entry.matches(action) }),
+            isCurrent(action)
+        else { return nil }
+        return record(presentation.entry)
     }
 
     public func openAttentionReminders() {
@@ -831,8 +878,7 @@ public final class EventNoticeModel: ObservableObject {
 
     /// True when the action still resolves to a live attention reminder (not the transient slot).
     func isAttentionReminder(_ action: EventNoticeAction) -> Bool {
-        guard let kind = actionableEntry(action)?.kind else { return false }
-        return kind.isAttention
+        entries.contains { $0.matches(action) && $0.kind.isAttention }
     }
 
     public func sourceNotice(for action: EventNoticeAction) -> HostEventNotice? {
@@ -861,6 +907,7 @@ public final class EventNoticeModel: ObservableObject {
                 || reason == .subsequentSubmission,
             isCurrent(action), let index = entries.firstIndex(where: { $0.matches(action) })
         else { publish(); return .stale }
+        dismissBanner(action: action)
         entries.remove(at: index)
         eraseReadingVersion(id: action.id)
         if protectedAction == action { protectedAction = nil }
@@ -879,25 +926,93 @@ public final class EventNoticeModel: ObservableObject {
         return exportSessionID(session)
     }
 
-    public func dismiss(animated: Bool = true) {
-        guard phase != .hidden else { return }
+    /// The compatibility close entry point now means Escape: clear display and waiting only.
+    public func dismiss(animated: Bool = true) { dismissStack(animated: animated) }
+
+    public func containsPresentation(_ id: UUID) -> Bool {
+        presentations.contains { $0.id == id && $0.phase != .hidden }
+    }
+
+    public func presentationID(for action: EventNoticeAction) -> UUID? {
+        presentations.first { $0.entry.matches(action) }?.id
+    }
+
+    public func dismissBanner(action: EventNoticeAction, animated: Bool = true) {
+        guard let id = presentationID(for: action) else { return }
+        dismissBanner(id: id, animated: animated)
+    }
+
+    public func dismissBanner(id: UUID, animated: Bool = true) {
+        guard let index = presentations.firstIndex(where: { $0.id == id }) else { return }
+        let captured = record(presentations[index].entry)
+        let item = presentations.remove(at: index)
+        beginExit(item, animated: animated, captured: captured)
+        reconcilePresentation()
+        publish()
+    }
+
+    public func dismissStack(animated: Bool = true) {
+        let previous = presentations.map { ($0, record($0.entry)) }
+        presentations.removeAll()
+        for (item, captured) in previous { beginExit(item, animated: animated, captured: captured) }
+        isQueueExpanded = false
+        queueOpenedAt = nil
         pauseReasons = []
-        currentDeadline = nil
-        pausedRemaining = nil
-        invalidatePresentationTimer()
-        if !animated || usesReducedMotion { finishDismissal(); return }
-        phase = .exiting
-        let revision = presentationRevision
-        presentationTimer = scheduler.schedule(after: Self.fadeDuration) { [weak self] in
-            guard let self, self.presentationRevision == revision else { return }
-            self.finishDismissal()
-        }
+        capacityHintCount = 0
+        reconcilePresentation()
         publish()
     }
 
     public func hideImmediately() {
+        presentations.removeAll()
+        exitingPresentations.removeAll()
+        if measuredPresentations != nil { measuredPresentations = [] }
+        invalidatePresentationCommit()
+        isQueueExpanded = false
+        queueOpenedAt = nil
+        pauseReasons = []
+        capacityHintCount = 0
         invalidatePresentationTimer()
-        finishDismissal()
+        publish()
+    }
+
+    public func setQueueExpanded(_ value: Bool) {
+        let expanded = value && presentations.count > visibleCount
+        guard isQueueExpanded != expanded else { return }
+        isQueueExpanded = expanded
+        queueOpenedAt = expanded ? now() : nil
+        setPauseReason(.queueExpansion, active: expanded)
+    }
+
+    public func setVisibleCapacity(_ value: Int, measuredIDs: Set<UUID>? = nil) {
+        let capacity = min(Self.maximumVisibleBannerCount, max(0, value))
+        let measurementsChanged = measuredIDs.map { $0 != measuredPresentations } ?? false
+        guard visibleCapacity != capacity || measurementsChanged else { return }
+        visibleCapacity = capacity
+        if let measuredIDs { measuredPresentations = measuredIDs }
+        reconcilePresentation()
+        publish()
+    }
+
+    /// Positions come from complete native measurements; the model owns only the shared motion
+    /// schedule, never a second layout/height cache.
+    public func updateDisplayPositions(_ positions: [UUID: Double]) {
+        var changed = false
+        for (index, item) in presentations.prefix(visibleCount).enumerated() {
+            guard let position = positions[item.id], position.isFinite else { continue }
+            let hadPosition = item.hasMeasuredPosition
+            item.hasMeasuredPosition = true
+            guard abs(item.positionY - position) > 0.5 else { continue }
+            if hadPosition && !usesReducedMotion {
+                let offset = item.relocation?.offsetY(at: now(), reducedMotion: false) ?? 0
+                item.relocation = EventNoticeMotionPlan(
+                    kind: .relocation, startedAt: now(), index: index,
+                    fromY: item.positionY + offset - position)
+            }
+            item.positionY = position
+            changed = true
+        }
+        if changed { publish() }
     }
 
     public func setAutomaticallySuppressed(_ value: Bool) {
@@ -908,9 +1023,22 @@ public final class EventNoticeModel: ObservableObject {
     }
 
     public func setReducedMotion(_ value: Bool) {
+        guard usesReducedMotion != value else { return }
         usesReducedMotion = value
-        if value && phase == .entering { completeEntrance() }
-        if value && phase == .exiting { hideImmediately() }
+        if value {
+            invalidatePresentationCommit()
+            exitingPresentations.removeAll()
+            for item in presentations.prefix(visibleCount) {
+                item.entrance = nil
+                item.relocation = nil
+                if item.phase == .entering {
+                    item.phase = .visible
+                    item.hasPresented = true
+                    resumeReading(item)
+                }
+            }
+        }
+        publish()
     }
 
     public func setEnabled(_ value: Bool) {
@@ -936,22 +1064,24 @@ public final class EventNoticeModel: ObservableObject {
         epochStartedAt = now()
         entries.removeAll()
         frozen.removeAll()
-        transient = nil
-        bannerEntry = nil
+        presentations.removeAll()
+        exitingPresentations.removeAll()
+        if measuredPresentations != nil { measuredPresentations = [] }
+        invalidatePresentationCommit()
+        isQueueExpanded = false
+        queueOpenedAt = nil
+        displayOverflowCount = 0
+        capacityHintCount = 0
         readingConsumers.removeAll()
         readingSelection = nil
-        currentID = nil
         protectedAction = nil
         seen.removeAll()
         observations.removeAll()
         developmentObservationRun = nil
         developmentObservationStartedAt = nil
-        phase = .hidden
         pauseReasons = []
         isExpanded = false
         isDetail = false
-        currentDeadline = nil
-        pausedRemaining = nil
         droppedCount = 0
         lastRemovalReason = .privacy
         publish(immediateBadge: true)
@@ -965,25 +1095,27 @@ public final class EventNoticeModel: ObservableObject {
         let wasPaused = !pauseReasons.isEmpty
         if active { pauseReasons.formUnion(reason) } else { pauseReasons.subtract(reason) }
         expireEntries()
-        if !wasPaused && !pauseReasons.isEmpty, phase == .visible, let deadline = currentDeadline {
-            pausedRemaining = max(0, deadline - now())
-            currentDeadline = nil
-            invalidatePresentationTimer()
+        if !wasPaused && !pauseReasons.isEmpty {
+            for item in presentations { pauseReading(item) }
         } else if wasPaused && pauseReasons.isEmpty {
-            resumeReading()
+            for item in presentations.prefix(visibleCount) { resumeReading(item) }
         }
         publish()
     }
 
     package var presentationUptime: TimeInterval { now() }
 
-    public func expireNow() { expireEntries(); publish(immediateBadge: true) }
-
-    private var canAutomaticallyDisplay: Bool {
-        !isAutomaticallySuppressed && (phase == .hidden || phase == .exiting)
+    public func expireNow() {
+        expireEntries(); reconcilePresentation(); publish(immediateBadge: true)
     }
 
-    private var currentEntry: Entry? { bannerEntry }
+    private var currentEntry: Entry? {
+        presentations.prefix(visibleCount).first?.entry ?? exitingPresentations.first?.entry
+    }
+    private var phase: EventNoticePresentationPhase {
+        presentations.prefix(visibleCount).first?.phase
+            ?? (exitingPresentations.isEmpty ? .hidden : .exiting)
+    }
 
     /// Resolve the complete identity once per arrival, before any transition mutates entries.
     private func index(for identity: Identity) -> Int? {
@@ -999,7 +1131,7 @@ public final class EventNoticeModel: ObservableObject {
         guard canReceive, action.epoch == receiverEpoch else { return nil }
         let entry =
             entries.first(where: { $0.matches(action) })
-            ?? (transient?.matches(action) == true ? transient : nil)
+            ?? presentations.first(where: { $0.entry.matches(action) })?.entry
         guard let entry, entry.content != nil, entry.expiresAt > now() else { return nil }
         return entry
     }
@@ -1027,58 +1159,179 @@ public final class EventNoticeModel: ObservableObject {
             identity: identity)
     }
 
-    private func beginDisplaying(_ entry: Entry) {
-        currentID = entry.id
-        bannerEntry = entry
-        phase = .entering
-        currentDeadline = nil
-        pausedRemaining = nil
-        invalidatePresentationTimer()
-        if usesReducedMotion { completeEntrance(); return }
-        let revision = presentationRevision
-        presentationTimer = scheduler.schedule(after: Self.fadeDuration) { [weak self] in
-            guard let self, self.presentationRevision == revision else { return }
-            self.completeEntrance()
+    @discardableResult
+    private func enqueue(_ entry: Entry) -> Bool {
+        guard !isAutomaticallySuppressed else { return true }
+        if entry.kind.isAttention,
+            let item = presentations.first(where: { $0.entry.id == entry.id })
+        {
+            item.entry = entry
+            item.remaining = Self.displayDuration
+            item.deadline = nil
+            if item.phase == .visible { resumeReading(item) }
+            return true
         }
+        guard presentations.count < Self.maximumBannerCount else {
+            displayOverflowCount = saturatedIncrement(displayOverflowCount)
+            capacityHintCount = saturatedIncrement(capacityHintCount)
+            return false
+        }
+        presentations.append(Presentation(entry))
+        reconcilePresentation()
+        return true
     }
 
-    private func completeEntrance() {
-        guard phase == .entering, currentEntry?.content != nil else { return }
-        invalidatePresentationTimer()
-        phase = .visible
-        pausedRemaining = Self.displayDuration
-        resumeReading()
+    private func reconcilePresentation() {
+        for (index, item) in presentations.enumerated() {
+            item.layerIndex = index
+            if index >= visibleCount {
+                pauseReading(item)
+                item.phase = .hidden
+                item.entrance = nil
+                item.relocation = nil
+                item.hasMeasuredPosition = false
+            } else if item.phase == .hidden {
+                if item.hasPresented || usesReducedMotion {
+                    item.phase = .visible
+                    item.hasPresented = true
+                    resumeReading(item)
+                } else {
+                    item.phase = .entering
+                    item.entrance = EventNoticeMotionPlan(kind: .entrance, startedAt: nil)
+                }
+            }
+        }
+        if presentations.count <= visibleCount {
+            isQueueExpanded = false
+            queueOpenedAt = nil
+            let wasPaused = !pauseReasons.isEmpty
+            pauseReasons.subtract(.queueExpansion)
+            if wasPaused && pauseReasons.isEmpty {
+                for item in presentations.prefix(visibleCount) { resumeReading(item) }
+            }
+        }
+        if presentations.isEmpty {
+            capacityHintCount = 0
+            pauseReasons.formIntersection(.modal)
+        }
+        if presentations.contains(where: { $0.phase == .entering && $0.entrance?.startedAt == nil }
+        ),
+            presentationCommitTimer == nil
+        {
+            // Arrivals in this MainActor transaction form one zero-based presentation batch.
+            let epoch = receiverEpoch
+            let id = UUID()
+            presentationCommitID = id
+            presentationCommitTimer = scheduler.schedule(after: 0) { [weak self] in
+                guard let self, self.receiverEpoch == epoch, self.presentationCommitID == id else {
+                    return
+                }
+                self.presentationCommitID = nil
+                self.presentationCommitTimer = nil
+                self.commitPresentation()
+            }
+        } else if !presentations.contains(where: {
+            $0.phase == .entering && $0.entrance?.startedAt == nil
+        }) {
+            invalidatePresentationCommit()
+        }
+        schedulePresentation()
+    }
+
+    private func commitPresentation() {
+        var index = 0
+        for item in presentations.prefix(visibleCount)
+        where item.phase == .entering && item.entrance?.startedAt == nil {
+            item.entrance = EventNoticeMotionPlan(kind: .entrance, startedAt: now(), index: index)
+            index += 1
+        }
         publish()
     }
 
-    private func resumeReading() {
-        guard phase == .visible, pauseReasons.isEmpty, currentEntry != nil else { return }
-        currentDeadline = now() + (pausedRemaining ?? Self.displayDuration)
-        pausedRemaining = nil
+    private func resumeReading(_ item: Presentation) {
+        guard item.phase == .visible, pauseReasons.isEmpty, item.deadline == nil else { return }
+        item.deadline = now() + item.remaining
+    }
+
+    private func pauseReading(_ item: Presentation) {
+        if let deadline = item.deadline { item.remaining = max(0, deadline - now()) }
+        item.deadline = nil
+    }
+
+    private func beginExit(_ item: Presentation, animated: Bool, captured: EventNoticeRecord) {
+        pauseReading(item)
+        guard animated, !usesReducedMotion, item.phase != .hidden else { return }
+        let time = now()
+        let opacity = item.entrance?.opacity(at: time, reducedMotion: false) ?? 1
+        let offset =
+            (item.entrance?.offsetY(at: time, reducedMotion: false) ?? 0)
+            + (item.relocation?.offsetY(at: time, reducedMotion: false) ?? 0)
+        item.phase = .exiting
+        item.retiredRecord = captured
+        item.exit = EventNoticeMotionPlan(
+            kind: .exit, startedAt: time, fromY: offset, fromOpacity: opacity)
+        item.relocation = nil
+        // At most 50 display frames can retire in one 180ms interval.
+        if exitingPresentations.count == Self.maximumBannerCount {
+            exitingPresentations.removeFirst()
+        }
+        exitingPresentations.append(item)
+    }
+
+    private func schedulePresentation() {
+        var earliest = TimeInterval.infinity
+        for item in presentations.prefix(visibleCount) {
+            if item.phase == .entering, let end = item.entrance?.completesAt {
+                earliest = min(earliest, end)
+            }
+            if let deadline = item.deadline { earliest = min(earliest, deadline) }
+        }
+        for item in exitingPresentations {
+            if let end = item.exit?.completesAt { earliest = min(earliest, end) }
+        }
+        let deadline = earliest.isFinite ? earliest : nil
+        guard presentationDeadline != deadline else { return }
         invalidatePresentationTimer()
+        presentationDeadline = deadline
+        guard let deadline else { return }
         let revision = presentationRevision
-        presentationTimer = scheduler.schedule(after: max(0, currentDeadline! - now())) {
-            [weak self] in
+        presentationTimer = scheduler.schedule(after: max(0, deadline - now())) { [weak self] in
             guard let self, self.presentationRevision == revision else { return }
-            self.dismiss()
+            self.presentationTimer = nil
+            self.presentationDeadline = nil
+            self.advancePresentation()
         }
     }
 
-    private func finishDismissal() {
-        presentationTimer = nil
-        currentID = nil
-        bannerEntry = nil
-        transient = nil
-        phase = .hidden
-        pauseReasons = []
-        currentDeadline = nil
-        pausedRemaining = nil
+    private func advancePresentation() {
+        let time = now()
+        for item in presentations.prefix(visibleCount)
+        where item.phase == .entering && (item.entrance?.completesAt ?? .infinity) <= time {
+            item.phase = .visible
+            item.hasPresented = true
+            resumeReading(item)
+        }
+        let expired = presentations.filter { ($0.deadline ?? .infinity) <= time }
+            .map { ($0, record($0.entry)) }
+        for (item, captured) in expired {
+            presentations.removeAll { $0.id == item.id }
+            beginExit(item, animated: true, captured: captured)
+        }
+        exitingPresentations.removeAll { ($0.exit?.completesAt ?? .infinity) <= time }
+        expireEntries()
+        reconcilePresentation()
         publish()
     }
 
     private func eraseReadingVersion(id: UUID) {
-        for index in frozen.indices where frozen[index].id == id { frozen[index].erase() }
-        if bannerEntry?.id == id { bannerEntry?.erase() }
+        for index in frozen.indices where frozen[index].id == id {
+            // A frozen placeholder cannot erase the shared handle retained by a retiring
+            // card. That noninteractive frame releases its own content after 180ms.
+            let previous = frozen[index]
+            frozen[index] = Entry(
+                id: previous.id, version: previous.version, event: previous.event,
+                kind: previous.kind, expiresAt: previous.expiresAt, content: nil, identity: nil)
+        }
     }
 
     private func expireEntries() {
@@ -1088,8 +1341,13 @@ public final class EventNoticeModel: ObservableObject {
         if entries.count < previousCount { lastRemovalReason = .expired }
         // Each reading version has its own deadline, even if a newer version extended the row.
         for index in frozen.indices where frozen[index].expiresAt <= time { frozen[index].erase() }
-        if let value = transient, value.expiresAt <= time { transient?.erase() }
-        if let value = bannerEntry, value.expiresAt <= time { bannerEntry?.erase() }
+        for item in presentations + exitingPresentations where item.entry.expiresAt <= time {
+            item.entry.erase()
+        }
+        let displayCount = presentations.count
+        presentations.removeAll { $0.entry.content == nil }
+        exitingPresentations.removeAll { $0.entry.content == nil }
+        if displayCount != presentations.count { reconcilePresentation() }
         seen.removeAll { $0.expiresAt <= time }
         observations.removeAll { $0.expiresAt <= time }
         if let action = protectedAction, !isCurrent(action) { protectedAction = nil }
@@ -1101,10 +1359,9 @@ public final class EventNoticeModel: ObservableObject {
         var earliest = TimeInterval.infinity
         for entry in entries { earliest = min(earliest, entry.expiresAt) }
         for entry in frozen where entry.content != nil { earliest = min(earliest, entry.expiresAt) }
-        if let bannerEntry, bannerEntry.content != nil {
-            earliest = min(earliest, bannerEntry.expiresAt)
+        for item in presentations + exitingPresentations where item.entry.content != nil {
+            earliest = min(earliest, item.entry.expiresAt)
         }
-        if let transient, transient.content != nil { earliest = min(earliest, transient.expiresAt) }
         for item in seen { earliest = min(earliest, item.expiresAt) }
         for item in observations { earliest = min(earliest, item.expiresAt) }
         let deadline = earliest.isFinite ? earliest : nil
@@ -1128,12 +1385,22 @@ public final class EventNoticeModel: ObservableObject {
         presentationRevision &+= 1
         presentationTimer?.cancel()
         presentationTimer = nil
+        presentationDeadline = nil
+    }
+
+    private func invalidatePresentationCommit() {
+        presentationCommitID = nil
+        presentationCommitTimer?.cancel()
+        presentationCommitTimer = nil
     }
 
     private func record(_ entry: Entry) -> EventNoticeRecord {
         EventNoticeRecord(
             id: entry.id, event: entry.event, occurredAt: entry.content?.occurredAt,
-            content: entry.content, status: entry.id == currentID ? .displayed : .collapsed,
+            content: entry.content,
+            status: presentations.prefix(visibleCount).contains(where: { $0.entry === entry })
+                ? .displayed
+                : presentations.contains(where: { $0.entry === entry }) ? .queued : .collapsed,
             isExpired: entry.content == nil, version: entry.version,
             isActionable: entry.action.map(isCurrent) ?? false,
             isSuperseded: entry.isSuperseded, kind: entry.kind)
@@ -1143,6 +1410,7 @@ public final class EventNoticeModel: ObservableObject {
         owesImmediateBadge = owesImmediateBadge || immediateBadge
         guard !isReducingBatch else { return }
         scheduleExpiry()
+        schedulePresentation()
         var pendingRefreshCount = 0
         if !readingConsumers.isEmpty {
             for entry in entries where !frozen.contains(where: { $0.action == entry.action }) {
@@ -1150,12 +1418,26 @@ public final class EventNoticeModel: ObservableObject {
             }
         }
         let sampledUptime = now()
-        let remaining = currentDeadline.map { max(0, $0 - sampledUptime) } ?? pausedRemaining
-        let readingTime = (remaining ?? (phase == .entering ? Self.displayDuration : nil)).map {
-            EventNoticeReadingTime(
-                sampledUptime: sampledUptime, remaining: $0,
-                isPaused: !pauseReasons.isEmpty || phase != .visible, budget: Self.displayDuration)
+        func bannerItem(_ item: Presentation) -> EventNoticeBannerItem {
+            let remaining = item.deadline.map { max(0, $0 - sampledUptime) } ?? item.remaining
+            return EventNoticeBannerItem(
+                id: item.id, record: item.retiredRecord ?? record(item.entry), phase: item.phase,
+                readingTime: EventNoticeReadingTime(
+                    sampledUptime: sampledUptime, remaining: remaining,
+                    isPaused: item.deadline == nil, budget: Self.displayDuration),
+                entrance: item.entrance, relocation: item.relocation, exit: item.exit,
+                positionY: item.positionY, layerIndex: item.layerIndex)
         }
+        let stack = EventNoticeStackSnapshot(
+            visible: presentations.prefix(visibleCount).map(bannerItem),
+            queued: presentations.dropFirst(visibleCount).map(bannerItem),
+            exiting: exitingPresentations.map(bannerItem), isQueueExpanded: isQueueExpanded,
+            queueOpenedAt: queueOpenedAt, pauseReasons: pauseReasons,
+            overflowCount: displayOverflowCount, capacityHintCount: capacityHintCount,
+            receiverEpoch: receiverEpoch)
+        if stackSnapshot != stack { stackSnapshot = stack }
+        let readingTime = stack.visible.first?.readingTime ?? stack.exiting.first?.readingTime
+        let remaining = readingTime?.remaining
         let banner = EventNoticeModelSnapshot(
             phase: phase, current: currentEntry.map(record), attentionReminders: [],
             pendingCount: 0, pauseReasons: pauseReasons, remainingTime: remaining,
@@ -1170,7 +1452,7 @@ public final class EventNoticeModel: ObservableObject {
         if bannerSnapshot != banner { bannerSnapshot = banner }
         let selected = readingSelection.flatMap { action in
             (frozen.first(where: { $0.id == action.id && $0.version == action.version })
-                ?? (transient?.id == action.id ? transient : nil)).map(record)
+                ?? presentations.first(where: { $0.entry.matches(action) })?.entry).map(record)
         }
         let updated = EventNoticeModelSnapshot(
             phase: isExpanded ? .visible : phase, current: isDetail ? selected : banner.current,

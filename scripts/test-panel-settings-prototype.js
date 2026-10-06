@@ -827,7 +827,7 @@ test("queued events receive four seconds only after becoming visible; stack paus
   assert.equal(context.NoticeClock.clocks.get(2).left(), 3000, "redraw keeps the surviving budget");
 });
 
-test("closing one banner cancels only its navigation; a later request cancels an earlier request", () => {
+test("closing one banner cancels only its navigation; a later request is refused during the single flight", () => {
   const runtime = loadPrototype(); const { context } = runtime;
   context.showNoticeBurst(false); const retained = JSON.stringify(context.REMINDERS);
   const reminderID = context.S.banners.find(x => x.id === 3).reminderID;
@@ -837,7 +837,9 @@ test("closing one banner cancels only its navigation; a later request cancels an
   assert.equal(JSON.stringify(context.REMINDERS), retained);
   context.S.bannerNavigationOutcome = "exact"; context.openBannerSource(2); context.openBannerSource(3);
   runtime.advanceTime(450);
-  assert.deepEqual(Array.from(context.S.banners, x => x.id), [2]);
+  assert.deepEqual(Array.from(context.S.banners, x => x.id), [3]);
+  assert.equal(context.REMINDERS.some(x => x.id === reminderID), true);
+  context.openBannerSource(3); runtime.advanceTime(450);
   assert.equal(context.REMINDERS.some(x => x.id === reminderID), false);
 });
 
@@ -845,7 +847,9 @@ test("closing all clears the queue and a full bounded queue reports overflow", (
   const { context, messages } = loadPrototype();
   for (let i = 0; i < 51; i++) context.showNoticeScene("stop");
   assert.equal(context.S.banners.length, 3); assert.equal(context.S.bannerQueue.length, 47);
-  assert.equal(messages.length, 1);
+  assert.equal(messages.length, 0);
+  assert.equal(context.S.bannerDisplayOverflow, 1);
+  assert.ok(context.bannerStackHTML().includes('id="bannerCapacity"'));
   context.closeBanner();
   assert.equal(context.S.banners.length + context.S.bannerQueue.length, 0);
 });
@@ -870,3 +874,104 @@ for (const admission of ["full", "disabled"]) {
     assert.equal(JSON.stringify([context.S.banners, context.S.bannerQueue]), banners, "rejected banners leave the display queue unchanged");
   });
 }
+
+
+for (const admission of ["enabled", "disabled"]) {
+  test(`${admission}: attention retention keeps 50 newest revisions independently of banner capacity`, () => {
+    const runtime = loadPrototype(), { context } = runtime;
+    context.S.prefs.bannerOn = admission === "enabled";
+    const arrivals = [];
+    for (let i = 0; i < 55; i++) {
+      context.showNoticeScene("permission", { host:"Codex", project:`project-${i}` });
+      arrivals.unshift(context.S.bannerReminderID);
+    }
+    assert.deepEqual(Array.from(context.REMINDERS, r => r.id), arrivals.slice(0, 50));
+    const accepted = Array.from(context.S.banners.concat(context.S.bannerQueue), n => n.id);
+    assert.deepEqual(accepted, admission === "enabled" ? Array.from({length:50}, (_, i) => i + 1) : []);
+    assert.equal(context.S.reminderOverflow, 7);
+    const oldest = context.REMINDERS.at(-1).id;
+    context.showNoticeScene("needsInput", { reminderID:oldest, host:"Codex", project:"updated" });
+    assert.equal(context.REMINDERS[0].id, oldest);
+    assert.equal(context.REMINDERS[0].version, 2);
+    assert.equal(context.REMINDERS.length, 50);
+    context.showNoticeScene("permission");
+    assert.equal(context.REMINDERS.length, 50);
+    assert.equal(context.REMINDERS[1].id, oldest, "the new revision survives the next capacity eviction");
+    assert.deepEqual(Array.from(context.S.banners.concat(context.S.bannerQueue), n => n.id), accepted,
+      "attention eviction preserves already accepted FIFO display items under ADR 0013");
+    if (admission === "enabled") {
+      const first = context.S.banners[0], retained = Array.from(context.REMINDERS, r => r.id);
+      assert.ok(context.bannerHTML(first).includes(`data-banner-action="${first.id}"`),
+        "accepted banners keep their captured action after attention capacity eviction");
+      assert.ok(!context.bannerHTML(first).includes('class="banner-error"'));
+      context.S.bannerNavigationOutcome = "exact";
+      context.openBannerSource(first.id);
+      runtime.advanceTime(450);
+      assert.deepEqual(Array.from(context.REMINDERS, r => r.id), retained,
+        "returning to an evicted attention version must not remove a different reminder");
+      assert.ok(!context.S.banners.some(n => n.id === first.id));
+    }
+  });
+}
+
+test("accepted legacy reminders keep their default revision after attention capacity eviction", () => {
+  const runtime = loadPrototype(), { context } = runtime;
+  context.S.bannerReminderID = context.REMINDERS[0].id;
+  context.showBanner(true);
+  const first = context.S.banners[0];
+  for (let i = 0; i < 55; i++) context.showNoticeScene("permission");
+  assert.ok(context.bannerHTML(first).includes(`data-banner-action="${first.id}"`));
+  assert.ok(!context.bannerHTML(first).includes('class="banner-error"'));
+  context.S.bannerNavigationOutcome = "fallback";
+  context.openBannerSource(first.id);
+  runtime.advanceTime(450);
+  assert.equal(first.failure, "fallback");
+});
+
+test("a revision of a capacity-evicted reminder replaces its accepted queued display", () => {
+  const runtime = loadPrototype(), { context } = runtime;
+  for (let i = 0; i < 55; i++) context.showNoticeScene("permission");
+  const waiting = context.S.bannerQueue[0];
+  assert.ok(!context.REMINDERS.some(r => r.id === waiting.reminderID));
+  const order = Array.from(context.S.banners.concat(context.S.bannerQueue), n => n.id);
+  const overflow = context.S.bannerDisplayOverflow;
+  context.showNoticeScene("needsInput", {reminderID:waiting.reminderID, host:"Codex", project:"updated queue"});
+  assert.equal(context.S.bannerQueue[0].id, waiting.id);
+  assert.equal(context.S.bannerQueue[0].reminderID, waiting.reminderID);
+  assert.equal(context.S.bannerQueue[0].version, 2);
+  assert.equal(context.REMINDERS[0].id, waiting.reminderID);
+  assert.equal(context.REMINDERS.length, 50);
+  assert.equal(context.S.bannerDisplayOverflow, overflow);
+  assert.deepEqual(Array.from(context.S.banners.concat(context.S.bannerQueue), n => n.id), order);
+});
+
+test("new attention revisions replace the display position and reading budget, invalidating old navigation", () => {
+  const runtime = loadPrototype(); const { context } = runtime;
+  context.showNoticeScene("permission", {host:"Codex", project:"first"});
+  context.showNoticeScene("stop", {host:"Claude Code", project:"second"});
+  const root = {matches() { return false; }, contains() {return false;}, addEventListener() {}};
+  context.NoticeClock.sync(root, false); runtime.advanceTime(1000);
+  const first = context.S.banners[0], secondLeft = context.NoticeClock.clocks.get(2).left();
+  context.S.bannerNavigationOutcome = "exact"; context.openBannerSource(1);
+  context.showNoticeScene("needsInput", {reminderID:first.reminderID, host:"Codex", project:"updated"});
+  assert.equal(context.S.banners.length, 2); assert.equal(context.S.banners[0].id, first.id);
+  assert.equal(context.S.banners[0].version, 2);
+  assert.equal(context.NoticeClock.clocks.get(1).left(), 4000);
+  assert.equal(context.NoticeClock.clocks.get(2).left(), secondLeft);
+  runtime.advanceTime(450);
+  assert.equal(context.REMINDERS.find(r => r.id === first.reminderID).version, 2);
+  context.closeBanner(1);
+  context.showNoticeScene("permission", {reminderID:first.reminderID, host:"Codex", project:"third"});
+  assert.equal(context.S.banners.at(-1).id, 3);
+});
+
+test("a navigation result arriving beyond the original three seconds cannot consume a reminder", () => {
+  const runtime = loadPrototype(); const { context } = runtime;
+  context.showNoticeScene("permission"); const reminder = context.S.banners[0].reminderID;
+  context.S.bannerNavigationOutcome="exact"; context.S.bannerNavigationDelay=3500;
+  context.openBannerSource(1); runtime.advanceTime(3000);
+  assert.equal(context.S.banners[0].failure,"timedOut");
+  runtime.advanceTime(500);
+  assert.ok(context.REMINDERS.some(r => r.id === reminder));
+  assert.equal(context.S.bannerNavigationID,null);
+});

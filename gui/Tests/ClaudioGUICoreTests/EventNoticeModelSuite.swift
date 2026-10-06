@@ -74,7 +74,7 @@ func runEventNoticeModelSuites() {
             verifiedSubmissionSurfaces: verified)
     }
 
-    suite("Attention：普通事件仅四秒展示，无排队、历史或收起后来源") {
+    suite("Attention：普通事件各自四秒展示，不进入提醒历史") {
         let clock = ManualEventNoticeScheduler()
         let model = makeModel(clock)
         let first = attentionNotice(epoch: model.receiverEpoch, native: "Stop")
@@ -90,7 +90,7 @@ func runEventNoticeModelSuites() {
         expect(
             model.snapshot.attentionReminders.isEmpty && model.snapshot.totalCount == 0,
             "普通事件不成为历史")
-        clock.advance(2.18)
+        clock.advance(4.4)
         expect(
             model.snapshot.phase == .hidden && model.resourceUsage.transientVersions == 0,
             "展示完即释放来源")
@@ -101,7 +101,7 @@ func runEventNoticeModelSuites() {
         model.dismiss(animated: false)
     }
 
-    suite("Attention：淡入中的新事件不替换、不延长或自动排队") {
+    suite("Attention：淡入中的新事件追加，当前条目不被替换或延长") {
         let clock = ManualEventNoticeScheduler()
         let model = makeModel(clock)
         let first = attentionNotice(epoch: model.receiverEpoch, native: "Stop")
@@ -117,20 +117,21 @@ func runEventNoticeModelSuites() {
         expect(model.accept(attention) == .accepted, "淡入中的待接手事件仍被保留")
         expect(
             model.snapshot.phase == .entering && model.snapshot.current?.id == first.id
-                && model.resourceUsage.transientVersions == 1
-                && model.snapshot.totalCount == 1,
-            "淡入中保持当前瞬时版本，只把待接手事件保留到列表")
+                && model.resourceUsage.transientVersions == 2
+                && model.snapshot.totalCount == 1
+                && model.stackSnapshot.visible.count == 3,
+            "淡入中保持当前瞬时版本，同时追加独立横幅")
 
         clock.advance(0.09)
         expect(
             model.snapshot.phase == .visible && model.snapshot.current?.id == first.id
                 && model.snapshot.remainingTime.map { abs($0 - 4) < 0.001 } == true,
             "后续事件不得延长淡入或替换当前四秒阅读期")
-        clock.advance(4.18)
+        clock.advance(4.4)
         expect(
             model.snapshot.phase == .hidden && model.snapshot.current == nil
                 && model.snapshot.totalCount == 1,
-            "当前收起后不得自动播放淡入期间到达的事件")
+            "追加条目分别用完四秒后收起，提醒保留")
     }
 
     suite("Attention：淡出中新瞬时与待接手事件抢占旧展示") {
@@ -563,9 +564,9 @@ func runEventNoticeModelSuites() {
         let usage = model.resourceUsage
         expect(
             usage.latestVersions <= 50 && usage.readingVersions <= 50
-                && usage.transientVersions <= 1
+                && usage.transientVersions <= EventNoticeModel.maximumBannerCount
                 && usage.deduplicationEntries == 256 && usage.observationEntries == 256
-                && usage.timers <= 3, "全部常驻集合有界")
+                && usage.timers <= 4, "全部常驻集合有界")
         clock.advance(1801)
         expect(
             model.snapshot.totalCount == 0 && model.resourceUsage.deduplicationEntries == 0

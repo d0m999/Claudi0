@@ -47,11 +47,18 @@ func runEventBannerLayoutSuites() {
         let model = EventNoticeModel(
             receiverEpoch: UUID(), now: { clock.time }, scheduler: clock.scheduler())
         _ = model.accept(attentionNotice(epoch: model.receiverEpoch, native: "Stop"))
-        clock.advance(0.18)
+        clock.advance(0.26)
         let preferences = ClaudioPreferences(previewLanguage: .english)
+        var measuredHeight: Double = 0
         let hosting = EventNoticeHostingView(
-            rootView: EventNoticeView(model: model, languageStore: preferences))
-        let height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
+            rootView: EventNoticeView(
+                model: model, languageStore: preferences,
+                onMeasurements: { heights in
+                    if let id = model.stackSnapshot.visible.first?.id {
+                        measuredHeight = heights["card.\(id.uuidString)"] ?? measuredHeight
+                    }
+                }))
+        var height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
         let window = EventNoticePanel(
             contentRect: NSRect(x: 100, y: 80, width: 440, height: height),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -62,6 +69,10 @@ func runEventBannerLayoutSuites() {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+        expect(measuredHeight > 0, "完整原生卡片有实测高度")
+        height = measuredHeight
+        window.setFrame(NSRect(x: 100, y: 80, width: 440, height: height), display: true)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
         let baseline = model.bannerSnapshot
         var publications = 0
         let subscription = model.$bannerSnapshot.dropFirst().sink { _ in publications += 1 }
@@ -229,14 +240,25 @@ func runEventBannerLayoutSuites() {
                     var details = 0
                     var closes = 0
                     let preferences = ClaudioPreferences(previewLanguage: language)
+                    let width: CGFloat = kind == "long" ? 268 : 440
+                    let geometry = EventNoticeStackGeometry()
+                    geometry.width = width
+                    var measuredHeight: Double = 0
+                    clock.advance(0.36)
                     let hosting = EventNoticeHostingView(
                         rootView: EventNoticeView(
                             model: model, languageStore: preferences,
+                            geometry: geometry,
                             onViewSource: { _ in details += 1 },
                             onOpenSourceApplication: { _ in opens += 1 },
-                            onClose: { closes += 1 }))
-                    let height = EventNoticeView.preferredHeight(for: model.snapshot)
-                    let width: CGFloat = kind == "long" ? 268 : 440
+                            onDismiss: { _ in closes += 1 },
+                            onMeasurements: { heights in
+                                if let id = model.stackSnapshot.visible.first?.id {
+                                    measuredHeight =
+                                        heights["card.\(id.uuidString)"] ?? measuredHeight
+                                }
+                            }))
+                    var height = EventNoticeView.preferredHeight(for: model.snapshot)
                     let window = NSWindow(
                         contentRect: NSRect(x: 0, y: 0, width: width, height: height),
                         styleMask: [.borderless], backing: .buffered, defer: false)
@@ -247,6 +269,10 @@ func runEventBannerLayoutSuites() {
                     window.orderFrontRegardless()
                     defer { window.orderOut(nil); window.close() }
                     hosting.layoutSubtreeIfNeeded()
+                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+                    expect(measuredHeight > 0, "\(kind)完整卡片可测量")
+                    height = measuredHeight
+                    window.setFrame(NSRect(x: 0, y: 0, width: width, height: height), display: true)
                     RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
                     expect(
                         abs(hosting.frame.height - height) < 1
@@ -341,9 +367,15 @@ func runEventReadingLiveSuites() async {
                     model.accept(notice) == .accepted,
                     "真实时钟\(native)事件有效")
                 expect(model.bannerSnapshot.phase == .entering, "生产视图在入场采样仍暂停时挂载")
+                var measuredHeight: Double = 0
                 let hosting = EventNoticeHostingView(
                     rootView: EventNoticeView(
-                        model: model, languageStore: ClaudioPreferences(previewLanguage: .english)))
+                        model: model, languageStore: ClaudioPreferences(previewLanguage: .english),
+                        onMeasurements: { heights in
+                            if let id = model.stackSnapshot.visible.first?.id {
+                                measuredHeight = heights["card.\(id.uuidString)"] ?? measuredHeight
+                            }
+                        }))
                 let width: CGFloat = 440
                 let height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
                 let visible =
@@ -373,6 +405,11 @@ func runEventReadingLiveSuites() async {
                     expect(false, "真实入场计时器必须进入 visible")
                     return
                 }
+                expect(measuredHeight > 0, "真实挂载完整卡片已测量")
+                window.setFrame(
+                    NSRect(
+                        x: frame.minX, y: frame.minY, width: width, height: measuredHeight),
+                    display: true)
                 var samples: [(span: CGFloat, fraction: Double)] = []
                 for (index, offset) in [0.3, 1.3, 2.3].enumerated() {
                     let delay = max(0, visibleSince + offset - ProcessInfo.processInfo.systemUptime)

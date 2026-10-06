@@ -207,7 +207,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertAlmostEqual(self.page.evaluate("NoticeClock.clocks.get(4).left()"), 4000, delta=50)
         self.assertEqual(self.page.evaluate("S.bannerQueue.map(x => x.id)"), [5, 6])
 
-    def test_panel_source_action_closes_only_its_banner_and_preserves_waiting_events(self):
+    def test_panel_application_fallback_preserves_its_banner_and_waiting_events(self):
         self.page.emulate_media(reduced_motion="no-preference")
         self.open()
         self.page.evaluate("showNoticeBurst(true); showNoticeBurst(false)")
@@ -223,11 +223,12 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.locator(f'[data-reminder="{reminder}"]').click()
         self.page.locator(f'[data-opensource="{reminder}"]').click()
 
-        self.assertEqual(self.page.evaluate("S.banners.map(x => x.id)"), [1, 2, 4])
-        self.assertEqual(self.page.evaluate("S.bannerQueue.map(x => x.id)"), [5, 6])
+        self.page.wait_for_function("S.banners.find(x => x.id === 3).failure === 'fallback'")
+        self.assertEqual(self.page.evaluate("S.banners.map(x => x.id)"), [1, 2, 3])
+        self.assertEqual(self.page.evaluate("S.bannerQueue.map(x => x.id)"), [4, 5, 6])
         self.assertEqual(self.page.locator("[data-notice]").count(), 3)
         self.assertTrue(self.page.evaluate("window.retainedBanner === document.getElementById('banner-1')"))
-        self.assertGreater(self.page.evaluate("NoticeClock.clocks.get(4).left()"), 3800)
+        self.assertFalse(self.page.evaluate("NoticeClock.clocks.has(4)"))
         self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
 
     def test_panel_source_action_without_a_visible_match_keeps_all_banners_and_queue(self):
@@ -662,6 +663,226 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.locator('[data-action="nav:general"]').click()
         self.assertIsNone(self.settings_state()["generation"])
         self.assertEqual(self.settings_state()["candidates"],[])
+
+
+    def test_attention_capacity_matches_the_panel_and_settings_reading_projection(self):
+        self.open(win="1", pane="activity")
+        self.page.locator("#mbIcon").click()
+        self.page.evaluate("NoticeClock.pause('test', true); for (let i = 0; i < 55; i++) showNoticeScene('permission')")
+        retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+        self.assertEqual(len(retained), 50)
+        self.assertTrue(self.page.locator('#banner-1 [data-banner-action="1"]').is_visible())
+        self.assertEqual(self.page.locator('#banner-1 .banner-error').count(), 0)
+        self.assertEqual([r["id"] for r in self.settings_state()["pending"]], retained)
+        self.assertEqual(self.page.locator("#needsBtn .n").inner_text(), "50")
+        self.assertEqual(self.page.locator('[data-action="toggle-pending"] .controls').inner_text(), "50")
+        self.page.locator('[data-action="toggle-pending"]').click()
+        self.assertEqual([r["id"] for r in self.settings_state()["reading"]], retained)
+        self.assertEqual(self.page.locator('[data-action^="notice:"]').count(), 50)
+        if not self.page.locator("#popover").is_visible():
+            self.page.locator("#mbIcon").click()
+        self.page.locator("#needsBtn").click()
+        self.assertEqual(self.page.locator('#popover [data-reminder]').count(), 50)
+
+    def test_collapsed_settings_reminders_update_without_navigation(self):
+        self.open(win="1", pane="activity")
+        pending = self.page.locator('[data-action="toggle-pending"]')
+        self.assertEqual(pending.get_attribute("aria-expanded"), "false")
+        original = len(self.settings_state()["pending"])
+        self.assertEqual(pending.locator(".controls").inner_text(), str(original))
+        self.page.evaluate("showNoticeScene('permission'); NoticeClock.pause('test', true)")
+        self.assertEqual(len(self.settings_state()["pending"]), original + 1)
+        self.assertEqual(pending.locator(".controls").inner_text(), str(original + 1))
+        self.assertFalse(self.settings_state()["pendingExpanded"])
+        self.assertIsNone(self.settings_state()["reading"])
+
+    def test_disabled_banners_still_publish_reminders_to_open_consumers(self):
+        self.open(win="1", pane="notifications")
+        self.page.locator('[data-control="notifications"]').uncheck()
+        self.page.locator('[data-action="nav:usage"]').click()
+        self.page.locator("#mbIcon").click()
+        original = len(self.settings_state()["pending"])
+        self.page.evaluate("showNoticeScene('permission')")
+        self.assertEqual(self.page.evaluate("S.banners.length + S.bannerQueue.length"), 0)
+        self.assertEqual(len(self.settings_state()["pending"]), original + 1)
+        self.assertEqual(self.page.locator("#needsBtn .n").inner_text(), str(original + 1))
+        self.assertEqual(self.page.locator('[data-action="toggle-pending"] .controls').inner_text(), str(original + 1))
+
+    def test_disabling_banners_stops_the_stack_queue_and_navigation_but_keeps_reminders(self):
+        for reduced_motion in ["reduce", "no-preference"]:
+            with self.subTest(reduced_motion=reduced_motion):
+                self.page.emulate_media(reduced_motion=reduced_motion)
+                self.open(win="1", pane="notifications")
+                self.page.evaluate("NoticeClock.pause('test', true); showNoticeBurst(false); showNoticeBurst(false); openBannerSource(3)")
+                retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+                self.assertEqual(self.page.evaluate("S.banners.length + S.bannerQueue.length"), 6)
+                self.assertEqual(self.page.evaluate("S.bannerNavigationID"), 3)
+                self.page.locator('[data-control="notifications"]').uncheck()
+                self.assertEqual(self.page.evaluate("S.banners.length + S.bannerQueue.length"), 0)
+                self.assertEqual(self.page.evaluate("NoticeClock.clocks.size"), 0)
+                self.assertIsNone(self.page.evaluate("S.bannerNavigationID"))
+                self.assertEqual(self.page.locator('[data-notice], .motion-exit.banner').count(), 0)
+                self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
+                self.assertEqual([r["id"] for r in self.settings_state()["pending"]], retained)
+                self.page.evaluate("closeBanner(1)")
+                self.page.wait_for_timeout(550)
+                self.page.locator('[data-control="notifications"]').check()
+                self.assertEqual(self.page.evaluate("S.banners.length + S.bannerQueue.length"), 0)
+                self.page.evaluate("showNoticeScene('stop')")
+                self.assertEqual(self.page.evaluate("S.banners.length"), 1)
+                self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
+
+    def test_expanded_settings_reminders_keep_reading_until_explicit_refresh(self):
+        self.open(win="1", pane="activity")
+        self.page.locator('[data-action="toggle-pending"]').click()
+        original = self.settings_state()["reading"]
+        self.page.locator('[data-action="refresh-reminders"]').focus()
+        self.page.locator('[data-action="refresh-reminders"]').evaluate("el => { window.readingButton = el; }")
+        self.page.evaluate("showNoticeScene('permission'); NoticeClock.pause('test', true)")
+        self.assertEqual(len(self.settings_state()["pending"]), len(original) + 1)
+        self.assertEqual(self.settings_state()["reading"], original)
+        self.assertEqual(self.page.locator('[data-action="toggle-pending"] .controls').inner_text(), str(len(original)))
+        self.assertEqual(self.page.locator('[data-action^="notice:"]').count(), len(original))
+        self.assertTrue(self.page.evaluate("window.readingButton.isConnected && window.readingButton === window.readingButton.getRootNode().activeElement"))
+        self.page.locator('[data-action="refresh-reminders"]').click()
+        self.assertEqual(len(self.settings_state()["reading"]), len(original) + 1)
+        self.assertEqual(self.page.locator('[data-action^="notice:"]').count(), len(original) + 1)
+
+    def test_full_queue_publishes_reminders_to_already_open_consumers(self):
+        self.open(win="1", pane="activity")
+        self.page.locator("#mbIcon").click()
+        self.page.evaluate("NoticeClock.pause('test', true); for (let i = 0; i < 50; i++) showNoticeScene('stop')")
+        original = self.page.evaluate("REMINDERS.map(r => r.id)")
+        banners = self.page.evaluate("[...S.banners, ...S.bannerQueue].map(n => n.id)")
+        self.assertEqual(len(banners), 50)
+        self.page.evaluate("showNoticeScene('permission')")
+        self.assertEqual(self.page.evaluate("REMINDERS.slice(1).map(r => r.id)"), original)
+        self.assertEqual(self.page.evaluate("[...S.banners, ...S.bannerQueue].map(n => n.id)"), banners)
+        self.assertEqual(len(self.settings_state()["pending"]), len(original) + 1)
+        self.assertEqual(self.page.locator("#needsBtn .n").inner_text(), str(len(original) + 1))
+        self.assertEqual(self.page.locator('[data-action="toggle-pending"] .controls').inner_text(), str(len(original) + 1))
+
+    def test_navigation_is_single_flight_and_feedback_belongs_to_each_card(self):
+        self.open()
+        self.page.evaluate("showNoticeScene('permission'); showNoticeScene('permission'); NoticeClock.pause('test',true); S.bannerNavigationDelay=650; S.bannerInjectFailure=true; openBannerSource(1)")
+        self.page.evaluate("openBannerSource(2); closeBanner(2)")
+        self.assertEqual(self.page.evaluate("S.bannerNavigationID"), 1)
+        self.page.wait_for_function("S.banners.find(n=>n.id===1).failure==='unavailable'")
+        self.page.evaluate("showNoticeScene('permission'); S.bannerNavigationOutcome='fallback'; openBannerSource(3)")
+        self.assertEqual(self.page.evaluate("S.banners.find(n=>n.id===1).failure"), "unavailable")
+        self.page.wait_for_function("S.banners.find(n=>n.id===3).failure==='fallback'")
+        self.assertEqual(self.page.locator(".banner-error").count(), 2)
+        self.page.evaluate("S.bannerNavigationDelay=3500; openBannerSource(1)")
+        self.page.wait_for_function("S.banners.find(n=>n.id===1).failure==='timedOut'")
+        self.page.wait_for_timeout(600)
+        self.assertEqual(self.page.evaluate("S.banners.find(n=>n.id===1).failure"), "timedOut")
+
+    def test_queue_expansion_pauses_all_reading_after_focus_and_hover_leave(self):
+        self.page.emulate_media(reduced_motion="no-preference")
+        self.open()
+        self.page.evaluate("showNoticeBurst(true); showNoticeBurst(false)")
+        self.page.locator("#bannerOverflow").click()
+        self.page.mouse.move(0, 0)
+        self.page.locator("#mbIcon").focus()
+        first = self.page.evaluate("[...NoticeClock.clocks.values()].map(c => c.left())")
+        self.page.wait_for_timeout(650)
+        later = self.page.evaluate("[...NoticeClock.clocks.values()].map(c => c.left())")
+        for a, b in zip(first, later):
+            self.assertAlmostEqual(a, b, delta=8)
+        self.assertTrue(self.page.evaluate("[...NoticeClock.clocks.values()].every(c => c.pauses.has('queueExpansion'))"))
+
+    def test_queued_attention_uses_its_reminder_source_before_and_after_promotion(self):
+        for language in ["zh", "en"]:
+            for scene in ["needsInput", "interrupted"]:
+                with self.subTest(language=language, scene=scene):
+                    self.open(lang=language)
+                    self.page.evaluate("showNoticeBurst(true); NoticeClock.pause('test', true)")
+                    self.page.evaluate("scene => showNoticeScene(scene)", scene)
+                    queued = self.page.evaluate("S.bannerQueue[0]")
+                    reminder = self.page.evaluate("id => REMINDERS.find(r => r.id === id)", queued["reminderID"])
+                    self.assertEqual(queued["host"], reminder["host"])
+                    self.assertEqual(queued["project"], reminder["proj"])
+                    self.page.locator("#bannerOverflow").click()
+                    row = self.page.locator(".banner-queue-row")
+                    self.assertIn(reminder["host"], row.inner_text())
+                    self.assertIn(reminder["proj"], row.inner_text())
+                    self.page.locator('[data-banner-close="1"]').click()
+                    banner = self.page.locator(f'#banner-{queued["id"]}')
+                    self.assertIn(reminder["host"], banner.inner_text())
+                    self.assertIn(reminder["proj"], banner.inner_text())
+
+    def test_resize_preserves_fifo_budget_and_zero_card_entry_opens_panel(self):
+        self.page.emulate_media(reduced_motion="no-preference")
+        self.open()
+        self.page.evaluate("showNoticeBurst(true); showNoticeBurst(false)")
+        self.page.wait_for_function("[...NoticeClock.clocks.values()].every(c => !c.pauses.has('entrance'))")
+        self.page.wait_for_timeout(500)
+        self.page.evaluate("NoticeClock.pause('test',true)")
+        saved = self.page.evaluate("NoticeClock.clocks.get(2).left()")
+        self.page.set_viewport_size({"width":1300, "height":300})
+        self.page.wait_for_function("S.banners.length === 1")
+        self.assertEqual(self.page.evaluate("S.banners.map(n => n.id)"), [1])
+        self.assertEqual(self.page.evaluate("S.bannerQueue.map(n => n.id)"), [2, 3, 4, 5, 6])
+        self.page.wait_for_timeout(500)
+        self.assertAlmostEqual(self.page.evaluate("NoticeClock.clocks.get(2).left()"), saved, delta=8)
+        self.page.set_viewport_size({"width":1300, "height":1000})
+        self.page.wait_for_function("S.banners.length === 3")
+        self.assertAlmostEqual(self.page.evaluate("NoticeClock.clocks.get(2).left()"), saved, delta=8)
+        self.assertEqual(self.page.locator("#banner-2").evaluate("n => n.getAnimations().length"), 0)
+        self.page.set_viewport_size({"width":1300, "height":160})
+        self.page.wait_for_function("S.banners.length === 0")
+        self.assertTrue(self.page.locator("#bannerOverflow").is_visible())
+        self.page.locator("#bannerOverflow").click()
+        self.assertTrue(self.page.evaluate("S.popover && S.needs === 'list'"))
+
+    def test_stack_escape_clears_visible_and_waiting_but_keeps_reminders(self):
+        self.open()
+        self.page.evaluate("showNoticeBurst(true); showNoticeBurst(false)")
+        retained = self.page.evaluate("REMINDERS.map(r => r.id)")
+        self.page.locator('[data-banner-close="2"]').focus()
+        self.page.keyboard.press("Escape")
+        self.assertEqual(self.page.evaluate("S.banners.length + S.bannerQueue.length"), 0)
+        self.assertEqual(self.page.evaluate("REMINDERS.map(r => r.id)"), retained)
+        self.assertEqual(self.page.locator("[data-notice]").count(), 0)
+
+    def test_turning_reduce_motion_on_during_cascade_removes_delay_and_starts_reading(self):
+        self.page.emulate_media(reduced_motion="no-preference")
+        self.open()
+        initial = self.page.evaluate("""() => {
+            showNoticeBurst(true);
+            return [...document.querySelectorAll('[data-notice]')].map(n => ({
+                delay:n.getAnimations()[0].effect.getTiming().delay,
+                fill:n.getAnimations()[0].effect.getTiming().fill
+            }));
+        }""")
+        self.assertEqual([s["delay"] for s in initial], [0, 90, 180])
+        self.assertTrue(all(s["fill"] == "backwards" for s in initial))
+        self.page.emulate_media(reduced_motion="reduce")
+        self.page.wait_for_function("Motion.reduced && [...NoticeClock.clocks.values()].every(c=>!c.pauses.has('entrance'))")
+        self.assertEqual(self.page.evaluate("document.getAnimations().length"), 0)
+        self.assertTrue(self.page.locator("[data-notice] .track > i").evaluate_all("nodes=>nodes.every(n=>getComputedStyle(n).opacity==='0.3')"))
+
+    def test_veil_only_changes_background_and_decoration_and_exit_keeps_its_layer(self):
+        for theme in ["light", "dark"]:
+            self.open(th=theme)
+            self.page.evaluate("showNoticeScene('permission'); showNoticeScene('permission'); showNoticeScene('permission')")
+            styles = self.page.locator("[data-notice]").evaluate_all("""nodes => nodes.map(n => ({
+                veil:getComputedStyle(n,'::before').opacity,
+                text:getComputedStyle(n.querySelector('.cap-text .p')).color,
+                textOpacity:getComputedStyle(n.querySelector('.cap-text .p')).opacity,
+                actionOpacity:getComputedStyle(n.querySelector('[data-banner-action]')).opacity,
+                trackOpacity:getComputedStyle(n.querySelector('.track > i')).opacity
+            }))""")
+            self.assertEqual([s["veil"] for s in styles], ["0", "0.2", "0.32"])
+            self.assertEqual(len({s["text"] for s in styles}), 1)
+            self.assertTrue(all(s["textOpacity"] == s["actionOpacity"] == "1" for s in styles))
+            self.assertTrue(all(s["trackOpacity"] == "0.3" for s in styles))
+        self.page.emulate_media(reduced_motion="no-preference")
+        self.open()
+        self.page.evaluate("showNoticeBurst(true)")
+        self.page.wait_for_function("[...document.querySelectorAll('[data-notice]')].every(n=>!n.getAnimations().length)")
+        self.page.evaluate("closeBanner(2)")
+        self.assertEqual(self.page.locator(".motion-exit.banner").evaluate("n=>getComputedStyle(n,'::before').opacity"), "0.2")
 
 
 if __name__ == "__main__":

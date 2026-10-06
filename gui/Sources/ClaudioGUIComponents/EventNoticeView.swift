@@ -1,166 +1,205 @@
-import ClaudioCore
 import ClaudioGUICore
 import ClaudioLocalization
 import SwiftUI
 
-/// The body and primary button share one action; close and the reading track stay independent.
+/// One stack aggregates hover, keyboard and queue focus. Cards return stable display IDs while
+/// all source actions remain version captured. The retained native controller owns geometry.
 @MainActor
 public struct EventNoticeView: View {
     @ObservedObject private var model: EventNoticeModel
     @ObservedObject private var languageStore: ClaudioPreferences
     @ObservedObject private var navigation: SessionNavigationCoordinator
+    @ObservedObject private var geometry: EventNoticeStackGeometry
     private let eventAnimations: EventAnimationResources
     @ObservedObject private var animationVisibility: EventAnimationVisibility
     private let onViewSource: @MainActor (EventNoticeAction) -> Void
-    private let onOpenSourceApplication: @MainActor (EventNoticeAction) -> Void
+    private let onNavigate: @MainActor (EventNoticeAction, UUID) -> Void
+    private let onDismiss: @MainActor (UUID) -> Void
     private let onClose: @MainActor () -> Void
-    @Environment(\.colorScheme) private var colorScheme
+    private let onQueueInteraction: @MainActor () -> Void
+    private let onMeasurements: @MainActor ([String: Double]) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @FocusState private var focusedControl: String?
-    @State private var bodyHasFocus = false
+    @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var queueFocused: Bool
+    @State private var focusedCards: Set<UUID> = []
+    // Only the last painted caption key, for the short inert retirement frame. Navigation
+    // results remain solely owned by the coordinator. This inert render snapshot contains no
+    // source contents and cannot drive navigation.
+    @State private var paintedFeedback: [UUID: ClaudioL10nKey] = [:]
 
     public init(
         model: EventNoticeModel, languageStore: ClaudioPreferences,
         navigation: SessionNavigationCoordinator? = nil,
         eventAnimations: EventAnimationResources? = nil,
         animationVisibility: EventAnimationVisibility? = nil,
+        geometry: EventNoticeStackGeometry? = nil,
         onViewSource: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onOpenSourceApplication: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onCopySessionID: @escaping @MainActor (EventNoticeAction) -> Bool = { _ in false },
-        onClose: @escaping @MainActor () -> Void = {}
+        onNavigate: (@MainActor (EventNoticeAction, UUID) -> Void)? = nil,
+        onDismiss: (@MainActor (UUID) -> Void)? = nil,
+        onQueueInteraction: (@MainActor () -> Void)? = nil,
+        onMeasurements: @escaping @MainActor ([String: Double]) -> Void = { _ in },
+        onClose: (@MainActor () -> Void)? = nil
     ) {
         self.model = model
         self.languageStore = languageStore
         self.navigation = navigation ?? SessionNavigationCoordinator(model: model)
         self.eventAnimations = eventAnimations ?? EventAnimationResources()
         self.animationVisibility = animationVisibility ?? EventAnimationVisibility()
+        self.geometry = geometry ?? EventNoticeStackGeometry()
         self.onViewSource = onViewSource
-        self.onOpenSourceApplication = onOpenSourceApplication
-        self.onClose = onClose
+        self.onNavigate = onNavigate ?? { action, _ in onOpenSourceApplication(action) }
+        self.onDismiss = onDismiss ?? { model.dismissBanner(id: $0) }
+        self.onClose = onClose ?? { model.dismissStack() }
+        self.onQueueInteraction =
+            onQueueInteraction ?? {
+                if model.stackSnapshot.visible.isEmpty {
+                    if let action = model.stackSnapshot.queued.first?.record.action {
+                        onViewSource(action)
+                    }
+                } else {
+                    model.setQueueExpanded(!model.stackSnapshot.isQueueExpanded)
+                }
+            }
+        self.onMeasurements = onMeasurements
     }
 
+    /// Kept for older single-card harness callers. Production uses complete measured heights.
     public static func preferredHeight(
         for snapshot: EventNoticeModelSnapshot, navigation: SessionNavigationCoordinator? = nil
     ) -> CGFloat {
         let base: CGFloat = snapshot.current?.kind.isAttention == true ? 75 : 67
         guard let record = snapshot.current else { return base }
-        let hasFeedback =
-            EventNoticeProjection.navigationFeedbackKey(
-                for: record, action: navigation?.action, result: navigation?.result ?? .idle) != nil
-        return base + (hasFeedback ? 55 : 0)
+        return base
+            + (EventNoticeProjection.navigationFeedbackKey(
+                for: record, action: record.action,
+                result: navigation?.result(for: record.action) ?? .idle)
+                == nil ? 0 : 55)
     }
 
     public var body: some View {
-        let snapshot = model.bannerSnapshot
+        let snapshot = model.stackSnapshot
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            if let record = snapshot.current {
-                VStack(alignment: .leading, spacing: 10) {
-                    EventNoticeBannerContent(
-                        event: record.event,
-                        title: EventNoticeProjection.primaryLine(
-                            for: record, language: languageStore.language),
-                        subtitle: EventNoticeProjection.secondaryLine(
-                            for: record, language: languageStore.language, now: context.date),
-                        action: EventAnimationTimeline.action(for: record.event, kind: record.kind),
-                        preferences: languageStore.eventAnimation, resources: eventAnimations,
-                        reading: snapshot.readingTime
-                            ?? EventNoticeReadingTime(
-                                sampledUptime: model.presentationUptime, remaining: 0,
-                                isPaused: true, budget: 4),
-                        isVisible: animationVisibility.isVisible
-                            && (snapshot.phase == .entering || snapshot.phase == .visible),
-                        uptime: { model.presentationUptime },
-                        onActivate: { activate(record) },
-                        isNavigationEnabled: canActivate(record),
-                        navigationHint: actionTitle(record),
-                        onBodyFocusChange: { focused in
-                            bodyHasFocus = focused
-                            model.setKeyboardFocused(focused || focusedControl != nil)
+            VStack(spacing: EventNoticeStackLayout.spacing) {
+                if !snapshot.visible.isEmpty || !snapshot.exiting.isEmpty {
+                    VStack(spacing: EventNoticeStackLayout.spacing) {
+                        ForEach(snapshot.visible) { item in
+                            card(item, now: context.date, measuring: false)
                         }
-                    ) {
-                        if record.kind.isAttention {
-                            Button(actionTitle(record)) {
-                                activate(record)
-                            }
-                            .buttonStyle(EventNoticeActionStyle(event: record.event))
-                            .disabled(!canActivate(record))
-                            .focused($focusedControl, equals: "open")
-                            .accessibilityIdentifier(
-                                "event-notice.open-source.\(record.id.uuidString)")
-                        }
-                        Button(l10n.text(.commonClose), systemImage: "xmark", action: onClose)
-                            .labelStyle(.iconOnly).buttonStyle(.plain)
-                            .frame(minWidth: 28, minHeight: 28)
-                            .focused($focusedControl, equals: "close")
-                            .accessibilityIdentifier("event-notice.close")
                     }
-                    if let feedback = feedback(record) {
-                        Text(feedback).font(.caption).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("event-notice.open-feedback")
+                    .overlay(alignment: .topLeading) {
+                        ForEach(snapshot.exiting) { item in
+                            card(item, now: context.date, measuring: false)
+                                .offset(y: item.positionY)
+                        }
                     }
                 }
-                .padding(14)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .background(ClaudioTheme.panelGradient(colorScheme))
-                .overlay(alignment: .bottom) {
-                    if let reading = snapshot.readingTime {
-                        EventNoticeReadingTrack(
-                            reading: reading, event: record.event, reduceMotion: reduceMotion,
-                            uptime: { model.presentationUptime })
-                    }
+                if !snapshot.queued.isEmpty {
+                    EventNoticeQueueEntry(
+                        snapshot: snapshot, language: languageStore.language,
+                        action: onQueueInteraction
+                    )
+                    .focused($queueFocused)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.panel))
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel(
-                    EventNoticeProjection.accessibilityLabel(
-                        for: snapshot, language: languageStore.language, now: context.date)
-                )
-                .accessibilityIdentifier("event-notice.capsule")
+                if snapshot.capacityHintCount > 0 {
+                    Text(
+                        ClaudioL10n(language: languageStore.language).format(
+                            .eventNoticeCapacityHint, snapshot.capacityHintCount)
+                    )
+                    .font(.caption).fixedSize(horizontal: false, vertical: true)
+                    .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        ClaudioTheme.panel(colorScheme), in: RoundedRectangle(cornerRadius: 13)
+                    )
+                    .noticeHeight("capacity-hint")
+                    .accessibilityIdentifier("event-notice.capacity-hint")
+                }
+                if snapshot.isQueueExpanded, geometry.queueHeight > 0 {
+                    EventNoticeQueueList(
+                        snapshot: snapshot, language: languageStore.language, now: context.date,
+                        height: geometry.queueHeight, uptime: { model.presentationUptime })
+                }
             }
+            .frame(width: geometry.width, alignment: .top)
+            .background(alignment: .top) {
+                // Measure the full FIFO prefix before admitting it to a small screen. Hidden
+                // measurement copies have no focus, hit testing or accessibility eligibility.
+                VStack(spacing: 0) {
+                    ForEach(snapshot.candidates) { item in
+                        card(item, now: context.date, measuring: true)
+                    }
+                    EventNoticeQueueEntry(
+                        snapshot: snapshot, language: languageStore.language, action: {})
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
         }
-        .onAppear { model.setReducedMotion(reduceMotion) }
+        .onPreferenceChange(EventNoticeHeightPreference.self, perform: onMeasurements)
+        .onAppear {
+            model.setReducedMotion(reduceMotion)
+            rememberPaintedFeedback(model.stackSnapshot)
+        }
+        .onChange(of: snapshot) { rememberPaintedFeedback($0) }
+        .onChange(of: navigation.feedback) { _ in rememberPaintedFeedback(model.stackSnapshot) }
         .onChange(of: reduceMotion) { model.setReducedMotion($0) }
         .onHover { model.setHovering($0) }
-        .onChange(of: focusedControl) { model.setKeyboardFocused($0 != nil || bodyHasFocus) }
+        .onChange(of: queueFocused) { _ in synchronizeFocus() }
+        .onChange(of: snapshot.visible.map(\.id)) { ids in
+            focusedCards.formIntersection(Set(ids))
+            synchronizeFocus()
+        }
         .onDisappear {
-            model.setHovering(false); model.setKeyboardFocused(false)
+            focusedCards.removeAll()
+            model.setHovering(false)
+            model.setKeyboardFocused(false)
         }
         .onExitCommand(perform: onClose)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(ClaudioL10n(language: languageStore.language).text(.eventNoticeStack))
+        .accessibilityIdentifier("event-notice.stack")
+        .accessibilityHidden(
+            snapshot.visible.isEmpty && snapshot.queued.isEmpty && snapshot.capacityHintCount == 0
+        )
     }
 
-    private var l10n: ClaudioL10n { ClaudioL10n(language: languageStore.language) }
-
-    private func canActivate(_ record: EventNoticeRecord) -> Bool {
-        EventNoticeProjection.canNavigate(record, result: navigation.result)
+    private func card(_ item: EventNoticeBannerItem, now: Date, measuring: Bool) -> some View {
+        EventNoticeCard(
+            item: item, preferences: languageStore, navigation: navigation,
+            resources: eventAnimations, isVisible: animationVisibility.isVisible,
+            measuring: measuring, now: now, uptime: { model.presentationUptime },
+            activate: { activate(item) }, dismiss: { onDismiss(item.id) },
+            focusChanged: { focused in
+                if focused { focusedCards.insert(item.id) } else { focusedCards.remove(item.id) }
+                synchronizeFocus()
+            }, retiredFeedback: paintedFeedback[item.id])
     }
 
-    private func activate(_ record: EventNoticeRecord) {
-        guard canActivate(record), let action = record.action, model.isCurrent(action) else {
-            return
+    private func rememberPaintedFeedback(_ snapshot: EventNoticeStackSnapshot) {
+        let retained = Set((snapshot.visible + snapshot.exiting).map(\.id))
+        var updated = paintedFeedback.filter { retained.contains($0.key) }
+        for item in snapshot.visible {
+            updated[item.id] = EventNoticeProjection.navigationFeedbackKey(
+                for: item.record, action: item.record.action,
+                result: navigation.result(for: item.record.action))
         }
-        if record.sourceApplication != nil {
-            onOpenSourceApplication(action)
+        if updated != paintedFeedback { paintedFeedback = updated }
+    }
+
+    private func synchronizeFocus() {
+        model.setKeyboardFocused(!focusedCards.isEmpty || queueFocused)
+    }
+
+    private func activate(_ item: EventNoticeBannerItem) {
+        guard item.isInteractive, !navigation.isNavigating,
+            let action = item.record.action, model.isCurrent(action)
+        else { return }
+        if item.record.sourceApplication != nil {
+            onNavigate(action, item.id)
         } else {
             onViewSource(action)
         }
     }
-
-    private func feedback(_ record: EventNoticeRecord) -> String? {
-        guard
-            let key = EventNoticeProjection.navigationFeedbackKey(
-                for: record, action: navigation.action, result: navigation.result)
-        else { return nil }
-        return l10n.text(key)
-            + (record.isActionable ? "" : " " + l10n.text(.eventNoticeRetryAtNeedsYou))
-    }
-
-    private func actionTitle(_ record: EventNoticeRecord) -> String {
-        if record.isActionable, navigation.action == record.action,
-            [.failed, .unavailable, .timedOut].contains(navigation.result)
-        {
-            return l10n.text(.commonRetry)
-        }
-        return EventNoticeProjection.actionTitle(for: record, language: languageStore.language)
-    }
-
 }

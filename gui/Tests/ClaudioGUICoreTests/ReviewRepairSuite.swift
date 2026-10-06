@@ -156,13 +156,15 @@ func runReviewRepairSuites() async {
         }
         let banner = source("gui/Sources/ClaudioGUI/EventNoticeWindowController.swift")
         expect(
-            banner.contains("for: snapshot ?? model.bannerSnapshot, navigation: navigation)"),
-            "窗口测量注入共享导航反馈")
-        expect(
-            banner.contains("owner: navigationOwner")
+            banner.contains("EventNoticeStackLayout.resolve(")
                 && banner.contains(
-                    "func close() {\n        navigation.cancelSourceApplication(owner: navigationOwner)"
-                ),
+                    "onMeasurements: { [weak self] in self?.receiveMeasurements($0) }")
+                && banner.contains("navigation.$feedback"),
+            "窗口使用完整卡片测量并响应共享的逐动作导航反馈")
+        expect(
+            banner.contains("owner: owner")
+                && banner.contains("navigation.cancelSourceApplication(owner: id)")
+                && banner.contains("model.dismissBanner(id: id)"),
             "横幅关闭只取消自己发起的请求")
         let diagnostics = source(
             "gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift")
