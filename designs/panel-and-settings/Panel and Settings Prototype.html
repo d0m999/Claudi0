@@ -4552,12 +4552,12 @@ function localizeShell(){
  for(const o of $('preview-scene').options){const v=scenes.find(s=>s.id===o.value);if(v)o.text=T(v.zh,v.en);}
 }
 function render(){
- const old=document.activeElement;const focus=old&&$('page-content').contains(old)?{id:old.id,action:old.dataset.action,control:old.dataset.control}:null;
+ const old=document.activeElement;const focusRoot=old&&$('settings-nav').contains(old)?$('settings-nav'):$('page-content');const focus=old&&focusRoot.contains(old)?{id:old.id,action:old.dataset.action,control:old.dataset.control}:null;
  localizeShell();renderNav();$('page-title').textContent=title();
  $('detail-back').hidden=false;$('detail-back').setAttribute('aria-label',T('返回上一级','Back to parent'));
  const views={events:renderEvents,sounds:renderSounds,integrations:renderIntegrations,notifications:renderNotifications,general:renderGeneral,shortcuts:renderShortcuts,usage:renderUsage,about:renderAbout};
  $('page-content').innerHTML=views[S.page]();
- if(focus){const target=focus.id?$(focus.id):focus.action?$('page-content').querySelector(`[data-action="${CSS.escape(focus.action)}"]`):focus.control?$('page-content').querySelector(`[data-control="${CSS.escape(focus.control)}"]`):null;if(target&&!target.disabled)target.focus({preventScroll:true});else focusReason();}
+ if(focus){const target=focus.id?$(focus.id):focus.action?focusRoot.querySelector(`[data-action="${CSS.escape(focus.action)}"]`):focus.control?focusRoot.querySelector(`[data-control="${CSS.escape(focus.control)}"]`):null;if(target&&!target.disabled)target.focus({preventScroll:true});else focusReason();}
 }
 function libraryStatus(){
  if(S.library==='ready')return '';
@@ -5127,6 +5127,7 @@ window.prototypeReview={getState:()=>JSON.parse(JSON.stringify(S)),setScene,expi
 
 // Throwaway navigation demo: browsing identity and reading position only.
 const browsing={entries:[],cursor:-1,version:0};
+function clearBrowsingHistory(){browsing.entries=[];browsing.cursor=-1;browsing.version++;}
 const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action});
 const same=(a,b)=>a&&b&&['page','detail','scope','pack','host','directory'].every(k=>a[k]===b[k]);
 function recordPosition(p,replace=false){if(replace&&browsing.cursor>=0)browsing.entries[browsing.cursor]=p;else{browsing.entries.splice(browsing.cursor+1);browsing.entries.push(p);if(browsing.entries.length>64)browsing.entries.shift();browsing.cursor=browsing.entries.length-1;}browsing.version++;}
@@ -5141,7 +5142,7 @@ $('detail-back').onclick=()=>traverse(-1);$('detail-forward').onclick=()=>traver
 document.addEventListener('click',e=>{if(e.target.closest('[data-action="animation-detail"]'))navigate('notifications','animation');});
 $('history-walkthrough').onclick=()=>{browsing.entries=[];browsing.cursor=-1;navigate('notifications');navigate('notifications','animation');navigate('general');traverse(-1);traverse(-1);traverse(1);};
 $('history-invalidate').onclick=()=>{if(S.page==='sounds')S.packs=S.packs.filter(p=>p.id!==S.pack);else if(S.scope!=='default')S.scopes=S.scopes.filter(p=>p.id!==S.scope);$('page-content').innerHTML=reason(T('捕获的目标已不可用。历史仍可前后遍历。','The captured target is unavailable. Back and Forward remain available.'),'error','target-unavailable');drawNavigation();};
-const closeOriginal=closeWindow;closeWindow=function(minimized=false){closeOriginal(minimized);if(!minimized){browsing.entries=[];browsing.cursor=-1;browsing.version++;}drawNavigation();};
+const closeOriginal=closeWindow;closeWindow=function(minimized=false){closeOriginal(minimized);if(!minimized)clearBrowsingHistory();drawNavigation();};
 recordPosition(position());render();
 window.prototypeReview.navigation={getState:()=>structuredClone(browsing),navigate,traverse};
 
@@ -5161,7 +5162,7 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
   const renderSettings=render;
   function changed(){if(bridgeReady&&!projecting)publish(S);}
   render=function(){renderSettings();changed();};
-  closeWindow=function(minimized=false){cleanup();if(!minimized){browsing.entries=[];browsing.cursor=-1;browsing.version++;}drawNavigation();onClose();};
+  closeWindow=function(minimized=false){cleanup();if(!minimized)clearBrowsingHistory();drawNavigation();onClose(minimized);};
   // Native dialogs own cancellation and focus. Escape backs out of details before closing the window.
   root.addEventListener('keydown',e=>{
     e.settingsEscapeCanClose=e.key==='Escape'&&!$('sheet').open&&!S.detail&&S.generation!=='busy';
@@ -5181,7 +5182,7 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
       if(count&&!S.pendingExpanded)count.firstChild.textContent=String(values.length);
     },
     focusTitle:()=>$('page-title').focus({preventScroll:true}),
-    suspend:()=>{cleanup();wasVisible=false;},
+    suspend:(minimized=false)=>{cleanup();if(!minimized)clearBrowsingHistory();drawNavigation();wasVisible=false;},
     selectScope,
     applyAIDeepLink,
     openWorkspace:id=>{
@@ -5255,8 +5256,8 @@ if(document.getElementById('window').attachShadow){
 render();
 
 /* 关闭设置窗口 → 面板回到菜单栏下并把焦点还给齿轮（handback 合同可见） */
-function closeWindowWithHandback() {
-  if (MacSettings) MacSettings.suspend();
+function closeWindowWithHandback(minimized) {
+  if (MacSettings) MacSettings.suspend(minimized === true);
   var returnToPanel = S.returnToPanel; S.returnToPanel = false;
   S.prefs.recording = null;
   endSoundsSession(); S.confirmation = null; S.workspaceForm = null;

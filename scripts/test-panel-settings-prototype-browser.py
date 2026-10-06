@@ -585,6 +585,66 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             self.assertEqual(self.settings_state()["scope"],"claudio")
             self.assertTrue(self.page.locator(f'[data-action="nav:{page}"]').evaluate("el => el === el.getRootNode().activeElement"))
 
+    def test_settings_close_paths_clear_the_window_history_before_reopening(self):
+        for close_path in ["outer_escape", "window_button"]:
+            with self.subTest(close_path=close_path):
+                self.open(win="1", pane="general")
+                original_scopes = self.settings_state()["scopes"]
+                self.page.locator('[data-action="nav:notifications"]').click()
+                self.page.locator('[data-action="nav:sounds"]').click()
+                self.page.locator("#detail-back").click()
+                before = self.page.evaluate("MacSettings.review.navigation.getState()")
+                self.assertGreater(before["cursor"], 0)
+                self.assertFalse(self.page.locator("#detail-forward").is_disabled())
+                if close_path == "outer_escape":
+                    self.page.locator("#mbIcon").focus()
+                    self.page.keyboard.press("Escape")
+                else:
+                    self.page.locator("#window-close").click()
+                self.assertFalse(self.page.locator("#window").is_visible())
+                closed = self.page.evaluate("MacSettings.review.navigation.getState()")
+                self.assertEqual(closed["entries"], [])
+                self.assertEqual(closed["cursor"], -1)
+                self.assertGreater(closed["version"], before["version"])
+                self.assertEqual(self.settings_state()["scopes"], original_scopes)
+                self.page.locator("#viewWindow").click()
+                reopened = self.page.evaluate("MacSettings.review.navigation.getState()")
+                self.assertEqual(len(reopened["entries"]), 1)
+                self.assertEqual(reopened["cursor"], 0)
+                self.assertTrue(self.page.locator("#detail-back").is_disabled())
+                self.assertTrue(self.page.locator("#detail-forward").is_disabled())
+
+    def test_background_host_completion_keeps_sidebar_focus_and_arrow_navigation(self):
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="integrations", lang=language)
+                self.page.locator("#demo-host-update").click()
+                self.assertEqual(next(h for h in self.settings_state()["hosts"] if h["id"] == "codex")["maintenance"], "recovering")
+                sidebar = self.page.locator('[data-action="nav:usage"]')
+                sidebar.click()
+                self.assertTrue(sidebar.evaluate("el => el === el.getRootNode().activeElement"))
+                self.page.wait_for_function("!MacSettings.getState().hosts.find(h => h.id === 'codex').maintenance")
+                self.assertTrue(sidebar.evaluate("el => el === el.getRootNode().activeElement"))
+                self.page.keyboard.press("ArrowDown")
+                self.assertEqual(self.settings_state()["page"], "about")
+                self.assertTrue(self.page.locator('[data-action="nav:about"]').evaluate("el => el === el.getRootNode().activeElement"))
+
+    def test_settings_minimization_keeps_the_window_history(self):
+        self.open(win="1", pane="general")
+        self.page.locator('[data-action="nav:notifications"]').click()
+        self.page.locator('[data-action="nav:sounds"]').click()
+        self.page.locator("#detail-back").click()
+        before = self.page.evaluate("MacSettings.review.navigation.getState()")
+        self.page.locator("#window-minimize").click()
+        self.assertFalse(self.page.locator("#window").is_visible())
+        self.assertEqual(self.page.evaluate("MacSettings.review.navigation.getState()"), before)
+        self.page.locator("#viewWindow").click()
+        reopened = self.page.evaluate("MacSettings.review.navigation.getState()")
+        self.assertEqual(reopened["cursor"], before["cursor"])
+        self.assertEqual(len(reopened["entries"]), len(before["entries"]))
+        self.assertFalse(self.page.locator("#detail-forward").is_disabled())
+
+
     def test_latest_integrations_details_diagnostics_and_history_are_in_main_file(self):
         self.open(win="1",pane="integrations")
         self.assertEqual(self.page.locator('[data-control^="host-enabled:"]').count(),3)
