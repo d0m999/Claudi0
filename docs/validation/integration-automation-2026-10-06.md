@@ -4,6 +4,9 @@
 规格：[PLAN-INTEGRATION-AUTOMATION.md](../../plan/PLAN-INTEGRATION-AUTOMATION.md)；
 合同：[ADR 0025](../adr/0025-automatically-maintain-explicit-host-intent.md)。
 
+后续 GUI 阅读器修复与串行全量通过的结果见
+[事件阅读器回归修复记录](gui-event-reader-repair-2026-10-06.md)。本文保留首次实现时的验证结果。
+
 ## 实现与来源
 
 - 共享持久意愿、首次/后续安装迁移、独立 GUI 运行身份和同步短期发布许可已实现。

@@ -265,6 +265,18 @@ if CommandLine.arguments.contains("--focus-scope-review") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--event-reader") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runEventNoticeReaderSuites()
+        print("Event reader: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()

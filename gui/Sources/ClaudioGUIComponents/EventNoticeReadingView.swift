@@ -47,14 +47,14 @@ public struct EventNoticeReadingView: View {
                         selected = nil
                         model.refreshReading()
                     }
-                    .accessibilityIdentifier("event-notice.refresh")
+                    .eventReaderActionIdentity("event-notice.refresh")
                 }
                 if let record = selectedRecord {
                     Button(l10n.text(.eventNoticeBack), systemImage: "chevron.left") {
                         navigation.cancelSourceApplication(owner: navigationOwner)
                         selected = nil
                     }
-                    .accessibilityIdentifier("event-notice.back")
+                    .eventReaderActionIdentity("event-notice.back")
                     detail(record, now: context.date)
                 } else {
                     if model.readingSnapshot.records.isEmpty {
@@ -89,7 +89,7 @@ public struct EventNoticeReadingView: View {
                         }
                         .buttonStyle(.plain).disabled(record.action == nil)
                         .accessibilityHint(record.isExpired ? l10n.text(.eventNoticeExpired) : "")
-                        .accessibilityIdentifier("event-notice.recent.\(record.id.uuidString)")
+                        .eventReaderActionIdentity("event-notice.recent.\(record.id.uuidString)")
                     }
                 }
                 if model.readingSnapshot.droppedCount > 0 {
@@ -143,13 +143,15 @@ public struct EventNoticeReadingView: View {
                 }
                 if let session = record.sessionID {
                     Text(session).font(.system(.caption, design: .monospaced)).textSelection(
-                        .enabled)
+                        .enabled
+                    )
+                    .eventReaderTestProbe("event-notice.session-id", value: session)
                     Button(l10n.text(.eventNoticeCopySession)) {
                         guard let action = record.action else { return }
                         copyResult = copySession(action)
                     }
                     .disabled(!record.isActionable)
-                    .accessibilityIdentifier("event-notice.copy-session")
+                    .eventReaderActionIdentity("event-notice.copy-session")
                 }
                 if record.sourceApplication != nil {
                     Button(
@@ -165,7 +167,7 @@ public struct EventNoticeReadingView: View {
                             owner: navigationOwner)
                     }
                     .disabled(!EventNoticeProjection.canNavigate(record, result: navigation.result))
-                    .accessibilityIdentifier("event-notice.reader.open-source")
+                    .eventReaderActionIdentity("event-notice.reader.open-source")
                 }
                 if let key = EventNoticeProjection.navigationFeedbackKey(
                     for: record, action: navigation.action, result: navigation.result)
@@ -183,7 +185,7 @@ public struct EventNoticeReadingView: View {
                         selected = nil
                     }
                     .frame(minHeight: 28).disabled(!record.isActionable)
-                    .accessibilityIdentifier("event-notice.remove")
+                    .eventReaderActionIdentity("event-notice.remove")
                 }
             }
         }
