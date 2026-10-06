@@ -53,6 +53,17 @@ private func makeDualHostDoctorFixture(under root: URL) -> DualHostDoctorFixture
         at: codexHooks.deletingLastPathComponent(), withIntermediateDirectories: true)
     try! FileManager.default.createDirectory(
         at: workBuddySettings.deletingLastPathComponent(), withIntermediateDirectories: true)
+    let intents = HostIntegrationIntentStore(
+        configFile: claudioRoot.appendingPathComponent("config.json"),
+        lockFile: claudioRoot.appendingPathComponent("config.lock"))
+    writeFixture("{}", to: intents.configFile)
+    _ = try! intents.migrate(
+        installedSurfaces: Set(HostIntegrationManager.automaticHosts.map(\.surfaceID))
+    ).get()
+    _ = try! HostGUIRunRegistry(
+        file: claudioRoot.appendingPathComponent("gui-run.json"),
+        authorizationLockFile: intents.authorizationLockFile
+    ).register().get()
     return DualHostDoctorFixture(
         claudioRoot: claudioRoot,
         claudioBinary: claudioRoot.appendingPathComponent("bin/claudio"),

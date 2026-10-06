@@ -458,6 +458,24 @@ public enum HostOperationState: Codable, Sendable, Equatable {
     case failed(reason: String)
 }
 
+extension HostIntegrationSnapshot {
+    /// GUI, CLI and doctor share the same durable intent and reception eligibility facts.
+    func projectingAuthorization(_ authorization: HostEventAuthorization) -> Self {
+        var result = self
+        switch authorization.intents.read() {
+        case .success(let intents):
+            result.intent = intents[host.surfaceID]
+            result.intentUnavailable = false
+        case .failure:
+            result.intent = nil
+            result.intentUnavailable = true
+        }
+        let token = authorization.capture(surface: host.surfaceID)
+        result.eventReceptionEligible = token != nil && token?.intent == result.intent
+        return result
+    }
+}
+
 /// UI、CLI 与 doctor 共用的宿主事实快照。
 public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
     public let host: HostID

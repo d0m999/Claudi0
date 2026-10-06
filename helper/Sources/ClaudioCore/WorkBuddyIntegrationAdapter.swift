@@ -81,7 +81,7 @@ public struct WorkBuddyIntegrationAdapter: HostIntegrationAdapter {
                     == scopeFingerprint
                 ? activeID : nil
             do {
-                try ensurePrivateDirectoryTree(
+                try ensurePrivateDirectoryExists(
                     at: environment.settingsFile.deletingLastPathComponent())
             } catch { return .failure(.configuration(reason: "WorkBuddy 配置目录不可写")) }
             let transaction = ConfigFileTransaction(

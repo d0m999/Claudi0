@@ -546,15 +546,21 @@ public func hostIntegrationDoctorResults(
             scopeFingerprint: environment.workBuddyScopeFingerprint,
             availability: environment.workBuddyAvailability),
         runtime: runtime)
-    return [
-        doctorHostResult(snapshot: claude),
-        doctorHostResult(snapshot: codex),
-        doctorHostResult(snapshot: workBuddy),
-    ]
+    let root = URL(fileURLWithPath: environment.claudioRoot, isDirectory: true)
+    let intents = HostIntegrationIntentStore(
+        configFile: root.appendingPathComponent("config.json"),
+        lockFile: root.appendingPathComponent("config.lock"))
+    let authorization = HostEventAuthorization(
+        intents: intents,
+        runs: HostGUIRunRegistry(
+            file: root.appendingPathComponent("gui-run.json"),
+            authorizationLockFile: intents.authorizationLockFile))
+    let snapshots =
+        [claude, codex, workBuddy]
         + environment.additionalHosts.filter { HostID.productVisibleCases.contains($0.host) }.map {
-            doctorHostResult(
-                snapshot: inspectAdditionalHostSnapshot(environment: $0, runtime: runtime))
+            inspectAdditionalHostSnapshot(environment: $0, runtime: runtime)
         }
+    return snapshots.map { doctorHostResult(snapshot: $0.projectingAuthorization(authorization)) }
 }
 
 private func sharedRuntimeDoctorResult(
@@ -589,6 +595,11 @@ private func doctorHostResult(
     let host = snapshot.host
     let configuration = snapshot.configuration
     let name = "host-\(host.rawValue)"
+    if snapshot.intent?.enabled == false {
+        return DoctorCheckResult(
+            name: name, severity: .warning,
+            message: "⚠ \(host.displayName) 已关闭；新事件接收已阻断")
+    }
     if let reason = snapshot.availability.unavailabilityReason, configuration == .notConfigured {
         return DoctorCheckResult(
             name: name, severity: .warning,
@@ -598,6 +609,16 @@ private func doctorHostResult(
         return DoctorCheckResult(
             name: name, severity: .failure,
             message: "✗ \(host.displayName) 已有 claudi0 连接但宿主不可用：\(reason)")
+    }
+    if snapshot.intentUnavailable {
+        return DoctorCheckResult(
+            name: name, severity: .failure,
+            message: "✗ \(host.displayName) 接入意愿无法读取；新事件接收已阻断")
+    }
+    if snapshot.intent == nil {
+        return DoctorCheckResult(
+            name: name, severity: .warning,
+            message: "⚠ \(host.displayName) 尚无已保存的接入意愿；新事件接收已阻断")
     }
     let writable: Bool
     let writableReason: String?
@@ -658,6 +679,11 @@ private func doctorHostResult(
             return DoctorCheckResult(
                 name: name, severity: .failure,
                 message: "✗ \(host.displayName) 已配置但缺少 installation ID")
+        }
+        guard snapshot.eventReceptionEligible else {
+            return DoctorCheckResult(
+                name: name, severity: .warning,
+                message: "⚠ \(host.displayName) GUI 运行资格不可用；新事件接收已暂停")
         }
         guard case .observed = snapshot.activation else {
             return DoctorCheckResult(

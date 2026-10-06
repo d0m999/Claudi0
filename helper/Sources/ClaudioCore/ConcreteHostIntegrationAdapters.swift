@@ -147,7 +147,8 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
                 == scopeFingerprint
             ? activeID : nil
         do {
-            try ensurePrivateDirectoryTree(at: environment.settingsFile.deletingLastPathComponent())
+            try ensurePrivateDirectoryExists(
+                at: environment.settingsFile.deletingLastPathComponent())
         } catch { return .failure(.configuration(reason: "宿主配置目录不可写")) }
         let transaction = ConfigFileTransaction(
             file: environment.settingsFile,
@@ -343,7 +344,7 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
         }
 
         do {
-            try ensurePrivateDirectoryTree(at: environment.hooksFile.deletingLastPathComponent())
+            try ensurePrivateDirectoryExists(at: environment.hooksFile.deletingLastPathComponent())
         } catch { return .failure(.configuration(reason: "宿主配置目录不可写")) }
         let transaction = ConfigFileTransaction(
             file: environment.hooksFile,

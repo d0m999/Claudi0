@@ -59,6 +59,26 @@ if CommandLine.arguments.contains("--host-automation") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--host-review-regressions") {
+    await runHostIntegrationReviewRegressionSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--host-integration-checks") {
+    await runHostIntegrationReviewRegressionSuites()
+    await runHostIntegrationAutomationSuites()
+    await runConcreteHostIntegrationAdapterSuites()
+    await runWorkBuddyIntegrationAdapterSuites()
+    await runHostIntegrationManagerOperationSuites()
+    runDoctorSuites()
+    runDualHostDoctorSuites()
+    runPrivateDirectorySuites()
+    runConfigFileTransactionSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--host-integration-model") {
     runHostIntegrationModelSuites()
     print("\(totalChecks) checks, \(failures) failures")
@@ -116,6 +136,7 @@ await runWorkBuddyIntegrationAdapterSuites()
 await runWorkBuddyAcceptancePreflightSuites()
 await runHostIntegrationManagerOperationSuites()
 await runHostIntegrationAutomationSuites()
+await runHostIntegrationReviewRegressionSuites()
 runFileLockSuites()
 runDoctorSuites()
 runDualHostDoctorSuites()

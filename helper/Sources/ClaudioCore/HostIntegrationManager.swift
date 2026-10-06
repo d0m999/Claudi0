@@ -216,6 +216,11 @@ public actor HostIntegrationManager {
     /// GUI 首启入口：只自举共享 runtime，不连接或改写任何宿主配置，然后刷新全部来源事实。
     @discardableResult
     public func bootstrapSharedRuntime() async -> [HostIntegrationSnapshot] {
+        prepareSharedRuntime()
+        return await refresh(usingCurrentRuntime: true)
+    }
+
+    private func prepareSharedRuntime() {
         let execution = bootstrapper.bootstrapExecution()
         latestBootstrapExecution = execution
         switch execution {
@@ -224,7 +229,6 @@ public actor HostIntegrationManager {
         case .failed(let error, _):
             runtime = .damaged(reason: error.description)
         }
-        return await refresh(usingCurrentRuntime: true)
     }
 
     public func refresh() async -> [HostIntegrationSnapshot] {
@@ -255,7 +259,7 @@ public actor HostIntegrationManager {
         _ host: HostID
     ) async -> Result<HostIntegrationSnapshot, HostIntegrationActionError> {
         if authorization != nil {
-            if runtime != .ready { _ = await bootstrapSharedRuntime() }
+            if runtime != .ready { prepareSharedRuntime() }
             guard runtime == .ready else {
                 return .failure(.runtimeUnavailable(reason: runtimeReason(runtime)))
             }
@@ -279,7 +283,7 @@ public actor HostIntegrationManager {
             guard authorization.intents.intent(for: host.surfaceID)?.enabled == true else {
                 return .failure(.configuration(reason: "来源已关闭；重新配置不会开启来源"))
             }
-            _ = await bootstrapSharedRuntime()
+            prepareSharedRuntime()
             failures[host] = nil
             return await maintainOnce(host, force: true)
         }
@@ -393,11 +397,10 @@ public actor HostIntegrationManager {
 
     private func projected(_ snapshot: HostIntegrationSnapshot) -> HostIntegrationSnapshot {
         guard let authorization else { return snapshot }
-        var result = snapshot
-        result.intent = authorization.intents.intent(for: snapshot.host.surfaceID)
-        if case .failure = authorization.intents.read() { result.intentUnavailable = true }
-        result.eventReceptionEligible =
-            authorization.capture(surface: snapshot.host.surfaceID) != nil
+        var result = snapshotWithOperation(
+            snapshot, operation: snapshot.operation, runtime: runtime
+        )
+        .projectingAuthorization(authorization)
         if let failure = failures[snapshot.host], inFlightOperations[snapshot.host] == nil {
             result = snapshotWithOperation(result, operation: .failed(reason: failure.description))
         }
@@ -531,8 +534,8 @@ public actor HostIntegrationManager {
     private func drainMaintenance(_ host: HostID) async {
         defer { maintenanceTasks[host] = nil; publish() }
         while maintenanceDirty.remove(host) != nil, !Task.isCancelled {
-            _ = await refresh()
-            if runtime != .ready { _ = await bootstrapSharedRuntime() }
+            runtime = bootstrapper.inspect()
+            if runtime != .ready { prepareSharedRuntime() }
             guard !Task.isCancelled, authorization != nil, runIdentity != nil, runtime == .ready
             else { return }
             var result = await maintainOnce(host)
@@ -551,8 +554,19 @@ public actor HostIntegrationManager {
         guard let authorization, let adapter = adapters[host] else {
             return .failure(.configuration(reason: "接入意愿不可读取"))
         }
+        let operationRun = runIdentity
+        let capturedBeforeInspection = authorization.capture(
+            surface: host.surfaceID, requiresGUI: false)
+        let revisionAtStart = latestOperationRevisions[host]
+        let activeAtStart = inFlightOperations[host] != nil
+        // Discovery and intent migration depend only on this source, never on a full refresh.
+        let inspected = await adapter.inspect(runtime: runtime)
+        if !activeAtStart, latestOperationRevisions[host] == revisionAtStart {
+            cachedSnapshots[host] = snapshotWithOperation(inspected, operation: .idle)
+            publish()
+        }
         if runtime == .ready, Self.automaticHosts.contains(host),
-            cachedSnapshots[host]?.availability == .available,
+            inspected.availability == .available,
             authorization.intents.intent(for: host.surfaceID) == nil,
             case .failure(let error) = authorization.intents.migrate(
                 installedSurfaces: [host.surfaceID])
@@ -566,11 +580,12 @@ public actor HostIntegrationManager {
             publish()
             return .failure(failure)
         }
-        guard let captured = authorization.capture(surface: host.surfaceID, requiresGUI: false)
+        guard
+            let captured = capturedBeforeInspection
+                ?? authorization.capture(surface: host.surfaceID, requiresGUI: false)
         else { return .failure(.configuration(reason: "接入意愿不可读取")) }
         let token = HostEventAuthorizationToken(
-            surface: captured.surface, intent: captured.intent, run: runIdentity)
-        let inspected = await adapter.inspect(runtime: runtime)
+            surface: captured.surface, intent: captured.intent, run: operationRun)
         if token.intent.enabled {
             guard runtime == .ready else {
                 return .failure(.runtimeUnavailable(reason: runtimeReason(runtime)))
@@ -585,11 +600,9 @@ public actor HostIntegrationManager {
                 publish()
                 return .success(projected(inspected))
             }
-        } else if inspected.configuration == .notConfigured, inspected.installationID == nil {
-            cachedSnapshots[host] = inspected
-            publish()
-            return .success(projected(inspected))
         }
+        // Configuration absence does not prove that the receipt installation marker was revoked.
+        // Let the adapter confirm and clear its own marker even when the host removed its hooks.
         let revision = beginOperation(
             token.intent.enabled ? .connecting : .disconnecting, host: host)
         let boundary = HostPublicationContext(authorization: authorization, token: token)
@@ -703,11 +716,12 @@ public actor HostIntegrationManager {
 
 private func snapshotWithOperation(
     _ snapshot: HostIntegrationSnapshot,
-    operation: HostOperationState
+    operation: HostOperationState,
+    runtime: SharedRuntimeHealth? = nil
 ) -> HostIntegrationSnapshot {
     var result = HostIntegrationSnapshot(
         host: snapshot.host,
-        runtime: snapshot.runtime,
+        runtime: runtime ?? snapshot.runtime,
         availability: snapshot.availability,
         configuration: snapshot.configuration,
         writability: snapshot.writability,
