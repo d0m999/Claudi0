@@ -313,9 +313,12 @@ export async function server(context, options = {}) {
       disposed = true;
       sessions.clear(); requests.clear(); completed.clear();
       for (const { resolve } of pending.splice(0)) resolve();
-      for (const child of children) child.kill("SIGKILL");
-      children.clear();
+      // Already admitted callbacks may still be starting when a short-lived host exits.
+      // Let them finish; each child retains its existing bounded timeout while the host lives.
       registry.delete(instanceKey);
     },
   };
 }
+
+// OpenCode's module loader selects the default PluginModule before legacy named exports.
+export default { id, server };

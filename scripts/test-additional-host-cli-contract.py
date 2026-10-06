@@ -209,10 +209,13 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
               "disconnect removes only owned bytes")
         check(protected.read_bytes() == original and legacy.read_bytes() == b"# old Kimi bytes\n",
               "third-party and old Kimi bytes preserved")
+        before_release = bytes_on_disk(root)
         hook(release, host, events[0], replacement, payload(host, events[0]), env)
-        check(invoke(release, ["integrations", "connect", host], env).returncode != 0,
-              "ordinary Release rejects unverified new-host connect")
+        # Release deliberately ignores the test-home override. Never connect a now-visible
+        # host here: that would install a fixture helper into the real user runtime.
+        check(bytes_on_disk(root) == before_release, "Release hook remains silent for an old fixture installation")
     status = invoke(release, ["integrations", "status", "--json"], env)
     check(status.returncode == 0 and [item["host"] for item in json.loads(status.stdout)] ==
-          ["claude-code", "codex", "workbuddy"], "ordinary Release has no unverified visible hosts")
+          ["claude-code", "codex", "workbuddy", "opencode", "kimi-code"],
+          "ordinary Release exposes sources with reviewed bindings")
 print(f"Additional host CLI: {checks} checks passed; fixtures only, real-host acceptance not performed")

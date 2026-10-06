@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 const source = await readFile(new URL("../integrations/opencode/claudio.js", import.meta.url), "utf8");
 const installation = { helper_path: "/fixture/.claudio/bin/claudio",
@@ -10,6 +13,12 @@ const module = await import("data:text/javascript;base64," +
   Buffer.from("const installation = " + JSON.stringify(installation) + ";\n" + source).toString("base64"));
 assert.equal(module.id, "claudio.opencode.v1");
 assert.equal(typeof module.server, "function");
+// OpenCode 1.18.34 loads the default PluginModule before considering legacy exports.
+// Named id/server exports alone fall through to the legacy function-only loader.
+assert.equal(module.default?.id, "claudio.opencode.v1",
+  "the real host loader must discover a default PluginModule with a stable id");
+assert.equal(module.default?.server, module.server,
+  "the real host loader must initialize the same public server entry point");
 let count = 0;
 let fixtureNumber = 0;
 
@@ -23,7 +32,7 @@ async function fixture({ lookup, clock } = {}) {
   const events = [];
   const context = { directory: "/fixture/project-" + fixtureNumber++,
     client: { session: { get: lookup ?? (async () => ({ data: undefined })) } } };
-  const hooks = await module.server(context, { dispatch: (name, payload) => events.push({ name, payload }),
+  const hooks = await module.default.server(context, { dispatch: (name, payload) => events.push({ name, payload }),
     clock: clock ?? (() => 1000) });
   const event = (type, properties) => hooks.event({ event: { type, properties } });
   const session = (id = "s", parentID) => event("session.created", { info: { id, parentID } });
@@ -397,6 +406,51 @@ await check("serialized queue overflow stays bounded and drops unidentified call
   release(); await first; await Promise.all(work);
   assert.equal(f.events.length, 64);
   await f.hooks.dispose();
+});
+
+await check("dispose lets admitted helper callbacks finish within their existing deadline", async () => {
+  const root = await mkdtemp(join(tmpdir(), "claudio-opencode-dispose-"));
+  const helper = join(root, ".claudio", "bin", "claudio");
+  const record = join(root, "events.jsonl");
+  await mkdir(join(root, ".claudio", "bin"), { recursive: true });
+  await writeFile(helper, "#!/usr/bin/env node\n" +
+    "const fs = require('node:fs');\n" +
+    "process.stdin.resume();\n" +
+    "process.stdin.on('end', () => setTimeout(() => fs.appendFileSync(" +
+    JSON.stringify(record) + ", JSON.stringify(process.argv[4]) + '\\n'), 100));\n",
+    { mode: 0o700 });
+  const realModule = await import("data:text/javascript;base64," + Buffer.from(
+    "const installation = " + JSON.stringify({ ...installation, helper_path: helper }) +
+    ";\n" + source).toString("base64"));
+  const hooks = await realModule.default.server({ directory: root,
+    client: { session: { get: async () => ({ data: undefined }) } } }, { clock: () => 1000 });
+  const event = (type, properties) => hooks.event({ event: { type, properties } });
+  try {
+    await event("session.created", { info: { id: "s" } });
+    await hooks["chat.message"]({ sessionID: "s" }, {
+      message: { role: "user", id: "u", sessionID: "s" },
+      parts: [{ type: "text", synthetic: false }],
+    });
+    await event("message.updated", { info: { id: "a", parentID: "u", sessionID: "s",
+      role: "assistant", finish: "stop", time: { created: 1000, completed: 1001 } } });
+    await event("session.idle", { sessionID: "s" });
+    await hooks.dispose();
+    const deadline = Date.now() + 2000;
+    let received = [];
+    while (Date.now() < deadline) {
+      try { received = (await readFile(record, "utf8")).trim().split("\n").map(JSON.parse); }
+      catch (error) { if (error.code !== "ENOENT") throw error; }
+      if (received.length === 2) break;
+      await delay(25);
+    }
+    assert.deepEqual(received.sort(), ["ResponseCompleted", "UserTurnStarted"]);
+    await event("question.asked", { sessionID: "s", id: "after-dispose" });
+    await delay(150);
+    assert.equal((await readFile(record, "utf8")).trim().split("\n").length, 2);
+  } finally {
+    await hooks.dispose();
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 console.log(`OpenCode plugin: ${count} scenarios passed`);

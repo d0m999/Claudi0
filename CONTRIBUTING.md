@@ -50,9 +50,9 @@ git diff --check
 
 `scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
 
-OpenCode and Kimi Code remain acceptance candidates until the binding evidence in ADR 0024 is
-complete. Debug builds expose the candidates; ordinary Release builds keep unverified bindings
-closed. Use `bash scripts/dev-bundle.sh --additional-host-acceptance` for an explicit local
+OpenCode and Kimi Code qualify per binding under ADR 0024. Ordinary Release builds expose a
+source when it has reviewed bindings and keep its unverified bindings closed. The current evidence
+is recorded in `docs/validation/opencode-kimi-code-2026-10-06.md`. Debug builds expose all candidates. Use `bash scripts/dev-bundle.sh --additional-host-acceptance` for an explicit local
 acceptance bundle. It compiles the same flag into GUI and helper and marks the app plist.
 The plugin source is embedded in the helper and copied to `Resources/integrations/opencode/`;
 after editing `integrations/opencode/claudio.js`, regenerate with

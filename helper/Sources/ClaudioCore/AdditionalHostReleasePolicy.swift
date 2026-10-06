@@ -1,9 +1,16 @@
 import Foundation
 
 /// No fixture, build, configuration or synthetic receipt can qualify a new binding for release.
-/// Keep this list empty until real-host, native notice and listening evidence is reviewed.
+/// Each entry requires reviewed real-host, native notice and listening evidence.
+/// Evidence: docs/validation/opencode-kimi-code-2026-10-06.md.
 public enum AdditionalHostReleasePolicy {
-    public static let verifiedBindings: Set<HostEventBindingID> = []
+    public static let verifiedBindings: Set<HostEventBindingID> = [
+        HostEventBindingID(
+            rawValue: "opencode:UserTurnStarted:task_start:bridge_execution_evidence_only:v1"),
+        HostEventBindingID(
+            rawValue: "opencode:ResponseCompleted:stop:bridge_terminal_evidence_only:v1"),
+        HostEventBindingID(rawValue: "kimi-code:TurnStarted:task_start:user_origin_only:v1"),
+    ]
 
     public static var isAcceptanceBuild: Bool {
         #if DEBUG || CLAUDIO_ADDITIONAL_HOST_ACCEPTANCE

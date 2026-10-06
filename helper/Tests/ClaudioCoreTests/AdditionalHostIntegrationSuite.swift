@@ -7,7 +7,25 @@ func runAdditionalHostIntegrationSuites() async {
         expect(HostID(rawValue: "opencode") == .opencode, "OpenCode 使用独立 HostID")
         expect(HostSurfaceID(rawValue: "kimi-code") == .kimiCode, "Kimi Code 使用独立 Surface")
         expect(HostID.opencode.descriptor.mechanism == .pluginBridge, "OpenCode 必须展示插件桥接")
-        expect(AdditionalHostReleasePolicy.verifiedBindings.isEmpty, "没有真实验收证据不能进入正式启用集")
+        let reviewedBindings: Set<HostEventBindingID> = [
+            HostEventBindingID(
+                rawValue: "opencode:UserTurnStarted:task_start:bridge_execution_evidence_only:v1"),
+            HostEventBindingID(
+                rawValue: "opencode:ResponseCompleted:stop:bridge_terminal_evidence_only:v1"),
+            HostEventBindingID(rawValue: "kimi-code:TurnStarted:task_start:user_origin_only:v1"),
+        ]
+        expect(
+            AdditionalHostReleasePolicy.verifiedBindings == reviewedBindings,
+            "正式集合只含 2026-10-06 已审阅的逐绑定证据")
+        let candidates = HostCapabilityCatalog.bindings(for: .opencode)
+            + HostCapabilityCatalog.bindings(for: .kimiCode)
+        expect(
+            reviewedBindings.allSatisfy { id in
+                candidates.contains {
+                    $0.id == id && $0.nativeEvent != nil && $0.implementation == .implemented
+                        && $0.support != .unsupported
+                }
+            }, "正式证据必须匹配已实现且有原生身份的目录绑定")
         expect(AdditionalHostReleasePolicy.isAcceptanceBuild, "harness 是隔离验收候选")
         expect(
             HostCapabilityCatalog.semanticEvent(host: .opencode, nativeEvent: "session.idle")
