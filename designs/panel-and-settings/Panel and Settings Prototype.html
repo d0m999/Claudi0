@@ -963,10 +963,10 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Settings presentation transplanted from Native Settings Alignment Prototype.html.
-     Source SHA-256: e70e7764b347a6bcec6a8ade0d0769ae9dc8dd4a53182da21b941242e20fba91
-     A ShadowRoot isolates the two existing design systems; no iframe or external HTML load.
-     Native settings owns shared demo facts. The panel receives read projections and sends commands. -->
+<!-- Settings presentation originated in Native Settings Alignment Prototype.html.
+     Migration-origin SHA-256: e70e7764b347a6bcec6a8ade0d0769ae9dc8dd4a53182da21b941242e20fba91
+     This integrated file is the current visual source of truth; the migration hash is provenance only.
+     A ShadowRoot isolates the existing design systems. This remains a browser prototype, not production SwiftUI/AppKit. -->
 <template id="macSettingsTemplate"><style>
 :host {
   color-scheme: light;
@@ -1219,18 +1219,28 @@ dialog .actions { flex-wrap:wrap; }
 dialog .small-button { min-width:75px; width:auto; flex-shrink:0; }
 dialog p { overflow-wrap:anywhere; }
 
-/* AppKit mapping: actual production colors and chrome follow the OS; CSS is illustrative. */
-:host { --page:#ececec; --group:#f6f6f6; }
-:host([data-theme="dark"]) { --page:#242424; --group:#2d2d2d; }
-.sidebar { background:color-mix(in srgb,var(--sidebar) 85%,transparent); border:0; }
-.brand { padding:8px 10px 16px; }.brand-mark,.brand small { display:none; }
-.brand strong { font-size:19px; font-weight:500; }
-.nav { gap:0; }.nav-item { min-height:32px; gap:8px; }.nav-icon { width:20px;height:20px;border-radius:4.5px; }.nav-icon svg { width:15px;height:15px; }
-.nav-item.group-start { margin-top:16px; }.nav-item.active { background:var(--accent);color:white;font-weight:400; }
-.toolbar { border-bottom:0; }.navigation { display:flex; background:var(--button);border-radius:9px;overflow:hidden;flex:none; }
-.navigation button { width:36px;height:30px;display:grid;place-items:center; }.navigation button+button { border-left:1px solid var(--line); }
+/* AppKit mapping: mirror production geometry and semantic colors; native rendering remains OS-owned. */
+:host { --page:#fff; --group:#f5f5f7; }
+:host([data-theme="dark"]) { --page:#202022; --group:#2d2d30; }
+.sidebar { background:var(--sidebar); border:0; }
+.brand { padding:16px 14px 16px; }
+.brand-mark,.brand small { display:none; }
+.brand-wordmark { display:flex; align-items:center; height:19px; color:var(--text); white-space:nowrap; }
+.brand-wordmark strong { display:block; font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif; font-size:17.86px; font-weight:600; letter-spacing:0; }
+.brand-wordmark svg { width:26px; height:19px; margin-left:-4.18px; overflow:visible; fill:none; stroke-linecap:round; flex:none; }
+.brand-wordmark .orbit-halo { stroke:var(--brand-clay); stroke-width:2.47; opacity:.10; }
+.brand-wordmark .orbit-zero { stroke:var(--brand-clay); stroke-width:1.9; }
+.brand-wordmark .orbit-sweep { stroke:var(--text); stroke-width:.75; opacity:.52; }
+:host([data-theme="dark"]) .brand-wordmark .orbit-sweep { opacity:.72; }
+:host { --brand-clay:#c4633c; }
+:host([data-theme="dark"]) { --brand-clay:#d97757; }
+.nav { gap:0; }.nav-item { min-height:32px; gap:8px; padding-left:4px; padding-right:4px; border-radius:6px; }.nav-icon { width:20px;height:20px;border-radius:4.5px; }.nav-icon svg { width:15px;height:15px; }
+.nav-item.group-start { margin-top:16px; }.nav-item.active { background:var(--selected);color:var(--text);font-weight:600; }
+.toolbar { border-bottom:1px solid var(--line); }.navigation { display:flex; background:var(--button);border-radius:7px;overflow:hidden;flex:none; }
+.navigation button { width:32px;height:28px;display:grid;place-items:center; }.navigation button+button { border-left:1px solid var(--line); }
+.toolbar h1:focus-visible { outline:none; }
 .section { margin-top:20px; }.group+.group { margin-top:12px; }.row { min-height:38px;padding:7px 14px; }.row.multi { min-height:51px; }
-.controls select { background:transparent;border:0;width:auto;max-width:280px;text-overflow:ellipsis; }
+.controls select,.picker select { background:transparent;border:0;width:auto;max-width:280px;text-overflow:ellipsis; }
 .history-evidence { max-width:1240px;margin:12px auto;padding:0 24px;font-size:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap; }
 .history-evidence button { padding:5px 9px;background:var(--button);border-radius:5px; }
 .preview-segments { display:flex;background:var(--button);border-radius:7px;overflow:hidden; }.preview-segments button { flex:1;padding:7px 5px; }.preview-segments button[aria-checked="true"] { background:var(--accent);color:white; }
@@ -1305,7 +1315,7 @@ dialog p { overflow-wrap:anywhere; }
       <button class="minimize" id="window-minimize" aria-label="最小化设置窗口"><svg><path d="M3 12h18"/></svg></button>
       <button class="maximize" id="window-maximize" aria-label="切换窗口尺寸"><svg><path d="M5 10V5h5m4 14h5v-5"/></svg></button>
     </div>
-    <div class="brand"><div class="brand-mark" aria-hidden="true"><svg><use href="#i-orbit"/></svg></div><div><strong>claudi0</strong><small id="brand-subtitle">Agent 提示音</small></div></div>
+    <div class="brand"><div class="brand-wordmark" role="img" aria-label="claudi0"><strong>claudi</strong><svg viewBox="0 0 26 19" aria-hidden="true"><ellipse class="orbit-halo" cx="10.5" cy="9.5" rx="7.8" ry="8.9"/><ellipse class="orbit-zero" cx="10.5" cy="9.5" rx="5.32" ry="8.36"/><ellipse class="orbit-sweep" cx="13" cy="9.5" rx="14.06" ry="4.75" transform="rotate(-16 13 9.5)"/></svg></div><small id="brand-subtitle">Agent 提示音</small></div>
     <nav class="nav" id="settings-nav" aria-label="设置类别"></nav>
     <div class="sidebar-bottom" id="sidebar-note">声音留在本机。<br>AI 生成由你主动发起。</div>
   </aside>
@@ -2199,6 +2209,10 @@ function panelHTML() {
   }
 
   h += disclosure("scopeContent", S.scopeMenu, scopeContent, "scopeBtn");
+  if (S.panelWriteFailure && S.panelWriteFailure.scope === S.scope) {
+    var failure = S.panelWriteFailure.notice;
+    h += '<p class="err-line" role="alert">' + esc(tr(failure.zh, failure.en)) + '</p>';
+  }
 
   if (!cur) {
     h += '<p class="err-line">' + tr("所选工作区不可用，请在上方重新选择。", "Selected workspace is unavailable. Choose a scope above.") + '</p></div>';
@@ -3749,11 +3763,20 @@ function updateQuietState() {
   var calendar = S.prefs.calendar === "on" && S.system.calendarBusy;
   S.prefs.quiet = { on: focus || calendar, reasonKey: focus && calendar ? "focusAndCalendarBusy" : focus ? "focusActive" : calendar ? "calendarBusy" : "" };
 }
+function writePanelGroup(scopeID, intent, control) {
+  var ok = MacSettings.writeGroup(scopeID, intent);
+  if (!ok && control) {
+    var group = groupById(scopeID);
+    // The browser changed the value before dispatch; an unchanged projection may skip patching it.
+    if (group) control.value = intent.type === "pack" ? group.pack : String(group.volume);
+  }
+  return ok;
+}
 function bindPrototypeControls() {
   ["panelPack", "groupPack"].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.onchange = function () {
-      if (MacSettings) MacSettings.writeGroup(id === "panelPack" ? S.scope : S.ws, {type:"pack",value:el.value});
+      if (MacSettings) writePanelGroup(id === "panelPack" ? S.scope : S.ws, {type:"pack",value:el.value}, el);
       else usePackForScope(el.value, id === "panelPack" ? S.scope : S.ws);
       render();
     };
@@ -3782,6 +3805,7 @@ function bindPrototypeControls() {
   });
   document.querySelectorAll("[data-library-retry]").forEach(function (b) {
     b.onclick = function () {
+      if (MacSettings) return MacSettings.refreshLibrary();
       var request = (S.library.refreshID || 0) + 1; S.library.refreshID = request;
       S.library.status = "refreshing"; render();
       setTimeout(function () { if (S.library.refreshID !== request) return; S.library.status = "ready"; S.library.revision++; render(); }, 450);
@@ -4004,7 +4028,7 @@ function bind() {
     b.onclick = function () {
       var g = curGroup(), id = b.getAttribute("data-mute");
       if (!g || !eventById(id)) return;
-      if (MacSettings) MacSettings.writeGroup(S.scope, {type:"event", index:EVENTS.findIndex(function(e){return e.id===id;}), value:!g.events[id]});
+      if (MacSettings) writePanelGroup(S.scope, {type:"event", index:EVENTS.findIndex(function(e){return e.id===id;}), value:!g.events[id]});
       else g.events[id] = !g.events[id]; render();
     };
   });
@@ -4012,7 +4036,7 @@ function bind() {
   if (vr) {
     vr.oninput = function () {
       var g = curGroup(); if (!g) return;
-      if (MacSettings) MacSettings.writeGroup(S.scope, {type:"volume",value:Number(vr.value)});
+      if (MacSettings) writePanelGroup(S.scope, {type:"volume",value:Number(vr.value)}, vr);
       else g.volume = Number(vr.value); render();
     };
     vr.onchange = render;
@@ -4420,7 +4444,7 @@ function createMacSettings(container, publish, onClose, onRemoveReminder) {
   const window = {AudioContext:realWindow.AudioContext, webkitAudioContext:realWindow.webkitAudioContext,
     addEventListener:realWindow.addEventListener.bind(realWindow), prototypeReview:null};
   const location={search:""}; // The main prototype alone owns URL deep links.
-  let bridgeReady=false, projecting=false, wasVisible=false;
+  let bridgeReady=false, projecting=false, wasVisible=false, pendingSceneRoute=false;
 
 'use strict';
 const $ = id => document.getElementById(id);
@@ -4465,7 +4489,7 @@ function factoryPacks(){return [
  ['pizzicato',['拨弦旋律','Pizzicato']],['bowl',['共鸣钵音','Resonant bowls']],['station','Station Chimes']
 ].map(([id,name])=>({id,name,builtin:true,healthy:true,license:'CC0',author:'Factory attribution',sounds:events.map((e,i)=>`${id}-${i+1}.wav`),sources:events.map(()=>'file'),audio:events.map((e,i)=>`${id}-${i+1}.wav`)}));}
 function freshState(){return {
- page:'events',detail:null,scope:'default',pack:'minimal',returnContext:null,scene:'normal',language:'zh',systemLanguage:'zh',notice:null,
+ page:'events',detail:null,scope:'default',pack:'minimal',returnContext:null,scene:'normal',language:'zh',systemLanguage:'zh',notice:null,panelWriteFailure:null,
  scopes:[{id:'default',pack:'minimal',volume:65,enabled:events.map(()=>true),path:null,surfaces:['claude-code','codex','workbuddy']},
  {id:'claudio',name:'Claudio',pack:'studio',volume:55,enabled:[true,true,true,true,false],path:'~/Projects/Claudio',kind:'git',surfaces:['claude-code','codex']},
  {id:'notes',name:'Notes',pack:'minimal',volume:40,enabled:[false,true,true,true,false],path:'~/Documents/Notes',kind:'plain',surfaces:['claude-code']}],
@@ -4777,6 +4801,7 @@ function groupWrite(intent,retry=false){
  if(!g){setNotice('原目标身份已变化，拒绝写入；没有修改其他作用域。','The captured target changed. Write refused; other scopes are unchanged.','error');render();return false;}
  if(S.faults.config&&!retry){S.configIntent={...intent,target:scopeIdentity(g)};setNotice('写入冲突，原值保留。请重试原操作或重新读取配置。','Write conflict. Previous values retained. Retry the original edit or reload configuration.','error');render();return false;}
  if(intent.type==='pack')g.pack=intent.value;else if(intent.type==='volume')g.volume=intent.value;else if(intent.type==='event')g.enabled[intent.index]=intent.value;else if(intent.type==='surface')g.surfaces=intent.value;
+ if(S.panelWriteFailure?.scope===g.id)S.panelWriteFailure=null;
  S.configIntent=null;return true;
 }
 function bind(p,i,name,source,origin='assign'){
@@ -5037,7 +5062,7 @@ const scenes=[
  ...Object.entries(activityNames).map(([id,n])=>['activity-'+id,...n]),...['missing','damaged','unreadable'].map(id=>['log-'+id,{missing:'日志缺失',damaged:'日志损坏',unreadable:'日志不可读'}[id],`Log ${id}`]),['activityRefreshFailure','统计刷新失败','Statistics refresh failure'],['logClearFailure','日志清理失败','Log clear failure'],['countClearFailure','计数清理失败','Count clear failure'],['reminderStale','冻结提醒旧版本','Old frozen reminder revision'],['reminderExpired','提醒过期清空','Expired reminder erased'],['reminderNoSession','提醒无有效会话','Reminder without valid session'],['sourceFailure','来源打开失败','Source app open failure'],['sourceTimeout','来源打开超时','Source app open timeout'],
  ['aboutUnknown','版本信息未知','Unknown version facts'],['resourceMissing','随包资源缺失','Bundled resources missing'],['resourceFailure','资源打开失败','Resource open failure'],['clipboardFailure','剪贴板复制失败','Clipboard copy failure'],['platformFailure','系统入口打开失败','System action open failure']
 ].map(([id,zh,en])=>({id,zh,en}));
-function setScene(value){const pref={language:S.language,systemLanguage:S.systemLanguage};stopHostMaintenance();cleanup();if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
+function setScene(value){const pref={language:S.language,systemLanguage:S.systemLanguage};stopHostMaintenance();cleanup();pendingSceneRoute=!wasVisible;if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
  attachReceiptFacts();const sounds=detail=>{S.page='sounds';S.pack='studio';S.detail=detail||null;};
  if(value==='zero')S.scopes[0].volume=0;
  else if(value==='missing'){S.scope='claudio';S.packs.find(p=>p.id==='studio').sounds[3]=null;}
@@ -5087,7 +5112,7 @@ function setScene(value){const pref={language:S.language,systemLanguage:S.system
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b&&!b.disabled)action(b.dataset.action,b);});
 function selectScope(id){
  if(!S.scopes.some(g=>g.id===id))return false;
- stopAudio();clearGeneration();S.scope=id;S.invalidScope=null;S.ruleBroken=S.scope===S.brokenRuleID;S.returnContext=null;S.notice=null;render();return true;
+ stopAudio();clearGeneration();S.scope=id;S.invalidScope=null;S.ruleBroken=S.scope===S.brokenRuleID;S.returnContext=null;S.notice=null;S.panelWriteFailure=null;render();return true;
 }
 document.addEventListener('change',e=>{const c=e.target,[type,id]=(c.dataset.control||'').split(':');if(!type)return;
  if(type==='scope'||type==='management-scope')return selectScope(c.value);
@@ -5182,8 +5207,9 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
       if(count&&!S.pendingExpanded)count.firstChild.textContent=String(values.length);
     },
     focusTitle:()=>$('page-title').focus({preventScroll:true}),
-    suspend:(minimized=false)=>{cleanup();if(!minimized)clearBrowsingHistory();drawNavigation();wasVisible=false;},
+    suspend:(minimized=false)=>{wasVisible=false;pendingSceneRoute=false;cleanup();if(!minimized)clearBrowsingHistory();drawNavigation();changed();},
     selectScope,
+    refreshLibrary,
     applyAIDeepLink,
     openWorkspace:id=>{
       if($('sheet').open)return false;
@@ -5191,10 +5217,15 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
     },
     writeGroup:(id,intent)=>{
       const previous=S.scope;S.scope=id;
-      const ok=S.library==='ready'&&!S.operation&&groupWrite(intent);S.scope=previous;
-      if(ok)render();return ok;
+      let ok=false;
+      if(S.library!=='ready')setNotice('声音包库尚不可写，请等待刷新完成或重试。','The sound library is not writable yet. Wait for refresh or retry.','error');
+      else if(S.operation)setNotice('操作进行中，请等待完成后再修改声音配置。','An operation is in progress. Wait before editing sound settings.','error');
+      else ok=groupWrite(intent);
+      S.scope=previous;S.panelWriteFailure=ok?null:{scope:id,notice:S.notice};
+      render();return ok;
     },
     syncPresentation:view=>{
+      let cleaned=false;
       projecting=true;
       try {
         const page=paneToPage[view.pane]||view.pane;
@@ -5202,11 +5233,14 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
         if(language()!==view.lang){S.language=view.lang;repaint=true;}
         if(container.dataset.theme!==view.theme){$('preview-theme').value=view.theme;applyTheme();}
         if(view.visible&&(!wasVisible||page!==S.page)){
-          navigate(page,null,{scope:view.scope,pack:page==='sounds'?view.pack:undefined,focus:false});repaint=false;
+          const detail=!wasVisible&&pendingSceneRoute&&page===S.page?S.detail:null;
+          pendingSceneRoute=false;
+          navigate(page,detail,{scope:view.scope,pack:page==='sounds'?view.pack:undefined,focus:false});repaint=false;
         } else if(repaint)render();
-        if(!view.visible&&wasVisible)cleanup();
+        if(!view.visible&&wasVisible){wasVisible=false;cleanup();cleaned=true;}
         wasVisible=view.visible;
       } finally {projecting=false;}
+      if(cleaned)changed();
     }
   };
 }
@@ -5229,6 +5263,7 @@ function projectMacSettings(state) {
       cov:EVENTS.filter(function(e){return !!files[e.id];}).map(function(e){return e.id;}),orphans:[],starred:state.stars.includes(p.id)};
   });
   S.library.status=state.library;S.library.referencesComplete=state.referencesComplete;
+  S.panelWriteFailure=state.panelWriteFailure||null;
   S.soundPack=state.pack;S.scope=state.scope;S.ws=state.scope;S.pane=({events:'groups',usage:'activity'})[state.page]||state.page;
   S.prefs.bannerOn=state.notifications;S.prefs.launchLogin=['enabled','requiresApproval'].includes(state.login);
   S.prefs.launchLoginState=state.login;S.prefs.focusEnabled=state.focusQuiet;S.prefs.focusAuth=state.focusAuth;
@@ -5257,11 +5292,12 @@ render();
 
 /* 关闭设置窗口 → 面板回到菜单栏下并把焦点还给齿轮（handback 合同可见） */
 function closeWindowWithHandback(minimized) {
-  if (MacSettings) MacSettings.suspend(minimized === true);
   var returnToPanel = S.returnToPanel; S.returnToPanel = false;
   S.prefs.recording = null;
   endSoundsSession(); S.confirmation = null; S.workspaceForm = null;
-  S.window = false; S.popover = returnToPanel; render();
+  S.window = false; S.popover = returnToPanel;
+  if (MacSettings) MacSettings.suspend(minimized === true);
+  render();
   var gear = document.getElementById("gearBtn");
   if (returnToPanel && gear) gear.focus({ preventScroll: true });
   else document.getElementById("mbIcon").focus({ preventScroll: true });
