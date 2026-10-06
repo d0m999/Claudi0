@@ -652,10 +652,10 @@ for (const lang of ["zh", "en"]) {
     const runtime = loadPrototype();
     const { context, document } = runtime;
     context.S.lang = lang;
-    context.S.bannerAtn = true;
     context.S.bannerReminderID = context.REMINDERS[0].id;
+    context.showBanner(true);
     const markup = context.bannerHTML();
-    assert.ok(markup.includes('id="bannerBody"'));
+    assert.ok(markup.includes('data-banner-body="1"'));
     assert.ok(!markup.includes('<div class="cap-text">'));
     assert.ok(!markup.includes("aria-expanded"));
     assert.ok(!markup.includes("bannerDetails"));
@@ -664,11 +664,11 @@ for (const lang of ["zh", "en"]) {
     runtime.mountControls(markup);
     assert.equal(document.querySelectorAll("[id]").length, 3);
     const before = JSON.stringify(context.REMINDERS);
-    document.getElementById("bannerAct").click();
-    assert.equal(context.S.bannerFailure, "started");
+    document.getElementById("bannerAct-1").click();
+    assert.equal(context.S.banners[0].failure, "started");
     runtime.advanceTime(450);
-    assert.equal(context.S.bannerAtn, true);
-    assert.equal(context.S.bannerFailure, "fallback");
+    assert.equal(context.S.banners.length, 1);
+    assert.equal(context.S.banners[0].failure, "fallback");
     assert.equal(JSON.stringify(context.REMINDERS), before);
     assert.ok(context.paneActivity().includes(context.REMINDERS[0].session));
   });
@@ -676,43 +676,44 @@ for (const lang of ["zh", "en"]) {
     const runtime = loadPrototype();
     const { context, document } = runtime;
     context.S.lang = lang;
-    context.S.bannerAtn = true;
     context.S.bannerReminderID = context.REMINDERS[0].id;
+    context.showBanner(true);
     context.S.bannerInjectFailure = true;
     const serial = context.S.bannerSerial;
     const before = JSON.stringify(context.REMINDERS);
     runtime.mountControls(context.bannerHTML());
-    document.getElementById("bannerAct").click();
-    assert.equal(context.S.bannerAtn, true);
-    assert.equal(context.S.bannerFailure, "started");
+    document.getElementById("bannerAct-1").click();
+    assert.equal(context.S.banners.length, 1);
+    assert.equal(context.S.banners[0].failure, "started");
     runtime.advanceTime(450);
-    assert.equal(context.S.bannerFailure, "unavailable");
+    assert.equal(context.S.banners[0].failure, "unavailable");
     assert.equal(context.S.bannerSerial, serial);
     assert.ok(context.bannerHTML().includes('role="alert"'));
     assert.ok(context.bannerHTML().includes(lang === "zh" ? "重试" : "Retry"));
     runtime.mountControls(context.bannerHTML());
-    document.getElementById("bannerAct").click();
+    document.getElementById("bannerAct-1").click();
     runtime.advanceTime(450);
-    assert.equal(context.S.bannerAtn, true);
-    assert.equal(context.S.bannerFailure, "fallback");
+    assert.equal(context.S.banners.length, 1);
+    assert.equal(context.S.banners[0].failure, "fallback");
     assert.equal(JSON.stringify(context.REMINDERS), before);
   });
   test(`${lang}: missing or changed banner targets cannot open a different reminder`, () => {
     const runtime = loadPrototype();
     const { context } = runtime;
     context.S.lang = lang;
-    context.S.bannerAtn = true;
-    context.S.bannerReminderID = "missing-reminder";
+    context.S.bannerReminderID = context.REMINDERS[0].id;
+    context.showBanner(true);
+    context.S.banners[0].reminderID = "missing-reminder";
     const before = JSON.stringify(context.REMINDERS);
     context.openBannerSource();
-    assert.equal(context.S.bannerFailure, "stale");
+    assert.equal(context.S.banners[0].failure, "stale");
     assert.equal(runtime.messages.length, 0);
-    assert.ok(!context.bannerHTML().includes('id="bannerAct"'));
-    context.S.bannerReminderID = context.REMINDERS[0].id;
+    assert.ok(!context.bannerHTML().includes('data-banner-action='));
+    context.S.banners[0].reminderID = context.REMINDERS[0].id;
     context.REMINDERS[0].updated = true;
     context.openBannerSource();
     assert.equal(runtime.messages.length, 0);
-    assert.ok(context.bannerHTML().includes('id="bannerAct" disabled'));
+    assert.match(context.bannerHTML(), /data-banner-action="1" disabled/);
     delete context.REMINDERS[0].updated;
     assert.equal(JSON.stringify(context.REMINDERS), before);
   });
@@ -721,11 +722,11 @@ for (const lang of ["zh", "en"]) {
 test("banner reading budget survives redraw and combined hover/focus pauses; expiry retains reminders", () => {
   const runtime = loadPrototype();
   const { context } = runtime;
-  context.S.bannerAtn = true;
   context.S.bannerReminderID = context.REMINDERS[0].id;
+  context.showBanner(true);
   const before = JSON.stringify(context.REMINDERS);
   const node = { matches() { return false; }, contains() { return false; }, addEventListener() {}, querySelector() { return null; } };
-  const clock = context.NoticeClock;
+  const clock = context.createNoticeClock(1);
   clock.sync(node, "atn:1");
   runtime.advanceTime(1000);
   assert.equal(clock.left(), 3000);
@@ -739,24 +740,24 @@ test("banner reading budget survives redraw and combined hover/focus pauses; exp
   assert.equal(clock.left(), 3000);
   clock.pause("focus", false);
   runtime.advanceTime(2999);
-  assert.equal(context.S.bannerAtn, true);
+  assert.equal(context.S.banners.length, 1);
   runtime.advanceTime(1);
-  assert.equal(context.S.bannerAtn, false);
+  assert.equal(context.S.banners.length, 0);
   assert.equal(JSON.stringify(context.REMINDERS), before);
 });
 
-test("informational banners have a close action and reading track without a source jump", () => {
+test("informational banners have a close action and reading track without an extra primary button", () => {
   const runtime = loadPrototype();
   const { context, document } = runtime;
-  context.S.bannerInfo = true;
   context.S.bannerEvent = "stop";
+  context.showBanner(false);
   const markup = context.bannerHTML();
   assert.ok(markup.includes('class="track"'));
-  assert.ok(!markup.includes('id="bannerAct"'));
+  assert.ok(!markup.includes('data-banner-action='));
   assert.ok(!markup.includes("aria-expanded"));
   runtime.mountControls(markup);
-  document.getElementById("bannerClose").click();
-  assert.equal(context.S.bannerInfo, false);
+  document.getElementById("bannerClose-1").click();
+  assert.equal(context.S.banners.length, 0);
 });
 
 // Whole-pack import was removed from the confirmed integrated prototype. Audio import in the
@@ -768,21 +769,104 @@ test("whole-pack import has no control, confirmation, demo creation or event bin
 for (const outcome of ["exact", "requested", "fallback", "failed"]) {
   test(`banner body shares navigation action: ${outcome}`, () => {
     const runtime = loadPrototype(); const { context, document } = runtime;
-    context.S.bannerAtn = true; context.S.bannerReminderID = context.REMINDERS[0].id;
+    context.S.bannerReminderID = context.REMINDERS[0].id; context.showBanner(true);
     context.S.bannerNavigationOutcome = outcome;
     const count = context.REMINDERS.length;
     runtime.mountControls(context.bannerHTML());
-    document.getElementById("bannerBody").click();
-    document.getElementById("bannerAct").click();
-    assert.equal(context.S.bannerFailure, "started"); runtime.advanceTime(450);
+    document.getElementById("bannerBody-1").click();
+    document.getElementById("bannerAct-1").click();
+    assert.equal(context.S.banners[0].failure, "started"); runtime.advanceTime(450);
     assert.equal(context.REMINDERS.length, count - (outcome === "exact" ? 1 : 0));
-    assert.equal(context.S.bannerAtn, outcome !== "exact");
+    assert.equal(context.S.banners.length, outcome === "exact" ? 0 : 1);
   });
 }
 test("ordinary body is clickable and close invalidates an in-flight jump", () => {
   const runtime = loadPrototype(); const { context, document } = runtime;
-  context.S.bannerInfo = true; context.S.bannerNavigationOutcome = "exact";
-  runtime.mountControls(context.bannerHTML()); document.getElementById("bannerBody").click();
-  document.getElementById("bannerClose").click(); runtime.advanceTime(450);
-  assert.equal(context.S.bannerInfo, false); assert.equal(runtime.messages.length, 0);
+  context.showBanner(false); context.S.bannerNavigationOutcome = "exact";
+  runtime.mountControls(context.bannerHTML()); document.getElementById("bannerBody-1").click();
+  document.getElementById("bannerClose-1").click(); runtime.advanceTime(450);
+  assert.equal(context.S.banners.length, 0); assert.equal(runtime.messages.length, 0);
 });
+
+for (const lang of ["zh", "en"]) {
+  test(`${lang}: ABC retain distinct content and actions; overflow waits in arrival order`, () => {
+    const runtime = loadPrototype(); const { context, document } = runtime;
+    context.S.lang = lang;
+    document.getElementById("btnBannerBurst").click();
+    assert.deepEqual(Array.from(context.S.banners, x => x.event), ["stop", "subagent", "permission"]);
+    assert.deepEqual(Array.from(context.S.banners, x => x.project), ["claudi0", "api-gateway", "web-dashboard"]);
+    const markup = context.bannerStackHTML(); runtime.mountControls(markup);
+    assert.equal(document.querySelectorAll("[data-banner-body]").length, 3);
+    assert.equal(document.querySelectorAll("[data-banner-close]").length, 3);
+    assert.equal(document.querySelectorAll("[data-banner-action]").length, 1);
+    document.getElementById("btnBannerMore").click();
+    assert.deepEqual(Array.from(context.S.bannerQueue, x => x.id), [4, 5, 6]);
+    context.closeBanner(2);
+    assert.deepEqual(Array.from(context.S.banners, x => x.id), [1, 3, 4]);
+    assert.deepEqual(Array.from(context.S.bannerQueue, x => x.id), [5, 6]);
+    assert.ok(context.bannerStackHTML().includes(lang === "zh" ? "还有 2 条" : "2 more"));
+  });
+}
+
+test("queued events receive four seconds only after becoming visible; stack pauses overlap", () => {
+  const runtime = loadPrototype(); const { context } = runtime;
+  context.showNoticeBurst(false); context.showNoticeBurst(false);
+  const root = { matches() { return false; }, contains() { return false; }, addEventListener() {} };
+  context.NoticeClock.sync(root, false);
+  runtime.advanceTime(1000);
+  assert.equal(context.NoticeClock.clocks.get(1).left(), 3000);
+  assert.equal(context.NoticeClock.clocks.has(4), false);
+  context.NoticeClock.pause("hover", true); context.NoticeClock.pause("focus", true);
+  runtime.advanceTime(10000); context.NoticeClock.pause("hover", false); runtime.advanceTime(10000);
+  assert.equal(context.NoticeClock.clocks.get(2).left(), 3000);
+  context.closeBanner(1); context.NoticeClock.sync(root, false);
+  assert.equal(context.NoticeClock.clocks.get(4).left(), 4000);
+  assert.equal(context.NoticeClock.clocks.get(4).pauses.has("focus"), false, "sync samples actual focus ownership");
+  context.NoticeClock.pause("hover", true);
+  context.NoticeClock.sync(root, false);
+  assert.equal(context.NoticeClock.clocks.get(2).left(), 3000, "redraw keeps the surviving budget");
+});
+
+test("closing one banner cancels only its navigation; a later request cancels an earlier request", () => {
+  const runtime = loadPrototype(); const { context } = runtime;
+  context.showNoticeBurst(false); const retained = JSON.stringify(context.REMINDERS);
+  const reminderID = context.S.banners.find(x => x.id === 3).reminderID;
+  context.S.bannerNavigationOutcome = "fallback";
+  context.openBannerSource(3); context.closeBanner(1); runtime.advanceTime(450);
+  assert.equal(context.S.banners.find(x => x.id === 3).failure, "fallback");
+  assert.equal(JSON.stringify(context.REMINDERS), retained);
+  context.S.bannerNavigationOutcome = "exact"; context.openBannerSource(2); context.openBannerSource(3);
+  runtime.advanceTime(450);
+  assert.deepEqual(Array.from(context.S.banners, x => x.id), [2]);
+  assert.equal(context.REMINDERS.some(x => x.id === reminderID), false);
+});
+
+test("closing all clears the queue and a full bounded queue reports overflow", () => {
+  const { context, messages } = loadPrototype();
+  for (let i = 0; i < 51; i++) context.showNoticeScene("stop");
+  assert.equal(context.S.banners.length, 3); assert.equal(context.S.bannerQueue.length, 47);
+  assert.equal(messages.length, 1);
+  context.closeBanner();
+  assert.equal(context.S.banners.length + context.S.bannerQueue.length, 0);
+});
+
+for (const admission of ["full", "disabled"]) {
+  test(`${admission}: distinct attention reminders survive rejected banner admission`, () => {
+    const { context } = loadPrototype();
+    if (admission === "full") {
+      for (let i = 0; i < 50; i++) context.showNoticeScene("stop");
+    } else context.S.prefs.bannerOn = false;
+    const retained = JSON.stringify(context.REMINDERS);
+    const banners = JSON.stringify([context.S.banners, context.S.bannerQueue]);
+    const sources = [
+      { host: "Codex", project: "api-gateway" },
+      { host: "Claude Code", project: "web-dashboard" }
+    ];
+    for (const source of sources) context.showNoticeScene("permission", source);
+    const added = context.REMINDERS.slice(0, 2);
+    assert.equal(JSON.stringify(context.REMINDERS.slice(2)), retained, "both reminders retained without replacing older ones");
+    assert.equal(new Set(added.map(r => r.id)).size, 2, "each arriving attention signal has its own identity");
+    assert.deepEqual(Array.from(added, r => ({ host: r.host, project: r.proj })), sources.slice().reverse());
+    assert.equal(JSON.stringify([context.S.banners, context.S.bannerQueue]), banners, "rejected banners leave the display queue unchanged");
+  });
+}
