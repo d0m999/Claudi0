@@ -7,7 +7,7 @@
 
 ## 集成自动维护与三层设置（现行 · 2026-10-06）
 
-呈现基线为 `designs/macos-settings-native/Native Settings Alignment Prototype.html`，
+呈现基线为 [`Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>)，
 保留应用列表 → 应用详情 → 诊断详情。领域合同由 ADR 0025 与
 [实施规格](plan/PLAN-INTEGRATION-AUTOMATION.md) 拥有；本节替代历史四行连接组放在首页、手动连接主流程、
 开关关闭确认及无产品图标要求。八页顺序、原生外壳、窗口期历史、唯一 retained owner 和焦点归还保留。
@@ -74,7 +74,7 @@
 
 ## 整合原型修订（现行 · 2026-10-01）
 
-[`designs/panel-and-settings/Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板与横幅的现行视觉及交互 SoT；其设置部分由下方 2026-10-02 修订取代；其布局、颜色、动效和交互形态覆盖旧 mockups、独立横幅原型及本文历史呈现描述。`CONTEXT.md`、相关 ADR 和既有 owner 继续决定领域语义、安全、能力事实、持久化与生命周期。完整迁移合同见 [原生迁移规格](plan/PLAN-NATIVE-PROTOTYPE-MIGRATION.md)；本节记录呈现合同，不表示原生实现或验收已完成。容器统一称「声音包」，单个声音称「提示音」。八页顺序为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于，raw values 不变。
+[`designs/panel-and-settings/Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是菜单栏、面板、横幅和设置的现行画面 SoT；设置 UI 已按 2026-10-06 的 AppKit／SwiftUI 实际结构对齐。布局、颜色、动效和交互形态覆盖旧 mockups、独立横幅原型及本文历史呈现描述。`CONTEXT.md`、相关 ADR 和既有 owner 继续决定领域语义、安全、能力事实、持久化与生命周期；Swift/AppKit 代码仍是生产状态和行为的依据。完整迁移合同见 [原生迁移规格](plan/PLAN-NATIVE-PROTOTYPE-MIGRATION.md)；原型不是原生实现或验收证据。容器统一称「声音包」，单个声音称「提示音」。八页顺序为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于，raw values 不变。
 
 横幅正文静态，无展开或详情。未确认来源提供「在面板查看」；跳转失败就地呈现原因/重试，剩余 4 秒预算不重置。仅横幅自身悬停/聚焦暂停；面板与诊断共享独立冻结阅读集合，首个消费者冻结，显式刷新，末个关闭释放。来源激活仍保留提醒且不产生 exactReturnConfirmed。
 
@@ -98,9 +98,9 @@
 - 窗口仍为默认 1240×820、最小 960×640，侧栏 210／252 pt 及 1100 pt 窗口断点。主辅栏唯一断点为内容可用宽度 760 pt，宽时辅助栏 260 pt、标准／紧凑栏间距 26／20 pt；窄时辅助卡放到事件与主要操作之后，间距 20 pt。浏览器视口断点不直接移植。
 - 声音选择器与包操作栏保留原生固定区域，事件和辅助卡共用现有详情滚动区。集成保留真实 Agent 与连接结构；此次不修改领域 owner、配置／manifest、试听或 AI 写入合同。
 
-## macOS 八页设置修订（现行 · 2026-10-02）
+## macOS 八页设置呈现历史（2026-10-02；由 2026-10-04／10-06 修订覆盖）
 
-设置窗口的唯一呈现 SoT 为 [`claudi0 macOS Settings Prototype.html`](<designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)，SHA-256：`f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。本节覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡、主辅栏与固定操作栏；这些记录保留为历史。原整合原型继续拥有菜单栏、面板和横幅。本节不改变领域、持久化或窗口焦点合同。
+本节记录当时独立设置原型的视觉基线：[`claudi0 macOS Settings Prototype.html`](<designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)，SHA-256：`f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。它覆盖 #214 及 #213 中的设置皮肤、独立事件卡、主辅栏与固定操作栏；这些呈现只作历史追溯。当前画面 SoT 见下方 2026-10-06 修订。领域、持久化及窗口焦点合同未随原型迁移。
 
 - 八页顺序与 raw values 不变。默认／最小内容区 1240×820／960×640 pt，侧栏宽 252／210 pt，窗口断点 1100 pt；三组间距 24 pt。
 - 使用系统默认字体。页名 17 pt semibold，主标签 13 pt，辅助文字 11–12 pt；设置不继承 Rounded。accent 浅色 `#007AFF`、深色 `#0A84FF`。
@@ -149,7 +149,7 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 
 ### 系统原生外壳与窗口期历史（现行 · 2026-10-04）
 
-本节根据已给定的最终对齐规格，覆盖以上固定 RGB、独立 58 pt 正文页头、侧栏自绘选择及仅通知历史的合同。交互样稿为 [Native Settings Alignment Prototype.html](<designs/macos-settings-native/Native Settings Alignment Prototype.html>)；它演示八页、代表详情、失效位置和阅读恢复。样稿不是 macOS 控件绘制、原生焦点或正式验收证据。
+本节根据已给定的最终对齐规格，覆盖以上固定 RGB、独立 58 pt 正文页头、侧栏自绘选择及仅通知历史的合同。早期交互样稿为 [Native Settings Alignment Prototype.html](<designs/macos-settings-native/Native Settings Alignment Prototype.html>)；它演示八页、代表详情、失效位置和阅读恢复，现作为迁移参考。当前画面以主原型中的设置为准。HTML 不能证明 macOS 控件绘制、原生焦点或正式验收。
 
 - 唯一 retained 非激活窗口保持 `.accessory`、原层级与 handback；默认／最小尺寸 1240×820／960×640、侧栏 252／210 pt、1100 pt 断点不变。使用 `NSSplitViewController` 原生 sidebar item，source-list 单选列表与真实 `.unified` `NSToolbar`。隐藏可见窗口标题但保留本地化窗口身份；系统 safe area 避让工具栏，不固定补偿高度。
 - 工具栏共用原生瞬时前后分段控件，页名为 AX heading，无静态标题 Tab 停靠点。侧栏鼠标和方向键导航保留列表第一响应者；程序回写选择不触发导航。八页三组顺序与 20 pt 图标、轻量字标保留，选择和材质由系统绘制。
@@ -161,6 +161,15 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 - sheet、确认和文件选择器阻止外层导航；取消保留游标并回触发入口。离页沿用停止试听、结束 AI 和取消草稿；已接受的磁盘事务仍由 owner 结算。关闭窗口清空历史与书签，仅原最后顶层目的页偏好保留。语言／后台更新不 makeKey 或激活。
 
 本次实现与自动、Computer Use、独立人工、macOS 12 实际运行证据分别登记在验证记录中；本节不宣称正式验收通过。
+
+### 主原型成为画面 SoT（现行 · 2026-10-06）
+
+[`Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板、横幅和统一设置的唯一视觉参考。它的八页设置以当前 SwiftUI 页面、`SettingsAppearance`、`SettingsPageLayout`、AppKit source-list 侧栏和 unified toolbar 为对齐对象；生产实现继续使用系统语义色、系统菜单和原生窗口外壳。
+
+- 设置窗口默认／最小尺寸为 1240×820／960×640 pt；宽度不超过 1100 pt 时侧栏为 210 pt，否则为 252 pt。侧栏行高 32 pt、组间距 16 pt、图标 20 pt，字标高 19 pt。
+- 内容最大宽度 780 pt，水平边距 32／26 pt；section／信息组间距 20／12 pt；普通／多行控件行高至少 38／51 pt，横向内边距 14 pt。内容、功能组、侧栏与选中材质跟随 macOS 系统语义色和原生 source-list 状态。
+- 主原型表达窗口、层级、留白、字标、图标、颜色、动效与导航 affordance。它的 HTML 状态和点击结果仅用于演示；页面可用状态、实际操作、权限、焦点、无障碍、持久化及 host 回调仍以 Swift/AppKit 实现和 ADR 为准。原生接受度须单独验证。
+- `Native Settings Alignment Prototype.html` 和旧独立 `claudi0 macOS Settings Prototype.html` 保留迁移来源与历史样式，不再是设置画面的 SoT。
 
 ## 事件动画（现行 · 2026-10-06，#216）
 

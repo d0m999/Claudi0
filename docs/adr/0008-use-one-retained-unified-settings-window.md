@@ -21,9 +21,9 @@ claudi0 使用一个由 AppKit controller 持有并在 app 生命周期内复用
 
 横幅正文静态，无展开或详情。未确认来源提供「在面板查看」；跳转失败就地呈现原因/重试，剩余 4 秒预算不重置。仅横幅自身悬停/聚焦暂停；面板与诊断共享独立冻结阅读集合，首个消费者冻结，显式刷新，末个关闭释放。来源激活仍保留提醒且不产生 exactReturnConfirmed。
 
-## macOS 设置呈现修订（现行 · 2026-10-02）
+## macOS 设置呈现修订（历史 · 2026-10-02）
 
-八页设置及详情／sheet 的呈现引用改为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡与双栏／固定操作栏；原整合原型继续拥有面板与横幅。上述历史记录与领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。
+当时八页设置及详情／sheet 的呈现引用为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。它覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡与双栏／固定操作栏；此项视觉引用已由 2026-10-06 的主原型 SoT 修订取代。领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。
 
 ## 原生会话导航修订（2026-10-04）
 
@@ -34,3 +34,9 @@ claudi0 使用一个由 AppKit controller 持有并在 app 生命周期内复用
 设置继续由唯一非激活 retained window 承载，改用原生 split sidebar、source-list 和 unified toolbar；右侧复用现有 SwiftUI 目的页。八页及详情共享一个由 `SettingsPresentationSession` 持有的窗口期历史，最多 64 个位置，关闭清空。选择这一形态是为了统一跨页前后导航、系统侧栏键盘行为和工具栏 safe area，同时保持 macOS 12 及现有 `.accessory` handback。
 
 位置只记录稳定浏览身份、捕获目录和阅读书签，不捕获配置或写能力。返回查看包不等于应用该包；失效身份进入不可用页而不是可写默认组。刷新和匹配当前导航版本的操作结果更新当前位置；历史遍历不重放复制、采用或写入。sheet 阻止外层导航，旧恢复请求与迟到结果不能覆盖新位置。它取代仅通知局部前进记录，避免目的页各自维护第二个路由或焦点 owner。完整呈现合同见 DESIGN 的“系统原生外壳与窗口期历史”。
+
+## 统一主原型作为画面 SoT（现行 · 2026-10-06）
+
+菜单栏面板、事件横幅和八页设置共用 [`Panel and Settings Prototype.html`](../../designs/panel-and-settings/Panel%20and%20Settings%20Prototype.html) 作为唯一画面参考。设置外观以当前 SwiftUI 页面和 AppKit 原生 split sidebar、source-list 与 unified toolbar 为准；独立的 `Native Settings Alignment Prototype.html` 与旧设置原型只作迁移记录和历史参考。
+
+该决定只规定视觉参考顺序。原型中的 HTML 状态和动作不等于生产行为；路由、状态、写入、窗口 owner、焦点、无障碍、持久化和宿主能力继续由本 ADR、相关 ADR 与 Swift/AppKit 实现决定。一个 retained 设置窗口及窗口期导航历史合同不变；此项不表示已完成原生视觉验收。

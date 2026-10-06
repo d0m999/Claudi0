@@ -64,6 +64,6 @@ supersedes: 0007
 
 横幅正文静态，无展开或详情。未确认来源提供「在面板查看」；跳转失败就地呈现原因/重试，剩余 4 秒预算不重置。仅横幅自身悬停/聚焦暂停；面板与诊断共享独立冻结阅读集合，首个消费者冻结，显式刷新，末个关闭释放。来源激活仍保留提醒且不产生 exactReturnConfirmed。
 
-## macOS 设置呈现修订（现行 · 2026-10-02）
+## macOS 设置呈现修订（历史 · 2026-10-02）
 
-八页设置及详情／sheet 的呈现引用改为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡与双栏／固定操作栏；原整合原型继续拥有面板与横幅。上述历史记录与领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。
+当时八页设置及详情／sheet 的呈现引用为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。这项视觉引用已由 2026-10-06 的整合主原型 SoT 修订取代；领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。

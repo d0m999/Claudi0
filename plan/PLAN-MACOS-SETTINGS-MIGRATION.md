@@ -6,7 +6,7 @@
 
 ## 2026-10-04 外壳与导航修订（现行）
 
-当前外壳与控件参照 [`Native Settings Alignment Prototype.html`](<../designs/macos-settings-native/Native Settings Alignment Prototype.html>)、`DESIGN.md` 现行原生外壳章节及 ADR 0008。采用真实 `NSSplitViewController`、`NSToolbar`、`NSTableView.style = .sourceList`；取消正文固定页头。窗口尺寸、侧栏宽度与断点保持原值，正文 section/group 间距改为 20/12 pt，普通/多行最低行高为 38/51 pt，背景与强调色由系统绘制。下文旧固定 RGB、页头、间距和行高仅是历史基线。
+当前画面 SoT 为 [`Panel and Settings Prototype.html`](<../designs/panel-and-settings/Panel and Settings Prototype.html>)；设置部分按 `DESIGN.md` 现行原生外壳章节、ADR 0008 与生产 UI 的 `NSSplitViewController`、`NSToolbar`、`NSTableView.style = .sourceList` 对齐。取消正文固定页头。窗口尺寸、侧栏宽度与断点保持原值，正文 section/group 间距改为 20/12 pt，普通/多行最低行高为 38/51 pt，背景与强调色由系统绘制。下文旧固定 RGB、页头、间距和行高仅是历史基线；独立设置 HTML 留作迁移参考。
 
 `SettingsPresentationSession` 持有窗口打开期间最多 64 个 `SettingsLocation`。侧栏、详情和显式深链共用 Back/Forward；重复当前位置保留前进分支。位置捕获目录身份、查看包、焦点书签与阅读锚点，不捕获配置或写入能力。已知失效目标保留错误页与历史；格式错误输入拒绝进入历史。sheet/文件选择器禁用外层导航，关闭清空历史。包复制与生成的迟到结果不得改写较新的导航；历史遍历不重放复制、应用或采用。
 
@@ -18,7 +18,7 @@
 设置呈现：[`claudi0 macOS Settings Prototype.html`](<../designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)。
 原型 SHA-256：`f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。
 
-新原型拥有默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于及其详情／sheet；覆盖 #214 及 #213 的冲突设置呈现要求。原整合原型继续拥有菜单栏、面板和横幅。领域合同、未知字段、写入锁／CAS、备份、回执与单一 retained 非激活窗口不变。
+当时的独立设置原型拥有默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于及其详情／sheet；覆盖 #214 及 #213 的冲突设置呈现要求。2026-10-06 起，这些画面并入主整合原型；旧文件保留迁移记录。领域合同、未知字段、写入锁／CAS、备份、回执与单一 retained 非激活窗口不变。
 
 ## 实施约束
 
