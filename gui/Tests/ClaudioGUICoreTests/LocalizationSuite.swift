@@ -66,6 +66,10 @@ func runLocalizationSuites() {
                 && english.text(.workspaceChooseDefaultGroup) == "Select Default Group",
             "失效工作区必须有双语显式重选动作")
         expect(
+            chinese.text(.workspaceEdit) == "工作区设置…"
+                && english.text(.workspaceEdit) == "Workspace Settings…",
+            "面板工作区入口使用简洁的双语设置名称")
+        expect(
             chinese.format(.panelHeader, Int64(2)).contains("2"),
             "Chinese format placeholders must be substituted")
         expect(

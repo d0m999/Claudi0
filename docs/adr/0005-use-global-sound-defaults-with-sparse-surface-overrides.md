@@ -21,6 +21,8 @@ WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据，其中 
 
 `Notification → notification` 可在工作区资格开放前独立实施：仅 `permission_prompt` 和 `idle_prompt`，两个 matcher 共用一个 binding 与 installation ID，使用默认组声音包、音量和事件开关。该阶段为四个已实现绑定、五条自有 hook、4/5 能力；`StopFailure` 仍未实现。入口、播放器启动前和安装锁内的回执写入均校验 installation ID 与完整 scope，三绑定旧 scope 在升级后失效。通知的当前回执不代表所有 subtype 已完成人工听音；subtype 证据单列脱敏验收矩阵。独立通知阶段不降低上述五类目录证据门槛。
 
-设置详情与菜单栏共用写入 owner 和声音包库。设置提供默认组/工作区列表及同窗口详情；菜单栏只手动选组、换包、调该组音量、试听与逐事件静音，适用 Surface 只读并可定向进入详情。活动概览始终标为“所有来源”，不推算工作区统计。
+设置详情与菜单栏共用写入 owner 和声音包库。设置提供默认组/工作区列表及同窗口详情；菜单栏只手动选组、换包、调该组音量、试听与逐事件静音，通过“工作区设置…”定向进入详情查看和管理适用 Surface。活动概览始终标为“所有来源”，不推算工作区统计。
+
+2026-10-06 呈现简化：当前编辑目标由面板顶部的声音作用域选择器说明，移除音量作用范围副文案与适用来源名单。试听边界移到按钮帮助及无障碍提示中；无法播放、配置失效和写入失败等需要操作的原因仍直接显示。本修订不改变声音配置、来源适用性或接入与试听分别判断的合同。
 
 参考：[Git rev-parse](https://git-scm.com/docs/git-rev-parse)、[Git worktree](https://git-scm.com/docs/git-worktree)、[Codex Hooks](https://developers.openai.com/de-DE/docs/hooks)、[Claude Code Hooks](https://code.claude.com/docs/en/hooks)。公开文档不代替发布前逐事件真实验证。

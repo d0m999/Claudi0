@@ -98,16 +98,10 @@ public struct MasterVolumeRow: View {
     }
 
     private var label: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(ClaudioL10n(language: language).text(.panelMasterVolume))
-                .font(.system(size: 12.5 * typeScale, weight: .medium, design: .rounded))
-                .foregroundColor(ClaudioTheme.text(colorScheme))
-            Text(ClaudioL10n(language: language).text(.panelMasterVolumeDescription))
-                .font(.system(size: 9.5 * typeScale, design: .rounded))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityHidden(true)
+        Text(ClaudioL10n(language: language).text(.panelMasterVolume))
+            .font(.system(size: 12.5 * typeScale, weight: .medium, design: .rounded))
+            .foregroundColor(ClaudioTheme.text(colorScheme))
+            .accessibilityHidden(true)
     }
 
     private var slider: some View {

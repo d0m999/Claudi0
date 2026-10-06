@@ -833,16 +833,8 @@ public struct PanelView: View {
                 .padding(.vertical, 7)
                 .id(selectedScope.scope)
                 if let id = selectedScope.scope.workspaceID,
-                    let rule = panelModel.workspaceRules.first(where: { $0.id == id })
+                    panelModel.workspaceRules.contains(where: { $0.id == id })
                 {
-                    Text(
-                        l10n.text(.workspaceSurfaces) + ": "
-                            + rule.surfaces.map { surface in
-                                HostID.productVisibleCases.first { $0.surfaceID == surface }?
-                                    .displayName ?? surface.rawValue
-                            }.joined(separator: ", ")
-                    )
-                    .font(.caption).foregroundColor(.secondary)
                     Button(l10n.text(.workspaceEdit)) {
                         guard let target = soundScopeSelection.projection.writeTarget,
                             target.id == id
@@ -859,9 +851,8 @@ public struct PanelView: View {
                     .accessibilityLabel(l10n.text(.workspaceEdit))
                     .accessibilityIdentifier("panel.workspace.edit")
                     .focused($focusedTarget, equals: .workspaceDetails)
+                    .padding(.bottom, 9)
                 }
-                Text(l10n.text(.workspacePreviewNote)).font(.caption).foregroundColor(.secondary)
-                    .padding(9)
                 if panelModel.workspaceRulesMalformed {
                     FailureRow(message: l10n.text(.workspaceInvalidRule))
                 }
@@ -1270,6 +1261,13 @@ private struct PanelAgentEventRow: View {
             .lineLimit(adaptation.rowWrapsToTwoLines ? 2 : 1)
     }
 
+    private var previewHelp: String {
+        let availability = presentation.controls.previewAvailability
+        let hint = localizedEventPreviewHint(availability, language: language)
+        guard availability.isAvailable else { return hint }
+        return hint + "\n" + ClaudioL10n(language: language).text(.workspacePreviewNote)
+    }
+
     private var actions: some View {
         HStack(spacing: 5) {
             Button(action: performPreview) {
@@ -1279,14 +1277,8 @@ private struct PanelAgentEventRow: View {
             .buttonStyle(ClaudioIconButtonStyle())
             .disabled(!presentation.controls.previewEnabled)
             .focused(focusedTarget, equals: .eventPreview(presentation.event))
-            .help(
-                localizedEventPreviewHint(
-                    presentation.controls.previewAvailability, language: language)
-            )
-            .accessibilityHint(
-                localizedEventPreviewHint(
-                    presentation.controls.previewAvailability, language: language)
-            )
+            .help(previewHelp)
+            .accessibilityHint(previewHelp)
             .accessibilityLabel(
                 ClaudioL10n(language: language).format(
                     .eventPreviewLabel,

@@ -24,6 +24,13 @@ func runPanelMountedContractSuites() async {
                 defer { probe.close() }
                 let l10n = ClaudioL10n(language: language)
                 expect(
+                    !probe.containsStaticText(l10n.text(.workspacePreviewNote)),
+                    "试听边界不再作为面板常驻文字")
+                expect(
+                    probe.element("panel.event.stop.preview")?.accessibilityHelp?()
+                        == l10n.text(.eventPreviewHint) + "\n" + l10n.text(.workspacePreviewNote),
+                    "可用试听按钮通过实际 AX Help 保留试听边界")
+                expect(
                     probe.element("panel.settings")?.accessibilityLabel?()
                         == l10n.text(.panelOpenSettings),
                     "挂载生产设置入口必须有精确本地化 AX 名称")
@@ -93,6 +100,56 @@ func runPanelMountedContractSuites() async {
                         .stop) == false,
                     "真实 Button 接线必须翻转真实配置文件")
                 expect(probe.actions.audibility >= 2, "音量与静音动作均转发共享可听性更新")
+            }
+        }
+    }
+    await suite("Mounted Panel workspace：精简呈现仍定向打开当前工作区设置") {
+        for language in ClaudioAppLanguage.allCases {
+            await withTempDirectory { root in
+                seedMountedPanelFiles(root)
+                let rule = WorkspaceSoundRule(
+                    id: UUID(),
+                    directory: WorkspaceDirectory(kind: .directory, path: root.path),
+                    surfaces: [.claudeCode, .codex],
+                    profile: WorkspaceSoundProfile(selectedPack: "pack-a", volume: 0.4))
+                let configFile = root.appendingPathComponent("config.json")
+                var config = loadClaudioConfig(from: configFile)!
+                config.workspaceRules = [rule]
+                try! JSONEncoder().encode(config).write(to: configFile)
+                let builder = CompositionFixture(root: root)
+                defer { builder.cleanup() }
+                let composition = try! builder.build()
+                composition.preferences.setLanguage(language)
+                _ = await composition.soundPackLibrary.refreshSnapshot(trigger: .initial)
+                for _ in 0..<100 { await Task.yield() }
+                composition.soundScopeSelection.select(.workspace(rule.id))
+                let before = try! Data(contentsOf: configFile)
+                let probe = PanelMountedContractProbe(composition: composition, root: root)
+                defer { probe.close() }
+                let l10n = ClaudioL10n(language: language)
+                expect(
+                    probe.element("panel.workspace.edit")?.accessibilityLabel?()
+                        == l10n.text(.workspaceEdit),
+                    "工作区设置入口的双语名称来自正式 catalog")
+                expect(
+                    !probe.containsStaticText(
+                        l10n.text(.workspaceSurfaces) + ": Claude Code, Codex")
+                        && !probe.containsStaticText(l10n.text(.workspacePreviewNote)),
+                    "工作区面板不再常驻来源名单与试听边界")
+                expect(
+                    probe.valueDescription("panel.master-volume") == "40%",
+                    "音量仍来自当前工作区")
+                expect(probe.press("panel.workspace.edit"), "真实 AX 按钮可打开工作区设置")
+                expect(
+                    probe.actions.workspaceRoutes == [
+                        EventSettingsWindowRoute(
+                            scope: .workspace(rule.id),
+                            workspaceTarget: WorkspaceSoundWriteTarget(rule: rule))
+                    ],
+                    "简化后仍只路由到当前工作区及其捕获的写目标")
+                expect(
+                    try! Data(contentsOf: configFile) == before,
+                    "查看工作区设置不改写声音配置")
             }
         }
     }
@@ -184,6 +241,7 @@ private final class PanelMountedActions {
     var quit = 0
     var audibility = 0
     var revealed: [URL] = []
+    var workspaceRoutes: [EventSettingsWindowRoute] = []
 }
 
 @MainActor
@@ -204,7 +262,8 @@ private final class PanelMountedContractProbe {
             activityDiagnostics: composition.activityDiagnostics,
             eventNoticeModel: EventNoticeModel(receiverEpoch: UUID()),
             onAudibilityInputsChanged: { actions.audibility += 1 },
-            onOpenSettings: { actions.settings += 1 }, onOpenRecentNotices: {},
+            onOpenSettings: { actions.settings += 1 },
+            onEditSoundScope: { actions.workspaceRoutes.append($0) }, onOpenRecentNotices: {},
             onOpenIntegration: { _ in },
             onQuit: { actions.quit += 1 }, onRevealConfig: { actions.revealed.append($0) },
             onAnnounce: { _ in })
@@ -271,6 +330,13 @@ private final class PanelMountedContractProbe {
             guard $0.accessibilityRole?() == .staticText,
                 $0.accessibilityIdentifier?() == identifier
             else { return false }
+            let value: String? = $0.accessibilityValue?()
+            return value == text
+        }
+    }
+    func containsStaticText(_ text: String) -> Bool {
+        allElements.contains {
+            guard $0.accessibilityRole?() == .staticText else { return false }
             let value: String? = $0.accessibilityValue?()
             return value == text
         }

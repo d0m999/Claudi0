@@ -121,6 +121,24 @@ for (const lang of ["zh", "en"]) {
 }
 
 for (const lang of ["zh", "en"]) {
+  test(`${lang}: compact workspace panel keeps its settings route and preview help`, () => {
+    const runtime = loadPrototype();
+    const { context, document } = runtime;
+    context.S.lang = lang;
+    const scope = context.GROUPS.find(g => g.kind === "ws");
+    context.S.scope = scope.id;
+    const before = JSON.stringify(context.GROUPS);
+    const markup = context.panelHTML();
+    assert.ok(!markup.includes(lang === "zh" ? "适用来源：" : "Applies to: "));
+    assert.ok(markup.includes(lang === "zh" ? "工作区设置…" : "Workspace settings…"));
+    assert.ok(markup.includes('title="' + (lang === "zh" ? "试听只验证" : "Preview checks")));
+    runtime.mountControls(markup);
+    document.getElementById("editWorkspaceBtn").click();
+    assert.equal(context.S.pane, "groups");
+    assert.equal(context.S.ws, scope.id);
+    assert.equal(JSON.stringify(context.GROUPS), before);
+    assert.ok(context.paneGroups().includes(lang === "zh" ? "适用来源" : "Applies to"));
+  });
   test(`${lang}: panel activity is a static summary of shared event counts`, () => {
     const { context } = loadPrototype();
     context.S.lang = lang;

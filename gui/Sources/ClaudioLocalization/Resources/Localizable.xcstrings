@@ -14257,13 +14257,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit Workspace…"
+            "value": "Workspace Settings…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "编辑工作区…"
+            "value": "工作区设置…"
           }
         }
       }

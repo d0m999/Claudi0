@@ -1735,8 +1735,7 @@ function panelHTML() {
   h += '<div class="kv form-row"><label class="k" for="panelPack">' + T.pack + '</label>' +
     '<select class="field" id="panelPack" style="max-width:170px"' + (S.library.status !== "ready" ? ' disabled' : '') + '>' + packOptions(cur.pack) + '</select></div>';
   if (cur.kind === "ws") {
-    h += '<p class="note-line">' + tr("适用来源：", "Applies to: ") + esc(surfaceNames(cur.surfaces)) + '</p>' +
-      '<button class="ghost-btn" id="editWorkspaceBtn">' + tr("编辑工作区…", "Edit workspace…") + '</button>';
+    h += '<button class="ghost-btn" id="editWorkspaceBtn">' + tr("工作区设置…", "Workspace settings…") + '</button>';
   }
   h += '<div class="sec-title">' + T.events + '<span class="cnt">5</span></div>';
   EVENTS.forEach(function (e) {
@@ -1748,7 +1747,9 @@ function panelHTML() {
       '<span class="rt"><span class="t">' + evName(e) + '</span>' +
       (detailReason ? '<span class="ev-reason" id="preview-reason-' + e.id + '">' + esc(detailReason) + '</span>' : '') + '</span>' +
       '<span class="acts"><button class="mini-btn" data-listen="' + e.id + '"' + (reason ? ' disabled' : '') +
-      (description ? ' aria-describedby="' + description + '"' : '') + ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
+      (description ? ' aria-describedby="' + description + '"' : '') +
+      (!reason ? ' title="' + esc(tr("试听只验证音频可播放，不代表宿主事件已接入。", "Preview checks audio playback only, not host event integration.")) + '"' : '') +
+      ' aria-label="' + evName(e) + tr("：试听", ": preview") + '">' + G.play + '</button>' +
       '<button class="mini-btn' + (muted ? ' off' : '') + '" data-mute="' + e.id + '" aria-pressed="' + muted +
       '" aria-label="' + evName(e) + (muted ? tr("：已静音", ": muted") : tr("：已开启", ": on")) + '">' + (muted ? G.muted : G.mute) + '</button></span></div>';
   });
