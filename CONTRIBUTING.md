@@ -36,6 +36,8 @@ python3 scripts/test-sound-pack-candidates.py
 python3 scripts/embed-opencode-plugin.py --check
 node scripts/test-opencode-plugin.mjs
 python3 scripts/test-additional-host-cli-contract.py
+python3 scripts/test-additional-host-migration.py
+python3 scripts/test-additional-host-migration.py --acceptance
 
 swift build -c debug --package-path gui --product ClaudioGUI
 swift build -c release --package-path gui --product ClaudioGUI
@@ -58,6 +60,12 @@ The plugin source is embedded in the helper and copied to `Resources/integration
 after editing `integrations/opencode/claudio.js`, regenerate with
 `python3 scripts/embed-opencode-plugin.py` and run the check above.
 Bundle builds use `-Osize` for the helper, preserving the existing executable-size budget.
+
+The migration suite exercises public adapters in isolated temporary roots under ordinary Release
+and explicit acceptance builds. Configuration ownership recognizes exact known historical templates
+and implemented bindings independently of release admission; connect migrates them to the current
+template and permitted binding set. Edited managed bytes remain conflicts, and one-shot backups
+are preserved. This automated migration evidence does not replace real-host acceptance.
 
 On a Command Line Tools installation whose current SDK requires unavailable SwiftUI macro
 plugins, select a compatible installed SDK explicitly for local checks, for example

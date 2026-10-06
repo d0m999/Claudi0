@@ -85,8 +85,15 @@ if CommandLine.arguments.contains("--host-integration-model") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--hook-command-matching") {
+    runHookCommandMatchingSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--additional-hosts") {
     await runAdditionalHostIntegrationSuites()
+    await runAdditionalHostMigrationSuites()
     runAdditionalHostHookSuites()
     print("\(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
@@ -112,6 +119,7 @@ runEventSuites()
 runQuestionBindingSuites()
 runHostQuestionHookSuites()
 await runAdditionalHostIntegrationSuites()
+await runAdditionalHostMigrationSuites()
 runAdditionalHostHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()

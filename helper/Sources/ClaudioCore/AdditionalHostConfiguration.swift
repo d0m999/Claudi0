@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// The native schemas stay in this adapter module. Installation bytes are compared exactly;
@@ -11,6 +12,10 @@ enum AdditionalHostConfiguration {
     }
 
     private static let pluginHeader = "// Claudio managed OpenCode bridge v1\nconst installation = "
+    // Exact template shipped by 3bf3840, before the default-export/disposal fixes.
+    // Fixture: Tests/ClaudioCoreTests/Fixtures/opencode-3bf3840.js. Never authorize by marker alone.
+    private static let legacyPluginTemplateSHA256 =
+        "209dacc1341c7496246975b35c3c4f02d889432dcbce7e46bf841cdc0cb72216"
     private static let blockStart = "# >>> Claudio Kimi Code hooks v1"
     private static let blockEnd = "# <<< Claudio Kimi Code hooks v1"
 
@@ -29,8 +34,11 @@ enum AdditionalHostConfiguration {
         host: HostID, installationID: UUID, helperPath: String,
         events: [String]? = nil
     ) throws -> Data {
-        let bindings = HostCapabilityCatalog.bindings(for: host).filter {
-            $0.isAudibleCapability && (events == nil || events!.contains($0.nativeEvent ?? ""))
+        let bindings = HostCapabilityCatalog.bindings(for: host).filter { binding in
+            if let events {
+                return binding.isImplementedCapability && events.contains(binding.nativeEvent ?? "")
+            }
+            return binding.isAudibleCapability
         }
         if host == .opencode {
             let encoder = JSONEncoder()
@@ -44,11 +52,11 @@ enum AdditionalHostConfiguration {
         }
         var block = "\n\(blockStart)\n"
         for binding in bindings {
-            guard let native = binding.nativeEvent,
-                let command = hostIntegrationHookCommand(
-                    host: host, nativeEvent: native,
-                    installationID: installationID, claudioBinaryPath: helperPath)
+            guard let native = binding.nativeEvent
             else { throw rejected("无法生成 Kimi Code 自有 hook") }
+            let command = canonicalHostIntegrationHookCommand(
+                host: host, nativeEvent: native,
+                installationID: installationID, claudioBinaryPath: helperPath)
             block += "[[hooks]]\nevent = \(try quoted(native))\n"
             if native == "TurnStarted" { block += "matcher = \(try quoted("^user$"))\n" }
             if let trigger = HostQuestionTrigger.binding(host: host, nativeEvent: native) {
@@ -84,13 +92,25 @@ enum AdditionalHostConfiguration {
                 !HostEventSource.containsUnsafeScalar(config.helperPath),
                 Set(config.enabledEvents).count == config.enabledEvents.count,
                 config.enabledEvents.allSatisfy({
-                    HostCapabilityCatalog.binding(
-                        host: host,
-                        nativeEvent: $0) != nil
-                }),
-                try render(
-                    host: host, installationID: config.installationID,
-                    helperPath: config.helperPath, events: config.enabledEvents) == data
+                    name in
+                    HostCapabilityCatalog.bindings(for: host).contains {
+                        $0.nativeEvent == name && $0.isImplementedCapability
+                    }
+                })
+            else {
+                throw rejected("OpenCode 的 claudio.js 为第三方文件或已被修改，已拒绝覆盖／删除")
+            }
+            let canonical = try render(
+                host: host, installationID: config.installationID,
+                helperPath: config.helperPath, events: config.enabledEvents)
+            let isCurrentTemplate = canonical == data
+            let prefix = canonical.dropLast(OpenCodePluginSource.template.utf8.count)
+            guard
+                isCurrentTemplate
+                    || (data.starts(with: prefix)
+                        && SHA256.hash(data: data.dropFirst(prefix.count))
+                            .map { String(format: "%02x", $0) }.joined()
+                            == legacyPluginTemplateSHA256)
             else {
                 throw rejected("OpenCode 的 claudio.js 为第三方文件或已被修改，已拒绝覆盖／删除")
             }
@@ -98,7 +118,8 @@ enum AdditionalHostConfiguration {
                 .compactMap(\.nativeEvent)
             let missing = expected.filter { !config.enabledEvents.contains($0) }
             return .init(
-                state: utf8BytesEqual(config.helperPath, helperPath) && missing.isEmpty
+                state: isCurrentTemplate && utf8BytesEqual(config.helperPath, helperPath)
+                    && config.enabledEvents == expected
                     ? .configured
                     : .incomplete(missingNativeEvents: missing.isEmpty ? expected : missing),
                 installationID: config.installationID, helperPath: config.helperPath,
@@ -111,7 +132,7 @@ enum AdditionalHostConfiguration {
             guard
                 !document.hooks.contains(where: { hook in
                     if case .string(let command) = hook.fields["command"] {
-                        return matchedHostHookCommand(
+                        return matchedAdditionalHostConfigurationHookCommand(
                             inHookCommand: command,
                             claudioRoot: claudioRoot)?.host == .kimiCode
                     }
@@ -130,7 +151,7 @@ enum AdditionalHostConfiguration {
         guard
             !outsideHooks.contains(where: { hook in
                 if case .string(let command) = hook.fields["command"] {
-                    return matchedHostHookCommand(
+                    return matchedAdditionalHostConfigurationHookCommand(
                         inHookCommand: command,
                         claudioRoot: claudioRoot)?.host == .kimiCode
                 }
@@ -140,7 +161,8 @@ enum AdditionalHostConfiguration {
         guard ownHooks.allSatisfy({ $0.end <= range.upperBound }),
             let first = ownHooks.first,
             case .string(let command) = first.fields["command"],
-            let match = matchedHostHookCommand(inHookCommand: command, claudioRoot: claudioRoot),
+            let match = matchedAdditionalHostConfigurationHookCommand(
+                inHookCommand: command, claudioRoot: claudioRoot),
             match.host == .kimiCode,
             let ownPath = commandPath(command: command, match: match),
             try render(
@@ -157,7 +179,7 @@ enum AdditionalHostConfiguration {
             .compactMap(\.nativeEvent)
         let missing = expected.filter { !installedEvents.contains($0) }
         return .init(
-            state: utf8BytesEqual(ownPath, helperPath) && missing.isEmpty
+            state: utf8BytesEqual(ownPath, helperPath) && installedEvents == expected
                 ? .configured
                 : .incomplete(missingNativeEvents: missing.isEmpty ? expected : missing),
             installationID: match.installationID, helperPath: ownPath, ownedRange: range)

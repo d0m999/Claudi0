@@ -66,7 +66,8 @@ let package = Package(
         .executableTarget(
             name: "claudio-tests",
             dependencies: ["ClaudioCore", "ClaudioHookInput"],
-            path: "Tests/ClaudioCoreTests"
+            path: "Tests/ClaudioCoreTests",
+            exclude: ["Fixtures"]
         ),
     ]
 )

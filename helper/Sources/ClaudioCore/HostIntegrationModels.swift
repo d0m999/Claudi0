@@ -213,8 +213,13 @@ public struct HostCapabilityBinding: Codable, Sendable, Equatable, Hashable {
     }
 
     public var isAudibleCapability: Bool {
+        isImplementedCapability && AdditionalHostReleasePolicy.permits(self)
+    }
+
+    /// Known implemented bindings may identify owned configuration even when release admission
+    /// is closed. This fact must not authorize runtime callbacks or new installation bindings.
+    var isImplementedCapability: Bool {
         nativeEvent != nil && support != .unsupported && implementation == .implemented
-            && AdditionalHostReleasePolicy.permits(self)
     }
 
     public var isDeclaredCapability: Bool {

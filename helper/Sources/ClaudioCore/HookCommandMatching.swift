@@ -264,6 +264,16 @@ public func hostIntegrationHookCommand(
     guard HostCapabilityCatalog.semanticEvent(host: host, nativeEvent: nativeEvent) != nil else {
         return nil
     }
+    return canonicalHostIntegrationHookCommand(
+        host: host, nativeEvent: nativeEvent, installationID: installationID,
+        claudioBinaryPath: claudioBinaryPath)
+}
+
+/// Format only after the caller selects a known binding. Ownership inspection can render a
+/// historical command without granting that binding runtime admission.
+func canonicalHostIntegrationHookCommand(
+    host: HostID, nativeEvent: String, installationID: UUID, claudioBinaryPath: String
+) -> String {
     return "\(shellQuotedPath(claudioBinaryPath)) hook \(host.rawValue) \(nativeEvent)"
         + " --installation-id \(installationID.uuidString)"
 }
@@ -276,6 +286,16 @@ public func matchedHostHookCommand(
     claudioRoot: String
 ) -> MatchedHostHookCommand? {
     matchHostHookCommand(inHookCommand: command) {
+        isClaudioBinaryPath($0, claudioRoot: claudioRoot)
+    }
+}
+
+/// Configuration cleanup/migration recognizes implemented additional-host bindings across build
+/// policies. The public command matcher and runtime binding lookup remain release-gated.
+func matchedAdditionalHostConfigurationHookCommand(
+    inHookCommand command: String, claudioRoot: String
+) -> MatchedHostHookCommand? {
+    matchHostHookCommand(inHookCommand: command, includeInactiveAdditionalHostBindings: true) {
         isClaudioBinaryPath($0, claudioRoot: claudioRoot)
     }
 }
@@ -305,6 +325,7 @@ public func matchedCurrentHostHookCommand(
 
 private func matchHostHookCommand(
     inHookCommand command: String,
+    includeInactiveAdditionalHostBindings: Bool = false,
     acceptsBinaryPath: (String) -> Bool
 ) -> MatchedHostHookCommand? {
     let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -320,7 +341,11 @@ private func matchHostHookCommand(
     let commandWithoutID = String(trimmed[..<markerRange.lowerBound])
 
     for host in HostID.allCases {
-        for binding in HostCapabilityCatalog.bindings(for: host) where binding.isAudibleCapability {
+        for binding in HostCapabilityCatalog.bindings(for: host)
+        where binding.isAudibleCapability
+            || (includeInactiveAdditionalHostBindings && (host == .opencode || host == .kimiCode)
+                && binding.isImplementedCapability)
+        {
             guard let nativeEvent = binding.nativeEvent else { continue }
             let suffix = " hook \(host.rawValue) \(nativeEvent)"
             guard commandWithoutID.hasSuffix(suffix) else { continue }
