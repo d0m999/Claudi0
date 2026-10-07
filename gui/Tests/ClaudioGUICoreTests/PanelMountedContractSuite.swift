@@ -10,6 +10,61 @@ import SwiftUI
 
 @MainActor
 func runPanelMountedContractSuites() async {
+    suite("Mounted Panel activity：单行双语统计省去正常态说明并保留异常") {
+        for language in ClaudioAppLanguage.allCases {
+            withTempDirectory { root in
+                seedMountedPanelFiles(root)
+                let builder = CompositionFixture(root: root)
+                defer { builder.cleanup() }
+                let composition = try! builder.build()
+                composition.preferences.setLanguage(language)
+                let now = Date()
+                let dates = LocalActivitySummaryStore.dateKeys(today: now, timeZone: .current)
+                let key = LocalActivityCounterKey.make(host: .claudeCode, event: .stop)
+                let document = LocalActivitySummaryDocument(
+                    updatedAt: now,
+                    buckets: [
+                        LocalActivityDayBucket(localDate: dates[0], counts: [key: 148]),
+                        LocalActivityDayBucket(localDate: dates[1], counts: [key: 725]),
+                    ])
+                let l10n = ClaudioL10n(language: language)
+                for readState: ActivityOverviewReadState in [.ready, .unavailable] {
+                    let projection = ActivityOverviewProjector.project(
+                        document: readState == .ready ? document : nil,
+                        readState: readState, integrationStatuses: [:], now: now,
+                        timeZone: .current)
+                    let presentation = ActivityDiagnosticsPresentation(
+                        projection: projection,
+                        log: ActivityDiagnosticLogSnapshot(path: "", state: .missing, failures: []))
+                    let diagnostics = ActivityDiagnosticsModel(
+                        previewPresentation: presentation,
+                        previewLoadResult: ActivityDiagnosticsLoadResult(
+                            readResult: LocalActivitySummaryReadResult(
+                                state: readState == .ready ? .ready(document) : .unavailable),
+                            log: presentation.log))
+                    let probe = PanelMountedContractProbe(
+                        composition: composition, root: root, activityDiagnostics: diagnostics)
+                    defer { probe.close() }
+                    let expected = l10n.format(
+                        .panelActivitySummary,
+                        (readState == .ready ? "148" : "—") as NSString,
+                        (readState == .ready ? "873" : "—") as NSString)
+                    let expectedReading =
+                        readState == .ready
+                        ? expected
+                        : expected + ", " + l10n.text(.settingsActivityStatusUnavailable)
+                    let reading = probe.valueDescription("panel.activity.totals")
+                    expect(
+                        reading == expectedReading,
+                        "实际挂载摘要使用原型单行文案，异常时合并播报真实原因与未知次数")
+                    expect(
+                        reading?.contains(l10n.text(.settingsActivityStatusReady)) == false
+                            && reading?.contains(l10n.text(.workspaceAllSources)) == false,
+                        "菜单栏不常驻数据完整或所有来源说明")
+                }
+            }
+        }
+    }
     await suite("Mounted Panel AX：两种语言的动作、身份、音量草稿与固定退出 footer") {
         for language in ClaudioAppLanguage.allCases {
             await withTempDirectory { root in
@@ -251,7 +306,10 @@ private final class PanelMountedContractProbe {
     private let window: NSWindow
     private let host: NSHostingView<PanelView>
 
-    init(composition: PanelAppComposition, root: URL) {
+    init(
+        composition: PanelAppComposition, root: URL,
+        activityDiagnostics: ActivityDiagnosticsModel? = nil
+    ) {
         let actions = actions
         let panel = PanelView(
             audioEnvironment: composition.audioEnvironment,
@@ -259,7 +317,7 @@ private final class PanelMountedContractProbe {
             panelModel: composition.eventSettingsModel,
             soundScopeSelection: composition.soundScopeSelection,
             hostIntegrations: composition.hostIntegrations, languageStore: composition.preferences,
-            activityDiagnostics: composition.activityDiagnostics,
+            activityDiagnostics: activityDiagnostics ?? composition.activityDiagnostics,
             eventNoticeModel: EventNoticeModel(receiverEpoch: UUID()),
             onAudibilityInputsChanged: { actions.audibility += 1 },
             onOpenSettings: { actions.settings += 1 },

@@ -1,8 +1,10 @@
 import AppKit
 import ClaudioCore
 import ClaudioGUICore
+import ClaudioLocalization
 import ClaudioSettingsPresentation
 import Foundation
+import SoundPacksWindow
 
 @MainActor
 func runSettingsProductImagesSuites() {
@@ -48,13 +50,14 @@ func runSettingsProductImagesSuites() {
     }
 
     var images: [String: NSImage] = [:]
-    suite("设置产品图标：四张原始资源按可见主体归一化") {
+    suite("设置产品图标：六张原始资源按可见主体归一化") {
         let resources = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("gui/Sources/ClaudioGUI/Resources/SettingsHostIcons")
         let expectedDimensions = [
             "claude-light": 256, "codex-light": 824, "codex-dark": 824, "workbuddy-light": 820,
+            "opencode-light": 192, "kimi-code-light": 192,
         ]
         for (name, dimension) in expectedDimensions.sorted(by: { $0.key < $1.key }) {
             guard let source = NSImage(contentsOf: resources.appendingPathComponent("\(name).png"))
@@ -73,8 +76,8 @@ func runSettingsProductImagesSuites() {
             "Codex 明暗变体必须占用同样的可见尺寸")
     }
 
-    guard images.count == 4 else { return }
-    suite("设置产品图标：真实集成页挂载三款产品的明暗图片") {
+    guard images.count == 6 else { return }
+    suite("设置产品图标：真实集成页挂载五款产品的明暗图片") {
         for dark in [false, true] {
             var requested: [HostID: Bool] = [:]
             let provider = SettingsProductImages { host, isDark in
@@ -83,6 +86,8 @@ func runSettingsProductImagesSuites() {
                 case .claudeCode: return images["claude-light"]
                 case .codex: return images[isDark ? "codex-dark" : "codex-light"]
                 case .workBuddy: return images["workbuddy-light"]
+                case .opencode: return images["opencode-light"]
+                case .kimiCode: return images["kimi-code-light"]
                 default: return nil
                 }
             }
@@ -94,7 +99,19 @@ func runSettingsProductImagesSuites() {
             defer { probe.close() }
             expect(
                 HostID.productVisibleCases.allSatisfy { requested[$0] == dark },
-                "集成页必须实际请求三款产品的当前外观图片")
+                "集成页必须实际请求五款产品的当前外观图片")
+            for host in HostID.productVisibleCases {
+                let frame = SoundPacksLayoutRecorder.frames["integrations.icon.\(host.rawValue)"]
+                expect(
+                    frame?.size == NSSize(width: 27, height: 27),
+                    "\(host) 的实际图标必须与其他集成统一为 27×27 pt")
+                for language in ClaudioAppLanguage.allCases {
+                    expect(
+                        integrationToolKindDisplayName(for: host, language: language)
+                            == (host == .workBuddy ? "Desktop" : "CLI"),
+                        "类型标记描述当前集成表面，仅 WorkBuddy 为 Desktop")
+                }
+            }
             if let directory = ProcessInfo.processInfo.environment[
                 "CLAUDIO_PRODUCT_ICON_CAPTURE_DIR"]
             {

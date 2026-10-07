@@ -805,6 +805,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let settingsActivityTitle: Self = "settings.activity.title"
     public static let settingsActivityRangeToday: Self = "settings.activity.range.today"
     public static let settingsActivityRangeSevenDays: Self = "settings.activity.range.seven-days"
+    public static let panelActivitySummary: Self = "panel.activity.summary"
     public static let settingsActivityMessages: Self = "settings.activity.messages"
     public static let settingsActivityEventsTitle: Self = "settings.activity.events.title"
     public static let settingsActivityCoverage: Self = "settings.activity.coverage"
@@ -928,6 +929,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "integrations.destination.subtitle"
     public static let integrationsAgentSection: Self = "integrations.destination.agent-section"
     public static let integrationsAgentHint: Self = "integrations.destination.agent-hint"
+    public static let integrationsToolCLI: Self = "integrations.tool.cli"
+    public static let integrationsToolDesktop: Self = "integrations.tool.desktop"
     public static let integrationsConnectionSection: Self =
         "integrations.destination.connection-section"
     public static let integrationsCoverage: Self = "integrations.destination.coverage"
@@ -1451,6 +1454,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "integrations.automatic.diagnostics-title"
 
     public static let allKnown: [Self] = [
+        .integrationsToolCLI, .integrationsToolDesktop,
         .integrationsAutoIntentUnavailable, .integrationsAutoRetry, .integrationsAutoCleaning,
         .integrationsAutoNoInstallation,
         .integrationsAutoNotInstalled, .integrationsAutoDisabled, .integrationsAutoPreparing,
@@ -2019,6 +2023,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsActivityTodayMessages, .settingsActivitySevenDayMessages,
         .settingsActivitySevenDaySubtasks, .settingsActivityTitle,
         .settingsActivityRangeToday, .settingsActivityRangeSevenDays,
+        .panelActivitySummary,
         .settingsActivityMessages, .settingsActivityEventsTitle,
         .settingsActivityCoverage, .settingsActivityStatusReady, .settingsActivityStatusEmpty,
         .settingsActivityStatusUnobserved, .settingsActivityStatusUnavailable,

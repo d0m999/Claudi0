@@ -175,24 +175,40 @@ struct IntegrationsSettingsDestinationView: View {
                     Image(nsImage: image).resizable().scaledToFit().frame(width: 27, height: 27)
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                         .accessibilityHidden(true)
+                        .soundPacksLayoutProbe("integrations.icon.\(agent.host.rawValue)")
                 }
                 Button {
                     onIntegrationsRoute(IntegrationsSettingsRoute(surface: agent.host.surfaceID))
                 } label: {
-                    Text(agent.title)
-                        .font(SettingsAppearance.font(.body).weight(.semibold))
-                        .foregroundColor(SettingsAppearance.text(colorScheme))
-                        .frame(
-                            maxWidth: .infinity,
-                            minHeight: SettingsAppearance.controlRowHeight
-                                - 2 * SettingsAppearance.controlRowVerticalPadding,
-                            alignment: .leading
+                    HStack(spacing: 8) {
+                        Text(agent.title)
+                            .font(SettingsAppearance.font(.body).weight(.semibold))
+                            .foregroundColor(SettingsAppearance.text(colorScheme))
+                        Text(
+                            integrationToolKindDisplayName(
+                                for: agent.host, language: languageStore.language)
                         )
-                        .contentShape(Rectangle())
+                        .font(SettingsAppearance.font(.caption))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4).fill(Color.secondary.opacity(0.08)))
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: SettingsAppearance.controlRowHeight
+                            - 2 * SettingsAppearance.controlRowVerticalPadding,
+                        alignment: .leading
+                    )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .focused($focusedTarget, equals: .agent(agent.host))
-                .accessibilityLabel(agent.title)
+                .accessibilityLabel(
+                    agent.title + ", "
+                        + integrationToolKindDisplayName(
+                            for: agent.host, language: languageStore.language)
+                )
                 .accessibilityValue(
                     automaticStatus(for: agent.host)
                 )

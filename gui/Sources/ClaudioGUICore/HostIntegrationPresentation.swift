@@ -440,6 +440,18 @@ public struct EventHostIndicatorPresentation: Identifiable, Sendable, Equatable 
     }
 }
 
+/// The label describes the integrated surface, rather than every client sold under that brand.
+public func integrationToolKindDisplayName(
+    for host: HostID, language: ClaudioAppLanguage
+) -> String {
+    let key: ClaudioL10nKey
+    switch host {
+    case .claudeCode, .codex, .opencode, .kimiCode: key = .integrationsToolCLI
+    case .workBuddy, .chatGPTDesktopAX, .claudeDesktopAX: key = .integrationsToolDesktop
+    }
+    return ClaudioL10n(language: language).text(key)
+}
+
 /// Compact names are a presentation projection, not host-capability logic. The exhaustive switch
 /// ensures a newly supported host cannot silently inherit a misleading event-row label.
 public func eventHostIndicatorCompactDisplayName(for host: HostID) -> String {

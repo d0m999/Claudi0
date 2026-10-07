@@ -21,6 +21,12 @@ func runLocalizationSuites() {
         let chinese = ClaudioL10n(language: .zhHans)
         let english = ClaudioL10n(language: .english)
         expect(
+            chinese.format(.panelActivitySummary, "148" as NSString, "873" as NSString)
+                == "今日 148 次 · 近 7 日 873 次"
+                && english.format(.panelActivitySummary, "148" as NSString, "873" as NSString)
+                    == "148 today · 873 last 7 days",
+            "菜单栏活动摘要必须匹配原型的双语单行文案")
+        expect(
             chinese.text(.interfaceTitle) == "界面",
             "explicit zh-Hans lookup must not depend on Locale.current")
         expect(

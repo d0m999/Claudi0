@@ -428,17 +428,18 @@ public struct PanelView: View {
 
     private var activityOverview: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(l10n.text(.workspaceAllSources)).font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Text(l10n.text(.settingsActivityRangeToday))
-                Text(activityCountText(activityPresentation.todayEventTotal)).monospacedDigit()
-                Spacer()
-                Text(l10n.text(.settingsActivityRangeSevenDays))
-                Text(activityCountText(activityPresentation.sevenDayEventTotal)).monospacedDigit()
-            }
+            Text(
+                l10n.format(
+                    .panelActivitySummary,
+                    activityCountText(activityPresentation.todayEventTotal) as NSString,
+                    activityCountText(activityPresentation.sevenDayEventTotal) as NSString)
+            )
             .font(.caption)
-            Text(activityStatusText(activityPresentation.sevenDayStatus)).font(.caption)
-                .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+            if let status = activityStatusText(activityPresentation.sevenDayStatus) {
+                Text(status).font(.caption).foregroundStyle(.secondary)
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("panel.activity.totals")
@@ -522,10 +523,9 @@ public struct PanelView: View {
             + "\(l10n.text(.settingsActivityRangeSevenDays)) \(sevenDays) · \(coverage)"
     }
 
-    private func activityStatusText(_ status: ActivityOverviewStatus) -> String {
+    private func activityStatusText(_ status: ActivityOverviewStatus) -> String? {
         switch status {
-        case .ready: return l10n.text(.settingsActivityStatusReady)
-        case .empty: return l10n.text(.settingsActivityStatusEmpty)
+        case .ready, .empty: return nil
         case .unobserved: return l10n.text(.settingsActivityStatusUnobserved)
         case .unavailable: return l10n.text(.settingsActivityStatusUnavailable)
         case .stale(let date):
