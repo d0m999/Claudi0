@@ -93,17 +93,24 @@ struct SettingsSoundsAICueView: View {
             supplement: editorSupplement
         )
         .onAppear {
-            pendingRouteSession = routeSession
             draftNameInput = sounds?.draft?.name ?? ""
             syncOwnerComposer()
             Task { await viewModel.refreshCredentialStatus() }
         }
-        .onChange(of: route) { _ in
-            stopCandidatePreview()
-            viewModel.endSession()
-            editorOwner.updateAICueComposer(session: nil, generation: nil)
-            pendingRouteSession = routeSession
+        .onChange(of: route) { newRoute in
+            let nextSession = newRoute.editTarget.map {
+                AICueComposerSession(packID: $0.packID, event: $0.event)
+            }
+            if pendingRouteSession != nextSession { pendingRouteSession = nil }
+            if viewModel.session != nextSession {
+                stopCandidatePreview()
+                viewModel.endSession()
+                editorOwner.updateAICueComposer(session: nil, generation: nil)
+            }
+            beginRouteSessionIfNeeded(for: newRoute)
         }
+        .onChange(of: editorOwner.presentation) { _ in beginRouteSessionIfNeeded() }
+        .onChange(of: detail) { _ in beginRouteSessionIfNeeded() }
         .onChange(of: selectedPack?.id) { selectedID in
             if let session = viewModel.session, session.packID != activePackID {
                 stopCandidatePreview()
@@ -117,9 +124,6 @@ struct SettingsSoundsAICueView: View {
         }
         .onChange(of: viewModel.session) { _ in syncOwnerComposer() }
         .onChange(of: viewModel.generation) { _ in syncOwnerComposer() }
-        .onChange(of: viewModel.requiresCredentialConfiguration) { required in
-            if required { credentialSheetIsPresented = true }
-        }
         .sheet(isPresented: $credentialSheetIsPresented) {
             EventSettingsAICueCredentialSheet(
                 viewModel: viewModel,
@@ -152,6 +156,11 @@ struct SettingsSoundsAICueView: View {
         supplement.scopePicker = scopePicker
         supplement.serviceSummary = AnyView(
             Text(l10n.text(viewModel.providerProfile.displayNameKey)))
+        supplement.serviceOverview = serviceCard
+        supplement.eventGenerationAction = { event in
+            AnyView(generationEntry(event, opensDetail: true))
+        }
+        supplement.eventComposerIsPresented = { event in activeEvent == event }
         supplement.onLeaveEvent = {
             stopCandidatePreview()
             viewModel.endSession()
@@ -165,56 +174,13 @@ struct SettingsSoundsAICueView: View {
     private var serviceDetail: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             serviceCard
-            ForEach(viewModel.availableProviderProfiles, id: \.id) { profile in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(l10n.text(profile.displayNameKey)).font(
-                            SettingsAppearance.font(.sectionTitle))
-                        Spacer(minLength: 8)
-                        Button(l10n.text(.settingsNativeSelectProfile)) {
-                            stopCandidatePreview()
-                            try? viewModel.selectProviderProfile(profile.id)
-                            Task { await viewModel.refreshCredentialStatus() }
-                        }
-                        .disabled(
-                            viewModel.isBusy || viewModel.credentialActivity != .idle
-                                || profile.id == viewModel.providerProfileID
-                        )
-                        .accessibilityIdentifier("settings.sounds.profile.\(profile.id.rawValue)")
-                    }
-                    Text(l10n.format(.settingsNativeRegion, regionName(profile.regionID)))
-                    ForEach(
-                        AICueModality.allCases.filter(profile.supportedModalities.contains),
-                        id: \.self
-                    ) { modality in
-                        if let route = profile.routes[modality] {
-                            Text(
-                                l10n.format(
-                                    route.candidateSetPolicy.semantics == .styled
-                                        ? .settingsNativeStyledRoute : .settingsNativeNumberedRoute,
-                                    l10n.text(aiCueModalityKey(modality)),
-                                    route.supportedLanguageTags.sorted().joined(separator: ", "),
-                                    Int64(route.candidateSetPolicy.requestedCount),
-                                    Int64(route.candidateSetPolicy.minimumAcceptedCount)))
-                        }
-                    }
-                    Text(l10n.text(profile.privacyDisclosureKey))
-                    Text(l10n.text(profile.credentialStorageDisclosureKey))
-                }
-                .font(SettingsAppearance.font(.caption))
-                .fixedSize(horizontal: false, vertical: true)
-                .settingsSectionSurface()
+            VStack(alignment: .leading, spacing: 8) {
+                Text(l10n.text(viewModel.providerProfile.privacyDisclosureKey))
+                Text(l10n.text(viewModel.providerProfile.credentialStorageDisclosureKey))
             }
-        }
-    }
-
-    private func regionName(_ region: String?) -> String {
-        switch region {
-        case nil: l10n.text(.settingsNativeGlobal)
-        case "singapore": l10n.text(.settingsNativeSingapore)
-        case "beijing": l10n.text(.settingsNativeBeijing)
-        case "china": l10n.text(.settingsNativeChina)
-        default: region ?? l10n.text(.settingsAboutUnknown)
+            .font(SettingsAppearance.font(.caption))
+            .fixedSize(horizontal: false, vertical: true)
+            .settingsSectionSurface()
         }
     }
 
@@ -361,37 +327,44 @@ struct SettingsSoundsAICueView: View {
         if wasPresented { draftNameButtonFocused = true }
     }
 
-    private func eventGenerationContent(_ event: Event) -> some View {
-        let row = sounds?.eventRows.first(where: { $0.event == event })
-        return VStack(alignment: .leading, spacing: 8) {
-            serviceCard
-            if selectedPack?.isBuiltinReadOnly != true {
-                Button(l10n.text(.aiCueGenerateAction)) {
+    @ViewBuilder
+    private func generationEntry(_ event: Event, opensDetail: Bool) -> some View {
+        if selectedPack?.isBuiltinReadOnly != true {
+            Button(l10n.text(.settingsNativeGenerateCue)) {
+                if opensDetail, let packID = activePackID {
+                    pendingRouteSession = AICueComposerSession(packID: packID, event: event)
+                    onDetailIntent(.editEvent(packID: packID, event: event))
+                    beginRouteSessionIfNeeded()
+                } else {
                     beginSession(for: event)
                 }
-                .buttonStyle(.bordered)
-                .disabled(activePackID == nil || row == nil)
-                .focused($focusedEvent, equals: event)
-                .accessibilityLabel(
-                    l10n.text(.aiCueGenerateAction) + " "
-                        + localizedEventName(event, language: languageStore.language)
-                )
-                .accessibilityHint(
-                    adoptionHint(
-                        row?.aiCueAdoptionAvailability
-                            ?? .ineligible(.configurationUnavailable))
-                )
-                .accessibilityIdentifier("settings.sounds.ai-cue.event.\(event.rawValue)")
-                .soundPacksLayoutProbe("settings.sounds.ai-cue.event.\(event.rawValue)")
-
             }
+            .buttonStyle(.bordered)
+            .disabled(
+                activePackID == nil || viewModel.isBusy
+                    || sounds?.eventRows.contains(where: { $0.event == event }) != true
+            )
+            .focused($focusedEvent, equals: event)
+            .accessibilityLabel(
+                l10n.text(.settingsNativeGenerateCue) + " "
+                    + localizedEventName(event, language: languageStore.language)
+            )
+            .accessibilityIdentifier("settings.sounds.ai-cue.event.\(event.rawValue)")
+            .soundPacksLayoutProbe("settings.sounds.ai-cue.event.\(event.rawValue)")
+        }
+    }
 
+    private func eventGenerationContent(_ event: Event) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             if activeEvent == event {
                 if selectedPack?.isBuiltinReadOnly == true {
                     readOnlyCopyGuidance
                 } else if let packID = activePackID {
+                    serviceCard
                     composer(packID: packID, event: event)
                 }
+            } else {
+                generationEntry(event, opensDetail: false)
             }
         }
     }
@@ -450,9 +423,13 @@ struct SettingsSoundsAICueView: View {
         return AICueComposerSession(packID: target.packID, event: target.event)
     }
 
-    private func beginRouteSessionIfNeeded() {
-        guard let pendingRouteSession, let sounds else { return }
-        switch soundsAICueRouteStep(pendingRouteSession, route: route, sounds: sounds) {
+    private func beginRouteSessionIfNeeded(for requestedRoute: SoundPacksWindowRoute? = nil) {
+        let targetRoute = requestedRoute ?? route
+        guard let pendingRouteSession, let sounds,
+            let target = targetRoute.editTarget,
+            target.packID == pendingRouteSession.packID, target.event == pendingRouteSession.event
+        else { return }
+        switch soundsAICueRouteStep(pendingRouteSession, route: targetRoute, sounds: sounds) {
         case .pending:
             return
         case .inspect(let action):
@@ -477,9 +454,7 @@ struct SettingsSoundsAICueView: View {
         playingCandidateID = nil
         viewModel.begin(packID: packID, event: event)
         syncOwnerComposer()
-        DispatchQueue.main.async {
-            focusedEvent = event
-        }
+        focusedEvent = nil
     }
 
     private func beginDraft() {
@@ -495,13 +470,14 @@ struct SettingsSoundsAICueView: View {
     }
 
     private func closeComposer() {
+        let closingEvent = activeEvent
         let hadSession = viewModel.session != nil
         let hadCandidates = viewModel.generation != nil
         stopCandidatePreview()
         viewModel.endSession()
         editorOwner.cancelAICuePackDraft()
         editorOwner.updateAICueComposer(session: nil, generation: nil)
-        focusedEvent = nil
+        focusedEvent = closingEvent
         guard hadSession else { return }
         onAnnouncement(
             l10n.text(

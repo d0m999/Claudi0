@@ -76,7 +76,7 @@ public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
         let writeFailureRecoveryPaths,
         let hasWriteFailureConfigRecovery,
         let hasSoundPackPicker,
-        let hasWorkspaceDetails):
+        _):
         var order: [PanelFocusTarget] = [.headerSettings, .recentNotices, .soundScope]
         if hasRefreshFailedNotice { order.append(.libraryRefreshRetry) }
         if hasConfigFailureNotice { order.append(.configReveal) }
@@ -86,7 +86,6 @@ public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
         }
         if hasSoundPackPicker { order.append(.soundPackPicker) }
         if hasMasterVolume { order.append(.masterVolume) }
-        if hasWorkspaceDetails { order.append(.workspaceDetails) }
         order.append(
             contentsOf: writeFailureRecoveryPaths.map { .writeFailureRecoveryFile(path: $0) })
         if hasWriteFailureConfigRecovery { order.append(.writeFailureConfigReveal) }

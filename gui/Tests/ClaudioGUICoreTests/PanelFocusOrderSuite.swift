@@ -102,10 +102,10 @@ func runPanelFocusOrderSuites() {
             expect(order.contains(.eventMute(event)), "\(event) 必须有静音焦点")
         }
         expect(
-            order.suffix(4).elementsEqual([
-                .soundPackPicker, .masterVolume, .workspaceDetails, .quitApplication,
-            ]),
-            "包选择、播放设置、工作区详情与退出顺序错误：\(order)")
+            order.suffix(3).elementsEqual([
+                .soundPackPicker, .masterVolume, .quitApplication,
+            ]) && !order.contains(.workspaceDetails),
+            "包选择、播放设置与退出顺序不包含已移除的工作区快捷入口：\(order)")
     }
 
     suite("panelFocusOrder：缺失声音只移除试听，保留已实现事件静音") {

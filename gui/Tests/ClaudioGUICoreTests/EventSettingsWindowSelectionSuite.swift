@@ -633,7 +633,7 @@ func runEventSettingsWindowSelectionSuites() {
             "规则消失后 scope detail 不得被判为当前目标")
     }
 
-    suite("事件设置 detail：删除请求经 selection owner 钉住 scope detail") {
+    suite("事件设置 detail：删除请求钉住工作区目标并保留发起页面") {
         let rule = WorkspaceSoundRule(
             directory: WorkspaceDirectory(kind: .directory, path: "/fixture/delete-detail"),
             surfaces: [.codex],
@@ -645,14 +645,26 @@ func runEventSettingsWindowSelectionSuites() {
             "删除前 detail 必须仍是 configuration")
         expect(selection.requestDeletion(of: rule), "删除请求必须被接受")
         expect(
-            selection.deletionPresentation.pending != nil
-                && selection.route.detail == .scope(WorkspaceSoundWriteTarget(rule: rule))
+            selection.deletionPresentation.pending?.target == WorkspaceSoundDeleteTarget(rule: rule)
+                && selection.route.detail == .configuration
                 && selection.route.scope == .workspace(rule.id),
-            "删除确认必须由 selection owner 同时钉住对应 scope detail")
+            "删除确认必须钉住对应工作区目标并保留主页面")
         selection.cancelDeletion()
         expect(
             selection.deletionPresentation.pending == nil
-                && selection.route.detail == .scope(WorkspaceSoundWriteTarget(rule: rule)),
-            "取消确认保留原 scope detail，不产生额外路由")
+                && selection.route.detail == .configuration,
+            "取消确认保留主页面，不产生额外路由")
+
+        let scopeDetail = WorkspaceSettingsDetail.scope(WorkspaceSoundWriteTarget(rule: rule))
+        selection.showScopeDetail(WorkspaceSoundWriteTarget(rule: rule))
+        expect(selection.requestDeletion(of: rule), "已有范围详情中的请求仍被接受")
+        expect(
+            selection.deletionPresentation.pending?.target == WorkspaceSoundDeleteTarget(rule: rule)
+                && selection.route.detail == scopeDetail,
+            "从范围详情发起时仍钉住同一目标并保留详情")
+        selection.cancelDeletion()
+        expect(
+            selection.deletionPresentation.pending == nil && selection.route.detail == scopeDetail,
+            "取消范围详情中的确认保留原详情")
     }
 }

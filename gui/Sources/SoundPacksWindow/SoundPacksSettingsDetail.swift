@@ -66,6 +66,7 @@ package enum SoundPacksSettingsDetail: Equatable, Sendable {
 package func soundPackDeleteExplanationKey(
     _ pack: SoundPackEditorPackPresentation
 ) -> ClaudioL10nKey {
+    if pack.isBuiltinReadOnly { return .soundPacksPackDeleteBuiltin }
     if pack.usage.usageIsIncomplete { return .settingsSoundsAICueScopeIncomplete }
     if pack.isReferencedByAnyScope { return .soundPacksPackDeleteActive }
     return pack.deleteAction == nil

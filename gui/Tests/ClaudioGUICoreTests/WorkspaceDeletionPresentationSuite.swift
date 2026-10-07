@@ -17,6 +17,9 @@ func runWorkspaceDeletionPresentationSuites() {
         expect(selection.requestDeletion(of: rule), "selected Workspace can request confirmation")
         let cancelledRequest = selection.deletionPresentation.pending!
         expect(
+            selection.route.detail == .configuration,
+            "从工作区主页面删除不跳入目录与适用来源子页")
+        expect(
             cancelledRequest.target == target
                 && !selection.requestDeletion(of: rule),
             "confirmation retains exact captured identity and cannot be opened twice")

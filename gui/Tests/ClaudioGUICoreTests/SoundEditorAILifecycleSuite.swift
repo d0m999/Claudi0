@@ -1,19 +1,29 @@
+import AppKit
 import ClaudioCore
 import ClaudioGUICore
+import ClaudioLocalization
 import ClaudioSettingsPresentation
 import Foundation
 import SoundPacksWindow
 
 private actor SoundEditorLifecycleCredentials: AICueCredentialManaging {
+    private var currentStatus: AICueCredentialStatus
+    init(
+        status: AICueCredentialStatus = .stored(
+            verification: .verified, hasPendingReplacement: false)
+    ) {
+        currentStatus = status
+    }
     func status(for profileID: AICueProviderProfileID) async -> AICueCredentialStatus {
-        .stored(verification: .verified, hasPendingReplacement: false)
+        currentStatus
     }
 
     func save(
         _ credential: SensitiveCredentialInput,
         for profileID: AICueProviderProfileID
     ) async throws -> AICueCredentialStatus {
-        await status(for: profileID)
+        currentStatus = .stored(verification: .verified, hasPendingReplacement: false)
+        return currentStatus
     }
 
     func delete(for profileID: AICueProviderProfileID) async throws {}
@@ -61,6 +71,93 @@ private actor SoundEditorLifecycleGenerator: AICueGenerating {
 @MainActor
 func runSoundEditorAILifecycleSuites() async {
     #if DEBUG
+    await suite("声音原生入口：直接生成、显式配置 Key、保存后仍需显式生成") {
+        for language in ClaudioAppLanguage.allCases {
+            let generator = SoundEditorLifecycleGenerator()
+            let credentials = SoundEditorLifecycleCredentials(status: .missing)
+            let viewModel = soundEditorLifecycleViewModel(
+                generator: generator, credentials: credentials)
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                language: language, route: .sounds(.overview),
+                availability: PreviewFixtures.settingsRouteAvailability, aiCueViewModel: viewModel)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session, size: NSSize(width: 960, height: 640))
+            defer { viewModel.endSession(); probe.close() }
+            await probe.settle()
+            let l10n = ClaudioL10n(language: language)
+            expect(!probe.hasAttachedSheet, "首次声音页不自动弹 Key sheet")
+            for event in Event.allCases {
+                if let frame = SoundPacksLayoutRecorder.frames[
+                    "settings.sounds.ai-cue.event.\(event.rawValue)"]
+                {
+                    _ = probe.scrollToVisible(frame)
+                }
+                expect(
+                    probe.menuAccessibilityElement(
+                        identifier: "settings.sounds.ai-cue.event.\(event.rawValue)") != nil,
+                    "五事件的生成入口必须在主页面直接可达")
+            }
+            expect(
+                SoundPacksLayoutRecorder.frames["sound-packs.deletion.card"] != nil,
+                "声音包删除必须成为主页面独立区域")
+            expect(
+                probe.menuIsEnabled(identifier: "sound-packs.delete-selected-pack") == false,
+                "使用中的声音包仍受删除保护")
+            if let frame = SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.stop"] {
+                _ = probe.scrollToVisible(frame)
+            }
+            expect(probe.pressControl("settings.sounds.ai-cue.event.stop"), "点击主页面生成入口")
+            await probe.settle()
+            expect(
+                viewModel.session
+                    == AICueComposerSession(packID: "settings-fixture-pack", event: .stop),
+                "直接入口跨路由保留同包同事件创作会话")
+            expect(
+                probe.menuAccessibilityElement(identifier: "event-settings.ai-cue.description")
+                    != nil,
+                "一步进入描述表单")
+            viewModel.updateDescription("短促木琴完成音效")
+            probe.refresh()
+            if let frame = SoundPacksLayoutRecorder.frames["event-settings.ai-cue.generate.control"]
+            {
+                _ = probe.scrollToVisible(frame)
+            }
+            expect(
+                probe.controlLabel("event-settings.ai-cue.generate")
+                    == l10n.text(.aiCueConfigureKey),
+                "缺少 Key 时主按钮明确引导配置")
+            expect(probe.pressControl("event-settings.ai-cue.generate"), "显式配置 Key")
+            await probe.settle()
+            expect(probe.hasAttachedSheet, "点击后挂载原生 Key sheet")
+            expect(!(await generator.isSuspended), "配置 Key 不触发生成")
+            // Use the injected credential manager; this checks the save seam without a real API request.
+            await viewModel.saveCredential(try! SensitiveCredentialInput("fixture-only-key"))
+            fixture.eventSettingsSelection.dismissCredentialSheet()
+            await probe.settle()
+            expect(
+                !probe.hasAttachedSheet && viewModel.soundDescription == "短促木琴完成音效",
+                "保存后返回同表单并保留描述")
+            let generatedAfterSaving = await generator.isSuspended
+            expect(viewModel.phase == .editing && !generatedAfterSaving, "保存不自动生成")
+            expect(
+                probe.controlLabel("event-settings.ai-cue.generate")
+                    == l10n.text(.aiCueGenerateCue),
+                "主按钮切换为生成提示音")
+            expect(probe.pressControl("event-settings.ai-cue.generate"), "显式生成提示音")
+            let generating = await soundEditorLifecycleWait { await generator.isSuspended }
+            expect(generating, "主按钮进入真实生成任务")
+            guard generating else { continue }
+            await generator.release(
+                with: soundEditorLifecycleGeneration(root: fixture.temporaryRoot))
+            _ = await soundEditorLifecycleWait { viewModel.phase == .candidatesReady }
+            await probe.settle()
+            expect(
+                probe.controlLabel("event-settings.ai-cue.candidate.clear.use")?.contains(
+                    l10n.format(.aiCueUseNamedEvent, localizedEventName(.stop, language: language)))
+                    == true,
+                "候选采用按钮明确具体事件")
+        }
+    }
     await suite("声音事件详情：点击当前声音侧栏立即取消生成并拒绝迟到候选") {
         let generator = SoundEditorLifecycleGenerator()
         let viewModel = soundEditorLifecycleViewModel(generator: generator)
@@ -230,10 +327,11 @@ func runSoundEditorAILifecycleSuites() async {
 
 @MainActor
 private func soundEditorLifecycleViewModel(
-    generator: SoundEditorLifecycleGenerator
+    generator: SoundEditorLifecycleGenerator,
+    credentials: SoundEditorLifecycleCredentials = SoundEditorLifecycleCredentials()
 ) -> AICueGenerationViewModel {
     AICueGenerationViewModel(
-        credentialManager: SoundEditorLifecycleCredentials(),
+        credentialManager: credentials,
         generator: generator, providerProfileID: .elevenLabsGlobal,
         providerPreferences: AICueProviderPreferences(defaults: UserDefaults()))
 }

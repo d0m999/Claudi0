@@ -25,4 +25,6 @@ WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据，其中 
 
 2026-10-06 呈现简化：当前编辑目标由面板顶部的声音作用域选择器说明，移除音量作用范围副文案与适用来源名单。试听边界移到按钮帮助及无障碍提示中；无法播放、配置失效和写入失败等需要操作的原因仍直接显示。本修订不改变声音配置、来源适用性或接入与试听分别判断的合同。
 
+2026-10-07 原型入口修订：移除面板“工作区设置…”快捷按钮，改由既有齿轮入口进入统一设置，再在“默认组／工作区”中管理。这一入口约定取代上文的快捷按钮呈现，不改变共享作用域选择、目录匹配、配置写入或窗口 owner；原生呈现已于同日同步。
+
 参考：[Git rev-parse](https://git-scm.com/docs/git-rev-parse)、[Git worktree](https://git-scm.com/docs/git-worktree)、[Codex Hooks](https://developers.openai.com/de-DE/docs/hooks)、[Claude Code Hooks](https://code.claude.com/docs/en/hooks)。公开文档不代替发布前逐事件真实验证。

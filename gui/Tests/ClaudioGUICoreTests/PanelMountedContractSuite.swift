@@ -183,9 +183,8 @@ func runPanelMountedContractSuites() async {
                 defer { probe.close() }
                 let l10n = ClaudioL10n(language: language)
                 expect(
-                    probe.element("panel.workspace.edit")?.accessibilityLabel?()
-                        == l10n.text(.workspaceEdit),
-                    "工作区设置入口的双语名称来自正式 catalog")
+                    probe.element("panel.workspace.edit") == nil,
+                    "工作区面板不再挂载工作区设置快捷入口")
                 expect(
                     !probe.containsStaticText(
                         l10n.text(.workspaceSurfaces) + ": Claude Code, Codex")
@@ -194,14 +193,10 @@ func runPanelMountedContractSuites() async {
                 expect(
                     probe.valueDescription("panel.master-volume") == "40%",
                     "音量仍来自当前工作区")
-                expect(probe.press("panel.workspace.edit"), "真实 AX 按钮可打开工作区设置")
+                expect(probe.press("panel.settings"), "齿轮仍可打开统一设置")
                 expect(
-                    probe.actions.workspaceRoutes == [
-                        EventSettingsWindowRoute(
-                            scope: .workspace(rule.id),
-                            workspaceTarget: WorkspaceSoundWriteTarget(rule: rule))
-                    ],
-                    "简化后仍只路由到当前工作区及其捕获的写目标")
+                    probe.actions.workspaceRoutes.isEmpty && probe.actions.settings == 1,
+                    "齿轮使用统一设置入口，不发送工作区快捷路由")
                 expect(
                     try! Data(contentsOf: configFile) == before,
                     "查看工作区设置不改写声音配置")

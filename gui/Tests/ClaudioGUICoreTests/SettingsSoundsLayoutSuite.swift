@@ -1,7 +1,7 @@
 import AppKit
-import ClaudioGUIComponents
 import ApplicationServices
 import ClaudioCore
+import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
 import ClaudioSettingsPresentation
@@ -116,6 +116,24 @@ func runSettingsSoundsLayoutSuites() async {
                                 )
                             } else {
                                 expect(false, "\(name) 必须挂载选择器")
+                            }
+                        }
+                        if destination == .sounds {
+                            for event in Event.allCases {
+                                expect(
+                                    probe.menuAccessibilityElement(
+                                        identifier: "settings.sounds.ai-cue.event.\(event.rawValue)"
+                                    ) != nil,
+                                    "\(name) 用户包五事件行必须直接挂载生成入口")
+                            }
+                            if let deletion = frames["sound-packs.deletion.card"],
+                                let eventGroup = frames["sound-packs.events.group"]
+                            {
+                                expect(
+                                    deletion.minY > eventGroup.maxY,
+                                    "\(name) 删除声音包位于主页面底部独立区域")
+                            } else {
+                                expect(false, "\(name) 必须挂载声音包删除区域")
                             }
                         }
                         if let captureDirectory = ProcessInfo.processInfo.environment[
@@ -507,7 +525,20 @@ final class SettingsSoundsNativeLayoutProbe {
         return value
     }
 
-    private func menuAccessibilityElement(identifier: String) -> AnyObject? {
+    func pressControl(_ identifier: String) -> Bool {
+        guard let control = menuAccessibilityElement(identifier: identifier),
+            control.isAccessibilityEnabled?() != false
+        else { return false }
+        let pressed = control.accessibilityPerformPress?() == true
+        refresh()
+        return pressed
+    }
+
+    func controlLabel(_ identifier: String) -> String? {
+        menuAccessibilityElement(identifier: identifier)?.accessibilityLabel?()
+    }
+
+    func menuAccessibilityElement(identifier: String) -> AnyObject? {
         prepareMenuAccessibility()
         var matches: [AnyObject] = []
         var visited: Set<ObjectIdentifier> = []
@@ -757,7 +788,6 @@ final class SettingsSoundsNativeLayoutProbe {
         window.close()
     }
 }
-
 
 private func colorsMatch(_ observed: [Int]?, _ expected: [Int]?) -> Bool {
     guard let observed, let expected, observed.count == expected.count else { return false }

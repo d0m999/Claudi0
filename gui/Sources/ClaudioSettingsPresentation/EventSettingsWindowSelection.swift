@@ -247,7 +247,6 @@ package final class EventSettingsWindowSelection: ObservableObject {
         deletionPresentation = WorkspaceDeletionPresentation(
             pending: WorkspaceDeletionRequest(target: WorkspaceSoundDeleteTarget(rule: rule)),
             feedback: nil)
-        updateDetail(.scope(WorkspaceSoundWriteTarget(rule: rule)))
         return true
     }
 

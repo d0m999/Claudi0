@@ -832,27 +832,6 @@ public struct PanelView: View {
                 .padding(.horizontal, 9)
                 .padding(.vertical, 7)
                 .id(selectedScope.scope)
-                if let id = selectedScope.scope.workspaceID,
-                    panelModel.workspaceRules.contains(where: { $0.id == id })
-                {
-                    Button(l10n.text(.workspaceEdit)) {
-                        guard let target = soundScopeSelection.projection.writeTarget,
-                            target.id == id
-                        else {
-                            onAnnounce(
-                                localizedWorkspaceError(
-                                    .staleRule, language: languageStore.language))
-                            return
-                        }
-                        onEditSoundScope(
-                            EventSettingsWindowRoute(
-                                scope: .workspace(id), workspaceTarget: target))
-                    }
-                    .accessibilityLabel(l10n.text(.workspaceEdit))
-                    .accessibilityIdentifier("panel.workspace.edit")
-                    .focused($focusedTarget, equals: .workspaceDetails)
-                    .padding(.bottom, 9)
-                }
                 if panelModel.workspaceRulesMalformed {
                     FailureRow(message: l10n.text(.workspaceInvalidRule))
                 }
@@ -1026,11 +1005,7 @@ public struct PanelView: View {
             hasRefreshFailedNotice: showsRefreshFailedNotice,
             writeFailureRecoveryPaths: writeFailureRecoveryFiles.map(\.path),
             hasWriteFailureConfigRecovery: showsWriteFailureConfigRecovery,
-            hasSoundPackPicker: !content.hasConfigFailureNotice,
-            hasWorkspaceDetails: !content.hasConfigFailureNotice
-                && panelModel.workspaceRules.contains {
-                    $0.id == selectedScope.scope.workspaceID
-                })
+            hasSoundPackPicker: !content.hasConfigFailureNotice)
     }
 
     private func isEventFocusTarget(_ target: PanelFocusTarget?) -> Bool {

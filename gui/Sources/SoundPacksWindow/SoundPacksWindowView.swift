@@ -13,6 +13,9 @@ package struct SoundPacksEditorSupplement {
     package var pageHeader: AnyView = AnyView(EmptyView())
     package var scopePicker: AnyView?
     package var serviceSummary: AnyView = AnyView(EmptyView())
+    package var serviceOverview: AnyView?
+    package var eventGenerationAction: (Event) -> AnyView = { _ in AnyView(EmptyView()) }
+    package var eventComposerIsPresented: (Event) -> Bool = { _ in false }
     package var onLeaveEvent: @MainActor () -> Void = {}
     package var returnToScope: (@MainActor () -> Void)? = nil
     package var onInspectPack: (@MainActor (String) -> Void)? = nil
@@ -735,16 +738,20 @@ private struct SoundPacksWindowContentView: View {
                     .font(SettingsAppearance.font(.secondary))
                     .fixedSize(horizontal: false, vertical: true)
                 }
-                packActions(card)
             }
             .modifier(SettingsSectionSurface())
             .soundPacksLayoutProbe("sound-packs.information.card")
-            overviewEventRows
-            disclosure(
-                .settingsNativeAIServices, id: "sound-packs.open-service", detail: .service
-            ) {
-                supplement.serviceSummary
+            if let service = supplement.serviceOverview {
+                service
+            } else {
+                disclosure(
+                    .settingsNativeAIServices, id: "sound-packs.open-service", detail: .service
+                ) {
+                    supplement.serviceSummary
+                }
             }
+            overviewEventRows
+            packActions(card).modifier(SettingsSectionSurface())
             if !card.isBuiltinReadOnly {
                 disclosure(
                     .settingsNativeAudioFiles, id: "sound-packs.open-audio",
@@ -759,6 +766,7 @@ private struct SoundPacksWindowContentView: View {
                 Text(l10n.text(.settingsNativePanelDescription))
             }
             libraryActions
+            packDeletion(card)
         } else {
             emptyState.modifier(SettingsSectionSurface())
             libraryActions
@@ -784,7 +792,9 @@ private struct SoundPacksWindowContentView: View {
             }
             .modifier(SettingsSectionSurface())
             VStack(alignment: .leading, spacing: 16) {
-                eventMappingRow(row)
+                if !supplement.eventComposerIsPresented(event) {
+                    eventMappingRow(row)
+                }
                 supplement.eventContent(event)
             }
             .modifier(SettingsSectionSurface())
@@ -868,13 +878,13 @@ private struct SoundPacksWindowContentView: View {
                     } label: {
                         Label(l10n.text(.settingsNativeEditCue), systemImage: "chevron.right")
                     }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.plain)
+                    .buttonStyle(.bordered)
                     .accessibilityLabel(
                         l10n.text(.settingsNativeEditCue) + " "
                             + localizedEventName(row.event, language: languageStore.language)
                     )
                     .accessibilityIdentifier("sound-packs.event.\(row.event.rawValue).edit")
+                    supplement.eventGenerationAction(row.event)
                 }
                 .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                 .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
@@ -1120,22 +1130,28 @@ private struct SoundPacksWindowContentView: View {
                         factoryRestoreButton(card)
                     }
                 }
-                if !card.isBuiltinReadOnly && card.availability != .missingSelectedPlaceholder {
-                    Divider()
-                    packActionRow(
-                        .soundPacksPackDelete,
-                        caption: l10n.text(soundPackDeleteExplanationKey(card))
-                    ) {
-                        Button(l10n.text(.soundPacksPackDelete), role: .destructive) {
-                            invoke(card.deleteAction)
-                        }
-                        .disabled(card.deleteAction == nil)
-                        .focused($focusedTarget, equals: .deleteUserPack)
-                        .accessibilityLabel(l10n.format(.soundPacksPackDeleteLabel, displayName))
-                        .accessibilityIdentifier("sound-packs.delete-selected-pack")
-                    }
-                }
             })
+    }
+
+    private func packDeletion(_ card: SoundPackEditorPackPresentation) -> some View {
+        packActionRow(
+            .settingsNativeDeleteSoundPack,
+            caption: l10n.text(soundPackDeleteExplanationKey(card))
+        ) {
+            Button(l10n.text(.settingsNativeDeleteSoundPack), role: .destructive) {
+                invoke(card.deleteAction)
+            }
+            .disabled(card.isBuiltinReadOnly || card.deleteAction == nil)
+            .focused($focusedTarget, equals: .deleteUserPack)
+            .accessibilityLabel(
+                l10n.format(
+                    .soundPacksPackDeleteLabel,
+                    SelectedPackMetadata(id: card.id, name: card.name).displayName)
+            )
+            .accessibilityIdentifier("sound-packs.delete-selected-pack")
+        }
+        .modifier(SettingsSectionSurface())
+        .soundPacksLayoutProbe("sound-packs.deletion.card")
     }
 
     private func packActionRow<Content: View>(

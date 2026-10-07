@@ -14465,6 +14465,118 @@
         }
       }
     },
+    "settings.native.remove-workspace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove workspace…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除工作区…"
+          }
+        }
+      }
+    },
+    "settings.native.workspace-removal-summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the sound rule only. Project files and sound packs remain."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅移除声音规则，保留项目文件和声音包。"
+          }
+        }
+      }
+    },
+    "settings.native.delete-sound-pack": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete sound pack…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除声音包…"
+          }
+        }
+      }
+    },
+    "settings.native.generate-cue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成…"
+          }
+        }
+      }
+    },
+    "ai-cue.generate-cue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate cue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成提示音"
+          }
+        }
+      }
+    },
+    "ai-cue.preview-and-choose": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview and choose"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试听并选用"
+          }
+        }
+      }
+    },
+    "ai-cue.use-named-event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use for %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用于%@"
+          }
+        }
+      }
+    },
     "workspace.all-sources": {
       "localizations": {
         "en": {

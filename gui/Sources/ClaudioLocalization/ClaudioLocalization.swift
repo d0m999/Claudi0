@@ -1453,7 +1453,19 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let integrationsAutoDiagnosticsTitle: Self =
         "integrations.automatic.diagnostics-title"
 
+    public static let settingsNativeRemoveWorkspace: Self = "settings.native.remove-workspace"
+    public static let settingsNativeWorkspaceRemovalSummary: Self =
+        "settings.native.workspace-removal-summary"
+    public static let settingsNativeDeleteSoundPack: Self = "settings.native.delete-sound-pack"
+    public static let settingsNativeGenerateCue: Self = "settings.native.generate-cue"
+    public static let aiCueGenerateCue: Self = "ai-cue.generate-cue"
+    public static let aiCuePreviewAndChoose: Self = "ai-cue.preview-and-choose"
+    public static let aiCueUseNamedEvent: Self = "ai-cue.use-named-event"
+
     public static let allKnown: [Self] = [
+        .settingsNativeRemoveWorkspace, .settingsNativeWorkspaceRemovalSummary,
+        .settingsNativeDeleteSoundPack, .settingsNativeGenerateCue, .aiCueGenerateCue,
+        .aiCuePreviewAndChoose, .aiCueUseNamedEvent,
         .integrationsToolCLI, .integrationsToolDesktop,
         .integrationsAutoIntentUnavailable, .integrationsAutoRetry, .integrationsAutoCleaning,
         .integrationsAutoNoInstallation,

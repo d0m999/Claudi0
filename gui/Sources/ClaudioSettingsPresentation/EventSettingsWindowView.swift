@@ -237,6 +237,16 @@ struct EventSettingsWindowView: View {
             scopeSelector
             scopeContent
             workspaceNavigation
+            if let rule, writable {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(l10n.text(.settingsNativeWorkspaceRemovalSummary))
+                        .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
+                    workspaceRemoveButton(rule)
+                        .focused($focusedTarget, equals: .workspaceRemove(rule.id))
+                        .settingsMountIdentity("workspace.remove")
+                }
+                .settingsSectionSurface()
+            }
         }
     }
 
@@ -744,16 +754,13 @@ struct EventSettingsWindowView: View {
             if rule.surfaces.isEmpty { Text(l10n.text(.workspaceNoSurfaces)).font(.caption) }
             Text("WorkBuddy · " + l10n.text(.workspaceEvidencePending)).font(.caption)
                 .foregroundColor(.secondary)
-            workspaceRemoveButton(rule)
-                .focused($focusedTarget, equals: .workspaceRemove(rule.id))
-                .settingsMountIdentity("workspace.remove")
         }
     }
 
     @ViewBuilder
     private func workspaceRemoveButton(_ rule: WorkspaceSoundRule) -> some View {
         SettingsFocusableButton(
-            l10n.text(.workspaceRemove),
+            l10n.text(.settingsNativeRemoveWorkspace),
             requestsFocus: selection.pendingReturnFocusTarget == .workspaceRemove(rule.id)
                 || selection.presentationState.focusTarget == .workspaceRemove(rule.id)
         ) {

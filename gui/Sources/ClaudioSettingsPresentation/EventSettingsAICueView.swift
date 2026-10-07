@@ -41,15 +41,7 @@ struct EventSettingsAICueServiceCard: View {
                     Text(l10n.text(.aiCueServiceTitle))
                         .font(SettingsAppearance.font(.body).weight(.semibold))
                         .foregroundColor(SettingsAppearance.text(colorScheme))
-                    Text(
-                        l10n.format(
-                            .aiCueServiceSubtitle,
-                            l10n.text(viewModel.providerProfile.displayNameKey)
-                        )
-                    )
-                    .font(SettingsAppearance.font(.caption))
-                    .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
-                    .fixedSize(horizontal: false, vertical: true)
+
                 }
             }
 
@@ -80,12 +72,6 @@ struct EventSettingsAICueServiceCard: View {
                 .soundPacksLayoutProbe("event-settings.ai-cue.provider-profile.control")
             }
             .soundPacksLayoutProbe("event-settings.ai-cue.provider-profile.row")
-
-            Text(capabilityText)
-                .font(SettingsAppearance.font(.caption))
-                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("event-settings.ai-cue.provider-capabilities")
 
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
@@ -363,8 +349,14 @@ struct EventSettingsAICueComposerView: View {
                         .accessibilityLabel(l10n.text(.commonCancel))
                         .accessibilityIdentifier("event-settings.ai-cue.cancel-generation")
                 } else {
-                    Button(l10n.text(.aiCueGenerateCandidates)) {
-                        if generationEnabled {
+                    Button(
+                        l10n.text(
+                            viewModel.requiresCredentialConfiguration
+                                ? .aiCueConfigureKey : .aiCueGenerateCue)
+                    ) {
+                        if viewModel.requiresCredentialConfiguration {
+                            onConfigureCredential()
+                        } else if generationEnabled {
                             if let onGenerate {
                                 onGenerate()
                             } else {
@@ -374,18 +366,17 @@ struct EventSettingsAICueComposerView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!generationEnabled)
-                    .accessibilityLabel(l10n.text(.aiCueGenerateCandidates))
+                    .accessibilityLabel(
+                        l10n.text(
+                            viewModel.requiresCredentialConfiguration
+                                ? .aiCueConfigureKey : .aiCueGenerateCue)
+                    )
                     .accessibilityHint(l10n.text(.aiCueGenerateHint))
                     .accessibilityIdentifier("event-settings.ai-cue.generate")
+                    .soundPacksLayoutProbe("event-settings.ai-cue.generate.control")
                 }
             }
 
-            if viewModel.requiresCredentialConfiguration {
-                Button(l10n.text(.aiCueConfigureKey), action: onConfigureCredential)
-                    .buttonStyle(.link)
-                    .accessibilityLabel(l10n.text(.aiCueConfigureKey))
-                    .accessibilityIdentifier("event-settings.ai-cue.configure-required")
-            }
         }
     }
 
@@ -398,6 +389,8 @@ struct EventSettingsAICueComposerView: View {
 
     private var candidatesStep: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text(l10n.text(.aiCuePreviewAndChoose))
+                .font(SettingsAppearance.font(.sectionTitle))
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(l10n.text(.aiCueDescriptionSummary))
@@ -500,10 +493,14 @@ struct EventSettingsAICueComposerView: View {
             Button {
                 onPreviewCandidate(candidate)
             } label: {
-                Image(systemName: playingCandidateID == candidate.id ? "stop.fill" : "play.fill")
-                    .frame(width: 16, height: 16)
-                    .claudioPreviewPulse(
-                        trigger: playingCandidateID == candidate.id ? 1 : 0)
+                Label(
+                    l10n.text(
+                        playingCandidateID == candidate.id
+                            ? .aiCueCandidateStopAction : .soundPacksPreview),
+                    systemImage: playingCandidateID == candidate.id ? "stop.fill" : "play.fill"
+                )
+                .claudioPreviewPulse(
+                    trigger: playingCandidateID == candidate.id ? 1 : 0)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(candidatePreviewLabel(candidate))
@@ -531,7 +528,7 @@ struct EventSettingsAICueComposerView: View {
                     .controlSize(.small)
                     .accessibilityLabel(l10n.text(.aiCueUseForEvent))
             }
-            Button(l10n.text(.aiCueUseForEvent)) {
+            Button(l10n.format(.aiCueUseNamedEvent, eventTitle)) {
                 onAdoptCandidate(candidate.id)
             }
             .buttonStyle(.borderedProminent)
@@ -543,9 +540,11 @@ struct EventSettingsAICueComposerView: View {
                 localizedAICueCandidateUseAccessibilityLabel(
                     identity: candidate.identity,
                     language: languageStore.language)
+                    + " · " + l10n.format(.aiCueUseNamedEvent, eventTitle)
             )
             .accessibilityHint(
-                adoptionEnabled ? l10n.text(.aiCueUseForEvent) : adoptionUnavailableHint
+                adoptionEnabled
+                    ? l10n.format(.aiCueUseNamedEvent, eventTitle) : adoptionUnavailableHint
             )
             .accessibilityIdentifier(
                 "event-settings.ai-cue.candidate.\(candidateIdentifierComponent(candidate)).use")
