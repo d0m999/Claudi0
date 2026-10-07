@@ -45,6 +45,9 @@ __pycache__/
 # WorkBuddy host-local state — never commit
 .workbuddy/
 
+# Local web prototype app registration
+/.wbapp_*.genie
+
 # macOS 截图落在仓库根，永远不进 Git
 /截屏*.png
 
