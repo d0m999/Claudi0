@@ -2,7 +2,7 @@
 
 > 设计状态：**已接受（ADR 0016）**。本轮仅定稿文档与可交互原型；Swift 生产实现、原生验收与发布状态独立。
 >
-> 更新：2026-09-17。原型：`mockups/pack-scoped-ai-cues.html`。
+> 更新：2026-09-17。原型：`mockups/pack-scoped-ai-cues.html`（已于 2026-10-07 随原型合并删除；唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）。
 
 ## 1. 背景与决定
 

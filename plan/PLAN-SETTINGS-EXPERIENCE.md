@@ -14,22 +14,22 @@
 > [`Panel and Settings Prototype.html`](<../designs/panel-and-settings/Panel and Settings Prototype.html>)、
 > [DESIGN.md 的「系统原生外壳与窗口期历史」](../DESIGN.md)、[ADR 0008](../docs/adr/0008-use-one-retained-unified-settings-window.md)。
 > 主原型的设置 UI 已按 `NSToolbar`、source list、窗口期 64 条位置历史及系统语义色对齐；正文 section/group 间距 20/12 pt、普通/多行最低 38/51 pt。
-> `Native Settings Alignment Prototype.html` 留作历史迁移参考。领域能力与既有写入 owner 继续有效。原生人工验收单独记录，不因实现或辅助 SDK 检查通过而完成。
+> `Native Settings Alignment Prototype.html` 已于 2026-10-07 随原型合并删除。领域能力与既有写入 owner 继续有效。原生人工验收单独记录，不因实现或辅助 SDK 检查通过而完成。
 >
 > 上一轮视觉与交互基线（历史）：
-> [`designs/macos-settings-native/claudi0 macOS Settings Prototype.html`](<../designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)，
+> `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`（已于 2026-10-07 随原型合并删除），
 > SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。
 > 设置的现行迁移合同为 [PLAN-MACOS-SETTINGS-MIGRATION.md](PLAN-MACOS-SETTINGS-MIGRATION.md)；
 > 原型只作当时的设置视觉基线；2026-10-06 起，面板、横幅和设置的画面 SoT 统一为上方主原型。
 > 设置呈现合同见 [DESIGN.md 的「macOS 八页设置修订」](../DESIGN.md)。
 > [PLAN-NATIVE-PROTOTYPE-MIGRATION.md](PLAN-NATIVE-PROTOTYPE-MIGRATION.md) 保留旧设置历史和面板／横幅范围。
 > `mockups/ai-app-manager-native-macos.html` 与 `mockups/pack-scoped-ai-cues.html`（配套脚本
-> `pack-scoped-ai-cues.js`）保留为历史参考，不覆盖整合原型的现行呈现；AI 领域合同仍由相关计划及 ADR 拥有。
+> `pack-scoped-ai-cues.js`）已于 2026-10-07 随原型合并删除；AI 领域合同仍由相关计划及 ADR 拥有。
 >
 > AI 提示音的 Provider/profile、凭据、候选与采用领域合同由
 > `plan/PLAN-CONSUMER-TTS-EXECUTION.md` 定义；本计划固定其统一设置投影并完成周边页面。
 > 2026-09-17 包作用域现行设计见 ADR 0016、`plan/PLAN-PACK-SCOPED-AI-CUES.md` 与
-> `mockups/pack-scoped-ai-cues.html`。本计划早期事件页行内生成任务保留为历史，不能作为
+> `mockups/pack-scoped-ai-cues.html`（已于 2026-10-07 随原型合并删除）。本计划早期事件页行内生成任务保留为历史，不能作为
 > 当前生产 UI 已完成的证据。
 
 > **现行合同覆盖说明（2026-09-25，#201/#202）**：本文件早期的 Global/Surface 稀疏声音覆盖、
@@ -385,6 +385,7 @@ Claudio 不承诺任何供应商 zero retention，不展示统一账单或推算
 多 Provider Events 原型路径为：
 
 `mockups/ai-app-manager-native-macos.html?page=events&app=workbuddy&prototype=tts`
+> **2026-10-07 注**：示例链接所指 mockup 已随原型合并删除。
 
 历史原型保留 T9 前四个 production profile 与一个 `productionEnabled: false` 的 SenseAudio fixture，并允许用
 `profile`、`credential` 和 `scenario` query 演示：

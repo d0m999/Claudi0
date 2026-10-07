@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from urllib.parse import urlencode
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 
 PROTOTYPE = (
@@ -468,6 +468,11 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
     def settings_state(self):
         return self.page.evaluate("MacSettings.getState()")
 
+    def open_scope_settings_from_panel(self):
+        self.assertEqual(self.page.locator("#editWorkspaceBtn").count(), 0)
+        self.page.locator("#gearBtn").click()
+        self.page.locator('[data-action="nav:events"]').click()
+
     def open_panel_with_write_conflict(self, language):
         self.open(panel="1", lang=language)
         self.page.locator("#gearBtn").click()
@@ -708,12 +713,12 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator("#needsBtn .n").inner_text(), str(original + 1))
         self.assertEqual(self.page.locator('[data-action="toggle-pending"] .controls').inner_text(), str(original + 1))
 
-    def test_same_page_workspace_entry_consumes_the_new_target(self):
+    def test_gear_settings_entry_preserves_the_selected_workspace(self):
         self.open(panel="1")
         for workspace in ["claudio", "notes"]:
             self.page.locator("#scopeBtn").click()
             self.page.locator(f'[data-scope="{workspace}"]').click()
-            self.page.locator("#editWorkspaceBtn").click()
+            self.open_scope_settings_from_panel()
             self.assertEqual(self.settings_state()["scope"], workspace)
             self.assertEqual(self.page.locator('[data-control="volume"]').input_value(),
                              "55" if workspace == "claudio" else "40")
@@ -732,7 +737,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.open(panel="1")
                 self.page.locator("#scopeBtn").click()
                 self.page.locator('[data-scope="claudio"]').click()
-                self.page.locator("#editWorkspaceBtn").click()
+                self.open_scope_settings_from_panel()
                 self.page.locator("#macSettingsScene").select_option(scene, force=True)
                 self.assertEqual(self.settings_state()["scope"], "claudio")
                 self.page.locator("#window-close").click()
@@ -940,9 +945,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.open(panel="1")
         self.page.locator("#scopeBtn").click()
         self.page.locator('[data-scope="claudio"]').click()
-        self.page.locator("#editWorkspaceBtn").click()
+        self.open_scope_settings_from_panel()
         self.assertEqual(self.settings_state()["scope"],"claudio")
-        self.assertTrue(self.page.locator("#page-title").evaluate("el => el === el.getRootNode().activeElement"))
+        self.assertTrue(self.page.locator('[data-action="nav:events"]').evaluate("el => el === el.getRootNode().activeElement"))
         for page in ["integrations","events","notifications","sounds","usage","shortcuts","about","general"]:
             self.page.locator(f'[data-action="nav:{page}"]').click()
             self.assertEqual(self.settings_state()["scope"],"claudio")
@@ -1009,7 +1014,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
 
     def test_latest_integrations_details_diagnostics_and_history_are_in_main_file(self):
         self.open(win="1",pane="integrations")
-        self.assertEqual(self.page.locator('[data-control^="host-enabled:"]').count(),3)
+        self.assertEqual(self.page.locator('[data-control^="host-enabled:"]').count(),5)
         self.page.locator('[data-action="open-host:codex"]').first.click()
         self.assertEqual(self.settings_state()["detail"],"host")
         self.assertEqual(self.page.locator('[id^="reminder-"]').count(),5)
@@ -1024,6 +1029,26 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#window").is_visible())
         self.assertNotEqual(self.settings_state()["detail"],"host-diagnostics")
 
+    def test_five_integration_icons_share_size_and_identify_cli_or_desktop(self):
+        for theme in ["light", "dark"]:
+            for lang in ["zh", "en"]:
+                self.open(win="1", pane="integrations", th=theme, lang=lang)
+                rows = self.page.locator(".integration-host-row")
+                self.assertEqual(rows.count(), 5)
+                for host in ["claude-code", "codex", "workbuddy", "opencode", "kimi-code"]:
+                    row = self.page.locator("#host-" + host)
+                    kind = "Desktop" if host == "workbuddy" else "CLI"
+                    self.assertEqual(row.locator(".host-kind").inner_text(), kind)
+                    image = row.locator(".host-icon img:visible")
+                    self.assertTrue(image.evaluate("el => el.complete && el.naturalWidth > 0"))
+                    dimensions = row.locator(".host-icon").evaluate(
+                        "el => ({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})"
+                    )
+                    self.assertEqual(dimensions, {"width": 27, "height": 27})
+                    self.assertIn(kind, row.locator(".host-summary").get_attribute("aria-label"))
+                self.page.locator('[data-action="open-host:opencode"]').first.click()
+                self.assertEqual(self.page.locator(".host-kind").inner_text(), "CLI")
+
     def test_panel_and_settings_round_trip_workspace_pack_volume_and_event_state(self):
         self.open(panel="1")
         self.page.locator("#scopeBtn").click()
@@ -1031,7 +1056,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.locator("#volRange").fill("37")
         self.page.locator("#panelPack").select_option("soft")
         self.page.locator('[data-mute="stop"]').click()
-        self.page.locator("#editWorkspaceBtn").click()
+        self.open_scope_settings_from_panel()
         self.assertEqual(self.page.locator('[data-control="volume"]').input_value(),"37")
         self.assertEqual(self.page.locator('[data-control="scope-pack"]').input_value(),"soft")
         self.assertFalse(self.page.locator('[data-control="event:1"]').is_checked())
@@ -1072,6 +1097,77 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertEqual(self.settings_state()["language"],"system")
         self.page.locator('[data-action="nav:notifications"]').click()
         self.assertEqual(self.settings_state()["language"],"system")
+
+    def test_additional_host_diagnostics_separate_support_implementation_and_release(self):
+        expected = {
+            "opencode": {"UserTurnStarted": (True, True), "ResponseCompleted": (True, True),
+                         "ResponseFailed": (True, False), "PermissionRequested": (True, False),
+                         "QuestionAsked": (True, False), "SubagentCompleted": (True, False)},
+            "kimi-code": {"TurnStarted": (True, True), "Stop": (False, False),
+                          "StopFailure": (False, False), "PermissionRequest": (True, False),
+                          "PreToolUse": (True, False), "SubagentStop": (True, False)},
+        }
+        for lang in ["zh", "en"]:
+            for host, bindings in expected.items():
+                with self.subTest(lang=lang, host=host):
+                    self.open(win="1", pane="integrations", lang=lang)
+                    self.page.locator(f'[data-action="open-host:{host}"]').first.click()
+                    reminders = self.page.locator('[id^="reminder-"]').all_inner_texts()
+                    self.assertIn("部分支持" if lang == "zh" else "Partially supported", reminders[0])
+                    self.assertIn("待验证" if lang == "zh" else "Awaiting verification", reminders[3])
+                    self.page.locator('[data-action="host-diagnostics"]').click()
+                    rows = dict(self.page.locator(".capability").evaluate_all("""elements => elements.map(el => [
+                        el.closest('.row').querySelector('.label strong').textContent, el.innerText
+                    ])"""))
+                    self.assertEqual(set(rows), set(bindings))
+                    for native_event, (implemented, admitted) in bindings.items():
+                        text = rows[native_event]
+                        self.assertIn("支持: 部分" if lang == "zh" else "Support: partial", text)
+                        value = ("是" if implemented else "否") if lang == "zh" else ("yes" if implemented else "no")
+                        self.assertIn(("实现: " if lang == "zh" else "Implemented: ") + value, text)
+                        value = ("是" if admitted else "否") if lang == "zh" else ("yes" if admitted else "no")
+                        self.assertIn(("Release 准入: " if lang == "zh" else "Release admission: ") + value, text)
+                        self.assertIn("当前回执: 未确认" if lang == "zh" else "Current receipt: unconfirmed", text)
+
+    def test_new_draft_clears_previous_pack_generation_expansion(self):
+        for lang in ["zh", "en"]:
+            with self.subTest(lang=lang):
+                self.open(win="1", pane="sounds", lang=lang)
+                self.page.locator('[data-control="pack"]').select_option("studio")
+                initial = self.settings_state()
+                self.page.locator('[data-action="generate-pack:0"]').click()
+                self.assertEqual(self.settings_state()["expandedEvent"], 0)
+                self.page.locator('[data-action="back-sounds"]').click()
+                self.page.locator('[data-action="new-pack"]').click()
+                self.assertIsNone(self.settings_state()["expandedEvent"])
+                self.assertFalse(self.page.locator("#cue-description").is_visible())
+                self.page.locator('[data-action="system-sound"]').click()
+                self.page.locator('[data-choice="Glass"]').click()
+                published = self.settings_state()
+                self.assertIsNone(published["draft"])
+                self.assertEqual(len(published["packs"]), len(initial["packs"]) + 1)
+                self.assertEqual(published["scopes"], initial["scopes"])
+                pack = next(p for p in published["packs"] if p["id"] == published["pack"])
+                self.assertEqual(pack["sounds"], ["Glass", None, None, None, None])
+
+    def test_candidate_preview_restores_styled_and_numbered_accessible_names(self):
+        for lang in ["zh", "en"]:
+            for profile in ["elevenlabs-global", "minimax-global"]:
+                with self.subTest(lang=lang, profile=profile):
+                    initial_lang = "zh" if profile == "minimax-global" else lang
+                    self.open(win="1", pane="sounds", ai="candidates", aiProfile=profile, lang=initial_lang)
+                    if lang == "en" and profile == "minimax-global":
+                        self.page.evaluate("document.getElementById('langBtn').click()")
+                    buttons = self.page.locator('[data-action^="candidate-preview:"]')
+                    labels = buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))")
+                    self.assertEqual(len(set(labels)), 3)
+                    for index in range(3):
+                        buttons.nth(index).click()
+                        expect(buttons.nth(index)).to_have_attribute("aria-pressed", "true")
+                        if index:
+                            self.assertEqual(buttons.nth(index - 1).get_attribute("aria-label"), labels[index - 1])
+                    expect(buttons.nth(2)).to_have_attribute("aria-pressed", "false")
+                    self.assertEqual(buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))"), labels)
 
     def test_native_sounds_editor_and_ai_service_are_available(self):
         self.open(win="1",pane="sounds")

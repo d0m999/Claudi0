@@ -1,4 +1,5 @@
 # claudi0 · macOS 设置：来源与验证索引
+> **2026-10-07 原型合并**：全仓只保留唯一原型 SoT `designs/panel-and-settings/Panel and Settings Prototype.html`。本目录及全仓其他原型 HTML（claudi0、Native Settings Alignment、Onboarding、Animation、Pixel Motion 及 mockups/ 全部）均已删除；`screenshots/`、`verification/`、`VERIFICATION.json` 作为历史验证证据保留，其指纹仅指向删除前版本。
 
 **2026-10-04 现行对齐规格**见 [Native Settings Alignment Prototype.html](<Native Settings Alignment Prototype.html>)、[DESIGN.md](../../DESIGN.md) 的「系统原生外壳与窗口期历史」及 [ADR 0008](../../docs/adr/0008-use-one-retained-unified-settings-window.md)。该轮采用系统 toolbar、source-list 与语义表面，增加窗口期最多 64 个浏览位置的统一历史；section/group 间距为 20/12，普通/多行最低行高为 38/51。下面 2026-10-01/02 的固定颜色、58 pt 页头、旧间距及没有通用历史的说明仅属于历史基线，冲突部分由现行规格覆盖。验证结果见 [本轮实现记录](../../docs/validation/macos-native-settings-alignment-2026-10-04.md)。
 

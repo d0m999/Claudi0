@@ -121,7 +121,7 @@ for (const lang of ["zh", "en"]) {
 }
 
 for (const lang of ["zh", "en"]) {
-  test(`${lang}: compact workspace panel keeps its settings route and preview help`, () => {
+  test(`${lang}: compact workspace panel uses the gear entry and retains preview help`, () => {
     const runtime = loadPrototype();
     const { context, document } = runtime;
     context.S.lang = lang;
@@ -130,11 +130,20 @@ for (const lang of ["zh", "en"]) {
     const before = JSON.stringify(context.GROUPS);
     const markup = context.panelHTML();
     assert.ok(!markup.includes(lang === "zh" ? "适用来源：" : "Applies to: "));
-    assert.ok(markup.includes(lang === "zh" ? "工作区设置…" : "Workspace settings…"));
+    assert.ok(!markup.includes("editWorkspaceBtn"));
+    assert.ok(markup.includes('id="gearBtn"'));
     assert.ok(markup.includes('title="' + (lang === "zh" ? "试听只验证" : "Preview checks")));
     runtime.mountControls(markup);
-    document.getElementById("editWorkspaceBtn").click();
-    assert.equal(context.S.pane, "groups");
+    document.getElementById("gearBtn").click();
+    assert.equal(context.S.pane, "general");
+    assert.equal(context.S.scope, scope.id);
+    assert.equal(context.S.returnToPanel, true);
+    assert.equal(JSON.stringify(context.GROUPS), before);
+    context.navigatePane("groups");
+    runtime.mountControls(context.paneGroups());
+    const workspaceSelect = document.getElementById("redesignWorkspace");
+    workspaceSelect.value = scope.id;
+    workspaceSelect.onchange();
     assert.equal(context.S.ws, scope.id);
     assert.equal(JSON.stringify(context.GROUPS), before);
     assert.ok(context.paneGroups().includes(lang === "zh" ? "适用来源" : "Applies to"));

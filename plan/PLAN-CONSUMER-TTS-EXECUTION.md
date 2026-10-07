@@ -1298,6 +1298,7 @@ allowlist 并被表述为真实集成完成：
 当前 allowlisted 多 Provider 核心闭环交互参考：
 
 `mockups/ai-app-manager-native-macos.html?page=events&app=workbuddy&prototype=tts&profile=elevenlabs-global&stage=applied&credential=verified`
+> **2026-10-07 注**：示例链接所指 mockup 已随原型合并删除。
 
 原型状态在内存中；`profile` 和 `credential=missing|verified|deferred|rejected|pending|unavailable` 只
 历史原型用于演示 T9 前四个 production allowlisted profile、read-only/deferred 验证差异和状态，不代表真实

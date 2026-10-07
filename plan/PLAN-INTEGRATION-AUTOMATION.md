@@ -5,6 +5,7 @@
 ## 呈现基线与原型
 
 `designs/macos-settings-native/Native Settings Alignment Prototype.html` 在实施前已有未提交的用户改版。
+> **2026-10-07 注**：该原型文件已随原型合并删除（全仓唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）。
 本次在该文件上补充未安装、退出/崩溃、重启与关闭竞争场景，没有重新创作其布局。
 
 - 实施前 SHA-256：`81eab0fc56429f1601767a867b39fb9c8396284fd2b0211c13409a250e53e593`

@@ -15,7 +15,7 @@
 ## 上一轮呈现与领域基线（历史）
 
 源码基线：`7ca63a4af0497b74b53e89225ccf4de30d900c12`。
-设置呈现：[`claudi0 macOS Settings Prototype.html`](<../designs/macos-settings-native/claudi0 macOS Settings Prototype.html>)。
+设置呈现：`designs/macos-settings-native/claudi0 macOS Settings Prototype.html`（已于 2026-10-07 随原型合并删除；唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）。
 原型 SHA-256：`f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`。
 
 当时的独立设置原型拥有默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于及其详情／sheet；覆盖 #214 及 #213 的冲突设置呈现要求。2026-10-06 起，这些画面并入主整合原型；旧文件保留迁移记录。领域合同、未知字段、写入锁／CAS、备份、回执与单一 retained 非激活窗口不变。

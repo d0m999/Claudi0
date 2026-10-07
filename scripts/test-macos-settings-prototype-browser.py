@@ -24,8 +24,6 @@ PAGES = ["events", "sounds", "integrations", "notifications", "general", "shortc
 DETAIL_ROUTES = [('workspaces', 'events', 'normal', ['workspaces']),
  ('workspace-details', 'events', 'normal', ['workspaces', 'select-workspace:claudio', 'scope-details']),
  ('add-workspace', 'events', 'normal', ['workspaces', 'add-workspace']),
- ('pack-copy', 'sounds', 'normal', ['copy-pack']),
- ('pack-copy-apply', 'sounds', 'normal', ['copy-and-use']),
  ('pack-options', 'sounds', 'normal', ['pack-options']),
  ('pack-attribution', 'sounds', 'normal', ['pack-options', 'pack-license']),
  ('restore-pack', 'sounds', 'normal', ['pack-options', 'restore-pack']),
@@ -101,24 +99,6 @@ STATE_ROUTES = [('directory-resolution',
   'sounds',
   'draft',
   ['snapshot:unpublished-disabled', 'system-sound', 'snapshot:long-sheet-normal']),
- ('copy-failure',
-  'sounds',
-  'copyFailure',
-  ['copy-pack',
-   'snapshot:confirm-normal',
-   'sheet-copy',
-   'snapshot:copying-disabled',
-   'wait:650',
-   'snapshot:copy-failure']),
- ('copy-apply-failure',
-  'sounds',
-  'copyApplyFailure',
-  ['copy-and-use',
-   'snapshot:captured-target-confirm',
-   'sheet-copy',
-   'snapshot:copying-disabled',
-   'wait:650',
-   'snapshot:copy-kept-apply-failed']),
  ('pack-delete-retained',
   'sounds',
   'deleteRetained',
@@ -747,25 +727,19 @@ class Regression:
         self.check("use applies captured current scope",self.state("S.scopes[2].pack")=="soft" and self.state("S.scopes[0].pack")=="minimal")
 
     def C09(self):
+        # Keep the historical case ID as a guard for the retired prototype controls.
         self.fresh(page="sounds")
-        initial=self.state("S.scopes")
-        self.act("copy-pack")
-        self.check("copy has no name input",self.page.locator("#copy-name").count()==0)
-        self.act("sheet-copy")
-        self.settled()
-        self.check("normal copy no application",self.state("S.scopes")==initial and self.state("S.pack").startswith("copy-"))
-        self.scene("copyApplyFailure")
-        self.act("copy-and-use")
-        self.act("sheet-copy")
-        self.settled()
-        self.check("failed application retains accessible copy",self.state("S.pack").startswith("copy-") and self.state("S.scopes[2].pack")=="minimal")
-        self.contains("副本保留")
-        self.fresh(page="sounds")
-        self.select("management-scope","claudio")
-        self.act("copy-and-use")
-        self.act("sheet-copy")
-        self.settled()
-        self.check("copy applies only explicit target",self.state("S.scopes[1].pack")==self.state("S.pack") and self.state("S.scopes[0].pack")=="minimal")
+        initial_scopes=self.state("S.scopes")
+        initial_packs=self.state("S.packs")
+        for pack_id in ["minimal","studio"]:
+            self.select("pack",pack_id)
+            for detail in [False,True]:
+                if detail:
+                    self.act("edit-pack:3")
+                self.check("retired pack copy controls absent",self.page.locator('[data-action="copy-pack"], [data-action="copy-and-use"]').count()==0)
+            self.act("back-sounds")
+        self.check("browsing preserves packs and scope selections",self.state("S.packs")==initial_packs and self.state("S.scopes")==initial_scopes)
+        self.check("retired copy scenes absent",not {"copyFailure","copyApplyFailure"}.intersection(self.state("prototypeReview.scenes")))
 
     def C10(self):
         self.scene("referenceIncomplete")
@@ -1003,11 +977,8 @@ class Regression:
     def C26(self):
         self.fresh(page="sounds")
         self.select("pack","studio")
-        self.act("copy-pack")
-        self.contains("整包许可","#sheet")
-        self.act("sheet-copy")
-        self.settled()
-        self.check("copy drops claims original preserved",not self.state("'license' in pack()") and self.state("S.packs.find(p=>p.id==='studio').license")=="Personal license")
+        other_packs=self.state("S.packs.filter(p=>p.id!=='studio')")
+        self.check("user pack starts with whole-pack claims",bool(self.state("pack().license")) and bool(self.state("pack().author")))
         self.act("edit-pack:3")
         self.act("open-generation")
         self.generate()
@@ -1015,6 +986,7 @@ class Regression:
         self.act("adopt:0")
         self.settled()
         self.check("adopt drops claims",not self.state("'license' in pack()") and not self.state("'author' in pack()"))
+        self.check("adoption preserves other packs",self.state("S.packs.filter(p=>p.id!=='studio')")==other_packs)
 
     def C27(self):
         self.fresh(page="integrations")
@@ -1323,7 +1295,7 @@ class Regression:
         self.page.keyboard.press("Tab")
         self.check("Tab skips disabled apply and reaches viewed pack",self.page.evaluate("document.activeElement.dataset.control")=="pack")
         self.page.keyboard.press("Tab")
-        self.check("Tab reaches copy after viewed pack",self.page.evaluate("document.activeElement.dataset.action")=="copy-pack")
+        self.check("Tab reaches pack options after viewed pack",self.page.evaluate("document.activeElement.dataset.action")=="pack-options")
         self.act("pack-options")
         self.page.keyboard.press("Escape")
         self.check("cancel focus returns to trigger",self.page.evaluate("document.activeElement.dataset.action")=="pack-options")

@@ -24,6 +24,7 @@ claudi0 使用一个由 AppKit controller 持有并在 app 生命周期内复用
 ## macOS 设置呈现修订（历史 · 2026-10-02）
 
 当时八页设置及详情／sheet 的呈现引用为 `designs/macos-settings-native/claudi0 macOS Settings Prototype.html`，SHA-256 `f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91`，合同见 [八页设置迁移规格](../../plan/PLAN-MACOS-SETTINGS-MIGRATION.md)。它覆盖 #214 及 #213 中冲突的设置皮肤、独立事件卡与双栏／固定操作栏；此项视觉引用已由 2026-10-06 的主原型 SoT 修订取代。领域事务、稳定身份、唯一 retained window、非激活焦点及写入 owner 合同保留。该修订不代表完整原生验收通过。
+> **2026-10-07 注**：该原型文件已随原型合并删除（全仓唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）。
 
 ## 原生会话导航修订（2026-10-04）
 
