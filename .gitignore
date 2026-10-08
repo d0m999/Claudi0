@@ -55,3 +55,15 @@ __pycache__/
 /designs/pixel-motion/samples/claudi0-pixel-motion-samples.zip
 /designs/pixel-motion/samples/G-compare-idle.gif
 /designs/pixel-motion/samples/H-compare-stop.gif
+
+# Local promo video project and production files
+/claudi0-promo.miora
+/claudi0-promo_assets/
+/output/promo-video/
+
+# Local sound redesign drafts and verification artifacts
+/work/sounds-interaction-interview/
+/work/sounds-native-implementation/
+
+# Local Paseo worktree setup
+/paseo.json
