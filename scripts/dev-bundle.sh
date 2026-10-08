@@ -16,6 +16,8 @@ fi
 
 GUI_NATIVE_HOST_CARD_PROBE=false
 ADDITIONAL_HOST_ACCEPTANCE=false
+BAILIAN_ACCEPTANCE=false
+BAILIAN_BUILD_OPTIONS=()
 SWIFT_BUILD_OPTIONS=()
 HOST_BUILD_OPTIONS=()
 for option in "$@"; do
@@ -25,10 +27,14 @@ for option in "$@"; do
             ADDITIONAL_HOST_ACCEPTANCE=true
             HOST_BUILD_OPTIONS=(-Xswiftc -DCLAUDIO_ADDITIONAL_HOST_ACCEPTANCE)
             ;;
+        --bailian-acceptance)
+            BAILIAN_ACCEPTANCE=true
+            BAILIAN_BUILD_OPTIONS=(-Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE)
+            ;;
         --native-sdk)
             SWIFT_BUILD_OPTIONS=(--build-system native --sdk "$(xcrun --sdk macosx --show-sdk-path)")
             ;;
-        *) echo "usage: $0 [--native-host-card-probe] [--additional-host-acceptance] [--native-sdk]" >&2; exit 2 ;;
+        *) echo "usage: $0 [--native-host-card-probe] [--additional-host-acceptance] [--bailian-acceptance] [--native-sdk]" >&2; exit 2 ;;
     esac
 done
 if [[ -n "${CLAUDIO_BUILD_SDK:-}" ]]; then
@@ -41,11 +47,13 @@ gui_build() {
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
             -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE \
+            "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
             "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
             "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     else
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
+            "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
             "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
             "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     fi
@@ -180,6 +188,33 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
     printf 'APPL????' > "$APP/Contents/PkgInfo"
+    if [[ "$BAILIAN_ACCEPTANCE" == true ]]; then
+        /usr/libexec/PlistBuddy -c 'Add :ClaudioBailianAcceptance bool true' "$APP/Contents/Info.plist"
+        python3 - "$repo_root" "$APP/Contents/Resources/bailian-acceptance-source.json" <<'PYIDENTITY'
+import hashlib
+import json
+import re
+from pathlib import Path
+import subprocess
+import sys
+root, destination = Path(sys.argv[1]), Path(sys.argv[2])
+paths = sorted([*root.joinpath("gui/Sources").rglob("*.swift"),
+                *root.joinpath("helper/Sources").rglob("*.swift"),
+                root / "gui/Package.swift", root / "helper/Package.swift", root / "scripts/dev-bundle.sh",
+                root / "gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings"])
+files = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+asset_source = root.joinpath("gui/Sources/ClaudioGUICore/BailianAssetContract.swift").read_text()
+host = re.search(r'static let hostname = "([a-z0-9.-]+)"', asset_source).group(1)
+mime = re.search(r'acceptedMediaTypes: \["([a-z/.-]+)"\]', asset_source).group(1)
+policy = {"origin": "https://" + host + ":443", "accepted_media_types": [mime],
+          "url_normalization": "exact-host-http-default-or-80-to-https-443-preserve-path-query",
+          "anonymous_get": True, "redirects": 0, "final_url_matches_normalized_request": True}
+payload = {"schema": 1, "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
+           "source_files": files, "source_digest": hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest(),
+           "bailian_asset_policy": policy, "distribution_eligible": False}
+destination.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n")
+PYIDENTITY
+    fi
     if [[ "$ADDITIONAL_HOST_ACCEPTANCE" == true ]]; then
         /usr/libexec/PlistBuddy -c 'Add :ClaudioAdditionalHostAcceptance bool true' "$APP/Contents/Info.plist"
     fi

@@ -12,6 +12,8 @@ public enum AICueCredentialInputError: Error, Sendable, Equatable {
 public final class SensitiveCredentialInput: @unchecked Sendable, CustomReflectable {
     private static let maximumBytes = 512
     private let utf8: Data
+    package let bailianWorkspaceID: BailianWorkspaceID?
+    package let bailianVerification: AICueCredentialVerification
 
     public init(_ value: String) throws {
         let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -29,10 +31,52 @@ public final class SensitiveCredentialInput: @unchecked Sendable, CustomReflecta
             throw AICueCredentialInputError.tooLong(maximumBytes: Self.maximumBytes)
         }
         utf8 = data
+        bailianWorkspaceID = nil
+        bailianVerification = .deferred
     }
 
-    fileprivate init(validatedUTF8: Data) {
-        utf8 = validatedUTF8
+    public init(apiKey: String, bailianWorkspaceID: BailianWorkspaceID) throws {
+        let key = try SensitiveCredentialInput(apiKey)
+        utf8 = key.utf8
+        self.bailianWorkspaceID = bailianWorkspaceID
+        bailianVerification = .deferred
+    }
+
+    private init(
+        utf8: Data, workspace: BailianWorkspaceID, verification: AICueCredentialVerification
+    ) {
+        self.utf8 = utf8
+        bailianWorkspaceID = workspace
+        bailianVerification = verification
+    }
+
+    package func confirmingBailianVerification(_ verification: AICueCredentialVerification) throws
+        -> SensitiveCredentialInput
+    {
+        guard let bailianWorkspaceID else { throw AICueProviderError.invalidRequest }
+        return SensitiveCredentialInput(
+            utf8: utf8, workspace: bailianWorkspaceID, verification: verification)
+    }
+
+    package static func stored(_ data: Data, slotID: AICueCredentialSlotID) throws
+        -> SensitiveCredentialInput
+    {
+        if slotID == .bailianBeijing {
+            guard data.count <= 2_048,
+                let record = try? JSONDecoder().decode(BailianCredentialRecord.self, from: data),
+                record.version == 1,
+                let workspace = try? BailianWorkspaceID(record.workspaceID)
+            else { throw AICueKeychainError.invalidStoredCredential }
+            let validated = try SensitiveCredentialInput(record.apiKey)
+            return SensitiveCredentialInput(
+                utf8: validated.utf8, workspace: workspace,
+                verification: record.verification.flatMap(
+                    AICueCredentialVerification.init(rawValue:)) ?? .deferred)
+        }
+        guard data.count <= 512, let value = String(data: data, encoding: .utf8) else {
+            throw AICueKeychainError.invalidStoredCredential
+        }
+        return try SensitiveCredentialInput(value)
     }
 
     public var customMirror: Mirror {
@@ -44,7 +88,25 @@ public final class SensitiveCredentialInput: @unchecked Sendable, CustomReflecta
         try body(String(decoding: utf8, as: UTF8.self))
     }
 
-    fileprivate var keychainData: Data { utf8 }
+    package func keychainData(in slotID: AICueCredentialSlotID) throws -> Data {
+        if slotID == .bailianBeijing {
+            guard let bailianWorkspaceID else { throw AICueProviderError.invalidRequest }
+            return try JSONEncoder().encode(
+                BailianCredentialRecord(
+                    version: 1, apiKey: String(decoding: utf8, as: UTF8.self),
+                    workspaceID: bailianWorkspaceID.rawValue,
+                    verification: bailianVerification.rawValue))
+        }
+        guard bailianWorkspaceID == nil else { throw AICueProviderError.invalidRequest }
+        return utf8
+    }
+}
+
+private struct BailianCredentialRecord: Codable {
+    let version: Int
+    let apiKey: String
+    let workspaceID: String
+    let verification: String?
 }
 
 public enum AICueCredentialVerification: String, Sendable, Equatable {
@@ -183,6 +245,8 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     private let registry: AICueProviderRegistry
     private let validators: [AICueProviderProfileID: any AICueCredentialValidating]
     private let metadata: any AICueCredentialMetadataStoring
+    private var legacyMigrationCompleted = false
+    private var migratingLegacy = false
     private var revisions: [AICueProviderProfileID: UInt64] = [:]
     private var mutatingProfiles: Set<AICueProviderProfileID> = []
 
@@ -210,6 +274,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     }
 
     public func status(for profileID: AICueProviderProfileID) async -> AICueCredentialStatus {
+        do { try await requireLegacyMigration(for: profileID) } catch { return .unavailable }
         guard let profile = try? registry.profile(for: profileID) else { return .unavailable }
         return await projectedStatus(for: profile, requiresStableSnapshot: true)
     }
@@ -225,7 +290,14 @@ public actor AICueCredentialManager: AICueCredentialManaging,
             let hasPending = try await containsPendingCredential(for: profile)
             let verification: AICueCredentialVerification?
             if hasActive {
-                verification = await metadata.verification(for: profile.id) ?? .deferred
+                if profile.id == .bailianBeijing {
+                    guard let snapshot = try await vault.credential(in: profile.credentialSlotID),
+                        snapshot.bailianWorkspaceID != nil
+                    else { return .unavailable }
+                    verification = snapshot.bailianVerification
+                } else {
+                    verification = await metadata.verification(for: profile.id) ?? .deferred
+                }
             } else {
                 verification = nil
             }
@@ -251,7 +323,11 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         _ credential: SensitiveCredentialInput,
         for profileID: AICueProviderProfileID
     ) async throws -> AICueCredentialStatus {
+        try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
+        guard (profileID == .bailianBeijing) == (credential.bailianWorkspaceID != nil) else {
+            throw AICueProviderError.invalidRequest
+        }
         try beginMutation(for: profileID)
         defer { endMutation(for: profileID) }
         switch profile.credentialValidationPolicy {
@@ -263,7 +339,8 @@ public actor AICueCredentialManager: AICueCredentialManaging,
             // Keychain update/insert is one atomic active-slot mutation. A failed probe or write
             // never deletes the old active item first.
             try await vault.replaceCredential(credential, in: profile.credentialSlotID)
-            await metadata.setVerification(.verified, for: profileID)
+            await metadata.setVerification(
+                profileID == .bailianBeijing ? .deferred : .verified, for: profileID)
 
         case .deferredUntilExplicitGeneration:
             let hasActive = try await vault.containsCredential(in: profile.credentialSlotID)
@@ -284,6 +361,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     }
 
     public func delete(for profileID: AICueProviderProfileID) async throws {
+        try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         try beginMutation(for: profileID)
         defer { endMutation(for: profileID) }
@@ -298,6 +376,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     public func cancelPendingReplacement(
         for profileID: AICueProviderProfileID
     ) async throws {
+        try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         guard let pendingSlotID = profile.pendingCredentialSlotID else { return }
         try beginMutation(for: profileID)
@@ -308,6 +387,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     public func credentialForGeneration(
         for profileID: AICueProviderProfileID
     ) async throws -> AICueGenerationCredential {
+        try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         let startingRevision = revision(for: profileID)
         guard !mutatingProfiles.contains(profileID) else {
@@ -328,6 +408,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
             try requireUnchangedProfile(profileID, since: startingRevision)
             guard let active else {
                 throw AICueCredentialManagerError.credentialRequired
+            }
+            guard (profileID == .bailianBeijing) == (active.bailianWorkspaceID != nil) else {
+                throw AICueCredentialManagerError.credentialUnavailable
             }
             return AICueGenerationCredential(
                 profileID: profileID,
@@ -350,6 +433,13 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         defer { endMutation(for: lease.profileID) }
         switch lease.source {
         case .active:
+            if lease.profileID == .bailianBeijing {
+                // Store generation verification with exactly the same atomic configuration bytes;
+                // a crash between Keychain and metadata cannot verify a replacement accidentally.
+                try await vault.replaceCredential(
+                    lease.credential.confirmingBailianVerification(.verified),
+                    in: profile.credentialSlotID)
+            }
             await metadata.setVerification(.verified, for: lease.profileID)
         case .pending:
             guard let pendingSlotID = profile.pendingCredentialSlotID else {
@@ -381,6 +471,13 @@ public actor AICueCredentialManager: AICueCredentialManaging,
 
         switch lease.source {
         case .active:
+            if lease.profileID == .bailianBeijing {
+                do {
+                    try await vault.replaceCredential(
+                        lease.credential.confirmingBailianVerification(.rejected),
+                        in: profile.credentialSlotID)
+                } catch { return }
+            }
             await metadata.setVerification(.rejected, for: lease.profileID)
         case .pending:
             guard let pendingSlotID = profile.pendingCredentialSlotID else { return }
@@ -391,6 +488,31 @@ public actor AICueCredentialManager: AICueCredentialManaging,
                 // A Keychain failure must leave the pending fact visible for an explicit retry.
             }
         }
+    }
+
+    private func requireLegacyMigration(for profileID: AICueProviderProfileID) async throws {
+        do { try await migrateLegacyQwenCredentials() } catch {
+            // Retired Qwen cleanup must not freeze unrelated services.
+            if profileID == .bailianBeijing { throw error }
+        }
+    }
+
+    /// Idempotent, service-scoped upgrade cleanup. A failed delete never marks completion;
+    /// the next explicit refresh/save retries. No historic audio or other provider slot is touched.
+    package func migrateLegacyQwenCredentials() async throws {
+        if legacyMigrationCompleted { return }
+        guard !migratingLegacy else { throw AICueCredentialManagerError.stateChanged }
+        migratingLegacy = true
+        defer { migratingLegacy = false }
+        for slot in [
+            AICueCredentialSlotID.qwenBeijingPending, .qwenSingaporePending,
+            .qwenBeijing, .qwenSingapore,
+        ] {
+            try await vault.deleteCredential(in: slot)
+        }
+        await metadata.setVerification(nil, for: .qwenBeijing)
+        await metadata.setVerification(nil, for: .qwenSingapore)
+        legacyMigrationCompleted = true
     }
 
     private func resolveProfile(
@@ -486,24 +608,19 @@ public actor AICueKeychainCredentialVault: AICueCredentialVault {
         guard status == errSecSuccess else {
             throw AICueKeychainError.unexpectedStatus(operation: "read", status: status)
         }
-        guard
-            let data = value as? Data,
-            !data.isEmpty,
-            data.count <= 512,
-            let value = String(data: data, encoding: .utf8),
-            let credential = try? SensitiveCredentialInput(value)
-        else {
+        guard let data = value as? Data, !data.isEmpty else {
             throw AICueKeychainError.invalidStoredCredential
         }
-        return credential
+        return try SensitiveCredentialInput.stored(data, slotID: slotID)
     }
 
     public func replaceCredential(
         _ credential: SensitiveCredentialInput,
         in slotID: AICueCredentialSlotID
     ) async throws {
+        let data = try credential.keychainData(in: slotID)
         let query = baseQuery(for: slotID)
-        let attributes: [String: Any] = [kSecValueData as String: credential.keychainData]
+        let attributes: [String: Any] = [kSecValueData as String: data]
         let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if updateStatus == errSecSuccess { return }
         guard updateStatus == errSecItemNotFound else {
@@ -513,7 +630,7 @@ public actor AICueKeychainCredentialVault: AICueCredentialVault {
         }
 
         var item = query
-        item[kSecValueData as String] = credential.keychainData
+        item[kSecValueData as String] = data
         item[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         item[kSecAttrSynchronizable as String] = false
         let addStatus = SecItemAdd(item as CFDictionary, nil)

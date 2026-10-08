@@ -6,6 +6,9 @@ status: accepted
 
 ## 决策
 
+北京／新加坡 Qwen 路线与凭据政策由 [ADR 0027](0027-use-bailian-beijing-audio-31.md) 取代；
+下文 Qwen 表与 pending 策略为历史依据，不再作为调用合同。
+
 SenseAudio 的本地凭据存储由 [ADR 0015](0015-use-local-file-credentials-for-senseaudio.md) 取代下文
 Keychain-only 要求；其他 Provider 仍沿用本 ADR。
 

@@ -10,7 +10,7 @@ func runAICueProviderContractsSuites() {
 
         expect(
             profiles.map(\.id) == [
-                .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
+                .elevenLabsGlobal, .miniMaxGlobal,
                 .senseAudioChina,
             ],
             "registry 必须按稳定顺序暴露完整五个 allowlisted profile")
@@ -26,8 +26,6 @@ func runAICueProviderContractsSuites() {
             profiles.map(\.displayNameKey) == [
                 .aiCueProviderProfileElevenLabsGlobal,
                 .aiCueProviderProfileMiniMaxGlobal,
-                .aiCueProviderProfileQwenSingapore,
-                .aiCueProviderProfileQwenBeijing,
                 .aiCueProviderProfileSenseAudioChina,
             ],
             "profile 的可见名称必须只引用双语 catalog key")
@@ -35,8 +33,6 @@ func runAICueProviderContractsSuites() {
             profiles.map(\.privacyDisclosureKey) == [
                 .aiCueCredentialPrivacy,
                 .aiCueCredentialPrivacyMiniMax,
-                .aiCueCredentialPrivacyQwenSingapore,
-                .aiCueCredentialPrivacyQwenBeijing,
                 .aiCueCredentialPrivacySenseAudioChina,
             ],
             "逐 profile 隐私披露必须由 registry profile 提供")
@@ -59,9 +55,8 @@ func runAICueProviderContractsSuites() {
             try! registry.profile(for: .miniMaxGlobal).supportedModalities == [.speech],
             "MiniMax 首批只能开放 speech")
         expect(
-            try! registry.profile(for: .qwenSingapore).supportedModalities == [.speech]
-                && registry.profile(for: .qwenBeijing).supportedModalities == [.speech],
-            "Qwen 两个 region profile 首批只能开放 speech")
+            (try? registry.profile(for: .qwenSingapore)) == nil
+                && (try? registry.profile(for: .qwenBeijing)) == nil, "旧 Qwen 入口撤下")
     }
 
     suite("AI 提示音 Provider registry：未知 profile 与被篡改的固定合同 fail closed") {
@@ -79,7 +74,7 @@ func runAICueProviderContractsSuites() {
 
         let elevenLabs = try! registry.profile(for: .elevenLabsGlobal)
         let speechRoute = elevenLabs.routes[.speech]!
-        let qwen = try! registry.profile(for: .qwenSingapore)
+        let qwen = try! registry.profile(for: .bailianBeijing)
         let senseAudio = try! registry.profile(for: .senseAudioChina)
         let senseAudioSpeech = senseAudio.routes[.speech]!
         let senseAudioSFX = senseAudio.routes[.soundEffect]!
@@ -127,9 +122,8 @@ func runAICueProviderContractsSuites() {
                         semantics: .numbered,
                         requestedCount: 3,
                         minimumAcceptedCount: 3))),
-            copying(elevenLabs, credentialSlotID: .qwenSingapore),
+            copying(elevenLabs, credentialSlotID: .bailianBeijing),
             copying(elevenLabs, privacyDisclosureKey: .aiCueCredentialPrivacyMiniMax),
-            copying(qwen, regionID: "user-region"),
             copying(senseAudio, providerID: .miniMax),
             copying(senseAudio, credentialValidationPolicy: .deferredUntilExplicitGeneration),
             copying(senseAudio, displayNameKey: .aiCueProviderProfileMiniMaxGlobal),
@@ -182,7 +176,7 @@ func runAICueProviderContractsSuites() {
             },
             "180 秒预算必须只属于 SenseAudio animal/soundEffect；所有其他 route 保持 60 秒")
         expect(
-            registry.profiles().count == 5, "evidence fixture registry 必须包含唯一 SenseAudio profile")
+            registry.profiles().count == 3, "evidence fixture registry 必须包含唯一 SenseAudio profile")
         expect(
             profile.providerID == .senseAudio
                 && profile.credentialSlotID == .senseAudioChina
@@ -237,15 +231,15 @@ func runAICueProviderContractsSuites() {
             evidenceGatedSenseAudioAssetPolicy: policy)
 
         expect(
-            production.profiles() == Array(AICueProviderRegistry().profiles().prefix(4))
+            production.profiles() == Array(AICueProviderRegistry().profiles().prefix(2))
                 && production.profiles().map(\.id) == [
-                    .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
+                    .elevenLabsGlobal, .miniMaxGlobal,
                 ]
                 && production.assetPolicy(for: .senseAudioChina) == nil,
             "显式 nil policy 必须保留既有四 profile 顺序并隐藏 SenseAudio")
         expect(
             evidenceGated.profiles().map(\.id) == [
-                .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
+                .elevenLabsGlobal, .miniMaxGlobal,
                 .senseAudioChina,
             ]
                 && evidenceGated.assetPolicy(for: .senseAudioChina) == policy,
@@ -347,8 +341,6 @@ func runAICueProviderContractsSuites() {
         let registry = AICueProviderRegistry()
         let elevenLabs = try! registry.profile(for: .elevenLabsGlobal)
         let miniMax = try! registry.profile(for: .miniMaxGlobal)
-        let qwenSingapore = try! registry.profile(for: .qwenSingapore)
-        let qwenBeijing = try! registry.profile(for: .qwenBeijing)
 
         expect(
             elevenLabs.credentialSlotID == .legacyElevenLabs
@@ -387,40 +379,7 @@ func runAICueProviderContractsSuites() {
                         requestedCount: 3,
                         minimumAcceptedCount: 3),
             "MiniMax profile 必须冻结 global slot、T2A route、voice 与 hex transport")
-        expect(
-            qwenSingapore.credentialSlotID == .qwenSingapore
-                && qwenSingapore.pendingCredentialSlotID == .qwenSingaporePending
-                && qwenSingapore.regionID == "singapore"
-                && qwenSingapore.credentialValidationPolicy
-                    == .deferredUntilExplicitGeneration
-                && qwenSingapore.routes[.speech]?.endpoint.host
-                    == "dashscope-intl.aliyuncs.com",
-            "Qwen Singapore 必须冻结独立 region、slot、deferred policy 与 host")
-        expect(
-            qwenBeijing.credentialSlotID == .qwenBeijing
-                && qwenBeijing.pendingCredentialSlotID == .qwenBeijingPending
-                && qwenBeijing.regionID == "beijing"
-                && qwenBeijing.routes[.speech]?.endpoint.host == "dashscope.aliyuncs.com",
-            "Qwen Beijing 必须冻结独立 region、slot 与 host")
-        expect(
-            [qwenSingapore, qwenBeijing].allSatisfy {
-                $0.routes[.speech]?.modelID == "qwen3-tts-instruct-flash"
-                    && $0.routes[.speech]?.voiceID == "Cherry"
-                    && $0.routes[.speech]?.authentication == .bearerAPIKey
-                    && $0.routes[.speech]?.transport
-                        == .ssePCM(
-                            AICuePCMFormat(
-                                sampleRate: 24_000,
-                                bitsPerSample: 16,
-                                channels: 1,
-                                isLittleEndian: true))
-                    && $0.routes[.speech]?.candidateSetPolicy
-                        == AICueCandidateSetPolicy(
-                            semantics: .styled,
-                            requestedCount: 3,
-                            minimumAcceptedCount: 3)
-            },
-            "两个 Qwen region 必须共享固定 model/voice/auth/PCM，不共享 endpoint 或 slot")
+
     }
 
     suite("AI 提示音 request compiler：台词与用户 style 分离且公共请求无 HTTP 字段") {
@@ -453,7 +412,7 @@ func runAICueProviderContractsSuites() {
         let request = try! AICueGenerationRequest(
             description: "用温和的声音说“可以继续”",
             locale: "zh-Hans",
-            providerProfileID: .qwenSingapore)
+            providerProfileID: .bailianBeijing)
         let plan = try! AICueSoundPlanner().makePlan(for: request)
         let compiled = AICueVariant.allCases.map {
             try! AICueProviderRequestCompiler().compile(
@@ -502,7 +461,7 @@ func runAICueProviderContractsSuites() {
             throwsCompilationError(.unsupportedLocale) {
                 _ = try AICueProviderRequestCompiler().compile(
                     plan: unsupportedLocalePlan,
-                    profileID: .qwenSingapore,
+                    profileID: .bailianBeijing,
                     variant: .clear)
             },
             "不支持的 locale 必须在 adapter 前拒绝")

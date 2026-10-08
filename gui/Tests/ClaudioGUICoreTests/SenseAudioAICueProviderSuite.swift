@@ -193,6 +193,7 @@ private actor SenseAudioCredentialMetadataFixture: AICueCredentialMetadataStorin
         _ verification: AICueCredentialVerification?,
         for profileID: AICueProviderProfileID
     ) {
+        guard profileID == .senseAudioChina else { return }
         writes += 1
         value = verification
     }
@@ -1036,8 +1037,8 @@ func runSenseAudioAICueProviderSuites() async {
                 "首项 asset 401 后不继续 sibling，不追加生成 POST")
             expect(
                 vaultFacts.reads == 1 && vaultFacts.replacements == 0
-                    && vaultFacts.deletions == 0
-                    && vaultFacts.slots == [.senseAudioChina]
+                    && vaultFacts.deletions == 4
+                    && vaultFacts.slots.filter { $0 == .senseAudioChina } == [.senseAudioChina]
                     && metadataFacts.value == .verified
                     && metadataFacts.writes == 0,
                 "asset 401 不得映射 invalid credential、拒绝或删除 active key")

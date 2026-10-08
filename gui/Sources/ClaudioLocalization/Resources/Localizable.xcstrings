@@ -18280,6 +18280,150 @@
           }
         }
       }
+    },
+    "aiCue.providerProfile.bailianBeijing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailian · Beijing (Acceptance)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "百炼 · 北京（验收）"
+          }
+        }
+      }
+    },
+    "aiCue.credential.privacy.bailianBeijing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound descriptions and speech are sent directly to Bailian in Beijing. Generation may incur charges and follows Bailian data processing terms. Saving checks both model permissions without generating audio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "声音描述和台词由本机直送百炼北京。生成可能计费，数据处理遵循百炼条款。保存仅检查两个模型的推理权限，不生成音频。"
+          }
+        }
+      }
+    },
+    "aiCue.credential.bailianWorkspace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailian workspace ID"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "百炼业务空间 ID"
+          }
+        }
+      }
+    },
+    "aiCue.credential.bailianWorkspaceInvalid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid Bailian workspace ID (one ASCII DNS label)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的百炼业务空间 ID（单个 ASCII 域名标签）。"
+          }
+        }
+      }
+    },
+    "aiCue.credential.bailianPermissionsChecked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model permissions checked · Generation unverified"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型权限已检查 · 待真实生成验证"
+          }
+        }
+      }
+    },
+    "aiCue.credential.bailianMigrationRetry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legacy credential cleanup or configuration read failed. Unlock this Mac and retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧凭据清理或配置读取失败，请解锁这台 Mac 后重试。"
+          }
+        }
+      }
+    },
+    "aiCue.credential.bailianAcceptanceOnly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailian awaits configuration in an acceptance build"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "百炼待配置 · 仅在验收构建开放"
+          }
+        }
+      }
+    },
+    "aiCue.bailian.assetContractUnavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailian Next is unavailable until its secure download contract passes acceptance. Your saved configuration is retained."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "百炼 Next 的安全下载合同尚未通过验收，暂不可生成；已保存配置保留。"
+          }
+        }
+      }
+    },
+    "aiCue.bailian.permissionFailure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both Bailian models must have inference permission. The previous configuration is retained."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "百炼两个模型须均有推理权限；未保存新配置，原配置保留。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

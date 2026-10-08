@@ -46,7 +46,7 @@ func runMultiProviderPrototypeContractSuites() {
                 html, from: "const profiles = [", to: "const profileName=")
         else { expect(false, "必须读取现行规范原型的 profile 表"); return }
         for id in [
-            "elevenlabs-global", "minimax-global", "qwen-singapore", "qwen-beijing",
+            "elevenlabs-global", "minimax-global", "bailian-beijing",
             "senseaudio-cn",
         ] {
             expect(
@@ -59,7 +59,7 @@ func runMultiProviderPrototypeContractSuites() {
             "SenseAudio 保持路线能力、部分候选及本地凭据事实")
         expect(
             profiles.contains("routes:['speech'],styled:false")
-                && profiles.contains("deferred:true"),
+                && profiles.contains("workspace:true"),
             "MiniMax 与 Qwen 保持各自候选和验证政策")
     }
 

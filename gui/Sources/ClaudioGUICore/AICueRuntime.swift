@@ -127,11 +127,12 @@ package struct AICueRuntime {
                 return SequentialAICueCandidateSetAdapter(
                     provider: MiniMaxAICueProvider(unaryTransport: unaryTransport),
                     registry: registry)
-            case .qwenSingapore, .qwenBeijing:
+            case .bailianBeijing:
                 return SequentialAICueCandidateSetAdapter(
-                    provider: try QwenAICueProvider(
-                        profileID: profile.id,
-                        sseTransport: sseTransport),
+                    provider: BailianAICueProvider(
+                        unaryTransport: unaryTransport,
+                        sseTransport: sseTransport, assetFetcher: assetFetcher,
+                        assetPolicy: registry.assetPolicy(for: profile.id)),
                     registry: registry)
             case .senseAudioChina:
                 return try SenseAudioAICueProvider(

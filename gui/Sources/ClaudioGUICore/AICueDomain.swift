@@ -207,6 +207,7 @@ public struct AICueSoundPlanner: Sendable {
     private let effectMarkers = [
         "音效", "木琴", "铃", "钟", "碰撞", "敲", "咔", "滴", "嗒", "响一声", "先响", "chime",
         "click", "impact", "sound effect", "whoosh",
+        "环境音", "雨声", "风声", "海浪", "旋律", "ambient", "melody", "rain sound", "wind sound",
     ]
 
     private func containsAny(_ value: String, _ markers: [String]) -> Bool {

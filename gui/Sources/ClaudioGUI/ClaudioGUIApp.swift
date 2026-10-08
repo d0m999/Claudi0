@@ -199,6 +199,11 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
                 manager: integrationManager, bridge: integrationBridge
             ) { [weak self] state in self?.menuBarController?.applyMaintenanceState(state) }
         }
+        #if CLAUDIO_BAILIAN_ACCEPTANCE
+        // The explicit acceptance app exposes the existing retained Settings window on launch.
+        // This lets local reviewers reach real history without relying on a hidden status item.
+        menuBarController?.requestSettingsWindowPresentation()
+        #endif
         #if DEBUG
         chatAXTracer = startExplicitChatAXTracerIfConfigured(
             environment: ProcessInfo.processInfo.environment)

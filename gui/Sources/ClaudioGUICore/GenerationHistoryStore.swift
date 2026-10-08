@@ -15,6 +15,7 @@ package struct GenerationHistoryBatch: Identifiable, Sendable, Equatable {
     package let soundDescription: String
     package let generatedAt: Date?
     package let profileID: AICueProviderProfileID?
+    package var modelID: String? = nil
     package let audio: [GenerationHistoryAudio]
     package let failure: SoundAssetStorageError?
 }
@@ -123,6 +124,7 @@ private struct HistoryBatchMetadata: Codable, Equatable {
     let soundDescription: String
     let generatedAt: Date
     let profileID: String
+    var modelID: String? = nil
     let initialAudioIDs: [UUID]
 }
 
@@ -190,6 +192,7 @@ private actor GenerationHistoryDisk {
             let metadata = HistoryBatchMetadata(
                 version: 1, id: generation.id, soundDescription: soundDescription,
                 generatedAt: generation.generatedAt, profileID: generation.profileID.rawValue,
+                modelID: candidates.first?.provenance.modelID,
                 initialAudioIDs: candidates.map(\.id))
             let destination = batchURL(generation.id)
             if PrivateSoundAssetIO.exists(destination) {
@@ -331,7 +334,8 @@ private actor GenerationHistoryDisk {
             return GenerationHistoryBatch(
                 id: id, soundDescription: metadata.soundDescription,
                 generatedAt: metadata.generatedAt,
-                profileID: AICueProviderProfileID(rawValue: metadata.profileID), audio: audio,
+                profileID: AICueProviderProfileID(rawValue: metadata.profileID),
+                modelID: metadata.modelID, audio: audio,
                 failure: nil)
         } catch {
             let unavailableAudio =

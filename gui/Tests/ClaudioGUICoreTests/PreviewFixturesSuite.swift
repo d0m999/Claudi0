@@ -94,17 +94,17 @@ func runPreviewFixturesSuites() {
             "aiCueGallery.elevenlabs.missing",
             "aiCueGallery.elevenlabs.verified",
             "aiCueGallery.minimax.rejected",
-            "aiCueGallery.qwen-singapore.deferred",
-            "aiCueGallery.qwen-beijing.pending-replacement",
-            "aiCueGallery.qwen-beijing.unavailable",
+            "aiCueGallery.bailian-beijing.permissions-checked",
+            "aiCueGallery.bailian-beijing.verified",
+            "aiCueGallery.bailian-beijing.unavailable",
             "aiCueGallery.senseaudio-cn.missing",
             "aiCueGallery.senseaudio-cn.voice-unavailable",
             "aiCueGallery.elevenlabs.probing",
-            "aiCueGallery.qwen-singapore.saving",
-            "aiCueGallery.qwen-beijing.updating-replacement",
+            "aiCueGallery.bailian-beijing.probing",
+            "aiCueGallery.bailian-beijing.replacing",
             "aiCueGallery.minimax.deleting",
             "aiCueGallery.elevenlabs.probe-failure",
-            "aiCueGallery.qwen-singapore.save-failure",
+            "aiCueGallery.bailian-beijing.save-failure",
             "aiCueGallery.minimax.delete-failure",
             "aiCueGallery.composer.editing",
             "aiCueGallery.composer.generating",
@@ -353,7 +353,7 @@ func runPreviewFixturesSuites() {
         expect(
             Set(scenarios.map(\.providerProfileID))
                 == [
-                    .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
+                    .elevenLabsGlobal, .miniMaxGlobal, .bailianBeijing,
                     .senseAudioChina,
                 ],
             "AI Cue gallery 必须覆盖全部五个 profile 的隔离状态")
@@ -361,15 +361,15 @@ func runPreviewFixturesSuites() {
             Set(scenarios.map(\.rawValue)).isSuperset(
                 of: [
                     "elevenlabs.missing", "elevenlabs.verified", "minimax.rejected",
-                    "qwen-singapore.deferred", "qwen-beijing.pending-replacement",
-                    "qwen-beijing.unavailable", "senseaudio-cn.missing",
+                    "bailian-beijing.permissions-checked", "bailian-beijing.verified",
+                    "bailian-beijing.unavailable", "senseaudio-cn.missing",
                     "senseaudio-cn.voice-unavailable", "composer.editing", "composer.generating",
                     "composer.candidates", "composer.playing", "composer.adopting",
                     "composer.senseaudio-partial", "composer.senseaudio-partial-playing",
                     "composer.applied", "composer.unsupported-modality",
                     "composer.unsupported-locale", "composer.provider-failure",
                     "composer.validation-failure", "composer.display-name-failure",
-                    "elevenlabs.probe-failure", "qwen-singapore.save-failure",
+                    "elevenlabs.probe-failure", "bailian-beijing.save-failure",
                     "minimax.delete-failure", "composer.target-drift",
                     "composer.adoption-rollback",
                 ]),
@@ -387,8 +387,8 @@ func runPreviewFixturesSuites() {
                     },
             "SenseAudio preview 必须用稳定 1/3 identity 呈现隔离 partial")
         expect(
-            AICueProviderRegistry().profiles().count == 5
-                && PreviewFixtures.aiCueEvidenceRegistry.profiles().count == 5
+            Set(AICueProviderRegistry().profiles().map(\.id))
+                == Set(PreviewFixtures.aiCueEvidenceRegistry.profiles().map(\.id))
                 && AICueProviderRegistry().assetPolicy(for: .senseAudioChina)
                     != PreviewFixtures.aiCueEvidenceRegistry.assetPolicy(for: .senseAudioChina),
             "Gallery 必须保留独立 fixture policy，不得污染生产 policy")
@@ -400,14 +400,14 @@ func runPreviewFixturesSuites() {
                 && PreviewFixtures.AICueGalleryScenario.candidates.playingCandidateID == nil,
             "playing 必须是候选状态上的正交视觉事实，不能伪造第二个 composer phase")
         expect(
-            PreviewFixtures.AICueGalleryScenario.qwenBeijingPendingReplacement
+            PreviewFixtures.AICueGalleryScenario.bailianVerified
                 .previewState().credentialStatus
-                == .stored(verification: .verified, hasPendingReplacement: true),
-            "Qwen pending replacement 必须保留 active verified 与 pending 两条事实")
+                == .stored(verification: .verified, hasPendingReplacement: false),
+            "百炼 verified 不应投影旧 Qwen pending 状态")
         expect(
             [
                 PreviewFixtures.AICueGalleryScenario.elevenLabsProbeFailure,
-                .qwenSingaporeSaveFailure,
+                .bailianSaveFailure,
                 .miniMaxDeleteFailure,
             ].allSatisfy { $0.previewState().credentialFailure != nil },
             "credential probe/save/delete failure 必须各有真实 credentialFailure fixture")

@@ -89,6 +89,20 @@ func runGenerationHistorySuites() async {
             let metadata = try String(
                 contentsOf: directory.appendingPathComponent(generation.id.uuidString.lowercased())
                     .appendingPathComponent("batch.json"), encoding: .utf8)
+            expect(
+                batch.modelID == generation.candidates[0].provenance.modelID,
+                "新记录持久保存实际模型 ID")
+            let batchFile = directory.appendingPathComponent(generation.id.uuidString.lowercased())
+                .appendingPathComponent("batch.json")
+            var legacy =
+                try JSONSerialization.jsonObject(with: Data(contentsOf: batchFile))
+                as! [String: Any]
+            legacy.removeValue(forKey: "modelID")
+            try JSONSerialization.data(withJSONObject: legacy).write(to: batchFile)
+            await recreated.refresh()
+            expect(
+                recreated.snapshot.batches[0].modelID == nil
+                    && recreated.snapshot.batches[0].audio.count == 3, "旧记录缺模型字段仍可读")
             let audioID = generation.candidates[0].id
             try await recreated.rename(batchID: generation.id, audioID: audioID, name: "新的名称")
             let proof = try await recreated.audio(batchID: generation.id, audioID: audioID)

@@ -343,17 +343,17 @@ public enum PreviewFixtures {
         case elevenLabsMissing = "elevenlabs.missing"
         case elevenLabsVerified = "elevenlabs.verified"
         case miniMaxRejected = "minimax.rejected"
-        case qwenSingaporeDeferred = "qwen-singapore.deferred"
-        case qwenBeijingPendingReplacement = "qwen-beijing.pending-replacement"
-        case qwenBeijingUnavailable = "qwen-beijing.unavailable"
+        case bailianPermissionsChecked = "bailian-beijing.permissions-checked"
+        case bailianVerified = "bailian-beijing.verified"
+        case bailianUnavailable = "bailian-beijing.unavailable"
         case senseAudioMissing = "senseaudio-cn.missing"
         case senseAudioVoiceUnavailable = "senseaudio-cn.voice-unavailable"
         case elevenLabsProbing = "elevenlabs.probing"
-        case qwenSingaporeSaving = "qwen-singapore.saving"
-        case qwenBeijingUpdatingReplacement = "qwen-beijing.updating-replacement"
+        case bailianProbing = "bailian-beijing.probing"
+        case bailianReplacing = "bailian-beijing.replacing"
         case miniMaxDeleting = "minimax.deleting"
         case elevenLabsProbeFailure = "elevenlabs.probe-failure"
-        case qwenSingaporeSaveFailure = "qwen-singapore.save-failure"
+        case bailianSaveFailure = "bailian-beijing.save-failure"
         case miniMaxDeleteFailure = "minimax.delete-failure"
         case editing = "composer.editing"
         case generating = "composer.generating"
@@ -447,23 +447,23 @@ public enum PreviewFixtures {
                     credentialStatus: .stored(
                         verification: .rejected,
                         hasPendingReplacement: false))
-            case .qwenSingaporeDeferred:
+            case .bailianPermissionsChecked:
                 Facts(
-                    providerProfileID: .qwenSingapore,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .stored(
                         verification: .deferred,
                         hasPendingReplacement: false))
-            case .qwenBeijingPendingReplacement:
+            case .bailianVerified:
                 Facts(
-                    providerProfileID: .qwenBeijing,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .stored(
                         verification: .verified,
-                        hasPendingReplacement: true))
-            case .qwenBeijingUnavailable:
+                        hasPendingReplacement: false))
+            case .bailianUnavailable:
                 Facts(
-                    providerProfileID: .qwenBeijing,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .unavailable)
             case .senseAudioMissing:
@@ -481,22 +481,22 @@ public enum PreviewFixtures {
                     credentialFailure: .provider(.requiredModelsUnavailable))
             case .elevenLabsProbing:
                 Facts(rendersCredentialSheet: true, credentialActivity: .probing)
-            case .qwenSingaporeSaving:
+            case .bailianProbing:
                 Facts(
-                    providerProfileID: .qwenSingapore,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .stored(
                         verification: .deferred,
                         hasPendingReplacement: false),
-                    credentialActivity: .saving)
-            case .qwenBeijingUpdatingReplacement:
+                    credentialActivity: .probing)
+            case .bailianReplacing:
                 Facts(
-                    providerProfileID: .qwenBeijing,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .stored(
                         verification: .verified,
-                        hasPendingReplacement: true),
-                    credentialActivity: .pendingReplacement)
+                        hasPendingReplacement: false),
+                    credentialActivity: .probing)
             case .miniMaxDeleting:
                 Facts(
                     providerProfileID: .miniMaxGlobal,
@@ -507,9 +507,9 @@ public enum PreviewFixtures {
                     rendersCredentialSheet: true,
                     credentialStatus: .missing,
                     credentialFailure: .provider(.invalidCredential))
-            case .qwenSingaporeSaveFailure:
+            case .bailianSaveFailure:
                 Facts(
-                    providerProfileID: .qwenSingapore,
+                    providerProfileID: .bailianBeijing,
                     rendersCredentialSheet: true,
                     credentialStatus: .missing,
                     credentialFailure: .storageUnavailable)

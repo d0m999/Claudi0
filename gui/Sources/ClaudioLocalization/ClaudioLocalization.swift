@@ -445,6 +445,22 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let aiCueConfigureKey: Self = "ai-cue.credential.configure"
     public static let aiCueManageKey: Self = "ai-cue.credential.manage"
     public static let aiCueCredentialTitle: Self = "ai-cue.credential.title"
+    public static let aiCueProviderProfileBailianBeijing = ClaudioL10nKey(
+        "aiCue.providerProfile.bailianBeijing")
+    public static let aiCueCredentialPrivacyBailianBeijing = ClaudioL10nKey(
+        "aiCue.credential.privacy.bailianBeijing")
+    public static let aiCueBailianAssetContractUnavailable = ClaudioL10nKey("aiCue.bailian.assetContractUnavailable")
+    public static let aiCueBailianPermissionFailure = ClaudioL10nKey("aiCue.bailian.permissionFailure")
+    public static let aiCueBailianAcceptanceOnly = ClaudioL10nKey(
+        "aiCue.credential.bailianAcceptanceOnly")
+    public static let aiCueBailianWorkspaceLabel = ClaudioL10nKey(
+        "aiCue.credential.bailianWorkspace")
+    public static let aiCueBailianWorkspaceInvalid = ClaudioL10nKey(
+        "aiCue.credential.bailianWorkspaceInvalid")
+    public static let aiCueBailianPermissionsChecked = ClaudioL10nKey(
+        "aiCue.credential.bailianPermissionsChecked")
+    public static let aiCueBailianMigrationRetry = ClaudioL10nKey(
+        "aiCue.credential.bailianMigrationRetry")
     public static let aiCueCredentialKeyLabel: Self = "ai-cue.credential.key-label"
     public static let aiCueCredentialPrivacy: Self = "ai-cue.credential.privacy"
     public static let aiCueCredentialPrivacyMiniMax: Self =
@@ -1719,6 +1735,15 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .aiCueCredentialSaving, .aiCueCredentialUpdatingReplacement, .aiCueCredentialDeleting,
         .aiCueConfigureKey,
         .aiCueManageKey, .aiCueCredentialTitle,
+        .aiCueProviderProfileBailianBeijing,
+        .aiCueCredentialPrivacyBailianBeijing,
+        .aiCueBailianAssetContractUnavailable,
+        .aiCueBailianPermissionFailure,
+        .aiCueBailianAcceptanceOnly,
+        .aiCueBailianWorkspaceLabel,
+        .aiCueBailianWorkspaceInvalid,
+        .aiCueBailianPermissionsChecked,
+        .aiCueBailianMigrationRetry,
         .aiCueCredentialKeyLabel, .aiCueCredentialPrivacy, .aiCueCredentialPrivacyMiniMax,
         .aiCueCredentialPrivacyQwenSingapore, .aiCueCredentialPrivacyQwenBeijing,
         .aiCueCredentialPrivacySenseAudioChina,

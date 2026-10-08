@@ -33,7 +33,7 @@ public struct AICueProviderRegistry: Sendable {
             assetPoliciesByProfileID: contract.assetPoliciesByProfileID)
     }
 
-    /// Explicit nil preserves the four-profile rollback seam. Deterministic fixtures can supply
+    /// Explicit nil omits SenseAudio without changing the other admitted profiles. Deterministic fixtures can supply
     /// an independent asset policy without changing the default production contract.
     package init(evidenceGatedSenseAudioAssetPolicy assetPolicy: AICueAssetPolicy?) {
         let contract = Self.builtInContract(senseAudioAssetPolicy: assetPolicy)
@@ -113,6 +113,7 @@ public struct AICueProviderRegistry: Sendable {
     }
 
     public func profile(for profileID: AICueProviderProfileID) throws -> AICueProviderProfile {
+        if profileID == .bailianBeijing { return Self.bailianBeijing }
         guard let profile = profilesByID[profileID] else {
             throw AICueProviderRegistryError.unknownProfile
         }
@@ -123,12 +124,13 @@ public struct AICueProviderRegistry: Sendable {
         assetPoliciesByProfileID[profileID]
     }
 
-    private static let allowlistedProfiles: [AICueProviderProfile] = [
-        elevenLabsGlobal,
-        miniMaxGlobal,
-        qwenSingapore,
-        qwenBeijing,
-    ]
+    private static let allowlistedProfiles: [AICueProviderProfile] = {
+        var profiles = [elevenLabsGlobal, miniMaxGlobal]
+        #if CLAUDIO_BAILIAN_ACCEPTANCE
+        profiles.append(bailianBeijing)
+        #endif
+        return profiles
+    }()
 
     /// Owner-accepted observed contract (ADR 0014). T9 enables the complete profile locally;
     /// distribution and final native/provider evidence remain separate acceptance gates.
@@ -139,14 +141,16 @@ public struct AICueProviderRegistry: Sendable {
     private static func builtInContract(
         senseAudioAssetPolicy: AICueAssetPolicy?
     ) -> BuiltInContract {
-        guard let senseAudioAssetPolicy else {
-            return BuiltInContract(
-                profiles: allowlistedProfiles,
-                assetPoliciesByProfileID: [:])
+        var profiles = allowlistedProfiles
+        var policies: [AICueProviderProfileID: AICueAssetPolicy] = [:]
+        #if CLAUDIO_BAILIAN_ACCEPTANCE
+        policies[.bailianBeijing] = BailianAssetContract.downloadPolicy
+        #endif
+        if let senseAudioAssetPolicy {
+            profiles.append(senseAudioChina)
+            policies[.senseAudioChina] = senseAudioAssetPolicy
         }
-        return BuiltInContract(
-            profiles: allowlistedProfiles + [senseAudioChina],
-            assetPoliciesByProfileID: [.senseAudioChina: senseAudioAssetPolicy])
+        return BuiltInContract(profiles: profiles, assetPoliciesByProfileID: policies)
     }
 
     private static let styledComplete = AICueCandidateSetPolicy(
@@ -241,61 +245,41 @@ public struct AICueProviderRegistry: Sendable {
         ],
         constraints: AICueProviderConstraints(maximumDurationMilliseconds: 3_000))
 
-    private static let qwenSingapore = qwenProfile(
-        id: .qwenSingapore,
-        slotID: .qwenSingapore,
-        regionID: "singapore",
-        displayNameKey: .aiCueProviderProfileQwenSingapore,
-        privacyDisclosureKey: .aiCueCredentialPrivacyQwenSingapore,
-        endpoint:
-            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/"
-            + "multimodal-generation/generation")
-
-    private static let qwenBeijing = qwenProfile(
-        id: .qwenBeijing,
-        slotID: .qwenBeijing,
-        regionID: "beijing",
-        displayNameKey: .aiCueProviderProfileQwenBeijing,
-        privacyDisclosureKey: .aiCueCredentialPrivacyQwenBeijing,
-        endpoint:
-            "https://dashscope.aliyuncs.com/api/v1/services/aigc/"
-            + "multimodal-generation/generation")
-
-    private static func qwenProfile(
-        id: AICueProviderProfileID,
-        slotID: AICueCredentialSlotID,
-        regionID: String,
-        displayNameKey: ClaudioL10nKey,
-        privacyDisclosureKey: ClaudioL10nKey,
-        endpoint: String
-    ) -> AICueProviderProfile {
-        AICueProviderProfile(
-            id: id,
-            providerID: .qwen,
-            credentialSlotID: slotID,
-            pendingCredentialSlotID: pendingSlotID(for: id),
-            credentialValidationPolicy: .deferredUntilExplicitGeneration,
-            regionID: regionID,
-            displayNameKey: displayNameKey,
-            privacyDisclosureKey: privacyDisclosureKey,
-            routes: [
-                .speech: AICueProviderRoute(
-                    modality: .speech,
-                    endpoint: fixedURL(endpoint),
-                    modelID: "qwen3-tts-instruct-flash",
-                    voiceID: "Cherry",
-                    supportedLanguageTags: ["zh*", "en*"],
-                    authentication: .bearerAPIKey,
-                    transport: .ssePCM(
-                        AICuePCMFormat(
-                            sampleRate: 24_000,
-                            bitsPerSample: 16,
-                            channels: 1,
-                            isLittleEndian: true)),
-                    candidateSetPolicy: styledComplete)
-            ],
+    package static let bailianBeijing: AICueProviderProfile = {
+        let routes = Dictionary(
+            uniqueKeysWithValues: AICueModality.allCases.map { modality in
+                let speech = modality == .speech
+                return (
+                    modality,
+                    AICueProviderRoute(
+                        modality: modality,
+                        endpoint: URL(
+                            string:
+                                "https://cn-beijing.maas.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
+                        )!,
+                        modelID: speech ? "qwen-audio-3.1-tts-flash" : "qwen-audio-3.1-tts-next",
+                        voiceID: nil,
+                        supportedLanguageTags: ["zh*", "en*"],
+                        authentication: .bearerAPIKey,
+                        transport: speech
+                            ? .ssePCM(
+                                AICuePCMFormat(
+                                    sampleRate: 24_000, bitsPerSample: 16, channels: 1,
+                                    isLittleEndian: true)) : .remoteAssets,
+                        candidateSetPolicy: styledComplete,
+                        generationBudget: speech ? .standard : .longRunningSFX,
+                        endpointScope: .bailianWorkspace,
+                        allowsGenerationRetry: false)
+                )
+            })
+        return AICueProviderProfile(
+            id: .bailianBeijing, providerID: .bailianBeijing,
+            credentialSlotID: .bailianBeijing, credentialValidationPolicy: .readOnlyProbe,
+            regionID: "beijing", displayNameKey: .aiCueProviderProfileBailianBeijing,
+            privacyDisclosureKey: .aiCueCredentialPrivacyBailianBeijing,
+            routes: routes,
             constraints: AICueProviderConstraints(maximumDurationMilliseconds: 3_000))
-    }
+    }()
 
     private static let senseAudioChina: AICueProviderProfile = {
         let speech = AICueProviderRoute(
@@ -347,13 +331,4 @@ public struct AICueProviderRegistry: Sendable {
         return url
     }
 
-    private static func pendingSlotID(
-        for profileID: AICueProviderProfileID
-    ) -> AICueCredentialSlotID {
-        switch profileID {
-        case .qwenSingapore: return .qwenSingaporePending
-        case .qwenBeijing: return .qwenBeijingPending
-        default: preconditionFailure("Only Qwen profiles own pending credential slots")
-        }
-    }
 }

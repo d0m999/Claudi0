@@ -76,6 +76,18 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--bailian-regression") {
+    await runBailianAICueProviderSuites()
+    await runAICueGenerationEngineSuites()
+    await runAICueGenerationDispatcherSuites()
+    await runAICueGenerationViewModelSuites()
+    await runGenerationHistorySuites()
+    runPreviewFixturesSuites()
+    runMultiProviderPrototypeContractSuites()
+    print("Bailian regression: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -705,7 +717,7 @@ Task { @MainActor in
     await runAICueLocalCredentialSuites()
     await runAICueElevenLabsProviderSuites()
     await runAICueMiniMaxProviderSuites()
-    await runQwenAICueProviderSuites()
+    await runBailianAICueProviderSuites()
     await runSenseAudioAICueProviderSuites()
     await runAICueCandidateSetSuites()
     await runAICueGenerationEngineSuites()

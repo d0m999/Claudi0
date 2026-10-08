@@ -210,14 +210,16 @@ private func isolationRequestBody(_ request: URLRequest) -> Data? {
 }
 
 private actor IsolationMetadata: AICueCredentialMetadataStoring {
-    private var verification: AICueCredentialVerification? = .verified
+    private var values: [AICueProviderProfileID: AICueCredentialVerification] = [
+        .senseAudioChina: .verified
+    ]
     func verification(for profileID: AICueProviderProfileID) -> AICueCredentialVerification? {
-        verification
+        values[profileID]
     }
     func setVerification(
         _ value: AICueCredentialVerification?, for profileID: AICueProviderProfileID
     ) {
-        verification = value
+        values[profileID] = value
     }
 }
 
@@ -395,28 +397,7 @@ func runSenseAudioIsolationSuites() async {
             expect(IsolationURLProtocol.network.requests().isEmpty, "取消后的 batch 不开始 GET")
         }
     }
-    await suite("SenseAudio 隔离装配：有假 Qwen Key 时必须到达拒绝 SSE 接缝，不能真实联网") {
-        await withTempDirectory { root in
-            IsolationURLProtocol.network.reset(failedAssets: [])
-            let fixture = await IsolationRuntime.make(
-                root: root,
-                otherCredentials: [
-                    .qwenSingapore: try! SensitiveCredentialInput("fixture-only-qwen")
-                ])
-            defer { fixture.defaults.removePersistentDomain(forName: fixture.defaultsName) }
-            var observed: AICueGenerationError?
-            do {
-                _ = try await fixture.runtime.dispatcher.generate(
-                    description: "请说“完成”", locale: "zh-Hans", providerProfileID: .qwenSingapore,
-                    deadline: .startingNow())
-            } catch let error as AICueGenerationError { observed = error } catch {}
-            expect(observed == .provider(.transportFailure), "显式 Qwen 生成从受控 SSE 失败返回")
-            expect(fixture.sseTransport.requests().count == 1, "有假 Key 不能由缺凭据先挡住 SSE 接缝")
-            expect(
-                IsolationURLProtocol.network.requests().isEmpty, "Qwen 不走 unary/asset，也不 fallback")
-            expect(isolationGenerationIsEmpty(fixture.generations), "受控 SSE 失败清理真实 generation")
-        }
-    }
+
     await suite("SenseAudio 隔离串联：安全违约整批失败、保凭据、清理并可重新生成") {
         let violations: [IsolationAssetViolation] = [
             .origin, .mime, .redirect, .finalURL, .authentication(401), .authentication(403),

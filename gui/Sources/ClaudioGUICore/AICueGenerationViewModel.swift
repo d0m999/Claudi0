@@ -170,6 +170,10 @@ public final class AICueGenerationViewModel: ObservableObject {
         return profile
     }
 
+    public var providerIsAdmitted: Bool {
+        registry.profiles().contains { $0.id == providerProfileID }
+    }
+
     public var availableProviderProfiles: [AICueProviderProfile] {
         registry.profiles()
     }

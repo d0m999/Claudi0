@@ -1,3 +1,8 @@
+> 2026-10-08 现行百炼替换：以 [ADR 0027](../docs/adr/0027-use-bailian-beijing-audio-31.md) 为准。
+> 旧 Qwen 路线撤下；百炼模型权限检查与真实生成验证分离，完整三候选、60/180 秒共享预算、生成零重试。
+> 已实测限定 OSS 域名的 HTTP 输入转换为 HTTPS／443，固定 MIME `audio/x-wav`、匿名 GET 与零跳转；新入口仍仅验收构建开放。实现与证据见
+> [百炼实施记录](PLAN-BAILIAN-AUDIO-31-EVIDENCE.md)。下文旧 Qwen 合同保留历史上下文。
+
 # PLAN — 描述式 AI 提示音（BYOK、多 Provider）执行计划
 
 > 状态：**T9 完整 SenseAudio TTS/SFX 已通过本地与最终 Bundle 复验；本变更合并后默认五 profiles、默认 ElevenLabs。结果见台账第 26 节；未发布。历史 T8 与有限风险接受保持原记录。**

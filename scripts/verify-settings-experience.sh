@@ -64,7 +64,7 @@ for suite in \
     runAICueCredentialSuites \
     runAICueElevenLabsProviderSuites \
     runAICueMiniMaxProviderSuites \
-    runQwenAICueProviderSuites \
+    runBailianAICueProviderSuites \
     runAICueGenerationEngineSuites \
     runAICueGenerationDispatcherSuites \
     runAICueAdoptionSuites \

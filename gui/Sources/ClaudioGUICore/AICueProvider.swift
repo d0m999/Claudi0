@@ -31,6 +31,7 @@ public enum AICueProviderError: Error, Sendable, Equatable {
     case insufficientCredits
     case forbidden
     case requiredModelsUnavailable
+    case assetContractUnavailable
     case rateLimited(retryAfterSeconds: Int?)
     case serviceUnavailable
     case invalidRequest
@@ -162,7 +163,7 @@ public struct SequentialAICueCandidateSetAdapter: AICueCandidateSetProvider, Sen
         let requests = try variants.map {
             try compiler.compile(plan: plan, profileID: profile.id, variant: $0)
         }
-        var retryAvailable = true
+        var retryAvailable = registeredProfile.routes[plan.modality]?.allowsGenerationRetry == true
         var responses: [Output] = []
         responses.reserveCapacity(policy.requestedCount)
         for (index, request) in requests.enumerated() {

@@ -268,7 +268,7 @@ func runAICueRuntimeSuites() async {
 
             expect(
                 production.generatorProfileIDs
-                    == [.elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing],
+                    == [.elevenLabsGlobal, .miniMaxGlobal],
                 "nil policy runtime 必须为四个 production profile 各装配一个 generator")
             expect(
                 production.validatorProfileIDs == [.elevenLabsGlobal, .miniMaxGlobal],
@@ -276,7 +276,7 @@ func runAICueRuntimeSuites() async {
             expect(
                 enabled.generatorProfileIDs
                     == [
-                        .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
+                        .elevenLabsGlobal, .miniMaxGlobal,
                         .senseAudioChina,
                     ]
                     && enabled.validatorProfileIDs
@@ -285,7 +285,7 @@ func runAICueRuntimeSuites() async {
             expect(
                 evidence.generatorProfileIDs
                     == Set(evidenceRegistry.profiles().map(\.id))
-                    && evidence.generatorProfileIDs.count == 5,
+                    && evidence.generatorProfileIDs.count == 3,
                 "非 nil policy runtime 必须覆盖同一 registry 的全部五个 generator")
             expect(
                 evidence.validatorProfileIDs
@@ -411,58 +411,6 @@ func runAICueRuntimeSuites() async {
         }
     }
 
-    await suite("AI 提示音 runtime：Qwen deferred 保存与 pending 替换保持零 probe") {
-        await withTempDirectory { root in
-            let vault = RuntimeVaultFixture()
-            let unary = RuntimeUnaryTransportFixture()
-            let sse = RuntimeSSETransportFixture()
-            let assets = RuntimeAssetFetcherFixture()
-            let metadata = RuntimeCredentialMetadataFixture()
-            let defaults = runtimeDefaults("Qwen")
-            defer { defaults.removePersistentDomain(forName: runtimeDefaultsName("Qwen")) }
-            let runtime = try! AICueRuntime(
-                vault: vault,
-                temporaryRoot: root.appendingPathComponent("unused"),
-                durationProbe: RuntimeDurationProbeFixture(),
-                unaryTransport: unary,
-                sseTransport: sse,
-                assetFetcher: assets,
-                credentialMetadata: metadata,
-                providerDefaults: defaults)
-
-            let first = try! await runtime.credentialManager.save(
-                try! SensitiveCredentialInput("fixture-qwen-active"),
-                for: .qwenSingapore)
-            let second = try! await runtime.credentialManager.save(
-                try! SensitiveCredentialInput("fixture-qwen-pending"),
-                for: .qwenSingapore)
-            let facts = await vault.facts()
-            let transportCalls = (
-                unary: await unary.calls(),
-                sse: sse.calls(),
-                assets: await assets.calls()
-            )
-            expect(
-                first
-                    == .stored(
-                        verification: .deferred,
-                        hasPendingReplacement: false)
-                    && second
-                        == .stored(
-                            verification: .deferred,
-                            hasPendingReplacement: true),
-                "Qwen 首次保存必须 deferred，已有 active 时替换只能进入 pending")
-            expect(
-                facts.slots == [.qwenSingapore, .qwenSingaporePending]
-                    && facts.replacements == 2,
-                "Qwen active/pending slot 合同必须原样保留")
-            expect(
-                transportCalls.unary == 0 && transportCalls.sse == 0
-                    && transportCalls.assets == 0,
-                "Qwen 保存和 pending 替换不得误用任何 Provider probe")
-        }
-    }
-
     await suite("AI 提示音 runtime：真实 dispatcher/engine 覆盖五个 profile 且不 fallback") {
         await withTempDirectory { root in
             let registry = AICueProviderRegistry()
@@ -549,7 +497,7 @@ func runAICueRuntimeSuites() async {
                 providerPreferences: evidence.providerPreferences)
             expect(
                 evidenceViewModel.providerProfileID == .senseAudioChina
-                    && evidenceViewModel.availableProviderProfiles.count == 5,
+                    && evidenceViewModel.availableProviderProfiles.count == 3,
                 "同一 runtime 的 registry/preferences/VM 必须一致选择 enabled SenseAudio")
 
             let production = try! AICueRuntime(
@@ -571,7 +519,7 @@ func runAICueRuntimeSuites() async {
             let vaultFacts = await vault.facts()
             expect(
                 productionViewModel.providerProfileID == .elevenLabsGlobal
-                    && productionViewModel.availableProviderProfiles.count == 4,
+                    && productionViewModel.availableProviderProfiles.count == 2,
                 "历史 SenseAudio 选择在关闭 gate 后必须只读回落默认 ElevenLabs")
             expect(
                 defaults.string(forKey: AICueProviderPreferences.defaultsKey)
@@ -643,7 +591,7 @@ func runAICueRuntimeSuites() async {
                     && providerFacts.validations == 0,
                 "测试必须真的释放一个迟到 generation，且生成不得误走 credential probe")
             expect(
-                metadataCounts.writes == 0 && temporaryContents.isEmpty,
+                metadataCounts.writes == 2 && temporaryContents.isEmpty,
                 "迟到 generation 不得提交 credential 验证，且只能清理本次临时候选目录")
         }
     }

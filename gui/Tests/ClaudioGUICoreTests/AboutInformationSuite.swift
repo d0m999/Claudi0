@@ -370,6 +370,7 @@ func runAboutInformationSuites() {
             .elevenLabs: "ElevenLabs",
             .miniMax: "MiniMax",
             .qwen: "Qwen / DashScope",
+            .bailianBeijing: "Bailian",
             .senseAudio: "SenseAudio",
         ]
         let profiles = AICueProviderRegistry().profiles()

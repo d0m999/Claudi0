@@ -61,9 +61,11 @@ struct EventSettingsAICueServiceCard: View {
                                 await viewModel.refreshCredentialStatus()
                             }
                         }),
-                    options: viewModel.availableProviderProfiles.map {
-                        SettingsMenuOption($0.id, l10n.text($0.displayNameKey))
-                    }, identifier: "event-settings.ai-cue.provider-profile"
+                    options: (viewModel.providerIsAdmitted
+                        ? viewModel.availableProviderProfiles
+                        : viewModel.availableProviderProfiles + [viewModel.providerProfile]).map {
+                            SettingsMenuOption($0.id, l10n.text($0.displayNameKey))
+                        }, identifier: "event-settings.ai-cue.provider-profile"
                 )
                 .fixedSize(horizontal: true, vertical: false)
                 .disabled(
@@ -95,7 +97,9 @@ struct EventSettingsAICueServiceCard: View {
                 Spacer(minLength: 8)
                 Button(manageButtonTitle, action: onManageCredential)
                     .buttonStyle(.bordered)
-                    .disabled(viewModel.credentialActivity != .idle)
+                    .disabled(
+                        viewModel.credentialActivity != .idle || !viewModel.providerIsAdmitted
+                    )
                     .accessibilityLabel(manageButtonTitle)
                     .accessibilityIdentifier("event-settings.ai-cue.credential-manage")
             }
@@ -107,6 +111,12 @@ struct EventSettingsAICueServiceCard: View {
     }
 
     private var statusPresentation: (text: String, symbol: String, symbolColor: Color) {
+        if !viewModel.providerIsAdmitted {
+            return (
+                l10n.text(.aiCueBailianAcceptanceOnly), "lock",
+                SettingsAppearance.secondaryText(colorScheme)
+            )
+        }
         if viewModel.credentialActivity != .idle {
             return (
                 l10n.text(aiCueCredentialActivityKey(viewModel.credentialActivity)),
@@ -141,7 +151,9 @@ struct EventSettingsAICueServiceCard: View {
             )
         case .stored(.deferred, false):
             return (
-                l10n.text(.aiCueServiceStoredDeferred),
+                l10n.text(
+                    viewModel.providerProfileID == .bailianBeijing
+                        ? .aiCueBailianPermissionsChecked : .aiCueServiceStoredDeferred),
                 "clock.badge.checkmark",
                 SettingsAppearance.secondaryText(colorScheme)
             )
@@ -153,7 +165,9 @@ struct EventSettingsAICueServiceCard: View {
             )
         case .unavailable:
             return (
-                l10n.text(.aiCueServiceUnavailable),
+                l10n.text(
+                    viewModel.providerProfileID == .bailianBeijing
+                        ? .aiCueBailianMigrationRetry : .aiCueServiceUnavailable),
                 "xmark.circle.fill",
                 ClaudioTheme.error(colorScheme)
             )
@@ -370,7 +384,7 @@ struct EventSettingsAICueComposerView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!generationEnabled)
+                    .disabled(!generationEnabled || !viewModel.providerIsAdmitted)
                     .accessibilityLabel(
                         l10n.text(
                             viewModel.requiresCredentialConfiguration
@@ -485,7 +499,7 @@ struct EventSettingsAICueComposerView: View {
                         }
                     }
                 }
-                .disabled(viewModel.phase == .adopting || !generationEnabled)
+                .disabled(viewModel.phase == .adopting || !generationEnabled || !viewModel.providerIsAdmitted)
                 .accessibilityLabel(l10n.text(.aiCueRegenerate))
                 .accessibilityHint(l10n.text(.aiCueGenerateHint))
                 .accessibilityIdentifier("event-settings.ai-cue.regenerate")
@@ -644,6 +658,8 @@ struct EventSettingsAICueCredentialSheet: View {
     @Environment(\.presentationMode) private var presentationMode
     @Environment(\.colorScheme) private var colorScheme
     @State private var keyInput = ""
+    @State private var workspaceInput = ""
+    @State private var workspaceInvalid = false
     @State private var inputError: AICueCredentialInputError?
     @State private var confirmsDeletion = false
 
@@ -687,6 +703,16 @@ struct EventSettingsAICueCredentialSheet: View {
                 .accessibilityIdentifier("event-settings.ai-cue.credential-activity")
             }
 
+            if viewModel.providerProfileID == .bailianBeijing {
+                TextField(l10n.text(.aiCueBailianWorkspaceLabel), text: $workspaceInput)
+                    .textFieldStyle(.roundedBorder)
+                    .disableAutocorrection(true)
+                    .accessibilityLabel(l10n.text(.aiCueBailianWorkspaceLabel))
+                    .accessibilityIdentifier("event-settings.ai-cue.bailian-workspace")
+                if workspaceInvalid {
+                    credentialErrorNotice(l10n.text(.aiCueBailianWorkspaceInvalid))
+                }
+            }
             Text(l10n.text(.aiCueCredentialKeyLabel))
                 .font(SettingsAppearance.font(.body).weight(.semibold))
             SecureField(l10n.text(.aiCueCredentialKeyLabel), text: $keyInput)
@@ -784,7 +810,17 @@ struct EventSettingsAICueCredentialSheet: View {
     private func submitCredential() {
         let credential: SensitiveCredentialInput
         do {
-            credential = try SensitiveCredentialInput(keyInput)
+            if viewModel.providerProfileID == .bailianBeijing {
+                guard let workspace = try? BailianWorkspaceID(workspaceInput) else {
+                    workspaceInvalid = true
+                    return
+                }
+                credential = try SensitiveCredentialInput(
+                    apiKey: keyInput, bailianWorkspaceID: workspace)
+            } else {
+                credential = try SensitiveCredentialInput(keyInput)
+            }
+            workspaceInvalid = false
         } catch let error as AICueCredentialInputError {
             inputError = error
             return
@@ -859,6 +895,7 @@ package func aiCueCredentialFailureText(
     case .provider(.invalidCredential), .provider(.forbidden):
         return l10n.text(.aiCueErrorCredentialInvalid)
     case .provider(.requiredModelsUnavailable):
+        if providerProfileID == .bailianBeijing { return l10n.text(.aiCueBailianPermissionFailure) }
         guard providerProfileID == .senseAudioChina else {
             return l10n.text(.aiCueErrorCredentialValidationFailed)
         }
@@ -907,6 +944,8 @@ package func aiCueFailureText(
     case .generation(.provider(.invalidCredential)),
         .generation(.provider(.forbidden)):
         return l10n.text(.aiCueErrorCredentialInvalid)
+    case .generation(.provider(.assetContractUnavailable)):
+        return l10n.text(.aiCueBailianAssetContractUnavailable)
     case .generation(.provider(.requiredModelsUnavailable)):
         return l10n.text(.aiCueErrorGeneration)
     case .generation(.provider(.insufficientCredits)):

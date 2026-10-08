@@ -21,6 +21,12 @@ public struct AICueProviderPreferences {
     }
 
     public func selectedProfileID() -> AICueProviderProfileID {
+        if let old = defaults.string(forKey: Self.defaultsKey),
+            ["qwen-beijing", "qwen-singapore"].contains(old)
+        {
+            defaults.set(AICueProviderProfileID.bailianBeijing.rawValue, forKey: Self.defaultsKey)
+            return .bailianBeijing
+        }
         guard
             let rawValue = defaults.string(forKey: Self.defaultsKey),
             let profile = try? registry.profile(

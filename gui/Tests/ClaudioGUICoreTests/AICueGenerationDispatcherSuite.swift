@@ -47,43 +47,51 @@ private actor DispatcherGeneratorFixture: AICueGenerating {
     }
 }
 
+private func dispatcherFixtures(
+    _ overrides: [AICueProviderProfileID: any AICueGenerating],
+    registry: AICueProviderRegistry = AICueProviderRegistry()
+) -> [AICueProviderProfileID: any AICueGenerating] {
+    Dictionary(
+        uniqueKeysWithValues: registry.profiles().map { profile in
+            (
+                profile.id,
+                overrides[profile.id]
+                    ?? DispatcherGeneratorFixture(returnedProfileID: profile.id)
+            )
+        })
+}
+
 func runAICueGenerationDispatcherSuites() async {
     await suite("AI 提示音 dispatcher：只把显式 profile 路由给对应 engine 并归还清理") {
         let elevenLabs = DispatcherGeneratorFixture(returnedProfileID: .elevenLabsGlobal)
         let miniMax = DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal)
-        let qwenSingapore = DispatcherGeneratorFixture(returnedProfileID: .qwenSingapore)
-        let qwenBeijing = DispatcherGeneratorFixture(returnedProfileID: .qwenBeijing)
         let senseAudio = DispatcherGeneratorFixture(returnedProfileID: .senseAudioChina)
-        let dispatcher = try! AICueGenerationDispatcher(generators: [
-            .elevenLabsGlobal: elevenLabs,
-            .miniMaxGlobal: miniMax,
-            .qwenSingapore: qwenSingapore,
-            .qwenBeijing: qwenBeijing,
-            .senseAudioChina: senseAudio,
-        ])
+        let dispatcher = try! AICueGenerationDispatcher(
+            generators: dispatcherFixtures([
+                .elevenLabsGlobal: elevenLabs,
+                .miniMaxGlobal: miniMax,
+                .senseAudioChina: senseAudio,
+            ]))
 
         let generation = try! await dispatcher.generate(
             description: "清晰地说“完成”",
             locale: "zh-Hans",
-            providerProfileID: .qwenBeijing,
+            providerProfileID: .miniMaxGlobal,
             deadline: .startingNow())
         expect(
-            await qwenBeijing.facts().requests == [.qwenBeijing],
+            await miniMax.facts().requests == [.miniMaxGlobal],
             "dispatcher 必须只调用用户显式选择的 region/profile")
         let elevenLabsFacts = await elevenLabs.facts()
         let miniMaxFacts = await miniMax.facts()
-        let qwenSingaporeFacts = await qwenSingapore.facts()
         let senseAudioFacts = await senseAudio.facts()
         expect(
             elevenLabsFacts.requests.isEmpty
-                && miniMaxFacts.requests.isEmpty
-                && qwenSingaporeFacts.requests.isEmpty
                 && senseAudioFacts.requests.isEmpty,
             "dispatcher 不得 fallback、跨区或复用其他 Provider engine")
 
         await dispatcher.discard(generationID: generation.id)
         expect(
-            await qwenBeijing.facts().discarded == [generation.id],
+            await miniMax.facts().discarded == [generation.id],
             "候选清理必须返回创建该 generation 的 engine")
         expect(await elevenLabs.facts().discarded.isEmpty, "清理不得广播到无关 engine")
     }
@@ -103,13 +111,12 @@ func runAICueGenerationDispatcherSuites() async {
         }
 
         let mismatched = DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal)
-        let dispatcher = try! AICueGenerationDispatcher(generators: [
-            .elevenLabsGlobal: mismatched,
-            .miniMaxGlobal: DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal),
-            .qwenSingapore: DispatcherGeneratorFixture(returnedProfileID: .qwenSingapore),
-            .qwenBeijing: DispatcherGeneratorFixture(returnedProfileID: .qwenBeijing),
-            .senseAudioChina: DispatcherGeneratorFixture(returnedProfileID: .senseAudioChina),
-        ])
+        let dispatcher = try! AICueGenerationDispatcher(
+            generators: dispatcherFixtures([
+                .elevenLabsGlobal: mismatched,
+                .miniMaxGlobal: DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal),
+                .senseAudioChina: DispatcherGeneratorFixture(returnedProfileID: .senseAudioChina),
+            ]))
         do {
             _ = try await dispatcher.generate(
                 description: "清晰地说“完成”",
@@ -132,13 +139,12 @@ func runAICueGenerationDispatcherSuites() async {
         let senseAudio = DispatcherGeneratorFixture(returnedProfileID: .senseAudioChina)
         let elevenLabs = DispatcherGeneratorFixture(returnedProfileID: .elevenLabsGlobal)
         let dispatcher = try! AICueGenerationDispatcher(
-            generators: [
-                .elevenLabsGlobal: elevenLabs,
-                .miniMaxGlobal: DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal),
-                .qwenSingapore: DispatcherGeneratorFixture(returnedProfileID: .qwenSingapore),
-                .qwenBeijing: DispatcherGeneratorFixture(returnedProfileID: .qwenBeijing),
-                .senseAudioChina: senseAudio,
-            ],
+            generators: dispatcherFixtures(
+                [
+                    .elevenLabsGlobal: elevenLabs,
+                    .miniMaxGlobal: DispatcherGeneratorFixture(returnedProfileID: .miniMaxGlobal),
+                    .senseAudioChina: senseAudio,
+                ], registry: registry),
             registry: registry)
 
         _ = try! await dispatcher.generate(

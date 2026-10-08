@@ -52,6 +52,12 @@ git diff --check
 
 `scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
 
+Bailian Audio 3.1 remains closed in ordinary builds until the resource contract and real adoption
+pass ADR 0027. Use `bash scripts/dev-bundle.sh --bailian-acceptance` for its explicit local bundle.
+It records source file hashes and the code-owned asset policy in `bailian-acceptance-source.json`;
+this build does not establish distribution eligibility. See
+[the current evidence](plan/PLAN-BAILIAN-AUDIO-31-EVIDENCE.md) before making real requests.
+
 OpenCode and Kimi Code qualify per binding under ADR 0024. Ordinary Release builds expose a
 source when it has reviewed bindings and keep its unverified bindings closed. The current evidence
 is recorded in `docs/validation/opencode-kimi-code-2026-10-06.md`. Debug builds expose all candidates. Use `bash scripts/dev-bundle.sh --additional-host-acceptance` for an explicit local

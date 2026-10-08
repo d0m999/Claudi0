@@ -251,8 +251,8 @@ func runAICueGenerationViewModelSuites() async {
             (.senseAudioChina, "清晰地说“任务完成”", 60),
             (.elevenLabsGlobal, "短促木琴音效", 60),
             (.miniMaxGlobal, "清晰地说“任务完成”", 60),
-            (.qwenSingapore, "清晰地说“任务完成”", 60),
-            (.qwenBeijing, "清晰地说“任务完成”", 60),
+            (.bailianBeijing, "清晰地说“任务完成”", 60),
+            (.bailianBeijing, "自然猫叫", 180),
             (.senseAudioChina, "先响一声木琴，然后说“任务完成”", 60),
             (.senseAudioChina, "", 60),
         ]
@@ -335,7 +335,7 @@ func runAICueGenerationViewModelSuites() async {
         let viewModel = AICueGenerationViewModel(
             credentialManager: ComposerCredentialManagerFixture(status: .missing),
             generator: generator,
-            providerProfileID: .qwenSingapore)
+            providerProfileID: .bailianBeijing)
         viewModel.begin(packID: "workbuddy-pack", event: .stop)
         viewModel.updateDescription("短促木琴完成音效")
 
@@ -343,15 +343,15 @@ func runAICueGenerationViewModelSuites() async {
         await waitForAICueViewModel { viewModel.phase != .generating }
 
         expect(
-            await generator.facts().profileIDs == [.qwenSingapore],
+            await generator.facts().profileIDs == [.bailianBeijing],
             "ViewModel 不能把所选 profile 隐式改回 ElevenLabs")
         let deadlines = await generator.facts().deadlines
         expect(
             deadlines.count == 1
                 && deadlines[0].expiresAtUptimeNanoseconds
                     - deadlines[0].startedAtUptimeNanoseconds
-                    == AICueGenerationDeadline.durationNanoseconds,
-            "60 秒 absolute deadline 必须在用户点击入口冻结并传入 engine")
+                    == AICueGenerationBudget.longRunningSFX.durationNanoseconds,
+            "180 秒 absolute deadline 必须在用户点击入口冻结并传入 engine")
     }
 
     await suite("AI 提示音状态层：生成拒绝后立即投影当前 profile 的 rejected 状态") {
@@ -360,7 +360,7 @@ func runAICueGenerationViewModelSuites() async {
         let viewModel = AICueGenerationViewModel(
             credentialManager: credentialManager,
             generator: ComposerGeneratorFixture(mode: .failure(.provider(.invalidCredential))),
-            providerProfileID: .qwenSingapore)
+            providerProfileID: .bailianBeijing)
         viewModel.begin(packID: "workbuddy-pack", event: .stop)
         viewModel.updateDescription("清晰地说“完成”")
 
@@ -647,21 +647,22 @@ func runAICueGenerationViewModelSuites() async {
         viewModel.startGeneration(locale: "zh-Hans")
         await waitForAICueViewModel { viewModel.phase == .generating }
 
-        try! viewModel.selectProviderProfile(.qwenBeijing)
+        try! viewModel.selectProviderProfile(.bailianBeijing)
         expect(viewModel.phase == .editing, "切换 profile 恢复下次请求的编辑上下文")
         expect(viewModel.generation == nil, "切换 profile 必须使所有未采用候选失效")
         expect(viewModel.soundDescription == "请说\"完成\"", "切换 profile 必须保留用户描述")
-        expect(viewModel.providerProfileID == .qwenBeijing, "选择必须更新当前 profile")
+        expect(viewModel.providerProfileID == .bailianBeijing, "选择必须更新当前 profile")
         expect(
-            AICueProviderPreferences(defaults: defaults).selectedProfileID() == .qwenBeijing,
+            AICueProviderPreferences(defaults: defaults).selectedProfileID() == .bailianBeijing,
             "profile/region 非敏感偏好必须跨实例持久化")
+        var expectedProfileOrder: [AICueProviderProfileID] = [.elevenLabsGlobal, .miniMaxGlobal]
+        #if CLAUDIO_BAILIAN_ACCEPTANCE
+        expectedProfileOrder.append(.bailianBeijing)
+        #endif
+        expectedProfileOrder.append(.senseAudioChina)
         expect(
-            viewModel.availableProviderProfiles.map(\.id)
-                == [
-                    .elevenLabsGlobal, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
-                    .senseAudioChina,
-                ],
-            "production UI 的 profile 选择必须直接投影 registry 的完整稳定顺序")
+            viewModel.availableProviderProfiles.map(\.id) == expectedProfileOrder,
+            "UI 的 profile 选择必须直接投影当前构建允许的完整稳定顺序")
         expect(viewModel.coordinator.generationBlock == .generating, "服务切换不能绕过全应用单任务门禁")
         while await generator.facts().generations == 0 { await Task.yield() }
         await generator.complete()
@@ -687,10 +688,10 @@ func runAICueGenerationViewModelSuites() async {
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let preferences = AICueProviderPreferences(defaults: defaults)
-        try! preferences.select(.qwenSingapore)
+        try! preferences.select(.bailianBeijing)
         let profile = try! AICueProviderRegistry().profile(
             for: preferences.selectedProfileID())
-        expect(profile.regionID == "singapore", "region 必须由选中的 registry profile 派生")
+        expect(profile.regionID == "beijing", "region 必须由选中的 registry profile 派生")
         expect(
             throwsProviderPreference {
                 try preferences.select(AICueProviderProfileID(rawValue: "user-endpoint"))
@@ -700,7 +701,7 @@ func runAICueGenerationViewModelSuites() async {
         expect(
             !snapshot.localizedCaseInsensitiveContains("authorization")
                 && !snapshot.localizedCaseInsensitiveContains("api-key")
-                && snapshot.contains("qwen-singapore"),
+                && snapshot.contains("bailian-beijing"),
             "偏好快照只能包含非敏感 allowlisted profile ID")
     }
 }

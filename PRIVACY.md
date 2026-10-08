@@ -14,9 +14,15 @@ allowlisted provider profile. The current registry is:
 
 - Profile `elevenlabs-global`: provider `ElevenLabs`; region `global`.
 - Profile `minimax-global`: provider `MiniMax`; region `global`.
-- Profile `qwen-singapore`: provider `Qwen / DashScope`; region `singapore`.
-- Profile `qwen-beijing`: provider `Qwen / DashScope`; region `beijing`.
 - Profile `senseaudio-cn`: provider `SenseAudio`; region `china`.
+
+Bailian Beijing is available only in a non-distribution acceptance build while full real generation
+and native acceptance remain incomplete. Next assets are fetched only from
+`https://dashscope-result-bj.oss-cn-beijing.aliyuncs.com:443` with `audio/x-wav`,
+anonymous GET and no redirects. HTTP URLs for this exact bucket are upgraded before requesting,
+preserving the path and signed query; no HTTP download is sent. Its API key and business workspace ID share one atomic Keychain
+record. Saving checks both model inference permissions, not real generation. Legacy Qwen active and
+pending credentials are removed during upgrade, without deleting audio or bindings.
 
 The fixed SenseAudio `.cn` route does not promise data residency. The default remains ElevenLabs.
 SenseAudio provides Chinese speech and sound effects, with no mixed
@@ -33,7 +39,7 @@ display or export saved keys, and it does not migrate or delete existing SenseAu
 
 Valid generated audio is automatically saved in private local generation history, including results
 you do not use. Each batch keeps your original sound description, generation time and actual
-provider profile; each audio item keeps its name, duration and file-integrity metadata. Internal
+provider profile and actual model ID (absent in older records); each audio item keeps its name, duration and file-integrity metadata. Internal
 sound plans, request bodies, provider request IDs, remote URLs, credentials and workspace identities
 are not saved in this history. Records stay until you move them to the macOS Trash. Deleting a record
 does not remove an independent copy already used in a sound pack. Named, unpublished sound-pack
@@ -57,9 +63,14 @@ AI 声音生成是 claudi0 GUI 中可选且必须由用户明确触发的动作�
 
 - 配置 `elevenlabs-global`：Provider `ElevenLabs`；region `global`。
 - 配置 `minimax-global`：Provider `MiniMax`；region `global`。
-- 配置 `qwen-singapore`：Provider `Qwen / DashScope`；region `singapore`。
-- 配置 `qwen-beijing`：Provider `Qwen / DashScope`；region `beijing`。
 - 配置 `senseaudio-cn`：Provider `SenseAudio`；region `china`。
+
+百炼北京仅在非分发验收构建中开放，完整真实生成与原生验收尚未完成。Next 资源只从
+`https://dashscope-result-bj.oss-cn-beijing.aliyuncs.com:443` 匿名 GET 下载，固定
+`audio/x-wav`，禁止跳转。仅将该精确域名的 HTTP 输入地址转换为 HTTPS 后请求，路径和
+签名参数保持原样，不发出明文 HTTP 下载。API Key、百炼业务空间 ID
+和真实生成验证事实保存在同一原子 Keychain 记录中。保存只检查两个模型的推理权限，不代表
+真实生成通过。升级删除旧 Qwen 的 active 与 pending 凭据，保留音频和绑定。
 
 固定 SenseAudio `.cn` 路线不承诺数据驻留。默认 Provider 仍为 ElevenLabs。
 SenseAudio 提供中文语音与音效，不支持 mixed，不自动 fallback。
@@ -74,7 +85,7 @@ macOS 钥匙串中，不会进入可复制的诊断摘要。SenseAudio profile �
 Keychain 项。
 
 所有有效生成音频自动保存到私有的本地生成记录，包括未选用项。每组保存原始声音描述、生成时间
-及实际服务；每条音频保存名称、时长和文件完整性元数据。记录不保存内部声音方案、请求正文、
+及实际服务和模型 ID（旧记录可缺失）；每条音频保存名称、时长和文件完整性元数据。记录不保存内部声音方案、请求正文、
 供应商请求 ID、远端 URL、凭据或工作区身份。记录一直保留，直到你将它们移到 macOS 废纸篓；
 删除记录不影响已用于声音包的独立副本。已命名但未发布的声音包草稿也保留在本机。关闭设置
 不会取消正在进行的生成；未保存结果不保证在退出或崩溃后恢复。描述与记录不进入诊断或日志。

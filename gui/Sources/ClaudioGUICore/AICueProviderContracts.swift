@@ -10,6 +10,7 @@ public struct AICueProviderID: RawRepresentable, Hashable, Codable, Sendable {
 
     public static let elevenLabs = AICueProviderID(rawValue: "elevenlabs")
     public static let miniMax = AICueProviderID(rawValue: "minimax")
+    public static let bailianBeijing = AICueProviderID(rawValue: "bailian-beijing")
     public static let qwen = AICueProviderID(rawValue: "qwen")
     public static let senseAudio = AICueProviderID(rawValue: "senseaudio")
 }
@@ -23,6 +24,7 @@ public struct AICueProviderProfileID: RawRepresentable, Hashable, Codable, Senda
 
     public static let elevenLabsGlobal = AICueProviderProfileID(rawValue: "elevenlabs-global")
     public static let miniMaxGlobal = AICueProviderProfileID(rawValue: "minimax-global")
+    public static let bailianBeijing = AICueProviderProfileID(rawValue: "bailian-beijing")
     public static let qwenSingapore = AICueProviderProfileID(rawValue: "qwen-singapore")
     public static let qwenBeijing = AICueProviderProfileID(rawValue: "qwen-beijing")
     public static let senseAudioChina = AICueProviderProfileID(rawValue: "senseaudio-cn")
@@ -37,6 +39,7 @@ public struct AICueCredentialSlotID: RawRepresentable, Hashable, Codable, Sendab
 
     public static let legacyElevenLabs = AICueCredentialSlotID(rawValue: "elevenlabs")
     public static let miniMaxGlobal = AICueCredentialSlotID(rawValue: "minimax-global")
+    public static let bailianBeijing = AICueCredentialSlotID(rawValue: "bailian-beijing")
     public static let qwenSingapore = AICueCredentialSlotID(rawValue: "qwen-singapore")
     public static let qwenBeijing = AICueCredentialSlotID(rawValue: "qwen-beijing")
     public static let senseAudioChina = AICueCredentialSlotID(rawValue: "senseaudio-cn")
@@ -161,9 +164,16 @@ public enum AICueGenerationBudget: Sendable, Equatable {
     }
 }
 
+public enum AICueEndpointScope: Sendable, Equatable {
+    case fixed
+    case bailianWorkspace
+}
+
 public struct AICueProviderRoute: Sendable, Equatable {
     public let modality: AICueModality
     public let endpoint: URL
+    public let endpointScope: AICueEndpointScope
+    public let allowsGenerationRetry: Bool
     public let modelID: String
     public let voiceID: String?
     public let supportedLanguageTags: Set<String>
@@ -181,10 +191,14 @@ public struct AICueProviderRoute: Sendable, Equatable {
         authentication: AICueProviderAuthentication,
         transport: AICueProviderAudioTransport,
         candidateSetPolicy: AICueCandidateSetPolicy,
-        generationBudget: AICueGenerationBudget = .standard
+        generationBudget: AICueGenerationBudget = .standard,
+        endpointScope: AICueEndpointScope = .fixed,
+        allowsGenerationRetry: Bool = true
     ) {
         self.modality = modality
         self.endpoint = endpoint
+        self.endpointScope = endpointScope
+        self.allowsGenerationRetry = allowsGenerationRetry
         self.modelID = modelID
         self.voiceID = voiceID
         self.supportedLanguageTags = supportedLanguageTags
@@ -357,9 +371,9 @@ public struct AICueProviderRequestCompiler: Sendable {
             return AICueProviderRequest(
                 profileID: profileID,
                 modality: plan.modality,
-                prompt: speechPrompt(
-                    plan: plan,
-                    variant: variant),
+                prompt: profileID == .bailianBeijing && plan.modality == .mixed
+                    ? soundPrompt(plan: plan, variant: variant)
+                    : speechPrompt(plan: plan, variant: variant),
                 spokenContent: spokenContent,
                 languageTag: languageTag,
                 targetDurationMilliseconds: plan.targetDurationMilliseconds,

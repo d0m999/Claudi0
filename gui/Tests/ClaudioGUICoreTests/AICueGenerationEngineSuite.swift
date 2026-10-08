@@ -410,7 +410,7 @@ func runAICueGenerationEngineSuites() async {
                 ("Say \"   \"", "en", .elevenLabsGlobal),
                 ("Say \"Task complete", "en", .elevenLabsGlobal),
                 ("一只小猫短促叫两声", "zh-Hans", .miniMaxGlobal),
-                ("Say \"Bonjour\"", "fr", .qwenSingapore),
+                ("Say \"Bonjour\"", "fr", .bailianBeijing),
                 ("短促木琴音效", "zh-Hans", AICueProviderProfileID(rawValue: "unknown")),
             ]
 
@@ -818,11 +818,11 @@ func runAICueGenerationEngineSuites() async {
         await withTempDirectory { root in
             let audio = validMP3ID3Data()
             let credentials = GenerationCredentialLeaseManagerFixture(
-                profileID: .qwenSingapore,
-                source: .pending)
+                profileID: .bailianBeijing,
+                source: .active)
             let provider = GenerationProviderFixture(
                 steps: [.success(audio), .success(audio), .success(audio)],
-                profileID: .qwenSingapore)
+                profileID: .bailianBeijing)
             let engine = AICueGenerationEngine(
                 credentialManager: credentials,
                 provider: provider,
@@ -832,7 +832,7 @@ func runAICueGenerationEngineSuites() async {
             let generation = try! await engine.generate(
                 description: "请说\"完成\"",
                 locale: "zh-Hans",
-                providerProfileID: .qwenSingapore,
+                providerProfileID: .bailianBeijing,
                 deadline: .startingNow())
             let facts = await credentials.facts()
             expect(generation.candidates.count == 3, "deferred key 成功仍必须完整发布三候选")
@@ -845,11 +845,11 @@ func runAICueGenerationEngineSuites() async {
     await suite("AI 提示音生成：后续非 401 失败不提升 pending") {
         await withTempDirectory { root in
             let credentials = GenerationCredentialLeaseManagerFixture(
-                profileID: .qwenSingapore,
-                source: .pending)
+                profileID: .bailianBeijing,
+                source: .active)
             let provider = GenerationProviderFixture(
                 steps: [.success(validMP3ID3Data()), .failure(.forbidden)],
-                profileID: .qwenSingapore)
+                profileID: .bailianBeijing)
             let engine = AICueGenerationEngine(
                 credentialManager: credentials,
                 provider: provider,
@@ -863,7 +863,7 @@ func runAICueGenerationEngineSuites() async {
                 _ = try await engine.generate(
                     description: "请说\"完成\"",
                     locale: "zh-Hans",
-                    providerProfileID: .qwenSingapore,
+                    providerProfileID: .bailianBeijing,
                     deadline: .startingNow())
             } catch AICueGenerationError.provider(.forbidden) {
                 forbidden = true
@@ -878,11 +878,11 @@ func runAICueGenerationEngineSuites() async {
     await suite("AI 提示音生成：pending 401 不自动 fallback 到旧 key") {
         await withTempDirectory { root in
             let credentials = GenerationCredentialLeaseManagerFixture(
-                profileID: .qwenBeijing,
-                source: .pending)
+                profileID: .bailianBeijing,
+                source: .active)
             let provider = GenerationProviderFixture(
                 steps: [.failure(.invalidCredential), .success(validMP3ID3Data())],
-                profileID: .qwenBeijing)
+                profileID: .bailianBeijing)
             let engine = AICueGenerationEngine(
                 credentialManager: credentials,
                 provider: provider,
@@ -894,7 +894,7 @@ func runAICueGenerationEngineSuites() async {
                 _ = try await engine.generate(
                     description: "请说\"完成\"",
                     locale: "zh-Hans",
-                    providerProfileID: .qwenBeijing,
+                    providerProfileID: .bailianBeijing,
                     deadline: .startingNow())
             } catch AICueGenerationError.provider(.invalidCredential) {
                 rejected = true

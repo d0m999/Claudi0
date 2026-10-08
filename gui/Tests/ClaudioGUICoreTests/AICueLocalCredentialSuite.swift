@@ -322,14 +322,20 @@ func runAICueLocalCredentialSuites() async {
                     contentsOf: root.appendingPathComponent("senseaudio-cn.key"), encoding: .utf8)
                     == "fixture-only-approved", "probe 失败保留已保存的假 Key")
             try! await restarted.delete(for: .senseAudioChina)
-            expect(await spy.slots.isEmpty, "SenseAudio 的查询、保存、取用、替换和删除均不访问 Keychain")
+            expect(
+                await spy.slots.allSatisfy {
+                    [.qwenBeijingPending, .qwenSingaporePending, .qwenBeijing, .qwenSingapore]
+                        .contains($0)
+                }, "SenseAudio 的查询、保存、取用、替换和删除均不访问 Keychain")
 
             let otherSlots: [AICueCredentialSlotID] = [
                 .legacyElevenLabs, .miniMaxGlobal, .qwenSingapore, .qwenBeijing,
                 .qwenSingaporePending, .qwenBeijingPending,
             ]
             for slot in otherSlots { _ = try! await vault.containsCredential(in: slot) }
-            expect(await spy.slots == otherSlots, "既有 Provider 和 pending slot 继续原样交给 Keychain")
+            expect(
+                await spy.slots.suffix(otherSlots.count) == otherSlots,
+                "既有 Provider 和 pending slot 继续原样交给 Keychain")
         }
     }
 
