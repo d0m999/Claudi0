@@ -71,6 +71,80 @@ private actor SoundEditorLifecycleGenerator: AICueGenerating {
 @MainActor
 func runSoundEditorAILifecycleSuites() async {
     #if DEBUG
+    await suite("声音实际生成表单：百炼准入同时约束生成和凭据入口") {
+        #if CLAUDIO_BAILIAN_ACCEPTANCE
+        let admitted = true
+        #else
+        let admitted = false
+        #endif
+        for status in [
+            AICueCredentialStatus.missing,
+            .stored(verification: .verified, hasPendingReplacement: false),
+        ] {
+            let defaultsName = "BailianAdmission-" + UUID().uuidString
+            let defaults = UserDefaults(suiteName: defaultsName)!
+            defer { defaults.removePersistentDomain(forName: defaultsName) }
+            let generator = SoundEditorLifecycleGenerator()
+            let model = AICueGenerationViewModel(
+                credentialManager: SoundEditorLifecycleCredentials(status: status),
+                generator: generator, providerProfileID: .bailianBeijing,
+                providerPreferences: AICueProviderPreferences(defaults: defaults))
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(.overview),
+                availability: PreviewFixtures.settingsRouteAvailability, aiCueViewModel: model)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session, size: NSSize(width: 960, height: 640))
+            defer { model.endSession(); probe.close() }
+            await probe.settle()
+            expect(probe.pressControl("settings.sounds.pack.settings-fixture-pack"), "实际声音列表进入包详情")
+            await probe.settle()
+            expect(probe.chooseSource(event: .stop, index: 0), "实际事件菜单打开 AI 表单")
+            await probe.settle()
+            model.updateDescription("清晰地说“任务完成”")
+            probe.refresh()
+            expect(
+                probe.menuIsEnabled(identifier: "settings.sounds.ai.generate") == admitted,
+                "缺凭据配置及已有凭据生成均服从当前构建准入")
+            expect(
+                probe.menuIsEnabled(identifier: "event-settings.ai-cue.credential-manage")
+                    == admitted,
+                "共享服务卡服从同一准入")
+            if status == .missing {
+                let manage = probe.menuAccessibilityElement(
+                    identifier: "settings.sounds.ai.credential-manage")
+                if let manage {
+                    expect(
+                        manage.isAccessibilityEnabled?() == admitted,
+                        "实际表单额外凭据入口服从准入")
+                } else {
+                    expect(false, "额外凭据入口必须可独立检查")
+                }
+            }
+            if !admitted {
+                expect(!probe.pressControl("settings.sounds.ai.generate"), "普通构建不能进入配置或生成")
+                expect(
+                    probe.menuAccessibilityElement(
+                        identifier: "event-settings.ai-cue.credential-input") == nil,
+                    "未获准服务不挂载凭据表单")
+                expect(!(await generator.isSuspended), "未获准服务不调用生成器")
+                try! model.selectProviderProfile(.elevenLabsGlobal)
+                await model.refreshCredentialStatus()
+                probe.refresh()
+                expect(
+                    probe.menuIsEnabled(identifier: "settings.sounds.ai.generate") == true,
+                    "切换到已准入服务可恢复生成或配置入口")
+            } else if status == .missing {
+                expect(probe.pressControl("settings.sounds.ai.credential-manage"), "验收构建允许进入凭据管理")
+                await probe.settle()
+                expect(
+                    probe.menuAccessibilityElement(
+                        identifier: "event-settings.ai-cue.credential-input") != nil,
+                    "验收构建挂载既有凭据表单")
+                expect(!(await generator.isSuspended), "配置入口不自动生成")
+            }
+        }
+    }
+
     await suite("声音原生流程：列表、五事件来源、附属表单与凭据返回") {
         for language in ClaudioAppLanguage.allCases {
             let generator = SoundEditorLifecycleGenerator()

@@ -142,14 +142,15 @@ public struct AICueSoundPlanner: Sendable {
         let description = request.description
         let quotation = quotedContent(in: description)
         let spokenContent = quotation.content
+        let instructions = styleDescription(in: description, excluding: quotation.range)
         let lowered = description.lowercased()
         let speechDetectionText = speechNegationMarkers.reduce(lowered) { partial, marker in
             partial.replacingOccurrences(of: marker, with: "")
         }
         let speechIntent =
             quotation.wasPresent || containsAny(speechDetectionText, speechMarkers)
-        let animalIntent = containsAny(lowered, animalMarkers)
-        let effectIntent = containsAny(lowered, effectMarkers)
+        let animalIntent = containsAny(instructions.lowercased(), animalMarkers)
+        let effectIntent = containsAny(instructions.lowercased(), effectMarkers)
 
         if speechIntent && spokenContent == nil {
             throw AICueValidationError.spokenContentRequired(
@@ -184,9 +185,7 @@ public struct AICueSoundPlanner: Sendable {
             soundDescription: description,
             spokenContent: spokenContent,
             languageTag: speechIntent ? request.locale : nil,
-            styleDescription: styleDescription(
-                in: description,
-                excluding: quotation.range),
+            styleDescription: instructions,
             targetDurationMilliseconds: min(
                 duration,
                 request.maximumDurationMilliseconds),

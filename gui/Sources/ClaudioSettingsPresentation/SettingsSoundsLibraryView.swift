@@ -764,7 +764,7 @@ struct SettingsSoundsLibraryView: View {
                     selectedCandidate = nil
                     model.startGeneration(locale: preferences.language.rawValue)
                 }.disabled(
-                    coordinator.generationBlock != nil
+                    !model.providerIsAdmitted || coordinator.generationBlock != nil
                         || model.soundDescription.trimmingCharacters(in: .whitespacesAndNewlines)
                             .isEmpty
                 )
@@ -773,6 +773,8 @@ struct SettingsSoundsLibraryView: View {
                     Button(l10n.text(.aiCueManageKey)) {
                         returnFromService = .ai; present(.service)
                     }
+                    .disabled(!model.providerIsAdmitted)
+                    .accessibilityIdentifier("settings.sounds.ai.credential-manage")
                 }
             }
             if let failure = model.failure {
@@ -1000,6 +1002,10 @@ struct SettingsSoundsLibraryView: View {
     }
 
     private func present(_ mode: SoundsSheet) {
+        guard mode != .service || model.providerIsAdmitted else {
+            if sheet == nil { modalIsPresented = false }
+            return
+        }
         effects.stopPreview(owner: owner)
         errorText = nil
         selectionRecoveryURL = nil

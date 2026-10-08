@@ -88,6 +88,12 @@ if CommandLine.arguments.contains("--bailian-regression") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--ai-cue-routing") {
+    runAICueDomainSuites()
+    print("AI cue routing: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)

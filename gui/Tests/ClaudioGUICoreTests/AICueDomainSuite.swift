@@ -100,6 +100,39 @@ func runAICueDomainSuites() {
             "所有内部方案都必须带有界时长、版本和候选阶段名称建议")
     }
 
+    suite("AI 提示音领域：台词中的声音词不改变纯语音路线") {
+        for content in ["海浪", "雨声", "旋律", "猫叫", "木琴", "chime"] {
+            for (opening, closing) in [
+                ("“", "”"), ("‘", "’"), ("「", "」"), ("『", "』"), ("\"", "\""),
+            ] {
+                let plan = try! AICueSoundPlanner().makePlan(
+                    for: try! AICueGenerationRequest(
+                        description: "清晰地说\(opening)\(content)\(closing)",
+                        locale: "zh-Hans", providerProfileID: .miniMaxGlobal))
+                expect(
+                    plan.modality == .speech && plan.spokenContent == content,
+                    "台词 \(content) 必须保持纯语音及原文")
+                expect(
+                    (try? AICueProviderRequestCompiler().compile(
+                        plan: plan, profileID: .miniMaxGlobal, variant: .clear)) != nil,
+                    "纯语音必须仍可通过 MiniMax 编译")
+                let request = try! AICueProviderRequestCompiler().compile(
+                    plan: plan, profileID: .bailianBeijing, variant: .clear)
+                let profile = try! AICueProviderRegistry().profile(for: .bailianBeijing)
+                expect(
+                    profile.routes[request.modality]?.modelID == "qwen-audio-3.1-tts-flash",
+                    "百炼纯语音必须固定 Flash")
+            }
+        }
+        for description in ["海浪里说“雨声”", "说“旋律”后响木琴", "猫叫后说“海浪”"] {
+            let plan = try! AICueSoundPlanner().makePlan(
+                for: try! AICueGenerationRequest(
+                    description: description, locale: "zh-Hans", providerProfileID: .bailianBeijing)
+            )
+            expect(plan.modality == .mixed, "台词外附加声音仍必须走混合路线")
+        }
+    }
+
     suite("AI 提示音领域：provider-neutral compiler 生成三个有意差异的请求") {
         let planner = AICueSoundPlanner()
         let compiler = AICueProviderRequestCompiler()

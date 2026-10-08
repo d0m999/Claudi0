@@ -90,7 +90,7 @@ find_unique_localization_bundle() {
   printf '%s\n' "${candidates[0]}"
 }
 
-assemble_dev_bundle() {
+assemble_dev_bundle() (
     local APP="claudi0.app"
     local LEGACY_APP="Claudio.app"
     local BUNDLE_VERSION
@@ -102,6 +102,14 @@ assemble_dev_bundle() {
     local LOGIN_ITEM_BIN_DIR
     local LOGIN_ITEM_BINARY
     local LOCALIZATION_BUNDLE
+    local BAILIAN_SOURCE_IDENTITY=""
+
+    verify_bailian_source_identity() {
+        if [[ "$BAILIAN_ACCEPTANCE" == true ]]; then
+            python3 "$repo_root/scripts/bailian-acceptance-source.py" verify \
+                "$repo_root" "$BAILIAN_SOURCE_IDENTITY"
+        fi
+    }
 
     # Validate source only after the output directory identity has been pinned.
     python3 "$repo_root/scripts/embed-opencode-plugin.py" --check
@@ -110,14 +118,27 @@ assemble_dev_bundle() {
     # 不能留在原地——否则走查者会 `open` 到上一次成功构建的旧二进制，却以为测的是这次改动。
     rm -rf "$APP" "$LEGACY_APP"
 
+    if [[ "$BAILIAN_ACCEPTANCE" == true ]]; then
+        BAILIAN_SOURCE_IDENTITY="$(mktemp "${TMPDIR:-/tmp}/claudio-bailian-source.XXXXXX")"
+        # This subshell owns both the frozen manifest and this build's app. Drift or any
+        # subsequent build failure must not leave an app claiming the frozen identity.
+        trap 'status=$?; rm -f -- "$BAILIAN_SOURCE_IDENTITY" "$BAILIAN_SOURCE_IDENTITY.state"; if [[ $status -ne 0 ]]; then rm -rf -- "$APP"; fi' EXIT
+        python3 "$repo_root/scripts/bailian-acceptance-source.py" freeze \
+            "$repo_root" "$BAILIAN_SOURCE_IDENTITY"
+        verify_bailian_source_identity
+    fi
+
     # 两个 `--product` 都不是可省的修饰：裸 `swift build -c release` 会连各自的测试
     # executable 一起建，而测试会引用 `#if DEBUG` 门控的 fixture，Release 下编译不过。
     gui_build
+    verify_bailian_source_identity
     login_item_build
+    verify_bailian_source_identity
     # Size optimization keeps the plugin/parser inside the unchanged helper budget.
     swift build -c release --package-path "$repo_root/helper" --product claudio -Xswiftc -Osize \
         "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}"
+    verify_bailian_source_identity
 
     GUI_BIN_DIR="$(gui_build --show-bin-path)"
     GUI_RESOURCE_BUNDLE="$(find_unique_gui_resource_bundle "$GUI_BIN_DIR")"
@@ -190,30 +211,8 @@ PLIST
     printf 'APPL????' > "$APP/Contents/PkgInfo"
     if [[ "$BAILIAN_ACCEPTANCE" == true ]]; then
         /usr/libexec/PlistBuddy -c 'Add :ClaudioBailianAcceptance bool true' "$APP/Contents/Info.plist"
-        python3 - "$repo_root" "$APP/Contents/Resources/bailian-acceptance-source.json" <<'PYIDENTITY'
-import hashlib
-import json
-import re
-from pathlib import Path
-import subprocess
-import sys
-root, destination = Path(sys.argv[1]), Path(sys.argv[2])
-paths = sorted([*root.joinpath("gui/Sources").rglob("*.swift"),
-                *root.joinpath("helper/Sources").rglob("*.swift"),
-                root / "gui/Package.swift", root / "helper/Package.swift", root / "scripts/dev-bundle.sh",
-                root / "gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings"])
-files = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
-asset_source = root.joinpath("gui/Sources/ClaudioGUICore/BailianAssetContract.swift").read_text()
-host = re.search(r'static let hostname = "([a-z0-9.-]+)"', asset_source).group(1)
-mime = re.search(r'acceptedMediaTypes: \["([a-z/.-]+)"\]', asset_source).group(1)
-policy = {"origin": "https://" + host + ":443", "accepted_media_types": [mime],
-          "url_normalization": "exact-host-http-default-or-80-to-https-443-preserve-path-query",
-          "anonymous_get": True, "redirects": 0, "final_url_matches_normalized_request": True}
-payload = {"schema": 1, "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
-           "source_files": files, "source_digest": hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest(),
-           "bailian_asset_policy": policy, "distribution_eligible": False}
-destination.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n")
-PYIDENTITY
+        verify_bailian_source_identity
+        cp "$BAILIAN_SOURCE_IDENTITY" "$APP/Contents/Resources/bailian-acceptance-source.json"
     fi
     if [[ "$ADDITIONAL_HOST_ACCEPTANCE" == true ]]; then
         /usr/libexec/PlistBuddy -c 'Add :ClaudioAdditionalHostAcceptance bool true' "$APP/Contents/Info.plist"
@@ -239,12 +238,14 @@ PYIDENTITY
         "$LOGIN_ITEM_APP/Contents/MacOS/claudi0-login-item"
     bash "$repo_root/scripts/check-release-size.sh" "$APP"
 
+    verify_bailian_source_identity
     codesign --force --sign - "$APP/Contents/Resources/bin/claudi0"
     codesign --force --sign - "$LOGIN_ITEM_APP"
     codesign --force --sign - "$APP"
     bash "$repo_root/scripts/verify-dev-bundle-signature.sh" "$APP"
     bash "$repo_root/scripts/check-release-size.sh" "$APP"
+    verify_bailian_source_identity
     echo "✅ dist/${APP}（$(uname -m)）—— 用 open dist/${APP} 启动（菜单栏出现 Orbit Zero 图标）"
-}
+)
 
 claudio_with_pinned_output_directory "$repo_root" "dist" assemble_dev_bundle

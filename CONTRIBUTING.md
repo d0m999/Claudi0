@@ -55,7 +55,10 @@ git diff --check
 Bailian Audio 3.1 remains closed in ordinary builds until the resource contract and real adoption
 pass ADR 0027. Use `bash scripts/dev-bundle.sh --bailian-acceptance` for its explicit local bundle.
 It records source file hashes and the code-owned asset policy in `bailian-acceptance-source.json`;
-this build does not establish distribution eligibility. See
+the identity is frozen before compilation and checked after each build and bundle assembly.
+Source drift fails the build and removes that run's app. Run
+`python3 scripts/test-bailian-bundle-identity.py` for the deterministic build-orchestration regression.
+This build does not establish distribution eligibility. See
 [the current evidence](plan/PLAN-BAILIAN-AUDIO-31-EVIDENCE.md) before making real requests.
 
 OpenCode and Kimi Code qualify per binding under ADR 0024. Ordinary Release builds expose a
