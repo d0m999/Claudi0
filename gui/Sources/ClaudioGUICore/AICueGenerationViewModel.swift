@@ -90,6 +90,9 @@ public final class AICueGenerationViewModel: ObservableObject {
     private var credentialStatusRevision: UInt64 = 0
     package private(set) var coordinator: AICueGenerationCoordinator
     private var coordinatorSubscription: AnyCancellable?
+    /// Readonly presentation fact; opening another composer never inherits a prior task's adoption context.
+    package var hasCurrentGenerationContext: Bool { observesCurrentTask && session != nil }
+
     private var observesCurrentTask = false
     private var adoptionTask: Task<Void, Never>?
 

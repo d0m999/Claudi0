@@ -310,6 +310,7 @@ private final class PanelMountedContractProbe {
             audioEnvironment: composition.audioEnvironment,
             configFile: root.appendingPathComponent("config.json"),
             panelModel: composition.eventSettingsModel,
+            previewSession: composition.manualPreview,
             soundScopeSelection: composition.soundScopeSelection,
             hostIntegrations: composition.hostIntegrations, languageStore: composition.preferences,
             activityDiagnostics: activityDiagnostics ?? composition.activityDiagnostics,

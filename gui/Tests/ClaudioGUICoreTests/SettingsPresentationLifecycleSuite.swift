@@ -1590,9 +1590,19 @@ private func settingsNativeAnnouncementAdapterIsSound(_ source: String) -> Bool 
 @MainActor
 private final class SettingsLifecycleAudioAdapter: SoundPacksEditorNativeEffectsAdapter {
     private(set) var stopCount = 0
+    var previewDuration: TimeInterval? { 0.25 }
 
     func selectAudioFiles(allowsMultipleSelection _: Bool) -> [URL] { [] }
     func playAudio(fileURL _: URL, volume _: Double) -> TimeInterval? { 0.25 }
+    private var completion: (@MainActor @Sendable (Bool) -> Void)?
+    func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        self.completion = completion
+        return playAudio(fileURL: fileURL, volume: volume) != nil
+    }
+
     func stopAudio() { stopCount += 1 }
     func revealInFinder(fileURL _: URL) {}
 }

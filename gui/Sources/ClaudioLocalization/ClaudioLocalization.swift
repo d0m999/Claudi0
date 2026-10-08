@@ -534,6 +534,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "ai-cue.error.required-voice-unavailable-existing-key"
     public static let aiCueErrorCredits: Self = "ai-cue.error.credits"
     public static let aiCueErrorRateLimited: Self = "ai-cue.error.rate-limited"
+    public static let aiCueErrorServiceUnavailable: Self = "ai-cue.error.service-unavailable"
     public static let aiCueErrorAudioInvalid: Self = "ai-cue.error.audio-invalid"
     public static let aiCueErrorGeneration: Self = "ai-cue.error.generation"
     public static let aiCueErrorNoValidCandidates: Self = "ai-cue.error.no-valid-candidates"
@@ -1520,6 +1521,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .soundsSaving,
         .soundsPending,
         .soundsSaved,
+        .soundsGeneratedCount,
+        .soundsBackgroundTask,
         .soundsCancelGeneration,
         .soundsRetrySave,
         .soundsDiscard,
@@ -1772,6 +1775,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .aiCueErrorCredentialValidationFailed, .aiCueErrorCredits,
         .aiCueErrorRequiredVoiceUnavailable, .aiCueErrorRequiredVoiceUnavailableExistingKey,
         .aiCueErrorRateLimited,
+        .aiCueErrorServiceUnavailable,
         .aiCueErrorAudioInvalid, .aiCueErrorGeneration, .aiCueErrorNoValidCandidates,
         .aiCueErrorNameRequired, .aiCueErrorNameInvalid, .aiCueErrorAdoptionTarget,
         .aiCueErrorAdoptionPartial, .aiCueErrorAdoption,

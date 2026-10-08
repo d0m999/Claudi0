@@ -743,6 +743,13 @@ private final class SettingsPresentationFixtureNativeEffectsAdapter:
             volume: Float(min(max(volume, 0), 1)))
     }
 
+    func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        previewPlayer.play(fileAt: fileURL, volume: Float(volume), onCompletion: completion)
+    }
+
     func stopAudio() {
         previewPlayer.stop()
     }

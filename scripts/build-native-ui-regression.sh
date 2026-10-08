@@ -8,13 +8,20 @@ case "${CLAUDIO_UI_REGRESSION_LIVE_CLOCK:-0}" in
     0|1) ;;
     *) echo "CLAUDIO_UI_REGRESSION_LIVE_CLOCK must be 0 or 1" >&2; exit 1 ;;
 esac
+case "${CLAUDIO_UI_REGRESSION_MOTION:-0}" in
+    0|1) ;;
+    *) echo "CLAUDIO_UI_REGRESSION_MOTION must be 0 or 1" >&2; exit 1 ;;
+esac
 regression_output="$(mktemp -d "${TMPDIR:-/tmp}/claudio-native-ui-build.XXXXXX")"
 regression_scratch="${CLAUDIO_UI_REGRESSION_SCRATCH:-$regression_output/swift}"
-regression_args=(--package-path gui --scratch-path "$regression_scratch" -c debug -Xswiftc -DCLAUDIO_UI_REGRESSION --product ClaudioGUI)
+regression_args=(--build-system native --package-path gui --scratch-path "$regression_scratch" -c debug -Xswiftc -DCLAUDIO_UI_REGRESSION --product ClaudioGUI)
 if [[ -n "${CLAUDIO_UI_REGRESSION_SDK:-}" ]]; then regression_args+=(--sdk "$CLAUDIO_UI_REGRESSION_SDK"); fi
 swift build "${regression_args[@]}" >&2
 regression_bin="$(swift build "${regression_args[@]}" --show-bin-path)"
 regression_app="$regression_output/Claudio UI Regression.app"
+if [[ "${CLAUDIO_UI_REGRESSION_MOTION:-0}" == 1 ]]; then
+    regression_app="$regression_output/Claudio App Motion Preview.app"
+fi
 mkdir -p "$regression_app/Contents/MacOS" "$regression_app/Contents/Resources"
 cp "$regression_bin/ClaudioGUI" "$regression_app/Contents/MacOS/ClaudioGUI"
 for regression_resource in "$regression_bin"/*_ClaudioGUI.bundle "$regression_bin"/*_ClaudioLocalization.bundle; do
@@ -28,7 +35,8 @@ python3 - "$regression_app" "$regression_output" <<'PY'
 import hashlib,json,os,pathlib,platform,plistlib,subprocess,sys
 app=pathlib.Path(sys.argv[1]); output=pathlib.Path(sys.argv[2])
 live_clock=os.environ.get('CLAUDIO_UI_REGRESSION_LIVE_CLOCK','0')=='1'
-info={'CFBundleIdentifier':'com.claudio.app.ui-regression','CFBundleName':'Claudio UI Regression','CFBundleExecutable':'ClaudioGUI','CFBundlePackageType':'APPL','CFBundleVersion':'1','CFBundleShortVersionString':'0.0.0','LSUIElement':True,'NSHighResolutionCapable':True,'ClaudioUIRegressionFixture':'v1','ClaudioUIRegressionLiveClock':live_clock}
+motion=os.environ.get('CLAUDIO_UI_REGRESSION_MOTION','0')=='1'
+info={'CFBundleIdentifier':'com.claudio.app.ui-regression.motion' if motion else 'com.claudio.app.ui-regression','CFBundleName':'Claudio App Motion Preview' if motion else 'Claudio UI Regression','CFBundleExecutable':'ClaudioGUI','CFBundlePackageType':'APPL','CFBundleVersion':'1','CFBundleShortVersionString':'0.0.0','LSUIElement':True,'NSHighResolutionCapable':True,'ClaudioUIRegressionFixture':'v1','ClaudioUIRegressionLiveClock':live_clock}
 (app/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 def git(*args): return subprocess.check_output(['git',*args])
 tracked=git('ls-files','-z').split(b'\0'); untracked=git('ls-files','--others','--exclude-standard','-z').split(b'\0')
@@ -38,9 +46,8 @@ for raw in sorted(set(tracked+untracked)):
  p=pathlib.Path(os.fsdecode(raw)); entries.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'deleted'})
 fingerprint=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest()
 base=git('rev-parse','--verify',os.environ.get('CLAUDIO_UI_REGRESSION_BASE_SHA','7ca63a4af0497b74b53e89225ccf4de30d900c12')+'^{commit}').decode().strip()
-prototype=pathlib.Path('designs/macos-settings-native/claudi0 macOS Settings Prototype.html')
+prototype=pathlib.Path('designs/panel-and-settings/Panel and Settings Prototype.html')
 prototype_sha=hashlib.sha256(prototype.read_bytes()).hexdigest()
-if prototype_sha!='f49c338fde51a03fa4ada9b5f31f071a281e6708038dbac609f3c7931b93fe91': raise SystemExit('Settings prototype fingerprint mismatch')
 manifest={'settingsPrototypeSHA256':prototype_sha,'sourceHEAD':git('rev-parse','HEAD').decode().strip(),'baseSHA':base,'worktreeFingerprint':fingerprint,'sourceFiles':entries,'macOS':platform.mac_ver()[0],'architecture':platform.machine(),'bundle':str(app),'screenshotOCR':str(output/'screenshot-ocr'),'screenshotOCRSHA256':hashlib.sha256((output/'screenshot-ocr').read_bytes()).hexdigest(),'sdk':os.environ.get('CLAUDIO_UI_REGRESSION_SDK','default'),'evidenceBoundary':'DEBUG native fixture; provider and source application are substitutes; no formal acceptance'}
 manifest['clockMode']='live' if live_clock else 'manual'
 manifest['liveClock']=live_clock

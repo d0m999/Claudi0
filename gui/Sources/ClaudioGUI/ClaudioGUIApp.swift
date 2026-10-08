@@ -77,7 +77,9 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         // policy for a menu-bar-only utility (DESIGN.md「空间 / 同类」: menubar 工具类 app).
         NSApp.setActivationPolicy(.accessory)
         #if DEBUG && CLAUDIO_UI_REGRESSION
-        guard Bundle.main.bundleIdentifier == "com.claudio.app.ui-regression",
+        guard
+            ["com.claudio.app.ui-regression", "com.claudio.app.ui-regression.motion"].contains(
+                Bundle.main.bundleIdentifier ?? ""),
             Bundle.main.object(forInfoDictionaryKey: "ClaudioUIRegressionFixture") as? String
                 == "v1"
         else { NSApp.terminate(nil); return }

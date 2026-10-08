@@ -28,22 +28,46 @@ struct PanelSoundScopePicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             heading
-            VStack(spacing: 0) {
-                trigger
-                if isExpanded {
-                    menu
-                        .padding(.top, 5)
-                        .frame(height: 0, alignment: .top)
-                        .zIndex(2)
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    trigger
+                    menu.padding(.top, 5)
+                        .opacity(isExpanded ? 1 : 0)
+                        .animation(
+                            reduceMotion ? nil : .easeInOut(duration: 0.12), value: isExpanded
+                        )
+                        .allowsHitTesting(isExpanded && !actionCoordinator.isPending)
+                        .disabled(!isExpanded || actionCoordinator.isPending)
+                        .accessibilityHidden(!isExpanded)
                 }
+                .frame(
+                    height: isExpanded ? 55 + CGFloat(menuLayout.totalHeight) : 50, alignment: .top
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: isExpanded ? 18 : 13)
+                        .fill(ClaudioTheme.surface(colorScheme))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: isExpanded ? 18 : 13)
+                        .strokeBorder(
+                            triggerHighlighted
+                                ? ClaudioTheme.clay(colorScheme)
+                                : ClaudioTheme.hairline(colorScheme),
+                            lineWidth: triggerHighlighted ? 1.5 : 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: isExpanded ? 18 : 13))
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: triggerHighlighted)
+                .animation(reduceMotion ? nil : AppMotion.spring, value: isExpanded)
             }
+            .frame(height: 50, alignment: .top)
             .background(
                 PanelSoundScopeOutsideClickMonitor(
-                    isActive: isExpanded,
+                    isActive: isExpanded || focusedTarget.wrappedValue == .soundScope,
                     protectedOverflowHeight: CGFloat(menuLayout.totalHeight) + 5,
-                    onOutsideClick: dismissMenuAndRestoreTriggerFocus))
+                    onOutsideClick: dismissMenuAndRestoreTriggerFocus,
+                    onActivationKey: activateFocusedItem))
         }
-        .zIndex(isExpanded ? 100 : 0)
+        .zIndex(100)
         .onChange(of: isExpanded) { expanded in
             if expanded {
                 focusSelectedMenuItem()
@@ -52,7 +76,9 @@ struct PanelSoundScopePicker: View {
             }
         }
         .onChange(of: focusedMenuTarget) { target in
-            guard isExpanded, target == nil, focusedTarget.wrappedValue != .soundScope else {
+            guard isExpanded, !actionCoordinator.isPending, target == nil,
+                focusedTarget.wrappedValue != .soundScope
+            else {
                 return
             }
             dismissMenuAndRestoreTriggerFocus()
@@ -94,6 +120,11 @@ struct PanelSoundScopePicker: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    .animation(
+                        reduceMotion ? nil : .easeOut(duration: 0.12), value: triggerHighlighted
+                    )
+                    .animation(reduceMotion ? nil : AppMotion.spring, value: isExpanded)
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 11)
@@ -104,27 +135,7 @@ struct PanelSoundScopePicker: View {
                 alignment: .leading
             )
             .contentShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-            .background(
-                RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                    .fill(
-                        triggerHighlighted
-                            ? ClaudioTheme.claySoft(colorScheme)
-                            : ClaudioTheme.surface(colorScheme))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                    .strokeBorder(
-                        triggerHighlighted
-                            ? ClaudioTheme.clay(colorScheme)
-                            : ClaudioTheme.hairline(colorScheme),
-                        lineWidth: triggerHighlighted ? 1.5 : 1)
-            )
-            .animation(
-                reduceMotion
-                    ? nil
-                    : .easeInOut(
-                        duration: PanelSoundScopeRowInteractionState.surfaceDuration),
-                value: triggerHighlighted)
+
         }
         .accessibilityLabel(l10n.text(.panelSoundScope))
         .accessibilityValue(selectedScope.accessibilityLabel)
@@ -167,19 +178,6 @@ struct PanelSoundScopePicker: View {
         .frame(maxWidth: .infinity)
         .frame(height: CGFloat(menuLayout.totalHeight), alignment: .top)
         .clipped()
-        .background(ClaudioTheme.surface(colorScheme))
-        .overlay(
-            RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section)
-                .strokeBorder(
-                    ClaudioTheme.hairline(colorScheme),
-                    lineWidth: ClaudioTheme.Metrics.hairline)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: ClaudioTheme.Radius.section))
-        .shadow(
-            color: ClaudioTheme.text(colorScheme).opacity(colorScheme == .dark ? 0.26 : 0.12),
-            radius: 12,
-            y: 6
-        )
         .onMoveCommand(perform: moveMenuFocus)
         .onExitCommand(perform: dismissMenuAndRestoreTriggerFocus)
         .accessibilityElement(children: .contain)
@@ -206,14 +204,15 @@ struct PanelSoundScopePicker: View {
             HStack(spacing: 4) {
                 PanelSoundScopeSuccessfulActionButton(
                     action: {
-                        onSelect(scope.scope)
-                        dismissMenuAndRestoreTriggerFocus()
+                        selectScope(scope.scope)
                     },
                     actionCoordinator: actionCoordinator,
                     reduceMotion: reduceMotion,
+                    waitsForPress: false,
                     focusedTarget: $focusedMenuTarget,
                     target: target,
                     policy: .scopeAction,
+                    isFocusable: isExpanded && !actionCoordinator.isPending,
                     onHover: { _ in }
                 ) {
                     HStack(spacing: 9) {
@@ -299,6 +298,7 @@ struct PanelSoundScopePicker: View {
     ) -> some View {
         return PanelSoundScopeSuccessfulActionButton(
             action: {
+                guard isExpanded else { return }
                 onOpenIntegration(host)
                 dismissMenuAndRestoreTriggerFocus()
             },
@@ -307,6 +307,7 @@ struct PanelSoundScopePicker: View {
             focusedTarget: $focusedMenuTarget,
             target: PanelSoundScopePickerFocusTarget.integrationAction(scope.scope),
             policy: .integrationAction,
+            isFocusable: isExpanded && !actionCoordinator.isPending,
             onHover: { actionHovered.wrappedValue = $0 }
         ) {
             HStack(spacing: 4) {
@@ -525,8 +526,41 @@ struct PanelSoundScopePicker: View {
     private func focusSelectedMenuItem() {
         let selected = PanelSoundScopePickerFocusTarget.scope(selectedScope.scope)
         DispatchQueue.main.async {
+            guard isExpanded else { return }
             focusedMenuTarget = menuFocusOrder.contains(selected) ? selected : menuFocusOrder.first
         }
+    }
+
+    /// A focusable SwiftUI button in a nonactivating panel receives arrow commands, but its
+    /// enclosing focus view does not forward Return/Space to the native button on macOS.
+    /// Scope activation stays local to this picker and uses the same action gate as a click.
+    private func activateFocusedItem() {
+        guard isExpanded else {
+            if focusedTarget.wrappedValue == .soundScope { isExpanded = true }
+            return
+        }
+        let target = focusedMenuTarget ?? .scope(selectedScope.scope)
+        switch target {
+        case .scope(let scope):
+            actionCoordinator.submit(reduceMotion: reduceMotion, waitsForPress: false) {
+                selectScope(scope)
+            }
+        case .integrationAction(let scope):
+            guard let presentation = scopes.first(where: { $0.scope == scope }),
+                let host = panelSoundScopeIntegrationActionHost(presentation)
+            else { return }
+            actionCoordinator.submit(reduceMotion: reduceMotion) {
+                guard isExpanded else { return }
+                onOpenIntegration(host)
+                dismissMenuAndRestoreTriggerFocus()
+            }
+        }
+    }
+
+    private func selectScope(_ scope: PanelSoundScopeID) {
+        guard isExpanded else { return }
+        onSelect(scope)
+        dismissMenuAndRestoreTriggerFocus()
     }
 
     private func moveMenuFocus(_ direction: MoveCommandDirection) {
@@ -558,13 +592,14 @@ private struct PanelSoundScopeOutsideClickMonitor: NSViewRepresentable {
     let isActive: Bool
     let protectedOverflowHeight: CGFloat
     let onOutsideClick: @MainActor () -> Void
+    let onActivationKey: @MainActor () -> Void
 
     func makeNSView(context _: Context) -> PanelSoundScopeOutsideClickMonitorView {
         let view = PanelSoundScopeOutsideClickMonitorView()
         view.configure(
             isActive: isActive,
             protectedOverflowHeight: protectedOverflowHeight,
-            onOutsideClick: onOutsideClick)
+            onOutsideClick: onOutsideClick, onActivationKey: onActivationKey)
         return view
     }
 
@@ -575,7 +610,7 @@ private struct PanelSoundScopeOutsideClickMonitor: NSViewRepresentable {
         nsView.configure(
             isActive: isActive,
             protectedOverflowHeight: protectedOverflowHeight,
-            onOutsideClick: onOutsideClick)
+            onOutsideClick: onOutsideClick, onActivationKey: onActivationKey)
     }
 
     static func dismantleNSView(
@@ -591,14 +626,17 @@ private final class PanelSoundScopeOutsideClickMonitorView: NSView {
     private var eventMonitor: Any?
     private var protectedOverflowHeight: CGFloat = 0
     private var onOutsideClick: (@MainActor () -> Void)?
+    private var onActivationKey: (@MainActor () -> Void)?
 
     func configure(
         isActive: Bool,
         protectedOverflowHeight: CGFloat,
-        onOutsideClick: @escaping @MainActor () -> Void
+        onOutsideClick: @escaping @MainActor () -> Void,
+        onActivationKey: @escaping @MainActor () -> Void
     ) {
         self.protectedOverflowHeight = protectedOverflowHeight
         self.onOutsideClick = onOutsideClick
+        self.onActivationKey = onActivationKey
         if isActive {
             startMonitoring()
         } else {
@@ -614,8 +652,19 @@ private final class PanelSoundScopeOutsideClickMonitorView: NSView {
 
     private func startMonitoring() {
         guard eventMonitor == nil else { return }
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .keyDown]) {
             [weak self] event in
+            if event.type == .keyDown {
+                guard [UInt16(36), 49, 76].contains(event.keyCode),
+                    event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+                else { return event }
+                let handled = MainActor.assumeIsolated {
+                    guard let self, self.window === event.window else { return false }
+                    self.onActivationKey?()
+                    return true
+                }
+                return handled ? nil : event
+            }
             let eventWindowID = event.window.map({ ObjectIdentifier($0) })
             let eventLocation = event.locationInWindow
             MainActor.assumeIsolated { [weak self] in

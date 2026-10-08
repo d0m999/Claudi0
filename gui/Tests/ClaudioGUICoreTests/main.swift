@@ -94,6 +94,26 @@ if CommandLine.arguments.contains("--ai-cue-routing") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--review-findings") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runReviewFindingRepairSuites()
+        print("Review findings: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--app-motion") {
+    runManualAudioPreviewSessionSuites()
+    runPanelSoundScopeInteractionSuites()
+    runAICueTaskSurfaceSuites()
+    print("App motion: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -732,6 +752,7 @@ Task { @MainActor in
     await runSoundsRedesignCompositionSuites()
     await runGenerationHistorySuites()
     await runSoundsReviewRecoverySuites()
+    await runReviewFindingRepairSuites()
     await runAICueGenerationViewModelSuites()
     runAICuePackScopedSuites()
     await runAICuePackScopedAsyncSuites()
@@ -773,6 +794,7 @@ Task { @MainActor in
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
     await runEventAttentionStressSuites()
+    runManualAudioPreviewSessionSuites()
     runPanelSoundScopeInteractionSuites()
     await runPanelPresentationSuites()
     runEventSettingsWindowSelectionSuites()
@@ -822,6 +844,7 @@ Task { @MainActor in
     await runSettingsRootInteractionSuites()
     runSettingsProductImagesSuites()
     await runSettingsSoundsLayoutSuites()
+    runAICueTaskSurfaceSuites()
     await runIntegrationAutomationNativeSuites()
     runSettingsNativeMigrationSuites()
     runPreviewFixturesSuites()

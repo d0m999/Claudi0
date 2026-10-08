@@ -177,7 +177,7 @@ func runReviewRepairSuites() async {
             "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift")
         expect(
             settings.contains(
-                ".onChange(of: model.config.selectedPack) { _ in\n            previewSequence.cancel()\n            player.stop()"
+                ".onChange(of: model.config.selectedPack) { _ in\n            previewSequence.cancel()\n            previewSession.stop(origin: previewOrigin)"
             )
                 && settings.contains("model.config.selectedPack == packID"),
             "包身份改变取消序列并停止播放器")

@@ -5329,6 +5329,23 @@
         }
       }
     },
+    "ai-cue.error.service-unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The generation service is temporarily unavailable. Try generating again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成服务暂时不可用。请稍后重新生成。"
+          }
+        }
+      }
+    },
     "ai-cue.error.audio-invalid": {
       "localizations": {
         "en": {
@@ -17752,6 +17769,18 @@
             "value": "关闭"
           }
         }
+      }
+    },
+    "settings.sounds.redesign.generatedCount" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld candidates" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 个候选" } }
+      }
+    },
+    "settings.sounds.redesign.backgroundTask": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This task was started earlier. Results go to generation history and will not be used automatically for this target." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这是之前发起的任务，结果会保存到生成记录。当前目标不会自动使用这些结果。" } }
       }
     },
     "settings.sounds.redesign.generate": {

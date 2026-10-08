@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 /// Implementations execute the supplied values verbatim; target derivation remains in the owner.
 @MainActor
 package protocol SoundPacksEditorNativeEffectsAdapter: AnyObject {
+    var previewDuration: TimeInterval? { get }
     func selectAudioFiles(allowsMultipleSelection: Bool) -> [URL]
     func playAudio(fileURL: URL, volume: Double) -> TimeInterval?
     func playAudio(
@@ -20,12 +21,8 @@ package protocol SoundPacksEditorNativeEffectsAdapter: AnyObject {
 }
 
 extension SoundPacksEditorNativeEffectsAdapter {
-    package func playAudio(
-        fileURL: URL, volume: Double,
-        completion: @escaping @MainActor @Sendable (Bool) -> Void
-    ) -> Bool {
-        playAudio(fileURL: fileURL, volume: volume) != nil
-    }
+    package var previewDuration: TimeInterval? { nil }
+
 }
 
 /// Native lifecycle signals whose reliability differs between retained AppKit windows and their
@@ -40,48 +37,49 @@ package enum SoundPacksEditorNativeLifecycleEvent: Sendable {
 /// selections become the only async domain operation the view needs to feed back to the owner.
 @MainActor
 package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
-    @Published package private(set) var previewFailed = false
-    @Published package private(set) var playingSoundID: String?
-    private var playbackID: UUID?
+    package let previewSession: ManualAudioPreviewSession
+    package let previewOrigin = ManualPreviewOrigin(.settings)
+    package var playingSoundID: String? { previewSession.playing?.target }
+    package var previewFailed: Bool { previewSession.failedOrigin?.category == .settings }
+    private let compatibilityPlayer: NativeEffectsPreviewPlayer
+    private var previewObservation: AnyCancellable?
     private let adapter: any SoundPacksEditorNativeEffectsAdapter
     private var operationTasks: [UUID: Task<Void, Never>] = [:]
-    private var hasActiveAudio = false
 
-    package init(adapter: any SoundPacksEditorNativeEffectsAdapter) {
+    package init(
+        adapter: any SoundPacksEditorNativeEffectsAdapter,
+        previewSession: ManualAudioPreviewSession? = nil
+    ) {
         self.adapter = adapter
-    }
-
-    package func toggleSoundPreview(id: String, fileURL: URL) {
-        if playingSoundID == id { stopActiveAudio(); return }
-        stopActiveAudio()
-        let token = UUID()
-        playbackID = token
-        playingSoundID = id
-        hasActiveAudio = true
-        previewFailed = false
-        let started = adapter.playAudio(fileURL: fileURL, volume: 1.0) { [weak self] success in
-            guard let self, self.playbackID == token else { return }
-            self.playbackID = nil
-            self.playingSoundID = nil
-            self.hasActiveAudio = false
-            self.previewFailed = !success
-        }
-        if !started {
-            playbackID = nil
-            playingSoundID = nil
-            hasActiveAudio = false
-            previewFailed = true
+        let player = NativeEffectsPreviewPlayer(adapter: adapter)
+        compatibilityPlayer = player
+        self.previewSession = previewSession ?? ManualAudioPreviewSession(player: player)
+        previewObservation = self.previewSession.objectWillChange.sink { [weak self] in
+            self?.objectWillChange.send()
         }
     }
 
     package func toggleSoundPreview(
-        id: String, action: SoundPackEditorAction, owner: SoundPacksEditorOwner
+        id: String, fileURL: URL, origin: ManualPreviewOrigin? = nil
     ) {
-        if playingSoundID == id { stopActiveAudio(); return }
-        guard case .nativeEffect(.playAudio(let url, _)) = owner.send(.invoke(action)) else {
+        guard let token = previewSession.prepare(origin: origin ?? previewOrigin, target: id) else {
             return
         }
-        toggleSoundPreview(id: id, fileURL: url)
+        _ = previewSession.start(token, fileURL: fileURL, volume: 1)
+    }
+
+    package func toggleSoundPreview(
+        id: String, action: SoundPackEditorAction, owner: SoundPacksEditorOwner,
+        origin: ManualPreviewOrigin? = nil
+    ) {
+        guard let token = previewSession.prepare(origin: origin ?? previewOrigin, target: id) else {
+            return
+        }
+        guard case .nativeEffect(.playAudio(let url, _)) = owner.send(.invoke(action)) else {
+            previewSession.fail(token)
+            return
+        }
+        _ = previewSession.start(token, fileURL: url, volume: 1)
     }
 
     package func dispatch(
@@ -129,24 +127,8 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     /// Stops whichever Event or AI preview the retained adapter currently owns. Resolving the
     /// stop action directly from the owner avoids route-filtered view getters and never retires a
     /// newly activated context.
-    package func stopPreview(owner: SoundPacksEditorOwner) {
-        previewFailed = false
-        guard hasActiveAudio else { return }
-        let result: SoundPacksEditorCommandResult
-        switch owner.presentation.mode {
-        case .inactive:
-            stopActiveAudio()
-            return
-        case .sounds(let sounds):
-            result = owner.send(.invoke(sounds.stopPreviewAction))
-        case .events(let events):
-            result = owner.send(.invoke(events.stopPreviewAction))
-        }
-        guard case .nativeEffect(.stopAudio) = result else {
-            stopActiveAudio()
-            return
-        }
-        stopActiveAudio()
+    package func stopPreview(owner: SoundPacksEditorOwner, origin: ManualPreviewOrigin? = nil) {
+        previewSession.stop(origin: origin ?? previewOrigin)
     }
 
     /// Consumes only the instantaneous native-effect branch. Async owner operations are retained
@@ -186,19 +168,15 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     }
 
     private func playAudio(fileURL: URL, volume: Double) -> TimeInterval? {
-        let duration = adapter.playAudio(fileURL: fileURL, volume: volume)
-        hasActiveAudio = duration != nil
-        previewFailed = duration == nil
-        return duration
+        guard
+            let token = previewSession.prepare(
+                origin: previewOrigin, target: "effect.\(UUID().uuidString)"),
+            previewSession.start(token, fileURL: fileURL, volume: volume)
+        else { return nil }
+        return compatibilityPlayer.duration ?? 3
     }
 
-    private func stopActiveAudio() {
-        playbackID = nil
-        playingSoundID = nil
-        guard hasActiveAudio else { return }
-        hasActiveAudio = false
-        adapter.stopAudio()
-    }
+    private func stopActiveAudio() { previewSession.stop(origin: previewOrigin) }
 
     /// Captures the owner-signed Event permit before the item-provider suspension. A provider
     /// cancellation performs the empty operation exactly once, returning typed `cancelled`,
@@ -279,32 +257,41 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
 package final class SystemSoundPacksEditorNativeEffectsAdapter:
     SoundPacksEditorNativeEffectsAdapter
 {
-    private let previewPlayer: NSSoundAudioPreviewPlayer
-
-    package init(previewPlayer: NSSoundAudioPreviewPlayer = NSSoundAudioPreviewPlayer()) {
-        self.previewPlayer = previewPlayer
-    }
+    package init() {}
 
     package func selectAudioFiles(allowsMultipleSelection: Bool) -> [URL] {
         runAudioOpenPanel(allowsMultipleSelection: allowsMultipleSelection)
     }
-
-    package func playAudio(fileURL: URL, volume: Double) -> TimeInterval? {
-        previewPlayer.playWithDuration(fileAt: fileURL, volume: Float(volume))
-    }
-
+    package func playAudio(fileURL: URL, volume: Double) -> TimeInterval? { nil }
     package func playAudio(
         fileURL: URL, volume: Double,
         completion: @escaping @MainActor @Sendable (Bool) -> Void
-    ) -> Bool {
-        previewPlayer.play(fileAt: fileURL, volume: Float(volume), onCompletion: completion)
-    }
-
-    package func stopAudio() {
-        previewPlayer.stop()
-    }
+    ) -> Bool { false }
+    package func stopAudio() {}
 
     package func revealInFinder(fileURL: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([fileURL])
     }
+}
+
+/// Only isolated legacy fixtures use this adapter-backed session. Production injects the shared
+/// app session and the native adapter above owns picker/Finder effects only.
+@MainActor
+private final class NativeEffectsPreviewPlayer: AudioPreviewPlaying {
+    let adapter: any SoundPacksEditorNativeEffectsAdapter
+    var duration: TimeInterval?
+    init(adapter: any SoundPacksEditorNativeEffectsAdapter) { self.adapter = adapter }
+    func play(fileAt url: URL, volume: Float) -> Bool {
+        duration = adapter.playAudio(fileURL: url, volume: Double(volume))
+        return duration != nil
+    }
+    func play(
+        fileAt url: URL, volume: Float,
+        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        // Isolated fixture adapters expose their measured duration separately.
+        duration = adapter.previewDuration
+        return adapter.playAudio(fileURL: url, volume: Double(volume), completion: onCompletion)
+    }
+    func stop() { adapter.stopAudio() }
 }

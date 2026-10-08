@@ -105,6 +105,33 @@ function loadPrototype(search = "") {
   };
 }
 
+test("panel preview: a superseded timer cannot stop a newer request", () => {
+  const runtime = loadPrototype();
+  const { context } = runtime;
+  // Retain the actual request/timeout path; record the visual projection without a browser DOM.
+  context.AppMotionPreview.button = (button, active) => {
+    button.dataset.motionPlaying = String(active);
+  };
+  const scope = context.groupById(context.S.scope);
+  const pack = context.packById(scope.pack);
+  const events = Object.keys(pack.files).filter(id => !context.previewReason(pack, id, scope));
+  assert.ok(events.length >= 2, "two playable panel events are required");
+  const a = { dataset: {} }, b = { dataset: {} };
+  context.previewGroupEvent(scope.id, events[0], a);
+  assert.equal(a.dataset.motionPlaying, "true");
+  runtime.advanceTime(1000);
+  context.previewGroupEvent(scope.id, events[1], b);
+  assert.equal(a.dataset.motionPlaying, "false");
+  assert.equal(b.dataset.motionPlaying, "true");
+  runtime.advanceTime(200);
+  assert.equal(b.dataset.motionPlaying, "true", "A's deadline must not end B at 200ms");
+  runtime.advanceTime(999);
+  assert.equal(b.dataset.motionPlaying, "true");
+  runtime.advanceTime(1);
+  assert.equal(b.dataset.motionPlaying, "false", "B ends at its own deadline");
+  assert.equal(context.AppMotionPreview.owner, null);
+});
+
 for (const lang of ["zh", "en"]) {
   test(`${lang}: notice ages floor minutes, hours and days`, () => {
     const { context } = loadPrototype();
