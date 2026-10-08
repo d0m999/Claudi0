@@ -3947,8 +3947,9 @@ function previewGroupEvent(scopeID, eventID, button) {
   toast(reason || tr("试听：", "Preview: ") + sourceName(pk.files[eventID]));
   if (!reason && button && button.dataset) {
     if(button.dataset.motionPlaying==='true'){AppMotionPreview.stop('panel');return;}
-    AppMotionPreview.claim('panel',()=>AppMotionPreview.button(button,false));
-    AppMotionPreview.button(button,true);setTimeout(()=>{if(AppMotionPreview.owner==='panel')AppMotionPreview.stop('panel');},1200);
+    var previewTimer = null;
+    AppMotionPreview.claim('panel',()=>{clearTimeout(previewTimer);AppMotionPreview.button(button,false);});
+    AppMotionPreview.button(button,true);previewTimer=setTimeout(()=>{if(AppMotionPreview.owner==='panel')AppMotionPreview.stop('panel');},1200);
   }
 }
 function requestDemoAudio(eventID) {

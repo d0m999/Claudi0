@@ -1036,6 +1036,10 @@ struct EventSettingsWindowView: View {
     private func eventRow(_ event: PanelEventPresentation) -> some View {
         let scope = selection.route.scope
         let recovery = eventPreviewRecoveryAction(for: event.controls.previewAvailability)
+        let failure = selection.previewFailure.flatMap {
+            $0.scope == scope && $0.packID == model.config.selectedPack
+                && $0.event == event.event ? $0 : nil
+        }
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 ClaudioEventGlyph(event: event.event, size: 24).accessibilityHidden(true)
@@ -1145,6 +1149,13 @@ struct EventSettingsWindowView: View {
                     }
                 }
                 .padding(.leading, 36)
+            }
+            if let failure {
+                FailureRow(
+                    message: localizedEventPreviewAttemptFailure(
+                        failure.reason, language: languageStore.language)
+                )
+                .settingsMountIdentity("workspace.event.preview-failure.\(event.event.cliName)")
             }
 
         }.frame(minHeight: 38)

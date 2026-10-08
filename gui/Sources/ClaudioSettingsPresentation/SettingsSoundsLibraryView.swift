@@ -800,20 +800,25 @@ struct SettingsSoundsLibraryView: View {
                     }
                     if coordinator.generationBlock == nil {
                         HStack {
-                            Button(
-                                l10n.text(
-                                    model.requiresCredentialConfiguration
-                                        ? .aiCueConfigureKey
-                                        : (model.generation == nil
-                                            ? .soundsGenerate : .soundsGenerateAgain))
-                            ) {
+                            Button {
                                 if model.requiresCredentialConfiguration {
                                     returnFromService = .ai; present(.service); return
                                 }
                                 effects.stopPreview(owner: owner, origin: previewOrigin)
                                 selectedCandidate = nil
                                 model.startGeneration(locale: preferences.language.rawValue)
-                            }.disabled(
+                            } label: {
+                                Text(
+                                    l10n.text(
+                                        model.requiresCredentialConfiguration
+                                            ? .aiCueConfigureKey
+                                            : (model.generation == nil
+                                                ? .soundsGenerate : .soundsGenerateAgain))
+                                )
+                                .frame(minWidth: 124, minHeight: 34)
+                                .contentShape(Rectangle())
+                            }
+                            .disabled(
                                 coordinator.generationBlock != nil
                                     || model.soundDescription.trimmingCharacters(
                                         in: .whitespacesAndNewlines
@@ -821,7 +826,6 @@ struct SettingsSoundsLibraryView: View {
                                     .isEmpty
                             )
                             .buttonStyle(.plain)
-                            .frame(minWidth: 124, minHeight: 34)
                             .foregroundColor(aiTaskExpanded ? .accentColor : .white)
                             .focused(taskFocus, equals: .generate)
                             .accessibilityIdentifier("settings.sounds.ai.generate")
