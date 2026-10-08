@@ -10,7 +10,10 @@ public enum PanelSoundScopeButtonPolicy: Hashable, Sendable {
     case integrationAction
 
     public var isExplicitlyFocusable: Bool {
-        self == .integrationAction
+        // Custom button styles in a nonactivating panel must accept programmatic focus even
+        // when macOS keyboard navigation is disabled. All three targets already belong to
+        // the picker's existing focus order.
+        true
     }
 
     public var reportsPressed: Bool {
@@ -66,6 +69,7 @@ public struct PanelSoundScopeButton<FocusValue: Hashable, Label: View>: View {
     private let focusedTarget: FocusState<FocusValue?>.Binding
     private let target: FocusValue
     private let policy: PanelSoundScopeButtonPolicy
+    private let isFocusable: Bool
     private let onHover: (Bool) -> Void
     private let label: Label
 
@@ -74,6 +78,7 @@ public struct PanelSoundScopeButton<FocusValue: Hashable, Label: View>: View {
         focusedTarget: FocusState<FocusValue?>.Binding,
         target: FocusValue,
         policy: PanelSoundScopeButtonPolicy,
+        isFocusable: Bool = true,
         onHover: @escaping (Bool) -> Void,
         @ViewBuilder label: () -> Label
     ) {
@@ -81,6 +86,7 @@ public struct PanelSoundScopeButton<FocusValue: Hashable, Label: View>: View {
         self.focusedTarget = focusedTarget
         self.target = target
         self.policy = policy
+        self.isFocusable = isFocusable
         self.onHover = onHover
         self.label = label()
     }
@@ -95,7 +101,7 @@ public struct PanelSoundScopeButton<FocusValue: Hashable, Label: View>: View {
     @ViewBuilder
     private var focusableButton: some View {
         if policy.isExplicitlyFocusable {
-            button.focusable()
+            button.focusable(isFocusable)
         } else {
             button
         }
@@ -132,6 +138,7 @@ public final class PanelSoundScopeActionCoordinator: ObservableObject {
     @discardableResult
     public func submit(
         reduceMotion: Bool,
+        waitsForPress: Bool = true,
         action: @escaping @MainActor () -> Void
     ) -> Bool {
         guard !isPending else { return false }
@@ -140,8 +147,10 @@ public final class PanelSoundScopeActionCoordinator: ObservableObject {
             action()
             self?.isPending = false
         }
-        let delay = PanelSoundScopeRowInteractionState.actionCompletionDelay(
-            reduceMotion: reduceMotion)
+        let delay =
+            waitsForPress
+            ? PanelSoundScopeRowInteractionState.actionCompletionDelay(
+                reduceMotion: reduceMotion) : 0
         guard delay > 0 else {
             completion()
             return true
@@ -166,15 +175,17 @@ public final class PanelSoundScopeActionCoordinator: ObservableObject {
 
 /// 作用域选择与 Integrations 动作的唯一成功提交路径。
 ///
-/// 它先获取菜单级 gate，再等待可见的 pressed 回弹完成；Reduce Motion
-/// 下延迟为零。两类动作无法各自引入第二条调度路径。
+/// 它先获取菜单级 gate。作用域选择立即提交，Integrations 可保留 pressed 回弹等待；
+/// Reduce Motion 下等待为零。两类动作共用这一条调度路径。
 public struct PanelSoundScopeSuccessfulActionButton<FocusValue: Hashable, Label: View>: View {
     private let action: @MainActor () -> Void
     @ObservedObject private var actionCoordinator: PanelSoundScopeActionCoordinator
     private let reduceMotion: Bool
+    private let waitsForPress: Bool
     private let focusedTarget: FocusState<FocusValue?>.Binding
     private let target: FocusValue
     private let policy: PanelSoundScopeButtonPolicy
+    private let isFocusable: Bool
     private let onHover: (Bool) -> Void
     private let label: Label
 
@@ -182,18 +193,22 @@ public struct PanelSoundScopeSuccessfulActionButton<FocusValue: Hashable, Label:
         action: @escaping @MainActor () -> Void,
         actionCoordinator: PanelSoundScopeActionCoordinator,
         reduceMotion: Bool,
+        waitsForPress: Bool = true,
         focusedTarget: FocusState<FocusValue?>.Binding,
         target: FocusValue,
         policy: PanelSoundScopeButtonPolicy,
+        isFocusable: Bool = true,
         onHover: @escaping (Bool) -> Void,
         @ViewBuilder label: () -> Label
     ) {
         self.action = action
         self.actionCoordinator = actionCoordinator
         self.reduceMotion = reduceMotion
+        self.waitsForPress = waitsForPress
         self.focusedTarget = focusedTarget
         self.target = target
         self.policy = policy
+        self.isFocusable = isFocusable
         self.onHover = onHover
         self.label = label()
     }
@@ -204,6 +219,7 @@ public struct PanelSoundScopeSuccessfulActionButton<FocusValue: Hashable, Label:
             focusedTarget: focusedTarget,
             target: target,
             policy: policy,
+            isFocusable: isFocusable,
             onHover: onHover
         ) {
             label
@@ -211,7 +227,8 @@ public struct PanelSoundScopeSuccessfulActionButton<FocusValue: Hashable, Label:
     }
 
     private func completeAfterPressRelease() {
-        actionCoordinator.submit(reduceMotion: reduceMotion, action: action)
+        actionCoordinator.submit(
+            reduceMotion: reduceMotion, waitsForPress: waitsForPress, action: action)
     }
 }
 

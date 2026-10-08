@@ -102,6 +102,7 @@ private final class MountedVolumeProbe {
         let panel = PanelView(
             audioEnvironment: composition.audioEnvironment, configFile: configFile,
             panelModel: composition.eventSettingsModel,
+            previewSession: composition.manualPreview,
             soundScopeSelection: composition.soundScopeSelection,
             focusCoordinator: focus, hostIntegrations: composition.hostIntegrations,
             languageStore: composition.preferences,

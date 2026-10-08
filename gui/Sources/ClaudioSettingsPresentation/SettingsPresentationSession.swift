@@ -999,6 +999,9 @@ package final class SettingsPresentationSession: ObservableObject {
         windowIsClosing: Bool = false,
         preservingAcceptedDeletion: Bool = false
     ) {
+        if destination == .sounds || destination == .eventsAndSounds {
+            dependencies.manualPreview.stop(category: .settings)
+        }
         switch destination {
         case .integrations:
             dependencies.integrationsModel.noteWindowKeyState(false)
@@ -1042,6 +1045,7 @@ package final class SettingsPresentationSession: ObservableObject {
         isPerformingTransaction = true
         windowPhase = phase
         if phase == .hidden || phase == .closing {
+            dependencies.manualPreview.stop(category: .settings)
             animationPreview.deactivate()
         } else if routeResolution.route == .notifications(.eventAnimation) {
             animationPreview.activate()

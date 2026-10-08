@@ -106,8 +106,7 @@ actor NativeRegressionGenerator: AICueGenerating {
         for directory in generations.values { try? FileManager.default.removeItem(at: directory) }
         generations.removeAll()
     }
-    nonisolated static func wav(ordinal: Int) -> Data {
-        let sampleCount = 4_800
+    nonisolated static func wav(ordinal: Int, sampleCount: Int = 4_800) -> Data {
         var data = Data("RIFF".utf8)
         func append(_ value: UInt32, bytes: Int) {
             for index in 0..<bytes { data.append(UInt8(truncatingIfNeeded: value >> (index * 8))) }

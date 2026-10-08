@@ -35,9 +35,8 @@ struct EventSettingsWindowView: View {
     @FocusState private var focusedTarget: EventSettingsFocusTarget?
     @State private var isAddingWorkspace = false
     @State private var previewSequence = EventPreviewSequenceCoordinator()
-    @State private var player = NSSoundAudioPreviewPlayer()
-    @State private var previewPulseTriggers: [Event: Int] = [:]
-    @State private var previewSuccessTokens: [Event: UUID] = [:]
+    @ObservedObject private var previewSession: ManualAudioPreviewSession
+    @State private var previewOrigin = ManualPreviewOrigin(.settings)
     @State private var migrationSeen = false
 
     init(
@@ -61,6 +60,7 @@ struct EventSettingsWindowView: View {
         self.aiCueViewModel = aiCueViewModel
         self.soundPacksEditorOwner = soundPacksEditorOwner
         self.soundPacksEditorNativeEffects = soundPacksEditorNativeEffects
+        self.previewSession = soundPacksEditorNativeEffects.previewSession
         self.performPlatformAction = performPlatformAction
         self.onNavigateWorkspace = onNavigateWorkspace
         self.onConfigureSound = onConfigureSound
@@ -118,8 +118,7 @@ struct EventSettingsWindowView: View {
                 .accessibilityIdentifier("workspace.settings.scroll")
                 .onChange(of: selection.route.detail) { _ in
                     previewSequence.cancel()
-                    player.stop()
-                    previewSuccessTokens.removeAll()
+                    previewSession.stop(origin: previewOrigin)
                     proxy.scrollTo("workspace-top", anchor: .top)
                 }
                 .onChange(of: selection.presentationState.focusRequestRevision) { _ in
@@ -134,6 +133,8 @@ struct EventSettingsWindowView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("workspace.settings")
         .onAppear {
+            previewSession.stop(origin: previewOrigin)
+            previewOrigin = ManualPreviewOrigin(.settings)
             migrationSeen = languageStore.hasSeenWorkspaceMigration
             #if DEBUG
             if reloadsOnAppear && !model.usesInjectedPreviewState { model.reload() }
@@ -144,14 +145,13 @@ struct EventSettingsWindowView: View {
         }
         .onChange(of: selection.route) { _ in
             previewSequence.cancel()
-            player.stop()
-            previewSuccessTokens.removeAll()
+            previewSession.stop(origin: previewOrigin)
+            previewOrigin = ManualPreviewOrigin(.settings)
             synchronize()
         }
         .onChange(of: model.config.selectedPack) { _ in
             previewSequence.cancel()
-            player.stop()
-            previewSuccessTokens.removeAll()
+            previewSession.stop(origin: previewOrigin)
         }
         .onChange(of: model.configState) { _ in
             if !selection.route.workspaceTargetIsCurrent(in: model.configState.resolvedConfig) {
@@ -165,8 +165,7 @@ struct EventSettingsWindowView: View {
         }
         .onDisappear {
             previewSequence.cancel()
-            player.stop()
-            previewSuccessTokens.removeAll()
+            previewSession.stop(origin: previewOrigin)
             selection.cancelDeletion()
             selection.clearReturnFocus()
         }
@@ -293,7 +292,7 @@ struct EventSettingsWindowView: View {
     }
 
     private func synchronize() {
-        player.stop()
+        previewSession.stop(origin: previewOrigin)
         // Preserve invalid identities so delayed actions cannot write the Default Group.
         // C1：选择事实住在共享 owner（`SoundScopeSelection`）；这里不再把保留路由推回 model ——
         // 显式选择走 `selectScope`，通用入口经 session 的 applyRoute 跟随 owner，工作区删除
@@ -386,7 +385,7 @@ struct EventSettingsWindowView: View {
     private func selectScope(_ scope: PanelSoundScopeID) {
         guard scopes.contains(where: { $0.scope == scope }) else { return }
         previewSequence.cancel()
-        player.stop()
+        previewSession.stop(origin: previewOrigin)
         let target = scope.workspaceID.flatMap { id in
             model.workspaceRules.first(where: { $0.id == id }).map(
                 WorkspaceSoundWriteTarget.init(rule:))
@@ -506,7 +505,7 @@ struct EventSettingsWindowView: View {
                     .settingsMountIdentity("workspace.scope.unavailable")
                 if selection.route.scope != .global {
                     Button(l10n.text(.workspaceChooseDefaultGroup)) {
-                        player.stop()
+                        previewSession.stop(origin: previewOrigin)
                         selection.select(EventSettingsWindowRoute(scope: .global))
                         model.selectSoundScope(.global)
                     }
@@ -594,24 +593,24 @@ struct EventSettingsWindowView: View {
             padding: SettingsAppearance.controlRowHorizontalPadding
         ) {
             VStack(alignment: .leading, spacing: 8) {
-            SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
+                SettingsControlRow(title: l10n.text(.panelSoundPackLabel)) {
                     SettingsNativePopUp(
-                    l10n.text(.panelSoundPackLabel),
-                    selection: Binding(
-                        get: { model.config.selectedPack },
-                        set: {
-                            guard model.selectedSoundScope == scope else { return }
-                            previewSequence.cancel()
-                            player.stop()
-                            previewSuccessTokens.removeAll()
-                            let retry = EventSettingsWriteRetry(
-                                scope: scope, workspaceDirectory: workspaceTarget?.directory,
-                                operation: .pack(before: model.config.selectedPack, requested: $0))
-                            selection.clearConflictReadback()
-                            _ = model.switchPack(to: $0)
-                            selection.noteWriteResult(retry, using: model)
-                            selection.clearPreviewFailure()
-                            onAudibilityInputsChanged()
+                        l10n.text(.panelSoundPackLabel),
+                        selection: Binding(
+                            get: { model.config.selectedPack },
+                            set: {
+                                guard model.selectedSoundScope == scope else { return }
+                                previewSequence.cancel()
+                                previewSession.stop(origin: previewOrigin)
+                                let retry = EventSettingsWriteRetry(
+                                    scope: scope, workspaceDirectory: workspaceTarget?.directory,
+                                    operation: .pack(
+                                        before: model.config.selectedPack, requested: $0))
+                                selection.clearConflictReadback()
+                                _ = model.switchPack(to: $0)
+                                selection.noteWriteResult(retry, using: model)
+                                selection.clearPreviewFailure()
+                                onAudibilityInputsChanged()
                             }),
                         options: (model.allSoundPacks.contains(where: {
                             $0.id == model.config.selectedPack
@@ -629,46 +628,51 @@ struct EventSettingsWindowView: View {
                             }, identifier: "event-settings.sound-pack-picker"
                     )
                     .fixedSize(horizontal: true, vertical: false)
-                .accessibilityIdentifier("event-settings.sound-pack-picker")
-                .focused($focusedTarget, equals: .packPicker)
-                .soundPacksLayoutProbe("event-settings.sound-pack-picker.control")
-            }
-            .soundPacksLayoutProbe("event-settings.sound-pack-picker.row")
-            Divider()
-            EventSettingsMasterVolumeControl(
-                diskVolume: model.config.masterVolume, isEnabled: writable,
-                language: languageStore.language, focusedTarget: $focusedTarget
-            ) { volume in
-                let retry = EventSettingsWriteRetry(
-                    scope: scope, workspaceDirectory: workspaceTarget?.directory,
-                    operation: .volume(before: model.config.masterVolume, requested: volume))
-                selection.clearConflictReadback()
-                let landed = model.setVolume(
-                    volume, for: scope, workspaceTarget: workspaceTarget)
-                selection.noteWriteResult(retry, using: model)
-                selection.clearPreviewFailure()
-                onAudibilityInputsChanged()
-                return landed
-            }.id(selection.route.scope)
-            if model.eventRows.contains(where: {
-                if case .broken = $0.coverage { return true }; return false
-            })
-                || eventSettingsPackNeedsRepair(
-                    selectedPackID: model.config.selectedPack, cards: model.allSoundPacks)
-            {
-                FailureRow(message: l10n.text(.workspacePackRepair))
-                    .accessibilityIdentifier("workspace.pack.repair-reason")
-            }
+                    .accessibilityIdentifier("event-settings.sound-pack-picker")
+                    .focused($focusedTarget, equals: .packPicker)
+                    .soundPacksLayoutProbe("event-settings.sound-pack-picker.control")
+                }
+                .soundPacksLayoutProbe("event-settings.sound-pack-picker.row")
+                Divider()
+                EventSettingsMasterVolumeControl(
+                    diskVolume: model.config.masterVolume, isEnabled: writable,
+                    language: languageStore.language, focusedTarget: $focusedTarget
+                ) { volume in
+                    let retry = EventSettingsWriteRetry(
+                        scope: scope, workspaceDirectory: workspaceTarget?.directory,
+                        operation: .volume(before: model.config.masterVolume, requested: volume))
+                    selection.clearConflictReadback()
+                    let landed = model.setVolume(
+                        volume, for: scope, workspaceTarget: workspaceTarget)
+                    selection.noteWriteResult(retry, using: model)
+                    selection.clearPreviewFailure()
+                    onAudibilityInputsChanged()
+                    return landed
+                }.id(selection.route.scope)
+                if model.eventRows.contains(where: {
+                    if case .broken = $0.coverage { return true }; return false
+                })
+                    || eventSettingsPackNeedsRepair(
+                        selectedPackID: model.config.selectedPack, cards: model.allSoundPacks)
+                {
+                    FailureRow(message: l10n.text(.workspacePackRepair))
+                        .accessibilityIdentifier("workspace.pack.repair-reason")
+                }
             }
         }
-            .soundPacksLayoutProbe("workspace.configuration.card")
+        .soundPacksLayoutProbe("workspace.configuration.card")
     }
 
     private var previewControls: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(l10n.text(.eventSettingsPreviewAll)) { previewAvailableEvents() }
-                .disabled(!events.contains(where: { $0.controls.previewEnabled }))
-                .accessibilityIdentifier("workspace.preview-available")
+            MotionPreviewButton(
+                isPlaying: previewSession.activeSequence?.origin == previewOrigin,
+                isEnabled: events.contains(where: { $0.controls.previewEnabled }),
+                playLabel: l10n.text(.eventSettingsPreviewAll), stopLabel: l10n.text(.soundsStop),
+                idleTitle: l10n.text(.eventSettingsPreviewAll), reservesSpace: false,
+                action: previewAvailableEvents
+            )
+            .accessibilityIdentifier("workspace.preview-available")
             Text(
                 l10n.text(
                     events.contains(where: { $0.controls.previewEnabled })
@@ -682,29 +686,37 @@ struct EventSettingsWindowView: View {
         let target = model.selectedWorkspaceTarget
         let packID = model.config.selectedPack
         let available = events.filter { $0.controls.previewEnabled }.map(\.event)
-        let generation = selection.beginPreviewSequence()
+        previewSequence.cancel()
+        guard let run = previewSession.beginSequence(origin: previewOrigin) else { return }
         Task { @MainActor in
             _ = await previewSequence.run(
                 events: available,
                 isCurrent: {
-                    selection.route.scope == scope && model.selectedWorkspaceTarget == target
+                    previewSession.isCurrent(run) && selection.route.scope == scope
+                        && model.selectedWorkspaceTarget == target
                         && model.config.selectedPack == packID
                 }
             ) { event in
-                switch model.attemptPreview(event, using: player) {
-                case .started:
-                    selection.clearPreviewFailure()
-                    previewPulseTriggers[event, default: 0] &+= 1
-                    return model.previewDuration(for: event) ?? 3
-                case .failed(let failure):
-                    reportPreviewFailure(
-                        failure, event: event, scope: scope, packID: model.config.selectedPack,
-                        sourcePackReadOnly: model.selectedPackIsBuiltinReadOnly)
+                guard previewSession.isCurrent(run), let audio = model.resolvePreview(event) else {
                     return nil
                 }
+                if previewSession.playStep(
+                    run, target: previewTarget(event), fileURL: audio.fileURL, volume: audio.volume)
+                {
+                    selection.clearPreviewFailure()
+                    return model.previewDuration(for: event) ?? 3
+                }
+                reportPreviewFailure(
+                    .playbackFailed, event: event, scope: scope, packID: packID,
+                    sourcePackReadOnly: model.selectedPackIsBuiltinReadOnly)
+                return nil
             }
-            _ = selection.completePreviewSequence(generation: generation)
+            previewSession.endSequence(run)
         }
+    }
+
+    private func previewTarget(_ event: Event) -> String {
+        "workspace.\(selection.route.scope.storedValue).\(model.config.selectedPack).\(event.rawValue)"
     }
 
     private func workspaceDetails(_ rule: WorkspaceSoundRule) -> some View {
@@ -1024,10 +1036,6 @@ struct EventSettingsWindowView: View {
     private func eventRow(_ event: PanelEventPresentation) -> some View {
         let scope = selection.route.scope
         let recovery = eventPreviewRecoveryAction(for: event.controls.previewAvailability)
-        let failure = selection.previewFailure.flatMap {
-            $0.scope == scope && $0.packID == model.config.selectedPack
-                && $0.event == event.event ? $0 : nil
-        }
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 ClaudioEventGlyph(event: event.event, size: 24).accessibilityHidden(true)
@@ -1047,40 +1055,40 @@ struct EventSettingsWindowView: View {
                 .focusable()
                 .focused($focusedTarget, equals: .event(event.event))
                 Spacer()
-                Button {
+                MotionPreviewButton(
+                    isPlaying: previewSession.isPlaying(
+                        previewTarget(event.event), origin: previewOrigin),
+                    isEnabled: event.controls.previewEnabled,
+                    playLabel: l10n.format(.eventPreviewLabel, event.title),
+                    stopLabel: l10n.text(.soundsStop)
+                ) {
                     previewSequence.cancel()
+                    guard
+                        let token = previewSession.prepare(
+                            origin: previewOrigin, target: previewTarget(event.event))
+                    else { return }
                     let packID = model.config.selectedPack
-                    let sourcePackReadOnly = model.selectedPackIsBuiltinReadOnly
-                    switch model.attemptPreview(event.event, using: player) {
-                    case .started:
-                        selection.clearPreviewFailure()
-                        previewPulseTriggers[event.event, default: 0] &+= 1
-                        let token = UUID()
-                        previewSuccessTokens[event.event] = token
-                        Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 1_200_000_000)
-                            if previewSuccessTokens[event.event] == token {
-                                previewSuccessTokens.removeValue(forKey: event.event)
-                            }
-                        }
-                    case .failed(let failure):
-                        previewSuccessTokens.removeValue(forKey: event.event)
+                    guard let audio = model.resolvePreview(event.event) else {
+                        previewSession.fail(token)
                         reportPreviewFailure(
-                            failure, event: event.event, scope: scope, packID: packID,
-                            sourcePackReadOnly: sourcePackReadOnly)
+                            .assetChanged, event: event.event, scope: scope, packID: packID,
+                            sourcePackReadOnly: model.selectedPackIsBuiltinReadOnly)
+                        return
                     }
-                } label: {
-                    Image(systemName: "play.fill")
-                        .claudioPreviewPulse(
-                            trigger: previewPulseTriggers[event.event, default: 0])
+                    if previewSession.start(token, fileURL: audio.fileURL, volume: audio.volume) {
+                        selection.clearPreviewFailure()
+                    } else {
+                        model.notePreviewPlaybackFailure()
+                        reportPreviewFailure(
+                            .playbackFailed, event: event.event, scope: scope, packID: packID,
+                            sourcePackReadOnly: model.selectedPackIsBuiltinReadOnly)
+                    }
                 }
-                .disabled(!event.controls.previewEnabled)
-                .accessibilityLabel(l10n.format(.eventPreviewLabel, event.title))
                 .accessibilityHint(
                     localizedEventPreviewHint(
-                        event.controls.previewAvailability,
-                        language: languageStore.language)
+                        event.controls.previewAvailability, language: languageStore.language)
                 )
+                .accessibilityIdentifier("workspace.event.\(event.event.rawValue).preview")
                 .focused($focusedTarget, equals: .preview(event.event))
                 Button {
                     configureSound(event.event, scope: scope)
@@ -1113,7 +1121,7 @@ struct EventSettingsWindowView: View {
                 ).labelsHidden().toggleStyle(.switch).controlSize(.mini).disabled(
                     !event.controls.muteEnabled
                 )
-                    .focused($focusedTarget, equals: .mute(event.event))
+                .focused($focusedTarget, equals: .mute(event.event))
             }
             if !event.controls.previewEnabled {
                 VStack(alignment: .leading, spacing: 6) {
@@ -1138,20 +1146,7 @@ struct EventSettingsWindowView: View {
                 }
                 .padding(.leading, 36)
             }
-            if reduceMotion && previewSuccessTokens[event.event] != nil {
-                Label(l10n.text(.eventPreviewStarted), systemImage: "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundColor(SettingsAppearance.accent(colorScheme))
-                    .accessibilityIdentifier(
-                        "workspace.event.preview-started.\(event.event.cliName)")
-            }
-            if let failure {
-                FailureRow(
-                    message: localizedEventPreviewAttemptFailure(
-                        failure.reason, language: languageStore.language)
-                )
-                .settingsMountIdentity("workspace.event.preview-failure.\(event.event.cliName)")
-            }
+
         }.frame(minHeight: 38)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("workspace.event.\(event.event.cliName)")

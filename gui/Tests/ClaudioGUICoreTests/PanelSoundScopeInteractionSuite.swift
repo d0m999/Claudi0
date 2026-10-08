@@ -84,16 +84,31 @@ private final class PanelSoundScopeDeferredSelectionState {
 
 @MainActor
 func runPanelSoundScopeInteractionSuites() {
+    suite("作用域 Motion：提交不等待收起动画，重入在同一 gate 内拒绝") {
+        var schedules = 0, selections = 0
+        let coordinator = PanelSoundScopeActionCoordinator(schedule: { _, _ in schedules += 1 })
+        let submitted = coordinator.submit(reduceMotion: false, waitsForPress: false) {
+            selections += 1
+            expect(
+                !coordinator.submit(reduceMotion: false, waitsForPress: false) {},
+                "reentrant selection is rejected")
+        }
+        expect(
+            submitted && selections == 1 && schedules == 0,
+            "selection commits synchronously without a 100ms timer")
+        expect(!coordinator.isPending, "gate resets independently of geometry collapse")
+    }
+
     suite("声音作用域控件：生产组件接缝可编译且三类策略唯一") {
         _ = PanelSoundScopeControlsCompileFixture()
         expect(
-            !PanelSoundScopeButtonPolicy.trigger.isExplicitlyFocusable
+            PanelSoundScopeButtonPolicy.trigger.isExplicitlyFocusable
                 && !PanelSoundScopeButtonPolicy.trigger.reportsPressed,
-            "触发卡不得额外进入 Tab 序或上报行级 pressed")
+            "触发卡必须能接收归还的焦点，不上报行级 pressed")
         expect(
-            !PanelSoundScopeButtonPolicy.scopeAction.isExplicitlyFocusable
+            PanelSoundScopeButtonPolicy.scopeAction.isExplicitlyFocusable
                 && PanelSoundScopeButtonPolicy.scopeAction.reportsPressed,
-            "作用域选择必须上报 pressed，但不改变现有焦点序")
+            "作用域选择必须接受菜单焦点并上报 pressed")
         expect(
             PanelSoundScopeButtonPolicy.integrationAction.isExplicitlyFocusable
                 && PanelSoundScopeButtonPolicy.integrationAction.reportsPressed,

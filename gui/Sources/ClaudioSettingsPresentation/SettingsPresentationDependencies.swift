@@ -16,6 +16,9 @@ package struct SettingsPresentationDependencies {
     package let aboutSettings: AboutSettingsModel
     package let soundPacksEditorOwner: SoundPacksEditorOwner
     package let soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher
+    @MainActor package var manualPreview: ManualAudioPreviewSession {
+        soundPacksEditorNativeEffects.previewSession
+    }
     package let eventSettingsModel: PanelConfigController
     package let hostIntegrations: HostIntegrationPresentationStore
     package let integrationsModel: IntegrationDestinationModel

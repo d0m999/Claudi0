@@ -47,6 +47,7 @@ package final class PanelAppComposition {
     }
 
     package struct Adapters {
+        package let previewPlayer: (any AudioPreviewPlaying)?
         package let globalHotKeys: GlobalHotKeyAdapter
         package let shortcutPersistence: GlobalShortcutPersistenceAdapter
         package let clipboardWriter: IntegrationDestinationClipboardWriter
@@ -56,6 +57,7 @@ package final class PanelAppComposition {
         package let makeAboutSettings: @MainActor ([AboutSurfaceFact]) -> AboutSettingsModel
 
         package init(
+            previewPlayer: (any AudioPreviewPlaying)? = nil,
             globalHotKeys: GlobalHotKeyAdapter,
             shortcutPersistence: GlobalShortcutPersistenceAdapter,
             clipboardWriter: IntegrationDestinationClipboardWriter,
@@ -65,6 +67,7 @@ package final class PanelAppComposition {
             makeActivityDiagnostics: @escaping @MainActor () -> ActivityDiagnosticsModel,
             makeAboutSettings: @escaping @MainActor ([AboutSurfaceFact]) -> AboutSettingsModel
         ) {
+            self.previewPlayer = previewPlayer
             self.globalHotKeys = globalHotKeys
             self.shortcutPersistence = shortcutPersistence
             self.clipboardWriter = clipboardWriter
@@ -96,6 +99,7 @@ package final class PanelAppComposition {
         }
     }
 
+    package let manualPreview: ManualAudioPreviewSession
     package let audioEnvironment: AudioImportEnvironment
     package let preferences: ClaudioPreferences
     package let soundPackLibrary: SoundPackLibrary
@@ -115,6 +119,8 @@ package final class PanelAppComposition {
     package let aboutSettings: AboutSettingsModel
 
     package init(environment: Environment, adapters: Adapters, actions: Actions) throws {
+        manualPreview = ManualAudioPreviewSession(
+            player: adapters.previewPlayer ?? UnavailablePreviewPlayer())
         audioEnvironment = environment.audioEnvironment
         preferences = environment.preferences
         integrationMatrixProvider = environment.integrationMatrixProvider
@@ -191,4 +197,14 @@ package final class PanelAppComposition {
         activityDiagnostics = adapters.makeActivityDiagnostics()
         aboutSettings = adapters.makeAboutSettings(hostIntegrations.safeSurfaceFacts)
     }
+}
+
+@MainActor
+private final class UnavailablePreviewPlayer: AudioPreviewPlaying {
+    func play(fileAt url: URL, volume: Float) -> Bool { false }
+    func play(
+        fileAt url: URL, volume: Float,
+        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool { false }
+    func stop() {}
 }

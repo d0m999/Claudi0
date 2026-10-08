@@ -35,7 +35,8 @@ public struct PanelView: View {
 
     private let audioEnvironment: AudioImportEnvironment
     private let configFile: URL
-    private let previewPlayer: AudioPreviewPlaying
+    @ObservedObject private var previewSession: ManualAudioPreviewSession
+    @State private var previewOrigin = ManualPreviewOrigin(.panel)
     private let refreshesActivityOnLifecycle: Bool
     private let onAudibilityInputsChanged: @MainActor () -> Void
     private let onOpenSettings: @MainActor () -> Void
@@ -53,6 +54,7 @@ public struct PanelView: View {
         audioEnvironment: AudioImportEnvironment,
         configFile: URL = ClaudioPaths.configFile,
         panelModel: PanelConfigController,
+        previewSession: ManualAudioPreviewSession,
         soundScopeSelection: SoundScopeSelection,
         focusCoordinator: PanelFocusCoordinator = PanelFocusCoordinator(),
         hostIntegrations: HostIntegrationPresentationStore,
@@ -88,7 +90,7 @@ public struct PanelView: View {
         self.onQuit = onQuit
         self.onRevealConfig = onRevealConfig
         self.onAnnounce = onAnnounce
-        previewPlayer = NSSoundAudioPreviewPlayer()
+        self.previewSession = previewSession
         refreshesActivityOnLifecycle = true
 
         _announcer = StateObject(wrappedValue: PanelAnnouncer())
@@ -128,7 +130,8 @@ public struct PanelView: View {
         self.noticeNavigation = SessionNavigationCoordinator(model: eventNoticeModel)
         self.activityDiagnostics = ActivityDiagnosticsModel(
             previewPresentation: previewActivityPresentation)
-        self.previewPlayer = previewPlayer ?? NSSoundAudioPreviewPlayer()
+        self.previewSession = ManualAudioPreviewSession(
+            player: previewPlayer ?? NSSoundAudioPreviewPlayer())
         self.refreshesActivityOnLifecycle = false
         self.onAudibilityInputsChanged = {}
         self.onOpenSettings = {}
@@ -238,11 +241,21 @@ public struct PanelView: View {
             announcePanelSummary(opening: false)
         }
         .onChange(of: panelModel.config.selectedPack) { _ in
+            previewSession.stop(origin: previewOrigin)
             previewAttemptFailures = [:]
         }
         .onChange(of: soundScopeSelection.projection.scope) { _ in
+            previewSession.stop(origin: previewOrigin)
             previewAttemptFailures = [:]
         }
+        .onChange(of: focusCoordinator.isPanelVisible) { visible in
+            if visible {
+                previewOrigin = ManualPreviewOrigin(.panel)
+            } else {
+                previewSession.stop(origin: previewOrigin)
+            }
+        }
+        .onDisappear { previewSession.stop(origin: previewOrigin) }
         .onChange(of: panelModel.configState.topContent) { content in
             focusedTarget = panelFocusAfterTopContentChange(
                 previous: previousTopContent,
@@ -390,6 +403,10 @@ public struct PanelView: View {
             selection: soundScopeSelection.projection.scope,
             scopes: soundScopePresentations,
             language: languageStore.language)
+    }
+
+    private func previewTarget(_ event: Event) -> String {
+        "panel.\(panelModel.selectedSoundScope.storedValue).\(panelModel.config.selectedPack).\(event.rawValue)"
     }
 
     private func soundScopePicker(availableMenuHeight: CGFloat) -> some View {
@@ -622,10 +639,30 @@ public struct PanelView: View {
                             event: event.event, content: hostIntegrations.content,
                             language: languageStore.language),
                         attemptFailure: previewAttemptFailures[event.event],
+                        isPlaying: previewSession.isPlaying(
+                            previewTarget(event.event), origin: previewOrigin),
                         focusedTarget: $focusedTarget,
                         onPreview: {
-                            let outcome = panelModel.attemptPreview(
-                                event.event, using: previewPlayer)
+                            let outcome: EventPreviewAttemptOutcome
+                            if let token = previewSession.prepare(
+                                origin: previewOrigin, target: previewTarget(event.event))
+                            {
+                                if let audio = panelModel.resolvePreview(event.event) {
+                                    if previewSession.start(
+                                        token, fileURL: audio.fileURL, volume: audio.volume)
+                                    {
+                                        outcome = .started
+                                    } else {
+                                        panelModel.notePreviewPlaybackFailure()
+                                        outcome = .failed(.playbackFailed)
+                                    }
+                                } else {
+                                    previewSession.fail(token)
+                                    outcome = .failed(.assetChanged)
+                                }
+                            } else {
+                                return false
+                            }
                             switch outcome {
                             case .started:
                                 previewAttemptFailures[event.event] = nil
@@ -1058,6 +1095,7 @@ private struct PanelAgentEventRow: View {
     let language: ClaudioAppLanguage
     let hostIndicators: [EventHostIndicatorPresentation]
     let attemptFailure: EventPreviewAttemptFailure?
+    let isPlaying: Bool
     let onPreview: () -> Bool
     let onRecovery: (EventPreviewRecoveryAction) -> Void
     let onToggleMute: () -> Void
@@ -1065,8 +1103,6 @@ private struct PanelAgentEventRow: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var previewPulseTrigger = 0
-    @State private var previewSuccessToken: UUID?
 
     init(
         presentation: PanelEventPresentation,
@@ -1074,6 +1110,7 @@ private struct PanelAgentEventRow: View {
         language: ClaudioAppLanguage,
         hostIndicators: [EventHostIndicatorPresentation],
         attemptFailure: EventPreviewAttemptFailure?,
+        isPlaying: Bool,
         focusedTarget: FocusState<PanelFocusTarget?>.Binding,
         onPreview: @escaping () -> Bool,
         onRecovery: @escaping (EventPreviewRecoveryAction) -> Void,
@@ -1084,6 +1121,7 @@ private struct PanelAgentEventRow: View {
         self.language = language
         self.hostIndicators = hostIndicators
         self.attemptFailure = attemptFailure
+        self.isPlaying = isPlaying
         self.focusedTarget = focusedTarget
         self.onPreview = onPreview
         self.onRecovery = onRecovery
@@ -1137,16 +1175,7 @@ private struct PanelAgentEventRow: View {
                             text: localizedEventPreviewAttemptFailure(
                                 attemptFailure, language: language)))
             }
-            if reduceMotion && previewSuccessToken != nil {
-                Label(
-                    ClaudioL10n(language: language).text(.eventPreviewStarted),
-                    systemImage: "checkmark.circle.fill"
-                )
-                .font(.caption)
-                .foregroundColor(ClaudioTheme.clay(colorScheme))
-                .accessibilityIdentifier(
-                    "panel.event.\(presentation.event.rawValue).preview-started")
-            }
+
         }
         .padding(.vertical, 7)
         .accessibilityElement(children: .contain)
@@ -1245,19 +1274,19 @@ private struct PanelAgentEventRow: View {
 
     private var actions: some View {
         HStack(spacing: 5) {
-            Button(action: performPreview) {
-                Image(systemName: "play.fill")
-                    .claudioPreviewPulse(trigger: previewPulseTrigger)
-            }
-            .buttonStyle(ClaudioIconButtonStyle())
-            .disabled(!presentation.controls.previewEnabled)
+            MotionPreviewButton(
+                isPlaying: isPlaying, isEnabled: presentation.controls.previewEnabled,
+                playLabel: ClaudioL10n(language: language).format(
+                    .eventPreviewLabel, presentation.title),
+                stopLabel: ClaudioL10n(language: language).text(.soundsStop), action: performPreview
+            )
             .focused(focusedTarget, equals: .eventPreview(presentation.event))
             .help(previewHelp)
             .accessibilityHint(previewHelp)
             .accessibilityLabel(
-                ClaudioL10n(language: language).format(
-                    .eventPreviewLabel,
-                    presentation.title)
+                isPlaying
+                    ? ClaudioL10n(language: language).text(.soundsStop)
+                    : ClaudioL10n(language: language).format(.eventPreviewLabel, presentation.title)
             )
             .accessibilityIdentifier("panel.event.\(presentation.event.rawValue).preview")
             #if DEBUG
@@ -1289,19 +1318,8 @@ private struct PanelAgentEventRow: View {
         .fixedSize()
     }
 
-    private func performPreview() {
-        if onPreview() {
-            previewPulseTrigger &+= 1
-            let token = UUID()
-            previewSuccessToken = token
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 1_200_000_000)
-                if previewSuccessToken == token { previewSuccessToken = nil }
-            }
-        } else {
-            previewSuccessToken = nil
-        }
-    }
+    private func performPreview() { _ = onPreview() }
+
 }
 
 private struct PanelPreviewFailureMount: ViewModifier {

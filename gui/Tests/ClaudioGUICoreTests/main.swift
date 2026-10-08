@@ -76,6 +76,14 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--app-motion") {
+    runManualAudioPreviewSessionSuites()
+    runPanelSoundScopeInteractionSuites()
+    runAICueTaskSurfaceSuites()
+    print("App motion: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -755,6 +763,7 @@ Task { @MainActor in
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
     await runEventAttentionStressSuites()
+    runManualAudioPreviewSessionSuites()
     runPanelSoundScopeInteractionSuites()
     await runPanelPresentationSuites()
     runEventSettingsWindowSelectionSuites()
@@ -804,6 +813,7 @@ Task { @MainActor in
     await runSettingsRootInteractionSuites()
     runSettingsProductImagesSuites()
     await runSettingsSoundsLayoutSuites()
+    runAICueTaskSurfaceSuites()
     await runIntegrationAutomationNativeSuites()
     runSettingsNativeMigrationSuites()
     runPreviewFixturesSuites()

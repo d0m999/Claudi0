@@ -161,6 +161,7 @@ final class MenuBarController: NSObject {
                 integrationMatrixProvider: integrationMatrixProvider,
                 integrationActionProvider: integrationActionProvider),
             adapters: PanelAppComposition.Adapters(
+                previewPlayer: NSSoundAudioPreviewPlayer(),
                 globalHotKeys: globalShortcutRegistrar.makeAdapter(),
                 shortcutPersistence: .userDefaults(),
                 clipboardWriter: IntegrationDestinationClipboardAdapter.system,
@@ -221,7 +222,8 @@ final class MenuBarController: NSObject {
             })
         let activityDiagnostics = composition.activityDiagnostics
         let soundPacksEditorNativeEffects = SoundPacksEditorNativeEffectsDispatcher(
-            adapter: SystemSoundPacksEditorNativeEffectsAdapter())
+            adapter: SystemSoundPacksEditorNativeEffectsAdapter(),
+            previewSession: composition.manualPreview)
         let settingsPresentationSession = SettingsPresentationSession(
             dependencies: SettingsPresentationDependencies(
                 preferences: languageStore,
@@ -261,6 +263,7 @@ final class MenuBarController: NSObject {
         let panel = PanelView(
             audioEnvironment: audioEnvironment,
             panelModel: eventSettingsModel,
+            previewSession: composition.manualPreview,
             soundScopeSelection: soundScopeSelection,
             focusCoordinator: focusCoordinator,
             hostIntegrations: hostIntegrations,
@@ -758,6 +761,7 @@ final class MenuBarController: NSObject {
             preservingNoticeNavigation: reason.preservesNoticeNavigation(
                 noticeNavigation,
                 frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier))
+        composition.manualPreview.stop(category: .panel)
         defer { settingsWindowController.finishPanelPresentation() }
         // A nonactivating panel releases keyboard focus itself. Only an explicit dismissal
         // may restore Settings' prior key target; outside interaction belongs to its recipient.

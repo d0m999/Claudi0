@@ -150,6 +150,16 @@ public final class PanelConfigController: ObservableObject {
         previewURL(for: event).flatMap { environment.durationProbe.probeDuration(of: $0) }
     }
 
+    public func resolvePreview(_ event: Event) -> (fileURL: URL, volume: Double)? {
+        guard let file = previewURL(for: event) else {
+            reloadAfterMissingPreview()
+            return nil
+        }
+        return (file, Double(previewVolume(for: config)))
+    }
+
+    public func notePreviewPlaybackFailure() { reloadAfterMissingPreview() }
+
     public func attemptPreview(
         _ event: Event, using player: AudioPreviewPlaying
     ) -> EventPreviewAttemptOutcome {
@@ -360,7 +370,8 @@ public final class PanelConfigController: ObservableObject {
         self.afterFullReload = { _ in }
         self.soundPacksRefreshCancellable = nil
         self.soundScopeSelection =
-            soundScopeSelection ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
+            soundScopeSelection
+            ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
         self.baseConfig = baseConfig
 
         self.configState = previewConfigState
@@ -447,7 +458,8 @@ public final class PanelConfigController: ObservableObject {
         // C1：生产经 `PanelAppComposition` 注入 app 生命周期 owner；nil 只发生在
         // 测试 / 预览，落一个绝不碰 `.standard` 的隔离 fixture owner。
         self.soundScopeSelection =
-            soundScopeSelection ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
+            soundScopeSelection
+            ?? SoundScopeSelection(defaults: SoundScopeSelectionFixtureDefaults())
 
         let loadedState = loadPanelConfig(from: configFile)
         let loadedConfig = loadedState.resolvedConfig

@@ -15,15 +15,6 @@ public protocol AudioPreviewPlaying: AnyObject {
     ) -> Bool
 }
 
-extension AudioPreviewPlaying {
-    public func play(
-        fileAt url: URL, volume: Float,
-        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
-    ) -> Bool {
-        play(fileAt: url, volume: volume)
-    }
-}
-
 public enum EventPreviewSequenceRunResult: Sendable, Equatable {
     case completed
     case empty

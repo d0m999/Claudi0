@@ -415,7 +415,7 @@ func runSoundPacksEditorNativeEffectsSuites() async {
                 "candidate 必须经同一 native adapter 开始播放并返回时长")
             expect(
                 adapter.playRequests
-                    == [.init(fileURL: candidateURL, volume: 0.6)],
+                    == [.init(fileURL: candidateURL, volume: Double(Float(0.6)))],
                 "candidate URL/volume 必须原样进入 retained playback adapter")
 
             dispatcher.handleLifecycle(.settingsWindowWillClose, owner: fixture.owner)
@@ -442,6 +442,7 @@ private final class RecordingSoundPacksEditorNativeEffectsAdapter:
     private(set) var stopCount = 0
     private(set) var revealRequests: [URL] = []
 
+    var previewDuration: TimeInterval? { playbackDuration }
     var playbackDuration: TimeInterval?
 
     init(pickerResults: [[URL]] = [], playbackDuration: TimeInterval? = 1) {
@@ -457,6 +458,15 @@ private final class RecordingSoundPacksEditorNativeEffectsAdapter:
     func playAudio(fileURL: URL, volume: Double) -> TimeInterval? {
         playRequests.append(PlayRequest(fileURL: fileURL, volume: volume))
         return playbackDuration
+    }
+
+    private var completion: (@MainActor @Sendable (Bool) -> Void)?
+    func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        self.completion = completion
+        return playAudio(fileURL: fileURL, volume: volume) != nil
     }
 
     func stopAudio() {

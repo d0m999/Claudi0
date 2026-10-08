@@ -774,7 +774,9 @@ func runViewWiringSuites() {
         expect(
             scopePicker.contains("ForEach(scopes)")
                 && scopePicker.contains(".frame(maxWidth: .infinity")
-                && scopePicker.contains(".frame(height: 0, alignment: .top)")
+                && scopePicker.contains(".frame(height: 50, alignment: .top)")
+                && scopePicker.contains(".accessibilityHidden(!isExpanded)")
+                && scopePicker.contains("waitsForPress: false")
                 && scopePicker.contains("PanelSoundScopeOutsideClickMonitor(")
                 && scopePicker.contains(".onMoveCommand(perform: moveMenuFocus)")
                 && scopePicker.contains(".onExitCommand")

@@ -746,6 +746,10 @@ private final class NoOpSoundPacksEditorNativeEffectsAdapter:
 {
     func selectAudioFiles(allowsMultipleSelection: Bool) -> [URL] { [] }
     func playAudio(fileURL: URL, volume: Double) -> TimeInterval? { nil }
+    func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool { false }
     func stopAudio() {}
     func revealInFinder(fileURL: URL) {}
 }

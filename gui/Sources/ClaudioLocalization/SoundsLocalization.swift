@@ -41,6 +41,8 @@ extension ClaudioL10nKey {
     public static let soundsGenerating: Self = "settings.sounds.redesign.generating"
     public static let soundsSaving: Self = "settings.sounds.redesign.saving"
     public static let soundsPending: Self = "settings.sounds.redesign.pending"
+    public static let soundsBackgroundTask: Self = "settings.sounds.redesign.backgroundTask"
+    public static let soundsGeneratedCount: Self = "settings.sounds.redesign.generatedCount"
     public static let soundsSaved: Self = "settings.sounds.redesign.saved"
     public static let soundsCancelGeneration: Self = "settings.sounds.redesign.cancelGeneration"
     public static let soundsRetrySave: Self = "settings.sounds.redesign.retrySave"

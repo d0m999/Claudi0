@@ -913,6 +913,8 @@ package func aiCueFailureText(
         return l10n.text(.aiCueErrorCredits)
     case .generation(.provider(.rateLimited)):
         return l10n.text(.aiCueErrorRateLimited)
+    case .generation(.provider(.serviceUnavailable)):
+        return l10n.text(.aiCueErrorServiceUnavailable)
     case .generation(.audioTooLarge), .generation(.unsupportedAudio),
         .generation(.audioDurationUnavailable), .generation(.audioTooLong):
         return l10n.text(.aiCueErrorAudioInvalid)

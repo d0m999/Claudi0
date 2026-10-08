@@ -15,6 +15,12 @@ private final class MountedPanelPreviewPlayer: AudioPreviewPlaying {
         return startsPlayback
     }
 
+    func play(
+        fileAt url: URL, volume: Float,
+        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        play(fileAt: url, volume: volume)
+    }
     func stop() {}
 }
 

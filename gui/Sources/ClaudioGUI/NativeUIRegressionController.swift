@@ -10,10 +10,6 @@ import ClaudioSettingsPresentation
 import SoundPacksWindow
 import SwiftUI
 
-private struct RegressionDurationProbe: AudioDurationProbing {
-    func probeDuration(of url: URL) -> TimeInterval? { 0.2 }
-}
-
 /// Created before any production owner. All writes, libraries, defaults and activity facts are
 /// isolated. The control window accepts only these fixed scenarios, never arbitrary commands.
 @MainActor
@@ -148,7 +144,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             let directory = parent.appendingPathComponent(id)
             try FileManager.default.createDirectory(
                 at: directory, withIntermediateDirectories: true)
-            try NativeRegressionGenerator.wav(ordinal: 1).write(
+            // A real three-second sample leaves time to inspect and activate the Stop capsule.
+            try NativeRegressionGenerator.wav(ordinal: 1, sampleCount: 72_000).write(
                 to: directory.appendingPathComponent("tone.wav"), options: .atomic)
             let manifest: [String: Any] = [
                 "id": id, "name": id, "schema": 1, "version": "1", "author": "Claudio fixture",
@@ -172,7 +169,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         try JSONEncoder().encode(config).write(to: configFile, options: .atomic)
         let environment = AudioImportEnvironment(
             userPacksDirectory: packs, factoryPacksDirectory: factory,
-            durationProbe: RegressionDurationProbe(),
+            durationProbe: AVFoundationAudioDurationProbe(),
             packsLockFile: root.appendingPathComponent("packs.lock"))
         let behavior = RegressionSourceBehavior()
         sourceBehavior = behavior
@@ -254,6 +251,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 integrationRefreshFeedback: .localized(
                     key: .feedbackHostStateUpdated, arguments: [])),
             adapters: PanelAppComposition.Adapters(
+                previewPlayer: NSSoundAudioPreviewPlayer(),
                 globalHotKeys: GlobalHotKeyAdapter(
                     register: { _ in }, unregister: { _ in }, setActionHandler: { _ in }),
                 shortcutPersistence: .userDefaults(defaults),
@@ -284,7 +282,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             aboutSettings: composition.aboutSettings, productImages: makeSettingsProductImages(),
             eventAnimations: eventAnimations,
             nativeEffects: SoundPacksEditorNativeEffectsDispatcher(
-                adapter: SystemSoundPacksEditorNativeEffectsAdapter()))
+                adapter: SystemSoundPacksEditorNativeEffectsAdapter(),
+                previewSession: composition.manualPreview))
         settings = SettingsWindowController(session: fixture.session)
         super.init()
         clipboardBackup = (NSPasteboard.general.pasteboardItems ?? []).map { original in
@@ -311,7 +310,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             let bindings = HostCapabilityCatalog.bindings(for: host).filter {
                 $0.isAudibleCapability && ($0.event == .stop || $0.event == .subagentStop)
             }
-            guard bindings.count == 2 else {
+            guard !bindings.isEmpty else {
                 throw NSError(domain: "ClaudioNativeFixture", code: 1)
             }
             for (generation, id) in [previousID, currentID].enumerated() {
@@ -376,6 +375,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             rootView: PanelView(
                 audioEnvironment: environment, configFile: configFile,
                 panelModel: fixture.eventSettingsModel,
+                previewSession: composition.manualPreview,
                 soundScopeSelection: fixture.eventSettingsModel.soundScopeSelection,
                 focusCoordinator: focus,
                 hostIntegrations: fixture.hostIntegrations, languageStore: preferences,
@@ -394,11 +394,13 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                             .integrations(IntegrationsSettingsRoute(surface: host.surfaceID))))
                 }, onQuit: { NSApp.terminate(nil) }, onRevealConfig: { _ in }, onAnnounce: { _ in })
         )
-        panel.contentSize = NSSize(width: 312, height: 740)
+        panel.contentSize = NSSize(width: 312, height: 560)
         panel.onEscape = { [weak self] in self?.focus.consumeNoticeEscape() ?? false }
         panel.onShow = { [weak self] in self?.focus.requestFocus() }
         panel.onClose = { [weak self] _ in
-            self?.focus.notePanelHidden(); self?.notices.closeReading(.panel)
+            self?.focus.notePanelHidden()
+            self?.composition.manualPreview.stop(category: .panel)
+            self?.notices.closeReading(.panel)
         }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             // Let native file panels own their Go to Folder shortcut.
@@ -482,6 +484,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     }
     func showPanel(action: EventNoticeAction?) {
         guard let button = statusItem?.button else { return }
+        _ = settings.closeForMutualExclusion()
         controls?.orderOut(nil)
         if !panel.isShown { panel.show(relativeTo: button.bounds, of: button) }
         if let action { notices.openReading(.panel); focus.requestNotice(action) }
