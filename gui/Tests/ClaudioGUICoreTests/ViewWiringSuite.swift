@@ -2697,9 +2697,9 @@ func runViewWiringSuites() {
 
         let allProduction = sourcesUnder("gui/Sources").map(\.code).joined(separator: "\n")
         expect(
-            allProduction.components(separatedBy: "NSOpenPanel()").count - 1 == 2
-                && picker.contains("NSOpenPanel()"),
-            "全 GUI 仅共享组件拥有两个独立选择器：音频文件与工作区目录")
+            allProduction.components(separatedBy: "NSOpenPanel()").count - 1 == 3
+                && picker.components(separatedBy: "NSOpenPanel()").count - 1 == 3,
+            "全部选择器由共享组件拥有：原音频选择器、工作区目录、声音创作附属选择器")
         expect(
             allProduction.components(separatedBy: "NSSound(contentsOf:").count - 1 == 1
                 && player.contains("NSSound(contentsOf:"),

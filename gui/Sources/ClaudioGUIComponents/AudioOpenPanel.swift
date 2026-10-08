@@ -5,6 +5,24 @@ import UniformTypeIdentifiers
 /// validates magic bytes, size, duration, path containment and publication independently.
 private let audioOpenPanelContentTypes: [UTType] = [.wav, .mp3, .aiff, .mpeg4Audio]
 
+/// Attached chooser for Sounds authoring. A directory choice is a complete pack preview;
+/// audio bytes and directory structure are independently validated before any write.
+@MainActor
+package func chooseSoundAsset(attachedTo parent: NSWindow, directory: Bool) async -> URL? {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = directory
+    panel.canChooseFiles = !directory
+    panel.allowsMultipleSelection = false
+    panel.treatsFilePackagesAsDirectories = directory
+    if !directory { panel.allowedContentTypes = audioOpenPanelContentTypes }
+    let response = await withCheckedContinuation { continuation in
+        panel.beginSheetModal(for: parent.attachedSheet ?? parent) {
+            continuation.resume(returning: $0)
+        }
+    }
+    return response == .OK ? panel.url : nil
+}
+
 /// The one native audio-file picker used by the panel and the standard Sound Packs window.
 @MainActor
 public func runAudioOpenPanel(allowsMultipleSelection: Bool) -> [URL] {

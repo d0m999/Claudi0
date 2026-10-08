@@ -140,21 +140,20 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 packIDs: ["pack-a", "pack-b"])
             let owner = fixture.owner
             await waitForSoundEditorReady(owner, library: fixture.library)
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 403)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 403)))
             announcementGapDrain(owner)
-            guard case .sounds(let initial) = owner.presentation.mode,
+            guard case .events(let initial) = owner.presentation.mode,
                 let inspectB = initial.packs.first(where: { $0.id == "pack-b" })?.inspectAction
             else {
                 expect(false, "[129-ANN-RED] priority fixture 必须取得 inspect-B")
                 return
             }
             _ = owner.send(.invoke(inspectB))
-            await waitForSoundEditorInventory(owner) { inventory in
-                inventory.contains { $0.fileName == "stop.mp3" }
-            }
             announcementGapDrain(owner)
-            guard case .sounds(let inspected) = owner.presentation.mode,
-                let useB = inspected.selectedPack?.useAction,
+            guard case .events(let inspected) = owner.presentation.mode,
+                let useB = inspected.packs.first(where: { $0.id == "pack-b" })?.useAction,
                 case .accepted(let useID) = owner.send(.invoke(useB))
             else {
                 expect(false, "[129-ANN-RED] priority fixture 必须 accepted use notice")
@@ -165,14 +164,12 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 expect(false, "[129-ANN-RED] successful use 必须形成 notice debt")
                 return
             }
-            await waitForSoundEditorInventory(owner) { inventory in
-                inventory.contains { $0.fileName == "stop.mp3" }
-            }
-            guard let assign = announcementGapAssignment(owner, event: .stop),
+            guard case .events(let afterUse) = owner.presentation.mode,
+                let assign = afterUse.packs.first(where: { $0.id == "pack-a" })?.useAction,
                 await announcementGapFailUnderLock(
                     owner: owner,
                     action: assign,
-                    lockFile: fixture.packsLockFile)
+                    lockFile: root.appendingPathComponent("config.lock"))
             else {
                 expect(false, "[129-ANN-RED] priority fixture 必须形成后到的 failure status")
                 return
@@ -216,8 +213,10 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 packIDs: ["pack-a", "pack-b"])
             let owner = fixture.owner
             await waitForSoundEditorReady(owner, library: fixture.library)
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 404)))
-            guard case .sounds(let initial) = owner.presentation.mode,
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 404)))
+            guard case .events(let initial) = owner.presentation.mode,
                 let inspectB = initial.packs.first(where: { $0.id == "pack-b" })?.inspectAction
             else {
                 expect(false, "[129-ANN-RED] FIFO fixture 必须取得 inspect-B")
@@ -225,8 +224,9 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
             }
             _ = owner.send(.invoke(inspectB))
             announcementGapDrain(owner)
-            guard case .sounds(let firstPresentation) = owner.presentation.mode,
-                let firstAction = firstPresentation.selectedPack?.useAction,
+            guard case .events(let firstPresentation) = owner.presentation.mode,
+                let firstAction = firstPresentation.packs.first(where: { $0.id == "pack-b" })?
+                    .useAction,
                 await announcementGapFailUnderLock(
                     owner: owner,
                     action: firstAction,
@@ -236,8 +236,9 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 expect(false, "[129-ANN-RED] FIFO fixture 必须形成首个 failure debt")
                 return
             }
-            guard case .sounds(let secondPresentation) = owner.presentation.mode,
-                let secondAction = secondPresentation.selectedPack?.useAction,
+            guard case .events(let secondPresentation) = owner.presentation.mode,
+                let secondAction = secondPresentation.packs.first(where: { $0.id == "pack-b" })?
+                    .useAction,
                 await announcementGapFailUnderLock(
                     owner: owner,
                     action: secondAction,

@@ -31,6 +31,16 @@ its key is stored in an unencrypted, user-private local file outside projects, w
 and a 0600 file, both without extended ACL entries. Other processes with the same user's file access may read it. Claudio does not
 display or export saved keys, and it does not migrate or delete existing SenseAudio Keychain items.
 
+Valid generated audio is automatically saved in private local generation history, including results
+you do not use. Each batch keeps your original sound description, generation time and actual
+provider profile; each audio item keeps its name, duration and file-integrity metadata. Internal
+sound plans, request bodies, provider request IDs, remote URLs, credentials and workspace identities
+are not saved in this history. Records stay until you move them to the macOS Trash. Deleting a record
+does not remove an independent copy already used in a sound pack. Named, unpublished sound-pack
+drafts also remain on this Mac. Closing Settings does not cancel an active generation; unsaved
+results are not guaranteed to survive quitting or a crash. Descriptions and history are excluded
+from diagnostics and logs. See [local storage and recovery](docs/sound-assets-storage.md).
+
 The About page's safe diagnostic summary contains only app version/build, architecture, macOS
 versions, published Surface semantic states, and whether fixed app resources exist. It excludes path
 values, receipt contents, credentials, sound descriptions, provider responses, calendar or Focus
@@ -62,6 +72,13 @@ macOS 钥匙串中，不会进入可复制的诊断摘要。SenseAudio profile �
 之外、未经加密的用户私有本地文件中，目录权限为 0700、文件权限为 0600，均不允许扩展 ACL 条目。同用户且具备相应文件
 访问权限的程序仍可能读取它。claudi0 不显示或导出已保存的 Key，也不迁移或删除既有 SenseAudio
 Keychain 项。
+
+所有有效生成音频自动保存到私有的本地生成记录，包括未选用项。每组保存原始声音描述、生成时间
+及实际服务；每条音频保存名称、时长和文件完整性元数据。记录不保存内部声音方案、请求正文、
+供应商请求 ID、远端 URL、凭据或工作区身份。记录一直保留，直到你将它们移到 macOS 废纸篓；
+删除记录不影响已用于声音包的独立副本。已命名但未发布的声音包草稿也保留在本机。关闭设置
+不会取消正在进行的生成；未保存结果不保证在退出或崩溃后恢复。描述与记录不进入诊断或日志。
+详见[本地存储与恢复](docs/sound-assets-storage.md)。
 
 “关于”页的安全诊断只包含应用版本/构建、架构、macOS 版本、已发布 Surface 的语义状态，以及
 固定应用资源是否存在。它排除路径值、回执内容、凭据、声音描述、供应商响应、日历或专注模式数据、

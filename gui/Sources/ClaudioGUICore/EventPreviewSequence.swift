@@ -8,6 +8,20 @@ public protocol AudioPreviewPlaying: AnyObject {
     @discardableResult
     func play(fileAt url: URL, volume: Float) -> Bool
     func stop()
+    @discardableResult
+    func play(
+        fileAt url: URL, volume: Float,
+        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool
+}
+
+extension AudioPreviewPlaying {
+    public func play(
+        fileAt url: URL, volume: Float,
+        onCompletion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        play(fileAt: url, volume: volume)
+    }
 }
 
 public enum EventPreviewSequenceRunResult: Sendable, Equatable {

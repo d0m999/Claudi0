@@ -182,15 +182,15 @@ func runSoundPacksEditorViewSuites() async {
                 return
             }
             expect(
-                sounds.scope == .unavailable(scope: scope, reason: .scopeUnavailable),
-                "同 UUID 新目录必须先由真实 editor owner 判为不可用")
+                sounds.scope == .available(.global),
+                "Sounds 包级编辑不由工作区目标决定")
             expect(
                 soundPacksWindowDeepLinkFocusTarget(
                     route: route, scopeAvailability: sounds.scope,
                     selectedPackID: sounds.selectedPack?.id,
                     visibleEvents: Set(sounds.eventRows.map(\.event)), fallback: .packList)
-                    == .managedScopeFailure,
-                "包与事件仍可见时，旧工作区深链仍须优先聚焦失效说明")
+                    == .eventAudio(.stop),
+                "旧工作区链接转换为包详情并定位事件")
             let focusScope = SoundPacksWindowFocusScope(
                 packIDs: sounds.packs.map(\.id), selectedPackID: sounds.selectedPack?.id,
                 hasManagedScopeFailure: true)
@@ -219,7 +219,7 @@ func runSoundPacksEditorViewSuites() async {
                 return
             }
             expect(
-                rebound.scope == .available(scope)
+                rebound.scope == .available(.global)
                     && soundPacksWindowDeepLinkFocusTarget(
                         route: reboundRoute, scopeAvailability: rebound.scope,
                         selectedPackID: rebound.selectedPack?.id,
@@ -257,9 +257,11 @@ func runSoundPacksEditorViewSuites() async {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a", "pack-b"])
             let owner = fixture.owner
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 802)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 802)))
             await waitForSoundEditorReady(owner, library: fixture.library)
-            guard case .sounds(let sounds) = owner.presentation.mode,
+            guard case .events(let sounds) = owner.presentation.mode,
                 let useAction = sounds.packs.first(where: { $0.id == "pack-b" })?.useAction
             else {
                 expect(false, "busy Gallery fixture 必须先取得真实 owner write capability")
@@ -274,7 +276,7 @@ func runSoundPacksEditorViewSuites() async {
             expect(
                 owner.presentation.activities.contains { $0.kind == .use && $0.phase == .busy },
                 "Gallery busy fixture 必须保留 owner presentation 的真实 write-in-progress activity")
-            guard case .sounds(let busy) = owner.presentation.mode else {
+            guard case .events(let busy) = owner.presentation.mode else {
                 expect(false, "busy fixture 必须保留 Sounds presentation")
                 return
             }
@@ -310,7 +312,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
             guard case .sounds(let inspected) = fixture.owner.presentation.mode else {
                 expect(false, "查看必须保留 Sounds presentation"); return
             }
-            let detail = SoundPacksSettingsDetail.event(packID: "pack-a", event: .stop)
+            let detail = SoundPacksSettingsDetail.pack(packID: "pack-a")
             expect(
                 inspected.selectedPack?.id == "pack-a" && detail.targetIsAvailable(in: inspected),
                 "从普通 overview 进入详情必须捕获正在查看的包 A")
@@ -380,7 +382,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 "复现必须保留配置实际引用的缺失包占位")
             for detail in [
                 SoundPacksSettingsDetail.audio(packID: "pack-a"),
-                .event(packID: "pack-a", event: .stop),
+                .pack(packID: "pack-a"),
             ] {
                 expect(
                     !detail.targetIsAvailable(in: missing)
@@ -413,12 +415,15 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                     soundPacksEditor: owner)
                 let session = sessionFixture.session
                 await waitForSoundEditorReady(owner, library: fixture.library)
-                let detail = SoundPacksSettingsDetail.event(packID: "factory-a", event: .stop)
+                let detail = SoundPacksSettingsDetail.pack(packID: "factory-a")
                 if kind == .copyAndApply {
                     await waitForSessionSoundsDetail(session, detail)
                     expect(
-                        session.state.routeResolution.route == .sounds(route),
-                        "copyAndApply 深链必须保留在外层 route")
+                        session.state.routeResolution.route
+                            == .sounds(
+                                SoundPacksWindowRoute(
+                                    scope: .global, destination: .pack(packID: "factory-a"))),
+                        "旧 copyAndApply 转换为只读浏览目标")
                 } else {
                     expect(
                         session.send(
@@ -437,6 +442,15 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 guard case .sounds(let sounds) = owner.presentation.mode,
                     let source = sounds.selectedPack
                 else { expect(false, "复制必须先取得原包投影"); return }
+                if kind == .copyAndApply {
+                    expect(
+                        source.copyAndApplyAction == nil && source.useAction == nil,
+                        "旧 copyAndApply 链接只浏览包，不签发应用能力")
+                    expect(
+                        loadClaudioConfig(from: fixture.configFile)?.selectedPack == "factory-a",
+                        "旧链接不改变组选包")
+                    return
+                }
                 let action: SoundPackEditorAction?
                 switch kind {
                 case .fork: action = source.forkAction
@@ -461,7 +475,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                     let copiedID = copied.selectedPack?.id, copiedID != "factory-a"
                 else { expect(false, "实际复制须通过共享库收敛到已发布副本"); return }
                 await waitForSessionSoundsDetail(
-                    session, .event(packID: copiedID, event: .stop))
+                    session, .pack(packID: copiedID))
                 expect(
                     session.state.soundsDetail.targetIsAvailable(in: copied),
                     "成功结果的精确 packID 必须恢复同一事件详情的能力")
@@ -539,7 +553,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
             await Task.yield()
             expect(
                 session.state.soundsDetail
-                    == .event(packID: "factory-a", event: .notification),
+                    == .pack(packID: "factory-a"),
                 "离开原事件详情后迟到 copy 不得劫持新的详情")
             let diskPackIDs = snapshot.facts.map(\.id)
             let configBytes = try? Data(contentsOf: fixture.configFile)
@@ -553,7 +567,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 afterTraversal.facts.map(\.id) == diskPackIDs
                     && (try? Data(contentsOf: fixture.configFile)) == configBytes
                     && session.state.soundsDetail
-                        == .event(packID: "factory-a", event: .notification),
+                        == .pack(packID: "factory-a"),
                 "Back/Forward 不重放复制、应用或旧结果，磁盘与新详情保持不变")
         }
     }
@@ -595,7 +609,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
             else { expect(false, "进入写者前的导航保留原 freshness 校验及真实失败结果"); return }
             await Task.yield()
             expect(
-                session.state.soundsDetail == .event(packID: "factory-a", event: .stop),
+                session.state.soundsDetail == .pack(packID: "factory-a"),
                 "没有 busy 起点捕获的详情不得被迟到 selection 和终态结果重定向")
         }
     }
@@ -622,58 +636,29 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 soundPacksEditor: owner)
             let session = sessionFixture.session
             await waitForSoundEditorReady(owner, library: library)
-            expect(owner.beginAICuePackDraft(language: .english), "必须经既有 owner 创建未发布草稿")
-            guard case .sounds(let draftSounds) = owner.presentation.mode,
-                let draft = draftSounds.draft,
-                let action = draftSounds.eventRows.first(where: { $0.event == .stop })?
-                    .systemSoundChoices.first?.action
-            else { expect(false, "草稿必须拥有安全系统音绑定 capability"); return }
-            let draftDetail = SoundPacksSettingsDetail.event(
-                packID: draft.packID, event: .taskStart)
-            await waitForSessionSoundsDetail(session, draftDetail)
-            expect(
-                session.state.routeResolution.route == .sounds(.overview),
-                "草稿详情不得改写外层 route")
-            expect(
-                draftDetail.targetIsAvailable(in: draftSounds), "未发布草稿必须可编辑捕获事件")
-            guard case .accepted(let operationID) = owner.send(.invoke(action)) else {
-                expect(false, "首个系统音必须经真实绑定事务发布"); return
+            let named = try! await owner.createNamedDraft(AICuePackName("系统首音"))
+            _ = session.send(.requestSoundsDetail(.draft(packID: named.packID)))
+            await waitForSessionSoundsDetail(session, .draft(packID: named.packID))
+            guard let selection = owner.beginSoundSelection(event: .stop) else {
+                expect(false, "持久草稿须提供当前目标上下文"); return
             }
-            await owner.waitForScheduledOperationExitForTesting(operationID)
+            expect(
+                owner.useExistingSound(.systemSound("Basso"), selection: selection),
+                "首个系统音通过独占发布事务安装")
             await owner.waitForMutationTransactionsToQuiesceForTesting()
-            guard case .sounds(let published) = owner.presentation.mode else {
-                expect(false, "已发布草稿必须保留 Sounds 投影"); return
-            }
-            let publishedStopDetail = SoundPacksSettingsDetail.event(
-                packID: draft.packID, event: .stop)
+            await waitForSessionSoundsDetail(session, .pack(packID: named.packID))
+            expect(loadClaudioConfig(from: config)?.selectedPack == "user", "发布不改组选包")
+            let next = try! await owner.createNamedDraft(AICuePackName("稍后继续"))
+            _ = session.send(.requestSoundsDetail(.draft(packID: next.packID)))
+            _ = session.send(.route(.sounds(.overview)))
+            await owner.draftStore.refresh()
             expect(
-                published.draft == nil && published.selectedPack?.id == draft.packID
-                    && session.state.soundsDetail == draftDetail
-                    && publishedStopDetail.targetIsAvailable(in: published),
-                "草稿首发必须使用原 packID，不能被任意 selectedPack 变化替换")
-            expect(
-                loadClaudioConfig(from: config)?.selectedPack == "user",
-                "草稿发布仍只查看，不擅自应用声音组")
-            expect(owner.beginAICuePackDraft(language: .english), "发布后仍能建立独立新草稿")
-            guard case .sounds(let nextDraftSounds) = owner.presentation.mode,
-                let nextDraft = nextDraftSounds.draft
-            else { expect(false, "第二个未发布草稿必须提供独立身份"); return }
-            let cancelledDetail = SoundPacksSettingsDetail.event(
-                packID: nextDraft.packID, event: .taskStart)
-            await waitForSessionSoundsDetail(session, cancelledDetail)
-            owner.cancelAICuePackDraft()
-            guard case .sounds(let cancelled) = owner.presentation.mode else { return }
-            await Task.yield()
-            expect(
-                session.state.soundsDetail == cancelledDetail
-                    && cancelledDetail.visibleEventRows(in: cancelled).isEmpty
-                    && cancelledDetail.unavailableFocusTarget(in: cancelled)
-                        == .managedScopeFailure,
-                "取消未发布草稿不得串到现有包，并须移除事件能力和聚焦原因")
+                owner.draftStore.snapshot.drafts.contains { $0.packID == next.packID },
+                "离页只结束查看，命名草稿仍持久存在")
             expect(
                 !FileManager.default.fileExists(
-                    atPath: packs.appendingPathComponent(nextDraft.packID).path),
-                "取消保持未发布草稿无目录")
+                    atPath: packs.appendingPathComponent(next.packID).path),
+                "未设置首音的草稿不发布为空安装包")
         }
     }
 
@@ -696,7 +681,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
             await waitForSoundEditorReady(owner, library: fixture.library)
             guard case .sounds(let resolved) = owner.presentation.mode else { return }
             expect(resolved.routeState == .resolved(route), "深链必须通过真实共享库解析原包")
-            await waitForSessionSoundsDetail(session, .event(packID: "pack-a", event: .stop))
+            await waitForSessionSoundsDetail(session, .pack(packID: "pack-a"))
             expect(
                 session.state.routeResolution.route == .sounds(route),
                 "深链目标必须保留在外层 route")
@@ -704,7 +689,7 @@ func runSoundPacksSettingsDetailIdentityRegressions() async {
                 .activate(.sounds(route: route, requestRevision: resolved.requestRevision)))
             await Task.yield()
             expect(
-                session.state.soundsDetail == .event(packID: "pack-a", event: .stop),
+                session.state.soundsDetail == .pack(packID: "pack-a"),
                 "解析完成后的同代次重发布不得再关闭详情")
             expect(
                 session.send(.route(.sounds(.overview))) == .routed,

@@ -451,7 +451,13 @@ final class MenuBarController: NSObject {
         hostIntegrationRefreshTask?.cancel()
     }
 
+    var generationTerminationReason: AICueTerminationReason? {
+        composition.generationCoordinator.terminationReason
+    }
+    var generationTerminationWindow: NSWindow? { settingsWindowController.terminationPromptWindow }
+
     func applicationWillTerminate() {
+        composition.generationCoordinator.terminate()
         panelWindow.onClose = nil
         panelWindow.close()
         globalShortcutSettings.suspend()

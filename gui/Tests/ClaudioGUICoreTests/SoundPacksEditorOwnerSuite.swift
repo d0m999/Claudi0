@@ -109,9 +109,7 @@ func runSoundPacksEditorOwnerSuites() {
             }
             expect(
                 rejected.route == delayedRoute
-                    && rejected.scope
-                        == .unavailable(
-                            scope: .workspace(original.id), reason: .scopeUnavailable)
+                    && rejected.scope == .available(.global)
                     && rejected.packs.allSatisfy {
                         $0.useAction == nil && $0.copyAndApplyAction == nil
                     }
@@ -164,11 +162,9 @@ func runSoundPacksEditorOwnerSuites() {
                 return
             }
             expect(
-                rejectedOverview.scope
-                    == .unavailable(
-                        scope: .workspace(original.id), reason: .scopeUnavailable)
+                rejectedOverview.scope == .available(.global)
                     && rejectedOverview.packs.allSatisfy { $0.useAction == nil },
-                "来自旧工作区的 Events 概览也不能换绑并签发使用动作")
+                "Sounds 忽略旧工作区浏览身份，并且不签发组使用动作")
 
             _ = owner.send(
                 .activate(
@@ -179,10 +175,8 @@ func runSoundPacksEditorOwnerSuites() {
                 return
             }
             expect(
-                repeated.scope
-                    == .unavailable(
-                        scope: .workspace(original.id), reason: .scopeUnavailable),
-                "普通重复导航即使 revision 改变，也不能接受同 UUID 新目录")
+                repeated.scope == .available(.global),
+                "Sounds 重复导航保持包编辑能力，不接受工作区写入能力")
 
             controller.selectSoundScope(
                 .workspace(original.id), rebindSelectedWorkspace: true)
@@ -195,18 +189,16 @@ func runSoundPacksEditorOwnerSuites() {
                 return
             }
             expect(
-                rebound.scope == .available(.workspace(original.id)),
-                "用户显式重选同 UUID 后，新目录锚点才能恢复编辑")
+                rebound.scope == .available(.global),
+                "工作区重选不改变 Sounds 的包级编辑模型")
             _ = owner.send(.activate(.sounds(route: delayedRoute, requestRevision: 5)))
             guard case .sounds(let oldAgain) = owner.presentation.mode else {
                 expect(false, "旧深链再次激活必须交付 Sounds")
                 return
             }
             expect(
-                oldAgain.scope
-                    == .unavailable(
-                        scope: .workspace(original.id), reason: .scopeUnavailable),
-                "显式重选后再次使用旧链接仍须拒绝原目录身份")
+                oldAgain.scope == .available(.global),
+                "旧链接只能浏览包，不能恢复原工作区写入身份")
             let currentRoute = SoundPacksWindowRoute.editEvent(
                 scope: .workspace(original.id), packID: "workspace-pack", event: .stop,
                 workspaceTarget: WorkspaceSoundWriteTarget(rule: replacement))
@@ -216,8 +208,8 @@ func runSoundPacksEditorOwnerSuites() {
                 return
             }
             expect(
-                current.scope == .available(.workspace(original.id)),
-                "新选择生成的目录锚点可安全进入编辑器")
+                current.scope == .available(.global),
+                "新链接同样使用独立的包编辑模型")
         }
     }
 

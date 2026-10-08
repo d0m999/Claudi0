@@ -18,6 +18,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let settingsPresentationSession: SettingsPresentationSession
     private let postAccessibilityAnnouncement: @MainActor (NSWindow, String, Int) -> Bool
     private var window: RetainedSettingsWindow?
+    var terminationPromptWindow: NSWindow? { window }
     private let statusActivationGuard = StatusItemWindowOrderGuard()
     private var focusRestoration: (@MainActor (PanelHandbackApplication?) -> Void)?
     private var handbackTracker = RetainedWindowHandbackTracker<PanelHandbackApplication>()

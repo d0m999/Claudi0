@@ -183,7 +183,8 @@ func runSettingsPresentationLifecycleSuites() async {
 
         for host in HostID.productVisibleCases {
             expect(
-                session.send(.route(.integrations(IntegrationsSettingsRoute(surface: host.surfaceID))))
+                session.send(
+                    .route(.integrations(IntegrationsSettingsRoute(surface: host.surfaceID))))
                     == .routed
                     && fixture.integrationsModel.selectedHost == host,
                 "应能分别从每个 Host 的集成页测试声音入口")
@@ -665,7 +666,7 @@ func runSettingsPresentationLifecycleSuites() async {
             ),
             (
                 .sounds(.editEvent(scope: selected, packID: "settings-fixture-pack", event: .stop)),
-                .staleSoundScope(selected)
+                .staleSoundPack("settings-fixture-pack")
             ),
         ]
         // The failure row stays mounted when a second Sounds request replaces its message.
@@ -745,9 +746,9 @@ func runSettingsPresentationLifecycleSuites() async {
                     == .rejected(.invalidSurface(.chatGPTDesktopAX))
                     && session.state == beforeInvalid
                     && session.navigationHistory == historyBeforeInvalid
-                && fixture.integrationsModel.selectedHost == priorHost
-                && fixture.eventSettingsModel.selectedSurface == priorSurface
-                && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
+                    && fixture.integrationsModel.selectedHost == priorHost
+                    && fixture.eventSettingsModel.selectedSurface == priorSurface
+                    && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
                 "不可解析的输入及重复请求保持路由、历史、焦点和领域 owner 不变")
         }
 
@@ -799,9 +800,9 @@ func runSettingsPresentationLifecycleSuites() async {
             expect(
                 session.send(.present(.route(invalidWhileClosed))) == .rejected(.invalidSoundPackID)
                     && session.state == closedState && session.navigationHistory == closedHistory
-                && fixture.integrationsModel.selectedHost == priorHost
-                && fixture.eventSettingsModel.selectedSurface == priorSurface
-                && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
+                    && fixture.integrationsModel.selectedHost == priorHost
+                    && fixture.eventSettingsModel.selectedSurface == priorSurface
+                    && fixture.soundPacksEditor.presentation.mode == priorSoundMode,
                 "关闭期间不可解析输入不能创建窗口会话或历史位置，也不能触碰领域 owner")
         }
 
@@ -1136,7 +1137,7 @@ func runSettingsPresentationLifecycleSuites() async {
             "本地事件详情意图必须被 session 仲裁接受")
         expect(
             session.state.soundsDetail
-                == .event(packID: "settings-fixture-pack", event: .stop)
+                == .pack(packID: "settings-fixture-pack")
                 && session.state.routeResolution.route
                     == .sounds(.editEvent(packID: "settings-fixture-pack", event: .stop))
                 && session.navigationHistory.entries.count == 2,

@@ -11,6 +11,7 @@ import Foundation
 package final class SoundPacksEditorOwner: ObservableObject {
     private static let maximumRetainedTerminalOperationCount = 32
 
+    package let draftStore: SoundPackDraftStore
     private let model: SoundPacksWindowModel
     @Published package private(set) var presentation: SoundPacksEditorPresentation
     private let refreshCoordinator: SoundPacksRefreshCoordinator?
@@ -28,6 +29,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
     private var currentAICueProfileID: AICueProviderProfileID?
     private var currentAICueCandidateIdentities: Set<AICueCandidateIdentity> = []
     private var currentAICueDraft: AICuePackDraft?
+    private var draftSubscription: AnyCancellable?
+    private var soundSelectionContexts: [UUID: SoundEventSelectionContext] = [:]
     private var presentationRevision: UInt64 = 0
     private var nextCapabilityID: UInt64 = 0
     private var actionLedger: [SoundPackEditorAction.ID: EditorActionBinding] = [:]
@@ -91,12 +94,21 @@ package final class SoundPacksEditorOwner: ObservableObject {
         refreshCoordinator: SoundPacksRefreshCoordinator?,
         audioImportExecutor: SoundPackAudioImportExecutor
     ) {
+        draftStore = SoundPackDraftStore(
+            directory: importEnvironment.userPacksDirectory.deletingLastPathComponent()
+                .appendingPathComponent("sound-pack-drafts"), environment: importEnvironment)
         self.model = model
         self.importEnvironment = importEnvironment
         self.refreshCoordinator = refreshCoordinator
         self.audioImportExecutor = audioImportExecutor
         presentation = Self.initialPresentation(from: model.editorProjectionSeed())
         connectSettledModel(model)
+        draftSubscription = draftStore.$snapshot.dropFirst().sink { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.publish(from: self.model.editorProjectionSeed())
+            }
+        }
     }
 
     #if DEBUG
@@ -256,6 +268,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         switch command {
         case .activate(let nextContext):
             interfaceHasActivated = true
+            pendingConfirmationState = nil
             let wasSoundsActive = context.isSounds
             actionEpoch &+= 1
             advanceCandidateGeneration(for: nextContext)
@@ -265,9 +278,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 publish(from: model.editorProjectionSeed())
             case .sounds(let route, _):
                 let (_, seed) = captureModelTransition {
-                    model.setManagedScope(
-                        route.scope,
-                        workspaceTarget: route.workspaceTarget)
+                    model.setManagedScope(.global, workspaceTarget: nil)
                     let seed = model.editorProjectionSeed()
                     if case .ready = seed.library,
                         let packID = route.destinationPackID,
@@ -280,6 +291,13 @@ package final class SoundPacksEditorOwner: ObservableObject {
                     enqueueSemanticAnnouncement(
                         .windowOpened(announcementFacts(from: seed)),
                         priority: announcementPriority(for: seed.announcementLibraryState))
+                }
+                if case .draft(let packID) = route.destination,
+                    let draft = draftStore.snapshot.drafts.first(where: { $0.packID == packID })
+                {
+                    currentAICueDraft = draft
+                } else if route.destinationPackID != currentAICueDraft?.packID {
+                    currentAICueDraft = nil
                 }
                 publish(from: seed)
             case .events(let route, _, _):
@@ -357,6 +375,46 @@ package final class SoundPacksEditorOwner: ObservableObject {
         publish(from: model.editorProjectionSeed())
     }
 
+    package func createNamedDraft(_ name: AICuePackName) async throws -> AICuePackDraft {
+        guard context.isSounds, !hasBusyOperation else { throw SoundAssetStorageError.busy }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        let draft = try await draftStore.create(name: name)
+        assetMutationInProgress = false
+        inspectDraft(draft)
+        return draft
+    }
+
+    package func inspectDraft(_ draft: AICuePackDraft) {
+        guard context.isSounds, !hasBusyOperation,
+            draftStore.snapshot.drafts.contains(where: { $0.packID == draft.packID })
+        else { return }
+        cancelAICuePackDraft()
+        currentAICueDraft = draft
+        actionEpoch &+= 1
+        publish(from: model.editorProjectionSeed())
+    }
+
+    package func renameNamedDraft(_ name: AICuePackName) async throws {
+        guard let draft = currentAICueDraft, !hasBusyOperation else {
+            throw SoundAssetStorageError.changed
+        }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        let renamed = try await draftStore.rename(packID: draft.packID, name: name)
+        guard currentAICueDraft?.packID == draft.packID else { return }
+        currentAICueDraft = renamed
+        publish(from: model.editorProjectionSeed())
+    }
+
+    package func deleteNamedDraft(_ packID: String) async throws {
+        guard !hasBusyOperation else { throw SoundAssetStorageError.busy }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        try await draftStore.delete(packID: packID)
+        if currentAICueDraft?.packID == packID { cancelAICuePackDraft() }
+    }
+
     /// Allocates only the identity and name for a new pack. No directory is visible until the
     /// first cue is adopted through ``AICuePackDraftTransaction``.
     @discardableResult
@@ -408,6 +466,243 @@ package final class SoundPacksEditorOwner: ObservableObject {
         currentAICueDraft = renamed
         publish(from: model.editorProjectionSeed())
         return true
+    }
+
+    package func preparePackImport(_ source: URL) async throws -> PreparedSoundPack {
+        try await SoundPackDirectoryTransfer.prepare(source: source, environment: importEnvironment)
+    }
+
+    package func importPreparedPack(_ prepared: PreparedSoundPack) async throws {
+        guard context.isSounds, !hasBusyOperation else { throw SoundAssetStorageError.busy }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        try await publishPreparedPack(prepared)
+    }
+
+    private func publishPreparedPack(_ prepared: PreparedSoundPack) async throws {
+        let mutation = model.beginEditorCompoundMutation(packID: prepared.packID)
+        do {
+            try await SoundPackDirectoryTransfer.publish(
+                prepared, environment: importEnvironment,
+                draftsDirectory: draftStore.directory)
+            withModelTransition {
+                model.finishPublishedDraft(packID: prepared.packID, mutation: mutation)
+            }
+            await prepared.discard()
+        } catch {
+            model.finishEditorCompoundMutationWithoutChange(mutation)
+            throw error
+        }
+    }
+
+    package func copyNamedPack(packID: String, name: AICuePackName) async throws -> String {
+        guard context.isSounds, !hasBusyOperation,
+            let source = resolvePackDirectory(
+                id: packID, userPacksDirectory: importEnvironment.userPacksDirectory,
+                bundledPacksDirectory: importEnvironment.bundledPacksDirectory)
+        else { throw SoundAssetStorageError.changed }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        let prepared = try await SoundPackDirectoryTransfer.prepare(
+            source: source, environment: importEnvironment, copyName: name)
+        do { try await publishPreparedPack(prepared) } catch {
+            await prepared.discard(); throw error
+        }
+        return prepared.packID
+    }
+
+    package func renameInstalledPack(packID: String, name: AICuePackName) async throws {
+        guard context.isSounds, !hasBusyOperation else { throw SoundAssetStorageError.busy }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        let mutation = model.beginEditorCompoundMutation(packID: packID)
+        do {
+            try await SoundPackDirectoryTransfer.rename(
+                packID: packID, name: name,
+                environment: importEnvironment, draftsDirectory: draftStore.directory)
+            withModelTransition {
+                model.finishEditorCompoundMutation(
+                    packID: packID, mutation: mutation, changedDespiteFailure: false)
+            }
+        } catch {
+            model.finishEditorCompoundMutationWithoutChange(mutation)
+            throw error
+        }
+    }
+
+    package var soundImportEnvironment: AudioImportEnvironment { importEnvironment }
+
+    package func beginSoundSelection(event: Event) -> SoundEventSelectionContext? {
+        let seed = model.editorProjectionSeed()
+        guard context.isSounds, !hasBusyOperation, seed.library.isFresh,
+            let packID = currentAICueDraft?.packID ?? seed.selectedPackID,
+            !seed.builtinPackIDs.contains(packID)
+        else { return nil }
+        let expected =
+            currentAICueDraft != nil
+            ? ManifestEventBindingExpectation.unmapped
+            : eventBindingExpectation(for: event, in: seed, packID: packID)
+        guard let expected else { return nil }
+        let selection = SoundEventSelectionContext(
+            id: UUID(), packID: packID,
+            event: event, expectedSource: expected, draft: currentAICueDraft)
+        soundSelectionContexts[selection.id] = selection
+        return selection
+    }
+
+    package func endSoundSelection(_ selection: SoundEventSelectionContext) {
+        soundSelectionContexts.removeValue(forKey: selection.id)
+    }
+
+    package func useExistingSound(
+        _ source: PackEventSoundSource, selection: SoundEventSelectionContext
+    ) -> Bool {
+        guard !hasBusyOperation, selectionIsCurrent(selection) else { return false }
+        if let draft = selection.draft {
+            let receipt = withModelTransition {
+                publishDraftSystemSound(draft, source: source, event: selection.event)
+            }
+            if case .assign(_, .success) = receipt {
+                endSoundSelection(selection)
+                Task { await draftStore.refresh() }
+                return true
+            }
+            return false
+        }
+        let result = withModelTransition {
+            model.assignSelectedSoundSource(
+                source, to: selection.event,
+                expectedEventBinding: selection.expectedSource)
+        }
+        if case .success = result {
+            endSoundSelection(selection)
+            return true
+        }
+        return false
+    }
+
+    package func prepareLocalSound(_ source: URL) async throws -> SoundLocalAudioPreview {
+        try await SoundLocalAudioPreview.prepare(source: source, environment: importEnvironment)
+    }
+
+    package func useLocalSound(
+        _ preview: SoundLocalAudioPreview, selection: SoundEventSelectionContext
+    ) async -> SoundPacksEditorOperationResult {
+        await useVerifiedSound(
+            bytes: preview.bytes, format: preview.format, name: preview.name,
+            isGenerated: false, selection: selection)
+    }
+
+    package func useHistorySound(
+        batchID: UUID, audioID: UUID, history: GenerationHistoryStore,
+        selection: SoundEventSelectionContext
+    ) async -> SoundPacksEditorOperationResult {
+        do {
+            let proof = try await history.audio(batchID: batchID, audioID: audioID)
+            return await useVerifiedSound(
+                bytes: proof.data, format: proof.format, name: proof.name,
+                isGenerated: true, selection: selection)
+        } catch { return .rejected(.importRejected) }
+    }
+
+    private func selectionIsCurrent(_ selection: SoundEventSelectionContext) -> Bool {
+        guard context.isSounds, soundSelectionContexts[selection.id] == selection else {
+            return false
+        }
+        let seed = model.editorProjectionSeed()
+        if let draft = selection.draft { return currentAICueDraft == draft }
+        return currentAICueDraft == nil && seed.selectedPackID == selection.packID
+            && seed.installedPackIDs.contains(selection.packID)
+            && !seed.builtinPackIDs.contains(selection.packID)
+            && eventBindingExpectation(for: selection.event, in: seed, packID: selection.packID)
+                == selection.expectedSource
+    }
+
+    private func useVerifiedSound(
+        bytes: Data, format: AudioFormat, name: AICueDisplayName, isGenerated: Bool,
+        selection: SoundEventSelectionContext
+    ) async -> SoundPacksEditorOperationResult {
+        guard !hasBusyOperation, selectionIsCurrent(selection) else {
+            return .rejected(.targetChanged)
+        }
+        assetMutationInProgress = true
+        defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
+        let seed = model.editorProjectionSeed()
+        guard
+            let target = try? AICueAdoptionTarget(packID: selection.packID, event: selection.event)
+        else {
+            return .rejected(.targetChanged)
+        }
+        let stage: AICuePackDraftStage?
+        if let draft = selection.draft {
+            guard
+                case .success(let value) = makeAICuePackDraftStage(
+                    draft, environment: importEnvironment)
+            else {
+                return .rejected(.mutationFailed)
+            }
+            stage = value
+        } else {
+            stage = nil
+        }
+        let environment =
+            stage.map { stagingEnvironment(for: $0, basedOn: importEnvironment) }
+            ?? importEnvironment
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-use-" + UUID().uuidString)
+        let source = temporary.appendingPathComponent("audio." + format.rawValue)
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                try ensurePrivateDirectoryExists(at: temporary)
+                try PrivateSoundAssetIO.write(bytes, to: source)
+            }.value
+        } catch {
+            if let stage { discardAICuePackDraftStage(stage) }
+            return .rejected(.importRejected)
+        }
+        defer {
+            Task.detached(priority: .utility) { try? FileManager.default.removeItem(at: temporary) }
+        }
+        let cancellation = SoundPackAudioImportCancellation()
+        let outcome = await runImportBindTransaction(
+            variant: stage != nil ? .adoptCueDraftPublish : .adoptCue, kind: .importAudio,
+            packID: selection.packID, event: selection.event, entrySeed: seed,
+            cancellation: cancellation,
+            job: SoundPackAudioImportJob(
+                requests: [
+                    AudioImportRequest(
+                        sourceURL: source,
+                        suggestedFileName: "sound-" + UUID().uuidString.lowercased() + "."
+                            + format.rawValue)
+                ],
+                packID: selection.packID, environment: environment),
+            opensWriteScope: stage == nil,
+            preWriteCurrency: { [self] _ in selectionIsCurrent(selection) },
+            postWriteCurrency: { [self] in selectionIsCurrent(selection) },
+            bind: { [self] imported in
+                mapAICueBindResult(
+                    model.bindEditorAICue(
+                        imported, displayName: name, target: target,
+                        expectedEventBinding: selection.expectedSource, environment: environment,
+                        removePackAttribution: isGenerated))
+            },
+            finalize: { [self] imported in
+                guard let stage else { return .finalized(imported: imported) }
+                guard !cancellation.isCancelled, selectionIsCurrent(selection) else {
+                    return .stale
+                }
+                switch publishAICuePackDraft(
+                    stage, importedFile: imported, environment: importEnvironment)
+                {
+                case .success(let value):
+                    currentAICueDraft = nil
+                    Task { await draftStore.refresh() }
+                    return .finalized(imported: value)
+                case .failure: return .failed(.mutationFailed)
+                }
+            }, discardRemnants: { if let stage { discardAICuePackDraftStage(stage) } })
+        if case .succeeded = outcome { endSoundSelection(selection) }
+        return mapAdoptionOutcome(outcome, target: target)
     }
 
     package func perform(
@@ -1130,8 +1425,9 @@ package final class SoundPacksEditorOwner: ObservableObject {
         return operationID
     }
 
+    private var assetMutationInProgress = false
     private var hasBusyOperation: Bool {
-        operationStates.values.contains { $0.phase == .busy }
+        assetMutationInProgress || operationStates.values.contains { $0.phase == .busy }
     }
 
     private func settleAsyncOperation(
@@ -1161,7 +1457,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         // and deliberately does not ask the shared library to scan.
         model.refreshEditorConfigProjection()
         let seed = model.editorProjectionSeed()
-        if action.kind.requiresWritableScope, !seed.writesAllowed {
+        if action.kind.requiresWritableScope, !context.isSounds, !seed.writesAllowed {
             consumeConfirmationAttemptIfCurrent(action)
             publish(from: seed)
             return .rejected(.scopeUnavailable)
@@ -1196,6 +1492,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             let applied = withModelTransition { model.selectPackForInspection(packID) }
             return applied ? .applied : .rejected(.packUnavailable)
         case .use(let packID):
+            guard !context.isSounds else { return .rejected(.staleAction) }
             return acceptScheduledOperation(
                 kind: .use,
                 packID: packID,
@@ -1219,13 +1516,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 event: nil,
                 binding: binding,
                 work: .copy(packID: packID, applyTarget: nil))
-        case .copyAndApply(let packID, let applyTarget):
-            return acceptScheduledOperation(
-                kind: .copy,
-                packID: packID,
-                event: nil,
-                binding: binding,
-                work: .copy(packID: packID, applyTarget: applyTarget))
+        case .copyAndApply:
+            return .rejected(.staleAction)
         case .requestImport(let packID, let bindTo):
             publish(from: seed)
             let permit = makeImportPermit(packID: packID, bindTo: bindTo, seed: seed)
@@ -1254,7 +1546,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
             return .nativeEffect(
                 .playAudio(
                     fileURL: fileURL,
-                    volume: AfplayVolume.clamped(seed.config.masterVolume)))
+                    volume: context.isSounds ? 1.0 : AfplayVolume.clamped(seed.config.masterVolume))
+            )
         case .previewForegroundImport(let fileURL, let packID):
             guard seed.installedPackIDs.contains(packID),
                 seed.selectedPackID == packID,
@@ -1267,7 +1560,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
             return .nativeEffect(
                 .playAudio(
                     fileURL: fileURL,
-                    volume: AfplayVolume.clamped(seed.config.masterVolume)))
+                    volume: context.isSounds ? 1.0 : AfplayVolume.clamped(seed.config.masterVolume))
+            )
         case .stopPreview:
             publish(from: seed)
             return .nativeEffect(.stopAudio)
@@ -1502,7 +1796,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             || (current.library == .loading(previousAvailable: true)
                 && current.snapshotRevision == binding.freshness.snapshotRevision)
         guard libraryPermitsExecution,
-            (!work.requiresWritableScope || current.writesAllowed),
+            (context.isSounds || !work.requiresWritableScope || current.writesAllowed),
             binding.freshness == makeFreshnessStamp(from: current)
         else {
             let failure: SoundPackEditorFailure =
@@ -1703,7 +1997,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
             mode: makeMode(from: seed),
             activities: makeActivities(seed: seed),
             pendingConfirmation: makeConfirmation(seed: seed),
-            pendingAnnouncement: announcementQueue.first?.announcement)
+            pendingAnnouncement: announcementQueue.first?.announcement,
+            draftPackIDs: Set(draftStore.snapshot.drafts.map(\.packID)))
         lastCommittedModelSeed = seed
         presentation = nextPresentation
     }
@@ -1741,8 +2036,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                 seed: seed,
                 signsWriteActions: !hasBusyOperation,
                 allowsCopy: true,
-                allowsCopyAndApply: route.isCopyAndApply
-                    && route.editTarget?.packID == $0.id,
+                allowsCopyAndApply: false,
                 copyAndApplyTarget: route.scope)
         }
         let selectedPack =
@@ -1753,7 +2047,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
         if case .ready = seed.library {
             if let packID = route.destinationPackID {
                 routeState =
-                    seed.installedPackIDs.contains(packID)
+                    (seed.installedPackIDs.contains(packID)
+                        || draftStore.snapshot.drafts.contains { $0.packID == packID })
                     ? .resolved(route)
                     : .staleTarget(packID: packID)
             } else {
@@ -1765,7 +2060,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         let selectedIsWritable =
             selectedPack.map {
                 seed.library.isFresh && !$0.isBuiltinReadOnly
-                    && $0.availability == .installed && seed.writesAllowed
+                    && $0.availability == .installed
                     && !hasBusyOperation
             } ?? false
         let writablePackID = selectedIsWritable ? selectedPack?.id : nil
@@ -2092,7 +2387,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
     ) -> (availability: EventPreviewAvailability, action: SoundPackEditorAction?) {
         let derivedAvailability = eventPreviewAvailability(
             coverage: row.coverage,
-            masterVolume: seed.config.masterVolume)
+            masterVolume: context.isSounds ? 1.0 : seed.config.masterVolume)
         let availability: EventPreviewAvailability
         if derivedAvailability.isAvailable,
             nativeTargets?.eventAudioURLs[row.event] == nil
@@ -2139,7 +2434,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         copyAndApplyTarget: PanelSoundScopeID = .global
     ) -> SoundPackEditorPackPresentation {
         let isInspected = card.id == seed.selectedPackID
-        let isActiveForScope = card.isSelected
+        let isActiveForScope = !context.isSounds && card.isSelected
         let isReferencedByAnyScope = seed.referencedPackIDs.contains(card.id)
         let isBuiltin = seed.builtinPackIDs.contains(card.id)
         let isAvailable = card.availability == .installed
@@ -2171,7 +2466,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             isCC0: card.isCC0,
             factoryIntegrity: card.factoryIntegrity,
             inspectAction: makeAction(.inspect, binding: .inspect(packID: card.id), seed: seed),
-            useAction: writesAllowed && !isActiveForScope
+            useAction: !context.isSounds && writesAllowed && !isActiveForScope
                 ? makeAction(.use, binding: .use(packID: card.id), seed: seed) : nil,
             toggleStarAction: writesAllowed && starControl.isEnabled
                 ? makeAction(.toggleStar, binding: .toggleStar(packID: card.id), seed: seed) : nil,
@@ -2258,6 +2553,10 @@ package final class SoundPacksEditorOwner: ObservableObject {
                                 .reveal,
                                 binding: .reveal(fileURL: $0),
                                 seed: seed)
+                        } : nil,
+                    previewAction: canTargetInventory
+                        ? file.nativeTargetURL.map {
+                            makeAction(.preview, binding: .preview(fileURL: $0), seed: seed)
                         } : nil)
             }
         }

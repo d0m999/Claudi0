@@ -20,6 +20,7 @@ package struct AICuePackDraftStage: Sendable, Equatable {
     package let payloadURL: URL
     package let packDirectoryURL: URL
     package let finalDirectoryURL: URL
+    package var requiresDraftRegistration = false
 
     package init(
         rootURL: URL,
@@ -79,12 +80,14 @@ package func makeAICuePackDraftStage(
         try? FileManager.default.removeItem(at: root)
         return .failure(.stagingFailed(reason: error.localizedDescription))
     }
-    return .success(
-        AICuePackDraftStage(
-            rootURL: root,
-            payloadURL: payload,
-            packDirectoryURL: pack,
-            finalDirectoryURL: final))
+    var stage = AICuePackDraftStage(
+        rootURL: root, payloadURL: payload,
+        packDirectoryURL: pack, finalDirectoryURL: final)
+    let registrations = environment.userPacksDirectory.deletingLastPathComponent()
+        .appendingPathComponent("sound-pack-drafts")
+    stage.requiresDraftRegistration = PrivateSoundAssetIO.exists(
+        registrations.appendingPathComponent(draft.packID + ".json"))
+    return .success(stage)
 }
 
 package func stagingEnvironment(
@@ -146,6 +149,26 @@ package func publishSoundPackDraft(
             manifest.id == stage.packDirectoryURL.lastPathComponent,
             !manifest.eventSources.isEmpty
         else { return .failure(.firstBindingInvalid) }
+        do {
+            let data = try PrivateSoundAssetIO.read(
+                stage.packDirectoryURL.appendingPathComponent("manifest.json"), maximum: 1_048_576)
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let value = json["name"] as? String
+            else { return .failure(.firstBindingInvalid) }
+            let name = try AICuePackName(value)
+            let registrations = environment.userPacksDirectory.deletingLastPathComponent()
+                .appendingPathComponent("sound-pack-drafts")
+            if stage.requiresDraftRegistration {
+                guard
+                    let draft = try SoundPackNames.registeredDraft(
+                        manifest.id, directory: registrations),
+                    draft.name == name
+                else { return .failure(.firstBindingInvalid) }
+            }
+            try SoundPackNames.validate(
+                name, excluding: manifest.id, environment: environment,
+                draftsDirectory: registrations)
+        } catch { return .failure(.firstBindingInvalid) }
         for source in manifest.eventSources.values {
             guard
                 source.audioURL(in: stage.packDirectoryURL, catalog: environment.systemSoundCatalog)

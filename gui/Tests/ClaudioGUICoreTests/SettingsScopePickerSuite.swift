@@ -26,6 +26,17 @@ func runSettingsScopePickerSuites() async {
             func controls(in view: NSView) -> [NSView] {
                 [view] + view.subviews.flatMap { controls(in: $0) }
             }
+            if destination == .sounds {
+                expect(
+                    !controls(in: probe.shell.view).contains {
+                        $0.accessibilityIdentifier() == identifier
+                    },
+                    "声音页完全移除工作区选择器")
+                expect(
+                    fixture.eventSettingsModel.selectedSoundScope == .global,
+                    "声音页浏览不修改组选项")
+                continue
+            }
             guard
                 let picker = controls(in: probe.shell.view).compactMap({ $0 as? NSPopUpButton })
                     .first(where: { $0.accessibilityIdentifier() == identifier })

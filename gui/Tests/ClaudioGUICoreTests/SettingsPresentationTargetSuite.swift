@@ -324,7 +324,7 @@ func runSettingsPresentationTargetSuites() {
 }
 
 @MainActor
-func runSettingsPresentationSliceSuites() {
+func runSettingsPresentationSliceSuites() async {
     suite("Settings presentation announcement：语义在单一 owner 穷尽本地化") {
         let english = ClaudioAppLanguage.english
         let zhHans = ClaudioAppLanguage.zhHans
@@ -651,46 +651,29 @@ func runSettingsPresentationSliceSuites() {
         )
     }
 
-    suite("Settings AI Cue gallery：credential/composer/playing 均进入 production root state") {
+    await suite("Settings AI Cue gallery：所有状态从真实包详情显式进入附属表单") {
         for scenario in PreviewFixtures.aiCueGalleryScenarios {
             let fixture = SettingsPresentationFixtures.generalLogin(
-                route: .events(scope: .global, event: .stop),
-                availability: PreviewFixtures.settingsRouteAvailability,
+                route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability,
                 aiCueScenario: scenario)
-            SettingsMountRecorder.reset()
-            let probe = SettingsRootNativeProbe(session: fixture.session)
-            let state = fixture.session.state.eventPresentation
-            let scenarioSession = scenario.previewSession
-
-            expect(
-                state.credentialSheetIsPresented == scenario.rendersCredentialSheet,
-                "\(scenario.rawValue) credential sheet visibility 必须来自 selection coherent state")
-            expect(
-                state.playingCandidateID == scenario.playingCandidateID,
-                "\(scenario.rawValue) playing candidate 必须来自 selection coherent state")
-            if let scenarioSession {
-                expect(
-                    fixture.session.state.routeResolution.route
-                        == .sounds(.editEvent(packID: "gallery-pack", event: scenarioSession.event))
-                        && fixture.aiCueViewModel.session
-                            == AICueComposerSession(
-                                packID: "gallery-pack", event: scenarioSession.event),
-                    "\(scenario.rawValue) composer 必须挂载 Sounds 包级 session 与对应事件详情")
-                expect(
-                    SettingsMountRecorder.identifiers.contains(
-                        "event-settings.ai-cue.composer"),
-                    "\(scenario.rawValue) 定向声音包编辑必须实际挂载 composer")
+            // Rendering a fixture never acts as a user click. Credential scenarios use the
+            // shared service entry; composer scenarios use the target event's native source menu.
+            if !scenario.rendersCredentialSheet {
+                fixture.eventSettingsSelection.dismissCredentialSheet()
             }
-            if scenario.rendersCredentialSheet {
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session,
+                size: NSSize(width: 960, height: 640))
+            await probe.settle()
+            if scenario.previewSession != nil {
                 expect(
-                    probe.hasAttachedSheet
-                        && SettingsMountRecorder.identifiers.contains(
-                            "event-settings.ai-cue.credential-sheet"),
-                    "\(scenario.rawValue) 必须经 production root 实际呈现并 mount credential sheet")
-            } else {
-                expect(
-                    !probe.hasAttachedSheet,
-                    "\(scenario.rawValue) 非 credential 场景不得产生 native attached sheet")
+                    probe.chooseSource(event: scenario.previewSession!.event, index: 0),
+                    "\(scenario.rawValue) 从目标事件打开真实表单")
+                probe.refresh()
+                expect(probe.hasAttachedSheet, "\(scenario.rawValue) 挂载同一窗口附属表单")
+            } else if scenario.rendersCredentialSheet {
+                await probe.settle()
+                expect(probe.hasAttachedSheet, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
             }
             probe.close()
         }

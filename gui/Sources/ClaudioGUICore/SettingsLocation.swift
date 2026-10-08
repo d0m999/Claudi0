@@ -47,16 +47,6 @@ package struct SettingsLocation: Equatable, Sendable {
             return SettingsRouteResolution(
                 route: route, failure: .staleSoundScope(workspaceRoute.scope))
         }
-        if case .sounds(let sounds) = route, let target = sounds.workspaceTarget {
-            guard sounds.scope == .workspace(target.id),
-                config.workspaceRules.contains(where: {
-                    $0.id == target.id && $0.directory == target.directory
-                })
-            else {
-                return SettingsRouteResolution(
-                    route: route, failure: .staleSoundScope(sounds.scope))
-            }
-        }
         if destination == .sounds, let viewedPackID,
             availability.soundPackSnapshotIsFresh,
             !availability.soundPackIDs.contains(viewedPackID)

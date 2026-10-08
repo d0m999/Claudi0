@@ -11,6 +11,7 @@ package struct SoundPacksEditorPresentation: Equatable {
     package let activities: [SoundPackEditorActivityPresentation]
     package let pendingConfirmation: SoundPackEditorConfirmation?
     package let pendingAnnouncement: SoundPackEditorAnnouncement?
+    package var draftPackIDs: Set<String> = []
 }
 
 package enum SoundPackLibraryPresentation: Equatable, Sendable {
@@ -243,6 +244,7 @@ package struct SoundPackEditorAudioPresentation: Identifiable, Equatable, Sendab
     package let assignments: [SoundPackEditorAssignmentPresentation]
     package let deleteAction: SoundPackEditorAction?
     package let revealAction: SoundPackEditorAction?
+    package var previewAction: SoundPackEditorAction? = nil
 }
 
 package struct SoundPackEditorAssignmentPresentation: Identifiable, Equatable, Sendable {

@@ -289,6 +289,9 @@ public func localizedEventPreviewHint(
 public struct SoundPacksWindowRoute: Sendable, Equatable, Hashable {
     public enum Destination: Sendable, Equatable, Hashable {
         case overview
+        case pack(packID: String)
+        case draft(packID: String)
+        case history
         case editEvent(packID: String, event: Event)
         /// Missing-sound entry from Events. The route carries the same explicit scope as the
         /// outer route, so the copy flow can apply the new user pack only to that target.
@@ -404,7 +407,7 @@ public struct SoundPacksWindowRoute: Sendable, Equatable, Hashable {
         switch destination {
         case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
             return (packID, event)
-        case .overview, .audio, .service, .panel:
+        case .overview, .pack, .draft, .history, .audio, .service, .panel:
             return nil
         }
     }
@@ -414,9 +417,10 @@ public struct SoundPacksWindowRoute: Sendable, Equatable, Hashable {
     /// carry an ``editTarget``.
     public var destinationPackID: String? {
         switch destination {
-        case .editEvent(let packID, _), .copyAndApply(let packID, _), .audio(let packID):
+        case .editEvent(let packID, _), .copyAndApply(let packID, _), .audio(let packID),
+            .pack(let packID), .draft(let packID):
             return packID
-        case .overview, .service, .panel:
+        case .overview, .history, .service, .panel:
             return nil
         }
     }

@@ -50,6 +50,14 @@ public enum ClaudioPaths {
         root.appendingPathComponent("packs", isDirectory: true)
     }
 
+    public static var generationHistoryDirectory: URL {
+        root.appendingPathComponent("generation-history", isDirectory: true)
+    }
+
+    public static var soundPackDraftsDirectory: URL {
+        root.appendingPathComponent("sound-pack-drafts", isDirectory: true)
+    }
+
     /// `~/.claudio/packs/<id>/` — a single user pack's directory.
     public static func packDirectory(id: String) -> URL {
         packsDirectory.appendingPathComponent(id, isDirectory: true)

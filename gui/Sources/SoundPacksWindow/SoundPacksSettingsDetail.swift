@@ -6,6 +6,9 @@ import ClaudioLocalization
 /// The session-side arbitration owns how this value changes; the view only renders it.
 package enum SoundPacksSettingsDetail: Equatable, Sendable {
     case overview
+    case pack(packID: String)
+    case draft(packID: String)
+    case history
     case event(packID: String, event: Event)
     case audio(packID: String)
     case service
@@ -13,7 +16,8 @@ package enum SoundPacksSettingsDetail: Equatable, Sendable {
 
     package var capturedPackID: String? {
         switch self {
-        case .event(let packID, _), .audio(let packID): packID
+        case .event(let packID, _), .audio(let packID), .pack(let packID), .draft(let packID):
+            packID
         default: nil
         }
     }
@@ -23,6 +27,9 @@ package enum SoundPacksSettingsDetail: Equatable, Sendable {
     package var routeDestination: SoundPacksWindowRoute.Destination {
         switch self {
         case .overview: .overview
+        case .pack(let id): .pack(packID: id)
+        case .draft(let id): .draft(packID: id)
+        case .history: .history
         case .event(let packID, let event): .editEvent(packID: packID, event: event)
         case .audio(let packID): .audio(packID: packID)
         case .service: .service
@@ -38,7 +45,9 @@ package enum SoundPacksSettingsDetail: Equatable, Sendable {
                 && sounds.selectedPack?.availability == .installed)
                 || sounds.draft?.packID == packID)
                 && sounds.eventRows.contains { $0.event == event }
-        case .audio(let packID):
+        case .draft(let packID):
+            return sounds.draft?.packID == packID
+        case .audio(let packID), .pack(let packID):
             return sounds.selectedPack?.id == packID
                 && sounds.selectedPack?.availability == .installed
         default: return true
@@ -50,7 +59,7 @@ package enum SoundPacksSettingsDetail: Equatable, Sendable {
     {
         guard targetIsAvailable(in: sounds) else { return [] }
         switch self {
-        case .overview: return sounds.eventRows
+        case .overview, .pack, .draft: return sounds.eventRows
         case .event(_, let event): return sounds.eventRows.filter { $0.event == event }
         default: return []
         }

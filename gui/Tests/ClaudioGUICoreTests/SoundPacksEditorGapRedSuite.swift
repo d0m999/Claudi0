@@ -519,16 +519,16 @@ func runSoundPacksEditorGapRedSuites() async {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a", "pack-b"])
             let owner = fixture.owner
-            let contextA = SoundPacksEditorContext.sounds(
-                route: .overview,
+            let contextA = SoundPacksEditorContext.events(
+                route: EventSettingsWindowRoute(scope: .global),
                 requestRevision: 350)
             _ = owner.send(.activate(contextA))
             await waitForSoundEditorReady(owner, library: fixture.library)
-            guard case .sounds(let sounds) = owner.presentation.mode,
+            guard case .events(let sounds) = owner.presentation.mode,
                 let useB = sounds.packs.first(where: { $0.id == "pack-b" })?.useAction,
                 case .accepted(let operationID) = owner.send(.invoke(useB))
             else {
-                expect(false, "[129-GAP-RED] sync epoch fixture 必须 accepted use-B")
+                expect(false, "[129-GAP-RED] sync epoch fixture 必须 accepted use B")
                 return
             }
             let configBefore = try? Data(contentsOf: fixture.configFile)
@@ -539,7 +539,9 @@ func runSoundPacksEditorGapRedSuites() async {
                 },
                 "[129-GAP-RED] accepted sync action 必须先在同栈发布 busy")
 
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 351)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 351)))
             _ = owner.send(.activate(contextA))
             await owner.waitForScheduledOperationExitForTesting(operationID)
 

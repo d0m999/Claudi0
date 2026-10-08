@@ -10,8 +10,11 @@ package func settingsSoundsImpliedDetail(
     switch destination {
     case .overview:
         return .overview
-    case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
-        return .event(packID: packID, event: event)
+    case .pack(let id): return .pack(packID: id)
+    case .draft(let id): return .draft(packID: id)
+    case .history: return .history
+    case .editEvent(let packID, _), .copyAndApply(let packID, _):
+        return .pack(packID: packID)
     case .audio(let packID):
         return .audio(packID: packID)
     case .service:
@@ -89,6 +92,7 @@ package struct SettingsSoundsDetailCopyTransition: Equatable, Sendable {
         guard self.detail == detail, let packID = resultPackID(in: presentation)
         else { return detail }
         switch detail {
+        case .pack: return .pack(packID: packID)
         case .event(_, let event): return .event(packID: packID, event: event)
         case .audio: return .audio(packID: packID)
         default: return detail
@@ -176,7 +180,9 @@ package struct SettingsSoundsDetailArbitration {
             // Only leaving a non-overview detail cleans it up; initial resolution may already
             // have a composer.
             if next != .overview { effects.stopPreviewAndEndAISession = true }
-            if sounds.draft != nil { effects.cancelAICueDraft = true }
+            if let draft = sounds.draft, reduced.capturedPackID != draft.packID {
+                effects.cancelAICueDraft = true
+            }
             copyTransition = nil
             unavailableDetailIdentity = nil
             next = reduced
@@ -218,7 +224,13 @@ package struct SettingsSoundsDetailArbitration {
             return previousSounds.draft?.packID
         }()
         if let draftID = sounds.draft?.packID, draftID != previousDraftID {
-            next = .event(packID: draftID, event: .taskStart)
+            next = .draft(packID: draftID)
+        }
+
+        if case .draft(let id) = next, sounds.draft == nil,
+            sounds.selectedPack?.id == id, sounds.selectedPack?.availability == .installed
+        {
+            next = .pack(packID: id)
         }
 
         if next.unavailableFocusTarget(in: sounds) != nil {

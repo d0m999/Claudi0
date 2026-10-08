@@ -159,9 +159,11 @@ func runSoundPacksEditorMutationSuites() async {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a", "pack-b"])
             let owner = fixture.owner
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 10)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 10)))
             await waitForSoundEditorReady(owner, library: fixture.library)
-            guard case .sounds(let initial) = owner.presentation.mode,
+            guard case .events(let initial) = owner.presentation.mode,
                 let useB = initial.packs.first(where: { $0.id == "pack-b" })?.useAction
             else {
                 expect(false, "ready presentation 必须签发 use pack-b capability")
@@ -218,9 +220,11 @@ func runSoundPacksEditorMutationSuites() async {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["pack-a", "pack-c"])
             let owner = fixture.owner
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 11)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 11)))
             await waitForSoundEditorReady(owner, library: fixture.library)
-            guard case .sounds(let initial) = owner.presentation.mode,
+            guard case .events(let initial) = owner.presentation.mode,
                 let useC = initial.packs.first(where: { $0.id == "pack-c" })?.useAction,
                 case .accepted(let completedID) = owner.send(.invoke(useC))
             else {
@@ -251,7 +255,7 @@ func runSoundPacksEditorMutationSuites() async {
                 "use completion 必须 settle 原 operation ID")
             expect(object?["selected_pack"] as? String == "pack-c", "use 必须写入目标 pack-c")
             expect((object?["future"] as? [String: Bool])?["keep"] == true, "use 必须保留未知 config 字段")
-            if case .sounds(let settled) = owner.presentation.mode {
+            if case .events(let settled) = owner.presentation.mode {
                 expect(
                     settled.selectedPack?.id == "pack-c"
                         && settled.selectedPack?.isActiveForScope == true,
@@ -1074,18 +1078,15 @@ func runSoundPacksEditorMutationSuites() async {
 
             expect(
                 owner.send(.invoke(confirmation.confirmAction))
-                    == .rejected(.scopeUnavailable),
-                "同时 stale capability + invalid Surface 时必须先返回 latest scope failure")
+                    == .rejected(.staleConfirmation),
+                "Sounds 不再检查旧 scope；过期确认能力必须拒绝")
             expect(
                 owner.presentation.pendingConfirmation == nil,
                 "scope failure 的第一次 confirm 尝试仍必须同栈消费并清 UI")
             if case .sounds(let failedScope) = owner.presentation.mode {
                 expect(
-                    failedScope.scope
-                        == .unavailable(
-                            scope: .global,
-                            reason: .scopeUnavailable),
-                    "malformed Surface config 必须保留 requested Surface 显示身份，且不得借 Global 回落恢复写权")
+                    failedScope.packs.allSatisfy { $0.useAction == nil },
+                    "Sounds 不得因旧 scope 或损坏配置签发组使用能力")
             } else {
                 expect(false, "scope failure 后必须保持 Sounds failure slice")
             }

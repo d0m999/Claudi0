@@ -116,7 +116,7 @@ func runSoundPacksEditorNativeTargetSuites() async {
         }
     }
 
-    await suite("Sound editor native target：mapped preview 携带 shared URL 与 Global master volume") {
+    await suite("Sound editor native target：mapped preview 携带 shared URL 与 声音页相对增益 1.0") {
         await withTempDirectory { root in
             let packDirectory = root.appendingPathComponent("packs/pack-a", isDirectory: true)
             let audioFile = packDirectory.appendingPathComponent("stop.mp3")
@@ -143,8 +143,8 @@ func runSoundPacksEditorNativeTargetSuites() async {
             expect(
                 fixture.owner.send(.invoke(preview))
                     == .nativeEffect(
-                        .playAudio(fileURL: audioFile.standardizedFileURL, volume: 0.43)),
-                "preview effect 必须携带已验证 URL 与 Global master volume，不让 adapter 重算")
+                        .playAudio(fileURL: audioFile.standardizedFileURL, volume: 1.0)),
+                "preview effect 必须携带已验证 URL 与 声音页相对增益 1.0，不让 adapter 重算")
         }
     }
 
@@ -291,7 +291,7 @@ func runSoundPacksEditorNativeTargetSuites() async {
                     action = signed
                     expectedEffect = .playAudio(
                         fileURL: mappedFile.standardizedFileURL,
-                        volume: 0.43)
+                        volume: 1.0)
                     targetToMove = mappedFile
                 case .inventoryReveal:
                     guard

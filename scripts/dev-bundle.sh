@@ -169,6 +169,13 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSCalendarsUsageDescription</key><string>claudi0 checks only whether a non-all-day busy event is active to temporarily quiet automatic sounds. It never stores event details.</string>
   <key>NSCalendarsFullAccessUsageDescription</key><string>claudi0 checks only whether a non-all-day busy event is active to temporarily quiet automatic sounds. It never stores event details.</string>
   <key>LSUIElement</key><true/>
+  <key>UTExportedTypeDeclarations</key>
+  <array><dict>
+    <key>UTTypeIdentifier</key><string>com.claudio.sound-pack</string>
+    <key>UTTypeDescription</key><string>Claudio Sound Pack</string>
+    <key>UTTypeConformsTo</key><array><string>com.apple.package</string><string>public.directory</string></array>
+    <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>claudiopack</string></array></dict>
+  </dict></array>
 </dict>
 </plist>
 PLIST

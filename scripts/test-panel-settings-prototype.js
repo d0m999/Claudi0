@@ -769,10 +769,33 @@ test("informational banners have a close action and reading track without an ext
   assert.equal(context.S.banners.length, 0);
 });
 
-// Whole-pack import was removed from the confirmed integrated prototype. Audio import in the
-// native event editor is a different capability and remains available.
-test("whole-pack import has no control, confirmation, demo creation or event binding", () => {
-  assert.doesNotMatch(html, /importPack|data-import-pack|导入声音包|Import sound pack/);
+// D51 and the D55 overall confirmation restore whole-pack import at the pack-list level.
+// Exercise the approved view's actual pure reducer; no browser or user files are involved.
+test("whole-pack import creates an independent pack and preserves existing selections", () => {
+  assert.match(html, /data-act="import-pack"/);
+  const source = scripts[0][1];
+  const start = source.indexOf("  const Model = {");
+  const end = source.indexOf("  let state=bridge.read();", start);
+  assert.ok(start >= 0 && end > start, "the approved view exposes its reducer seam");
+  const context = vm.createContext({});
+  new vm.Script(`
+    const copy = value => JSON.parse(JSON.stringify(value));
+    const audio = (id, name, filename, duration=1.4) => ({id,name,filename,duration});
+    const events = ['task_start','stop','stop_failure','notification','subagent_stop'].map(id=>({id,name:id}));
+    const sampleService='demo';
+    ${source.slice(start, end)}
+    globalThis.reduce = action => Model.reduce(globalThis.input,action);
+  `).runInContext(context);
+  const original = { packs: [{id:"existing",name:"Existing",bindings:{stop:{type:"file",id:"close.wav"}},files:[]}], scopes:[{id:"default",pack:"existing"}], serial:1 };
+  context.input = structuredClone(original);
+  const result = JSON.parse(JSON.stringify(context.reduce({type:"import-pack"})));
+  assert.equal(result.state.packs.length, 2);
+  assert.deepEqual(result.state.packs[0], original.packs[0]);
+  assert.deepEqual(result.state.scopes, original.scopes);
+  assert.equal(Object.keys(result.state.packs[1].bindings).length, 5);
+  assert.deepEqual(context.input, original, "the reducer must not mutate its input");
+  context.input=result.state;
+  assert.ok(context.reduce({type:"import-pack"}).error, "re-import must preserve the existing imported pack");
 });
 
 for (const outcome of ["exact", "requested", "fallback", "failed"]) {

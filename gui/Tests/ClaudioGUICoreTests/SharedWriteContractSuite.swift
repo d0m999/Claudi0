@@ -11,9 +11,11 @@ func runSharedWriteContractSuites() async {
             let composition = try! builder.build()
             let model = composition.eventSettingsModel
             let owner = composition.soundPacksEditorOwner
-            _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 1)))
+            _ = owner.send(
+                .activate(
+                    .events(route: EventSettingsWindowRoute(scope: .global), requestRevision: 1)))
             await waitForSoundEditorReady(owner, library: composition.soundPackLibrary)
-            guard case .sounds(let sounds) = owner.presentation.mode,
+            guard case .events(let sounds) = owner.presentation.mode,
                 let use = sounds.packs.first(where: { $0.id == "pack-b" })?.useAction
             else { expect(false, "真实共享库必须签发 pack-b 使用动作"); return }
             let configFile = root.appendingPathComponent("config.json")

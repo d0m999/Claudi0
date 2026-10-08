@@ -74,6 +74,10 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
             switch route.destination {
             case .overview:
                 return [SettingsDestination.sounds.rawValue, scope]
+            case .pack(let id), .draft(let id):
+                return [SettingsDestination.sounds.rawValue, id]
+            case .history:
+                return [SettingsDestination.sounds.rawValue, "history"]
             case .editEvent(let packID, let event), .copyAndApply(let packID, let event):
                 return [
                     SettingsDestination.sounds.rawValue, scope, packID, event.cliName,
@@ -145,7 +149,8 @@ package struct SettingsSoundPackShellProjection: Equatable {
             integrationSurfaces: publishedSurfaces,
             eventScopes: Set([.global] + config.workspaceRules.map { .workspace($0.id) }),
             soundScopes: Set([.global] + config.workspaceRules.map { .workspace($0.id) }),
-            soundPackIDs: editorPresentation.installedPackIDs,
+            soundPackIDs: editorPresentation.installedPackIDs.union(
+                editorPresentation.draftPackIDs),
             soundPackSnapshotIsFresh: editorPresentation.library.isFresh,
             events: Set(Event.allCases))
         pendingAnnouncement = editorPresentation.pendingAnnouncement
@@ -235,12 +240,7 @@ public func resolveSettingsRoute(
             failure = nil
         }
     case .sounds(let soundsRoute):
-        if let scopeFailure = settingsScopeFailure(
-            soundsRoute.scope,
-            availableScopes: availability.soundScopes)
-        {
-            failure = scopeFailure
-        } else if let packID = soundsRoute.destinationPackID,
+        if let packID = soundsRoute.destinationPackID,
             packID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             failure = .invalidSoundPackID

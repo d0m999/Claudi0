@@ -9,21 +9,20 @@ func runAICueDescriptionSuites() {
     suite("AI 提示音原生描述控件：生成时不挂载可编辑输入器") {
         for scenario in [PreviewFixtures.AICueGalleryScenario.generating, .editing] {
             let fixture = aiCueDescriptionPackFixture(scenario)
-            let hostingView = NSHostingView(rootView: SettingsRootView(session: fixture.session))
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1_240, height: 820),
-                styleMask: [.titled], backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            window.contentView = hostingView
-            hostingView.layoutSubtreeIfNeeded()
-            let inputs = aiCueNativeTextInputs(in: hostingView)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session,
+                size: NSSize(width: 1_240, height: 820))
+            probe.refresh()
+            expect(probe.chooseSource(event: .stop, index: 0), "描述测试从事件显式打开 AI 表单")
+            probe.refresh()
+            expect(probe.hasAttachedSheet, "测试必须挂载真实附属表单")
+            let inputs = probe.sheetContentView.map { aiCueNativeTextInputs(in: $0) } ?? []
             if scenario == .generating {
                 expect(inputs.isEmpty, "生成中的生产树必须移除 NSTextView，不只禁用其 SwiftUI 外壳")
             } else {
                 expect(inputs.contains(where: \.isEditable), "编辑态必须实际挂载可编辑输入器，不能空树假通过")
             }
-            window.close()
-            withExtendedLifetime((window, hostingView)) {}
+            probe.close()
         }
     }
 }
@@ -32,90 +31,66 @@ func runAICueDescriptionSuites() {
 /// and yields the main actor so production focus lifecycle tasks can actually execute.
 @MainActor
 func runAICueDescriptionFocusSuites() async {
-    await suite("AI 提示音原生描述焦点：初次挂载与取消后可直接编辑") {
-        let allScenarios: [(PreviewFixtures.AICueGalleryScenario, UInt16?, String)] = [
-            (.editing, nil, ""),
-            (.generating, 49, " "),
-            (.generating, 36, "\r"),
-        ]
-        let scenarios =
-            CommandLine.arguments.contains("--ai-cue-native-focus-return-only")
-            ? [allScenarios[2]] : allScenarios
-        let rounds = CommandLine.arguments.contains("--ai-cue-native-focus-stress") ? 10 : 1
-        for (scenario, keyCode, characters) in (0..<rounds).flatMap({ _ in scenarios }) {
+    await suite("AI 提示音原生描述焦点：附属表单初次打开与取消生成后可直接编辑") {
+        for scenario in [PreviewFixtures.AICueGalleryScenario.editing, .generating] {
             let fixture = aiCueDescriptionPackFixture(scenario)
-            let hostingView = NSHostingView(rootView: SettingsRootView(session: fixture.session))
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1_240, height: 820),
-                styleMask: [.titled], backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            window.contentView = hostingView
-            window.center()
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session,
+                size: NSSize(width: 1_240, height: 820))
+            defer { probe.close() }
+            await probe.settle()
+            NSApp.activate(ignoringOtherApps: true)
+            expect(probe.chooseSource(event: .stop, index: 0), "从事件明确进入附属表单")
+            await probe.settle()
+            guard let window = probe.sheetWindow, let content = window.contentView else {
+                expect(false, "必须在真实附属表单上检查焦点"); continue
+            }
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
-            _ = fixture.session.send(.windowPhaseChanged(.key))
-            defer { window.orderOut(nil); window.close() }
-            hostingView.layoutSubtreeIfNeeded()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            let isKeyWindow = await aiCueWaitForKeyWindow(window)
-            // Focus tasks mutate SwiftUI state after the initial native layout. Flush that
-            // pending layout before synchronous sendEvent; a timed sleep alone is not a barrier.
-            hostingView.layoutSubtreeIfNeeded()
-            expect(isKeyWindow, "焦点门禁必须在真正的 key window 上执行")
-            guard isKeyWindow else { continue }
+            expect(await aiCueWaitForKeyWindow(window), "焦点门禁必须在真正的 key sheet 上执行")
             let originalDescription = fixture.aiCueViewModel.soundDescription
-            if let keyCode {
-                expect(aiCueNativeTextInputs(in: hostingView).isEmpty, "生成态没有可写输入器")
-                expect(fixture.aiCueViewModel.phase == .generating, "按键前必须仍处于生成态")
-                expect(
-                    aiCueSendKey(to: window, keyCode: 11, characters: "b"),
-                    "必须经由真实窗口派发非激活按键")
-                expect(fixture.aiCueViewModel.phase == .generating, "非激活按键不能取消生成")
-                expect(
-                    aiCueSendKey(
-                        to: window, keyCode: 49, characters: " ", modifiers: .command),
-                    "必须经由真实窗口派发带修饰键的空格")
-                expect(fixture.aiCueViewModel.phase == .generating, "Command-Space 不能取消生成")
-                expect(
-                    aiCueSendKey(to: window, keyCode: keyCode, characters: characters),
-                    "必须经由真实窗口派发取消激活按键")
+            if scenario == .generating {
+                expect(aiCueNativeTextInputs(in: content).isEmpty, "生成态不挂载可写输入器")
+                expect(aiCueSendKey(to: window, keyCode: 11, characters: "b"), "生成期间经窗口派发普通按键")
+                expect(fixture.aiCueViewModel.phase == .generating, "普通按键不能取消生成")
+                expect(probe.pressControl("settings.sounds.generation.cancel"), "显式取消同一个后台任务")
+                await probe.settle()
             }
-            let deadline = Date(timeIntervalSinceNow: 1)
+            let deadline = Date(timeIntervalSinceNow: 2)
             while Date() < deadline,
-                !aiCueNativeTextInputs(in: hostingView).contains(where: {
+                !aiCueNativeTextInputs(in: content).contains(where: {
                     $0.isEditable && window.firstResponder === $0
                 })
             {
                 try? await Task.sleep(nanoseconds: 10_000_000)
+                content.layoutSubtreeIfNeeded()
             }
             expect(
-                fixture.aiCueViewModel.phase == .editing,
-                "\(scenario.rawValue)/\(keyCode ?? 0)：键盘取消必须恢复编辑态")
-            expect(
-                fixture.aiCueViewModel.soundDescription == originalDescription,
-                "取消必须保留原描述")
-            expect(
-                aiCueNativeTextInputs(in: hostingView).contains(where: {
+                fixture.aiCueViewModel.phase == .editing
+                    && fixture.aiCueViewModel.soundDescription == originalDescription,
+                "取消保留描述并恢复编辑态")
+            guard
+                let editor = aiCueNativeTextInputs(in: content).first(where: {
                     $0.isEditable && window.firstResponder === $0
-                }),
-                "\(scenario.rawValue)：不点击输入框也必须让真实 NSTextView 成为 first responder")
-            if let editor = aiCueNativeTextInputs(in: hostingView).first(where: {
-                $0.isEditable && window.firstResponder === $0
-            }) {
-                editor.setSelectedRange(NSRange(location: editor.string.utf16.count, length: 0))
+                })
+            else {
                 expect(
-                    aiCueSendKey(to: window, keyCode: 49, characters: " "),
-                    "编辑态必须经由真实窗口派发空格")
-                let inputDeadline = Date(timeIntervalSinceNow: 1)
-                while Date() < inputDeadline,
-                    fixture.aiCueViewModel.soundDescription == originalDescription
-                {
-                    try? await Task.sleep(nanoseconds: 10_000_000)
-                }
-                expect(
-                    fixture.aiCueViewModel.soundDescription == originalDescription + " ",
-                    "恢复编辑后空格必须写入描述，不能被取消激活处理器吞掉")
+                    false,
+                    "无需点击描述输入器即可成为 first responder：\(scenario.rawValue)；实际 \(String(describing: window.firstResponder))；输入器 \(aiCueNativeTextInputs(in: content).map { String(describing: $0.window) + String($0.isEditable) })"
+                ); continue
             }
+            expect(true, "实际 NSTextView 持有焦点")
+            editor.setSelectedRange(NSRange(location: editor.string.utf16.count, length: 0))
+            expect(aiCueSendKey(to: window, keyCode: 49, characters: " "), "真实键盘空格进入描述")
+            await probe.settle()
+            expect(
+                fixture.aiCueViewModel.soundDescription == originalDescription + " ", "空格不被旧取消处理器吞掉"
+            )
+            expect(
+                aiCueSendKey(to: window, keyCode: 53, characters: "\u{001b}"), "Escape 经真实窗口关闭附属表单")
+            await probe.settle()
+            expect(
+                !probe.hasAttachedSheet && fixture.aiCueViewModel.session == nil, "Escape 撤销采用上下文")
         }
     }
 }

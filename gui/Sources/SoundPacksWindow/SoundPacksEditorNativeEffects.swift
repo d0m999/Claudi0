@@ -11,8 +11,21 @@ import UniformTypeIdentifiers
 package protocol SoundPacksEditorNativeEffectsAdapter: AnyObject {
     func selectAudioFiles(allowsMultipleSelection: Bool) -> [URL]
     func playAudio(fileURL: URL, volume: Double) -> TimeInterval?
+    func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool
     func stopAudio()
     func revealInFinder(fileURL: URL)
+}
+
+extension SoundPacksEditorNativeEffectsAdapter {
+    package func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        playAudio(fileURL: fileURL, volume: volume) != nil
+    }
 }
 
 /// Native lifecycle signals whose reliability differs between retained AppKit windows and their
@@ -28,12 +41,47 @@ package enum SoundPacksEditorNativeLifecycleEvent: Sendable {
 @MainActor
 package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     @Published package private(set) var previewFailed = false
+    @Published package private(set) var playingSoundID: String?
+    private var playbackID: UUID?
     private let adapter: any SoundPacksEditorNativeEffectsAdapter
     private var operationTasks: [UUID: Task<Void, Never>] = [:]
     private var hasActiveAudio = false
 
     package init(adapter: any SoundPacksEditorNativeEffectsAdapter) {
         self.adapter = adapter
+    }
+
+    package func toggleSoundPreview(id: String, fileURL: URL) {
+        if playingSoundID == id { stopActiveAudio(); return }
+        stopActiveAudio()
+        let token = UUID()
+        playbackID = token
+        playingSoundID = id
+        hasActiveAudio = true
+        previewFailed = false
+        let started = adapter.playAudio(fileURL: fileURL, volume: 1.0) { [weak self] success in
+            guard let self, self.playbackID == token else { return }
+            self.playbackID = nil
+            self.playingSoundID = nil
+            self.hasActiveAudio = false
+            self.previewFailed = !success
+        }
+        if !started {
+            playbackID = nil
+            playingSoundID = nil
+            hasActiveAudio = false
+            previewFailed = true
+        }
+    }
+
+    package func toggleSoundPreview(
+        id: String, action: SoundPackEditorAction, owner: SoundPacksEditorOwner
+    ) {
+        if playingSoundID == id { stopActiveAudio(); return }
+        guard case .nativeEffect(.playAudio(let url, _)) = owner.send(.invoke(action)) else {
+            return
+        }
+        toggleSoundPreview(id: id, fileURL: url)
     }
 
     package func dispatch(
@@ -145,6 +193,8 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
     }
 
     private func stopActiveAudio() {
+        playbackID = nil
+        playingSoundID = nil
         guard hasActiveAudio else { return }
         hasActiveAudio = false
         adapter.stopAudio()
@@ -199,6 +249,7 @@ package final class SoundPacksEditorNativeEffectsDispatcher: ObservableObject {
         from result: SoundPacksEditorOperationResult,
         owner: SoundPacksEditorOwner
     ) {
+        if case .sounds = owner.presentation.mode { return }
         let action: SoundPackEditorAction?
         switch result {
         case .imported(let outcome):
@@ -240,6 +291,13 @@ package final class SystemSoundPacksEditorNativeEffectsAdapter:
 
     package func playAudio(fileURL: URL, volume: Double) -> TimeInterval? {
         previewPlayer.playWithDuration(fileAt: fileURL, volume: Float(volume))
+    }
+
+    package func playAudio(
+        fileURL: URL, volume: Double,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) -> Bool {
+        previewPlayer.play(fileAt: fileURL, volume: Float(volume), onCompletion: completion)
     }
 
     package func stopAudio() {

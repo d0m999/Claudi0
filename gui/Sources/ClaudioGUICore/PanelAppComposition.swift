@@ -108,6 +108,9 @@ package final class PanelAppComposition {
     package let integrationsModel: IntegrationDestinationModel
     package let globalShortcutSettings: GlobalShortcutSettingsModel
     package let aiCueViewModel: AICueGenerationViewModel
+    package let generationHistory: GenerationHistoryStore
+    package var generationCoordinator: AICueGenerationCoordinator { aiCueViewModel.coordinator }
+    package var soundPackDrafts: SoundPackDraftStore { soundPacksEditorOwner.draftStore }
     package let activityDiagnostics: ActivityDiagnosticsModel
     package let aboutSettings: AboutSettingsModel
 
@@ -179,8 +182,12 @@ package final class PanelAppComposition {
             adapter: adapters.globalHotKeys,
             persistence: adapters.shortcutPersistence,
             actionHandler: actions.performGlobalShortcut)
+        generationHistory = GenerationHistoryStore(
+            directory: environment.aiCueTemporaryRoot
+                .deletingLastPathComponent().appendingPathComponent("generation-history"))
         aiCueViewModel = try adapters.makeAICueViewModel(
             environment.aiCueTemporaryRoot, environment.audioEnvironment.durationProbe)
+        aiCueViewModel.installGenerationHistory(generationHistory)
         activityDiagnostics = adapters.makeActivityDiagnostics()
         aboutSettings = adapters.makeAboutSettings(hostIntegrations.safeSurfaceFacts)
     }

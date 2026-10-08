@@ -88,7 +88,9 @@ public final class AICueGenerationViewModel: ObservableObject {
     private let providerPreferences: AICueProviderPreferences
     private var sessionRevision: UInt64 = 0
     private var credentialStatusRevision: UInt64 = 0
-    private var generationTask: Task<Void, Never>?
+    package private(set) var coordinator: AICueGenerationCoordinator
+    private var coordinatorSubscription: AnyCancellable?
+    private var observesCurrentTask = false
     private var adoptionTask: Task<Void, Never>?
 
     public init(
@@ -96,8 +98,18 @@ public final class AICueGenerationViewModel: ObservableObject {
         generator: any AICueGenerating,
         providerProfileID: AICueProviderProfileID? = nil,
         registry: AICueProviderRegistry = AICueProviderRegistry(),
-        providerPreferences: AICueProviderPreferences = AICueProviderPreferences()
+        providerPreferences: AICueProviderPreferences = AICueProviderPreferences(),
+        generationHistoryDirectory: URL? = nil
     ) {
+        // Standalone view-model fixtures get isolated storage. App composition installs its one
+        // durable store before any user interaction; no disk operation occurs in this initializer.
+        coordinator = AICueGenerationCoordinator(
+            generator: generator,
+            history: GenerationHistoryStore(
+                directory: generationHistoryDirectory
+                    ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                        "claudio-composer-" + UUID().uuidString.lowercased())),
+            registry: registry)
         self.credentialManager = credentialManager
         self.generator = generator
         self.registry = registry
@@ -106,6 +118,7 @@ public final class AICueGenerationViewModel: ObservableObject {
         self.providerProfileID =
             (try? registry.profile(for: preferredProfileID).id)
             ?? providerPreferences.selectedProfileID()
+        observeCoordinator()
     }
 
     #if DEBUG
@@ -145,6 +158,8 @@ public final class AICueGenerationViewModel: ObservableObject {
         generation = previewState.generation
         failure = previewState.failure
         adoptionOutcome = previewState.adoptionOutcome
+        coordinator.applyGalleryState(previewState)
+        observesCurrentTask = previewState.phase == .generating
     }
     #endif
 
@@ -207,6 +222,7 @@ public final class AICueGenerationViewModel: ObservableObject {
 
     public func returnToDescription() {
         guard phase != .adopting else { return }
+        coordinator.cancel()
         invalidateVisibleGeneration()
     }
 
@@ -230,7 +246,7 @@ public final class AICueGenerationViewModel: ObservableObject {
     }
 
     /// A profile switch is an explicit region/provider choice. It persists only the allowlisted ID,
-    /// cancels the old generation and invalidates every unadopted candidate without touching an
+    /// detaches the visible candidate context while the current task keeps its frozen profile and
     /// already adopted sound.
     public func selectProviderProfile(_ profileID: AICueProviderProfileID) throws {
         guard
@@ -312,77 +328,58 @@ public final class AICueGenerationViewModel: ObservableObject {
         }
     }
 
-    public func startGeneration(locale: String) {
-        guard session != nil, phase != .generating, phase != .adopting else { return }
-        let deadline = AICueGenerationDeadline.startingNow(
-            description: soundDescription,
-            locale: locale,
-            profileID: providerProfileID,
-            registry: registry)
+    /// Installs the durable application store before the composition becomes reachable.
+    package func installGenerationHistory(_ history: GenerationHistoryStore) {
+        precondition(coordinator.state == .idle && session == nil)
+        coordinator = AICueGenerationCoordinator(
+            generator: generator, history: history, registry: registry)
+        observeCoordinator()
+    }
 
-        generationTask?.cancel()
-        if let previous = generation {
-            discard(previous)
+    private func observeCoordinator() {
+        coordinatorSubscription = coordinator.$state.sink { [weak self] state in
+            self?.receiveGenerationState(state)
         }
+    }
+
+    private func receiveGenerationState(_ state: AICueGenerationTaskState) {
+        guard observesCurrentTask, session != nil else { return }
+        switch state {
+        case .generating, .saving:
+            phase = .generating
+        case .saved:
+            generation = coordinator.generation
+            displayName = generation?.plan.suggestedDisplayName ?? ""
+            phase = .candidatesReady
+            failure = nil
+            Task { await refreshCredentialStatus() }
+        case .pending:
+            generation = coordinator.generation
+            displayName = generation?.plan.suggestedDisplayName ?? ""
+            phase = .candidatesReady
+            failure = .generation(.temporaryStorageUnavailable)
+        case .failed(let error):
+            generation = nil
+            phase = .editing
+            failure = .generation(error)
+            Task { await refreshCredentialStatus() }
+        case .idle:
+            generation = nil
+            phase = .editing
+        }
+    }
+
+    public func startGeneration(locale: String) {
+        guard session != nil, phase != .adopting, coordinator.generationBlock == nil else { return }
         generation = nil
         adoptionOutcome = nil
         adoptingCandidateID = nil
         displayName = ""
         failure = nil
-        phase = .generating
         sessionRevision &+= 1
-        let revision = sessionRevision
-        let description = soundDescription
-        let generator = self.generator
-        let providerProfileID = self.providerProfileID
-
-        generationTask = Task { [weak self] in
-            let result: Result<AICueGeneration, AICueGenerationError>
-            do {
-                result = .success(
-                    try await generator.generate(
-                        description: description,
-                        locale: locale,
-                        providerProfileID: providerProfileID,
-                        deadline: deadline))
-            } catch let error as AICueGenerationError {
-                result = .failure(error)
-            } catch is CancellationError {
-                result = .failure(.cancelled)
-            } catch {
-                result = .failure(.provider(.transportFailure))
-            }
-
-            guard let self else {
-                if case .success(let generation) = result {
-                    await generator.discard(generationID: generation.id)
-                }
-                return
-            }
-            guard self.sessionRevision == revision, !Task.isCancelled else {
-                if case .success(let generation) = result {
-                    await generator.discard(generationID: generation.id)
-                }
-                return
-            }
-            self.generationTask = nil
-            switch result {
-            case .success(let generation):
-                self.generation = generation
-                self.displayName = generation.plan.suggestedDisplayName
-                self.phase = .candidatesReady
-                await self.refreshCredentialStatus()
-            case .failure(let error):
-                if error == .credentialRequired {
-                    self.credentialStatus = .missing
-                } else if error == .credentialUnavailable {
-                    self.credentialStatus = .unavailable
-                }
-                self.phase = .editing
-                self.failure = .generation(error)
-                await self.refreshCredentialStatus()
-            }
-        }
+        observesCurrentTask = true
+        _ = coordinator.start(
+            description: soundDescription, locale: locale, profileID: providerProfileID)
     }
 
     package func adopt(
@@ -397,6 +394,7 @@ public final class AICueGenerationViewModel: ObservableObject {
     ) {
         guard
             phase == .candidatesReady,
+            case .saved = coordinator.state,
             let generation,
             let candidate = generation.candidates.first(where: { $0.id == candidateID }),
             session != nil
@@ -413,27 +411,24 @@ public final class AICueGenerationViewModel: ObservableObject {
             return
         }
 
+        guard let lease = coordinator.beginAdoption(generationID: generation.id) else { return }
         failure = nil
         phase = .adopting
         adoptingCandidateID = candidateID
         let revision = sessionRevision
-        let generator = self.generator
+        let coordinator = self.coordinator
         adoptionTask = Task { [weak self] in
             let result = await operation(candidate, name, permit)
-            guard let self else {
-                await generator.discard(generationID: generation.id)
-                return
-            }
-            guard self.sessionRevision == revision else {
-                await generator.discard(generationID: generation.id)
-                return
-            }
+            let adopted: Bool
+            if case .adopted = result { adopted = true } else { adopted = false }
+            await coordinator.finishAdoption(lease, adopted: adopted)
+            guard let self else { return }
             self.adoptionTask = nil
+            guard self.sessionRevision == revision else { return }
             self.adoptingCandidateID = nil
             switch result {
             case .adopted(let outcome):
-                await generator.discard(generationID: generation.id)
-                guard self.sessionRevision == revision else { return }
+                self.coordinator.detachComposer()
                 self.generation = nil
                 self.adoptionOutcome = AICueComposerAdoptionOutcome(
                     finalDisplayName: outcome.finalDisplayName)
@@ -463,12 +458,9 @@ public final class AICueGenerationViewModel: ObservableObject {
     }
 
     private func invalidateVisibleGeneration() {
-        generationTask?.cancel()
-        generationTask = nil
+        observesCurrentTask = false
+        coordinator.detachComposer()
         sessionRevision &+= 1
-        if let generation {
-            discard(generation)
-        }
         generation = nil
         adoptionOutcome = nil
         adoptingCandidateID = nil
@@ -478,29 +470,10 @@ public final class AICueGenerationViewModel: ObservableObject {
     }
 
     private func resetComposer(clearSession: Bool) {
-        let adoptionWasRunning = phase == .adopting
-        generationTask?.cancel()
-        generationTask = nil
-        sessionRevision &+= 1
-        if !adoptionWasRunning, let generation {
-            discard(generation)
-        }
-        generation = nil
-        adoptionOutcome = nil
-        adoptingCandidateID = nil
-        soundDescription = ""
-        displayName = ""
-        failure = nil
-        phase = .editing
+        invalidateVisibleGeneration()
         if clearSession { session = nil }
     }
 
-    private func discard(_ generation: AICueGeneration) {
-        let generator = self.generator
-        Task {
-            await generator.discard(generationID: generation.id)
-        }
-    }
 }
 
 #if DEBUG

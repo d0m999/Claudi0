@@ -45,8 +45,8 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                     owner.send(.invoke(previewAction))
             {
                 expect(
-                    previewURL == outcome.accepted.last?.destinationURL && volume == 0.37,
-                    "preview capability 必须在 invoke 时产生 accepted target 与最新音量 effect")
+                    previewURL == outcome.accepted.last?.destinationURL && volume == 1.0,
+                    "preview capability 必须在 invoke 时产生 accepted target 与系统输出相对增益")
                 expect(
                     owner.send(.invoke(previewAction)) == .rejected(.staleAction),
                     "outcome preview capability 必须 single-use")

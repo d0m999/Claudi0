@@ -331,11 +331,6 @@ func runSettingsNavigationSuites() {
                 .routeFailure(.sounds)
             ),
             (
-                .sounds(.editEvent(scope: staleWorkspace, packID: "valid-pack", event: .stop)),
-                .staleSoundScope(staleWorkspace),
-                .routeFailure(.sounds)
-            ),
-            (
                 .events(scope: staleWorkspace, event: .stop),
                 .staleSoundScope(staleWorkspace),
                 .routeFailure(.eventsAndSounds)
@@ -421,8 +416,8 @@ func runSettingsNavigationSuites() {
             soundPackIDs: ["source-pack"], events: Set(Event.allCases))
         expect(
             resolveSettingsRoute(.sounds(route), availability: removed).failure
-                == .staleSoundScope(.workspace(id)),
-            "工作区删除后不得回退默认组")
+                == nil,
+            "工作区删除不影响包级浏览，也不授权任何组选包写入")
     }
 
     suite("Settings sound shell：inactive editor 通过一个 coherent projection 提供 route 事实") {

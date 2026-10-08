@@ -669,11 +669,9 @@ func runAICuePackScopedAsyncSuites() async {
                 expect(false, "损坏 Surface 仍需显示声音页")
                 return
             }
-            let blockedScope: SoundPackEditorScopeAvailability = .unavailable(
-                scope: .surface(.workBuddy), reason: .scopeUnavailable)
             expect(
-                sounds.scope == blockedScope,
-                "测试必须先证明此 Surface 的配置写入已被停止")
+                sounds.scope == .available(.global),
+                "Sounds 包编辑不依赖退役 Surface 配置")
             expect(
                 sounds.selectedPack?.id == "healthy-pack",
                 "测试必须仍选中健康用户包")

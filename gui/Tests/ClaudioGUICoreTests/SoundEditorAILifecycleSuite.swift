@@ -71,258 +71,225 @@ private actor SoundEditorLifecycleGenerator: AICueGenerating {
 @MainActor
 func runSoundEditorAILifecycleSuites() async {
     #if DEBUG
-    await suite("声音原生入口：直接生成、显式配置 Key、保存后仍需显式生成") {
+    await suite("声音原生流程：列表、五事件来源、附属表单与凭据返回") {
         for language in ClaudioAppLanguage.allCases {
             let generator = SoundEditorLifecycleGenerator()
-            let credentials = SoundEditorLifecycleCredentials(status: .missing)
             let viewModel = soundEditorLifecycleViewModel(
-                generator: generator, credentials: credentials)
+                generator: generator,
+                credentials: SoundEditorLifecycleCredentials(status: .missing))
             let fixture = SettingsPresentationFixtures.generalLogin(
-                language: language, route: .sounds(.overview),
-                availability: PreviewFixtures.settingsRouteAvailability, aiCueViewModel: viewModel)
+                language: language,
+                route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability,
+                aiCueViewModel: viewModel)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session,
+                size: NSSize(width: 960, height: 640))
+            defer { viewModel.endSession(); probe.close() }
+            await probe.settle()
+            expect(!probe.hasAttachedSheet && viewModel.session == nil, "开声音页只显示列表，不创建表单或请求")
+            expect(
+                probe.menuAccessibilityElement(identifier: "settings.sounds.management-scope")
+                    == nil,
+                "声音页不显示工作区作用域")
+            expect(probe.pressControl("settings.sounds.pack.settings-fixture-pack"), "真实列表行进入详情")
+            await probe.settle()
+            expect(
+                fixture.session.state.soundsDetail == .pack(packID: "settings-fixture-pack"),
+                "列表进入同区域包详情")
+            captureSoundLifecycle(probe, name: "detail-\(language.rawValue)")
+            for event in Event.allCases {
+                expect(
+                    probe.menuIsEnabled(
+                        identifier: "settings.sounds.event.\(event.rawValue).source") == true,
+                    "五事件直接提供来源菜单")
+            }
+            expect(probe.chooseSource(event: .stop, index: 0), "选择 AI 来源")
+            await probe.settle()
+            expect(
+                probe.hasAttachedSheet
+                    && viewModel.session
+                        == AICueComposerSession(packID: "settings-fixture-pack", event: .stop),
+                "AI 使用同一窗口附属表单及固定目标")
+            viewModel.updateDescription("短促木琴完成音效")
+            probe.refresh()
+            expect(
+                probe.controlLabel("settings.sounds.ai.generate")
+                    == ClaudioL10n(language: language).text(.aiCueConfigureKey), "缺少凭据明确引导配置")
+            expect(probe.pressControl("settings.sounds.ai.generate"), "从生成表单进入共享服务管理")
+            await probe.settle()
+            expect(
+                probe.menuAccessibilityElement(identifier: "event-settings.ai-cue.credential-input")
+                    != nil, "服务管理实际挂载")
+            await viewModel.saveCredential(try! SensitiveCredentialInput("fixture-only-key"))
+            expect(!(await generator.isSuspended), "保存凭据不发生成请求")
+            expect(probe.pressControl("event-settings.ai-cue.credential-cancel"), "服务管理返回原表单")
+            await probe.settle()
+            expect(
+                viewModel.soundDescription == "短促木琴完成音效" && probe.hasAttachedSheet,
+                "返回保留描述和原附属表单")
+            captureSoundLifecycle(probe, name: "composer-\(language.rawValue)", sheet: true)
+            expect(probe.pressControl("settings.sounds.sheet.close"), "关闭表单")
+            await probe.settle()
+            expect(!probe.hasAttachedSheet && viewModel.session == nil, "关闭撤销采用上下文")
+            for source in 1...4 {
+                expect(probe.chooseSource(event: .stop, index: source), "其他来源也从同一事件打开")
+                await probe.settle()
+                expect(probe.hasAttachedSheet, "来源选择使用附属表单")
+                captureSoundLifecycle(
+                    probe, name: "source-\(source)-\(language.rawValue)", sheet: true)
+                expect(probe.pressControl("settings.sounds.sheet.close"), "取消来源不写入")
+                await probe.settle()
+            }
+        }
+    }
+    await suite("声音原生生命周期：关闭表单继续生成，结果从记录入口恢复") {
+        let generator = SoundEditorLifecycleGenerator()
+        let viewModel = soundEditorLifecycleViewModel(generator: generator)
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .sounds(.overview),
+            availability: PreviewFixtures.settingsRouteAvailability, aiCueViewModel: viewModel)
+        let probe = SettingsSoundsNativeLayoutProbe(
+            session: fixture.session, size: NSSize(width: 960, height: 640))
+        defer { probe.close() }
+        await probe.settle()
+        expect(probe.pressControl("settings.sounds.pack.settings-fixture-pack"), "进入目标包")
+        await probe.settle()
+        expect(probe.chooseSource(event: .stop, index: 0), "打开 AI 表单")
+        await probe.settle()
+        viewModel.updateDescription("后台完成的木琴")
+        probe.refresh()
+        expect(probe.pressControl("settings.sounds.ai.generate"), "仅显式点击开始任务")
+        expect(await soundEditorLifecycleWait { await generator.isSuspended }, "Provider 收到一组任务")
+        expect(probe.pressControl("settings.sounds.sheet.close"), "生成中仍可关闭表单")
+        await probe.settle()
+        expect(
+            await generator.cancellationCount == 0 && viewModel.session == nil,
+            "关表单不取消任务，只撤销采用上下文")
+        let generation = soundEditorLifecycleGeneration(root: fixture.temporaryRoot)
+        await generator.release(with: generation)
+        expect(
+            await soundEditorLifecycleWait { viewModel.coordinator.state == .saved(generation.id) },
+            "后台完成后归档成功")
+        expect(viewModel.generation == nil && !probe.hasAttachedSheet, "后台完成不重新打开或授予旧上下文")
+        expect(viewModel.coordinator.history.snapshot.batches.first?.audio.count == 3, "全部三条结果持久保存")
+        expect(viewModel.coordinator.hasUnreadCompletion, "会话内记录入口显示未读完成状态")
+        let routeResult = fixture.session.send(
+            .route(.sounds(SoundPacksWindowRoute(scope: .global, destination: .history))))
+        await probe.settle()
+        captureSoundLifecycle(probe, name: "history")
+        expect(
+            !viewModel.coordinator.hasUnreadCompletion,
+            "进入记录页消除完成提示：\(routeResult), \(fixture.session.state.routeResolution), \(fixture.session.state.soundsDetail)"
+        )
+    }
+    await suite("声音原生生命周期：持久草稿的 AI 首音发布不会被页面切换撤销") {
+        let generator = SoundEditorLifecycleGenerator()
+        let viewModel = soundEditorLifecycleViewModel(generator: generator)
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .sounds(.overview),
+            availability: PreviewFixtures.settingsRouteAvailability, aiCueViewModel: viewModel)
+        let probe = SettingsSoundsNativeLayoutProbe(
+            session: fixture.session, size: NSSize(width: 960, height: 640))
+        defer { probe.close() }
+        await probe.settle()
+        let owner = fixture.soundPacksEditor
+        do {
+            let draft = try await owner.createNamedDraft(AICuePackName("AI 首音草稿"))
+            _ = fixture.session.send(
+                .route(
+                    .sounds(
+                        SoundPacksWindowRoute(
+                            scope: .global, destination: .draft(packID: draft.packID)))))
+            await probe.settle()
+            expect(probe.chooseSource(event: .stop, index: 0), "草稿事件打开 AI 表单")
+            await probe.settle()
+            viewModel.updateDescription("第一次保存的木琴")
+            viewModel.startGeneration(locale: "zh-Hans")
+            expect(await soundEditorLifecycleWait { await generator.isSuspended }, "只发起本轮请求")
+            let generation = soundEditorLifecycleGeneration(root: fixture.temporaryRoot)
+            await generator.release(with: generation)
+            expect(
+                await soundEditorLifecycleWait { viewModel.phase == .candidatesReady },
+                "归档成功才出现可采用候选")
+            await probe.settle()
+            captureSoundLifecycle(probe, name: "candidates", sheet: true)
+            guard case .sounds(let sounds) = owner.presentation.mode,
+                let permit = sounds.eventRows.first(where: { $0.event == .stop })?
+                    .aiCueAdoptionPermit
+            else {
+                expect(false, "持久草稿签发真实当前候选采用能力"); return
+            }
+            viewModel.adopt(candidateID: generation.candidates[0].id, permit: permit) {
+                candidate, name, permit in
+                await owner.perform(
+                    .adoptAICue(candidate: candidate, displayName: name, permit: permit))
+            }
+            expect(
+                await soundEditorLifecycleWait {
+                    viewModel.phase == .applied || viewModel.session == nil
+                }, "首次发布成功后结束表单")
+            await probe.settle()
+            let manifestURL = owner.soundImportEnvironment.userPacksDirectory
+                .appendingPathComponent(draft.packID).appendingPathComponent("manifest.json")
+            let manifest = try JSONDecoder().decode(
+                PackManifest.self, from: Data(contentsOf: manifestURL))
+            expect(
+                manifest.id == draft.packID && manifest.eventSources[Event.stop.rawValue] != nil,
+                "真实事务发布同一草稿 ID 和事件绑定")
+            expect(
+                fixture.session.state.soundsDetail == .pack(packID: draft.packID)
+                    && !probe.hasAttachedSheet,
+                "发布后进入正式包详情，不落入失效草稿页")
+            expect(
+                viewModel.coordinator.history.snapshot.batches.first?.audio.count == 3,
+                "采用一条仍保留全部三条生成记录")
+        } catch { expect(false, "AI 首音原生集成失败：\(error)") }
+    }
+    await suite("声音原生候选：部分成功显示实际数量与已有许可说明") {
+        for count in [1, 2] {
+            let generator = SoundEditorLifecycleGenerator()
+            let viewModel = soundEditorLifecycleViewModel(generator: generator)
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability,
+                aiCueViewModel: viewModel)
             let probe = SettingsSoundsNativeLayoutProbe(
                 session: fixture.session, size: NSSize(width: 960, height: 640))
             defer { viewModel.endSession(); probe.close() }
             await probe.settle()
-            let l10n = ClaudioL10n(language: language)
-            expect(!probe.hasAttachedSheet, "首次声音页不自动弹 Key sheet")
-            for event in Event.allCases {
-                if let frame = SoundPacksLayoutRecorder.frames[
-                    "settings.sounds.ai-cue.event.\(event.rawValue)"]
-                {
-                    _ = probe.scrollToVisible(frame)
-                }
-                expect(
-                    probe.menuAccessibilityElement(
-                        identifier: "settings.sounds.ai-cue.event.\(event.rawValue)") != nil,
-                    "五事件的生成入口必须在主页面直接可达")
-            }
-            expect(
-                SoundPacksLayoutRecorder.frames["sound-packs.deletion.card"] != nil,
-                "声音包删除必须成为主页面独立区域")
-            expect(
-                probe.menuIsEnabled(identifier: "sound-packs.delete-selected-pack") == false,
-                "使用中的声音包仍受删除保护")
-            if let frame = SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.event.stop"] {
-                _ = probe.scrollToVisible(frame)
-            }
-            expect(probe.pressControl("settings.sounds.ai-cue.event.stop"), "点击主页面生成入口")
+            expect(probe.pressControl("settings.sounds.pack.settings-fixture-pack"), "进入目标包")
             await probe.settle()
-            expect(
-                viewModel.session
-                    == AICueComposerSession(packID: "settings-fixture-pack", event: .stop),
-                "直接入口跨路由保留同包同事件创作会话")
-            expect(
-                probe.menuAccessibilityElement(identifier: "event-settings.ai-cue.description")
-                    != nil,
-                "一步进入描述表单")
-            viewModel.updateDescription("短促木琴完成音效")
-            probe.refresh()
-            if let frame = SoundPacksLayoutRecorder.frames["event-settings.ai-cue.generate.control"]
-            {
-                _ = probe.scrollToVisible(frame)
-            }
-            expect(
-                probe.controlLabel("event-settings.ai-cue.generate")
-                    == l10n.text(.aiCueConfigureKey),
-                "缺少 Key 时主按钮明确引导配置")
-            expect(probe.pressControl("event-settings.ai-cue.generate"), "显式配置 Key")
+            expect(probe.chooseSource(event: .stop, index: 0), "打开生成表单")
             await probe.settle()
-            expect(probe.hasAttachedSheet, "点击后挂载原生 Key sheet")
-            expect(!(await generator.isSuspended), "配置 Key 不触发生成")
-            // Use the injected credential manager; this checks the save seam without a real API request.
-            await viewModel.saveCredential(try! SensitiveCredentialInput("fixture-only-key"))
-            fixture.eventSettingsSelection.dismissCredentialSheet()
-            await probe.settle()
-            expect(
-                !probe.hasAttachedSheet && viewModel.soundDescription == "短促木琴完成音效",
-                "保存后返回同表单并保留描述")
-            let generatedAfterSaving = await generator.isSuspended
-            expect(viewModel.phase == .editing && !generatedAfterSaving, "保存不自动生成")
-            expect(
-                probe.controlLabel("event-settings.ai-cue.generate")
-                    == l10n.text(.aiCueGenerateCue),
-                "主按钮切换为生成提示音")
-            expect(probe.pressControl("event-settings.ai-cue.generate"), "显式生成提示音")
-            let generating = await soundEditorLifecycleWait { await generator.isSuspended }
-            expect(generating, "主按钮进入真实生成任务")
-            guard generating else { continue }
+            viewModel.updateDescription("部分完成的木琴")
+            viewModel.startGeneration(locale: "zh-Hans")
+            expect(await soundEditorLifecycleWait { await generator.isSuspended }, "只发起一组请求")
             await generator.release(
-                with: soundEditorLifecycleGeneration(root: fixture.temporaryRoot))
-            _ = await soundEditorLifecycleWait { viewModel.phase == .candidatesReady }
+                with: soundEditorLifecycleGeneration(root: fixture.temporaryRoot, count: count))
+            expect(
+                await soundEditorLifecycleWait { viewModel.phase == .candidatesReady },
+                "部分有效集合归档后可选择")
             await probe.settle()
             expect(
-                probe.controlLabel("event-settings.ai-cue.candidate.clear.use")?.contains(
-                    l10n.format(.aiCueUseNamedEvent, localizedEventName(.stop, language: language)))
-                    == true,
-                "候选采用按钮明确具体事件")
+                probe.menuAccessibilityElement(identifier: "settings.sounds.ai.partial") != nil,
+                "部分成功显示明确的实际数量提示")
+            expect(viewModel.generation?.candidates.count == count, "表单保留实际候选数量")
+            captureSoundLifecycle(probe, name: "candidates-\(count)", sheet: true)
         }
-    }
-    await suite("声音事件详情：点击当前声音侧栏立即取消生成并拒绝迟到候选") {
-        let generator = SoundEditorLifecycleGenerator()
-        let viewModel = soundEditorLifecycleViewModel(generator: generator)
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .sounds(.overview),
-            availability: PreviewFixtures.settingsRouteAvailability,
-            aiCueViewModel: viewModel)
-        let probe = SettingsRootNativeProbe(session: fixture.session)
-        defer {
-            viewModel.endSession()
-            probe.close()
-        }
-        guard await soundEditorLifecycleOpenLocalEvent(probe, fixture: fixture) else { return }
-        viewModel.begin(packID: "settings-fixture-pack", event: .stop)
-        viewModel.updateDescription("短促木琴完成音效")
-        viewModel.startGeneration(locale: "zh-Hans")
-        let suspended = await soundEditorLifecycleWait { await generator.isSuspended }
-        expect(suspended && viewModel.phase == .generating, "真实 generation task 必须已挂起")
-
-        // Publishing the current context again is not a new user navigation request.
-        if case .sounds(let sounds) = fixture.soundPacksEditor.presentation.mode {
-            _ = fixture.soundPacksEditor.send(
-                .activate(.sounds(route: .overview, requestRevision: sounds.requestRevision)))
-        }
-        await Task.yield()
-        expect(
-            viewModel.session != nil && viewModel.phase == .generating,
-            "相同 requestRevision 的投影重放不得退出本地详情或取消生成")
-
-        await soundEditorLifecycleClickSoundsSidebar(probe)
-        _ = await soundEditorLifecycleWait { viewModel.session == nil }
-        expect(
-            fixture.session.state.routeResolution.destination == .sounds
-                && soundEditorLifecycleRoute(fixture.soundPacksEditor) == .overview,
-            "外层声音编辑器 route 始终为概览")
-        expect(
-            viewModel.session == nil && viewModel.phase == .editing,
-            "详情退出必须立即结束 session 并恢复 editing")
-        let cancelled = await soundEditorLifecycleWait { await generator.cancellationCount == 1 }
-        expect(cancelled, "详情退出必须取消正在运行的 generation task")
-
-        let generation = soundEditorLifecycleGeneration(root: fixture.temporaryRoot)
-        await generator.release(with: generation)
-        _ = await soundEditorLifecycleWait {
-            await generator.discardedGenerationIDs.contains(generation.id)
-                || viewModel.generation != nil
-        }
-        expect(
-            viewModel.session == nil && viewModel.generation == nil && viewModel.phase == .editing,
-            "已退出详情的迟到成功不得重新发布候选")
-        let discarded = await generator.discardedGenerationIDs
-        expect(discarded == [generation.id], "迟到成功必须交还同一 generation 清理")
-    }
-
-    await suite("声音事件详情：点击当前声音侧栏清候选并撤销 owner 采用资格") {
-        let generator = SoundEditorLifecycleGenerator()
-        let viewModel = soundEditorLifecycleViewModel(generator: generator)
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .sounds(.overview),
-            availability: PreviewFixtures.settingsRouteAvailability,
-            aiCueViewModel: viewModel)
-        let probe = SettingsRootNativeProbe(session: fixture.session)
-        defer {
-            viewModel.endSession()
-            probe.close()
-        }
-        guard await soundEditorLifecycleOpenLocalEvent(probe, fixture: fixture) else { return }
-        viewModel.begin(packID: "settings-fixture-pack", event: .stop)
-        viewModel.updateDescription("短促木琴完成音效")
-        viewModel.startGeneration(locale: "zh-Hans")
-        _ = await soundEditorLifecycleWait { await generator.isSuspended }
-        let generation = soundEditorLifecycleGeneration(root: fixture.temporaryRoot)
-        await generator.release(with: generation)
-        let ready = await soundEditorLifecycleWait {
-            soundEditorLifecyclePermit(fixture.soundPacksEditor) != nil
-        }
-        expect(ready && viewModel.phase == .candidatesReady, "正常生成必须发布候选及 owner 采用 permit")
-        guard let permit = soundEditorLifecyclePermit(fixture.soundPacksEditor) else { return }
-
-        await soundEditorLifecycleClickSoundsSidebar(probe)
-        _ = await soundEditorLifecycleWait { viewModel.session == nil }
-        expect(
-            viewModel.session == nil && viewModel.generation == nil && viewModel.phase == .editing,
-            "同 route 的显式退出必须使全部未采用候选失效")
-        expect(
-            soundEditorLifecyclePermit(fixture.soundPacksEditor) == nil,
-            "owner 不得为已退出的候选继续签发 permit")
-        _ = await soundEditorLifecycleWait {
-            await generator.discardedGenerationIDs.contains(generation.id)
-        }
-        let discarded = await generator.discardedGenerationIDs
-        expect(discarded == [generation.id], "退出必须清理已发布的 generation")
-        let result = await fixture.soundPacksEditor.perform(
-            .adoptAICue(
-                candidate: generation.candidates[0],
-                displayName: try! AICueDisplayName("木琴完成"), permit: permit))
-        expect(result == .rejected(.stalePermit), "退出前捕获的 permit 必须在写入前拒绝")
-    }
-
-    await suite("声音事件详情：点击当前声音侧栏丢弃未发布空草稿") {
-        let generator = SoundEditorLifecycleGenerator()
-        let viewModel = soundEditorLifecycleViewModel(generator: generator)
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .sounds(.overview),
-            availability: PreviewFixtures.settingsRouteAvailability,
-            aiCueViewModel: viewModel)
-        let probe = SettingsRootNativeProbe(session: fixture.session)
-        defer { probe.close() }
-        guard case .sounds(let initial) = fixture.soundPacksEditor.presentation.mode else {
-            expect(false, "草稿入口必须处于声音概览")
-            return
-        }
-        expect(
-            fixture.soundPacksEditor.beginAICuePackDraft(language: .zhHans),
-            "必须通过正常 owner 方法创建未发布空草稿")
-        guard case .sounds(let created) = fixture.soundPacksEditor.presentation.mode,
-            let draft = created.draft
-        else {
-            expect(false, "创建成功必须投影草稿身份")
-            return
-        }
-        let mounted = await soundEditorLifecycleWait {
-            SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil
-        }
-        expect(mounted, "草稿创建必须通过真实 onChange 进入本地事件详情")
-        await soundEditorLifecycleClickSoundsSidebar(probe)
-        if case .sounds(let exited) = fixture.soundPacksEditor.presentation.mode {
-            expect(exited.draft == nil, "退出本地详情必须取消空草稿")
-            expect(
-                exited.packs.map(\.id) == initial.packs.map(\.id),
-                "取消空草稿不得向已安装声音包列表发布新包")
-        } else {
-            expect(false, "点击声音侧栏必须保留声音概览")
-        }
-        let packDirectory = fixture.temporaryRoot.appendingPathComponent("packs")
-            .appendingPathComponent(draft.packID)
-        expect(
-            !FileManager.default.fileExists(atPath: packDirectory.path),
-            "未采用声音的空草稿不得发布磁盘包目录")
-    }
-
-    await suite("声音事件详情：初始深链挂载保留正常开始的同目标生成") {
-        let generator = SoundEditorLifecycleGenerator()
-        let viewModel = soundEditorLifecycleViewModel(generator: generator)
-        viewModel.begin(packID: "settings-fixture-pack", event: .stop)
-        viewModel.updateDescription("短促木琴完成音效")
-        viewModel.startGeneration(locale: "zh-Hans")
-        _ = await soundEditorLifecycleWait { await generator.isSuspended }
-        let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .sounds(.editEvent(packID: "settings-fixture-pack", event: .stop)),
-            availability: PreviewFixtures.settingsRouteAvailability,
-            aiCueViewModel: viewModel)
-        let probe = SettingsRootNativeProbe(session: fixture.session)
-        await Task.yield()
-        expect(
-            viewModel.session == AICueComposerSession(packID: "settings-fixture-pack", event: .stop)
-                && viewModel.phase == .generating,
-            "首次路由投影必须保留同目标 session 与 generation task")
-        let cancellations = await generator.cancellationCount
-        expect(cancellations == 0, "首次深链挂载不得误取消原始请求")
-        viewModel.endSession()
-        await generator.release(with: soundEditorLifecycleGeneration(root: fixture.temporaryRoot))
-        probe.close()
     }
     #endif
+}
+
+@MainActor
+private func captureSoundLifecycle(
+    _ probe: SettingsSoundsNativeLayoutProbe, name: String, sheet: Bool = false
+) {
+    guard let directory = ProcessInfo.processInfo.environment["CLAUDIO_SOUND_CAPTURE_DIR"] else {
+        return
+    }
+    let file = URL(fileURLWithPath: directory).appendingPathComponent(name + ".png")
+    expect(
+        sheet ? probe.saveSheetScreenshot(to: file) : probe.saveScreenshot(to: file),
+        "原生声音流程截图可保存：\(name)")
 }
 
 @MainActor
@@ -392,15 +359,18 @@ private func soundEditorLifecycleClickSoundsSidebar(_ probe: SettingsRootNativeP
     await soundEditorLifecycleExpectOverview()
 }
 
-private func soundEditorLifecycleGeneration(root: URL) -> AICueGeneration {
+@MainActor
+private func soundEditorLifecycleGeneration(root: URL, count: Int = 3) -> AICueGeneration {
     let id = UUID()
     let plan = AICueSoundPlan(
         suggestedDisplayName: "木琴完成", modality: .soundEffect,
         soundDescription: "短促木琴完成音效", spokenContent: nil, languageTag: nil,
         styleDescription: "短促、清晰", targetDurationMilliseconds: 1_500,
         instructionVersion: AICueSoundPlanner.instructionVersion)
-    let candidates = AICueVariant.allCases.map { variant in
-        AICueCandidate(
+    let candidates = AICueVariant.allCases.prefix(count).map { variant in
+        writeFixture(
+            validMP3ID3Data(), to: root.appendingPathComponent("candidate-\(variant.ordinal).mp3"))
+        return AICueCandidate(
             id: UUID(), variant: variant,
             asset: AICueTemporaryAudioAsset(
                 fileURL: root.appendingPathComponent("candidate-\(variant.ordinal).mp3"),
@@ -413,5 +383,6 @@ private func soundEditorLifecycleGeneration(root: URL) -> AICueGeneration {
     }
     return AICueGeneration(
         id: id, profileID: .elevenLabsGlobal, plan: plan, candidates: candidates,
+        completion: count == 3 ? .complete : .partial,
         generatedAt: Date(timeIntervalSince1970: 1))
 }

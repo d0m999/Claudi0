@@ -316,15 +316,10 @@ package final class SettingsPresentationSession: ObservableObject {
             guard lifecycleDestination == .sounds, routeResolution.failure == nil,
                 availability.soundPackIDs.contains(packID)
             else { return .unchanged }
-            let scope: PanelSoundScopeID
-            let target: WorkspaceSoundWriteTarget?
-            if case .sounds(let route) = routeResolution.route {
-                scope = route.scope; target = route.workspaceTarget
-            } else {
-                scope = .global; target = nil
-            }
             return routeTransaction(
-                .route(.sounds(.overview(scope: scope, workspaceTarget: target))),
+                .route(
+                    .sounds(
+                        SoundPacksWindowRoute(scope: .global, destination: .pack(packID: packID)))),
                 inspecting: packID)
         case .setLanguageMode(let languageMode):
             dependencies.preferences.setLanguageMode(languageMode)
@@ -434,11 +429,10 @@ package final class SettingsPresentationSession: ObservableObject {
             soundsDetailArbitration.consume(publication, navigationStamp: navigationHistory.stamp)
         }
         guard pendingViewedSoundPackRestoration == nil else { return }
-        if case .sounds(let sounds) = publication.mode, sounds.draft == nil,
-            sounds.routeState != .pendingFreshSnapshot, routeResolution.failure == nil,
-            let packID = soundsDetailArbitration.detail.capturedPackID ?? sounds.selectedPack?.id
+        if case .sounds(let sounds) = publication.mode,
+            sounds.routeState != .pendingFreshSnapshot, routeResolution.failure == nil
         {
-            lastViewedSoundPackID = packID
+            lastViewedSoundPackID = soundsDetailArbitration.detail.capturedPackID
             synchronizeCurrentBrowsingLocation(publication: sounds)
         }
     }
@@ -926,6 +920,9 @@ package final class SettingsPresentationSession: ObservableObject {
         case .sounds:
             let soundRoute: SoundPacksWindowRoute =
                 if case .sounds(let requested) = route { requested } else { .overview }
+            if soundRoute.destination == .history {
+                dependencies.aiCueViewModel.coordinator.markHistoryRead()
+            }
             activeSoundsRequestRevision = explicitRouteRequestRevision + 1
             _ = dependencies.soundPacksEditorOwner.send(
                 .activate(
@@ -1353,17 +1350,8 @@ extension SettingsPresentationSession {
         if route.destination == .sounds {
             if case .sounds(let requested) = route, let packID = requested.destinationPackID {
                 viewedPackID = packID
-            } else if let lastViewedSoundPackID,
-                !availability.soundPackSnapshotIsFresh
-                    || availability.soundPackIDs.contains(lastViewedSoundPackID)
-            {
-                viewedPackID = lastViewedSoundPackID
             } else {
-                if case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode {
-                    viewedPackID = sounds.selectedPack?.id
-                } else {
-                    viewedPackID = nil
-                }
+                viewedPackID = nil
             }
         } else {
             viewedPackID = nil
@@ -1388,7 +1376,8 @@ extension SettingsPresentationSession {
         else { return }
         // Preserve a pending/stale identity; refresh fallback is not a browsing choice.
         if let packID = current.location.viewedPackID,
-            !publication.packs.contains(where: { $0.id == packID })
+            !publication.packs.contains(where: { $0.id == packID }),
+            publication.draft?.packID != packID
         {
             return
         }
@@ -1403,6 +1392,17 @@ extension SettingsPresentationSession {
         let destination: SoundPacksWindowRoute.Destination
         switch soundsDetailArbitration.detail {
         case .overview: destination = .overview
+        case .pack(let id):
+            if case .sounds(let previousRoute) = previous,
+                case .editEvent(let requestedID, let event) = previousRoute.destination,
+                requestedID == id
+            {
+                destination = .editEvent(packID: id, event: event)
+            } else {
+                destination = .pack(packID: id)
+            }
+        case .draft(let id): destination = .draft(packID: id)
+        case .history: destination = .history
         case .event(let packID, let event):
             if case .sounds(let route) = previous, route.isCopyAndApply,
                 route.destinationPackID == packID
@@ -1424,8 +1424,7 @@ extension SettingsPresentationSession {
         navigationHistory.replaceCurrent(
             SettingsLocation(
                 route: routeResolution.route,
-                viewedPackID: soundsDetailArbitration.detail.capturedPackID
-                    ?? publication.selectedPack?.id))
+                viewedPackID: soundsDetailArbitration.detail.capturedPackID))
         publishProjection()
     }
 
@@ -1439,7 +1438,8 @@ extension SettingsPresentationSession {
             }
         case .sounds:
             switch soundsDetailArbitration.detail {
-            case .overview: break
+            case .overview, .pack, .draft: break
+            case .history: title = l10n.text(.soundsHistory)
             case .event(_, let event):
                 title = localizedEventName(event, language: preferenceSnapshot.language)
             case .audio: title = l10n.text(.settingsNativeAudioFiles)

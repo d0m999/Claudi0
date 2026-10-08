@@ -29,6 +29,8 @@ enum ClaudioGUIApp {
 final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
     lazy var preferences = ClaudioPreferences()
     private var menuBarController: MenuBarController?
+    private var generationTerminationGate = AICueTerminationGate()
+    private var generationQuitPrompt: GenerationQuitPrompt?
     private var maintenanceRuntime: HostIntegrationMaintenanceRuntime?
     private var hostIntegrationBridge: HostIntegrationManagerBridge?
     #if DEBUG && CLAUDIO_UI_REGRESSION
@@ -37,6 +39,38 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
     #if DEBUG
     private var chatAXTracer: ChatAXTracerSession?
     #endif
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        switch generationTerminationGate.request(
+            reason: menuBarController?.generationTerminationReason)
+        {
+        case .allow: return .terminateNow
+        case .cancel: return .terminateCancel
+        case .alreadyWaiting: return .terminateLater
+        case .ask(let reason):
+            Task { @MainActor [weak self] in self?.showGenerationQuitPrompt(reason) }
+            return .terminateLater
+        }
+    }
+
+    private func showGenerationQuitPrompt(_ reason: AICueTerminationReason) {
+        let prompt = GenerationQuitPrompt(reason: reason, language: preferences.language)
+        generationQuitPrompt = prompt
+        prompt.show(attachedTo: menuBarController?.generationTerminationWindow) {
+            [weak self] quit in
+            guard let self else { return }
+            self.generationQuitPrompt = nil
+            switch self.generationTerminationGate.answer(
+                quit: quit,
+                currentReason: self.menuBarController?.generationTerminationReason)
+            {
+            case .allow: NSApp.reply(toApplicationShouldTerminate: true)
+            case .cancel: NSApp.reply(toApplicationShouldTerminate: false)
+            case .ask(let updated): self.showGenerationQuitPrompt(updated)
+            case .alreadyWaiting: break
+            }
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // `.accessory`: no Dock icon, no menu bar application menu — the correct activation

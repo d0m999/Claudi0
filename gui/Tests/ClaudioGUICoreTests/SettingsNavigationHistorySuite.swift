@@ -169,11 +169,11 @@ func runSettingsNavigationHistorySuites() async {
             let initialEntry = session.navigationHistory.current!.id
             await waitForSoundEditorReady(editor.owner, library: editor.library)
             for _ in 0..<512
-            where session.state.soundsDetail != .event(packID: "pack-b", event: .stop) {
+            where session.state.soundsDetail != .pack(packID: "pack-b") {
                 await Task.yield()
             }
             expect(
-                session.state.soundsDetail == .event(packID: "pack-b", event: .stop)
+                session.state.soundsDetail == .pack(packID: "pack-b")
                     && session.navigationHistory.entries.count == 1
                     && session.navigationHistory.current?.id == initialEntry,
                 "Initial pending completion resolves in place with one history identity")
@@ -187,7 +187,7 @@ func runSettingsNavigationHistorySuites() async {
             session.send(.goBack)
             await waitForSoundEditorReady(editor.owner, library: editor.library)
             expect(
-                session.state.soundsDetail == .event(packID: "pack-b", event: .stop)
+                session.state.soundsDetail == .pack(packID: "pack-b")
                     && session.navigationHistory.current?.location.viewedPackID == "pack-b"
                     && (try? Data(contentsOf: editor.configFile)) == bytes,
                 "Back restores viewing B without replaying old configuration: route=\(session.state.routeResolution), detail=\(session.state.soundsDetail), location=\(session.navigationHistory.current!.location), bytesUnchanged=\((try? Data(contentsOf: editor.configFile)) == bytes)"
@@ -260,7 +260,7 @@ func runSettingsNavigationHistorySuites() async {
             expect(
                 session.state.routeResolution.failure == nil
                     && editor.owner.presentation.library.isFresh
-                    && session.state.soundsDetail == .overview
+                    && session.state.soundsDetail == .pack(packID: "pack-b")
                     && restored.selectedPack?.id == "pack-b"
                     && session.navigationHistory.current?.location.viewedPackID == "pack-b"
                     && session.navigationHistory.current?.id == entryID

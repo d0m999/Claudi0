@@ -179,10 +179,8 @@ func runSoundPacksEditorNativeEffectsSuites() async {
             await dispatcher.waitForOperationsToFinishForTesting()
             expect(
                 adapter.pickerModes == [true]
-                    && adapter.playRequests.count == 1
-                    && adapter.playRequests[0].fileURL.lastPathComponent == "new.mp3"
-                    && adapter.playRequests[0].volume == 0.37,
-                "foreground success 必须只执行一次 owner-signed preview URL/volume")
+                    && adapter.playRequests.isEmpty,
+                "声音页导入成功不自动试听")
             await waitForSoundEditorReady(owner, library: fixture.library)
             await waitForSoundEditorInventory(owner) { inventory in
                 inventory.contains { $0.fileName == "new.mp3" }
@@ -199,7 +197,7 @@ func runSoundPacksEditorNativeEffectsSuites() async {
             dispatcher.consume(.nativeEffect(cancelledEffect), owner: owner)
             await dispatcher.waitForOperationsToFinishForTesting()
             expect(
-                adapter.pickerModes == [true, true] && adapter.playRequests.count == 1,
+                adapter.pickerModes == [true, true] && adapter.playRequests.isEmpty,
                 "picker 取消必须 exact once 执行 empty perform 且不触发 preview")
             expect(
                 await owner.perform(

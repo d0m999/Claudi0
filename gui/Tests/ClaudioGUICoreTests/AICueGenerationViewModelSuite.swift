@@ -89,11 +89,13 @@ private actor ComposerGeneratorFixture: AICueGenerating {
     enum Mode: Sendable {
         case success(AICueGeneration)
         case lateSuccess(AICueGeneration)
+        case controlled(AICueGeneration)
         case failure(AICueGenerationError)
         case waitForCancellation
     }
 
     private var mode: Mode
+    private var continuation: CheckedContinuation<Void, Never>?
     private(set) var generateCount = 0
     private(set) var discardedGenerationIDs: [UUID] = []
     private(set) var requestedProfileIDs: [AICueProviderProfileID] = []
@@ -103,6 +105,7 @@ private actor ComposerGeneratorFixture: AICueGenerating {
     init(mode: Mode) { self.mode = mode }
 
     func setMode(_ mode: Mode) { self.mode = mode }
+    func complete() { continuation?.resume(); continuation = nil }
 
     func generate(
         description: String,
@@ -116,6 +119,9 @@ private actor ComposerGeneratorFixture: AICueGenerating {
         requestedDescriptions.append(description)
         switch mode {
         case .success(let generation): return generation
+        case .controlled(let generation):
+            await withCheckedContinuation { continuation = $0 }
+            return generation
         case .lateSuccess(let generation):
             // Bounded stand-in for an external provider that completes despite cancellation.
             try? await Task.sleep(nanoseconds: 200_000_000)
@@ -624,12 +630,13 @@ func runAICueGenerationViewModelSuites() async {
         expect(await credentials.counts().saves == 1, "替换只能尝试一次")
     }
 
-    await suite("AI 提示音状态层：切换 profile 取消生成并使未采用候选失效") {
+    await suite("AI 提示音状态层：切换 profile 保留后台生成并使未采用候选失效") {
         let suiteName = "AICueProviderSwitch.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let preferences = AICueProviderPreferences(defaults: defaults)
-        let generator = ComposerGeneratorFixture(mode: .waitForCancellation)
+        let generated = aiCueComposerGeneration()
+        let generator = ComposerGeneratorFixture(mode: .controlled(generated))
         let viewModel = AICueGenerationViewModel(
             credentialManager: ComposerCredentialManagerFixture(status: .missing),
             generator: generator,
@@ -641,7 +648,7 @@ func runAICueGenerationViewModelSuites() async {
         await waitForAICueViewModel { viewModel.phase == .generating }
 
         try! viewModel.selectProviderProfile(.qwenBeijing)
-        expect(viewModel.phase == .editing, "切换 profile 必须立即取消旧 generation")
+        expect(viewModel.phase == .editing, "切换 profile 恢复下次请求的编辑上下文")
         expect(viewModel.generation == nil, "切换 profile 必须使所有未采用候选失效")
         expect(viewModel.soundDescription == "请说\"完成\"", "切换 profile 必须保留用户描述")
         expect(viewModel.providerProfileID == .qwenBeijing, "选择必须更新当前 profile")
@@ -655,7 +662,24 @@ func runAICueGenerationViewModelSuites() async {
                     .senseAudioChina,
                 ],
             "production UI 的 profile 选择必须直接投影 registry 的完整稳定顺序")
-        await waitForAICueViewModel { viewModel.phase != .generating }
+        expect(viewModel.coordinator.generationBlock == .generating, "服务切换不能绕过全应用单任务门禁")
+        while await generator.facts().generations == 0 { await Task.yield() }
+        await generator.complete()
+        await waitForHistoryState(viewModel.coordinator) { state in
+            switch state {
+            case .saved, .pending, .failed: true;
+            default: false
+            }
+        }
+        expect(
+            viewModel.coordinator.history.snapshot.batches.first?.profileID == .elevenLabsGlobal,
+            "在途任务以原始 profile 归档")
+        let facts = await generator.facts()
+        expect(
+            facts.generations == 1 && facts.profileIDs == [.elevenLabsGlobal]
+                && facts.deadlines.count == 1,
+            "服务切换不重发请求或替换原绝对截止时间")
+        expect(viewModel.generation == nil, "后台完成不能重新签发旧表单采用资格")
     }
 
     suite("AI 提示音状态层：profile 偏好只接受 allowlist 且不含 credential") {
@@ -725,9 +749,13 @@ private func aiCueComposerAdoptionPermit(
     return permit
 }
 
+@MainActor
 private func aiCueComposerGeneration(root: URL? = nil) -> AICueGeneration {
     let generationID = UUID()
-    let base = root ?? FileManager.default.temporaryDirectory
+    let base =
+        root
+        ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+            "composer-fixture-" + generationID.uuidString)
     let plan = AICueSoundPlan(
         suggestedDisplayName: "木琴完成",
         modality: .soundEffect,
@@ -755,6 +783,7 @@ private func aiCueComposerGeneration(root: URL? = nil) -> AICueGeneration {
                 requestOrdinal: variant.ordinal,
                 providerRequestID: nil))
     }
+    for candidate in candidates { writeFixture(validMP3ID3Data(), to: candidate.asset.fileURL) }
     return AICueGeneration(
         id: generationID,
         profileID: .elevenLabsGlobal,

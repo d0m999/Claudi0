@@ -683,7 +683,7 @@ private struct SoundPacksWindowContentView: View {
 
     private var detailTitle: String {
         switch detail {
-        case .overview: l10n.text(.settingsDestinationSounds)
+        case .overview, .pack, .draft, .history: l10n.text(.settingsDestinationSounds)
         case .event(_, let event): localizedEventName(event, language: languageStore.language)
         case .audio: l10n.text(.settingsNativeAudioFiles)
         case .service: l10n.text(.settingsNativeAIServices)
@@ -703,7 +703,7 @@ private struct SoundPacksWindowContentView: View {
     // Keep the detail routing seam shallow; every branch retains its native controls and owner.
     private var detailContent: AnyView {
         switch detail {
-        case .overview: AnyView(overviewDetail)
+        case .overview, .pack, .draft, .history: AnyView(overviewDetail)
         case .event(let packID, let event): AnyView(eventDetail(packID: packID, event: event))
         case .audio(let packID): AnyView(audioDetail(packID: packID))
         case .service: supplement.auxiliary
@@ -1912,7 +1912,7 @@ private struct SoundPacksWindowContentView: View {
             activeSounds.selectedPack?.id == requestedRoute.editTarget?.packID
         else { return nil }
         switch requestedRoute.destination {
-        case .overview, .audio, .service, .panel: return nil
+        case .overview, .pack, .draft, .history, .audio, .service, .panel: return nil
         case .editEvent(_, let event), .copyAndApply(_, let event): return event
         }
     }
@@ -2055,7 +2055,7 @@ package func soundPacksWindowDeepLinkFocusTarget(
 ) -> SoundPacksWindowFocusTarget? {
     if case .unavailable = scopeAvailability { return .managedScopeFailure }
     return switch route.destination {
-    case .overview, .service, .panel: nil
+    case .overview, .pack, .draft, .history, .service, .panel: nil
     case .audio:
         // The detail title takes focus through the detail-change handler; there is no single
         // inventory control to preselect.

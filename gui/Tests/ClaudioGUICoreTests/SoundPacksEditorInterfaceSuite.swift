@@ -335,14 +335,14 @@ func runSoundPacksEditorInterfaceSuites() async {
             }
 
             expect(
-                packA.isActiveForScope && !packA.isInspected,
-                "pack-a 仍是当前 scope 的 active pack，但不再是 inspection selection")
+                !packA.isActiveForScope && !packA.isInspected,
+                "Sounds 不显示组当前选包，pack-a 也不是当前检查目标")
             expect(
                 !packB.isActiveForScope && packB.isInspected,
                 "pack-b 只是 inspection selection，不能伪装成 active pack")
             expect(packA.useAction == nil, "active pack 不应签发冗余 Use capability")
             expect(packA.deleteAction == nil, "active pack 不得因未被 inspect 就变成可删除")
-            expect(packB.useAction != nil, "非 active 的 inspected pack 必须可 Use")
+            expect(packB.useAction == nil, "Sounds 不提供组选包动作")
             expect(packB.deleteAction != nil, "未被任何 scope 引用的 inspected pack 必须可删除")
         }
     }
@@ -431,7 +431,7 @@ func runSoundPacksEditorInterfaceSuites() async {
                     expect(false, "切换后必须保留 pack-b 投影")
                     return
                 }
-                expect(packB.isInspected && packB.useAction != nil, "测试前提：编辑器仍可写")
+                expect(packB.isInspected && packB.copyAction != nil, "测试前提：编辑器仍可写")
                 expect(packB.deleteAction == nil, "引用未知时不得签发确认后必然失败的 Delete")
             }
         }
@@ -766,7 +766,7 @@ func runSoundPacksEditorInterfaceSuites() async {
                 inventory.contains { $0.fileName == "stop.mp3" }
             }
             guard case .sounds(let fresh) = owner.presentation.mode,
-                let oldUse = fresh.packs.first(where: { $0.id == "pack-b" })?.useAction
+                let oldUse = fresh.packs.first(where: { $0.id == "pack-b" })?.toggleStarAction
             else {
                 expect(false, "fresh fixture 必须先签发 write capability")
                 return

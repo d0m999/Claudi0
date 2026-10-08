@@ -323,6 +323,13 @@ private func callOpenParens(of name: String, member: Bool, in source: String) ->
             } else {
                 // 自由函数：前面是 `.` 说明它是某个东西的成员，不是我们要的那个自由函数。
                 if source[probe] == "." { continue }
+                var wordStart = probe
+                while wordStart > source.startIndex,
+                    isIdentifierCharacter(source[source.index(before: wordStart)])
+                {
+                    wordStart = source.index(before: wordStart)
+                }
+                if source[wordStart...probe] == "func" { continue }
             }
         } else if member {
             // 文件开头就是 `name` —— 不可能是成员调用。
@@ -623,8 +630,19 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Each immutable WAV is atomically published before the fixture exposes it, and the retained
     // fixture removes only that exact root at the end of its lifetime.
     "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationFixtures.swift": [".write("],
-    // 星标删除：锁内重验后的单目录项 `unlink(2)`；不跟随 symlink，也不递归删除目录。
-    "gui/Sources/ClaudioGUICore/PackGallery.swift": ["unlink("],
+    // 包内未使用音频只经可恢复 Trash；不再永久 unlink 用户音频。
+    "gui/Sources/ClaudioGUICore/PackGallery.swift": [".trashItem("],
+    // 私有声音资产共享的 fd 原子写与可恢复 Trash 内核，由下方独立形状断言和 GUI
+    // GenerationHistory/SoundsRedesignComposition 的真实磁盘故障回归共同审计。
+    "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift": [
+        ".trashItem(", ".write(", "open(", "openat(", "renameatx_np(", "unlinkat(", "write(",
+    ],
+    "gui/Sources/ClaudioGUICore/GenerationHistoryStore.swift": [".write("],
+    // unlinkat 仅清理成功发布的无音频草稿登记；从不删除已安装包或音频。
+    "gui/Sources/ClaudioGUICore/SoundPackDraftStore.swift": [".write(", "unlinkat(", "write("],
+    "gui/Sources/ClaudioGUICore/SoundPackDirectoryTransfer.swift": [".write("],
+    "gui/Sources/ClaudioGUICore/SoundEventSelection.swift": [".write("],
+    "gui/Sources/ClaudioGUICore/SoundPacksEditorOwner.swift": [".write("],
     // Usage 日志清理：与 append/rotation 共用 log lock，只 unlink 固定日志叶路径；ENOENT 成功。
     // History 清理由 ClaudioCore 的 HostHookReceiptStore 既有安全原语负责，不在这里重复登记。
     // Diagnostic log cleanup only removes bounded, generated log files under the private
@@ -682,9 +700,14 @@ private let rawWriteFileDescriptorHolders: Set<String> = [
     "helper/Sources/ClaudioCore/FileLock.swift",
     "gui/Sources/ClaudioGUICore/AICueGenerationEngine.swift",
     "gui/Sources/ClaudioGUICore/AICueLocalCredentials.swift",
+    "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift",
 ]
 
 private func isAuditedPrivateInitialWrite(path: String, arguments: String) -> Bool {
+    if path == "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift" {
+        return arguments.filter { !$0.isWhitespace }
+            == "fd,raw.baseAddress!.advanced(by:offset),raw.count-offset"
+    }
     if path == "helper/Sources/ClaudioCore/AnchoredFileIO.swift" {
         return arguments.filter { !$0.isWhitespace }
             == "descriptor,base.advanced(by:offset),raw.count-offset"
@@ -703,6 +726,21 @@ private func unauditedNonContentReplacingWrites(
     arguments: [String],
     source: String
 ) -> [String] {
+    // These are calls to the audited atomic writer, not raw Data/FileHandle writes. Pin each
+    // file's exact count and require every .write receiver to be this one shared boundary.
+    let privateAssetWriteSites: [String: Int] = [
+        "gui/Sources/ClaudioGUICore/GenerationHistoryStore.swift": 2,
+        "gui/Sources/ClaudioGUICore/SoundPackDraftStore.swift": 1,
+        "gui/Sources/ClaudioGUICore/SoundPackDirectoryTransfer.swift": 3,
+        "gui/Sources/ClaudioGUICore/SoundEventSelection.swift": 1,
+        "gui/Sources/ClaudioGUICore/SoundPacksEditorOwner.swift": 1,
+    ]
+    if let count = privateAssetWriteSites[path], arguments.count == count,
+        source.components(separatedBy: "PrivateSoundAssetIO.write(").count - 1 == count,
+        source.components(separatedBy: ".write(").count - 1 == count
+    {
+        return []
+    }
     let diagnosticStreams: Set<String> = [
         "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift",
         "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift",
@@ -1070,6 +1108,28 @@ func runAtomicWriteSuites() {
             "POSIX 裸写调用点计数必须同时识别 qualified/unqualified write 与写意图 open；"
                 + "即使第二个 open 的 flags 来自变量，token Set 已存在时新增裸写者也必须变红")
 
+        let declaredWriter = pipeline(
+            "func write(_ bytes: Data) { Darwin.write(fd, pointer, count) }")
+        expect(
+            rawPOSIXWriteCallArguments(in: declaredWriter).count == 1,
+            "函数声明不能伪装成第二次裸写调用，函数体内的真实调用仍须识别")
+        let boundaryPath = "gui/Sources/ClaudioGUICore/SoundEventSelection.swift"
+        for (source, expectedCount) in [
+            ("PrivateSoundAssetIO.write(bytes, to: file)", 0),
+            ("other.write(bytes, to: file)", 1),
+            (
+                "PrivateSoundAssetIO.write(bytes, to: file)\nPrivateSoundAssetIO.write(bytes, to: other)",
+                2
+            ),
+        ] {
+            expect(
+                unauditedNonContentReplacingWrites(
+                    path: boundaryPath,
+                    arguments: writeCallArguments(in: source), source: source
+                ).count == expectedCount,
+                "原子边界豁免不能容忍替代 receiver 或新增调用")
+        }
+
         let scopedFunctions = pipeline(
             """
             private func target() {
@@ -1122,6 +1182,28 @@ func runAtomicWriteSuites() {
         ] {
             expect(source.contains(required), "目录 fd 发布不能丢失 \(required)")
         }
+    }
+
+    suite("写盘绊线：声音资产完整写入私有文件，再原子发布；Trash 不永久删除兜底") {
+        let path = "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift"
+        guard let source = scanned[path]?.codeWithoutStringLiterals,
+            let writer = functionBody(named: "write", in: source),
+            let trash = functionBody(named: "trash", in: source)
+        else { expect(false, "声音资产写入与 Trash 接缝必须可审计"); return }
+        let compact = writer.filter { !$0.isWhitespace }
+        for shape in [
+            "O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0o600", "whileoffset<raw.count",
+            "offset+=count", "fsync(fd)==0", "renameat(parent,source,parent,$0)",
+            "unlinkat(parent,$0,0)",
+        ] {
+            expect(compact.contains(shape), "声音资产原子写不能丢失 \(shape)")
+        }
+        expect(rawPOSIXWriteCallArguments(in: source).count == 1, "声音资产只有一个受审计裸写调用")
+        expect(
+            trash.contains("moveExclusively(isolated, to: source)")
+                && trash.contains("recoveryRequired(isolated)")
+                && !trash.contains("removeItem(") && !trash.contains("unlinkat("),
+            "Trash 失败必须保留并尝试恢复，不永久删除音频")
     }
 
     suite("写盘绊线：SenseAudio 凭据仅经私有 staging 完整写入后原子替换") {

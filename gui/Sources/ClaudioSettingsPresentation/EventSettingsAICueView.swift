@@ -9,6 +9,7 @@ import SwiftUI
 struct EventSettingsAICueServiceCard: View {
     @ObservedObject var viewModel: AICueGenerationViewModel
     @ObservedObject var languageStore: ClaudioPreferences
+    let compact: Bool
     let onManageCredential: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -18,30 +19,34 @@ struct EventSettingsAICueServiceCard: View {
     init(
         viewModel: AICueGenerationViewModel,
         languageStore: ClaudioPreferences,
+        compact: Bool = false,
         onManageCredential: @escaping () -> Void
     ) {
         self.viewModel = viewModel
         self.languageStore = languageStore
+        self.compact = compact
         self.onManageCredential = onManageCredential
     }
 
     var body: some View {
         let status = statusPresentation
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(SettingsAppearance.accent(colorScheme))
-                    .frame(width: 30, height: 30)
-                    .background(SettingsAppearance.accent(colorScheme).opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
-                    .accessibilityHidden(true)
+            if !compact {
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(SettingsAppearance.accent(colorScheme))
+                        .frame(width: 30, height: 30)
+                        .background(SettingsAppearance.accent(colorScheme).opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: SettingsAppearance.groupRadius))
+                        .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(l10n.text(.aiCueServiceTitle))
-                        .font(SettingsAppearance.font(.body).weight(.semibold))
-                        .foregroundColor(SettingsAppearance.text(colorScheme))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(l10n.text(.aiCueServiceTitle))
+                            .font(SettingsAppearance.font(.body).weight(.semibold))
+                            .foregroundColor(SettingsAppearance.text(colorScheme))
 
+                    }
                 }
             }
 
@@ -634,6 +639,7 @@ struct EventSettingsAICueComposerView: View {
 struct EventSettingsAICueCredentialSheet: View {
     @ObservedObject var viewModel: AICueGenerationViewModel
     @ObservedObject var languageStore: ClaudioPreferences
+    var onDone: (() -> Void)?
 
     @Environment(\.presentationMode) private var presentationMode
     @Environment(\.colorScheme) private var colorScheme
@@ -645,10 +651,12 @@ struct EventSettingsAICueCredentialSheet: View {
 
     init(
         viewModel: AICueGenerationViewModel,
-        languageStore: ClaudioPreferences
+        languageStore: ClaudioPreferences,
+        onDone: (() -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.languageStore = languageStore
+        self.onDone = onDone
     }
 
     var body: some View {
@@ -721,7 +729,7 @@ struct EventSettingsAICueCredentialSheet: View {
                 Spacer()
                 Button(l10n.text(.commonCancel)) {
                     keyInput = ""
-                    presentationMode.wrappedValue.dismiss()
+                    if let onDone { onDone() } else { presentationMode.wrappedValue.dismiss() }
                 }
                 .accessibilityLabel(l10n.text(.commonCancel))
                 .accessibilityIdentifier("event-settings.ai-cue.credential-cancel")
@@ -748,7 +756,7 @@ struct EventSettingsAICueCredentialSheet: View {
                 Task {
                     await viewModel.deleteCredential()
                     if viewModel.credentialStatus == .missing {
-                        presentationMode.wrappedValue.dismiss()
+                        if let onDone { onDone() } else { presentationMode.wrappedValue.dismiss() }
                     }
                 }
             }
@@ -791,7 +799,7 @@ struct EventSettingsAICueCredentialSheet: View {
             if viewModel.credentialFailure == nil,
                 case .stored = viewModel.credentialStatus
             {
-                presentationMode.wrappedValue.dismiss()
+                if let onDone { onDone() } else { presentationMode.wrappedValue.dismiss() }
             }
         }
     }
@@ -871,7 +879,7 @@ package func aiCueCredentialFailureText(
     }
 }
 
-private func aiCueFailureText(
+package func aiCueFailureText(
     _ failure: AICueComposerFailure,
     providerProfileID: AICueProviderProfileID,
     l10n: ClaudioL10n

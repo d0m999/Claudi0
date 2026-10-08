@@ -832,7 +832,7 @@
 <tr><td><b>横幅堆叠，让同时到达的事件各自可读</b></td><td>最多三条同时展开，每条保留独立来源、正文动作、关闭和 2px 阅读轨；超过三条显示数量及待展示列表，按到达顺序补位，总展示容量为 50 条。获得展示位置后才开始 4 秒阅读预算，入场期间不消耗；堆叠区悬停或键盘聚焦暂停整组，重绘、失败及重试不重置预算。入退场 180ms，剩余横幅平滑补位 260ms；Reduce Motion 即时切换，阅读轨固定完整长度、30% 不透明度。只关闭所选横幅，保留待接手提醒。正文与主操作共享导航；仅精确返回移除对应提醒，应用回退与请求已发送就地反馈。</td><td>2026-10-06 用户要求在主原型演示堆叠及动效。本行为属于交互探索，尚未迁移原生代码，也未修改 ADR 0013 的单瞬时版本、CONTEXT.md 的阅读及隐私合同。</td></tr>
 <tr><td><b>现行 macOS 设置整合到主原型</b></td><td>复用最新 Native Settings Alignment Prototype 的八页、统一工具栏、后退/前进历史、应用接入详情及诊断。面板与设置共享声音包、工作区、音量、事件开关和偏好；关闭设置按原入口归还焦点。</td><td>2026-10-06 用户要求整合既有 macOS 设置 UI；仅 HTML 演示，未改动 Swift 实现。</td></tr>
 <tr><td><b>系统风格设置呈现</b></td><td>八页使用 macOS 中性浅/深色、系统字体、252/210px 侧栏和单列分组表单；保留应用图标、详情层级、sheet 与键盘导航。</td><td>DESIGN.md 当前 macOS 设置与接入章节；原有独立设置设计稿作为来源保留。</td></tr>
-<tr><td><b>声音与工作区使用原生分组表单和详情导航</b></td><td>工作区独立保存声音包、音量和五事件开关；声音库、单事件编辑、AI 服务与生成采用单列详情。切换页面保留当前管理作用域，返回/前进保留浏览位置。</td><td>复用现行 macOS 对齐稿；容器称“声音包”，单个声音称“提示音”。</td></tr>
+<tr><td><b>声音设置以声音包为中心</b></td><td>声音包列表进入五事件详情；设置／更换菜单承接 AI 生成、历史音频、本包音频、导入和系统音。草稿命名后保留，试听与选用分开；后台任务及保存失败结果从生成记录处理。声音页不显示工作区信息。</td><td>2026-10-08 用户逐项确认 D1–D54，并确认整体原型定稿；文件、生成与凭据均为模拟，原生尚未实现。</td></tr>
     <tr>
       <td><b>面板顶部加入「需要你」条</b>（与横幅同源内容）</td>
       <td>面板的第一问题不是「我听的是哪套声音」，而是「有没有人在等我」。横幅是推送，面板是兜底入口，两者必须共用同一份内容投影，否则用户会读到两套说法</td>
@@ -1340,6 +1340,182 @@ dialog p { overflow-wrap:anywhere; }
 <footer class="prototype-note"><span id="prototype-message">独立设置原型 · 固定演示数据 · 合成试听</span><span><a id="research-link" href="../macos-settings-native/APPLE-DESIGN-RESEARCH.md" target="_blank">Apple 设计研究</a> &nbsp; / &nbsp; <a id="map-link" href="../macos-settings-native/IMPLEMENTATION-MAP.md" target="_blank">原生实现映射</a></span></footer>
 <div id="announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 <dialog id="sheet" aria-labelledby="sheet-title"></dialog>
+<template id="approvedSoundsTemplate"><div id="claudio-sounds-overview" aria-label="Claudio 声音设置整体交互">
+  <div class="sf-window">
+    <aside class="sf-sidebar">
+      <div class="sf-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="sf-brand">claudi<span>0</span></div>
+      <nav aria-label="设置页面">
+        <div class="sf-nav-group">
+          <span class="sf-nav"><i data-lucide="audio-lines" aria-hidden="true"></i><span>默认组／工作区</span></span>
+          <button type="button" class="sf-nav sf-current cursor-interaction" data-act="home" aria-current="page"><i data-lucide="volume-2" aria-hidden="true"></i><span>声音</span></button>
+          <span class="sf-nav"><i data-lucide="plug" aria-hidden="true"></i><span>集成</span></span>
+          <span class="sf-nav"><i data-lucide="bell" aria-hidden="true"></i><span>通知</span></span>
+        </div>
+        <div class="sf-nav-group"><span class="sf-nav"><i data-lucide="settings" aria-hidden="true"></i><span>通用</span></span><span class="sf-nav"><i data-lucide="command" aria-hidden="true"></i><span>快捷键</span></span></div>
+        <div class="sf-nav-group"><span class="sf-nav"><i data-lucide="activity" aria-hidden="true"></i><span>活动与诊断</span></span><span class="sf-nav"><i data-lucide="info" aria-hidden="true"></i><span>关于</span></span></div>
+      </nav>
+      <div class="sf-sidebar-note">声音留在本机。<br>AI 生成由你主动发起。</div>
+    </aside>
+    <div class="sf-stage">
+      <main class="sf-screen">
+        <header class="sf-toolbar">
+          <button type="button" class="sf-icon sf-back cursor-interaction" data-act="back" aria-label="返回声音包列表" hidden><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+          <h1 data-page-title>声音</h1>
+        </header>
+        <div class="sf-body">
+          <section data-route="library" aria-label="声音包列表">
+            <div class="sf-section-heading"><h2>声音包</h2><div class="sf-actions"><button type="button" class="sf-button cursor-interaction" data-act="import-pack"><i data-lucide="square-arrow-down" aria-hidden="true"></i>导入…</button><button type="button" class="sf-button sf-primary cursor-interaction" data-act="new-pack"><i data-lucide="plus" aria-hidden="true"></i>新建声音包…</button></div></div>
+            <div class="sf-box" data-pack-list></div>
+            <div class="sf-service sf-box"><i data-lucide="sparkles" aria-hidden="true"></i><div class="sf-grow"><div>AI 声音生成服务</div><div class="sf-secondary">SenseAudio · 中国 API</div></div><button type="button" class="sf-button cursor-interaction" data-act="service">管理…</button></div>
+          </section>
+          <section data-route="detail" aria-label="声音包详情" hidden>
+            <div class="sf-pack-heading"><div class="sf-cover" aria-hidden="true"><i data-lucide="audio-lines"></i></div><div class="sf-grow"><h2 data-pack-name></h2><div class="sf-secondary" data-pack-meta></div></div><button type="button" class="sf-button cursor-interaction" data-act="copy-pack" data-copy-label>复制…</button><button type="button" class="sf-button cursor-interaction" data-act="rename-pack">重命名…</button></div>
+            <p class="sf-secondary sf-consequence" data-pack-consequence></p>
+            <div class="sf-box sf-event-box" data-event-list></div>
+            <div class="sf-pack-files"><span class="sf-secondary" data-file-count></span><button type="button" class="sf-button cursor-interaction" data-act="files">管理包内音频…</button></div>
+            <div class="sf-delete-row"><button type="button" class="sf-button sf-danger cursor-interaction" data-act="delete-pack">移到废纸篓…</button><span class="sf-secondary" data-pack-delete-reason></span></div>
+          </section>
+          <section data-route="history" aria-label="生成记录" hidden>
+            <div data-current-task></div>
+            <div class="sf-history-list" data-history-list></div>
+            <p class="sf-secondary sf-history-footnote">记录保存在这台 Mac。移到废纸篓不会影响声音包内已选用的副本。</p>
+          </section>
+          <button type="button" class="sf-history-entry sf-box cursor-interaction" data-act="history"><span class="sf-history-glyph"><i data-lucide="clock-3" aria-hidden="true"></i></span><span class="sf-grow"><span>生成记录</span><span class="sf-secondary" data-history-status>查看、试听和管理生成的音频</span></span><span class="sf-notice" data-history-badge hidden></span><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+          <div class="sf-status sf-secondary" aria-live="polite" data-status></div>
+        </div>
+      </main>
+      <div class="sf-overlay" hidden>
+        <section class="sf-sheet" role="dialog" aria-modal="true" aria-labelledby="sf-dialog-title">
+          <header class="sf-sheet-header"><h2 id="sf-dialog-title"></h2><p class="sf-secondary" data-dialog-subtitle></p></header>
+          <div class="sf-sheet-body" data-dialog-body></div>
+          <footer class="sf-sheet-footer" data-dialog-footer></footer>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <template data-tpl="pack-row"><button type="button" class="sf-pack-row cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><span class="sf-tag" data-tag></span><i data-lucide="chevron-right" aria-hidden="true"></i></button></template>
+  <template data-tpl="event-row"><div class="sf-event"><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入音频…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>macOS 系统提示音…</button></div></div></template>
+  <template data-tpl="choice-row"><div class="sf-audio-row"><label class="sf-audio-select cursor-interaction"><input type="radio" name="sf-audio-selection"><span class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></span></label><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><div class="sf-actions" data-extra></div></div></template>
+  <template data-tpl="managed-audio"><div class="sf-audio-row"><div class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></div><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-icon cursor-interaction" data-rename aria-label="重命名音频"><i data-lucide="pencil" aria-hidden="true"></i></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash aria-label="移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div></template>
+  <template data-tpl="history-group"><section class="sf-box sf-history-group"><div class="sf-history-header"><button type="button" class="sf-disclosure cursor-interaction" data-expand aria-expanded="true"><span data-chevron aria-hidden="true">⌄</span><span class="sf-grow"><span class="sf-medium" data-description></span><span class="sf-secondary" data-metadata></span></span></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash-group aria-label="将整组音频移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div><div class="sf-group-audio" data-audio-list></div></section></template>
+  <template data-tpl="name-form"><form data-name-form><label class="sf-field-label" for="sf-name-input">声音包名称</label><input id="sf-name-input" class="sf-input" type="text" autocomplete="off" maxlength="64" required><p class="sf-error" data-name-error role="alert" hidden></p><p class="sf-secondary" data-name-hint></p></form></template>
+  <template data-tpl="ai-form"><div class="sf-ai"><div class="sf-inline-service"><span class="sf-secondary">SenseAudio · 中国 API</span><button type="button" class="sf-link cursor-interaction" data-act="service">管理…</button></div><label class="sf-field-label" for="sf-ai-prompt">描述你想要的声音</label><textarea id="sf-ai-prompt" class="sf-input" rows="3" maxlength="500" placeholder="例如：一声柔和、轻快的提示音，像玻璃风铃，不要人声。"></textarea><div class="sf-generate-row"><span class="sf-secondary">一般生成 3 条，试听后选择一条。</span><button type="button" class="sf-button sf-primary cursor-interaction" data-act="generate">生成 3 条</button></div><div data-ai-progress></div><div data-ai-results></div><p class="sf-secondary" data-ai-reason hidden></p></div></template>
+  <template data-tpl="task"><section class="sf-task sf-box"><div class="sf-task-title"><i data-lucide="sparkles" aria-hidden="true"></i><div class="sf-grow"><span class="sf-medium" data-task-title></span><span class="sf-secondary" data-task-meta></span></div><button type="button" class="sf-button cursor-interaction" data-cancel-task>取消生成</button></div><p class="sf-task-description" data-task-description></p><p class="sf-error" data-task-error hidden></p><div class="sf-group-audio" data-task-audios></div><div class="sf-task-actions" data-task-actions></div></section></template>
+  <template data-tpl="service"><div class="sf-box"><div class="sf-setting-row"><span>生成服务与地区</span><span>SenseAudio · 中国 API</span></div><div class="sf-setting-row"><span>API Key</span><span class="sf-secondary">已保存 · 已验证</span></div></div><p class="sf-secondary">生成的音频和描述保存在本机。请求仅在你点击生成后发出。</p></template>
+  <template data-tpl="confirm"><p class="sf-confirm-message" data-confirm-message></p><p class="sf-secondary" data-confirm-note></p></template>
+  <template data-tpl="import-pack"><div class="sf-box"><div class="sf-setting-row"><span class="sf-medium">森林轻响.claudiopack</span><i data-lucide="package" aria-hidden="true"></i></div><div class="sf-setting-row"><span>声音包</span><span>森林轻响</span></div><div class="sf-setting-row"><span>包含</span><span>5 个事件 · 5 个音频文件</span></div></div><p class="sf-secondary">导入后可在声音包列表中查看和编辑。</p></template>
+</div>
+<style>
+  #claudio-sounds-overview { --sf-window:light-dark(#fafafa,#242426); --sf-sidebar:light-dark(#ededee,#303033); --sf-surface:light-dark(#fff,#323235); --sf-text:light-dark(#252528,#f1f1f3); --sf-muted:light-dark(#717178,#b5b5bd); --sf-line:light-dark(#e0e0e4,#49494e); --sf-blue:light-dark(#0074eb,#287fe0); --sf-on-blue:light-dark(#fff,#fff); --sf-select:light-dark(#edf5ff,#263e56); --sf-button:light-dark(#fff,#48484e); --sf-red:light-dark(#c32924,#ff908c); --sf-soft:light-dark(#f4f4f6,#3a3a3f); --sf-shadow:light-dark(#00000016,#00000055); --sf-veil:light-dark(#29293425,#05050a78); --sf-orange:light-dark(#a56004,#ffcb80); font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; color:var(--sf-text); width:100%; }
+  #claudio-sounds-overview * { box-sizing:border-box; }
+  #claudio-sounds-overview [hidden] { display:none!important; }
+  #claudio-sounds-overview .sf-window { display:grid; grid-template-columns:190px minmax(0,1fr); background:var(--sf-window); border:1px solid var(--sf-line); border-radius:12px; box-shadow:0 6px 22px var(--sf-shadow); min-height:720px; }
+  #claudio-sounds-overview .sf-sidebar { background:var(--sf-sidebar); border-right:1px solid var(--sf-line); border-radius:12px 0 0 12px; display:flex; flex-direction:column; padding:20px 12px 18px; }
+  #claudio-sounds-overview .sf-lights { display:flex; gap:8px; padding:0 6px; }
+  #claudio-sounds-overview .sf-lights span { width:11px; height:11px; border-radius:50%; background:light-dark(#fd625b,#c34d48); }
+  #claudio-sounds-overview .sf-lights span:nth-child(2) { background:light-dark(#f4bd4f,#b48d3c); }
+  #claudio-sounds-overview .sf-lights span:nth-child(3) { background:light-dark(#50c55b,#429e4b); }
+  #claudio-sounds-overview .sf-brand { font-size:24px; font-weight:500; letter-spacing:-1px; margin:30px 10px 25px; }
+  #claudio-sounds-overview .sf-brand span { color:var(--sf-orange); }
+  #claudio-sounds-overview .sf-nav-group { display:grid; gap:3px; margin-bottom:24px; }
+  #claudio-sounds-overview .sf-nav { width:100%; display:flex; align-items:center; gap:10px; padding:9px 10px; border:0; border-radius:7px; background:transparent; color:var(--sf-text); font:inherit; text-align:left; }
+  #claudio-sounds-overview .sf-nav svg { width:17px; height:17px; flex-shrink:0; }
+  #claudio-sounds-overview .sf-current { background:var(--sf-blue); color:var(--sf-on-blue); font-weight:500; }
+  #claudio-sounds-overview .sf-sidebar-note { color:var(--sf-muted); font-size:11px; padding:24px 8px 0; margin-top:auto; }
+  #claudio-sounds-overview .sf-stage { display:grid; min-width:0; position:relative; }
+  #claudio-sounds-overview .sf-screen,#claudio-sounds-overview .sf-overlay { grid-area:1/1; min-width:0; }
+  #claudio-sounds-overview .sf-toolbar { display:flex; align-items:center; gap:10px; padding:18px 24px; min-height:67px; padding-right:95px; }
+  #claudio-sounds-overview h1 { margin:0; font-size:20px; font-weight:500; }
+  #claudio-sounds-overview h2 { margin:0; font-size:15px; font-weight:500; }
+  #claudio-sounds-overview p { margin:10px 0; }
+  #claudio-sounds-overview .sf-body { padding:19px 28px 24px; }
+  #claudio-sounds-overview .sf-section-heading { display:flex; align-items:center; gap:12px; justify-content:space-between; margin-bottom:13px; flex-wrap:wrap; }
+  #claudio-sounds-overview .sf-actions { display:flex; align-items:center; gap:9px; flex-shrink:0; flex-wrap:wrap; }
+  #claudio-sounds-overview button { font:inherit; }
+  #claudio-sounds-overview button:disabled { opacity:.45; cursor:default; }
+  #claudio-sounds-overview .sf-button,#claudio-sounds-overview .sf-icon { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:4px 11px; min-height:29px; border:1px solid var(--sf-line); border-radius:6px; color:var(--sf-text); background:var(--sf-button); box-shadow:0 1px 2px var(--sf-shadow); white-space:nowrap; }
+  #claudio-sounds-overview .sf-icon { width:30px; padding:4px; flex-shrink:0; }
+  #claudio-sounds-overview .sf-icon svg,#claudio-sounds-overview .sf-button svg { width:14px; height:14px; }
+  #claudio-sounds-overview .sf-primary { background:var(--sf-blue); color:var(--sf-on-blue); border-color:var(--sf-blue); }
+  #claudio-sounds-overview .sf-danger { color:var(--sf-red); }
+  #claudio-sounds-overview .sf-link { background:transparent; color:var(--sf-blue); border:0; padding:4px 0; font:inherit; }
+  #claudio-sounds-overview .sf-clear { color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-secondary { color:var(--sf-muted); font-size:12px; font-weight:400; }
+  #claudio-sounds-overview .sf-grow { flex:1; min-width:0; overflow-wrap:anywhere; }
+  #claudio-sounds-overview .sf-grow>span { display:block; }
+  #claudio-sounds-overview .sf-medium { font-weight:500; }
+  #claudio-sounds-overview .sf-box { border:1px solid var(--sf-line); border-radius:9px; background:var(--sf-surface); }
+  #claudio-sounds-overview .sf-cover { width:48px; height:48px; border-radius:10px; background:var(--sf-soft); color:var(--sf-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  #claudio-sounds-overview .sf-cover svg { width:26px; height:26px; }
+  #claudio-sounds-overview .sf-cover-small { width:38px; height:38px; border-radius:8px; }
+  #claudio-sounds-overview .sf-cover-small svg { width:21px; height:21px; }
+  #claudio-sounds-overview .sf-pack-row { padding:16px; display:flex; align-items:center; gap:13px; border:0; border-bottom:1px solid var(--sf-line); background:transparent; width:100%; text-align:left; color:var(--sf-text); }
+  #claudio-sounds-overview .sf-pack-row:last-child { border-bottom:0; }
+  #claudio-sounds-overview .sf-pack-row>svg { width:15px; color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-pack-row:hover { background:var(--sf-soft); }
+  #claudio-sounds-overview .sf-tag { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
+  #claudio-sounds-overview .sf-service { display:flex; align-items:center; gap:12px; padding:16px; margin-top:24px; }
+  #claudio-sounds-overview .sf-service>svg { width:20px; color:var(--sf-blue); }
+  #claudio-sounds-overview .sf-history-entry { display:flex; align-items:center; gap:12px; padding:16px; margin-top:18px; width:100%; text-align:left; color:var(--sf-text); }
+  #claudio-sounds-overview .sf-history-entry svg { width:17px; }
+  #claudio-sounds-overview .sf-history-glyph { color:var(--sf-muted); display:flex; }
+  #claudio-sounds-overview .sf-notice { color:var(--sf-blue); font-size:12px; }
+  #claudio-sounds-overview .sf-pack-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+  #claudio-sounds-overview .sf-pack-heading h2 { font-size:20px; }
+  #claudio-sounds-overview .sf-consequence { margin:15px 0 20px; }
+  #claudio-sounds-overview .sf-event { position:relative; border-bottom:1px solid var(--sf-line); }
+  #claudio-sounds-overview .sf-event:last-child { border:0; }
+  #claudio-sounds-overview .sf-event-main { display:flex; align-items:center; gap:12px; min-height:78px; padding:15px; }
+  #claudio-sounds-overview .sf-event-glyph { display:flex; align-items:center; color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-event-glyph svg { width:17px; height:17px; }
+  #claudio-sounds-overview .sf-source-menu { display:grid; gap:3px; padding:6px; background:var(--sf-surface); border:1px solid var(--sf-line); box-shadow:0 5px 15px var(--sf-shadow); border-radius:8px; position:absolute; top:62px; right:14px; z-index:3; width:218px; max-width:calc(100% - 20px); }
+  #claudio-sounds-overview .sf-source-menu button { padding:8px; border:0; border-radius:4px; display:flex; align-items:center; gap:9px; background:transparent; color:var(--sf-text); text-align:left; }
+  #claudio-sounds-overview .sf-source-menu button:hover { background:var(--sf-select); }
+  #claudio-sounds-overview .sf-source-menu svg { width:15px; height:15px; }
+  #claudio-sounds-overview .sf-pack-files { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:15px; }
+  #claudio-sounds-overview .sf-delete-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding-top:25px; }
+  #claudio-sounds-overview .sf-status { min-height:18px; margin-top:12px; }
+  #claudio-sounds-overview .sf-overlay { z-index:5; display:flex; align-items:flex-start; justify-content:center; padding:46px 20px 30px; background:var(--sf-veil); border-radius:0 12px 12px 0; }
+  #claudio-sounds-overview .sf-sheet { width:100%; max-width:550px; background:var(--sf-surface); border:1px solid var(--sf-line); border-radius:11px; box-shadow:0 12px 38px var(--sf-shadow); }
+  #claudio-sounds-overview .sf-sheet-header { padding:21px 22px 0; }
+  #claudio-sounds-overview .sf-sheet-header h2 { font-size:17px; }
+  #claudio-sounds-overview .sf-sheet-header p { margin:5px 0 0; }
+  #claudio-sounds-overview .sf-sheet-body { padding:18px 22px 12px; }
+  #claudio-sounds-overview .sf-sheet-footer { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:9px; padding:10px 22px 19px; }
+  #claudio-sounds-overview .sf-field-label { display:block; margin-bottom:7px; font-weight:500; }
+  #claudio-sounds-overview .sf-input { display:block; width:100%; padding:8px 10px; font:inherit; color:var(--sf-text); background:var(--sf-window); border:1px solid var(--sf-line); border-radius:6px; resize:vertical; }
+  #claudio-sounds-overview .sf-error { color:var(--sf-red); font-size:12px; }
+  #claudio-sounds-overview .sf-inline-service { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:12px; }
+  #claudio-sounds-overview .sf-generate-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0 18px; }
+  #claudio-sounds-overview .sf-audio-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--sf-line); }
+  #claudio-sounds-overview .sf-audio-row:first-child { border-top:0; }
+  #claudio-sounds-overview .sf-audio-select { display:flex; align-items:center; gap:11px; flex:1; min-width:0; }
+  #claudio-sounds-overview input[type="radio"] { accent-color:var(--sf-blue); flex-shrink:0; margin:0; }
+  #claudio-sounds-overview .sf-audio-row[data-selected="true"] { background:var(--sf-select); }
+  #claudio-sounds-overview .sf-history-group { margin-bottom:14px; }
+  #claudio-sounds-overview .sf-history-header { padding:12px 13px; display:flex; gap:8px; align-items:center; }
+  #claudio-sounds-overview .sf-disclosure { display:flex; align-items:flex-start; gap:9px; flex:1; min-width:0; background:transparent; color:var(--sf-text); border:0; text-align:left; padding:0; }
+  #claudio-sounds-overview .sf-disclosure>[data-chevron] { width:10px; color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-group-audio { padding:0 14px; }
+  #claudio-sounds-overview .sf-history-footnote { margin:18px 0; }
+  #claudio-sounds-overview .sf-task { padding:14px; margin-bottom:16px; }
+  #claudio-sounds-overview .sf-task-title { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  #claudio-sounds-overview .sf-task-title>svg { width:17px; color:var(--sf-blue); }
+  #claudio-sounds-overview .sf-task-description { margin:12px 0 6px; overflow-wrap:anywhere; }
+  #claudio-sounds-overview .sf-task-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  #claudio-sounds-overview .sf-task-actions:empty { display:none; }
+  #claudio-sounds-overview .sf-setting-row { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:12px 14px; border-bottom:1px solid var(--sf-line); }
+  #claudio-sounds-overview .sf-setting-row:last-child { border:0; }
+  #claudio-sounds-overview .sf-empty { padding:30px 10px; text-align:center; color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-confirm-message { font-size:14px; overflow-wrap:anywhere; }
+  @media (max-width:760px) { #claudio-sounds-overview .sf-window { grid-template-columns:154px minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { padding-inline:8px; } #claudio-sounds-overview .sf-nav { gap:7px; padding-inline:7px; font-size:12px; } #claudio-sounds-overview .sf-body { padding-inline:17px; } #claudio-sounds-overview .sf-event-main { flex-wrap:wrap; } #claudio-sounds-overview .sf-event-main>.sf-actions { margin-left:auto; } #claudio-sounds-overview .sf-overlay { padding:28px 12px; } #claudio-sounds-overview .sf-sheet-body,#claudio-sounds-overview .sf-sheet-header { padding-inline:16px; } }
+  @media (max-width:550px) { #claudio-sounds-overview .sf-window { grid-template-columns:minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { display:none; } #claudio-sounds-overview .sf-toolbar { padding-left:17px; } #claudio-sounds-overview .sf-overlay { border-radius:12px; } #claudio-sounds-overview .sf-section-heading>.sf-actions { width:100%; } #claudio-sounds-overview .sf-pack-heading>.sf-grow { flex-basis:calc(100% - 64px); } #claudio-sounds-overview .sf-history-header { align-items:flex-start; } #claudio-sounds-overview .sf-audio-row { flex-wrap:wrap; } #claudio-sounds-overview .sf-audio-select { min-width:160px; } #claudio-sounds-overview .sf-sheet-footer { padding-inline:16px; } #claudio-sounds-overview .sf-event-main>.sf-grow { flex-basis:calc(100% - 36px); } #claudio-sounds-overview .sf-source-menu { top:100%; } }
+  @media (pointer:coarse) { #claudio-sounds-overview button,#claudio-sounds-overview .sf-audio-select { min-height:44px; } #claudio-sounds-overview .sf-icon { min-width:44px; } #claudio-sounds-overview .sf-input { font-size:16px; } #claudio-sounds-overview .sf-source-menu { top:100%; } }
+</style>
+
+<style>#claudio-sounds-overview .sf-window{display:block;min-height:0;border:0;box-shadow:none;background:transparent}#claudio-sounds-overview .sf-sidebar,#claudio-sounds-overview .sf-toolbar{display:none}#claudio-sounds-overview .sf-body{padding:0}#claudio-sounds-overview .sf-overlay{border-radius:10px;padding-top:24px}#claudio-sounds-overview{color-scheme:inherit}</style></template>
 </template>
 
 <script>
@@ -4511,7 +4687,7 @@ const host=()=>S.hosts.find(h=>h.id===S.selectedHost);
 const users=p=>S.scopes.filter(g=>g.pack===p.id).map(scopeName);
 const credential=()=>S.credentials[S.profile];
 const hasCredential=()=>['verified','deferred','pending'].includes(credential().status);
-const installed=p=>p&&S.packs.some(v=>v.id===p.id);
+const installed=p=>p&&!p.draft&&S.packs.some(v=>v.id===p.id);
 const canWrite=p=>p&&!p.builtin&&p.healthy&&S.library==='ready'&&!S.operation&&S.generation!=='busy';
 const editorIndex=()=>S.detail?.startsWith('edit:')?events.findIndex(e=>e.id===S.detail.slice(5)):-1;
 const routeKey=()=>S.page+':'+(S.detail||'');
@@ -4521,8 +4697,9 @@ function feedback(){return S.notice?reason(esc(T(S.notice.zh,S.notice.en)),S.not
 function stopAudio(){audioEpoch++;for(const n of audioNodes){try{n.stop();}catch(_){}}audioNodes=[];clearTimeout(audioTimer);audioTimer=null;document.querySelectorAll('.playing').forEach(b=>{b.classList.remove('playing');const act=b.dataset.action||'',index=Number(act.split(':')[1]||0),candidate=act.startsWith('candidate-preview:');b.innerHTML=candidate?T('试听','Preview'):icon('play');b.setAttribute('aria-pressed','false');b.removeAttribute('title');b.setAttribute('aria-label',T('试听','Preview')+' '+(candidate?candidateName(S.candidates[index]):events[index].name()));});}
 function clearGeneration(){if(S.retry?.fault==='adopt')S.retry=null;clearTimeout(generationTimer);generationTimer=null;S.generation=null;S.candidates=[];S.adoptionName='';}
 function cancelOperation(){if(!S.operation)return;clearTimeout(workTimer);workTimer=null;S.epoch++;const op=S.operation;S.operation=null;setNotice(op.imported?.length?`已取消；${op.imported.length} 个成功导入的文件保留，尚未绑定。`:'操作已取消，目标配置未改变。',op.imported?.length?`Cancelled; ${op.imported.length} imported files remain unbound.`:'Cancelled. The target configuration is unchanged.','warning');render();}
-function cleanup(){if($('sheet').open)closeSheet();stopAudio();clearGeneration();cancelOperation();S.epoch++;if(S.draft){S.pack=S.lastInstalledPack||S.packs[0]?.id;S.draft=null;}S.reading=null;S.pendingExpanded=false;}
+function cleanup(){approvedSoundsView?.suspend();if($('sheet').open)closeSheet();stopAudio();clearGeneration();cancelOperation();S.epoch++;if(S.draft){S.pack=S.lastInstalledPack||S.packs[0]?.id;S.draft=null;}S.reading=null;S.pendingExpanded=false;}
 function navigateOriginal(page,detail=null,options={}){
+ if(S.page==='sounds'&&page!=='sounds')approvedSoundsView?.suspend();
  scrollByRoute[routeKey()]=$('page-scroll').scrollTop;stopAudio();
  if(S.page==='sounds'&&(page!=='sounds'||S.detail!==detail||options.pack&&options.pack!==S.pack))clearGeneration();
  if(S.operation)cancelOperation();S.epoch++;
@@ -4537,6 +4714,7 @@ function renderNav(){
  $('settings-nav').innerHTML=pages.map(p=>`<button class="nav-item ${S.page===p.id?'active':''} ${['general','usage'].includes(p.id)?'group-start':''}" data-action="nav:${p.id}" ${S.page===p.id?'aria-current="page"':''}><span class="nav-icon" style="--icon-color:${p.color}">${icon(p.icon)}</span><span>${p.title()}</span></button>`).join('');
 }
 function title(){
+ if(S.page==='sounds'&&S.detail==='pack')return T('声音包','Sound pack');if(S.page==='sounds'&&S.detail==='history')return T('生成记录','Generation history');
  if(S.detail==='workspaces')return T('工作区','Workspaces');if(S.detail==='scope-details')return scopeName(scope());
  if(S.detail==='service')return T('AI 提示音服务','AI cue services');if(S.detail==='audio')return T('音频文件','Audio files');
  if(S.detail==='panel')return T('面板显示集','Panel display set');if(S.detail==='host')return host().name;
@@ -4572,7 +4750,7 @@ function render(){
  localizeShell();renderNav();$('page-title').textContent=title();
  $('detail-back').hidden=false;$('detail-back').setAttribute('aria-label',T('返回上一级','Back to parent'));
  const views={events:renderEvents,sounds:renderSounds,integrations:renderIntegrations,notifications:renderNotifications,general:renderGeneral,shortcuts:renderShortcuts,usage:renderUsage,about:renderAbout};
- $('page-content').innerHTML=views[S.page]();
+ $('page-content').innerHTML=views[S.page]();if(S.page==='sounds')mountApprovedSounds();
  if(focus){const target=focus.id?$(focus.id):focus.action?focusRoot.querySelector(`[data-action="${CSS.escape(focus.action)}"]`):focus.control?focusRoot.querySelector(`[data-control="${CSS.escape(focus.control)}"]`):null;if(target&&!target.disabled)target.focus({preventScroll:true});else focusReason();}
 }
 function libraryStatus(){
@@ -4613,16 +4791,448 @@ function renderScopeDetails(){const g=scope();if(!g)return reason(T('工作区�
  section(T('适用来源','Eligible surfaces'),['claude-code','codex','workbuddy'].map(id=>row(S.hosts.find(h=>h.id===id).name,id==='workbuddy'?T('目录证据尚不完整，当前不可选。','Directory evidence is incomplete; currently unavailable.'):T('已具备验证过的目录证据。','Verified directory evidence is available.'),toggle(T('工作区适用','Workspace eligibility')+' '+id,`scope-surface:${id}`,g.surfaces.includes(id),id==='workbuddy'||!!S.operation))).join('')+(!g.surfaces.length?reason(T('没有适用来源。此规则保留完整声音配置，目前不会匹配任何来源。','No eligible surfaces. The complete sound configuration is retained, but this rule currently matches no surface.')):''))+
  section(T('声音配置','Sound configuration'),disclosure(T('编辑声音配置','Edit sound configuration'),T('声音包、独立音量和五事件开关。','Pack, independent volume, and five event switches.'),'',`select-workspace:${g.id}`))+
  feedback();}
-function management(){const g=scope();const p=pack();return section(T('当前管理作用域','Current management scope'),row(T('声音作用域','Sound scope'),g?`${esc(scopeName(g))} · ${T('查看声音包不会应用到此组。','Viewing a pack does not apply it to this group.')}`:T('原目标不可用。请显式选择。','The previous target is unavailable. Select explicitly.'),picker(T('当前管理作用域','Current management scope'),'management-scope',[...(!g?[['__invalid__',T('目标不可用','Target unavailable')]]:[]),...S.scopes.map(g=>[g.id,scopeName(g)])],g?S.scope:'__invalid__'))+row(T('用于当前作用域','Use for current scope'),g&&p?`${esc(scopeName(g))} · ${g.pack===p.id?T('使用中','In use'):T('尚未使用此包','Not using this pack')}`:'',button(g&&g.pack===p?.id?T('使用中','In use'):T('使用此声音包','Use this pack'),'use-pack','small-button',!g||!installed(p)||!p.healthy||g.pack===p.id||S.library!=='ready'||!!S.operation)));}
-function packActions(p){return row(T('包操作','Pack actions'),'',button(T('声音包资料…','Pack information…'),'pack-options','small-button',!installed(p)||!!S.operation));}
-function renderSounds(){
+function createApprovedSoundsView(root,bridge) {
+  const events = [
+    { id:'task_start', name:'用户发起', icon:'send' },
+    { id:'stop', name:'响应结束', icon:'circle-check' },
+    { id:'stop_failure', name:'执行中断', icon:'circle-pause' },
+    { id:'notification', name:'等待介入', icon:'bell' },
+    { id:'subagent_stop', name:'子任务结束', icon:'check-check' }
+  ];
+  const sampleService = bridge.service();
+  const copy = value => JSON.parse(JSON.stringify(value));
+  const audio = (id, name, filename, duration=1.4) => ({ id, name, filename, duration });
+
+  // Throwaway model: only sample data, no audio, credentials, network or file I/O.
+  const Model = {
+    key: value => value.trim().normalize('NFKC').toLocaleLowerCase(),
+    nameError(state, value, exclude) {
+      const name=value.trim();
+      if (!name) return '请输入声音包名称。';
+      if (Array.from(name).length>64 || /[\u0000-\u001f\u007f]/u.test(name)) return '名称最多 64 个字符，不能包含换行或控制字符。';
+      if (state.packs.some(p=>p.id!==exclude && this.key(p.name)===this.key(name))) return '已有同名声音包';
+      return '';
+    },
+    reduce(previous, action) {
+      const state=copy(previous), pack=state.packs.find(p=>p.id===action.packID);
+      switch(action.type) {
+        case 'name': {
+          const error=this.nameError(state,action.name,action.mode==='rename'?action.packID:null);
+          if(error) return {state:previous,error};
+          if(action.mode==='rename') { if(!pack||pack.kind==='builtin') return {state:previous,error:'此声音包不能重命名。'}; pack.name=action.name.trim(); return {state,id:pack.id}; }
+          const id='pack-'+state.serial++;
+          const next=action.mode==='copy'&&pack?copy(pack):{files:[],bindings:{},kind:'draft'};
+          next.copiedFrom=action.mode==='copy'?pack.id:null;next.id=id; next.name=action.name.trim(); next.protected=false;
+          if(action.mode==='copy'&&next.kind!=='draft') next.kind='user';
+          state.packs.push(next); return {state,id};
+        }
+        case 'clear': if(pack&&pack.kind!=='builtin') delete pack.bindings[action.event]; break;
+        case 'adopt': {
+          if(!pack||pack.kind==='builtin'||!action.audio) return {state:previous,error:'当前目标不可编辑。'};
+          if(action.origin==='ai'&&(state.task?.phase!=='saved'||state.task?.context!==action.context)) return {state:previous,error:'请从该事件的“从生成记录选择”重新选用。'};
+          let binding;
+          if(action.origin==='system') binding={type:'system',id:action.audio.id,name:action.audio.name};
+          else if(action.origin==='pack') {
+            if(!pack.files.some(f=>f.id===action.audio.id)) return {state:previous,error:'此音频已不在声音包中。'};
+            binding={type:'file',id:action.audio.id};
+          } else {
+            const newAudio=copy(action.audio); newAudio.id='file-'+state.serial++;
+            let filename=newAudio.filename; let suffix=2;
+            while(pack.files.some(f=>f.filename===filename)) filename=newAudio.filename.replace(/(\.[^.]+)$/u,'-'+suffix+++'$1');
+            newAudio.filename=filename; pack.files.push(newAudio); binding={type:'file',id:newAudio.id};
+          }
+          if(Object.entries(pack.bindings).some(([event,b])=>event!==action.event&&b.type===binding.type&&b.id===binding.id)) return {state:previous,error:'此音频正在被其他事件使用，请选择另一条。'};
+          pack.bindings[action.event]=binding; if(pack.kind==='draft') pack.kind='user'; break;
+        }
+        case 'start': {
+          if(state.task&&['running','pending'].includes(state.task.phase)) return {state:previous,error:'请先处理当前生成任务。'};
+          if(!action.description.trim()) return {state:previous,error:'请先描述你想要的声音。'};
+          state.task={id:'generation-'+state.serial++,phase:'running',context:action.context,description:action.description.trim(),service:action.service||sampleService,time:action.time,outcome:action.outcome,items:[],due:action.due,count:action.count||3};
+          state.prompt=action.description; break;
+        }
+        case 'finish': {
+          if(state.task?.id!==action.id||state.task.phase!=='running') break;
+          const t=state.task;
+          if(t.outcome==='generation-failure') {t.phase='failed';break;}
+          t.items=[audio(t.id+'-1','轻铃 · 明亮','bright-chime.mp3',1.2),audio(t.id+'-2','轻铃 · 柔和','soft-chime.mp3',1.6),audio(t.id+'-3','轻铃 · 清脆','clear-chime.mp3',1.4)];
+          t.items=t.items.slice(0,t.count||3);
+          t.phase=t.outcome==='save-failure'?'pending':'saved';
+          if(t.phase==='saved') {state.history.unshift({id:t.id,description:t.description,time:t.time,service:t.service,items:copy(t.items)});state.unseen+=t.items.length;}
+          break;
+        }
+        case 'cancel': if(state.task?.phase==='running') {state.task.phase='cancelled';state.task.items=[];} break;
+        case 'invalidate': if(state.task?.context===action.context) state.task.context=null; break;
+        case 'retry-save': {
+          const t=state.task; if(t?.phase!=='pending') break;
+          t.phase='saved'; state.history.unshift({id:t.id,description:t.description,time:t.time,service:t.service,items:copy(t.items)});state.unseen+=t.items.length;break;
+        }
+        case 'abandon': if(state.task?.phase==='pending') state.task=null; break;
+        case 'delete-audio': {
+          const group=state.history.find(g=>g.id===action.groupID);if(!group) break;
+          group.items=group.items.filter(a=>a.id!==action.id);state.history=state.history.filter(g=>g.items.length);break;
+        }
+        case 'delete-group': state.history=state.history.filter(g=>g.id!==action.id);break;
+        case 'rename-audio': {
+          const item=state.history.flatMap(g=>g.items).find(a=>a.id===action.id);
+          if(item&&action.name.trim()) item.name=action.name.trim();break;
+        }
+        case 'delete-file': {
+          if(!pack||pack.kind==='builtin'||Object.values(pack.bindings).some(b=>b.type==='file'&&b.id===action.id)) return {state:previous,error:'此音频正在使用，无法移到废纸篓。'};
+          pack.files=pack.files.filter(f=>f.id!==action.id);break;
+        }
+        case 'delete-pack': if(pack&&!pack.protected&&pack.kind!=='builtin') state.packs=state.packs.filter(p=>p.id!==pack.id);break;
+        case 'import-pack': {
+          if(state.packs.some(p=>p.id==='forest')) return {state:previous,error:'森林轻响已经导入。'};
+          state.packs.push({id:'forest',name:'森林轻响',kind:'user',protected:false,files:events.map((e,i)=>audio('forest-'+i,e.name+'轻响',e.id+'.wav')),bindings:Object.fromEntries(events.map((e,i)=>[e.id,{type:'file',id:'forest-'+i}]))});break;
+        }
+      }
+      return {state};
+    }
+  };
+  let state=bridge.read();
+  let ui={route:'library',packID:'daily',returnRoute:'library',menu:null,dialogs:[],collapsed:[],status:''};
+  let playing=null,playTimer=null,taskTimer=null,scheduledID=null;
+  const scenario={nextResult:'success'};
+  const q=(selector,parent=root)=>parent.querySelector(selector);
+  const all=(selector,parent=root)=>Array.from(parent.querySelectorAll(selector));
+  const tpl=name=>q('[data-tpl="'+name+'"]').content.cloneNode(true);
+  const top=()=>ui.dialogs.at(-1);
+  const selectedPack=()=>state.packs.find(p=>p.id===ui.packID)||state.packs[0];
+  const eventName=id=>events.find(e=>e.id===id)?.name||'';
+  const count=p=>Object.keys(p.bindings).length;
+  function button(text,action,primary=false) {
+    const el=document.createElement('button');el.type='button';el.className='sf-button cursor-interaction'+(primary?' sf-primary':'');el.textContent=text;el.dataset.act=action;return el;
+  }
+  function textNode(text,className='sf-secondary') {const el=document.createElement('p');el.className=className;el.textContent=text;return el;}
+  function icons() {bridge.icons(root);}
+  function stopPreview() {playing=null;clearTimeout(playTimer);syncPreview();}
+  function syncPreview() {all('[data-preview]').forEach(b=>{const active=playing===b.dataset.preview;b.textContent=active?'■':'▶';b.setAttribute('aria-label',(active?'停止试听 ':'试听 ')+(b.dataset.audioName||''));b.setAttribute('aria-pressed',String(active));});}
+  function listen(id,name,duration) {
+    if(playing===id) {stopPreview();return;}
+    stopPreview();playing=id;syncPreview();playTimer=setTimeout(stopPreview,Math.max(800,duration*1000));
+  }
+  function previewButton(el,item,namespace) {el.dataset.preview=namespace+':'+item.id;el.dataset.audioName=item.name;el.dataset.duration=String(item.duration||1.4);}
+  function dispatch(action) {
+    state=bridge.read();const blocked=bridge.guard(action);
+    const result=blocked?{state,error:blocked}:Model.reduce(state,action);
+    state=result.state;if(result.error){ui.status=result.error;if(top())top().error=result.error;}else bridge.write(state,action);
+    return result;
+  }
+  function persist() {bridge.publish();}
+  function commit() {render();persist();}
+  function openDialog(dialog) {stopPreview();ui.menu=null;ui.dialogs.push(dialog);render();q('input,textarea,button',q('.sf-sheet'))?.focus();persist();}
+  function closeDialog() {
+    stopPreview();const d=ui.dialogs.pop();if(d?.type==='ai') dispatch({type:'invalidate',context:d.context});
+    render();const focus=top()?q('input,textarea,button',q('.sf-sheet')):q('[data-act="back"]:not([hidden])')||q('[data-act="new-pack"]');focus?.focus();persist();
+  }
+  function navigate(route,packID) {
+    stopPreview();ui.dialogs.forEach(d=>{if(d.type==='ai') dispatch({type:'invalidate',context:d.context});});ui.dialogs=[];ui.menu=null;ui.status='';
+    if(route==='history') {ui.returnRoute=ui.route;state.unseen=0;}
+    ui.route=route;if(packID) ui.packID=packID;bridge.browse(route,ui.packID);commit();
+  }
+  function freshName(base) {const stem=Array.from(base.trim()).slice(0,57).join('');let name=stem,n=2;while(Model.nameError(state,name,null)) name=stem+' '+n++;return name;}
+  function scheduleTask() {
+    if(state.task?.phase!=='running') {clearTimeout(taskTimer);scheduledID=null;return;}
+    if(scheduledID===state.task.id) return;
+    clearTimeout(taskTimer);scheduledID=state.task.id;const id=scheduledID;
+    taskTimer=setTimeout(()=>{scheduledID=null;dispatch({type:'finish',id});commit();},Math.max(0,state.task.due-Date.now()));
+  }
+  function boundAudio(pack,event) {
+    const b=pack.bindings[event];if(!b) return null;
+    return b.type==='system'?audio(b.id,b.name,b.name+' · macOS 系统提示音'):pack.files.find(f=>f.id===b.id)||null;
+  }
+  function occupation(pack,item,type,event) {
+    const found=Object.entries(pack.bindings).find(([key,b])=>key!==event&&b.type===type&&b.id===item.id);
+    return found?eventName(found[0])+'正在使用':'';
+  }
+  function renderLibrary() {
+    const list=q('[data-pack-list]');list.replaceChildren();
+    state.packs.forEach(pack=>{const row=tpl('pack-row'),b=q('button',row);b.dataset.act='pack';b.dataset.id=pack.id;
+      q('[data-name]',row).textContent=pack.name;q('[data-meta]',row).textContent=pack.kind==='draft'?'设置首个提示音后即可使用':count(pack)+' / 5 个事件已设置';
+      q('[data-tag]',row).textContent=pack.kind==='builtin'?'内置':pack.kind==='draft'?'草稿':'自定';list.append(row);
+    });
+  }
+  function renderDetail() {
+    const pack=selectedPack();ui.packID=pack.id;
+    q('[data-pack-name]').textContent=pack.name;q('[data-pack-meta]').textContent=pack.kind==='builtin'?'内置声音包 · CC0':pack.kind==='draft'?'草稿 · 尚未设置提示音':'用户声音包';
+    q('[data-pack-consequence]').textContent=pack.kind==='builtin'?'内置声音包是只读的。复制后可编辑。':'修改此包会影响所有使用它的地方。';
+    q('[data-copy-label]').textContent=pack.kind==='builtin'?'复制并编辑…':'复制…';
+    q('[data-act="rename-pack"]').hidden=pack.kind==='builtin';
+    const list=q('[data-event-list]');list.replaceChildren();
+    events.forEach(event=>{
+      const row=tpl('event-row'),el=q('.sf-event',row),item=boundAudio(pack,event.id);el.dataset.event=event.id;
+      q('[data-event-name]',row).textContent=event.name;q('[data-source-name]',row).textContent=item?item.filename:'未设置';
+      q('[data-lucide]',row).dataset.lucide=event.icon;
+      const play=q('[data-preview]',row);play.disabled=!item;if(item) previewButton(play,item,'event-'+event.id);
+      const change=q('[data-source-button]',row);change.textContent=item?'更换…':'设置…';change.dataset.act='sources';change.dataset.event=event.id;change.hidden=pack.kind==='builtin';change.setAttribute('aria-expanded',String(ui.menu===event.id));
+      const clear=q('[data-clear]',row);clear.hidden=!item||pack.kind==='builtin';clear.dataset.act='clear';clear.dataset.event=event.id;
+      q('[data-source-menu]',row).hidden=ui.menu!==event.id;
+      all('[data-source]',row).forEach(b=>{b.dataset.act='source';b.dataset.event=event.id;});list.append(row);
+    });
+    q('[data-file-count]').textContent='包内音频 · '+pack.files.length+' 个文件';q('.sf-pack-files').hidden=pack.kind==='builtin';
+    q('[data-act="delete-pack"]').disabled=pack.kind==='builtin'||pack.protected;
+    q('[data-pack-delete-reason]').textContent=pack.kind==='builtin'?'内置声音包不能删除。':pack.protected?'此声音包仍在使用，暂时不能删除。':'';
+  }
+  function managedAudio(item,groupID,namespace='history') {
+    const node=tpl('managed-audio');q('[data-name]',node).textContent=item.name;q('[data-meta]',node).textContent=item.duration.toFixed(1)+' 秒';previewButton(q('[data-preview]',node),item,namespace);
+    const rename=q('[data-rename]',node);rename.dataset.act='rename-audio';rename.dataset.id=item.id;
+    const trash=q('[data-trash]',node);trash.dataset.act='trash-audio';trash.dataset.id=item.id;trash.dataset.group=groupID;
+    return node;
+  }
+  function choiceAudio(item,dialog,{meta,disabled=false,namespace='choice'}={}) {
+    const row=tpl('choice-row'),el=q('.sf-audio-row',row),input=q('input',row);el.dataset.selected=String(dialog.selected===item.id);
+    q('[data-name]',row).textContent=item.name;q('[data-meta]',row).textContent=meta||item.duration.toFixed(1)+' 秒';
+    input.value=item.id;input.checked=dialog.selected===item.id;input.disabled=disabled;input.dataset.choice=item.id;
+    previewButton(q('[data-preview]',row),item,namespace);return row;
+  }
+  function historyGroup(group,dialog=null) {
+    const row=tpl('history-group'),header=q('[data-expand]',row),open=!ui.collapsed.includes(group.id);
+    header.dataset.act='expand-group';header.dataset.id=group.id;header.setAttribute('aria-expanded',String(open));q('[data-chevron]',row).textContent=open?'⌄':'›';
+    q('[data-description]',row).textContent=group.description;q('[data-metadata]',row).textContent=group.time+' · '+group.service+' · '+group.items.length+' 条';
+    const trash=q('[data-trash-group]',row);trash.hidden=!!dialog;trash.dataset.act='trash-group';trash.dataset.id=group.id;
+    const list=q('[data-audio-list]',row);list.hidden=!open;
+    group.items.forEach(item=>list.append(dialog?choiceAudio(item,dialog,{namespace:'history-choice'}):managedAudio(item,group.id)));
+    return row;
+  }
+  function taskView() {
+    const t=state.task;if(!t||!['running','pending','failed','cancelled'].includes(t.phase)) return null;
+    const node=tpl('task');q('[data-task-title]',node).textContent={running:'正在生成…',pending:'待处理 · '+t.items.length+' 条尚未保存',failed:'生成未完成',cancelled:'已取消生成'}[t.phase];
+    q('[data-task-meta]',node).textContent=t.service;q('[data-task-description]',node).textContent=t.description;
+    const cancel=q('[data-cancel-task]',node);cancel.hidden=t.phase!=='running';cancel.dataset.act='cancel-generation';
+    const err=q('[data-task-error]',node);err.hidden=!['pending','failed'].includes(t.phase);
+    err.textContent=t.phase==='pending'?'无法保存音频，请检查本机可用空间后重试。保存完成前不能选用或再次生成。':'生成服务暂时无法完成请求。描述已保留，可以稍后重新生成。';
+    if(t.phase==='pending') {
+      t.items.forEach(a=>{const row=managedAudio(a,'','pending');q('[data-rename]',row).hidden=true;q('[data-trash]',row).hidden=true;q('[data-task-audios]',node).append(row);});
+      q('[data-task-actions]',node).append(button('放弃这批音频…','abandon'),button('重试保存','retry-save',true));
+    }
+    return node;
+  }
+  function renderHistory() {
+    const current=q('[data-current-task]'),list=q('[data-history-list]');current.replaceChildren();list.replaceChildren();const task=taskView();if(task) current.append(task);
+    if(!state.history.length) list.append(textNode('还没有生成记录。','sf-empty'));
+    state.history.forEach(group=>list.append(historyGroup(group)));
+  }
+  function sheet(title,subtitle='') {q('#sf-dialog-title').textContent=title;q('[data-dialog-subtitle]').textContent=subtitle;q('[data-dialog-subtitle]').hidden=!subtitle;q('[data-dialog-body]').replaceChildren();q('[data-dialog-footer]').replaceChildren();}
+  function footer(...buttons) {q('[data-dialog-footer]').append(...buttons);}
+  function sourceItems(dialog) {
+    const pack=state.packs.find(p=>p.id===dialog.packID);
+    if(dialog.source==='pack') return pack?.files||[];
+    if(dialog.source==='system') return ['Glass','Ping','Pop','Submarine'].map(name=>audio(name,name,name+' · macOS 系统提示音',1.4));
+    if(dialog.source==='import') return [audio('import-soft','soft_chime.wav','soft_chime.wav',2.1),audio('import-short','轻快提示.mp3','轻快提示.mp3',1.3)];
+    if(dialog.source==='history') return state.history.flatMap(g=>g.items);
+    if(dialog.source==='ai') return state.task?.items||[];
+    return [];
+  }
+  function renderDialog() {
+    const d=top(),overlay=q('.sf-overlay');overlay.hidden=!d;q('.sf-screen').inert=!!d;q('.sf-sidebar').inert=!!d;bridge.modal(!!d);if(!d) return;
+    const pack=state.packs.find(p=>p.id===d.packID),target=pack?pack.name+(d.event?' · '+eventName(d.event):''):'';
+    const body=q('[data-dialog-body]');
+    if(d.type==='name'||d.type==='audio-name') {
+      const isAudio=d.type==='audio-name';sheet(isAudio?'重命名音频':{new:'新建声音包',copy:pack?.kind==='builtin'?'复制并编辑':'复制声音包',rename:'重命名声音包'}[d.mode]);
+      const node=tpl('name-form'),input=q('input',node);input.value=d.value||'';q('label',node).textContent=isAudio?'音频名称':'声音包名称';
+      q('[data-name-hint]',node).textContent=isAudio?'只更改生成记录中的名称。':d.mode==='new'?'新建后先保存为草稿，设置首个提示音即可使用。':d.mode==='copy'?'将声音包和其中的音频复制为可编辑副本。':'只改变显示名称，已有提示音保持不变。';
+      q('[data-name-error]',node).hidden=!d.error;q('[data-name-error]',node).textContent=d.error||'';body.append(node);
+      footer(button('取消','close'),button(d.mode==='new'?'新建':d.mode==='copy'?'创建副本':'存储','save-name',true));
+    } else if(d.type==='ai') {
+      sheet('AI 生成提示音',target);const node=tpl('ai-form');body.append(node);
+      const prompt=q('#sf-ai-prompt');prompt.value=state.prompt;
+      const t=state.task,active=t&&['running','pending'].includes(t.phase),own=!!t&&t.context===d.context;
+      prompt.disabled=!!active;
+      const generate=q('[data-act="generate"]');generate.disabled=!!active||!state.prompt.trim();generate.textContent=own&&t.phase==='saved'?'再次生成 3 条':'生成 3 条';
+      if(active||own&&['failed','cancelled'].includes(t?.phase)) {const node=taskView();if(node) q('[data-ai-progress]').append(node);}
+      if(own&&t?.phase==='saved') {
+        q('[data-ai-results]').append(textNode('已保存到生成记录 · 选择一条用于'+eventName(d.event)));
+        t.items.forEach(item=>q('[data-ai-results]').append(choiceAudio(item,d,{namespace:'candidate'})));
+      }
+      if(!own&&t?.phase==='saved'&&d.watching===t.id) {
+        q('[data-ai-results]').append(textNode('这次生成已完成，音频已保存到生成记录。'),button('从生成记录选择…','use-history'));
+      }
+      const reason=q('[data-ai-reason]');
+      if(t?.phase==='pending') {reason.hidden=false;reason.textContent='请先保存或放弃待处理音频，再继续生成。';}
+      else if(t?.phase==='running') {reason.hidden=false;reason.textContent='关闭此表单后会继续生成，可从“生成记录”查看进度。';}
+      const adopt=button('选用','adopt',true);adopt.disabled=!d.selected||!own||t?.phase!=='saved';
+      footer(button('关闭','close'),adopt);
+    } else if(d.type==='picker') {
+      const titles={pack:'从本包选择',system:'macOS 系统提示音',import:'导入音频',history:'从生成记录选择'};sheet(titles[d.source],target);
+      if(d.source==='history') {if(!state.history.length) body.append(textNode('还没有已保存的音频。','sf-empty'));state.history.forEach(g=>body.append(historyGroup(g,d)));}
+      else {
+        const items=sourceItems(d);if(!items.length) body.append(textNode('包内还没有音频。请从事件导入或生成提示音。','sf-empty'));
+        items.forEach(item=>{const reason=['pack','system'].includes(d.source)?occupation(pack,item,d.source==='pack'?'file':'system',d.event):'';
+          body.append(choiceAudio(item,d,{meta:reason||(d.source==='pack'?item.filename+' · ':'')+item.duration.toFixed(1)+' 秒',disabled:!!reason,namespace:d.source}));});
+      }
+      if(d.source==='import') body.append(textNode('试听或选择文件后，点击“选用”才加入声音包。'));
+      const adopt=button('选用','adopt',true);adopt.disabled=!d.selected;footer(button('取消','close'),adopt);
+    } else if(d.type==='files') {
+      sheet('包内音频',target);if(!pack.files.length) body.append(textNode('包内还没有音频。','sf-empty'));
+      pack.files.forEach(item=>{const row=managedAudio(item,'','file-manager'),reason=occupation(pack,item,'file',null);q('[data-name]',row).textContent=item.filename;q('[data-meta]',row).textContent=reason||'未使用';q('[data-rename]',row).hidden=true;
+        const trash=q('[data-trash]',row);trash.dataset.act='trash-file';trash.dataset.id=item.id;trash.disabled=!!reason;body.append(row);
+      });footer(button('完成','close',true));
+    } else if(d.type==='service') {sheet('AI 声音生成服务');body.append(tpl('service'));footer(button('完成','close',true));}
+    else if(d.type==='confirm') {sheet(d.title);const node=tpl('confirm');q('[data-confirm-message]',node).textContent=d.message;q('[data-confirm-note]',node).textContent=d.note||'可在访达的废纸篓中找回音频文件。';body.append(node);const confirm=button('移到废纸篓','confirm',true);footer(button('取消','close'),confirm);}
+    else if(d.type==='import-pack') {sheet('导入声音包');body.append(tpl('import-pack'));if(d.error) body.append(textNode(d.error,'sf-error'));footer(button('取消','close'),button('导入','confirm-import',true));}
+  }
+  function render() {
+    all('[data-route]').forEach(el=>el.hidden=el.dataset.route!==ui.route);
+    q('[data-page-title]').textContent=ui.route==='history'?'生成记录':ui.route==='detail'?'声音包':'声音';
+    q('[data-act="back"]').hidden=ui.route==='library';
+    if(ui.route==='library') renderLibrary();if(ui.route==='detail') renderDetail();if(ui.route==='history') renderHistory();
+    q('[data-act="history"]').hidden=ui.route==='history';
+    const t=state.task,badge=q('[data-history-badge]');
+    q('[data-history-status]').textContent=t?.phase==='running'?'正在生成 · 关闭表单后仍会继续':t?.phase==='pending'?'有音频尚未保存，点击继续处理':'查看、试听和管理生成的音频';
+    badge.hidden=!(state.unseen||t?.phase==='pending');badge.textContent=t?.phase==='pending'?'待处理':state.unseen+' 条新音频';
+    q('[data-status]').textContent=ui.status;renderDialog();all('.sf-inline-service>.sf-secondary,.sf-service .sf-secondary').forEach(el=>el.textContent=bridge.service());if(top()?.error&&!['name','audio-name'].includes(top().type))q('[data-dialog-body]').append(textNode(top().error,'sf-error'));icons();syncPreview();scheduleTask();
+  }
+  function saveName() {
+    const d=top();if(!d) return;
+    if(d.type==='audio-name') {if(!d.value?.trim()) {d.error='请输入音频名称。';commit();return;}dispatch({type:'rename-audio',id:d.id,name:d.value});closeDialog();return;}
+    const result=dispatch({type:'name',mode:d.mode,packID:d.packID,name:d.value||''});
+    if(result.error) {d.error=result.error;ui.status='';commit();return;}
+    ui.dialogs=[];ui.route='detail';ui.packID=result.id;ui.status='';bridge.browse('detail',ui.packID);commit();
+  }
+  root.addEventListener('submit',event=>{event.preventDefault();saveName();});
+  root.addEventListener('input',event=>{
+    if(event.target.id==='sf-name-input') {top().value=event.target.value;top().error='';q('[data-name-error]').hidden=true;persist();}
+    if(event.target.id==='sf-ai-prompt') {state.prompt=event.target.value;bridge.prompt(state.prompt);const b=q('[data-act="generate"]');if(b)b.disabled=!state.prompt.trim()||['running','pending'].includes(state.task?.phase);persist();}
+  });
+  root.addEventListener('change',event=>{if(event.target.matches('[data-choice]')) {top().selected=event.target.value;commit();}});
+  root.addEventListener('click',event=>{
+    const preview=event.target.closest('[data-preview]');if(preview&&!preview.disabled) {listen(preview.dataset.preview,preview.dataset.audioName,Number(preview.dataset.duration));return;}
+    const b=event.target.closest('[data-act]');if(!b||b.disabled) return;const action=b.dataset.act,d=top(),pack=selectedPack();
+    if(action==='home') return navigate('library');
+    if(action==='back') return navigate(ui.route==='history'?ui.returnRoute:'library');
+    if(action==='pack') return navigate('detail',b.dataset.id);
+    if(action==='history') return navigate('history');
+    if(action==='new-pack') return openDialog({type:'name',mode:'new',value:freshName('我的提示音')});
+    if(action==='copy-pack') return openDialog({type:'name',mode:'copy',packID:pack.id,value:freshName(pack.name+' 的副本')});
+    if(action==='rename-pack') return openDialog({type:'name',mode:'rename',packID:pack.id,value:pack.name});
+    if(action==='save-name') return saveName();
+    if(action==='close') return closeDialog();
+    if(action==='sources') {ui.menu=ui.menu===b.dataset.event?null:b.dataset.event;return commit();}
+    if(action==='clear') {stopPreview();dispatch({type:'clear',packID:pack.id,event:b.dataset.event});ui.status=eventName(b.dataset.event)+'已清除。音频仍保留在包内。';return commit();}
+    if(action==='source') {
+      const source=b.dataset.source;
+      return openDialog(source==='ai'?{type:'ai',source,packID:pack.id,event:b.dataset.event,context:'context-'+Date.now(),watching:['running','pending'].includes(state.task?.phase)?state.task.id:null,selected:null}:{type:'picker',source,packID:pack.id,event:b.dataset.event,selected:null});
+    }
+    if(action==='service') {stopPreview();return bridge.manageService();}
+    if(action==='files') return openDialog({type:'files',packID:pack.id});
+    if(action==='generate') {
+      stopPreview();d.selected=null;const now=new Date();
+      dispatch({type:'start',description:state.prompt,context:d.context,outcome:bridge.outcome(),service:bridge.service(),count:bridge.count(),time:now.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),due:Date.now()+5500});return commit();
+    }
+    if(action==='use-history') {stopPreview();ui.dialogs[ui.dialogs.length-1]={type:'picker',source:'history',packID:d.packID,event:d.event,selected:null};return commit();}
+    if(action==='cancel-generation') {dispatch({type:'cancel'});return commit();}
+    if(action==='retry-save') {dispatch({type:'retry-save'});return commit();}
+    if(action==='abandon') return openDialog({type:'confirm',title:'放弃未保存音频？',message:'将这批 '+state.task.items.length+' 条未保存音频移到废纸篓。',confirmAction:{type:'abandon'},note:'移除后才能再次生成。关闭此窗口不会放弃音频。'});
+    if(action==='adopt') {
+      const item=sourceItems(d).find(a=>a.id===d.selected);if(!item) return;
+      const result=dispatch({type:'adopt',packID:d.packID,event:d.event,audio:item,origin:d.source,context:d.context});
+      if(!result.error) {ui.status=eventName(d.event)+'已设置为“'+item.name+'”。';closeDialog();} else commit();return;
+    }
+    if(action==='expand-group') {ui.collapsed=ui.collapsed.includes(b.dataset.id)?ui.collapsed.filter(id=>id!==b.dataset.id):[...ui.collapsed,b.dataset.id];return commit();}
+    if(action==='rename-audio') {const item=state.history.flatMap(g=>g.items).find(a=>a.id===b.dataset.id);return openDialog({type:'audio-name',id:item.id,value:item.name});}
+    if(action==='trash-audio') {stopPreview();dispatch({type:'delete-audio',id:b.dataset.id,groupID:b.dataset.group});ui.status='音频已移到废纸篓。';return commit();}
+    if(action==='trash-group') {const group=state.history.find(g=>g.id===b.dataset.id);return openDialog({type:'confirm',title:'将整组音频移到废纸篓？',message:'这组 '+group.items.length+' 条音频及其生成记录将被移除。',note:'声音包中已选用的副本不受影响。可通过访达找回音频文件。',confirmAction:{type:'delete-group',id:group.id}});}
+    if(action==='trash-file') {const file=pack.files.find(a=>a.id===b.dataset.id);return openDialog({type:'confirm',title:'将音频移到废纸篓？',message:'“'+file.filename+'”未被本包事件使用。',confirmAction:{type:'delete-file',packID:pack.id,id:file.id}});}
+    if(action==='delete-pack') return openDialog({type:'confirm',title:'将声音包移到废纸篓？',message:'“'+pack.name+'”及其包内音频将被移除。',note:'独立的生成记录不会删除。',confirmAction:{type:'delete-pack',packID:pack.id}});
+    if(action==='confirm') {const result=dispatch(d.confirmAction);if(result.error) {ui.status=result.error;closeDialog();return;}if(d.confirmAction.type==='delete-pack') {ui.dialogs=[];ui.route='library';ui.status='声音包已移到废纸篓。';bridge.browse('library',ui.packID);return commit();}closeDialog();return;}
+    if(action==='import-pack') return openDialog({type:'import-pack'});
+    if(action==='confirm-import') {const result=dispatch({type:'import-pack'});if(result.error) {d.error=result.error;return commit();}ui.dialogs=[];ui.route='detail';ui.packID='forest';ui.status='';bridge.browse('detail',ui.packID);return commit();}
+  });
+  root.addEventListener('keydown',event=>{
+    if(event.key==='Escape') {if(top()) {event.preventDefault();event.stopImmediatePropagation();closeDialog();}else if(ui.menu) {event.preventDefault();event.stopImmediatePropagation();ui.menu=null;commit();}return;}
+    if(event.key==='Tab'&&top()) {
+      const focusable=all('button:not(:disabled),input:not(:disabled),textarea:not(:disabled)',q('.sf-sheet')).filter(el=>!el.closest('[hidden]'));
+      const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first) {event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last) {event.preventDefault();first?.focus();}
+    }
+  });
+  render();
+  return {
+    element:root,modal:()=>!!top(),
+    profileChanged(){const d=ui.dialogs.find(d=>d.type==='ai');if(d){d.watching=state.task?.id;dispatch({type:'invalidate',context:d.context});}stopPreview();persist();},
+    sync(detail,packID){
+      state=bridge.read();root.style.colorScheme=container.dataset.theme==='dark'?'dark':'light';
+      ui.packID=packID||state.packs[0]?.id;ui.route=detail==='history'?'history':detail==='pack'||detail?.startsWith('edit:')?'detail':'library';
+      if(!state.packs.some(p=>p.id===ui.packID)&&ui.route==='detail')ui.route='library';
+      render();
+    },
+    suspend(){stopPreview();ui.dialogs.forEach(d=>{if(d.type==='ai')dispatch({type:'invalidate',context:d.context});});ui.dialogs=[];ui.menu=null;bridge.modal(false);persist();},
+    dispose(){this.suspend();clearTimeout(taskTimer);scheduledID=null;},
+    getState:()=>({state:bridge.read(),ui:copy(ui)})
+  };
+}
+
+// Throwaway adapter for the approved Sounds design. The retained Settings state
+// owns pack facts; the view keeps navigation and selection only.
+let approvedSoundsView=null;
+function approvedSoundsSnapshot(){
+  const cue=S.approvedCues??={history:[],task:null,prompt:S.description,unseen:0};
+  return {packs:S.packs.map(p=>({id:p.id,name:packName(p),kind:p.draft?'draft':p.builtin?'builtin':'user',protected:!S.referencesComplete||users(p).length>0,
+    files:p.audio.map(n=>({id:n,filename:n,name:p.audioNames?.[n]||n,duration:p.audioDurations?.[n]||1.4})),
+    bindings:Object.fromEntries(events.flatMap((e,i)=>p.sounds[i]?[[e.id,{type:p.sources[i]==='system'?'system':'file',id:p.sounds[i],name:p.sounds[i]}]]:[]))})),
+    history:structuredClone(cue.history),task:cue.task?structuredClone(cue.task):null,prompt:cue.prompt,unseen:cue.unseen,serial:S.serial};
+}
+function writeApprovedSounds(snapshot,action){
+  const previous=S.packs;
+  S.packs=snapshot.packs.map(p=>{
+    const old={...(previous.find(v=>v.id===p.id)||previous.find(v=>v.id===p.copiedFrom)||{})};
+    if(p.copiedFrom&&!previous.some(v=>v.id===p.id)){delete old.license;delete old.author;}
+    const file=id=>p.files.find(f=>f.id===id);
+    const metadata=Object.fromEntries(p.files.map(f=>[f.filename,f.name]));
+    return {...old,id:p.id,name:old.name&&packName(old)===p.name?old.name:p.name,builtin:p.kind==='builtin',draft:p.kind==='draft',healthy:old.healthy!==false,
+      sounds:events.map(e=>{const b=p.bindings[e.id];return b?b.type==='system'?b.id:file(b.id)?.filename||null:null;}),
+      sources:events.map(e=>{const b=p.bindings[e.id];return b?b.type==='system'?'system':'file':null;}),
+      audio:p.files.map(f=>f.filename),audioNames:metadata,audioDurations:Object.fromEntries(p.files.map(f=>[f.filename,f.duration]))};
+  });
+  S.approvedCues={history:structuredClone(snapshot.history),task:snapshot.task?structuredClone(snapshot.task):null,prompt:snapshot.prompt,unseen:snapshot.unseen};
+  if(action?.type==='adopt'&&['ai','history'].includes(action.origin)){const p=S.packs.find(p=>p.id===action.packID);if(p){delete p.license;delete p.author;}}
+  S.serial=snapshot.serial;S.stars=S.stars.filter(id=>S.packs.some(p=>p.id===id&&!p.draft));
+}
+function approvedSoundsGuard(action){
+  if(['finish','cancel','invalidate','abandon','retry-save','delete-audio','delete-group','rename-audio'].includes(action.type)){
+    if(action.type==='retry-save'&&S.faults.archive)return T('本地保存仍失败；音频保留在待处理区域。','Local saving still failed. Audio remains pending.');
+    if(['abandon','delete-audio','delete-group'].includes(action.type)&&S.faults.fileDelete)return T('移到废纸篓失败，原音频保留。','Moving to Trash failed; the original audio remains.');
+    return '';
+  }
+  if(S.library!=='ready'||S.operation)return T('声音包库暂时不能写入，请刷新后重试。','The library is not writable. Refresh and retry.');
+  const p=S.packs.find(p=>p.id===action.packID);
+  if(p&&!p.healthy)return T('此声音包不可用，原内容保留。','This pack is unavailable; its content is retained.');
+  if(['clear','adopt'].includes(action.type)&&S.faults.binding)return T('映射写入失败，原提示音保留。','Binding write failed; the previous cue is retained.');
+  if(action.type==='delete-file'&&S.faults.fileDelete)return T('移到废纸篓失败，音频仍在包内。','Moving to Trash failed; audio remains in the pack.');
+  if(action.type==='delete-pack'&&S.faults.deleteRetained)return T('移到废纸篓失败，声音包保留。','Moving to Trash failed; the pack is retained.');
+  if(action.type==='start'&&!hasCredential())return T('请先通过“管理…”配置生成服务。','Configure the service through Manage first.');
+  return '';
+}
+function mountApprovedSounds(){
+  const mount=$('approved-sounds-mount');if(!mount)return;
+  if(!approvedSoundsView){
+    const fragment=$('approvedSoundsTemplate').content.cloneNode(true);
+    mount.append(fragment);
+    const element=$('claudio-sounds-overview');
+    approvedSoundsView=createApprovedSoundsView(element,{
+      read:approvedSoundsSnapshot,write:writeApprovedSounds,guard:approvedSoundsGuard,prompt:value=>{S.approvedCues.prompt=value;},
+      publish:()=>{if(bridgeReady&&!projecting)publish(S);},
+      service:()=>profileName(profile()),
+      outcome:()=>S.faults.generation?'generation-failure':S.faults.archive?'save-failure':'success',
+      count:()=>S.faults.partial&&profile().partial&&cueRoute().id!=='speech'?2:3,
+      browse:(route,id)=>{const before=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=before;S.pack=id;S.detail=route==='detail'?'pack':route==='history'?'history':null;S.returnContext=null;const next=position();if(!same(before,next))recordPosition(next);$('page-title').textContent=title();drawNavigation();},
+      modal:open=>{$('settings-nav').inert=open;drawNavigation();},
+      icons:node=>{const names={'audio-lines':'wave','volume-2':'speaker',plug:'plug',bell:'bell',settings:'gear',command:'command',activity:'chart',info:'info','chevron-left':'back',plus:'plus','square-arrow-down':'file',sparkles:'ai','clock-3':'chart','chevron-right':'next',pencil:'edit',send:'start','circle-check':'finish','circle-pause':'interrupt','check-check':'branch','music-2':'wave','folder-open':'folder','file-audio':'file','trash-2':'trash',package:'file'};node.querySelectorAll('[data-lucide]').forEach(el=>{el.outerHTML=icon(names[el.dataset.lucide]||'wave');});},
+      manageService:()=>openSheet('AI 声音生成服务','AI sound generation service',()=>renderService(),'')
+    });
+  } else mount.append(approvedSoundsView.element);
+  approvedSoundsView.sync(S.detail,S.pack);
+}
+
+function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+'<div id="approved-sounds-mount"></div>';}
+function packActions(p){return row(T('包操作','Pack actions'),'',button(T('在 Finder 中显示…','Reveal in Finder…'),'reveal-pack','small-button',!installed(p)));}
+function renderSoundsLegacy(){
  if(S.detail==='service')return renderService();if(S.detail==='audio')return renderAudioFiles();if(S.detail==='panel')return renderPanelPacks();if(editorIndex()>=0)return renderSoundEditor();
- const p=pack();let html=libraryStatus()+management();
+ const p=pack();let html=libraryStatus();
  if(!S.packs.length)return html+section('',`<div class="empty"><strong>${S.library==='ready'?T('还没有声音包','No sound packs'):T('声音包尚不可用','Packs are not available yet')}</strong></div>`)+`<div class="section-actions">${button(T('恢复工厂声音包…','Restore factory packs…'),'restore-library','small-button',!!S.operation)}${button(T('新建声音包…','New sound pack…'),'new-pack','small-button',S.library!=='ready')}</div>`+feedback();
  html+=section('',row(T('查看声音包','View sound pack'),T('此选择只改变查看目标。','This selection changes only the viewed pack.'),picker(T('查看声音包','View sound pack'),'pack',[...(!p?[['__invalid__',T('原声音包不可用，请重新选择','Original pack unavailable; select again')]]:[]),...S.packs.map(p=>[p.id,packName(p)])],p?S.pack:'__invalid__',!!S.operation)));
  if(!p)return html+reason(T('原声音包已移除。请显式重新选择。','The original pack was removed. Select explicitly.'),'error','target-unavailable')+feedback();
  html+=section(T('声音包信息','Sound pack information'),row(esc(packName(p)),p.builtin?T('内置包只读。','Built-in pack is read-only.'):T('用户声音包','User sound pack'),`<span class="value">${p.sounds.filter(Boolean).length}/5</span>`)+
- row(T('共享使用者','Shared users'),users(p).map(esc).join('、')||T('尚无已知使用者','No known users'),`<span class="value">${S.referencesComplete?'':T('信息不完整','Incomplete information')}</span>`)+(S.referencesComplete?'':reason(T('配置损坏，使用者范围不完整。可编辑健康用户包，但不能删除。','Damaged configuration makes the usage list incomplete. Healthy user packs remain editable; deletion is blocked.')))+packActions(p)+brokenPack(p));
+ packActions(p)+brokenPack(p));
  html+=section(T('面板快捷入口','Panel shortcuts'),disclosure(T('面板显示集','Panel display set'),T('最多四项，查看完整声音包库后选择。','Choose up to four packs from the complete library.'),`${S.stars.length}/4`,'panel-packs'));
  html+=compactService();
  html+=section(T('提示音','Event cues'),events.map((e,i)=>row(e.name(),mapped(p,i),previewButton(i,!p.sounds[i]||!p.healthy)+button(T('编辑…','Edit…'),`edit-pack:${i}`,'small-button',!!S.operation)+(p.builtin?'':button(T('生成…','Generate…'),`generate-pack:${i}`,'small-button',!p.healthy||S.library!=='ready'||!!S.operation)),{id:`sound-${e.id}`,icon:e.icon,color:e.color})).join('')+feedback(),T('修改包内映射会影响所有使用者。每组仍保留自己的音量和开关。','Pack mappings affect all users. Each group retains its own volume and switches.'));
@@ -4839,7 +5449,7 @@ function bindingPicker(system=false){const p=pack(),i=editorIndex();if(!canWrite
  openSheet(system?'选择系统提示音':'选择包内音频',system?'Choose a system sound':'Choose pack audio',()=>`<p>${system?T('系统音按当前 Mac 名称引用。','System sounds are referenced by their name on the current Mac.'):T('同一个文件只能新绑定给一个事件。','A file can be newly bound to only one event.')}</p><div class="group">${names.map(n=>{const used=p.sounds.findIndex((v,j)=>v===n&&p.sources[j]===source&&j!==i);return `<button class="row disclosure-row" data-choice="${esc(n)}" ${used>=0?'disabled':''}><span class="label"><strong>${esc(n)}</strong>${used>=0?`<small>${T('已用于','Used by')} ${events[used].name()}</small>`:''}</span>${p.sounds[i]===n&&p.sources[i]===source?icon('check'):''}</button>`;}).join('')}</div>`,'',()=>{$('sheet').querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{closeSheet();bind(p,i,b.dataset.choice,source);render();});});
 }
 function addWorkspace(){let directory=null,resolving=false,resolveEpoch=0;
- openSheet('添加工作区','Add workspace',()=>`<p>${T('名称由所选目录派生。创建前明确确认音量；允许零适用来源。','The name comes from the directory. Confirm the volume before creation; zero eligible surfaces is allowed.')}</p><div class="form-stack"><label for="workspace-directory">${T('演示目录','Demo directory')}</label><select id="workspace-directory"><option value="git">~/Projects/NewProject · Git</option><option value="plain">~/Documents/NewNotes</option><option value="duplicate">~/Projects/Claudio · Git</option><option value="failure">${T('Git 解析失败','Git resolution failure')}</option></select>${button(T('选择并解析目录','Select and resolve directory'),'resolve-directory')}<small id="directory-result">${T('尚未选择目录','No directory selected')}</small><label for="workspace-pack">${T('声音包','Sound pack')}</label><select id="workspace-pack"><option value="">${T('请选择声音包','Choose a pack')}</option>${S.packs.filter(p=>p.healthy).map(p=>`<option value="${p.id}">${esc(packName(p))}</option>`).join('')}</select><label for="workspace-volume">${T('音量','Volume')}</label><input id="workspace-volume" class="field" type="number" value="60" min="0" max="100"></div><label class="plain-check"><input id="workspace-volume-confirm" type="checkbox">${T('我已确认此工作区音量','I confirm this workspace volume')}</label><label class="plain-check"><input id="workspace-claude" type="checkbox" checked>Claude Code</label><label class="plain-check"><input id="workspace-codex" type="checkbox" checked>Codex</label><label class="plain-check disabled"><input type="checkbox" disabled>WorkBuddy · ${T('目录证据不完整','directory evidence incomplete')}</label>`,()=>button(T('添加','Add'),'sheet-add-workspace','small-button primary',true),()=>{
+ openSheet('添加工作区','Add workspace',()=>`<p>${T('名称由所选目录派生。创建前明确确认音量；允许零适用来源。','The name comes from the directory. Confirm the volume before creation; zero eligible surfaces is allowed.')}</p><div class="form-stack"><label for="workspace-directory">${T('演示目录','Demo directory')}</label><select id="workspace-directory"><option value="git">~/Projects/NewProject · Git</option><option value="plain">~/Documents/NewNotes</option><option value="duplicate">~/Projects/Claudio · Git</option><option value="failure">${T('Git 解析失败','Git resolution failure')}</option></select>${button(T('选择并解析目录','Select and resolve directory'),'resolve-directory')}<small id="directory-result">${T('尚未选择目录','No directory selected')}</small><label for="workspace-pack">${T('声音包','Sound pack')}</label><select id="workspace-pack"><option value="">${T('请选择声音包','Choose a pack')}</option>${S.packs.filter(p=>p.healthy&&!p.draft).map(p=>`<option value="${p.id}">${esc(packName(p))}</option>`).join('')}</select><label for="workspace-volume">${T('音量','Volume')}</label><input id="workspace-volume" class="field" type="number" value="60" min="0" max="100"></div><label class="plain-check"><input id="workspace-volume-confirm" type="checkbox">${T('我已确认此工作区音量','I confirm this workspace volume')}</label><label class="plain-check"><input id="workspace-claude" type="checkbox" checked>Claude Code</label><label class="plain-check"><input id="workspace-codex" type="checkbox" checked>Codex</label><label class="plain-check disabled"><input type="checkbox" disabled>WorkBuddy · ${T('目录证据不完整','directory evidence incomplete')}</label>`,()=>button(T('添加','Add'),'sheet-add-workspace','small-button primary',true),()=>{
  const add=$('sheet').querySelector('[data-action="sheet-add-workspace"]'),resolve=$('sheet').querySelector('[data-action="resolve-directory"]');
  const enabled=()=>{const v=Number($('workspace-volume').value);add.disabled=!directory||resolving||!$('workspace-pack').value||!$('workspace-volume-confirm').checked||!Number.isFinite(v)||v<0||v>100;};
  $('workspace-pack').onchange=enabled;$('workspace-volume-confirm').onchange=enabled;$('workspace-volume').oninput=()=>{$('workspace-volume-confirm').checked=false;enabled();};$('workspace-directory').onchange=()=>{resolveEpoch++;resolving=false;resolve.disabled=false;directory=null;$('sheet-error').textContent='';$('directory-result').textContent=T('尚未解析新目录','New directory not resolved yet');enabled();};
@@ -4851,9 +5461,6 @@ function newPack(){if(S.operation||S.library!=='ready')return;S.lastInstalledPac
 function renameDraft(){if(!S.draft||S.operation)return;const p=S.draft;openSheet('修改草稿名称','Edit draft name',()=>`<div class="form-stack"><label for="draft-name">${T('草稿名称','Draft name')}</label><input id="draft-name" class="field" value="${esc(packName(p))}" data-maximum-characters="64" autofocus></div>`,()=>button(T('保存名称','Save name'),'save-draft-name','small-button primary'),()=>{$('sheet').querySelector('[data-action="save-draft-name"]').onclick=()=>{if(S.draft?.id!==p.id){sheetError('草稿已失效。','Draft is no longer available.');return;}const n=$('draft-name').value.trim();if(nameError(n,64)){$('sheet-error').textContent=nameError(n,64);return;}p.name=n;closeSheet();setNotice('草稿名称已保存；尚未发布。','Draft name saved; still unpublished.');render();};});}
 function packDeleteReason(p){return p.builtin?T('内置声音包不能删除。','Built-in sound packs cannot be deleted.'):S.library!=='ready'?T('声音包库尚不可写，刷新完成后再删除。','The sound library is not writable yet. Wait for refresh to finish.'):S.operation?T('操作进行中，完成后再删除。','An operation is in progress. Wait for it to finish.'):!S.referencesComplete?T('使用情况尚不完整，请先检查配置。','Usage information is incomplete. Check your configuration first.'):users(p).length?T('正在被 '+users(p).join('、')+' 使用，请先为这些组更换声音包。','Used by '+users(p).join(', ')+'. Choose another pack for these groups first.'):T('确认后移到废纸篓。','Moves to Trash after confirmation.');}
 function canDeletePack(p){return installed(p)&&!p.builtin&&S.referencesComplete&&!users(p).length&&S.library==='ready'&&!S.operation;}
-function packOptions(){const p=pack();if(!installed(p))return;
- openSheet('声音包资料','Sound pack information',()=>`<p>${esc(packName(p))}</p><div class="group">${row(T('包许可与作者','Pack license and author'),`${esc(p.license||T('无整包声明','No whole-pack claim'))} · ${esc(p.author||T('无整包作者声明','No whole-pack author claim'))}`,button(T('查看归属资料…','Inspect attribution…'),'pack-license'))}${row(T('文件位置','File location'),`Demo/packs/${esc(p.id)}`,button(T('在 Finder 中显示…','Reveal in Finder…'),'reveal-pack'))}${p.builtin?row(T('恢复工厂内容','Restore factory content'),T('只恢复这个工厂包。','Restores only this factory pack.'),button(T('恢复…','Restore…'),'restore-pack')):''}</div>`);
-}
 function deletePack(){const p=pack();if(!installed(p)||p.builtin||!S.referencesComplete||users(p).length)return;
  confirmAction('删除声音包？','Delete sound pack?',()=>esc(packName(p))+' · '+T('确认后移到废纸篓；使用情况会再次检查。','Moves to Trash after confirmation; usage is checked again.'),()=>T('删除','Delete'),()=>perform('delete','正在删除声音包','Deleting sound pack',()=>{
  if(!S.referencesComplete||users(p).length){setNotice('使用者范围已变化，未执行删除。','Reference information changed. Deletion was not performed.','error');return;}
@@ -5013,10 +5620,9 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='edit-pack'){S.expandedEvent=null;return navigate('sounds',`edit:${events[Number(id)].id}`);}
  if(a==='generate-pack'){const i=Number(id);S.expandedEvent=i;navigate('sounds',`edit:${events[i].id}`);$('cue-description')?.focus();return;}
  if(a==='return-scope'){const r=S.returnContext;if(!r)return navigate('events');const valid=validScope(r);S.scope=r.id;S.invalidScope=valid?null:r;navigate('events',null,{scope:r.id});S.returnContext=null;if(valid)requestAnimationFrame(()=>$('page-content').querySelector(`[data-action="edit-from-scope:${r.event}"]`)?.focus());else focusReason();return;}
- if(a==='pack-options')return packOptions();if(a==='delete-pack'){closeSheet();return deletePack();}
+ if(a==='delete-pack'){closeSheet();return deletePack();}
  if(a==='restore-library'){closeSheet();return restoreFactory(true);}if(a==='restore-pack'){closeSheet();return restoreFactory(false);}
  if(a==='retry-last'){const retry=S.retry;if(!retry)return;S.retry=null;S.faults[retry.fault]=false;return retry.run();}
- if(a==='pack-license'){closeSheet();return openSheet('声音包许可与归属','Pack license and attribution',()=>`<p>${esc(packName(pack()))}</p><div class="group">${row('license',esc(pack().license||T('无整包声明','No whole-pack claim')))}${row('author',esc(pack().author||T('无整包声明','No whole-pack claim')))}${row(T('独立归属资料','Separate attribution'),T('原有归属文件和第三方许可资料保留。','Original attribution files and third-party license materials remain.'))}</div>`);}
  if(['reveal-pack','reveal-sound','reveal-manifest'].includes(a)){closeSheet();return platformAction(a==='reveal-manifest'?`Demo/packs/${pack()?.id}/manifest.json`:a==='reveal-sound'?pack()?.sources[editorIndex()]==='system'?'macOS system sound directory':`Demo/packs/${pack()?.id}/${pack()?.sounds[editorIndex()]}`:`Demo/packs/${pack()?.id}`);}
  if(a==='choose-file'||a==='system-sound')return bindingPicker(a==='system-sound');if(a==='import-audio')return importOne();if(a==='add-audio')return addAudio();if(a==='assign-file')return assignFile(Number(id));if(a==='delete-file')return deleteFile(Number(id));
  if(a==='clear-binding'){const p=pack(),i=editorIndex();return confirmAction('清除此事件绑定？','Clear this event binding?',()=>T('事件将没有提示音。包内文件与其他事件保留。','The event will have no cue. Pack files and other events remain.'),()=>T('清除绑定','Clear binding'),()=>{bind(p,i,null,null);render();});}
@@ -5025,7 +5631,7 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='close-generation'){stopAudio();clearGeneration();S.expandedEvent=null;render();document.querySelector('[data-action="open-generation"]')?.focus();return;}
  if(a==='generate')return beginGeneration();if(a==='cancel-generation'){clearGeneration();S.generation='cancelled';render();$('cue-description')?.focus();return;}
  if(a==='modify-description'){stopAudio();clearGeneration();render();$('cue-description')?.focus();return;}
- if(a==='adopt')return adoptCandidate(Number(id));if(a==='profile'){if(S.operation)return;stopAudio();clearGeneration();S.profile=id;render();return;}
+ if(a==='adopt')return adoptCandidate(Number(id));if(a==='profile'){if(S.operation)return;approvedSoundsView?.profileChanged();stopAudio();clearGeneration();S.profile=id;render();return;}
  if(a==='credential')return credentialSheet();
  if(a==='select-host'){S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='surface');S.selectedHost=id;S.notice=null;render();return;}
  if(a==='open-host'){return navigate('integrations','host',{host:id});}
@@ -5059,7 +5665,6 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='retry-config'){const intent=S.configIntent;if(intent){S.faults.config=false;if(groupWrite(intent,true))setNotice('原配置操作已重试成功。','The original configuration edit was retried successfully.');}render();return;}
  if(a==='reveal-backup')return platformAction('Demo/config.backup.json');
  if(a==='star'){const p=S.packs.find(p=>p.id===id),starred=S.stars.includes(id);if(!p||(!starred&&(!p.healthy||S.stars.length>=4)))return;if(S.faults.config){setNotice('星标写入失败，原显示集保留。','Star write failed. Previous display set retained.','error');render();return;}S.stars=starred?S.stars.filter(v=>v!==id):[...S.stars,id];setNotice('面板显示集已更新，各组选包未改变。','Panel display set updated; group selections unchanged.');render();return;}
- if(a==='use-pack'){const p=pack(),g=scope();if(!g||!installed(p)||!p.healthy)return;if(groupWrite({type:'pack',value:p.id})){setNotice(`已将声音包用于 ${scopeName(g)}。`,`The sound pack is now used by ${scopeName(g)}.`);render();}return;}
  if(a==='delete-workspace'){const g=scope();if(!g||g.id==='default')return;const captured=scopeIdentity(g);return confirmAction('移除此工作区？','Remove this workspace?',()=>`${esc(scopeName(g))} · ${esc(g.path)}<br>`+T('只删除声音规则，不删除项目或声音包。','Remove only the sound rule, preserving project files and sound packs.'),()=>T('移除','Remove'),()=>{if(!validScope(captured)||S.faults.config){setNotice('工作区删除失败或身份变化，规则与其他目标保留。','Workspace removal failed or its identity changed. Rules and other targets remain.','error');render();return;}S.scopes=S.scopes.filter(v=>v.id!==g.id);S.scope=g.id;S.invalidScope=captured;navigate('events');setNotice('声音规则已移除，请显式选择下一个作用域。项目和声音包保留。','Sound rule removed. Explicitly select the next scope. Project files and sound packs remain.');render();});}
  if(a==='cancel-operation')return cancelOperation();
 }
@@ -5068,7 +5673,7 @@ const scenes=[
  ['workspaceRemoval','工作区 · 移除入口','Workspace · remove entry'],['packRemoval','声音包 · 删除入口','Sound pack · delete entry'],['firstGeneration','AI · 首次生成','AI · first generation'],
  ['normal','正常','Normal'],['zero','组音量为零','Zero group volume'],['missing','缺少提示音','Missing cue'],['previewFailure','试听失败','Preview failure'],['stale','工作区失效','Unavailable workspace'],['ruleBroken','工作区规则损坏','Damaged workspace rule'],['migration','旧声音配置迁移提示','Legacy sound migration'],['configConflict','配置写入冲突','Configuration conflict'],
  ['libraryLoading','声音包库加载中','Library loading'],['libraryRefreshing','声音包库刷新中','Library refreshing'],['libraryFailure','声音包库首次失败','Initial library failure'],['libraryStale','声音包库旧结果','Stale library results'],['empty','声音包库为空','Empty library'],['referenceIncomplete','包引用不完整','Incomplete pack references'],['deleteRetained','删除后隔离文件保留','Deletion retained isolated files'],['restoreFailure','工厂恢复部分失败','Partial factory restore failure'],['fifthStar','已有第五颗星标','Existing fifth star'],['brokenStar','损坏包已有星标','Existing star on broken pack'],
- ['manifestFailure','manifest 损坏','Damaged manifest'],['inventoryFailure','音频清单失败','Inventory failure'],['inventoryLoading','音频清单加载中','Inventory loading'],['bindingFailure','映射写入失败','Binding write failure'],['duplicateBinding','既有重复绑定','Existing duplicate bindings'],['importBindFailure','导入成功但绑定失败','Import succeeds, binding fails'],['importPartial','多文件部分成功','Partial multi-file import'],['fileDeleteFailure','音频删除失败','Audio deletion failure'],['draft','未发布草稿','Unpublished draft'],['partial','AI 2/3 候选','AI 2/3 candidates'],['generationFailure','AI 生成失败','AI generation failure'],['adoptionFailure','AI 采用失败','AI adoption failure'],
+ ['manifestFailure','manifest 损坏','Damaged manifest'],['inventoryFailure','音频清单失败','Inventory failure'],['inventoryLoading','音频清单加载中','Inventory loading'],['bindingFailure','映射写入失败','Binding write failure'],['duplicateBinding','既有重复绑定','Existing duplicate bindings'],['importBindFailure','导入成功但绑定失败','Import succeeds, binding fails'],['importPartial','多文件部分成功','Partial multi-file import'],['fileDeleteFailure','音频删除失败','Audio deletion failure'],['draft','未发布草稿','Unpublished draft'],['partial','AI 2/3 候选','AI 2/3 candidates'],['archiveFailure','AI 本地保存失败','AI local save failure'],['generationFailure','AI 生成失败','AI generation failure'],['adoptionFailure','AI 采用失败','AI adoption failure'],
  ['credentialChecking','凭据检查中','Credential checking'],['credentialMissing','凭据缺失','Missing credential'],['credentialRejected','凭据被拒绝','Rejected credential'],['credentialUnavailable','凭据不可用','Credential unavailable'],['credentialPending','Qwen 待替换','Qwen replacement pending'],['credentialDeleteFailure','凭据删除失败','Credential deletion failure'],
  ['hostNotInstalled','接入 · 未安装（可关闭已有意愿）','Integration · not installed (saved ON can turn OFF)'],['hostOffUninstalled','接入 · 未安装且已关闭','Integration · not installed and OFF'],['hostPreparing','接入 · 自动准备','Integration · automatic preparation'],['hostRecovering','接入 · 自动更新连接','Integration · automatic recovery'],['hostManual','接入 · Codex 授权夹具','Integration · Codex authorization fixture'],['hostNotConnected','接入 · 用户已关闭','Integration · turned off'],['hostLegacy','接入 · 旧连接自动更新','Integration · automatic legacy update'],['hostAwaiting','接入 · 已准备好','Integration · ready to receive events'],['hostReady','接入 · 已收到事件','Integration · events received'],['hostFailure','接入 · 自动恢复失败','Integration · automatic recovery failed'],['receiptClearFailure','回执历史清理失败','Receipt history clear failure'],
  ['receiverFailure','接收器失败','Receiver failure'],['receiverDisabled','接收器停用','Receiver disabled'],['permissionDenied','专注与日历拒绝授权','Focus and Calendar permissions denied'],['permissionRestricted','专注与日历受限','Focus and Calendar restricted'],['permissionUnavailable','系统观察不可用','System observation unavailable'],
@@ -5078,10 +5683,11 @@ const scenes=[
  ...Object.entries(activityNames).map(([id,n])=>['activity-'+id,...n]),...['missing','damaged','unreadable'].map(id=>['log-'+id,{missing:'日志缺失',damaged:'日志损坏',unreadable:'日志不可读'}[id],`Log ${id}`]),['activityRefreshFailure','统计刷新失败','Statistics refresh failure'],['logClearFailure','日志清理失败','Log clear failure'],['countClearFailure','计数清理失败','Count clear failure'],['reminderStale','冻结提醒旧版本','Old frozen reminder revision'],['reminderExpired','提醒过期清空','Expired reminder erased'],['reminderNoSession','提醒无有效会话','Reminder without valid session'],['sourceFailure','来源打开失败','Source app open failure'],['sourceTimeout','来源打开超时','Source app open timeout'],
  ['aboutUnknown','版本信息未知','Unknown version facts'],['resourceMissing','随包资源缺失','Bundled resources missing'],['resourceFailure','资源打开失败','Resource open failure'],['clipboardFailure','剪贴板复制失败','Clipboard copy failure'],['platformFailure','系统入口打开失败','System action open failure']
 ].map(([id,zh,en])=>({id,zh,en}));
-function setScene(value){const pref={language:S.language,systemLanguage:S.systemLanguage};stopHostMaintenance();cleanup();pendingSceneRoute=!wasVisible;if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
+function setScene(value){approvedSoundsView?.dispose();approvedSoundsView=null;const pref={language:S.language,systemLanguage:S.systemLanguage};stopHostMaintenance();cleanup();pendingSceneRoute=!wasVisible;if($('sheet').open)closeSheet();S=freshState();Object.assign(S,pref);S.scene=value;scrollByRoute={};$('preview-scene').value=value;
  attachReceiptFacts();const sounds=detail=>{S.page='sounds';S.pack='studio';S.detail=detail||null;};
  if(value==='workspaceRemoval')S.scope='claudio';
  else if(value==='packRemoval'){sounds();S.scopes[1].pack='minimal';}
+ else if(value==='archiveFailure'){sounds('pack');S.faults.archive=true;}
  else if(value==='firstGeneration'){sounds('edit:notification');S.expandedEvent=3;S.description='';S.credentials[S.profile]={status:'missing'};}
  else if(value==='zero')S.scopes[0].volume=0;
  else if(value==='missing'){S.scope='claudio';S.packs.find(p=>p.id==='studio').sounds[3]=null;}
@@ -5133,7 +5739,7 @@ function selectScope(id){
 }
 document.addEventListener('change',e=>{const c=e.target,[type,id]=(c.dataset.control||'').split(':');if(!type)return;
  if(type==='profile')return action('profile:'+c.value);
- if(type==='scope'||type==='management-scope')return selectScope(c.value);
+ if(type==='scope')return selectScope(c.value);
  if(type==='scope-pack'){stopAudio();groupWrite({type:'pack',value:c.value});render();return;}
  if(type==='pack'){stopAudio();clearGeneration();S.pack=c.value;S.returnContext=null;S.notice=null;render();return;}
  if(type==='event'){groupWrite({type:'event',index:Number(id),value:c.checked});render();return;}
@@ -5174,12 +5780,12 @@ function clearBrowsingHistory(){browsing.entries=[];browsing.cursor=-1;browsing.
 const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action});
 const same=(a,b)=>a&&b&&['page','detail','scope','pack','host','directory'].every(k=>a[k]===b[k]);
 function recordPosition(p,replace=false){if(replace&&browsing.cursor>=0)browsing.entries[browsing.cursor]=p;else{browsing.entries.splice(browsing.cursor+1);browsing.entries.push(p);if(browsing.entries.length>64)browsing.entries.shift();browsing.cursor=browsing.entries.length-1;}browsing.version++;}
-function navigate(page,detail=null,options={}){if($('sheet').open)return;const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page}"]`)?.focus();}}
-function traverse(delta){if($('sheet').open)return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();document.querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
+function navigate(page,detail=null,options={}){if($('sheet').open||approvedSoundsView?.modal())return;const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page}"]`)?.focus();}}
+function traverse(delta){if($('sheet').open||approvedSoundsView?.modal())return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();document.querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
 const renderOriginal=render;
 render=function(){renderOriginal();if(S.page==='notifications'&&!S.detail)$('page-content').insertAdjacentHTML('beforeend',section('',disclosure(T('事件动画','Event animation'),'','','animation-detail')));if(S.page==='notifications'&&S.detail==='animation')renderAnimationAlignment();drawNavigation();};
 function renderAnimationAlignment(){const styles=[['original','原版图标','Original icon','../../assets/branding/claudi0-mark.svg'],['mechanicalDuck','机械小鸭','Mechanical duck','../../gui/Sources/ClaudioGUI/Resources/EventAnimations/E/sprites.png'],['pixelGhost','像素幽灵','Pixel ghost','../../gui/Sources/ClaudioGUI/Resources/EventAnimations/G/sprites.png'],['bitcoin','比特币','Bitcoin','../../gui/Sources/ClaudioGUI/Resources/EventAnimations/H/sprites.png']];S.animationStyle??='original';S.animationEvent??=0;$('page-title').textContent=T('事件动画','Event animation');$('page-content').innerHTML=`<p class="intro">${T('保留角色素材；选择与键盘焦点独立显示。','Character assets are retained. Selection and keyboard focus have distinct appearances.')}</p><div class="gallery" role="radiogroup">${styles.map(([id,zh,en,img])=>`<button role="radio" aria-checked="${S.animationStyle===id}" data-style="${id}">${id==='original'?`<img src="${img}" alt="">`:`<span class="sprite" aria-hidden="true" style="background-image:url('${img}')"></span>`}${T(zh,en)}</button>`).join('')}</div><section class="section"><div class="section-heading"><h2>${T('横幅预览','Banner preview')}</h2></div><div class="preview-segments" role="radiogroup">${events.map((e,i)=>`<button role="radio" aria-checked="${S.animationEvent===i}" data-preview="${i}">${e.name()}</button>`).join('')}</div><p>${events[S.animationEvent].name()}</p></section>`+section('',row(T('显示角色','Show character'),'',toggle(T('显示角色','Show character'),'demo-character',true))+row(T('静态表情','Static expression'),'',toggle(T('静态表情','Static expression'),'demo-static',false)));$('page-content').querySelectorAll('[data-style]').forEach(b=>{b.onclick=()=>{S.animationStyle=b.dataset.style;renderAnimationAlignment();};b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const i=styles.findIndex(v=>v[0]===b.dataset.style),next=styles[Math.max(0,Math.min(3,i+(e.key==='ArrowRight'?1:-1)))][0];S.animationStyle=next;renderAnimationAlignment();document.querySelector(`[data-style="${next}"]`).focus();};});$('page-content').querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{S.animationEvent=Number(b.dataset.preview);renderAnimationAlignment();});}
-function drawNavigation(){if(!$('history-state'))return;$('detail-back').hidden=false;$('detail-back').disabled=$('sheet').open||browsing.cursor<=0;$('detail-forward').disabled=$('sheet').open||browsing.cursor>=browsing.entries.length-1;$('detail-back').setAttribute('aria-label',T('返回','Back'));$('detail-forward').setAttribute('aria-label',T('前进','Forward'));$('history-state').textContent=T('浏览位置','Browsing position')+` ${browsing.cursor+1}/${browsing.entries.length} · `+browsing.entries.map((p,i)=>`${i===browsing.cursor?'[':''}${pages.find(v=>v.id===p.page).title()}${p.detail?' / '+p.detail:''}${i===browsing.cursor?']':''}`).join(' → ');}
+function drawNavigation(){if(!$('history-state'))return;$('detail-back').hidden=false;$('detail-back').disabled=$('sheet').open||approvedSoundsView?.modal()||browsing.cursor<=0;$('detail-forward').disabled=$('sheet').open||approvedSoundsView?.modal()||browsing.cursor>=browsing.entries.length-1;$('detail-back').setAttribute('aria-label',T('返回','Back'));$('detail-forward').setAttribute('aria-label',T('前进','Forward'));$('history-state').textContent=T('浏览位置','Browsing position')+` ${browsing.cursor+1}/${browsing.entries.length} · `+browsing.entries.map((p,i)=>`${i===browsing.cursor?'[':''}${pages.find(v=>v.id===p.page).title()}${p.detail?' / '+p.detail:''}${i===browsing.cursor?']':''}`).join(' → ');}
 const evidence=document.createElement('div');evidence.className='history-evidence';evidence.innerHTML='<span id="history-state"></span><button id="history-walkthrough">A → 详情 → B → Back → Back → Forward</button><button id="history-invalidate">使当前目标失效 / Invalidate target</button>';document.querySelector('.stage').after(evidence);
 $('detail-back').onclick=()=>traverse(-1);$('detail-forward').onclick=()=>traverse(1);
 document.addEventListener('click',e=>{if(e.target.closest('[data-action="animation-detail"]'))navigate('notifications','animation');});
@@ -5275,7 +5881,7 @@ function projectMacSettings(state) {
       pack:g.pack,volume:g.volume,events:events,
       unavailable:state.invalidScope?.id===g.id||state.brokenRuleID===g.id||(state.ruleBroken&&state.scope===g.id)};
   });
-  PACKS=state.packs.map(function(p){
+  PACKS=state.packs.filter(function(p){return !p.draft;}).map(function(p){
     const files={};EVENTS.forEach(function(e,i){files[e.id]=p.sources[i]==='system'?'system:'+p.sounds[i]:p.sounds[i];});
     return {id:p.id,name:Array.isArray(p.name)?p.name[S.lang==='zh'?0:1]:p.name,builtin:p.builtin,broken:!p.healthy,
       license:p.license,lic:p.license||'user',author:p.author,files:files,names:{},audio:p.audio.slice(),

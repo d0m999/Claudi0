@@ -38,89 +38,29 @@ private func multiProviderPrototypeCollapsed(_ source: String) -> String {
 
 @MainActor
 func runMultiProviderPrototypeContractSuites() {
-    suite("multi-provider prototype pins production profiles plus gated SenseAudio fixture") {
+    suite("规范原型：现行五个 profile 与路线能力保持同步") {
         guard
             let html = multiProviderPrototypeSource(
-                "mockups/ai-app-manager-native-macos.html"),
+                "designs/panel-and-settings/Panel and Settings Prototype.html"),
             let profiles = multiProviderPrototypeSection(
-                html,
-                from: "const ttsProviderProfiles = [",
-                to: "const initialTTSStageKey"),
-            let profileResolution = multiProviderPrototypeSection(
-                html,
-                from: "const initialTTSProfileID",
-                to: "const ttsCredentialStates")
-        else {
-            expect(false, "必须能读取多 Provider 原型的 profile 合同")
-            return
-        }
-
-        let expectedProfileIDs = [
+                html, from: "const profiles = [", to: "const profileName=")
+        else { expect(false, "必须读取现行规范原型的 profile 表"); return }
+        for id in [
             "elevenlabs-global", "minimax-global", "qwen-singapore", "qwen-beijing",
             "senseaudio-cn",
-        ]
-        expect(
-            multiProviderPrototypeOccurrences(of: "id: '", in: profiles) == 5,
-            "原型 registry 必须声明四个 production profile 与一个 gated SenseAudio fixture")
-        for profileID in expectedProfileIDs {
-            expect(
-                multiProviderPrototypeOccurrences(of: "id: '\(profileID)'", in: profiles) == 1,
-                "原型 registry 必须恰好声明一次 \(profileID)")
-        }
-        expect(
-            profiles.contains("id: 'senseaudio-cn'")
-                && profiles.contains("productionEnabled: false")
-                && profiles.contains("candidateSemantics: 'numbered'")
-                && profiles.contains("minimumAcceptedCount: 1"),
-            "SenseAudio 原型必须显式冻结 numbered/partial 合同并保持生产门禁关闭")
-
-        let collapsedResolution = multiProviderPrototypeCollapsed(profileResolution)
-        expect(
-            collapsedResolution.contains(
-                "ttsProviderProfiles.some(profile => profile.id === initialTTSProfileID)"
-                    + " ? initialTTSProfileID : 'elevenlabs-global';"),
-            "未知或缺省 profile 必须回落到 elevenlabs-global")
-    }
-
-    suite("legacy credential ready is an ElevenLabs-only compatibility alias") {
-        guard
-            let html = multiProviderPrototypeSource(
-                "mockups/ai-app-manager-native-macos.html"),
-            let credentialFixtures = multiProviderPrototypeSection(
-                html,
-                from: "const ttsCredentialStates = {",
-                to: "const ttsPendingReplacementPreviousStates"),
-            let compatibility = multiProviderPrototypeSection(
-                html,
-                from: "const initialTTSCredentialValue",
-                to: "if (ttsCredentialStates[selectedTTSProfileID] === 'pending')")
-        else {
-            expect(false, "必须能读取原型的 credential fixture 合同")
-            return
-        }
-
-        for fixture in [
-            "'elevenlabs-global': 'verified'",
-            "'minimax-global': 'missing'",
-            "'qwen-singapore': 'deferred'",
-            "'qwen-beijing': 'unavailable'",
-            "'senseaudio-cn': 'missing'",
         ] {
             expect(
-                credentialFixtures.contains(fixture),
-                "原型必须保留固定 credential fixture：\(fixture)")
+                multiProviderPrototypeOccurrences(of: "id:'\(id)'", in: profiles) == 1,
+                "现行原型每个 profile 只定义一次：\(id)")
         }
-
-        let collapsedCompatibility = multiProviderPrototypeCollapsed(compatibility)
         expect(
-            collapsedCompatibility.contains(
-                "initialTTSCredentialValue === 'ready'"
-                    + " && selectedTTSProfileID === 'elevenlabs-global'"),
-            "credential=ready 只能把 elevenlabs-global 解释为 verified")
+            profiles.contains("routes:['speech','animal','soundEffect']")
+                && profiles.contains("partial:true,local:true"),
+            "SenseAudio 保持路线能力、部分候选及本地凭据事实")
         expect(
-            !collapsedCompatibility.contains(
-                "if (initialTTSCredentialValue === 'ready')"),
-            "credential=ready 不得无条件覆盖 MiniMax/Qwen fixture 状态")
+            profiles.contains("routes:['speech'],styled:false")
+                && profiles.contains("deferred:true"),
+            "MiniMax 与 Qwen 保持各自候选和验证政策")
     }
 
     suite("prototype compatibility boundary is synchronized across both plans") {

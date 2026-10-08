@@ -71,10 +71,7 @@ func runSettingsSoundsLayoutSuites() async {
                                 ("event-settings.sound-pack-picker", 38),
                             ]
                         case .sounds:
-                            menuRows = [
-                                ("settings.sounds.management-scope", 51),
-                                ("sound-packs.pack-list", 38),
-                            ]
+                            menuRows = []
                         default:
                             menuRows = []
                         }
@@ -84,7 +81,7 @@ func runSettingsSoundsLayoutSuites() async {
                                 minimumHeight: menuRow.minimumHeight,
                                 exactHeight: menuRow.minimumHeight == 38 ? 38 : nil)
                         }
-                        if destination == .eventsAndSounds || destination == .sounds {
+                        if destination == .eventsAndSounds {
                             let prefix = destination == .sounds ? "sound-packs" : "workspace"
                             let events = Event.allCases.compactMap {
                                 frames["\(prefix).event-row.\($0.rawValue)"]
@@ -119,22 +116,17 @@ func runSettingsSoundsLayoutSuites() async {
                             }
                         }
                         if destination == .sounds {
-                            for event in Event.allCases {
-                                expect(
-                                    probe.menuAccessibilityElement(
-                                        identifier: "settings.sounds.ai-cue.event.\(event.rawValue)"
-                                    ) != nil,
-                                    "\(name) 用户包五事件行必须直接挂载生成入口")
-                            }
-                            if let deletion = frames["sound-packs.deletion.card"],
-                                let eventGroup = frames["sound-packs.events.group"]
-                            {
-                                expect(
-                                    deletion.minY > eventGroup.maxY,
-                                    "\(name) 删除声音包位于主页面底部独立区域")
-                            } else {
-                                expect(false, "\(name) 必须挂载声音包删除区域")
-                            }
+                            expect(
+                                probe.menuIsEnabled(identifier: "settings.sounds.new-pack") == true,
+                                "\(name) 列表的新建入口可操作")
+                            expect(
+                                probe.menuAccessibilityElement(
+                                    identifier: "settings.sounds.history") != nil,
+                                "\(name) 列表提供生成记录入口")
+                            expect(
+                                probe.menuAccessibilityElement(
+                                    identifier: "settings.sounds.management-scope") == nil,
+                                "\(name) 声音页不显示工作区设置")
                         }
                         if let captureDirectory = ProcessInfo.processInfo.environment[
                             "CLAUDIO_LAYOUT_CAPTURE_DIR"]
@@ -186,12 +178,12 @@ func runSettingsSoundsLayoutSuites() async {
             session: draftFixture.session,
             size: NSSize(width: 960, height: 640))
         await draftProbe.settle()
-        expect(
-            draftFixture.soundPacksEditor.beginAICuePackDraft(language: .zhHans), "草稿须由既有 owner 创建")
+        let draft = try! await draftFixture.soundPacksEditor.createNamedDraft(AICuePackName("持久草稿"))
+        _ = draftFixture.session.send(.requestSoundsDetail(.draft(packID: draft.packID)))
         draftProbe.refresh()
         expect(
-            SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
-            "新草稿直接进入事件详情且未发布")
+            SoundPacksLayoutRecorder.frames["sound-packs.events.group"] != nil,
+            "命名草稿进入五事件详情且未发布")
         expect(
             {
                 if case .sounds(let sounds) = draftFixture.soundPacksEditor.presentation.mode {
@@ -211,8 +203,8 @@ func runSettingsSoundsLayoutSuites() async {
         await readonlyProbe.settle()
         expect(readonlyFixture.aiCueViewModel.session == nil, "只读包详情不得启动 AI 会话")
         expect(
-            SoundPacksLayoutRecorder.frames["sound-packs.event-detail"] != nil,
-            "只读深链仍进入对应事件详情")
+            SoundPacksLayoutRecorder.frames["sound-packs.events.group"] != nil,
+            "只读深链进入包详情")
         readonlyProbe.close()
     }
 
@@ -277,8 +269,9 @@ func runSettingsSoundsLayoutSuites() async {
                 && fixture.aiCueViewModel.generation?.candidates.count == 3,
             "用户包深链必须打开对应事件的行内生成表单")
         expect(
-            SoundPacksLayoutRecorder.frames["settings.sounds.ai-cue.composer.stop"] != nil,
-            "行内表单必须位于同一映射列表")
+            SoundPacksLayoutRecorder.frames["sound-packs.events.group"] != nil
+                && !probe.hasAttachedSheet,
+            "旧深链展示包详情，不自动打开生成表单")
         if fixture.session.send(.inspectSoundPack("settings-fixture-pack")) == .routed {
             await probe.settle()
             expect(
@@ -286,7 +279,7 @@ func runSettingsSoundsLayoutSuites() async {
                     && fixture.aiCueViewModel.generation == nil,
                 "切换包后旧目标会话与候选必须失效")
             expect(
-                fixture.session.state.soundsDetail == .overview
+                fixture.session.state.soundsDetail == .pack(packID: "settings-fixture-pack")
                     && fixture.session.navigationHistory.current?.location.viewedPackID
                         == "settings-fixture-pack"
                     && SoundPacksLayoutRecorder.frames["sound-packs.events.group"] != nil,
@@ -333,31 +326,12 @@ func runSettingsMenuLayoutSuites() async {
                     appearance: dark ? .darkAqua : .aqua)
                 defer { probe.close() }
                 await probe.settle()
-                expectSettingsMenuLayout(
-                    probe: probe, identifier: "sound-packs.pack-list",
-                    name: "长包名 \(language.rawValue) \(dark)", minimumHeight: 38,
-                    exactHeight: 38)
                 expect(
-                    probe.menuIsEnabled(identifier: "sound-packs.pack-list") == true,
-                    "实际挂载的长名称菜单必须仍可操作")
-                if language == .zhHans && !dark {
-                    expect(
-                        probe.menuAccessibilityValue(identifier: "missing.menu") == nil,
-                        "不存在的菜单身份不能匹配其他控件的名称")
-                    expect(
-                        probe.menuIsEnabled(identifier: "missing.menu") == nil,
-                        "不存在的菜单身份不能被误报为禁用")
-                }
-                let selectedValue = probe.menuAccessibilityValue(
-                    identifier: "sound-packs.pack-list")
-                // Backends may expose the selected title or its richer accessibility label.
-                let expectedLabel = localizedSoundPacksPackAccessibilityLabel(
-                    displayName: packName, isActivePack: true, state: .complete,
-                    license: .cc0, language: language)
+                    probe.menuIsEnabled(identifier: "settings.sounds.pack.long-pack") == true,
+                    "长包名列表行必须仍可操作")
                 expect(
-                    selectedValue == packName || selectedValue == expectedLabel,
-                    "长包名可视觉截断，但挂载菜单的无障碍当前值仍保留完整名称，\(language.rawValue) \(dark)：\(String(describing: selectedValue))"
-                )
+                    probe.controlLabel("settings.sounds.pack.long-pack") == packName,
+                    "长包名无障碍标签保留完整名称")
             }
         }
     }
@@ -369,6 +343,8 @@ func runSettingsMenuLayoutSuites() async {
                 session: fixture.session, size: NSSize(width: 960, height: 640),
                 appearance: dark ? .darkAqua : .aqua)
             defer { probe.close() }
+            await probe.settle()
+            expect(probe.chooseSource(event: .stop, index: 0), "从事件显式打开生成表单")
             await probe.settle()
             expect(fixture.aiCueViewModel.phase == .adopting, "fixture 必须处于禁止更换服务的采用阶段")
             expectSettingsMenuLayout(
@@ -514,6 +490,8 @@ final class SettingsSoundsNativeLayoutProbe {
     }
 
     var hasAttachedSheet: Bool { window.attachedSheet != nil }
+    var sheetContentView: NSView? { window.attachedSheet?.contentView }
+    var sheetWindow: NSWindow? { window.attachedSheet }
 
     func menuIsEnabled(identifier: String) -> Bool? {
         menuAccessibilityElement(identifier: identifier)?.isAccessibilityEnabled?()
@@ -552,7 +530,31 @@ final class SettingsSoundsNativeLayoutProbe {
             }
         }
         visit(hostingView)
+        if let content = window.attachedSheet?.contentView { visit(content) }
         return matches.count == 1 ? matches[0] : nil
+    }
+
+    func chooseSource(event: Event, index: Int) -> Bool {
+        func find(_ view: NSView) -> NSPopUpButton? {
+            if let button = view as? NSPopUpButton,
+                button.accessibilityIdentifier() == "settings.sounds.event.\(event.rawValue).source"
+            {
+                return button
+            }
+            return view.subviews.lazy.compactMap { find($0) }.first
+        }
+        guard let button = find(hostingView), button.isEnabled,
+            index >= 0, index + 1 < button.numberOfItems
+        else { return false }
+        button.selectItem(at: index + 1)
+        return button.sendAction(button.action, to: button.target)
+    }
+
+    func setText(_ identifier: String, value: String) -> Bool {
+        guard let element = menuAccessibilityElement(identifier: identifier) else { return false }
+        element.setAccessibilityValue?(value)
+        refresh()
+        return true
     }
 
     private func prepareMenuAccessibility() {
@@ -781,11 +783,15 @@ final class SettingsSoundsNativeLayoutProbe {
     }
 
     func close() {
-        if let sheet = window.attachedSheet { window.endSheet(sheet) }
+        if let sheet = window.attachedSheet {
+            window.endSheet(sheet)
+            sheet.orderOut(nil)
+        }
         session.send(.windowWillClose)
         window.orderOut(nil)
         window.contentViewController = nil
         window.close()
+        refresh()
     }
 }
 

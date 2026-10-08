@@ -665,19 +665,18 @@ private func isDirectRegularFile(_ fileURL: URL) -> Bool {
     return result == 0 && (status.st_mode & S_IFMT) == S_IFREG
 }
 
-/// Permanently deletes one audio file only after re-reading the manifest under `packs.lock` and
-/// proving it is still an orphan.
-///
-/// This is deliberately named as an irreversible action and performs no “cleanup” as a side effect
-/// of bind/clear. UI callers must present a destructive confirmation that names the file and states
-/// that the action cannot be undone before invoking this function. The function independently
-/// revalidates the fact at invocation time so a stale window row can never delete a file newly
-/// referenced by another event.
+/// Moves one confirmed unused audio file to Trash after re-reading references under packs.lock.
+/// Bind/clear never call this function. A failed Trash operation restores the file or reports the
+/// retained recovery location, and never falls back to permanently deleting user content.
 @MainActor
 public func deleteOrphanAudioFile(
     fileName: String,
     packID: String,
-    environment: AudioImportEnvironment
+    environment: AudioImportEnvironment,
+    moveToTrash: @Sendable (URL) throws -> Void = { url in
+        var destination: NSURL?
+        try FileManager.default.trashItem(at: url, resultingItemURL: &destination)
+    }
 ) -> Result<Void, OrphanAudioDeleteError> {
     guard !environment.builtinPackIDs.contains(packID) else {
         return .failure(.builtinReadOnly(packID: packID))
@@ -700,7 +699,8 @@ public func deleteOrphanAudioFile(
         deleteOrphanAudioFileWhileLocked(
             fileName: fileName,
             packID: packID,
-            packDirectory: userPackDirectory)
+            packDirectory: userPackDirectory,
+            moveToTrash: moveToTrash)
     }
     switch outcome {
     case .ran(let result):
@@ -715,7 +715,8 @@ public func deleteOrphanAudioFile(
 private func deleteOrphanAudioFileWhileLocked(
     fileName: String,
     packID: String,
-    packDirectory: URL
+    packDirectory: URL,
+    moveToTrash: @Sendable (URL) throws -> Void
 ) -> Result<Void, OrphanAudioDeleteError> {
     guard fileName == URL(fileURLWithPath: fileName).lastPathComponent,
         !fileName.hasPrefix("."),
@@ -747,24 +748,12 @@ private func deleteOrphanAudioFileWhileLocked(
         return .failure(.fileNotFound(fileName: fileName))
     }
 
-    // `unlink(2)`, not `FileManager.removeItem`: even if a non-cooperating process swaps the
-    // checked regular file for a directory between `lstat` and this call, `unlink` refuses the
-    // directory instead of recursively deleting its contents. If it swaps in a symlink, unlink
-    // removes only that directory entry and never follows the target.
-    var unlinkErrno: Int32 = 0
-    let unlinkResult = target.withUnsafeFileSystemRepresentation { path in
-        guard let path else {
-            unlinkErrno = EINVAL
-            return Int32(-1)
-        }
-        let result = unlink(path)
-        if result != 0 { unlinkErrno = errno }
-        return result
-    }
-    guard unlinkResult == 0 else {
-        return .failure(
-            .deleteFailed(
-                reason: "unlink errno \(unlinkErrno): \(String(cString: strerror(unlinkErrno)))"))
+    do {
+        try PrivateSoundAssetIO.trash(target, using: moveToTrash)
+    } catch SoundAssetStorageError.recoveryRequired(let url) {
+        return .failure(.deleteFailed(reason: "Recovery retained: " + url.path))
+    } catch {
+        return .failure(.deleteFailed(reason: "Trash failed; original audio retained"))
     }
     return .success(())
 }
