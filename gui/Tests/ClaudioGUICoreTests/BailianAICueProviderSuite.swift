@@ -263,7 +263,7 @@ func runBailianAICueProviderSuites() async {
             "http://other.invalid/a.wav", "http://" + host + ".other.invalid/a.wav",
             "http://" + host + ":81/a.wav", "https://" + host + ":80/a.wav",
             "https://" + host + ":444/a.wav", "ftp://" + host + "/a.wav",
-            "http://user@" + host + "/a.wav", "http://user:secret@" + host + "/a.wav",
+            "http://user@" + host + "/a.wav", "http://user:PASSWORD@" + host + "/a.wav",
             "http://" + host + "/a.wav#", "http://" + host + "/a.wav#fragment",
             "http://127.0.0.1/a.wav", "http://[::1]/a.wav", "http://" + host + "/",
             "http://" + host + "/%2e%2e/a.wav", "http://" + host + "/a//b.wav",
