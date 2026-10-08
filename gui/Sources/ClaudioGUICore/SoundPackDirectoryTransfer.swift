@@ -148,7 +148,9 @@ package enum SoundPackDirectoryTransfer {
         let data = try PrivateSoundAssetIO.read(
             directory.appendingPathComponent("manifest.json"), maximum: 1_048_576)
         let manifest = try JSONDecoder().decode(PackManifest.self, from: data)
-        guard isSafePackID(manifest.id) else { throw SoundAssetStorageError.unsafeEntry }
+        guard isSafePackID(manifest.id), !manifest.id.hasPrefix(".") else {
+            throw SoundAssetStorageError.unsafeEntry
+        }
         for source in manifest.eventSources.values {
             guard let name = source.fileName else { continue }
             guard let url = safePackFileURL(name, in: directory) else {

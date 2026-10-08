@@ -83,6 +83,10 @@ package enum SoundPackNames {
         for root in roots where PrivateSoundAssetIO.exists(root) {
             for entry in try PrivateSoundAssetIO.entries(root)
             where !entry.lastPathComponent.hasPrefix(".") && entry.lastPathComponent != packID {
+                var isDirectory: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDirectory),
+                    isDirectory.boolValue
+                else { continue }
                 let data = try PrivateSoundAssetIO.read(
                     entry.appendingPathComponent("manifest.json"), maximum: 1_048_576)
                 let manifest = try JSONDecoder().decode(PackManifest.self, from: data)

@@ -149,9 +149,12 @@ package final class SettingsPresentationSession: ObservableObject {
                 }
             }
         aiGenerationCancellable = dependencies.aiCueViewModel.$session
-            .combineLatest(dependencies.aiCueViewModel.$generation)
+            .combineLatest(
+                dependencies.aiCueViewModel.$generation,
+                dependencies.aiCueViewModel.coordinator.$state
+            )
             .removeDuplicates { lhs, rhs in
-                lhs.0 == rhs.0 && lhs.1 == rhs.1
+                lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2
             }
             .dropFirst()
             .sink { [weak self] projection in
@@ -159,9 +162,17 @@ package final class SettingsPresentationSession: ObservableObject {
                     guard let self, !self.isPerformingTransaction else { return }
                     switch self.lifecycleDestination {
                     case .sounds:
+                        // Archive recovery can change eligibility without changing the session
+                        // or candidate values. Only a saved generation can sign adoption permits.
+                        let generation: AICueGeneration?
+                        if case .saved = projection.2 {
+                            generation = projection.1
+                        } else {
+                            generation = nil
+                        }
                         self.dependencies.soundPacksEditorOwner.updateAICueComposer(
                             session: projection.0,
-                            generation: projection.1)
+                            generation: generation)
                     case .eventsAndSounds:
                         // The old Events route remains a compatibility seam for already-open
                         // legacy sessions. Package-scoped sessions belong exclusively to Sounds.

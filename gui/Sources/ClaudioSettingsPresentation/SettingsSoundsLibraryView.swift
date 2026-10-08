@@ -95,6 +95,7 @@ struct SettingsSoundsLibraryView: View {
                     heading(l10n.text(.settingsDestinationSounds))
                     libraryContent
                 } else {
+                    libraryStatus
                     packContent
                 }
                 if let errorText { errorLabel(errorText) }
@@ -123,6 +124,7 @@ struct SettingsSoundsLibraryView: View {
             openLegacySheetIfNeeded()
         }
         .onChange(of: route) { _ in
+            previewRequestID = UUID()
             effects.stopPreview(owner: owner)
             errorText = nil
             if isHistory { coordinator.markHistoryRead(); Task { await history.refresh() } }
@@ -131,6 +133,7 @@ struct SettingsSoundsLibraryView: View {
         }
         .onChange(of: model.generation) { _ in syncComposer() }
         .onChange(of: model.session) { _ in syncComposer() }
+        .onChange(of: coordinator.state) { _ in syncComposer() }
         .onChange(of: model.providerProfileID) { _ in
             selectedCandidate = nil; syncComposer()
         }
@@ -189,6 +192,7 @@ struct SettingsSoundsLibraryView: View {
                     Label(historyEntryTitle, systemImage: "clock.arrow.circlepath")
                 }.accessibilityIdentifier("settings.sounds.history")
             }
+            libraryStatus
             VStack(spacing: 0) {
                 ForEach(sounds?.packs ?? []) { item in
                     HStack {
@@ -240,8 +244,12 @@ struct SettingsSoundsLibraryView: View {
                         "settings.sounds.draft.\(draft.packID)")
                     Divider()
                 }
-                if sounds?.packs.isEmpty == true, drafts.snapshot.drafts.isEmpty {
-                    Text(l10n.text(.soundsNoAudio)).foregroundColor(.secondary).padding()
+                if owner.presentation.library == .ready, sounds?.packs.isEmpty == true,
+                    drafts.snapshot.drafts.isEmpty
+                {
+                    Text(l10n.text(.panelPacksNoneTitle))
+                        .foregroundColor(.secondary).padding()
+                        .accessibilityIdentifier("settings.sounds.library.empty")
                 }
             }.settingsSectionSurface()
             serviceCard
@@ -252,6 +260,37 @@ struct SettingsSoundsLibraryView: View {
                 Button(l10n.text(.soundPacksRestore)) { invoke(action) }
             }
             if let failure = drafts.failure { errorLabel(storageMessage(failure)) }
+        }
+    }
+
+    @ViewBuilder private var libraryStatus: some View {
+        switch owner.presentation.library {
+        case .unloaded, .loading(previousAvailable: false):
+            ProgressView(l10n.text(.soundPacksLibraryLoading))
+                .accessibilityIdentifier("settings.sounds.library.loading")
+        case .loading(previousAvailable: true):
+            ProgressView(l10n.text(.soundPacksLibraryRefreshing))
+                .accessibilityIdentifier("settings.sounds.library.refreshing")
+        case .failed(let previousAvailable, let reason):
+            let message = l10n.text(
+                reason == .locationUnavailable
+                    ? .soundPacksEmptyLoadFailedMessage : .panelPacksReadFailed)
+            HStack {
+                errorLabel(
+                    previousAvailable
+                        ? l10n.format(.soundPacksLibraryRefreshFailed, message) : message
+                )
+                .accessibilityIdentifier("settings.sounds.library.failure")
+                Spacer()
+                Button(l10n.text(.commonRetry)) {
+                    if let action = sounds?.retryLibraryAction { invoke(action) }
+                }
+                .disabled(sounds?.retryLibraryAction == nil)
+                .accessibilityLabel(l10n.text(.soundPacksLibraryRetryLabel))
+                .accessibilityHint(l10n.text(.soundPacksLibraryRetryHint))
+                .accessibilityIdentifier("settings.sounds.library.retry")
+            }
+        case .ready: EmptyView()
         }
     }
 
@@ -747,7 +786,7 @@ struct SettingsSoundsLibraryView: View {
 
     private func inventoryContent(managing: Bool) -> some View {
         VStack(alignment: .leading) {
-            if inventory.isEmpty { Text(l10n.text(.soundsNoAudio)).foregroundColor(.secondary) }
+            inventoryStatus
             List(selection: $selectedItem) {
                 ForEach(inventory) { audio in
                     HStack {
@@ -783,6 +822,41 @@ struct SettingsSoundsLibraryView: View {
                                 && !audio.usedByEvents.contains(selection?.event ?? .taskStart))
                 }
             }.frame(minHeight: 160, maxHeight: 340)
+        }
+    }
+
+    @ViewBuilder private var inventoryStatus: some View {
+        switch sounds?.inventory {
+        case .idle, .loading:
+            ProgressView(l10n.text(.soundPacksAudioLoading))
+                .accessibilityIdentifier("settings.sounds.inventory.loading")
+        case .failed(let previous, let reason):
+            let message = inventoryFailureMessage(reason)
+            errorLabel(
+                previous == nil ? message : l10n.format(.soundPacksLibraryRefreshFailed, message)
+            )
+            .accessibilityIdentifier("settings.sounds.inventory.failure")
+            Button(l10n.text(.commonRetry)) {
+                if let action = sounds?.retryLibraryAction { invoke(action) }
+            }
+            .disabled(sounds?.retryLibraryAction == nil)
+            .accessibilityIdentifier("settings.sounds.inventory.retry")
+        case .ready(let files) where files.isEmpty:
+            Text(l10n.text(.soundsNoAudio)).foregroundColor(.secondary)
+                .accessibilityIdentifier("settings.sounds.inventory.empty")
+        case .ready, nil: EmptyView()
+        }
+    }
+
+    private func inventoryFailureMessage(_ reason: SoundPackEditorInventoryFailureReason) -> String
+    {
+        switch reason {
+        case .packUnavailable:
+            l10n.format(.soundPacksInventoryPackNotFound, packID ?? "")
+        case .manifestUnreadable:
+            l10n.format(.soundPacksInventoryManifestUnreadable, l10n.text(.panelPacksReadFailed))
+        case .directoryUnavailable:
+            l10n.format(.soundPacksInventoryDirectoryUnreadable, l10n.text(.panelPacksReadFailed))
         }
     }
 
@@ -1038,7 +1112,10 @@ struct SettingsSoundsLibraryView: View {
                 guard previewRequestID == requestID else { await preview.discard(); return }
                 historyPreview = preview
                 effects.toggleSoundPreview(id: audio.uuidString, fileURL: preview.fileURL)
-            } catch { errorText = storageMessage(error) }
+            } catch {
+                guard previewRequestID == requestID else { return }
+                errorText = storageMessage(error)
+            }
         }
     }
 

@@ -76,6 +76,18 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--sounds-review-recovery") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSoundsReviewRecoverySuites()
+        print("Sounds review recovery: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--sounds-redesign") {
     await runGenerationHistorySuites()
     await runSoundsRedesignCompositionSuites()
@@ -701,6 +713,7 @@ Task { @MainActor in
     await runAICueAdoptionSuites()
     await runSoundsRedesignCompositionSuites()
     await runGenerationHistorySuites()
+    await runSoundsReviewRecoverySuites()
     await runAICueGenerationViewModelSuites()
     runAICuePackScopedSuites()
     await runAICuePackScopedAsyncSuites()

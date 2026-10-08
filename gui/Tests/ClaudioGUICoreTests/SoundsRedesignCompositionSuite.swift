@@ -244,6 +244,92 @@ func runSoundsRedesignCompositionSuites() async {
         }
     }
 
+    await suite("声音包命名：库中普通文件不阻断新建、复制或改名") {
+        await withTempDirectory { root in
+            let environment = makeAudioImportEnvironment(
+                userPacksDirectory: root.appendingPathComponent("packs"))
+            let directory = root.appendingPathComponent("drafts")
+            let store = SoundPackDraftStore(directory: directory, environment: environment)
+            writeFixture(
+                "unrelated file",
+                to: environment.userPacksDirectory.appendingPathComponent("README.txt"))
+            let source = environment.userPacksDirectory.appendingPathComponent("original")
+            writeFixture(
+                #"{"id":"original","name":"Original","events":{}}"#,
+                to: source.appendingPathComponent("manifest.json"))
+            do {
+                let draft = try await store.create(name: AICuePackName("New Draft"))
+                _ = try await store.rename(
+                    packID: draft.packID, name: AICuePackName("Renamed Draft"))
+                try await SoundPackDirectoryTransfer.rename(
+                    packID: "original", name: AICuePackName("Renamed Pack"),
+                    environment: environment, draftsDirectory: directory)
+                let copy = try await SoundPackDirectoryTransfer.prepare(
+                    source: source, environment: environment, copyName: AICuePackName("Named Copy"))
+                defer { Task { await copy.discard() } }
+                try await SoundPackDirectoryTransfer.publish(
+                    copy, environment: environment, draftsDirectory: directory)
+                expect(
+                    FileManager.default.fileExists(
+                        atPath: environment.userPacksDirectory.appendingPathComponent(copy.packID)
+                            .path), "普通文件存在时仍可发布命名副本")
+                do {
+                    _ = try await store.create(name: AICuePackName("renamed pack"))
+                    expect(false, "过滤普通文件不能绕过真实包名称冲突")
+                } catch { expect(error as? SoundAssetStorageError == .nameConflict, "真实冲突仍在锁内拒绝") }
+                expect(
+                    try String(
+                        contentsOf: environment.userPacksDirectory.appendingPathComponent(
+                            "README.txt"), encoding: .utf8) == "unrelated file", "命名不修改无关文件")
+            } catch { expect(false, "普通文件不得阻断命名操作：\(error)") }
+        }
+    }
+
+    await suite("声音包导入：拒绝库无法发现的隐藏身份，并在发布边界复核") {
+        await withTempDirectory { root in
+            let environment = makeAudioImportEnvironment(
+                userPacksDirectory: root.appendingPathComponent("packs"))
+            let source = root.appendingPathComponent("external")
+            do {
+                for id in [".invisible", ".another"] {
+                    writeFixture(
+                        "{\"id\":\"\(id)\",\"events\":{}}",
+                        to: source.appendingPathComponent("manifest.json"))
+                    do {
+                        let hidden = try await SoundPackDirectoryTransfer.prepare(
+                            source: source, environment: environment)
+                        await hidden.discard()
+                        expect(false, "隐藏 ID \(id) 必须在预览前拒绝")
+                    } catch {
+                        expect(error as? SoundAssetStorageError == .unsafeEntry, "隐藏 ID 显示安全校验原因")
+                    }
+                    expect(
+                        !FileManager.default.fileExists(
+                            atPath: environment.userPacksDirectory.appendingPathComponent(id).path),
+                        "拒绝后不留下不可见安装包")
+                }
+                writeFixture(
+                    #"{"id":"visible","events":{}}"#,
+                    to: source.appendingPathComponent("manifest.json"))
+                let prepared = try await SoundPackDirectoryTransfer.prepare(
+                    source: source, environment: environment)
+                let stage = try FileManager.default.contentsOfDirectory(
+                    at: environment.userPacksDirectory, includingPropertiesForKeys: nil
+                ).first { $0.lastPathComponent.hasPrefix(".pack-transfer-") }!
+                writeFixture(
+                    #"{"id":".invisible","events":{}}"#,
+                    to: stage.appendingPathComponent("payload/manifest.json"))
+                do {
+                    try await SoundPackDirectoryTransfer.publish(
+                        prepared, environment: environment,
+                        draftsDirectory: root.appendingPathComponent("drafts"))
+                    expect(false, "发布时仍须拒绝已变成隐藏 ID 的预览")
+                } catch { expect(error as? SoundAssetStorageError == .unsafeEntry, "发布也执行同一身份校验") }
+                await prepared.discard()
+            } catch { expect(false, "导入身份回归失败：\(error)") }
+        }
+    }
+
     suite("声音试听：真实回调、旧播放隔离、互斥与系统输出相对增益") {
         let player = RedesignPlayback()
         let effects = SoundPacksEditorNativeEffectsDispatcher(adapter: player)
