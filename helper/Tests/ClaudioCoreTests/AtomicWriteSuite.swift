@@ -1206,14 +1206,14 @@ func runAtomicWriteSuites() {
             "Trash 失败必须保留并尝试恢复，不永久删除音频")
     }
 
-    suite("写盘绊线：SenseAudio 凭据仅经私有 staging 完整写入后原子替换") {
+    suite("写盘绊线：SenseAudio／百炼凭据仅经私有 staging 完整写入后原子替换") {
         let path = "gui/Sources/ClaudioGUICore/AICueLocalCredentials.swift"
         guard let source = scanned[path]?.codeWithoutStringLiterals,
-            let actorRange = source.range(of: "actor SenseAudioFileCredentialVault"),
+            let actorRange = source.range(of: "actor AICueFileCredentialVault"),
             let body = functionBody(
                 named: "replaceCredential", in: String(source[actorRange.lowerBound...]))
         else {
-            expect(false, "缺失 SenseAudio 本地凭据写入接缝")
+            expect(false, "缺失本地凭据共享写入接缝")
             return
         }
         let compact = body.filter { !$0.isWhitespace }

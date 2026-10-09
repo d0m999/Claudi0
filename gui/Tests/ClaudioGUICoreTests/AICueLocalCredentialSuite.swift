@@ -442,7 +442,8 @@ func runAICueLocalCredentialSuites() async {
             try! registry.profile(for: .senseAudioChina).credentialStorageDisclosureKey
                 == .aiCueCredentialLocalFile,
             "SenseAudio 表单使用本地文件说明")
-        for profile in AICueProviderRegistry().profiles() where profile.id != .senseAudioChina {
+        for profile in AICueProviderRegistry().profiles()
+        where profile.id != .senseAudioChina && profile.id != .bailianBeijing {
             expect(
                 profile.credentialStorageDisclosureKey == .aiCueCredentialKeychain,
                 "其他 Provider 保持 Keychain 说明")

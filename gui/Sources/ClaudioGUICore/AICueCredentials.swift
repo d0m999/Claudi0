@@ -336,7 +336,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
                 throw AICueCredentialManagerError.probeUnavailable
             }
             try await validator.validateCredential(credential)
-            // Keychain update/insert is one atomic active-slot mutation. A failed probe or write
+            // Storage replacement is one atomic active-slot mutation. A failed probe or write
             // never deletes the old active item first.
             try await vault.replaceCredential(credential, in: profile.credentialSlotID)
             await metadata.setVerification(
@@ -435,7 +435,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         case .active:
             if lease.profileID == .bailianBeijing {
                 // Store generation verification with exactly the same atomic configuration bytes;
-                // a crash between Keychain and metadata cannot verify a replacement accidentally.
+                // a crash between storage and metadata cannot verify a replacement accidentally.
                 try await vault.replaceCredential(
                     lease.credential.confirmingBailianVerification(.verified),
                     in: profile.credentialSlotID)
@@ -491,9 +491,11 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     }
 
     private func requireLegacyMigration(for profileID: AICueProviderProfileID) async throws {
+        // ADR 0029: a fresh local-file Bailian configuration never consumes retired Keychain
+        // credentials, and must not depend on permissions to delete those unrelated bytes.
+        if profileID == .bailianBeijing { return }
         do { try await migrateLegacyQwenCredentials() } catch {
             // Retired Qwen cleanup must not freeze unrelated services.
-            if profileID == .bailianBeijing { throw error }
         }
     }
 

@@ -4401,6 +4401,22 @@
         }
       }
     },
+    "ai-cue.credential.local-configuration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The API Key and business workspace ID are saved together in a local file and remain available after restarting Claudio. The file is not encrypted; permissions restrict access to your Mac user account. Claudio does not display, copy, or include the saved key in exports."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key 与业务空间 ID 一起保存在本机文件中，重启 claudi0 后仍可使用。文件未加密，访问权限限于当前 Mac 用户；claudi0 不会显示、复制或将已保存的 Key 包含在导出内容中。"
+          }
+        }
+      }
+    },
     "ai-cue.error.local-credential-unavailable": {
       "localizations": {
         "en": {

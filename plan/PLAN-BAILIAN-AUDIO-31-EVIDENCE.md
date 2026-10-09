@@ -112,3 +112,19 @@
 - 要求 clean HEAD 的 `verify-settings-experience.sh` 综合门禁本轮未执行；共享工作区保留并行改动，独立目录是暂存候选而非已提交的 clean HEAD。
 
 本轮没有新增真实生成请求、原生操作、凭据写入、push 或发布。累计仍为 **12 / 20**，完整真实与原生验收结论维持上节所述。
+
+## 私有本地配置保存（2026-10-09）
+
+所有者明确选择与 WorkBuddy 类似的私有本地文件方式，记录于 [ADR 0029](../docs/adr/0029-save-bailian-configuration-in-private-local-file.md)。百炼配置由原凭据 owner 保存到 `~/Library/Application Support/Claudio/Credentials/bailian-beijing.json`，一个版本化记录包含 API Key、业务空间 ID 和真实生成验证状态。复用 SenseAudio 的 fd / 权限 / ACL / 私有 staging / 原子替换边界；SenseAudio 路径及字节格式不变，其他服务仍使用各自原 Keychain 槽。百炼操作不再依赖旧 Keychain 清理，不查询或自动导入旧值或仓库 `.env`。
+
+先加入原凭据管理接口上的回归：旧 Keychain 返回 `-34018` 时，新百炼配置保存被阻断，**2 项失败**。实现独立文件政策后该回归通过。新增完整配置生命周期、权限失败保旧值、记录损坏／超限、staging ACL 查询故障保旧值与清理、双语披露及文件恢复错误检查；仅使用假 Key 与临时目录。
+
+- `--ai-cue-local-credentials`：**116 项、0 失败**。重新装配 manager / vault 后恢复完整配置及模拟生成验证状态；这是同一测试进程内的重新装配，不能当作真实 Key 的 App 重启验收。
+- 普通 `--bailian-regression`：**775 项、0 失败**；`CLAUDIO_BAILIAN_ACCEPTANCE` 集中回归：**774 项、0 失败**。
+- `--senseaudio-isolation`：**247 项、0 失败**。
+- helper executable harness 首次因源码绊线仍查找旧专用 actor 名称失败；同步为共享文件 writer 后，**5030 项、0 失败**。所有私有 staging、完整 fd 写、fsync、原子 rename 断言保留。
+- GUI Debug 产品构建通过；`CLAUDIO_BUILD_SDK=.../MacOSX26.5.sdk bash scripts/dev-bundle.sh --bailian-acceptance` 通过 GUI Release、helper/LoginItem、ad-hoc 签名、体积和资源检查。定位目录 JSON、新 key 的双语及 `allKnown` 注册、原型 script 语法、核心／新增 suite 严格 Swift 格式及 `git diff --check` 通过。原有 `EventSettingsAICueView.swift:502` 行长 lint 警告与 HEAD 一致，本次未修改该行。
+- 新 `dist/claudi0.app` 的 `source_digest` 为 `ff4ea31765fad0003713b5780f426330e781832dbb2b6b2f3f84504702131ac1`，包内身份与打包后源码内容一致；构建期间的源文件快照未变化。plist `ClaudioBailianAcceptance=true`，`distribution_eligible=false`。旧普通包保留在忽略的 `dist/package-backups/before-bailian-local-20261009-144532/`。
+- 退出精确的旧验收实例后启动新包，进程路径核对为 `dist/claudi0.app/Contents/MacOS/claudi0-app`。实际原生声音页显示百炼“未配置”；打开配置表单后 AX 与截图确认业务空间、掩码 Key 输入框、未加密／当前用户权限披露、取消及空输入下禁用的“验证并保存”。表单留空供用户录入，没有预置 Key 或发生成请求。
+
+本轮未读取实际用户 API Key，未写入真实百炼配置，未执行真实 Key 保存／App 重启、付费生成、听感、VoiceOver、双架构签名、公证或发布。未重跑完整 GUI harness，不将集中回归替代为全套通过。生成预算仍为 **12 / 20**，普通分发构建的百炼入口资格仍由 ADR 0027 控制。

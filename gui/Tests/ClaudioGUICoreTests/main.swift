@@ -78,6 +78,7 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
 
 if CommandLine.arguments.contains("--bailian-regression") {
     await runBailianAICueProviderSuites()
+    await runBailianLocalCredentialSuites()
     await runAICueGenerationEngineSuites()
     await runAICueGenerationDispatcherSuites()
     await runAICueGenerationViewModelSuites()
@@ -486,7 +487,14 @@ if CommandLine.arguments.contains("--senseaudio-isolation") {
 
 if CommandLine.arguments.contains("--ai-cue-local-credentials") {
     await runAICueLocalCredentialSuites()
+    await runBailianLocalCredentialSuites()
     print("AI cue local credentials: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--bailian-local-credentials") {
+    await runBailianLocalCredentialSuites()
+    print("Bailian local credentials: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -741,6 +749,7 @@ Task { @MainActor in
     runAICuePayloadDecodingSuites()
     await runAICueCredentialSuites()
     await runAICueLocalCredentialSuites()
+    await runBailianLocalCredentialSuites()
     await runAICueElevenLabsProviderSuites()
     await runAICueMiniMaxProviderSuites()
     await runBailianAICueProviderSuites()

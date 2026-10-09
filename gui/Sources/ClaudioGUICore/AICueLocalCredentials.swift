@@ -3,17 +3,20 @@ import Darwin
 import Foundation
 
 /// One explicit storage choice, not a fallback after a Keychain failure. Existing providers keep
-/// their original slots; SenseAudio never reads, migrates, writes or deletes a Keychain item.
+/// their original slots; local-file providers do not fall back to Keychain.
 package struct AICueAppCredentialVault: AICueCredentialVault {
     private let keychain: any AICueCredentialVault
     private let senseAudio: any AICueCredentialVault
+    private let bailian: any AICueCredentialVault
 
     package init(
         keychain: any AICueCredentialVault = AICueKeychainCredentialVault(),
-        senseAudio: any AICueCredentialVault = SenseAudioFileCredentialVault()
+        senseAudio: any AICueCredentialVault = SenseAudioFileCredentialVault(),
+        bailian: any AICueCredentialVault = AICueFileCredentialVault(kind: .bailianBeijing)
     ) {
         self.keychain = keychain
         self.senseAudio = senseAudio
+        self.bailian = bailian
     }
 
     package func containsCredential(in slotID: AICueCredentialSlotID) async throws -> Bool {
@@ -37,13 +40,21 @@ package struct AICueAppCredentialVault: AICueCredentialVault {
     }
 
     private func storage(for slotID: AICueCredentialSlotID) -> any AICueCredentialVault {
-        slotID == .senseAudioChina ? senseAudio : keychain
+        switch slotID {
+        case .senseAudioChina: senseAudio
+        case .bailianBeijing: bailian
+        default: keychain
+        }
     }
 }
 
 extension AICueProviderProfile {
     public var credentialStorageDisclosureKey: ClaudioL10nKey {
-        id == .senseAudioChina ? .aiCueCredentialLocalFile : .aiCueCredentialKeychain
+        switch id {
+        case .senseAudioChina: .aiCueCredentialLocalFile
+        case .bailianBeijing: .aiCueCredentialLocalConfiguration
+        default: .aiCueCredentialKeychain
+        }
     }
 }
 
@@ -81,24 +92,44 @@ package struct AICueLocalCredentialSystemACLReader: AICueLocalCredentialACLReadi
 /// Local plaintext storage protected by POSIX permissions and absence of extended ACL entries.
 /// It does not provide encryption or isolation from other processes running as the same user.
 /// Construction and missing-item checks never create directories. Only an explicit save writes.
-package actor SenseAudioFileCredentialVault: AICueCredentialVault {
+package typealias SenseAudioFileCredentialVault = AICueFileCredentialVault
+
+package enum AICueCredentialFileKind: Sendable {
+    case senseAudioChina
+    case bailianBeijing
+
+    var slotID: AICueCredentialSlotID {
+        self == .senseAudioChina ? .senseAudioChina : .bailianBeijing
+    }
+
+    var filename: String {
+        self == .senseAudioChina ? "senseaudio-cn.key" : "bailian-beijing.json"
+    }
+
+    var maximumBytes: Int { self == .senseAudioChina ? 512 : 2_048 }
+}
+
+package actor AICueFileCredentialVault: AICueCredentialVault {
     private let directory: URL
-    private let filename = "senseaudio-cn.key"
-    private let maximumBytes = 512
+    private let kind: AICueCredentialFileKind
+    private var filename: String { kind.filename }
+    private var maximumBytes: Int { kind.maximumBytes }
     private let aclReader: any AICueLocalCredentialACLReading
 
     package init(
+        kind: AICueCredentialFileKind = .senseAudioChina,
         directory: URL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(
                 "Library/Application Support/Claudio/Credentials", isDirectory: true),
         aclReader: any AICueLocalCredentialACLReading = AICueLocalCredentialSystemACLReader()
     ) {
         self.directory = directory.standardizedFileURL
+        self.kind = kind
         self.aclReader = aclReader
     }
 
     package func containsCredential(in slotID: AICueCredentialSlotID) throws -> Bool {
-        try requireSenseAudio(slotID)
+        try requireSlot(slotID)
         guard let root = try openDirectory(create: false) else { return false }
         defer { close(root) }
         guard let item = try openItem(in: root) else { return false }
@@ -107,7 +138,7 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
     }
 
     package func credential(in slotID: AICueCredentialSlotID) throws -> SensitiveCredentialInput? {
-        try requireSenseAudio(slotID)
+        try requireSlot(slotID)
         guard let root = try openDirectory(create: false) else { return nil }
         defer { close(root) }
         guard let item = try openItem(in: root) else { return nil }
@@ -126,8 +157,8 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
             count += readCount
         }
         guard count > 0, count <= maximumBytes,
-            let value = String(bytes: bytes.prefix(count), encoding: .utf8),
-            let credential = try? SensitiveCredentialInput(value)
+            let credential = try? SensitiveCredentialInput.stored(
+                Data(bytes.prefix(count)), slotID: slotID)
         else { throw AICueLocalCredentialError.unavailable }
         return credential
     }
@@ -135,7 +166,11 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
     package func replaceCredential(
         _ credential: SensitiveCredentialInput, in slotID: AICueCredentialSlotID
     ) throws {
-        try requireSenseAudio(slotID)
+        try requireSlot(slotID)
+        // The same validated record format owns workspace and verification together for Bailian.
+        guard let data = try? credential.keychainData(in: slotID),
+            !data.isEmpty, data.count <= maximumBytes
+        else { throw AICueLocalCredentialError.unavailable }
         guard let root = try openDirectory(create: true) else {
             throw AICueLocalCredentialError.unavailable
         }
@@ -154,7 +189,6 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
         var stagingInfo = stat()
         guard fstat(item, &stagingInfo) == 0 else { throw AICueLocalCredentialError.unavailable }
         try requirePrivatePermissions(stagingInfo, descriptor: item, mode: 0o600)
-        let data = credential.withUTF8String { Data($0.utf8) }
         try data.withUnsafeBytes { bytes in
             var offset = 0
             while offset < bytes.count {
@@ -171,7 +205,7 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
     }
 
     package func deleteCredential(in slotID: AICueCredentialSlotID) throws {
-        try requireSenseAudio(slotID)
+        try requireSlot(slotID)
         guard let root = try openDirectory(create: false) else { return }
         defer { close(root) }
         guard let item = try openItem(in: root) else { return }
@@ -179,8 +213,8 @@ package actor SenseAudioFileCredentialVault: AICueCredentialVault {
         guard unlinkat(root, filename, 0) == 0 else { throw AICueLocalCredentialError.unavailable }
     }
 
-    private func requireSenseAudio(_ slotID: AICueCredentialSlotID) throws {
-        guard slotID == .senseAudioChina else { throw AICueLocalCredentialError.unavailable }
+    private func requireSlot(_ slotID: AICueCredentialSlotID) throws {
+        guard slotID == kind.slotID else { throw AICueLocalCredentialError.unavailable }
     }
 
     private func requirePrivatePermissions(

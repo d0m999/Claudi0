@@ -4,6 +4,8 @@ status: accepted
 
 # 使用百炼北京业务空间与 Audio 3.1 固定路线
 
+> 百炼的 Keychain 存储与首次使用前强制旧槽清理要求由 [ADR 0029](0029-save-bailian-configuration-in-private-local-file.md) 取代。下文保留原决定的依据；其余模型、资源、生成和验收门禁合同继续有效。
+
 本决定部分取代 ADR 0006 的旧北京／新加坡 Qwen 路线与凭据政策。旧 Qwen 入口与模型调用撤下，旧选择迁移为 `bailian-beijing` 待配置，不静默选择其他服务。历史记录、声音包及绑定保留。
 
 纯语音固定 `qwen-audio-3.1-tts-flash`，中文 `yuxiaoyun_v3.1`、英文 `Emily_v3.1`，SSE PCM 封装 WAV，末包 URL 不跟随。其余声音类型（动物、环境音、音效、短旋律、混合）固定 `qwen-audio-3.1-tts-next`，发送 `text_prompt`，JSON URL 立即下载 WAV / 24 kHz / mono。两模型均在业务空间专属北京 HTTPS 地址调用；业务空间不是 Claudio 本机工作区，不接受任意 endpoint。

@@ -1610,7 +1610,7 @@ var L = {
         "elevenlabs-global": "声音描述和生成指令会由本机直接发送给 ElevenLabs；生成可能由 ElevenLabs 向你的账户收费；数据留存及是否用于模型改进，以你的 ElevenLabs 账户设置和其条款为准。",
         "minimax-global": "声音描述、普通话台词和生成元数据会由本机直接发送给 MiniMax 全球服务；生成可能消耗你的 MiniMax 配额；数据留存及是否用于模型改进以 MiniMax 条款为准。保存前只执行不生成音频的 voice-list 只读检查。",
         "qwen-singapore": "声音描述、台词和生成元数据会由本机直接发送给新加坡地区的 DashScope，并适用该地区的数据处理、留存及模型改进条款。保存不发模型请求且不消耗生成配额；下一次显式生成可能消耗配额，并验证此地区的独立 Key。",
-        "bailian-beijing": "保存会只读检查 Flash 和 Next 的推理权限，Key 与业务空间 ID 一起保存在钥匙串；权限检查不代表真实生成验证。声音描述、台词和生成元数据会由本机直接发送给北京地区的 DashScope，并适用该地区的数据处理、留存及模型改进条款。保存不发模型请求且不消耗生成配额；下一次显式生成可能消耗配额，并验证此地区的独立 Key。",
+        "bailian-beijing": "保存会只读检查 Flash 和 Next 的推理权限，Key 与业务空间 ID 一起保存在本机私有文件；权限检查不代表真实生成验证。声音描述、台词和生成元数据会由本机直接发送给北京地区的 DashScope，并适用该地区的数据处理、留存及模型改进条款。保存不发模型请求且不消耗生成配额；下一次显式生成可能消耗配额，并验证此地区的独立 Key。",
         "senseaudio-cn": "声音描述、台词和生成元数据会由本机通过固定 .cn API 路由直接发送给 SenseAudio；该路由不构成数据驻留承诺。生成可能消耗配额，数据处理、留存及是否用于模型改进以 SenseAudio 条款为准。保存前会通过音色列表只读检查确认当前账户可使用固定音色 female_0033_b；该检查不生成音频。如果该音色不可用，已有的已保存 API Key 保持不变。"
       },
       demoKeyNote: "仅使用演示 Key。",
@@ -1748,7 +1748,7 @@ var L = {
         "elevenlabs-global": "Your sound description and generation instructions are sent directly to ElevenLabs. ElevenLabs may charge your account for generation. Retention and model-improvement use follow your ElevenLabs account and their terms.",
         "minimax-global": "Your sound description, Mandarin speech, and generation metadata are sent directly to MiniMax's global service. Generation may consume your MiniMax quota. Data retention and model-improvement use follow MiniMax's terms. Saving first runs a read-only voice-list probe and does not generate audio.",
         "qwen-singapore": "Your sound description, speech, and generation metadata are sent directly to DashScope in Singapore under that region's data-processing, retention, and model-improvement terms. Saving makes no model request and costs no generation quota; the next explicit generation may consume quota and validates this region's separate key.",
-        "bailian-beijing": "Saving checks Flash and Next inference permissions and stores the key and workspace ID together in Keychain; permission checks do not verify generation. Your sound description, speech, and generation metadata are sent directly to DashScope in Beijing under that region's data-processing, retention, and model-improvement terms. Saving makes no model request and costs no generation quota; the next explicit generation may consume quota and validates this region's separate key.",
+        "bailian-beijing": "Saving checks Flash and Next inference permissions and stores the key and workspace ID together in a private local file; permission checks do not verify generation. Your sound description, speech, and generation metadata are sent directly to DashScope in Beijing under that region's data-processing, retention, and model-improvement terms. Saving makes no model request and costs no generation quota; the next explicit generation may consume quota and validates this region's separate key.",
         "senseaudio-cn": "Your sound description, speech, and generation metadata are sent directly to SenseAudio through its fixed .cn API route; this route is not a data-residency promise. Generation may consume quota, and processing, retention, and model-improvement use follow SenseAudio's terms. Saving uses a read-only voice-list probe to confirm that your account can access the fixed female_0033_b voice; it does not generate audio. If that voice is unavailable, an existing saved API Key remains unchanged."
       },
       demoKeyNote: "Use a demo key only.",
@@ -2584,13 +2584,13 @@ var FACTORY_PACKS = JSON.parse(JSON.stringify(PACKS.filter(function (p) { return
 /* ============ AI 提示音：五个已注册固定 profile（AICueProviderRegistry.swift · ADR 0006/0011/0014/0015）
    routes.keys 是能力的唯一真相：abilities 决定可生成的声音类型；locales 决定 speech 可用语言；
    candidateKind 决定候选身份（styled 显示风格名，numbered 只显示序号）；partial 表示路线允许 1–2/3。
-   storage 只有两种事实：macOS 钥匙串，或 SenseAudio 的本地凭据文件（ADR 0015）。 ============ */
+   storage 只有两种事实：macOS 钥匙串，或 SenseAudio／百炼的本地凭据文件（ADR 0015／0029）。 ============ */
 /* routes 是能力的唯一真相：每个 modality 一条 route，各自带 candidateSetPolicy
    （styled/numbered × requestedCount 3 × minimumAcceptedCount 3 或 1）。
    ElevenLabs 四条 route 全是 styledComplete；Qwen 的 speech 也是 styledComplete（Registry:295），
    所以「顺序请求」不等于 numbered——只有 MiniMax 与 SenseAudio.speech 是 numberedComplete，
    numberedPartial 只出现在 SenseAudio 的 animal / soundEffect（Registry:319,329）。
-   storage 只有两种事实：macOS 钥匙串，或 SenseAudio 的本地凭据文件（ADR 0015）。 ============ */
+   storage 只有两种事实：macOS 钥匙串，或 SenseAudio／百炼的本地凭据文件（ADR 0015／0029）。 ============ */
 var AI_POLICIES = {
   styledComplete: { kind: "styled", minimum: 3 },
   numberedComplete: { kind: "numbered", minimum: 3 },
@@ -2615,7 +2615,7 @@ var AI_PROFILES = [
       animal: { policy: "styledComplete", tags: ["zh*", "en*"] },
       soundEffect: { policy: "styledComplete", tags: ["zh*", "en*"] },
       mixed: { policy: "styledComplete", tags: ["zh*", "en*"] }
-    }, storage: "keychain", validation: "probe" },
+    }, storage: "local-file", validation: "probe" },
   { id: "senseaudio-cn", zh: "SenseAudio · 中国 API", en: "SenseAudio · China API",
     routes: {
       speech: { policy: "numberedComplete", tags: ["zh*"] },
@@ -4674,7 +4674,7 @@ const pages = [
 const profiles = [
  {id:'elevenlabs-global',name:'ElevenLabs',region:['全球','Global'],abilities:['语音、混合、动物、音效 · 中英文','Speech, mixed, animal, effects · Chinese / English'],routes:['speech','mixed','animal','soundEffect'],styled:true},
  {id:'minimax-global',name:'MiniMax',region:['全球','Global'],abilities:['仅中文语音','Chinese speech only'],routes:['speech'],styled:false},
- {id:'bailian-beijing',name:'Bailian',region:['北京（验收）','Beijing (Acceptance)'],abilities:['语音、动物、环境音、特效、短旋律、混合 · 中英文','Speech, animals, ambience, effects, short melodies, mixed'],routes:['speech','animal','soundEffect','mixed'],styled:true,workspace:true},
+ {id:'bailian-beijing',name:'Bailian',region:['北京（验收）','Beijing (Acceptance)'],abilities:['语音、动物、环境音、特效、短旋律、混合 · 中英文','Speech, animals, ambience, effects, short melodies, mixed'],routes:['speech','animal','soundEffect','mixed'],styled:true,workspace:true,local:true},
  {id:'senseaudio-cn',name:'SenseAudio',region:['中国 API','China API'],abilities:['中文语音、动物、音效；不支持混合','Chinese speech, animal, effects; no mixed route'],routes:['speech','animal','soundEffect'],styled:false,partial:true,local:true}
 ];
 const profileName=p=>`${p.name} · ${T(...p.region)}`;
@@ -5313,7 +5313,7 @@ function compactService(setup=true){const p=profile(),status=credentialText(cred
  T('生成可能消耗所选服务的配额。','Generation may use your provider quota.'),button(T('数据与费用…','Data & fees…'),'service','link',!!S.operation||S.generation==='busy'));
 }
 function providerDisclosure(pr){return T(`声音描述和生成指令由这台 Mac 直接发送给 ${profileName(pr)}。生成可能计费；留存与模型改进规则依供应商和账户设置。API 地区不代表数据驻留承诺。`,`Sound descriptions and generation instructions go directly from this Mac to ${profileName(pr)}. Generation may incur charges. Retention and model improvement depend on the provider and account settings. API region does not guarantee data residency.`);}
-function credentialStorage(pr){return pr.local?T('API Key 保存在这台 Mac 的私有本地文件中，未加密；有同用户文件权限的程序可能读取。','The API Key is stored in a private, unencrypted local file. Programs with the same user permissions may read it.'):T('API Key 保存在这台 Mac 的钥匙串中；各服务及地区独立保存。','The API Key is stored in this Mac’s Keychain, separately for each service and region.');}
+function credentialStorage(pr){if(pr.workspace&&pr.local)return T('API Key 与业务空间 ID 一起保存在这台 Mac 的私有本地文件中，未加密；有同用户文件权限的程序可能读取。','The API Key and business workspace ID are stored together in a private, unencrypted local file. Programs with the same user permissions may read it.');return pr.local?T('API Key 保存在这台 Mac 的私有本地文件中，未加密；有同用户文件权限的程序可能读取。','The API Key is stored in a private, unencrypted local file. Programs with the same user permissions may read it.'):T('API Key 保存在这台 Mac 的钥匙串中；各服务及地区独立保存。','The API Key is stored in this Mac’s Keychain, separately for each service and region.');}
 function renderService(){const p=profile();return compactService()+
  section(T('当前服务的数据与费用','Data & fees for the selected service'),row(profileName(p),providerDisclosure(p))+row(T('API Key 保存位置','API Key storage'),credentialStorage(p))+row(T('保存与生成','Saving and generation'),p.deferred?T('保存不发送模型请求；首次生成时验证。更换已保存 Key 时可取消待替换值。','Saving makes no model request. The first generation verifies the key. A pending replacement can be cancelled.'):T('保存前执行只读验证，不生成音频；保存后由你主动点击生成。','A read-only check runs before saving, without generating audio. You choose when to generate.')))+feedback();
 }

@@ -473,6 +473,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "ai-cue.credential.privacy.senseaudio-cn"
     public static let aiCueCredentialKeychain: Self = "ai-cue.credential.keychain"
     public static let aiCueCredentialLocalFile: Self = "ai-cue.credential.local-file"
+    public static let aiCueCredentialLocalConfiguration: Self = "ai-cue.credential.local-configuration"
     public static let aiCueErrorLocalCredentialUnavailable: Self =
         "ai-cue.error.local-credential-unavailable"
     public static let aiCueCredentialValidateSave: Self = "ai-cue.credential.validate-save"
@@ -1750,7 +1751,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .aiCueCredentialKeyLabel, .aiCueCredentialPrivacy, .aiCueCredentialPrivacyMiniMax,
         .aiCueCredentialPrivacyQwenSingapore, .aiCueCredentialPrivacyQwenBeijing,
         .aiCueCredentialPrivacySenseAudioChina,
-        .aiCueCredentialKeychain, .aiCueCredentialLocalFile, .aiCueErrorLocalCredentialUnavailable,
+        .aiCueCredentialKeychain, .aiCueCredentialLocalFile, .aiCueCredentialLocalConfiguration,
+        .aiCueErrorLocalCredentialUnavailable,
         .aiCueCredentialValidateSave, .aiCueCredentialSave,
         .aiCueCredentialCancelReplacement, .aiCueCredentialDelete,
         .aiCueCredentialDeleteTitle,

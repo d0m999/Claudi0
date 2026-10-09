@@ -167,7 +167,7 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(
                     viewModel.providerProfileID == .bailianBeijing
-                        ? .aiCueBailianMigrationRetry : .aiCueServiceUnavailable),
+                        ? .aiCueErrorLocalCredentialUnavailable : .aiCueServiceUnavailable),
                 "xmark.circle.fill",
                 ClaudioTheme.error(colorScheme)
             )
@@ -911,7 +911,7 @@ package func aiCueCredentialFailureText(
         return l10n.text(.aiCueErrorCredentialValidationFailed)
     case .storageUnavailable:
         return l10n.text(
-            providerProfileID == .senseAudioChina
+            providerProfileID == .senseAudioChina || providerProfileID == .bailianBeijing
                 ? .aiCueErrorLocalCredentialUnavailable : .aiCueErrorCredentialUnavailable)
     }
 }
