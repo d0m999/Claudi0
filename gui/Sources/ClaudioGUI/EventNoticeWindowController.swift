@@ -26,7 +26,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private var isPositioning = false
     private var measurements: [String: Double] = [:]
     private var renderedEpoch: UUID
-    private var modalDepth: [String: Int] = [:]
+    private let modalPauseObserver: EventNoticeModalPauseObserver
     private let animationVisibility = EventAnimationVisibility(isVisible: false)
 
     init(
@@ -38,6 +38,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         onWillBecomeInteractive: @escaping @MainActor () -> (@MainActor () -> Void)? = { nil }
     ) {
         self.model = model
+        modalPauseObserver = EventNoticeModalPauseObserver(model: model)
         self.navigation = navigation
         self.onViewInPanel = onViewInPanel
         self.languageStore = languageStore
@@ -91,23 +92,6 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             for: NSApplication.didChangeScreenParametersNotification
         )
         .sink { [weak self] _ in self?.repositionIfVisible() }.store(in: &subscriptions)
-        for (name, active, kind) in [
-            (Notification.Name.claudioSettingsModalWillBegin, true, "file-picker"),
-            (.claudioSettingsModalDidEnd, false, "file-picker"),
-            (NSWindow.willBeginSheetNotification, true, "sheet"),
-            (NSWindow.didEndSheetNotification, false, "sheet"),
-        ] {
-            NotificationCenter.default.publisher(for: name)
-                .sink { [weak self] notification in
-                    guard let self else { return }
-                    let key = kind + String((notification.object as? NSWindow)?.windowNumber ?? 0)
-                    let depth = max(0, (self.modalDepth[key] ?? 0) + (active ? 1 : -1))
-                    self.modalDepth[key] = depth > 0 ? depth : nil
-                    self.model.setPauseReason(
-                        .modal, active: self.modalDepth.values.contains { $0 > 0 })
-                }
-                .store(in: &subscriptions)
-        }
     }
 
     func openInteractive() { onViewInPanel(nil) }
@@ -249,7 +233,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
             if window.isVisible { window.orderOut(nil) }
             return
         }
-        let isModal = modalDepth.values.contains { $0 > 0 }
+        let isModal = modalPauseObserver.isPaused
         if model.stackSnapshot.pauseReasons.contains(.modal) != isModal {
             model.setPauseReason(.modal, active: isModal)
         }

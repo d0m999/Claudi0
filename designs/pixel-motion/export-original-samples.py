@@ -27,7 +27,7 @@ from playwright.sync_api import sync_playwright
 
 
 HERE = Path(__file__).resolve().parent
-HTML = HERE / "Pixel Motion Prototype.html"
+HTML = HERE / "reference" / "approved-source.html"
 SAMPLES = HERE / "samples"
 VARIANTS = ("E", "G", "H")
 COMMON_STATES = ("idle", "task_start", "notification", "stop", "subagent_stop", "stop_failure", "preview")
@@ -376,7 +376,7 @@ def main() -> None:
             save_preview_gif(stage / f"{name}-preview.gif", lambda elapsed, key=key: group_preview(key, groups[key], elapsed))
         provenance = {
             "generatedAtUTC": datetime.now(timezone.utc).isoformat(),
-            "source": "Pixel Motion Prototype.html",
+            "source": str(HTML.relative_to(HERE)),
             "sourceSHA256": html_digest,
             "productionMethod": "Programmatic pixel drawing in the prototype Canvas API. No third-party photographs or logo image files are included in the exported assets.",
             "designIntent": "Graphical interaction drafts for a mechanical duck, a pixel ghost, and a generic Bitcoin coin symbol.",

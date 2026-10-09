@@ -21,7 +21,7 @@ backup_current, extract_variant = _original.backup_current, _original.extract_va
 save_json, save_apng, verify_apng, group_preview = _original.save_json, _original.save_apng, _original.verify_apng, _original.group_preview
 save_preview_gif, event_meaning_preview, screenshot = _original.save_preview_gif, _original.event_meaning_preview, _original.screenshot
 
-RUNTIME = HTML.parents[2] / "gui/Sources/ClaudioGUI/Resources/EventAnimations"
+RUNTIME = _original.HERE.parents[1] / "gui/Sources/ClaudioGUI/Resources/EventAnimations"
 STYLE = {"E": "mechanicalDuck", "G": "pixelGhost", "H": "bitcoin"}
 
 

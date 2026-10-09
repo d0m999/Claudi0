@@ -16,9 +16,14 @@ private actor RuntimeVaultFixture: AICueCredentialVault {
     private var readCount = 0
     private var replacementCount = 0
     private var deletionCount = 0
+    private let credentialReadDelayNanoseconds: UInt64
 
-    init(credentials: [AICueCredentialSlotID: SensitiveCredentialInput] = [:]) {
+    init(
+        credentials: [AICueCredentialSlotID: SensitiveCredentialInput] = [:],
+        credentialReadDelayNanoseconds: UInt64 = 0
+    ) {
         self.credentials = credentials
+        self.credentialReadDelayNanoseconds = credentialReadDelayNanoseconds
     }
 
     func containsCredential(in slotID: AICueCredentialSlotID) -> Bool {
@@ -26,7 +31,10 @@ private actor RuntimeVaultFixture: AICueCredentialVault {
         return credentials[slotID] != nil
     }
 
-    func credential(in slotID: AICueCredentialSlotID) -> SensitiveCredentialInput? {
+    func credential(in slotID: AICueCredentialSlotID) async -> SensitiveCredentialInput? {
+        if credentialReadDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: credentialReadDelayNanoseconds)
+        }
         readCount += 1
         return credentials[slotID]
     }
@@ -531,6 +539,11 @@ func runAICueRuntimeSuites() async {
         }
     }
 
+    await runAICueRuntimeLateResultSuites()
+}
+
+@MainActor
+func runAICueRuntimeLateResultSuites() async {
     await suite("AI 提示音 runtime：VM 作废后真实 dispatcher/engine 丢弃迟到结果") {
         await withTempDirectory { root in
             let registry = AICueProviderRegistry()
@@ -542,9 +555,13 @@ func runAICueRuntimeSuites() async {
                     ? suspendedProvider
                     : RuntimeCandidateSetProviderFixture(profile: profile)
             }
-            let vault = RuntimeVaultFixture(credentials: [
-                .legacyElevenLabs: try! SensitiveCredentialInput("fixture-active-key")
-            ])
+            // A normal asynchronous credential read must finish before invalidation. A fixed
+            // yield count can expire first, cancelling the request before the provider starts.
+            let vault = RuntimeVaultFixture(
+                credentials: [
+                    .legacyElevenLabs: try! SensitiveCredentialInput("fixture-active-key")
+                ],
+                credentialReadDelayNanoseconds: 200_000_000)
             let metadata = RuntimeCredentialMetadataFixture()
             let defaults = runtimeDefaults("Late")
             defer { defaults.removePersistentDomain(forName: runtimeDefaultsName("Late")) }
@@ -557,9 +574,10 @@ func runAICueRuntimeSuites() async {
                 providerBindings: bindings,
                 credentialMetadata: metadata,
                 providerDefaults: defaults)
+            let trackedGenerator = RuntimeTrackedGenerator(generator: runtime.dispatcher)
             let viewModel = AICueGenerationViewModel(
                 credentialManager: runtime.credentialManager,
-                generator: runtime.dispatcher,
+                generator: trackedGenerator,
                 providerProfileID: .elevenLabsGlobal,
                 registry: runtime.registry,
                 providerPreferences: runtime.providerPreferences)
@@ -567,14 +585,34 @@ func runAICueRuntimeSuites() async {
             viewModel.begin(scope: .surface(.workBuddy), event: .stop)
             viewModel.updateDescription("请说“完成”")
             viewModel.startGeneration(locale: "zh-Hans")
-            await waitForRuntimeProviderSuspension(suspendedProvider)
+            guard
+                await waitForRuntimeCondition(
+                    "等待 runtime Provider 悬挂超时",
+                    {
+                        await suspendedProvider.facts().isSuspended
+                    })
+            else {
+                viewModel.returnToDescription()
+                await suspendedProvider.resumeGeneration()
+                return
+            }
             viewModel.updateDescription("生成期间应被拒绝的描述")
             expect(viewModel.soundDescription == "请说“完成”", "真实 runtime 也必须拒绝生成中的描述修改")
             viewModel.returnToDescription()
             viewModel.updateDescription("请说“新的完成”")
             await suspendedProvider.resumeGeneration()
-            await waitForRuntimeProviderCompletion(suspendedProvider)
-            for _ in 0..<100 { await Task.yield() }
+            guard
+                await waitForRuntimeCondition(
+                    "等待 runtime Provider 迟到完成超时",
+                    {
+                        await suspendedProvider.facts().completed == 1
+                    }),
+                await waitForRuntimeCondition(
+                    "等待真实 dispatcher/engine 收尾超时",
+                    {
+                        await trackedGenerator.completedCalls == 1
+                    })
+            else { return }
 
             let providerFacts = await suspendedProvider.facts()
             let metadataCounts = await metadata.counts()
@@ -649,26 +687,36 @@ private func throwsRuntimeBindingError(_ body: () throws -> Void) -> Bool {
     }
 }
 
-private func waitForRuntimeProviderSuspension(
-    _ provider: RuntimeCandidateSetProviderFixture
-) async {
-    for _ in 0..<2_000 {
-        if await provider.facts().isSuspended { return }
-        await Task.yield()
+/// Observes the actual dispatcher return rather than guessing how many executor turns its
+/// cleanup needs. Every generation/discard operation still delegates to the production seam.
+private actor RuntimeTrackedGenerator: AICueGenerating {
+    let generator: any AICueGenerating
+    private(set) var completedCalls = 0
+
+    init(generator: any AICueGenerating) { self.generator = generator }
+
+    func generate(
+        description: String, locale: String, providerProfileID: AICueProviderProfileID,
+        deadline: AICueGenerationDeadline
+    ) async throws -> AICueGeneration {
+        defer { completedCalls += 1 }
+        return try await generator.generate(
+            description: description, locale: locale, providerProfileID: providerProfileID,
+            deadline: deadline)
     }
-    await MainActor.run {
-        expect(false, "等待 runtime Provider 悬挂超时")
-    }
+
+    func discard(generationID: UUID) async { await generator.discard(generationID: generationID) }
+    func discardAll() async { await generator.discardAll() }
 }
 
-private func waitForRuntimeProviderCompletion(
-    _ provider: RuntimeCandidateSetProviderFixture
-) async {
-    for _ in 0..<2_000 {
-        if await provider.facts().completed == 1 { return }
-        await Task.yield()
-    }
-    await MainActor.run {
-        expect(false, "等待 runtime Provider 迟到完成超时")
-    }
+private func waitForRuntimeCondition(
+    _ failureMessage: String, _ predicate: @Sendable () async -> Bool
+) async -> Bool {
+    let deadline = ProcessInfo.processInfo.systemUptime + 3
+    repeat {
+        if await predicate() { return true }
+        try? await Task.sleep(nanoseconds: 5_000_000)
+    } while ProcessInfo.processInfo.systemUptime < deadline
+    await MainActor.run { expect(false, failureMessage) }
+    return false
 }

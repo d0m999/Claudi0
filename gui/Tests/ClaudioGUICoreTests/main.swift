@@ -115,6 +115,22 @@ if CommandLine.arguments.contains("--app-motion") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--gui-baseline-regressions") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        _ = await runEventAnimationReferenceSuites()
+        await runAICueRuntimeLateResultSuites()
+        await runSettingsAICueGallerySuites(
+            scenarios: CommandLine.arguments.contains("--minimal")
+                ? [.bailianPermissionsChecked] : PreviewFixtures.aiCueGalleryScenarios)
+        print("GUI baseline regressions: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -233,6 +249,18 @@ if CommandLine.arguments.contains("--event-notice-reader") {
 }
 
 // Live reading timers need AppKit's event loop rather than the synchronous layout harness.
+if CommandLine.arguments.contains("--event-modal-lifecycle") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runEventNoticeModalLifecycleSuites()
+        print("Event notice modal lifecycle: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--event-reading-live") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -349,6 +377,7 @@ if CommandLine.arguments.contains("--event-stack-native") {
 }
 
 if CommandLine.arguments.contains("--event-attention") {
+    await runEventNoticeModalLifecycleSuites()
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
     runCodexQuestionObservationSuites()
@@ -864,6 +893,7 @@ Task { @MainActor in
     runPanelPresentationMountSuites()
     runActivityOverviewSuites()
     runAICueDescriptionSuites()
+    await runEventNoticeModalLifecycleSuites()
     // Keep the native AppKit suite after every async suite; see the targeted ordering above.
     runEventNoticePresentationSuites()
     runEventBannerLayoutSuites()

@@ -232,7 +232,7 @@ private final class AnimationControlledFinishDelay {
 }
 
 @MainActor
-func runEventAnimationIntegrationSuites() async {
+func runEventAnimationReferenceSuites() async -> EventAnimationResources {
     let resources = EventAnimationResources(directory: animationDirectory)
     for style in EventAnimationStyle.allCases where style != .original {
         for dark in [false, true] { await resources.load(style, dark: dark) }
@@ -245,9 +245,9 @@ func runEventAnimationIntegrationSuites() async {
             let reference = try JSONDecoder().decode(AnimationBoundaryReference.self, from: data)
             let html = try Data(
                 contentsOf: animationRepository.appendingPathComponent(
-                    "designs/pixel-motion/Pixel Motion Prototype.html"))
+                    "designs/pixel-motion/reference/approved-source.html"))
             let digest = SHA256.hash(data: html).map { String(format: "%02x", $0) }.joined()
-            expect(reference.sourceSHA256 == digest, "参考必须绑定当前 HTML，不接受旧参考")
+            expect(reference.sourceSHA256 == digest, "参考必须绑定批准源归档，不接受过期参考")
             expect(reference.samples.count == 2_809, "五类事件全部循环，须覆盖完整首轮及后续循环边界")
             for sample in reference.samples {
                 guard let frames = resources.loaded(sample.style, dark: false),
@@ -271,6 +271,11 @@ func runEventAnimationIntegrationSuites() async {
                 contentsOf: animationRepository.appendingPathComponent(
                     "designs/pixel-motion/samples/pixel-reference.json"))
             let reference = try JSONDecoder().decode(AnimationPixelReference.self, from: data)
+            let source = try Data(
+                contentsOf: animationRepository.appendingPathComponent(
+                    "designs/pixel-motion/reference/approved-source.html"))
+            let digest = SHA256.hash(data: source).map { String(format: "%02x", $0) }.joined()
+            expect(reference.sourceSHA256 == digest, "像素参考也必须绑定同一批准源归档")
             expect(reference.samples.count == 480, "三角色五事件16帧双外观必须齐全")
             for sample in reference.samples {
                 guard
@@ -284,6 +289,12 @@ func runEventAnimationIntegrationSuites() async {
             }
         } catch { expect(false, "像素参考加载失败：\(error)") }
     }
+    return resources
+}
+
+@MainActor
+func runEventAnimationIntegrationSuites() async {
+    let resources = await runEventAnimationReferenceSuites()
     suite("事件动画：缺失、损坏与未来偏好 fail closed，直到明确重选才替换") {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(
             "animation-preferences-\(UUID()).plist")

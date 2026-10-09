@@ -16,6 +16,7 @@
 ## 应进入版本管理的素材
 
 - 批准的源原型、导出脚本与对应规格。
+- `pixel-motion/reference/approved-source.html` 与说明：2026-10-09 按原 SHA-256 保存的动画绘制／时序固定输入，仅供导出校验；不恢复已退役的独立产品原型。
 - `gui/Sources/ClaudioGUI/Resources/EventAnimations/` 的正式图集、时序与清单。
 - `designs/pixel-motion/samples/` 的 provenance、播放／像素参考、E/G/H 规范样本，以及 `previewFiles` 登记的 17 张预览。导出检查、集成 suite 或来源审计直接依赖这些文件。
 - `macos-settings-native/screenshots/`、`verification/` 和 `VERIFICATION.json` 的固定历史证据，以及引用它们的文档。

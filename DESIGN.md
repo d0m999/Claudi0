@@ -244,9 +244,9 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 
 ## 事件动画（现行 · 2026-10-06，#216）
 
-角色画面、逐帧时长、循环范围和静态帧以 `designs/pixel-motion/Pixel Motion Prototype.html`
-为唯一准据，SHA-256 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc`。
-> **2026-10-07 注**：Pixel Motion Prototype.html 已随原型合并删除（samples/ 资产与导出脚本保留）；本条"唯一准据"的文件指向待重新指定。
+角色画面、逐帧时长、循环范围和静态帧以已批准的[绘制来源归档](designs/pixel-motion/reference/approved-source.html)
+为准，SHA-256 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc`。
+> **2026-10-09 来源归档修复**：独立原型于 2026-10-07 退役。上述已批准的动画绘制与时序输入按原指纹归档为 [`reference/approved-source.html`](designs/pixel-motion/reference/approved-source.html)，仅供导出与固定来源校验；现行产品画面仍由主原型拥有。来源身份与用途见[归档说明](designs/pixel-motion/reference/README.md)。
 原生统一设置在「通知 → 事件动画」并排提供原版图标、机械小鸭、像素幽灵、比特币，默认原版。
 原生窗口、控件和功能组沿用上方 macOS 八页设置合同；设置预览和真实横幅使用同一导出资源及播放组件。
 角色约 32 pt，透明背景、最近邻缩放，小鸭分别使用明暗图集。静态偏好或系统 Reduce Motion

@@ -651,33 +651,7 @@ func runSettingsPresentationSliceSuites() async {
         )
     }
 
-    await suite("Settings AI Cue gallery：所有状态从真实包详情显式进入附属表单") {
-        for scenario in PreviewFixtures.aiCueGalleryScenarios {
-            let fixture = SettingsPresentationFixtures.generalLogin(
-                route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability,
-                aiCueScenario: scenario)
-            // Rendering a fixture never acts as a user click. Credential scenarios use the
-            // shared service entry; composer scenarios use the target event's native source menu.
-            if !scenario.rendersCredentialSheet {
-                fixture.eventSettingsSelection.dismissCredentialSheet()
-            }
-            let probe = SettingsSoundsNativeLayoutProbe(
-                session: fixture.session,
-                size: NSSize(width: 960, height: 640))
-            await probe.settle()
-            if scenario.previewSession != nil {
-                expect(
-                    probe.chooseSource(event: scenario.previewSession!.event, index: 0),
-                    "\(scenario.rawValue) 从目标事件打开真实表单")
-                probe.refresh()
-                expect(probe.hasAttachedSheet, "\(scenario.rawValue) 挂载同一窗口附属表单")
-            } else if scenario.rendersCredentialSheet {
-                await probe.settle()
-                expect(probe.hasAttachedSheet, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
-            }
-            probe.close()
-        }
-    }
+    await runSettingsAICueGallerySuites()
 
     suite("Settings presentation fixture：DEBUG seam 随机隔离且只暴露真实 owner") {
         withTempDirectory { fixtureParent in
@@ -786,6 +760,52 @@ func runSettingsPresentationSliceSuites() async {
         }
     }
 
+    #endif
+}
+
+@MainActor
+func runSettingsAICueGallerySuites(
+    scenarios: [PreviewFixtures.AICueGalleryScenario] = PreviewFixtures.aiCueGalleryScenarios
+) async {
+    #if DEBUG
+    await suite("Settings AI Cue gallery：所有状态从真实包详情显式进入附属表单") {
+        for scenario in scenarios {
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(.overview), availability: PreviewFixtures.settingsRouteAvailability,
+                aiCueScenario: scenario)
+            // Rendering a fixture never acts as a user click. Credential scenarios use the
+            // shared service entry; composer scenarios use the target event's native source menu.
+            if !scenario.rendersCredentialSheet {
+                fixture.eventSettingsSelection.dismissCredentialSheet()
+            }
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: fixture.session,
+                size: NSSize(width: 960, height: 640))
+            await probe.settle()
+            if scenario.previewSession != nil {
+                expect(
+                    probe.chooseSource(event: scenario.previewSession!.event, index: 0),
+                    "\(scenario.rawValue) 从目标事件打开真实表单")
+                probe.refresh()
+                expect(probe.hasAttachedSheet, "\(scenario.rawValue) 挂载同一窗口附属表单")
+            } else if scenario.rendersCredentialSheet {
+                await probe.settle()
+                if fixture.aiCueViewModel.providerIsAdmitted {
+                    expect(probe.hasAttachedSheet, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
+                } else {
+                    expect(
+                        !probe.hasAttachedSheet
+                            && !fixture.eventSettingsSelection.presentationState
+                                .credentialSheetIsPresented,
+                        "\(scenario.rawValue) 未准入服务不得挂载表单或残留模态状态")
+                    expect(
+                        fixture.aiCueViewModel.providerProfileID == scenario.providerProfileID,
+                        "\(scenario.rawValue) 拒绝配置不得静默切换其他服务")
+                }
+            }
+            probe.close()
+        }
+    }
     #endif
 }
 
