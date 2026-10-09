@@ -245,7 +245,7 @@ func runEventAnimationIntegrationSuites() async {
             let reference = try JSONDecoder().decode(AnimationBoundaryReference.self, from: data)
             let html = try Data(
                 contentsOf: animationRepository.appendingPathComponent(
-                    "designs/pixel-motion/Pixel Motion Prototype.html"))
+                    "designs/pixel-motion/source/Pixel Motion Prototype.html"))
             let digest = SHA256.hash(data: html).map { String(format: "%02x", $0) }.joined()
             expect(reference.sourceSHA256 == digest, "参考必须绑定当前 HTML，不接受旧参考")
             expect(reference.samples.count == 2_809, "五类事件全部循环，须覆盖完整首轮及后续循环边界")

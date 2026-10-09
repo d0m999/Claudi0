@@ -15,7 +15,8 @@ extension AboutBundledResourceKind {
 @MainActor
 func makeSystemAboutSettingsModel(
     bundle: Bundle = .main,
-    surfaceFacts: [AboutSurfaceFact]
+    surfaceFacts: [AboutSurfaceFact],
+    appUpdates: AppUpdateModel
 ) -> AboutSettingsModel {
     let facts = projectAboutBundleFacts(
         AboutBundleFactsInput(
@@ -93,7 +94,8 @@ func makeSystemAboutSettingsModel(
                 pasteboard.clearContents()
                 return pasteboard.setString(value, forType: .string)
             },
-            open: { NSWorkspace.shared.open($0) }))
+            open: { NSWorkspace.shared.open($0) }),
+        appUpdates: appUpdates)
 }
 
 private var currentAboutArchitecture: String? {

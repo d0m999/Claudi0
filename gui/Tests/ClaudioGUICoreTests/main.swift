@@ -76,6 +76,18 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--ai-cue-gallery") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsAICueGallerySuites()
+        print("AI Cue gallery: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--bailian-regression") {
     await runBailianAICueProviderSuites()
     await runBailianLocalCredentialSuites()
@@ -125,6 +137,13 @@ if CommandLine.arguments.contains("--sounds-review-recovery") {
     }
     application.run()
     exit(1)
+}
+
+if CommandLine.arguments.contains("--public-preview") {
+    runAppUpdateSuites()
+    await runPreviewCredentialAccessSuites()
+    print("Public preview: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
 }
 
 if CommandLine.arguments.contains("--sounds-redesign") {
@@ -758,6 +777,8 @@ Task { @MainActor in
     await runAICueGenerationEngineSuites()
     await runAICueGenerationDispatcherSuites()
     await runAICueAdoptionSuites()
+    runAppUpdateSuites()
+    await runPreviewCredentialAccessSuites()
     await runSoundsRedesignCompositionSuites()
     await runGenerationHistorySuites()
     await runSoundsReviewRecoverySuites()

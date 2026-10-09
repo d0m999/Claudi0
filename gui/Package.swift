@@ -30,7 +30,8 @@ let package = Package(
             targets: ["claudio-sound-pack-benchmark"]),
     ],
     dependencies: [
-        .package(path: "../helper")
+        .package(path: "../helper"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
         // Explicit catalog lookup is kept in its own resource-bearing target. ClaudioGUICore's
@@ -118,6 +119,7 @@ let package = Package(
         .executableTarget(
             name: "ClaudioGUI",
             dependencies: [
+                .product(name: "Sparkle", package: "Sparkle"),
                 "ClaudioLocalization",
                 "ClaudioGUICore",
                 "ClaudioGUIComponents",
@@ -135,6 +137,7 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("Carbon"),
+                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
                 // ClaudioGUI is a final app executable, not a library ABI. Tell the linker before
                 // dead stripping and the later full `strip` that no Swift symbols need exporting;
                 // otherwise package-level presentation seams inflate the shipped LINKEDIT payload.

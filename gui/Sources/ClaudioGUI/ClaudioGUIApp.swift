@@ -30,6 +30,8 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
     lazy var preferences = ClaudioPreferences()
     private var menuBarController: MenuBarController?
     private var generationTerminationGate = AICueTerminationGate()
+    private var adoptionTerminationTask: Task<Void, Never>?
+    private var appUpdater: SparkleAppUpdateAdapter?
     private var generationQuitPrompt: GenerationQuitPrompt?
     private var maintenanceRuntime: HostIntegrationMaintenanceRuntime?
     private var hostIntegrationBridge: HostIntegrationManagerBridge?
@@ -47,9 +49,33 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         case .allow: return .terminateNow
         case .cancel: return .terminateCancel
         case .alreadyWaiting: return .terminateLater
+        case .waitForAdoption:
+            waitForAdoption()
+            return .terminateLater
         case .ask(let reason):
             Task { @MainActor [weak self] in self?.showGenerationQuitPrompt(reason) }
             return .terminateLater
+        }
+    }
+
+    private func waitForAdoption() {
+        guard adoptionTerminationTask == nil else { return }
+        adoptionTerminationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            while self.menuBarController?.generationTerminationReason == .adopting {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                if Task.isCancelled { return }
+            }
+            self.adoptionTerminationTask = nil
+            switch self.generationTerminationGate.adoptionCompleted(
+                currentReason: self.menuBarController?.generationTerminationReason)
+            {
+            case .allow: NSApp.reply(toApplicationShouldTerminate: true)
+            case .cancel: NSApp.reply(toApplicationShouldTerminate: false)
+            case .ask(let reason): self.showGenerationQuitPrompt(reason)
+            case .waitForAdoption: self.waitForAdoption()
+            case .alreadyWaiting: break
+            }
         }
     }
 
@@ -67,6 +93,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
             case .allow: NSApp.reply(toApplicationShouldTerminate: true)
             case .cancel: NSApp.reply(toApplicationShouldTerminate: false)
             case .ask(let updated): self.showGenerationQuitPrompt(updated)
+            case .waitForAdoption: self.waitForAdoption()
             case .alreadyWaiting: break
             }
         }
@@ -188,14 +215,18 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         let loginItemSettings = LoginItemSettingsModel(
             adapter: makeSystemLoginItemServiceAdapter())
 
+        let appUpdater = SparkleAppUpdateAdapter(bundle: .main)
+        self.appUpdater = appUpdater
         menuBarController = MenuBarController(
             preferences: preferences,
+            appUpdates: appUpdater.model,
             loginItemSettings: loginItemSettings,
             audioEnvironment: audioEnvironment,
             bundledHelper: bundledHelper,
             hostIntegrationState: initialIntegrationState,
             integrationMatrixProvider: integrationMatrixProvider,
             integrationActionProvider: integrationActionProvider)
+        appUpdater.start()
         if nativeProbeState == nil {
             maintenanceRuntime = HostIntegrationMaintenanceRuntime(
                 manager: integrationManager, bridge: integrationBridge

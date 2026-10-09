@@ -1,0 +1,20 @@
+claudi0 公开预览 / Public Preview
+
+此构建为 ad-hoc 签名、未公证，无 Developer ID。
+This build is ad-hoc signed, not notarized and has no Developer ID.
+
+将 claudi0.app 拖入 Applications，从 Applications 启动。
+Drag claudi0.app to Applications, then launch it from Applications.
+如果系统拒绝打开，按系统提示到“系统设置 → 隐私与安全 → 仍要打开”。
+If macOS blocks launch, follow its instructions in System Settings → Privacy & Security → Open Anyway.
+不要关闭 Gatekeeper 或移除 quarantine。具体系统放行与更新步骤需真机验收。
+Do not disable Gatekeeper or remove quarantine. System prompts and update behavior require device acceptance.
+
+官方安装与恢复 / Official installation and recovery:
+https://d0m999.github.io/Claudi0/preview/
+Apple: https://support.apple.com/en-us/102445
+
+依赖 Data Protection Keychain 的生成服务在公开预览版中不可用。
+Providers that require Data Protection Keychain are unavailable in the public preview.
+已保存凭据、生成记录及声音配置保留。
+Saved credentials, generated audio and sound configuration are preserved.

@@ -538,7 +538,7 @@ func runSoundPackLibrarySuites() async {
                 && source.contains("soundPacksEditorOwner: soundPacksEditorOwner")
                 && !source.contains("SoundPacksWindowController(")
                 && source.contains(
-                    "PanelView(\n            audioEnvironment: audioEnvironment,\n            panelModel: eventSettingsModel,\n            previewSession: composition.manualPreview,\n            soundScopeSelection: soundScopeSelection,"
+                    "PanelView(\n            audioEnvironment: audioEnvironment,\n            appUpdates: appUpdates,\n            panelModel: eventSettingsModel,\n            previewSession: composition.manualPreview,\n            soundScopeSelection: soundScopeSelection,"
                 ),
             "executable 仍借用组合根 owner 接入面板与 Settings；核心共享由组合行为检查保护")
         expect(

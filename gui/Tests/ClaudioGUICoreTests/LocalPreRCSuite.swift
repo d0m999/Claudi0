@@ -711,6 +711,12 @@ func runLocalPreRCSuites() {
                     "verify-dev-bundle-signature.sh",
                 ])
 
+            // This path-retention fixture already substitutes all build/signing effects.
+            // Sparkle's real framework/signature contract is exercised by its separate gate.
+            writeFixture(
+                "# fixture: no framework I/O\n",
+                to: scripts.appendingPathComponent("sparkle-bundle.py"))
+
             writeFixture("gui-binary", to: guiBin.appendingPathComponent("ClaudioGUI"))
             fixture.installExecutable(
                 "#!/bin/bash\necho 0.0.0-dev\n",

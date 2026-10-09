@@ -13,11 +13,21 @@ assert.ok(catalogSource, "selector pack catalog must remain readable");
 const catalogIds = [...catalogSource[1].matchAll(/\n\s+id: "([a-z0-9-]+)"/g)]
   .map(match => match[1])
   .sort();
-const repositoryPackIds = fs.readdirSync(path.join(root, "packs"), { withFileTypes: true })
-  .filter(entry => entry.isDirectory() && entry.name !== "license-snapshots")
-  .map(entry => entry.name)
-  .sort();
-assert.deepEqual(catalogIds, repositoryPackIds, "selector must list every repository pack");
+// packs/ contains optional, ignored local audio. The versioned license ledger owns the
+// curated roster; a clean checkout must validate the same six candidates without that audio.
+const licenses = fs.readFileSync(path.join(root, "packs/LICENSES.md"), "utf8");
+const currentCandidates = licenses.split("## 重设计试听候选包：2026-09-02");
+assert.equal(currentCandidates.length, 2, "current curated license roster must be identifiable");
+const builtinIds = [...licenses.matchAll(/^## 内置包：([a-z0-9-]+)（/gm)]
+  .map(match => match[1]);
+const candidateIds = [...currentCandidates[1].matchAll(/^#{2,3} ([a-z0-9-]+)（/gm)]
+  .map(match => match[1]);
+const licensedPackIds = [...builtinIds, ...candidateIds].sort();
+assert.ok(builtinIds.length > 0 && candidateIds.length > 0, "builtin and curated licenses are required");
+assert.equal(new Set(licensedPackIds).size, licensedPackIds.length, "licensed IDs must be unique");
+assert.deepEqual(catalogIds, licensedPackIds, "selector must exactly match the versioned curated license roster");
+const bundled = JSON.parse(fs.readFileSync(path.join(root, "packs/bundled-pack-selection.json"), "utf8"));
+assert.ok(bundled.selected_pack_ids.every(id => catalogIds.includes(id)), "selector must include every approved Factory Pack");
 assert.match(html, /src="sound-pack-selector-state\.js"/);
 assert.match(html, /selectorState\.changeBlindPack\(/);
 assert.match(html, /selectorState\.replaceSelection\(/);

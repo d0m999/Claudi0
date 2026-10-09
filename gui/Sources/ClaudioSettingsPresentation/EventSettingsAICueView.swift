@@ -99,6 +99,7 @@ struct EventSettingsAICueServiceCard: View {
                     .buttonStyle(.bordered)
                     .disabled(
                         viewModel.credentialActivity != .idle || !viewModel.providerIsAdmitted
+                            || !viewModel.providerCredentialAccessAllowed
                     )
                     .accessibilityLabel(manageButtonTitle)
                     .accessibilityIdentifier("event-settings.ai-cue.credential-manage")
@@ -111,6 +112,12 @@ struct EventSettingsAICueServiceCard: View {
     }
 
     private var statusPresentation: (text: String, symbol: String, symbolColor: Color) {
+        if !viewModel.providerCredentialAccessAllowed {
+            return (
+                l10n.text(.aiCuePreviewKeychainUnavailable), "lock",
+                SettingsAppearance.secondaryText(colorScheme)
+            )
+        }
         if !viewModel.providerIsAdmitted {
             return (
                 l10n.text(.aiCueBailianAcceptanceOnly), "lock",
@@ -384,7 +391,10 @@ struct EventSettingsAICueComposerView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!generationEnabled || !viewModel.providerIsAdmitted)
+                    .disabled(
+                        !generationEnabled || !viewModel.providerIsAdmitted
+                            || !viewModel.providerCredentialAccessAllowed
+                    )
                     .accessibilityLabel(
                         l10n.text(
                             viewModel.requiresCredentialConfiguration
@@ -499,7 +509,11 @@ struct EventSettingsAICueComposerView: View {
                         }
                     }
                 }
-                .disabled(viewModel.phase == .adopting || !generationEnabled || !viewModel.providerIsAdmitted)
+                .disabled(
+                    viewModel.phase == .adopting || !generationEnabled
+                        || !viewModel.providerIsAdmitted
+                        || !viewModel.providerCredentialAccessAllowed
+                )
                 .accessibilityLabel(l10n.text(.aiCueRegenerate))
                 .accessibilityHint(l10n.text(.aiCueGenerateHint))
                 .accessibilityIdentifier("event-settings.ai-cue.regenerate")
@@ -891,6 +905,9 @@ package func aiCueCredentialFailureText(
     credentialStatus: AICueCredentialStatus?,
     l10n: ClaudioL10n
 ) -> String {
+    if !AICueCredentialAccessPolicy.currentBuild.permits(providerProfileID) {
+        return l10n.text(.aiCuePreviewKeychainUnavailable)
+    }
     switch failure {
     case .provider(.invalidCredential), .provider(.forbidden):
         return l10n.text(.aiCueErrorCredentialInvalid)

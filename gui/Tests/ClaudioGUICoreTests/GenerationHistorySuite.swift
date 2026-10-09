@@ -326,6 +326,7 @@ func runGenerationHistorySuites() async {
         guard let lease = coordinator.beginAdoption(generationID: generation.id) else {
             expect(false, "已归档候选可以开始采用事务"); return
         }
+        expect(coordinator.terminationReason == .adopting, "采用租约阻止更新中断事务")
         coordinator.detachComposer()
         expect(
             coordinator.generation != nil && coordinator.generationBlock == .adopting,
@@ -336,6 +337,7 @@ func runGenerationHistorySuites() async {
         await coordinator.finishAdoption(lease, adopted: true)
         expect(
             coordinator.generation == nil && coordinator.generationBlock == nil, "事务结束后释放临时资产和门禁")
+        expect(coordinator.terminationReason == nil, "采用结束退出风险重新派生为空")
         expect(await generator.discarded.contains(generation.id), "已采用临时结果在事务返回后清理")
     }
 

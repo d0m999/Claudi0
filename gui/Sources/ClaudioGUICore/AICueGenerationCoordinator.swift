@@ -20,6 +20,7 @@ package enum AICueGenerationBlock: Sendable, Equatable {
 package enum AICueTerminationReason: Sendable, Equatable {
     case generating
     case unsavedAudio
+    case adopting
 }
 
 /// One app-lifetime owner, distinct from the visible composer's lifetime. No task is queued.
@@ -62,7 +63,8 @@ package final class AICueGenerationCoordinator: ObservableObject {
     }
 
     package var terminationReason: AICueTerminationReason? {
-        switch state {
+        if !adoptionLeases.isEmpty { return .adopting }
+        return switch state {
         case .generating: .generating
         case .saving, .pending: .unsavedAudio
         default: nil

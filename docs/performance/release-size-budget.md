@@ -359,3 +359,10 @@ LoginItem、非可执行资源预算，以及逐切片、架构一致性与 GUI 
 `454c4a7` 是本次预算分支基点 `dc3fdda` 的祖先；该 CI 回执只证明祖先提交的
 arm64 本地装包及 ad-hoc 签名复验。最终候选 HEAD 仍须在无预算覆盖的共享门禁下重新测量，
 并分别取得双架构、Developer ID 签名、公证与正式 release 的证据。
+
+## 2026-10-09 Sparkle 独立预算
+
+Sparkle 2.10.0 官方 universal Framework（五个 Mach-O、原生本地化、版本化符号链接和
+嵌套 app/XPC）单独限制为 `3,500,000 B`。实测上游目录约 3 MiB，签名后的精确正规文件合计
+以本轮账本为准。仅从原有“非可执行资源”合计中扣除该 Framework 的正规文件字节；GUI、helper、
+LoginItem、普通资源和产品导出门禁继续独立执行，不允许把其他文件转入 Framework 预算。

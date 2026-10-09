@@ -53,6 +53,7 @@ public struct AboutSettingsActions {
 /// object is called.
 @MainActor
 public final class AboutSettingsModel: ObservableObject {
+    public let appUpdates: AppUpdateModel
     public let bundleFacts: AboutBundleFacts
     public let resources: [AboutBundledResource]
     public let pathFacts: [AboutPathExistenceFact]
@@ -66,8 +67,10 @@ public final class AboutSettingsModel: ObservableObject {
         resources: [AboutBundledResource],
         pathFacts: [AboutPathExistenceFact],
         surfaceFacts: [AboutSurfaceFact],
-        actions: AboutSettingsActions
+        actions: AboutSettingsActions,
+        appUpdates: AppUpdateModel? = nil
     ) {
+        self.appUpdates = appUpdates ?? AppUpdateModel()
         self.bundleFacts = bundleFacts
         self.resources = resources
         self.pathFacts = pathFacts

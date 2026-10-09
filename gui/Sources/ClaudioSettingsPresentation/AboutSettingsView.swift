@@ -19,6 +19,7 @@ struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             identity
+            AppUpdateSettingsView(model: model.appUpdates, language: preferences.language)
             SettingsSectionCard(
                 title: l10n.text(.settingsAboutResourcesTitle),
                 description: l10n.text(.settingsAboutResourcesDescription),
@@ -91,7 +92,6 @@ struct AboutSettingsView: View {
 
     private var resources: some View {
         VStack(alignment: .leading, spacing: 12) {
-
 
             ForEach(Array(model.resources.enumerated()), id: \.element.id) { index, resource in
                 if index > 0 { Divider() }

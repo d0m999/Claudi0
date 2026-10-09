@@ -17787,16 +17787,36 @@
         }
       }
     },
-    "settings.sounds.redesign.generatedCount" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld candidates" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 个候选" } }
+    "settings.sounds.redesign.generatedCount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld candidates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个候选"
+          }
+        }
       }
     },
     "settings.sounds.redesign.backgroundTask": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This task was started earlier. Results go to generation history and will not be used automatically for this target." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这是之前发起的任务，结果会保存到生成记录。当前目标不会自动使用这些结果。" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This task was started earlier. Results go to generation history and will not be used automatically for this target."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是之前发起的任务，结果会保存到生成记录。当前目标不会自动使用这些结果。"
+          }
+        }
       }
     },
     "settings.sounds.redesign.generate": {
@@ -18466,6 +18486,244 @@
           "stringUnit": {
             "state": "translated",
             "value": "百炼两个模型须均有推理权限；未保存新配置，原配置保留。"
+          }
+        }
+      }
+    },
+    "app.update.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Software Update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "软件更新"
+          }
+        }
+      }
+    },
+    "app.update.public-preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public Preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公开预览"
+          }
+        }
+      }
+    },
+    "app.update.preview-limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This preview is ad-hoc signed and not notarized. Providers that require Data Protection Keychain are unavailable; saved credentials and audio are preserved."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此预览版为 ad-hoc 签名、未公证。依赖 Data Protection Keychain 的生成服务不可用；已保存凭据和音频保留。"
+          }
+        }
+      }
+    },
+    "app.update.check": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新…"
+          }
+        }
+      }
+    },
+    "app.update.automatic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically check daily"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天自动检查更新"
+          }
+        }
+      }
+    },
+    "app.update.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking for updates…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查更新…"
+          }
+        }
+      }
+    },
+    "app.update.available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ is available…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有新版本 %@…"
+          }
+        }
+      }
+    },
+    "app.update.current": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are up to date."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前已是最新版本。"
+          }
+        }
+      }
+    },
+    "app.update.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The update could not be completed. Try again or download from the official page."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新未能完成。请重试或从官方页面下载。"
+          }
+        }
+      }
+    },
+    "app.update.development": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates are unavailable in this development build."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此开发构建不提供更新。"
+          }
+        }
+      }
+    },
+    "app.update.move": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag claudi0 into Applications and relaunch before updating."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请将 claudi0 拖入应用程序目录并重新启动，再检查更新。"
+          }
+        }
+      }
+    },
+    "app.update.configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The updater configuration is unavailable. Download from the official page."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新配置不可用。请从官方页面下载。"
+          }
+        }
+      }
+    },
+    "app.update.recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Official downloads and recovery"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方下载与恢复"
+          }
+        }
+      }
+    },
+    "ai-cue.preview.keychain-unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This provider requires Data Protection Keychain and is unavailable in the public preview. Saved credentials are preserved."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此服务依赖 Data Protection Keychain，公开预览版不可用。已保存凭据保留。"
           }
         }
       }

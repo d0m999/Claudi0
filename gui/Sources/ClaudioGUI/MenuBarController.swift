@@ -123,6 +123,7 @@ final class MenuBarController: NSObject {
     /// shared bootstrap 已上移到 AppDelegate 的 composition root，不再经过面板。
     init(
         preferences: ClaudioPreferences,
+        appUpdates: AppUpdateModel,
         loginItemSettings: LoginItemSettingsModel,
         audioEnvironment: AudioImportEnvironment,
         bundledHelper: URL?,
@@ -177,7 +178,9 @@ final class MenuBarController: NSObject {
                         providerPreferences: runtime.providerPreferences)
                 },
                 makeActivityDiagnostics: makeActivityDiagnosticsModel,
-                makeAboutSettings: { makeSystemAboutSettingsModel(surfaceFacts: $0) }),
+                makeAboutSettings: {
+                    makeSystemAboutSettingsModel(surfaceFacts: $0, appUpdates: appUpdates)
+                }),
             actions: PanelAppComposition.Actions(
                 audibilityInputsChanged: { [weak actionRouter] in
                     actionRouter?.audibilityInputsChanged()
@@ -262,6 +265,7 @@ final class MenuBarController: NSObject {
 
         let panel = PanelView(
             audioEnvironment: audioEnvironment,
+            appUpdates: appUpdates,
             panelModel: eventSettingsModel,
             previewSession: composition.manualPreview,
             soundScopeSelection: soundScopeSelection,
@@ -455,7 +459,8 @@ final class MenuBarController: NSObject {
     }
 
     var generationTerminationReason: AICueTerminationReason? {
-        composition.generationCoordinator.terminationReason
+        if composition.soundPacksEditorOwner.soundAdoptionCount > 0 { return .adopting }
+        return composition.generationCoordinator.terminationReason
     }
     var generationTerminationWindow: NSWindow? { settingsWindowController.terminationPromptWindow }
 

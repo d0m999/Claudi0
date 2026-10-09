@@ -127,14 +127,20 @@ BUNDLE_BYTES="$(find "$APP" -type f -exec stat -f '%z' {} + | awk '{sum += $1} E
 GUI_FILE_BYTES="$(stat -f '%z' "$GUI_BINARY")"
 HELPER_FILE_BYTES="$(stat -f '%z' "$HELPER_BINARY")"
 LOGIN_ITEM_FILE_BYTES="$(stat -f '%z' "$LOGIN_ITEM_BINARY")"
-NON_EXECUTABLE_BYTES=$((BUNDLE_BYTES - GUI_FILE_BYTES - HELPER_FILE_BYTES - LOGIN_ITEM_FILE_BYTES))
+SPARKLE_BYTES=0
+if [[ -d "$APP/Contents/Frameworks/Sparkle.framework" ]]; then
+  SPARKLE_BYTES="$(find "$APP/Contents/Frameworks/Sparkle.framework" -type f -exec stat -f '%z' {} + | awk '{sum += $1} END {print sum + 0}')"
+  [[ "$SPARKLE_BYTES" -le 3500000 ]] || { echo "Sparkle exceeds separate 3500000 B budget" >&2; exit 1; }
+  echo "✅ Sparkle 单独预算：${SPARKLE_BYTES} B / 3500000 B"
+fi
+NON_EXECUTABLE_BYTES=$((BUNDLE_BYTES - SPARKLE_BYTES - GUI_FILE_BYTES - HELPER_FILE_BYTES - LOGIN_ITEM_FILE_BYTES))
 if [ "$NON_EXECUTABLE_BYTES" -gt "$NON_EXECUTABLE_BUNDLE_BYTES" ]; then
   echo "❌ 非可执行资源超出体积预算：${NON_EXECUTABLE_BYTES} B > ${NON_EXECUTABLE_BUNDLE_BYTES} B" >&2
   exit 1
 fi
 echo "✅ 非可执行资源：${NON_EXECUTABLE_BYTES} B / ${NON_EXECUTABLE_BUNDLE_BYTES} B"
 
-BUNDLE_MAXIMUM=$(((GUI_BYTES_PER_ARCH + HELPER_BYTES_PER_ARCH + LOGIN_ITEM_BYTES_PER_ARCH) * ARCH_COUNT + NON_EXECUTABLE_BUNDLE_BYTES))
+BUNDLE_MAXIMUM=$(((GUI_BYTES_PER_ARCH + HELPER_BYTES_PER_ARCH + LOGIN_ITEM_BYTES_PER_ARCH) * ARCH_COUNT + NON_EXECUTABLE_BUNDLE_BYTES + SPARKLE_BYTES))
 if [ "$BUNDLE_BYTES" -gt "$BUNDLE_MAXIMUM" ]; then
   echo "❌ app bundle 超出体积预算：${BUNDLE_BYTES} B > ${BUNDLE_MAXIMUM} B" >&2
   exit 1

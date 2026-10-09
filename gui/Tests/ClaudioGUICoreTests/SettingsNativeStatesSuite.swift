@@ -43,16 +43,29 @@ func runSettingsNativeStatesSuites() async {
                 expect(
                     fixture.session.state.routeResolution.destination == .sounds,
                     "全部 AI 状态必须进入声音页的包级详情")
-                expect(
-                    probe.hasAttachedSheet == scenario.rendersCredentialSheet,
-                    "凭据 sheet 必须与真实 session 呈现状态一致")
-                let expectedID =
+                let expectsCredentialSheet =
                     scenario.rendersCredentialSheet
-                    ? "event-settings.ai-cue.credential-sheet"
-                    : "event-settings.ai-cue.composer"
+                    && fixture.aiCueViewModel.providerIsAdmitted
+                    && fixture.aiCueViewModel.providerCredentialAccessAllowed
                 expect(
-                    SettingsMountRecorder.identifiers.contains(expectedID),
-                    "必须出现原生状态内容 \(expectedID)")
+                    probe.hasAttachedSheet == expectsCredentialSheet,
+                    "凭据 sheet 必须遵守 Provider 准入与存储能力")
+                if scenario.rendersCredentialSheet && !expectsCredentialSheet {
+                    expect(
+                        !SettingsMountRecorder.identifiers.contains(
+                            "event-settings.ai-cue.credential-sheet")
+                            && !fixture.session.state.eventPresentation.credentialSheetIsPresented
+                            && fixture.session.state.chrome.navigationEnabled,
+                        "被拒绝的凭据入口不得挂载表单或阻塞外层导航")
+                } else {
+                    let expectedID =
+                        expectsCredentialSheet
+                        ? "event-settings.ai-cue.credential-sheet"
+                        : "event-settings.ai-cue.composer"
+                    expect(
+                        SettingsMountRecorder.identifiers.contains(expectedID),
+                        "必须出现原生状态内容 \(expectedID)")
+                }
                 if fixture.session.state.routeResolution.failure == nil,
                     case .sounds(let route) = fixture.session.state.routeResolution.route,
                     let target = route.editTarget
@@ -84,7 +97,7 @@ func runSettingsNativeStatesSuites() async {
                         expect(false, "有效事件详情必须存在服务上下文与详情的真实布局")
                     }
                 }
-                if scenario.rendersCredentialSheet {
+                if expectsCredentialSheet {
                     let before = probe.renderedSheetText()
                     expect(
                         before?.contains(language == .english ? "Cancel" : "取消") == true,
@@ -113,7 +126,7 @@ func runSettingsNativeStatesSuites() async {
                     )
                 }
                 recordNativeState(probe, name: "\(scenario.id)-\(language.rawValue)")
-                if scenario.rendersCredentialSheet {
+                if expectsCredentialSheet {
                     let stamp = fixture.session.navigationHistory.stamp
                     expect(
                         fixture.session.send(.route(.destination(.general))) == .unchanged

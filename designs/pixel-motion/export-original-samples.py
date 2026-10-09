@@ -27,7 +27,7 @@ from playwright.sync_api import sync_playwright
 
 
 HERE = Path(__file__).resolve().parent
-HTML = HERE / "Pixel Motion Prototype.html"
+HTML = HERE / "source/Pixel Motion Prototype.html"
 SAMPLES = HERE / "samples"
 VARIANTS = ("E", "G", "H")
 COMMON_STATES = ("idle", "task_start", "notification", "stop", "subagent_stop", "stop_failure", "preview")

@@ -33,6 +33,7 @@ public struct PanelView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
+    private let appUpdates: AppUpdateModel?
     private let audioEnvironment: AudioImportEnvironment
     private let configFile: URL
     @ObservedObject private var previewSession: ManualAudioPreviewSession
@@ -52,6 +53,7 @@ public struct PanelView: View {
     /// 面板与设置窗口共享同一个 controller 与选择 owner，这里不再自构第二份。
     public init(
         audioEnvironment: AudioImportEnvironment,
+        appUpdates: AppUpdateModel? = nil,
         configFile: URL = ClaudioPaths.configFile,
         panelModel: PanelConfigController,
         previewSession: ManualAudioPreviewSession,
@@ -72,6 +74,7 @@ public struct PanelView: View {
         onRevealConfig: @escaping @MainActor (URL) -> Void,
         onAnnounce: @escaping @MainActor (String) -> Void,
     ) {
+        self.appUpdates = appUpdates
         self.audioEnvironment = audioEnvironment
         self.configFile = configFile
         self.focusCoordinator = focusCoordinator
@@ -121,6 +124,7 @@ public struct PanelView: View {
         _soundScopeSelection = ObservedObject(wrappedValue: previewPanelModel.soundScopeSelection)
         _isSoundScopeMenuExpanded = State(initialValue: previewSoundScopeExpanded)
         _activityRange = State(initialValue: previewActivityRange)
+        self.appUpdates = nil
         self.audioEnvironment = audioEnvironment
         self.configFile = URL(fileURLWithPath: "/dev/null/claudio-panel-preview-config.json")
         self.focusCoordinator = focusCoordinator
@@ -191,6 +195,9 @@ public struct PanelView: View {
             }
             .onPreferenceChange(PanelSoundScopePickerBottomPreferenceKey.self) {
                 soundScopePickerBottom = $0
+            }
+            if let appUpdates {
+                PanelAppUpdateReminder(model: appUpdates, language: languageStore.language)
             }
             PanelQuitFooter(
                 language: languageStore.language,

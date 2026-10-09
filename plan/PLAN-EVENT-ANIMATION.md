@@ -8,6 +8,7 @@
 
 以打磨后的 Pixel Motion Prototype 为角色画面、逐帧时长、循环范围和静态帧的唯一准据。在原生统一设置窗口的「通知 → 事件动画」中并排提供原版图标、机械小鸭、像素幽灵、比特币四种选择，默认原版。设置预览与真实横幅使用相同资源和播放器。由 Codex 自动完成资源、行为、原生操作、截图及适用工程验证，不另设人工验收关卡。
 > **2026-10-07 注**：Pixel Motion Prototype.html 已随原型合并删除；samples/ 资产与导出脚本保留，本条"唯一准据"的文件指向待重新指定。
+> **2026-10-09 来源修复**：从删除前 Git blob 按原字节归档到 [source/Pixel Motion Prototype.html](../designs/pixel-motion/source/Pixel%20Motion%20Prototype.html)，SHA-256 与下述已导出资源来源一致。此路径是导出／回归的固定输入；当前原生 UI 仍遵循 DESIGN，不恢复旧原型为当前界面。
 
 ## User Stories
 
