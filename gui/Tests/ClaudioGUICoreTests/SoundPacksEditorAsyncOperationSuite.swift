@@ -1767,6 +1767,20 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                         selectedPack: "workbuddy-pack"),
                 ])
             writeFixture(try! JSONEncoder().encode(sharedConfig), to: fixture.base.configFile)
+            // Another library deliberately occupies the shared serial scan queue. Adoption must
+            // still finish its write, while observation of the refresh waits for that queue.
+            let scanGate = SoundEditorPostSampleGate()
+            let blockingLibrary = SoundPackLibrary(
+                scanner: SoundPackLibraryScanner(operation: { _ in
+                    scanGate.pauseWorker()
+                    return .success([])
+                }))
+            await blockingLibrary.loadIfNeeded(trigger: .initial)
+            defer { scanGate.release() }
+            guard await scanGate.waitUntilEntered() else {
+                expect(false, "受控扫描必须先占住共享扫描队列")
+                return
+            }
             let source = root.appendingPathComponent("private-candidate-name.mp3")
             writeFixture(validMP3ID3Data(), to: source)
             let candidate = soundEditorCandidate(at: source, generationID: generationID)
@@ -1793,8 +1807,23 @@ func runSoundPacksEditorAsyncOperationSuites() async {
                     && soundEditorDirectoryEntries(
                         fixture.manifest.deletingLastPathComponent()) != entriesBefore,
                 "包级采纳写入原包的音频与 manifest")
+            var observationStarted = false
+            var observationFinished = false
+            let observation = Task { @MainActor in
+                observationStarted = true
+                await owner.waitForMutationTransactionsToQuiesceForTesting()
+                observationFinished = true
+            }
+            while !observationStarted { await Task.yield() }
+            expect(
+                !observationFinished && fixture.recorder.requests.count == scansBefore,
+                "扫描仍排队时不得提前把刷新观察为完成；生产采用不等待扫描")
+            scanGate.release()
+            await observation.value
+            await blockingLibrary.waitUntilIdleForTesting()
             expect(
                 fixture.recorder.requests.count == scansBefore + 1
+                    && fixture.recorder.requests.last?.invalidatedPackIDs == ["workbuddy-pack"]
                     && owner.presentation.activities.contains { $0.kind == .adoptAICue },
                 "成功采纳只发布一次包刷新和真实活动")
             if case .events(let current) = owner.presentation.mode {

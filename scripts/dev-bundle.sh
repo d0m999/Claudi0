@@ -20,8 +20,14 @@ BAILIAN_ACCEPTANCE=false
 BAILIAN_BUILD_OPTIONS=()
 SWIFT_BUILD_OPTIONS=()
 HOST_BUILD_OPTIONS=()
+PREVIEW_BUILD_OPTIONS=()
+PREVIEW_CHANNEL=development
 for option in "$@"; do
     case "$option" in
+        --public-preview)
+            PREVIEW_CHANNEL=preview
+            PREVIEW_BUILD_OPTIONS=(-Xswiftc -DCLAUDIO_PUBLIC_PREVIEW)
+            ;;
         --native-host-card-probe) GUI_NATIVE_HOST_CARD_PROBE=true ;;
         --additional-host-acceptance)
             ADDITIONAL_HOST_ACCEPTANCE=true
@@ -34,9 +40,13 @@ for option in "$@"; do
         --native-sdk)
             SWIFT_BUILD_OPTIONS=(--build-system native --sdk "$(xcrun --sdk macosx --show-sdk-path)")
             ;;
-        *) echo "usage: $0 [--native-host-card-probe] [--additional-host-acceptance] [--bailian-acceptance] [--native-sdk]" >&2; exit 2 ;;
+        *) echo "usage: $0 [--public-preview] [--native-host-card-probe] [--additional-host-acceptance] [--bailian-acceptance] [--native-sdk]" >&2; exit 2 ;;
     esac
 done
+if [[ "$PREVIEW_CHANNEL" == preview ]]; then
+    [[ "$REQUESTED_VERSION" =~ ^0\.0\.[1-9][0-9]*$ ]] || { echo "preview requires CLAUDIO_VERSION=0.0.N" >&2; exit 2; }
+    [[ "$BAILIAN_ACCEPTANCE" == false && "$ADDITIONAL_HOST_ACCEPTANCE" == false ]] || exit 2
+fi
 if [[ -n "${CLAUDIO_BUILD_SDK:-}" ]]; then
     SWIFT_BUILD_OPTIONS=(--build-system native --sdk "$CLAUDIO_BUILD_SDK")
 fi
@@ -49,12 +59,14 @@ gui_build() {
             -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE \
             "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
             "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
             "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     else
         swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
             "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
             "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
             "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     fi
 }
@@ -137,6 +149,7 @@ assemble_dev_bundle() (
     # Size optimization keeps the plugin/parser inside the unchanged helper budget.
     swift build -c release --package-path "$repo_root/helper" --product claudio -Xswiftc -Osize \
         "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}"
     verify_bailian_source_identity
 
@@ -155,6 +168,7 @@ assemble_dev_bundle() (
     HELPER_BIN_DIR="$(swift build -c release --package-path "$repo_root/helper" \
         --product claudio -Xswiftc -Osize \
         "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
+            "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" --show-bin-path)"
     HELPER_BINARY="$HELPER_BIN_DIR/claudio"
     BUNDLE_VERSION="$("$HELPER_BINARY" --version)"
@@ -218,6 +232,10 @@ PLIST
         /usr/libexec/PlistBuddy -c 'Add :ClaudioAdditionalHostAcceptance bool true' "$APP/Contents/Info.plist"
     fi
 
+    python3 "$repo_root/scripts/sparkle-bundle.py" embed "$APP" --source \
+        "$repo_root/gui/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+    python3 "$repo_root/scripts/sparkle-bundle.py" configure "$APP" --channel "$PREVIEW_CHANNEL"
+
     LOGIN_ITEM_BIN_DIR="$(login_item_build --show-bin-path)"
     LOGIN_ITEM_BINARY="$LOGIN_ITEM_BIN_DIR/ClaudioLoginItem"
     bash "$repo_root/scripts/assemble-login-item.sh" \
@@ -241,8 +259,10 @@ PLIST
     verify_bailian_source_identity
     codesign --force --sign - "$APP/Contents/Resources/bin/claudi0"
     codesign --force --sign - "$LOGIN_ITEM_APP"
+    python3 "$repo_root/scripts/sparkle-bundle.py" sign "$APP"
     codesign --force --sign - "$APP"
     bash "$repo_root/scripts/verify-dev-bundle-signature.sh" "$APP"
+    python3 "$repo_root/scripts/sparkle-bundle.py" verify "$APP" --archs "$(uname -m)"
     bash "$repo_root/scripts/check-release-size.sh" "$APP"
     verify_bailian_source_identity
     echo "✅ dist/${APP}（$(uname -m)）—— 用 open dist/${APP} 启动（菜单栏出现 Orbit Zero 图标）"

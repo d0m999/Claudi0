@@ -1,8 +1,45 @@
 # claudi0 分发、安装与恢复指南
 
-**支持范围：** macOS 12+，Apple Silicon 与 Intel。正式 Release 为 universal、Developer ID 签名并经过 Apple notarization 的 DMG。
+**支持范围：** macOS 12+，Apple Silicon 与 Intel。正式 Release 为 universal、Developer ID 签名并经过 Apple notarization 的 DMG。公开预览使用独立 ad-hoc 签名、未公证 DMG；首发仍须通过下述真机账本。
 
 产品概览与快速开始见 [中文 README](../README.zh-CN.md)；本文聚焦安装、宿主配置边界、修复和卸载。
+
+## 公开预览渠道
+
+[ADR 0030](adr/0030-distribute-ad-hoc-public-preview-with-signed-updates.md) 固定了本渠道。
+GitHub `preview-v0.0.N` prerelease 与 `vMAJOR.MINOR.PATCH` 正式 Release 分离。首版 `0.0.1`，
+app、helper、LoginItem 和 DMG 同版本；不提供 Homebrew。公开入口固定为
+[预览下载与恢复](https://d0m999.github.io/Claudi0/preview/)。首次公开部署前该地址可能尚不可用。
+
+下载 DMG 与 `SHA256SUMS.txt` 并核对校验和，拖入 `/Applications` 后再启动。此包没有
+Developer ID、未公证；若 macOS 拒绝打开，依据系统提示和
+[Apple 指引](https://support.apple.com/en-us/102445) 到“隐私与安全 → 仍要打开”。
+这份步骤是待验收指引；最终候选必须通过真浏览器下载、正常 quarantine 与两平台实测后，
+才能把其系统提示和可行安装路径记录为已验证。不关闭 Gatekeeper、不清除 quarantine。
+
+About 显示“公开预览”。第二次启动由 Sparkle 询问自动检查意愿，同意后每天检查；自动下载、
+安装关闭。后台发现新版仅在菜单与 About 提醒，点击打开标准窗口确认下载／安装／重启，
+系统可能再次确认。从 DMG、只读卷或 Translocation 路径运行时不会开始更新会话。
+更新退出保留原风险确认；采用事务完成前等待，取消退出不替换旧 app。重启按既有路径核对
+helper 原始字节并原子替换，恢复宿主维护；期间事件不补播。
+
+依赖 Data Protection Keychain 的 Provider 在预览版关闭凭据状态查询、读写、清理和新生成；
+原选择、凭据、生成记录与已采用音频保留。SenseAudio／百炼私有本地存储不受此存储限制，
+但仍受 ADR 0014/0015/0027/0029 的独立准入要求约束。
+
+检查失败时可重试，或从固定官方页面下载同版本；签名失败不能安装。安装失败或重启失败时
+重新启动当前 app，必要时以官方 DMG 覆盖安装，保留用户数据。丢失 EdDSA 密钥时停止 feed
+发布，通过人工下载安装恢复，不关闭 `SURequireSignedFeed` 或设置签名失败过期。
+
+候选 build 必须来自固定 clean commit。publish 只消费 [预览账本](preview-acceptance.md)
+中被明确验收的原始 artifact，核对 GitHub run/workflow/archive digest、manifest、DMG SHA、
+版本、universal 架构、ad-hoc 签名和更新签名；先创建 prerelease 并复验公网字节，再部署 feed。
+缺 Secret、公钥不匹配、候选未验收、下载或验签失败均停止，不改上一份有效 feed。
+执行 build／本机打包不授权公开 publish；公开首发需另行明确授权。
+
+未来正式 `0.1.0` 沿用 bundle ID、EdDSA key 与用户数据，版本比较可从 `0.0.10` 升级。
+正式包内置正式 feed；只有正式包独立签名、公证、平台和跨签名状态升级验收完成后，才允许
+它进入预览 feed，用户确认安装后转入正式渠道。此实现不自动执行该迁移。
 
 ## 安装方式一：GitHub Release DMG（主渠道）
 

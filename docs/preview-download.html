@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-Hans"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>claudi0 公开预览</title><style>body{max-width:680px;margin:64px auto;padding:0 24px;font:17px/1.65 system-ui;color:#202020}a{color:#8e432c}</style>
+<h1>claudi0 公开预览</h1><p>macOS 12+ · Apple Silicon 与 Intel</p>
+<p>公开预览版为 ad-hoc 签名，无 Developer ID，未经过 Apple 公证。发布须完成两平台真机验收。</p>
+<p><a href="https://github.com/d0m999/Claudi0/releases">在 GitHub 下载预览 DMG 与 SHA256SUMS.txt</a></p>
+<ol><li>核对下载文件的 SHA-256。</li><li>打开 DMG，将 claudi0.app 拖入“应用程序”。</li><li>从“应用程序”启动。如果系统拒绝打开，按系统提示到“隐私与安全 → 仍要打开”。
+<a href="https://support.apple.com/en-us/102445">Apple 系统指引</a>。不同 macOS 的提示可能不同，最终安装指引以该候选的真机记录为准。</li></ol>
+<p>第二次启动询问每天自动检查更新的意愿。后台发现新版仅在菜单与“关于”提醒，点击后确认下载、安装和重启；系统可能再次请求确认。</p>
+<p>依赖 Data Protection Keychain 的生成服务不可用；已保存凭据、生成记录、已采用音频与声音配置保留。本地存储服务仍遵守自身准入政策。</p>
+<h2>恢复</h2><p>检查失败可重试。签名验证失败时不要安装；从本页固定 GitHub 链接重新下载并核对校验和。安装失败后重新打开现有应用，或用官方 DMG 替换。保留用户数据，无需关闭 Gatekeeper 或移除 quarantine。</p>
+<h2>Public Preview</h2><p>This ad-hoc signed build has no Developer ID and is not notarized. Drag the app to Applications. If macOS blocks it, follow Privacy &amp; Security → Open Anyway. Updates require user confirmation. Data Protection Keychain providers are unavailable; saved credentials and audio are preserved.</p>
+</html>

@@ -173,6 +173,10 @@ public final class AICueGenerationViewModel: ObservableObject {
         return profile
     }
 
+    public var providerCredentialAccessAllowed: Bool {
+        AICueCredentialAccessPolicy.currentBuild.permits(providerProfileID)
+    }
+
     public var providerIsAdmitted: Bool {
         registry.profiles().contains { $0.id == providerProfileID }
     }

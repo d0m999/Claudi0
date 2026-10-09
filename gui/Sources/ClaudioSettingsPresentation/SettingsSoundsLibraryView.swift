@@ -819,7 +819,8 @@ struct SettingsSoundsLibraryView: View {
                                 .contentShape(Rectangle())
                             }
                             .disabled(
-                                !model.providerIsAdmitted || coordinator.generationBlock != nil
+                                !model.providerIsAdmitted || !model.providerCredentialAccessAllowed
+                                    || coordinator.generationBlock != nil
                                     || model.soundDescription.trimmingCharacters(
                                         in: .whitespacesAndNewlines
                                     )
@@ -844,7 +845,7 @@ struct SettingsSoundsLibraryView: View {
                 Button(l10n.text(.aiCueManageKey)) {
                     returnFromService = .ai; present(.service)
                 }
-                .disabled(!model.providerIsAdmitted)
+                .disabled(!model.providerIsAdmitted || !model.providerCredentialAccessAllowed)
                 .accessibilityIdentifier("settings.sounds.ai.credential-manage")
             }
         }
@@ -1074,7 +1075,10 @@ struct SettingsSoundsLibraryView: View {
     }
 
     private func present(_ mode: SoundsSheet) {
-        guard mode != .service || model.providerIsAdmitted else {
+        guard
+            mode != .service
+                || (model.providerIsAdmitted && model.providerCredentialAccessAllowed)
+        else {
             if sheet == nil { modalIsPresented = false }
             return
         }

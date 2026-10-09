@@ -48,6 +48,15 @@ bash scripts/check-release-size.sh dist/claudi0.app
 git diff --check
 ```
 
+The selector state regression compares the exact six-package curated roster with the versioned
+`packs/LICENSES.md`, including duplicate/missing/extra entries, rather than requiring ignored local
+audio directories. The bundled-pack selection must be a subset of that licensed roster.
+
+`--ai-cue-gallery` mounts the production presentation seam with fixtures. Ordinary builds verify
+credential-entry rejection; `-Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE` verifies admitted sheets;
+`-Xswiftc -DCLAUDIO_PUBLIC_PREVIEW` verifies storage-limited rejection. These checks do not grant
+Provider admission or establish real Keychain access or UI acceptance.
+
 `scripts/test-sound-pack-candidates.py` always checks generators and license records; audio checks for local candidate packs report a skip when their pack directories are absent. Present candidate packs retain all existing audio and ledger checks.
 
 `scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
@@ -92,6 +101,34 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 
 Use [the unified settings acceptance checklist](docs/settings-experience-acceptance.md) to keep
 automated, native UI, real-system, Provider, architecture, signing, and release evidence separate.
+
+## Public preview candidates
+
+The independent [preview workflow](.github/workflows/preview.yml) builds a clean exact `main`
+commit as `0.0.N`. It does not create a public release in build mode. Publish mode consumes an
+accepted artifact's original DMG, validates the GitHub archive digest and every device gate in
+[preview-acceptance.json](docs/preview-acceptance.json), then verifies public assets before deploying
+the signed Pages feed. See [the preview ledger](docs/preview-acceptance.md) and ADR 0030.
+If publication fails after creating the prerelease, retrying reuses it only when its tag resolves
+to the accepted source commit and all three assets match the original candidate bytes exactly.
+
+For local inspection only (current architecture, uncommitted source permitted):
+
+```bash
+CLAUDIO_VERSION=0.0.1 bash scripts/dev-bundle.sh --public-preview
+swift run --package-path gui claudio-gui-tests --public-preview
+bash scripts/test-sparkle-contract.sh
+python3 scripts/test-preview-artifact.py
+```
+
+`--public-preview` cannot be combined with Provider/host acceptance flags. Sparkle's pinned upstream
+universal framework is copied with its versioned links and signed inside out. It has a separate
+3,500,000-byte budget; original app/resource budgets remain enforced. A dev bundle lacks a feed;
+an installed preview uses the preview feed, and a formal bundle uses the formal feed. Formal
+framework tools require the same Developer ID team, runtime and timestamp gates as other binaries.
+Neither local inspection nor a universal candidate establishes Gatekeeper, login or two-version
+upgrade acceptance. CI needs `SPARKLE_PRIVATE_KEY` (32-byte seed in base64); use stdin, never a
+command-line secret. The matching public key is checked in `config/sparkle-public-key.txt`.
 
 ## Change rules
 

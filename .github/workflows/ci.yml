@@ -138,7 +138,7 @@ jobs:
           path: |
             gui/.build
             helper/.build
-          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v3
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
 
       - name: Validate string catalog JSON
         run: jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
@@ -197,7 +197,13 @@ jobs:
           path: |
             gui/.build
             helper/.build
-          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift') }}-v3
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
+
+      - name: Verify admitted AI Cue credential gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE claudio-gui-tests --ai-cue-gallery
+
+      - name: Verify public preview credential gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --ai-cue-gallery
 
   verify:
     name: Test and build

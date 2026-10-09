@@ -242,6 +242,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     AICueGenerationCredentialManaging
 {
     private let vault: any AICueCredentialVault
+    private let accessPolicy: AICueCredentialAccessPolicy
     private let registry: AICueProviderRegistry
     private let validators: [AICueProviderProfileID: any AICueCredentialValidating]
     private let metadata: any AICueCredentialMetadataStoring
@@ -256,6 +257,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         validators: [AICueProviderProfileID: any AICueCredentialValidating]
     ) {
         self.vault = vault
+        accessPolicy = .currentBuild
         self.registry = registry
         self.validators = validators
         metadata = AICueUserDefaultsCredentialMetadataStore()
@@ -265,15 +267,18 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         vault: any AICueCredentialVault,
         registry: AICueProviderRegistry = AICueProviderRegistry(),
         validators: [AICueProviderProfileID: any AICueCredentialValidating],
-        metadata: any AICueCredentialMetadataStoring
+        metadata: any AICueCredentialMetadataStoring,
+        accessPolicy: AICueCredentialAccessPolicy = .currentBuild
     ) {
         self.vault = vault
+        self.accessPolicy = accessPolicy
         self.registry = registry
         self.validators = validators
         self.metadata = metadata
     }
 
     public func status(for profileID: AICueProviderProfileID) async -> AICueCredentialStatus {
+        guard accessPolicy.permits(profileID) else { return .unavailable }
         do { try await requireLegacyMigration(for: profileID) } catch { return .unavailable }
         guard let profile = try? registry.profile(for: profileID) else { return .unavailable }
         return await projectedStatus(for: profile, requiresStableSnapshot: true)
@@ -323,6 +328,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         _ credential: SensitiveCredentialInput,
         for profileID: AICueProviderProfileID
     ) async throws -> AICueCredentialStatus {
+        guard accessPolicy.permits(profileID) else {
+            throw AICueCredentialManagerError.credentialUnavailable
+        }
         try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         guard (profileID == .bailianBeijing) == (credential.bailianWorkspaceID != nil) else {
@@ -361,6 +369,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     }
 
     public func delete(for profileID: AICueProviderProfileID) async throws {
+        guard accessPolicy.permits(profileID) else {
+            throw AICueCredentialManagerError.credentialUnavailable
+        }
         try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         try beginMutation(for: profileID)
@@ -376,6 +387,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     public func cancelPendingReplacement(
         for profileID: AICueProviderProfileID
     ) async throws {
+        guard accessPolicy.permits(profileID) else {
+            throw AICueCredentialManagerError.credentialUnavailable
+        }
         try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         guard let pendingSlotID = profile.pendingCredentialSlotID else { return }
@@ -387,6 +401,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     public func credentialForGeneration(
         for profileID: AICueProviderProfileID
     ) async throws -> AICueGenerationCredential {
+        guard accessPolicy.permits(profileID) else {
+            throw AICueCredentialManagerError.credentialUnavailable
+        }
         try await requireLegacyMigration(for: profileID)
         let profile = try resolveProfile(profileID)
         let startingRevision = revision(for: profileID)
@@ -425,6 +442,9 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     }
 
     public func generationDidValidate(_ lease: AICueGenerationCredential) async throws {
+        guard accessPolicy.permits(lease.profileID) else {
+            throw AICueCredentialManagerError.credentialUnavailable
+        }
         let profile = try resolveProfile(lease.profileID)
         guard lease.revision == revision(for: lease.profileID) else {
             throw AICueCredentialManagerError.stateChanged
@@ -458,6 +478,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
         didFailWith error: AICueProviderError
     ) async {
         guard
+            accessPolicy.permits(lease.profileID),
             error == .invalidCredential,
             lease.revision == revision(for: lease.profileID),
             let profile = try? registry.profile(for: lease.profileID)
@@ -502,6 +523,7 @@ public actor AICueCredentialManager: AICueCredentialManaging,
     /// Idempotent, service-scoped upgrade cleanup. A failed delete never marks completion;
     /// the next explicit refresh/save retries. No historic audio or other provider slot is touched.
     package func migrateLegacyQwenCredentials() async throws {
+        guard accessPolicy.permitsDataProtectionKeychain else { return }
         if legacyMigrationCompleted { return }
         guard !migratingLegacy else { throw AICueCredentialManagerError.stateChanged }
         migratingLegacy = true

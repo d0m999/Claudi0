@@ -24,7 +24,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 PROTOTYPE = ROOT / "designs/macos-settings-native/Animation Settings Prototype.html"
 JAVASCRIPT = PROTOTYPE.parent / "animation-settings-prototype.js"
-SOURCE = ROOT / "designs/pixel-motion/Pixel Motion Prototype.html"
+SOURCE = ROOT / "designs/pixel-motion/reference/approved-source.html"
 RESOURCES = ROOT / "gui/Sources/ClaudioGUI/Resources/EventAnimations"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 EVENTS = ["task_start", "notification", "stop", "subagent_stop", "stop_failure"]

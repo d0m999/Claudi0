@@ -373,6 +373,11 @@ jobs:
           bash scripts/assemble-login-item.sh \
             dist/app-bin/ClaudioLoginItem "$APP" "$CLAUDIO_VERSION"
 
+      - name: Embed pinned Sparkle and configure formal feed
+        run: |
+          python3 scripts/sparkle-bundle.py embed "dist/$APP_NAME.app" --source gui/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework
+          python3 scripts/sparkle-bundle.py configure "dist/$APP_NAME.app" --channel release
+
       - name: Verify unified version and release size budget
         shell: bash
         run: |
@@ -435,6 +440,7 @@ jobs:
             --timestamp \
             --sign "$SIGNING_IDENTITY" \
             "$LOGIN_ITEM_APP"
+          python3 scripts/sparkle-bundle.py sign "$APP" --identity "$SIGNING_IDENTITY"
           codesign \
             --force \
             --options runtime \
@@ -446,6 +452,7 @@ jobs:
             executable "$EXPECTED_TEAM_ID" "$APP/Contents/Resources/bin/claudi0"
           bash scripts/verify-release-signature.sh app "$EXPECTED_TEAM_ID" "$LOGIN_ITEM_APP"
           bash scripts/verify-release-signature.sh app "$EXPECTED_TEAM_ID" "$APP"
+          python3 scripts/sparkle-bundle.py verify "$APP" --team "$EXPECTED_TEAM_ID"
 
       - name: Notarize and staple app
         env:
@@ -615,6 +622,7 @@ jobs:
           bash scripts/check-release-size.sh "$APP"
           bash scripts/verify-release-signature.sh app "$EXPECTED_TEAM_ID" "$LOGIN_ITEM_APP"
           bash scripts/verify-release-signature.sh app "$EXPECTED_TEAM_ID" "$APP"
+          python3 scripts/sparkle-bundle.py verify "$APP" --team "$EXPECTED_TEAM_ID"
           bash scripts/verify-release-signature.sh dmg "$EXPECTED_TEAM_ID" "$DMG_PATH"
           spctl --assess --type execute --verbose=4 "$APP"
           spctl --assess \

@@ -10,6 +10,7 @@ import Foundation
 @MainActor
 package final class SoundPacksEditorOwner: ObservableObject {
     private static let maximumRetainedTerminalOperationCount = 32
+    package private(set) var soundAdoptionCount = 0
 
     package let draftStore: SoundPackDraftStore
     private let model: SoundPacksWindowModel
@@ -625,6 +626,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
         guard !hasBusyOperation, selectionIsCurrent(selection) else {
             return .rejected(.targetChanged)
         }
+        soundAdoptionCount += 1
+        defer { soundAdoptionCount -= 1 }
         assetMutationInProgress = true
         defer { assetMutationInProgress = false; publish(from: model.editorProjectionSeed()) }
         let seed = model.editorProjectionSeed()
@@ -724,6 +727,8 @@ package final class SoundPacksEditorOwner: ObservableObject {
         displayName: AICueDisplayName,
         permit: SoundPackAdoptionPermit
     ) async -> SoundPacksEditorOperationResult {
+        soundAdoptionCount += 1
+        defer { soundAdoptionCount -= 1 }
         let (_, seed) = captureModelTransition {
             model.refreshEditorConfigProjection()
         }

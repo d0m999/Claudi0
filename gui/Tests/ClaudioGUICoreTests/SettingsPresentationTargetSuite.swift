@@ -790,14 +790,20 @@ func runSettingsAICueGallerySuites(
                 expect(probe.hasAttachedSheet, "\(scenario.rawValue) 挂载同一窗口附属表单")
             } else if scenario.rendersCredentialSheet {
                 await probe.settle()
-                if fixture.aiCueViewModel.providerIsAdmitted {
+                let mayManageCredentials =
+                    fixture.aiCueViewModel.providerIsAdmitted
+                    && fixture.aiCueViewModel.providerCredentialAccessAllowed
+                if mayManageCredentials {
                     expect(probe.hasAttachedSheet, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
+                    expect(
+                        fixture.eventSettingsSelection.presentationState.credentialSheetIsPresented,
+                        "已准入表单必须保留同一 session 的模态事实")
                 } else {
                     expect(
                         !probe.hasAttachedSheet
                             && !fixture.eventSettingsSelection.presentationState
                                 .credentialSheetIsPresented,
-                        "\(scenario.rawValue) 未准入服务不得挂载表单或残留模态状态")
+                        "\(scenario.rawValue) 未准入或存储受限入口不得挂载表单或残留模态状态")
                     expect(
                         fixture.aiCueViewModel.providerProfileID == scenario.providerProfileID,
                         "\(scenario.rawValue) 拒绝配置不得静默切换其他服务")

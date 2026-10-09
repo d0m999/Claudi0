@@ -449,8 +449,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "aiCue.providerProfile.bailianBeijing")
     public static let aiCueCredentialPrivacyBailianBeijing = ClaudioL10nKey(
         "aiCue.credential.privacy.bailianBeijing")
-    public static let aiCueBailianAssetContractUnavailable = ClaudioL10nKey("aiCue.bailian.assetContractUnavailable")
-    public static let aiCueBailianPermissionFailure = ClaudioL10nKey("aiCue.bailian.permissionFailure")
+    public static let aiCueBailianAssetContractUnavailable = ClaudioL10nKey(
+        "aiCue.bailian.assetContractUnavailable")
+    public static let aiCueBailianPermissionFailure = ClaudioL10nKey(
+        "aiCue.bailian.permissionFailure")
     public static let aiCueBailianAcceptanceOnly = ClaudioL10nKey(
         "aiCue.credential.bailianAcceptanceOnly")
     public static let aiCueBailianWorkspaceLabel = ClaudioL10nKey(
@@ -473,7 +475,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         "ai-cue.credential.privacy.senseaudio-cn"
     public static let aiCueCredentialKeychain: Self = "ai-cue.credential.keychain"
     public static let aiCueCredentialLocalFile: Self = "ai-cue.credential.local-file"
-    public static let aiCueCredentialLocalConfiguration: Self = "ai-cue.credential.local-configuration"
+    public static let aiCueCredentialLocalConfiguration: Self =
+        "ai-cue.credential.local-configuration"
     public static let aiCueErrorLocalCredentialUnavailable: Self =
         "ai-cue.error.local-credential-unavailable"
     public static let aiCueCredentialValidateSave: Self = "ai-cue.credential.validate-save"
@@ -632,6 +635,20 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let settingsSidebarProduct: Self = "settings.sidebar.product"
     public static let settingsSidebarLocalFirst: Self = "settings.sidebar.local-first"
     public static let settingsAnnouncementValue: Self = "settings.announcement.value"
+    public static let appUpdateTitle: Self = "app.update.title"
+    public static let appUpdatePublicPreview: Self = "app.update.public-preview"
+    public static let appUpdatePreviewLimit: Self = "app.update.preview-limit"
+    public static let appUpdateCheck: Self = "app.update.check"
+    public static let appUpdateAutomatic: Self = "app.update.automatic"
+    public static let appUpdateChecking: Self = "app.update.checking"
+    public static let appUpdateAvailable: Self = "app.update.available"
+    public static let appUpdateCurrent: Self = "app.update.current"
+    public static let appUpdateFailed: Self = "app.update.failed"
+    public static let appUpdateDevelopment: Self = "app.update.development"
+    public static let appUpdateMove: Self = "app.update.move"
+    public static let appUpdateConfiguration: Self = "app.update.configuration"
+    public static let appUpdateRecovery: Self = "app.update.recovery"
+    public static let aiCuePreviewKeychainUnavailable: Self = "ai-cue.preview.keychain-unavailable"
     public static let settingsAboutUnknown: Self = "settings.about.unknown"
     public static let settingsAboutBrand: Self = "settings.about.brand"
     public static let settingsAboutProduct: Self = "settings.about.product"
@@ -1481,6 +1498,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let aiCueUseNamedEvent: Self = "ai-cue.use-named-event"
 
     public static let allKnown: [Self] = [
+        .appUpdateTitle, .appUpdatePublicPreview, .appUpdatePreviewLimit, .appUpdateCheck,
+        .appUpdateAutomatic, .appUpdateChecking, .appUpdateAvailable, .appUpdateCurrent,
+        .appUpdateFailed, .appUpdateDevelopment, .appUpdateMove, .appUpdateConfiguration,
+        .appUpdateRecovery, .aiCuePreviewKeychainUnavailable,
         .soundsHistory,
         .soundsNewPack,
         .soundsImportPack,

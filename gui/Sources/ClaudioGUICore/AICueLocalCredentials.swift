@@ -5,6 +5,7 @@ import Foundation
 /// One explicit storage choice, not a fallback after a Keychain failure. Existing providers keep
 /// their original slots; local-file providers do not fall back to Keychain.
 package struct AICueAppCredentialVault: AICueCredentialVault {
+    private let accessPolicy: AICueCredentialAccessPolicy
     private let keychain: any AICueCredentialVault
     private let senseAudio: any AICueCredentialVault
     private let bailian: any AICueCredentialVault
@@ -12,8 +13,10 @@ package struct AICueAppCredentialVault: AICueCredentialVault {
     package init(
         keychain: any AICueCredentialVault = AICueKeychainCredentialVault(),
         senseAudio: any AICueCredentialVault = SenseAudioFileCredentialVault(),
-        bailian: any AICueCredentialVault = AICueFileCredentialVault(kind: .bailianBeijing)
+        bailian: any AICueCredentialVault = AICueFileCredentialVault(kind: .bailianBeijing),
+        accessPolicy: AICueCredentialAccessPolicy = .currentBuild
     ) {
+        self.accessPolicy = accessPolicy
         self.keychain = keychain
         self.senseAudio = senseAudio
         self.bailian = bailian
@@ -39,8 +42,11 @@ package struct AICueAppCredentialVault: AICueCredentialVault {
         try await storage(for: slotID).deleteCredential(in: slotID)
     }
 
-    private func storage(for slotID: AICueCredentialSlotID) -> any AICueCredentialVault {
-        switch slotID {
+    private func storage(for slotID: AICueCredentialSlotID) throws -> any AICueCredentialVault {
+        guard accessPolicy.permits(slotID) else { throw AICueKeychainError.invalidStoredCredential }
+        return
+            switch slotID
+        {
         case .senseAudioChina: senseAudio
         case .bailianBeijing: bailian
         default: keychain
