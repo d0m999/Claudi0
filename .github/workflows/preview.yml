@@ -59,6 +59,7 @@ jobs:
           swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --public-preview
           swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --ai-cue-gallery
           python3 scripts/test-preview-artifact.py
+          python3 scripts/test-preview-release.py
           bash scripts/test-sparkle-contract.sh
           git diff --check
       - name: Build immutable universal preview
@@ -109,7 +110,7 @@ jobs:
           fi
       - name: Publish original DMG and verify public bytes
         run: |
-          gh release create "preview-v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$TARGET_COMMIT" --prerelease --title "claudi0 $VERSION — 公开预览" --notes-file candidate/RELEASE_NOTES.md "candidate/claudi0-$VERSION.dmg" candidate/SHA256SUMS.txt candidate/PREVIEW_MANIFEST.json
+          python3 scripts/publish-preview-release.py candidate "$GITHUB_REPOSITORY" "$TARGET_COMMIT" "$VERSION"
           python3 scripts/verify-public-preview.py candidate
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

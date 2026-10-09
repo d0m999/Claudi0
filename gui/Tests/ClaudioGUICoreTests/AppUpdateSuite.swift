@@ -7,7 +7,9 @@ func runAppUpdateSuites() {
         let model = AppUpdateModel(state: .idle, isPublicPreview: true)
         var checks = 0
         var preferences: [Bool] = []
-        model.connect(check: { checks += 1 }, setAutomaticChecks: { preferences.append($0) })
+        model.connect(
+            check: { checks += 1 }, sessionInProgress: { false },
+            setAutomaticChecks: { preferences.append($0) })
         model.project(state: .idle, canCheck: true, automaticChecks: false)
         model.checkForUpdates()
         model.checkForUpdates()
@@ -24,6 +26,51 @@ func runAppUpdateSuites() {
         model.checkForUpdates()
         model.setAutomaticallyChecksForUpdates(true)
         expect(checks == 2 && preferences == [true], "不可用路径不启动更新或改偏好")
+    }
+    suite("AppUpdate：已有会话聚焦不等待新检查回调，可反复找回窗口") {
+        let model = AppUpdateModel(state: .idle)
+        var checks = 0
+        var sessionInProgress = false
+        model.connect(
+            check: {
+                checks += 1
+                sessionInProgress = true
+            },
+            sessionInProgress: { sessionInProgress },
+            setAutomaticChecks: { _ in })
+        model.project(state: .idle, canCheck: true, automaticChecks: false)
+        model.checkForUpdates()
+        expect(sessionInProgress && model.state == .checking, "新检查仍进入检查中")
+        expect(!model.canCheckForUpdates, "下载 feed 时禁止重复检查")
+        model.project(state: .available("0.0.10"), canCheck: true, automaticChecks: false)
+        model.project(state: .idle, canCheck: true, automaticChecks: false)
+        // Sparkle already delivered user attention. Refocusing emits no KVO or delegate callback.
+        model.checkForUpdates()
+        expect(model.state == .idle, "聚焦已查看的窗口不伪装为新的检查")
+        expect(model.canCheckForUpdates, "没有新回调时找回窗口的入口仍可用")
+        model.checkForUpdates()
+        expect(checks == 3 && model.state == .idle, "同一会话允许再次显式聚焦")
+        sessionInProgress = false
+        model.project(state: .upToDate, canCheck: true, automaticChecks: false)
+        model.checkForUpdates()
+        expect(checks == 4 && model.state == .checking, "会话结束后再次点击启动新检查")
+    }
+    suite("AppUpdate：后台提醒和权限会话聚焦保留当前投影") {
+        for state: AppUpdateState in [.available("0.0.10"), .idle] {
+            let model = AppUpdateModel(state: state)
+            var focuses = 0
+            model.connect(
+                check: { focuses += 1 }, sessionInProgress: { true },
+                setAutomaticChecks: { _ in })
+            model.project(state: state, canCheck: true, automaticChecks: false)
+            model.checkForUpdates()
+            model.checkForUpdates()
+            expect(focuses == 2, "后台提醒或权限窗口可反复显式聚焦")
+            expect(model.state == state && model.canCheckForUpdates, "聚焦不伪写检查状态或禁用入口")
+            model.project(state: state, canCheck: false, automaticChecks: false)
+            model.checkForUpdates()
+            expect(focuses == 2, "已有会话仍遵守 Sparkle 禁止操作的事实")
+        }
     }
     suite("AppUpdate：DMG、只读卷、Translocation 与路径边界") {
         let roots = [URL(fileURLWithPath: "/Applications")]

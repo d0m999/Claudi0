@@ -109,6 +109,8 @@ commit as `0.0.N`. It does not create a public release in build mode. Publish mo
 accepted artifact's original DMG, validates the GitHub archive digest and every device gate in
 [preview-acceptance.json](docs/preview-acceptance.json), then verifies public assets before deploying
 the signed Pages feed. See [the preview ledger](docs/preview-acceptance.md) and ADR 0030.
+If publication fails after creating the prerelease, retrying reuses it only when its tag resolves
+to the accepted source commit and all three assets match the original candidate bytes exactly.
 
 For local inspection only (current architecture, uncommitted source permitted):
 

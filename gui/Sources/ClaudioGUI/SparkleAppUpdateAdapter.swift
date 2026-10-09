@@ -44,6 +44,9 @@ final class SparkleAppUpdateAdapter: NSObject, SPUUpdaterDelegate,
             startingUpdater: false, updaterDelegate: self, userDriverDelegate: self)
         model.connect(
             check: { [weak self] in self?.controller?.checkForUpdates(nil) },
+            sessionInProgress: { [weak self] in
+                self?.controller?.updater.sessionInProgress ?? false
+            },
             setAutomaticChecks: { [weak self] enabled in
                 self?.controller?.updater.automaticallyChecksForUpdates = enabled
             })

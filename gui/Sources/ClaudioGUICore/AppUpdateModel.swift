@@ -24,6 +24,7 @@ public final class AppUpdateModel: ObservableObject {
     @Published public private(set) var automaticallyChecksForUpdates = false
     public let isPublicPreview: Bool
     private var check: (@MainActor () -> Void)?
+    private var sessionInProgress: (@MainActor () -> Bool)?
     private var setAutomaticChecks: (@MainActor (Bool) -> Void)?
 
     public init(
@@ -35,9 +36,11 @@ public final class AppUpdateModel: ObservableObject {
 
     package func connect(
         check: @escaping @MainActor () -> Void,
+        sessionInProgress: @escaping @MainActor () -> Bool,
         setAutomaticChecks: @escaping @MainActor (Bool) -> Void
     ) {
         self.check = check
+        self.sessionInProgress = sessionInProgress
         self.setAutomaticChecks = setAutomaticChecks
     }
 
@@ -54,10 +57,15 @@ public final class AppUpdateModel: ObservableObject {
     }
 
     public func checkForUpdates() {
-        guard canCheckForUpdates, state != .checking, let check else { return }
+        guard canCheckForUpdates, state != .checking, let check, let sessionInProgress else {
+            return
+        }
         if case .unavailable = state { return }
-        canCheckForUpdates = false
-        state = .checking
+        // Refocusing an existing Sparkle session produces no new check callbacks.
+        if !sessionInProgress() {
+            canCheckForUpdates = false
+            state = .checking
+        }
         check()
     }
 
