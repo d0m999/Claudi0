@@ -1190,7 +1190,7 @@ private struct PanelAgentEventRow: View {
     }
 
     private var identity: some View {
-        HStack(alignment: .top, spacing: 7) {
+        HStack(alignment: .center, spacing: 7) {
             ClaudioEventGlyph(event: presentation.event, size: 23)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
