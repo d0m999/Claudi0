@@ -19,6 +19,12 @@ import uuid
 RUNNER = sys.argv[1]
 CLI = len(sys.argv) > 2 and sys.argv[2] == "--cli"
 PAYLOAD = "中文".encode() + b"\x00\x1b[200~literal\x1b[I\x1b[201~end"
+EXIT_BACKPRESSURE_CHILD = """import os, tty
+tty.setraw(0)
+os.write(1, b'EXITREADY')
+os.read(0, 1)
+os.write(1, b'x' * 1024)
+"""
 
 
 def attributes_equal(left, right):
@@ -200,6 +206,39 @@ def exit_case():
         terminal.close()
 
 
+def exit_backpressure_case(original_mode=2):
+    terminal = Terminal(EXIT_BACKPRESSURE_CHILD, original_mode=original_mode)
+    try:
+        terminal.until(b"EXITREADY")
+        os.write(terminal.master, b"q")
+        # Leave the terminal unread until the child has exited and the launcher's
+        # final write meets the still-full outer PTY output queue.
+        time.sleep(0.15)
+        terminal.finish()
+        payload = terminal.data.split(b"EXITREADY", 1)[1]
+        restored = b"\x1b[?1004h" if original_mode == 1 else b"\x1b[?1004l"
+        assert payload == b"x" * 1024 + restored, "exit lost output or focus-mode restore bytes"
+    finally:
+        terminal.close()
+
+
+def delayed_restore_case():
+    terminal = Terminal(EXIT_BACKPRESSURE_CHILD)
+    try:
+        terminal.until(b"EXITREADY")
+        os.write(terminal.master, b"q")
+        # Even sustained backpressure or an interrupted wait cannot hand the shell
+        # a terminal whose focus mode is still owned by the launcher.
+        time.sleep(0.1)
+        os.kill(terminal.process.pid, signal.SIGWINCH)
+        time.sleep(1.1)
+        assert terminal.process.poll() is None, "launcher handed back the terminal before restoration completed"
+        terminal.finish()
+        assert terminal.data.split(b"EXITREADY", 1)[1] == b"x" * 1024 + b"\x1b[?1004l", "delayed restore lost bytes"
+    finally:
+        terminal.close()
+
+
 def signal_case():
     terminal = Terminal("import os,signal,time\nsignal.signal(signal.SIGINT,signal.SIG_DFL)\nos.write(1,b'SIGNALREADY')\ntime.sleep(10)")
     try:
@@ -341,6 +380,9 @@ checks = [
     ("SIGWINCH and size propagation", size_case),
     ("1 MiB output with backpressure", large_case),
     ("child exit code", exit_case),
+    ("exit restores focus mode under output backpressure", exit_backpressure_case),
+    ("exit preserves originally enabled focus mode under backpressure", lambda: exit_backpressure_case(1)),
+    ("delayed and interrupted output wait completes before terminal handoff", delayed_restore_case),
     ("Ctrl-C reaches child", signal_case),
     ("job suspension and resume", stopped_case),
     ("launcher SIGTERM reaches command", termination_case),

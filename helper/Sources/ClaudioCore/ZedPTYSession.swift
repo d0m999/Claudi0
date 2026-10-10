@@ -28,18 +28,23 @@ public enum ZedPTYSession {
         cfmakeraw(&raw)
         guard tcsetattr(0, TCSANOW, &raw) == 0 else { throw SessionError.ioFailed }
         var originalFocus: Bool?
+        func restoreFocusMode() throws {
+            guard let enabled = originalFocus else { return }
+            originalFocus = nil
+            try writeComplete(1, Data("\u{1B}[?1004\(enabled ? "h" : "l")".utf8))
+        }
         defer {
-            if let originalFocus {
-                writeSmall(1, Data("\u{1B}[?1004\(originalFocus ? "h" : "l")".utf8))
-            }
+            // Error exits already fail; successful exits explicitly complete this write below.
+            try? restoreFocusMode()
             _ = tcsetattr(0, TCSANOW, &saved)
             _ = fcntl(0, F_SETFL, inputFlags); _ = fcntl(1, F_SETFL, outputFlags)
         }
-        _ = fcntl(0, F_SETFL, inputFlags | O_NONBLOCK)
-        _ = fcntl(1, F_SETFL, outputFlags | O_NONBLOCK)
+        guard fcntl(0, F_SETFL, inputFlags | O_NONBLOCK) == 0,
+            fcntl(1, F_SETFL, outputFlags | O_NONBLOCK) == 0
+        else { throw SessionError.ioFailed }
         let mode = try queryFocusMode()
         originalFocus = mode.enabled
-        writeSmall(1, Data("\u{1B}[?1004h".utf8))
+        try writeComplete(1, Data("\u{1B}[?1004h".utf8))
         var master: Int32 = -1
         let arguments = command.map { strdup($0) }
         defer { for argument in arguments { free(argument) } }
@@ -97,8 +102,8 @@ public enum ZedPTYSession {
             channel.send(frame)
         }
         func suspend() throws {
+            try writeComplete(1, Data("\u{1B}[?1004\(mode.enabled ? "h" : "l")".utf8))
             _ = tcsetattr(0, TCSANOW, &saved)
-            writeSmall(1, Data("\u{1B}[?1004\(mode.enabled ? "h" : "l")".utf8))
             guard fcntl(0, F_SETFL, inputFlags) == 0,
                 fcntl(1, F_SETFL, outputFlags) == 0
             else { throw SessionError.ioFailed }
@@ -113,7 +118,7 @@ public enum ZedPTYSession {
                 fcntl(0, F_SETFL, inputFlags | O_NONBLOCK) == 0,
                 fcntl(1, F_SETFL, outputFlags | O_NONBLOCK) == 0
             else { throw SessionError.ioFailed }
-            writeSmall(1, Data("\u{1B}[?1004h".utf8))
+            try writeComplete(1, Data("\u{1B}[?1004h".utf8))
             _ = kill(-child, SIGCONT)
         }
 
@@ -140,6 +145,7 @@ public enum ZedPTYSession {
             }
             if childFinished && toOuter.isEmpty && (masterEOF || uptime() - (exitedAt ?? 0) > 0.25)
             {
+                try restoreFocusMode()
                 return exitCode
             }
             if channel?.isAlive == false { channel = nil }
@@ -247,8 +253,24 @@ public enum ZedPTYSession {
         }
         return nil
     }
-    private static func writeSmall(_ fd: Int32, _ data: Data) {
-        data.withUnsafeBytes { _ = Darwin.write(fd, $0.baseAddress, data.count) }
+    private static func writeComplete(_ fd: Int32, _ data: Data) throws {
+        // Preserve partial progress and wait through EAGAIN/EINTR. Do not hand the
+        // terminal back while its mode restoration is still waiting for capacity.
+        var pending = data
+        while !pending.isEmpty {
+            let previousCount = pending.count
+            try drain(&pending, fd: fd)
+            if pending.count < previousCount { continue }
+            var descriptor = pollfd(fd: fd, events: Int16(POLLOUT), revents: 0)
+            let result = poll(&descriptor, 1, -1)
+            if result < 0 {
+                if errno == EINTR { continue }
+                throw SessionError.ioFailed
+            }
+            if descriptor.revents & Int16(POLLERR | POLLHUP | POLLNVAL) != 0 {
+                throw SessionError.ioFailed
+            }
+        }
     }
     private static func drain(_ data: inout Data, fd: Int32) throws {
         guard !data.isEmpty else { return }
@@ -268,7 +290,7 @@ public enum ZedPTYSession {
         throw SessionError.ioFailed
     }
     private static func queryFocusMode() throws -> (enabled: Bool, pending: Data) {
-        writeSmall(1, Data("\u{1B}[?1004$p".utf8))
+        try writeComplete(1, Data("\u{1B}[?1004$p".utf8))
         var pending = Data()
         let deadline = uptime() + 0.25
         while uptime() < deadline {

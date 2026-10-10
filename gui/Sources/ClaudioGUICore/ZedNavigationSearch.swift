@@ -61,7 +61,7 @@ public enum ZedNavigationSearch {
             return nil
         }
         if let result = status() { return result }
-        guard let baseline = await e.snapshot() else { return .unavailable }
+        guard let baseline = await e.snapshot() else { return status() ?? .unavailable }
         if let result = status() { return result }
         let startedAt = e.now()
         let oldSequence = baseline.states.first { $0.instance == instance }?.sequence ?? 0
@@ -70,7 +70,7 @@ public enum ZedNavigationSearch {
         func checkpoint(_ window: UUID) async -> ZedNavigationSnapshot? {
             if let result = status() { failure = result; return nil }
             guard e.isWindowCurrent(window), let snapshot = await e.snapshot() else {
-                failure = .unavailable; return nil
+                failure = status() ?? .unavailable; return nil
             }
             if let result = status() { failure = result; return nil }
             guard snapshot.epoch == baseline.epoch,

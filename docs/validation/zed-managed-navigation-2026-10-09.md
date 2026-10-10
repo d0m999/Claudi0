@@ -5,6 +5,32 @@
 未提交、推送或发布；官方 Zed 未替换或重签。以下“当前结果”取代后文历史阶段的状态描述。
 后文保留失败、认证与配置恢复的过程，不能将某次历史状态当作当前阻塞。
 
+## 2026-10-10：`70e0251` review 修复补充（未提交）
+
+本次只处理 review 的两个 P2：外层 PTY 输出背压导致 focus-report mode 恢复序列丢失，
+以及 Claudio 自身输入不能取消受管理导航。修复保留在 `codex/zed-login-navigation` 工作树；
+主仓库原有未提交内容未改动，未 commit、push、创建 PR 或发布。
+
+- PTY 模式写入保留部分写进度，处理 `EAGAIN`／`EINTR`，等待完整写出后才退出或暂停。
+  真实双层 PTY 回归先重现原模式未恢复；新增原先开启／关闭、持续背压和信号中断等待场景，
+  校验输出字节、退出码、termios 和共享描述符标志。持续背压期间不提前交还终端。
+- 请求内同时安装 global／local input monitor，本应用按键、点击和滚动同步撤销资格，仍传递
+  原事件。只排除同 marker、同进程的自身派发；结束时移除两个 monitor。真实 AppKit
+  `sendEvent` 接缝覆盖输入、传递和清理；搜索／窗口选择／生产协调器接缝覆盖取消后不再激活、
+  保留提醒、禁止应用回退。snapshot 失败出口也先复验取消与原截止时间，避免把取消转成回退。
+- `swift run --package-path helper claudio-tests --zed-pty-bridge`：85 checks，0 failures。
+- `SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --package-path gui claudio-gui-tests --zed-source-navigation`：173 checks，0 failures。
+- helper `claudio` 与 GUI `ClaudioGUI` Debug 构建通过；实际 Debug CLI 的
+  `python3 helper/Tests/ClaudioCoreTests/zed_pty_fixture.py helper/.build/debug/claudio --cli`：15／15 场景通过。
+- 7 个改动／新增 Swift 文件 strict lint、Python fixture 语法、本地化 JSON 与 diff whitespace
+  检查通过，包括两个新增未跟踪文件。完整未提交 diff 按 Standards／Spec 两轴只读复核，
+  未发现新增 actionable finding。
+
+未运行 helper／GUI 完整 harness、Release 构建或 bundle。未复测真实 Zed、人工点击／键盘、
+VoiceOver 或真实 CLI hook 回调；上述合成 PTY 和 AppKit 事件接缝证据不代替这些验收。
+日志为 `/tmp/claudio-zed-review-{pty-final,navigation-final,cli-pty-final,debug-build,helper-debug-build}.log`；
+红回归为 `/tmp/claudio-zed-review-{pty-red,input-red,input-barrier-red}.log`。
+
 ## 当前结果（2026-10-10 续测）
 
 用户已完成系统认证，并暂缓另一会话的原生应用操作。只为独立检查包刷新同范围的签名登记，

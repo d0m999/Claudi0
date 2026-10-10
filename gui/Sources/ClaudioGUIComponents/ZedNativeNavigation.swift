@@ -16,8 +16,7 @@ final class ZedNativeNavigation {
     private let deadline: TimeInterval
     private var handles: [(UUID, AXUIElement)] = []
     private var selected: AXUIElement?
-    private var monitor: Any?
-    private var interfered = false
+    private var inputMonitor: ZedNavigationInputMonitor?
     private let marker = Int64.random(in: 1...Int64.max)
     private(set) var failureReason: String?
 
@@ -51,26 +50,16 @@ final class ZedNativeNavigation {
         guard isCurrent, !handles.isEmpty else {
             onFailure(stopReason ?? "standard_windows_missing"); return nil
         }
-        let marker = self.marker
-        monitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel]
-        ) { [weak self] event in
-            if let cg = event.cgEvent, cg.getIntegerValueField(.eventSourceUserData) == marker,
-                cg.getIntegerValueField(.eventSourceUnixProcessID) == Int64(getpid())
-            {
-                return
-            }
-            Task { @MainActor in self?.interfered = true }
-        }
-        guard monitor != nil else { onFailure("input_monitor_unavailable"); return nil }
+        inputMonitor = ZedNavigationInputMonitor(marker: marker)
+        guard inputMonitor != nil else { onFailure("input_monitor_unavailable"); return nil }
     }
 
     var isCurrent: Bool {
-        !interfered && !Task.isCancelled && current()
+        inputMonitor?.interfered != true && !Task.isCancelled && current()
             && ProcessInfo.processInfo.systemUptime < deadline
     }
     var stopReason: String? {
-        if interfered { return "native_input_interference" }
+        if inputMonitor?.interfered == true { return "native_input_interference" }
         if Task.isCancelled { return "native_task_cancelled" }
         if !current() { return "native_request_superseded" }
         if ProcessInfo.processInfo.systemUptime >= deadline { return "native_deadline" }
@@ -79,8 +68,8 @@ final class ZedNativeNavigation {
     var windows: [UUID] { handles.map(\.0) }
     var supportsDirections: Bool { Self.managedDirections() }
     func stop() {
-        if let monitor { NSEvent.removeMonitor(monitor) }
-        monitor = nil; handles.removeAll(); selected = nil
+        inputMonitor?.stop()
+        inputMonitor = nil; handles.removeAll(); selected = nil
     }
 
     func isWindowCurrent(_ id: UUID) -> Bool {

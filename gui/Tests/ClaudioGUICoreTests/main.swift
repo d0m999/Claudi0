@@ -348,12 +348,14 @@ if CommandLine.arguments.contains("--event-stack-native") {
 }
 
 if CommandLine.arguments.contains("--zed-managed-navigation") {
+    await runZedNavigationInputSuites()
     await runZedManagedNavigationSuites()
     print("Zed managed navigation: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
 if CommandLine.arguments.contains("--zed-source-navigation") {
+    await runZedNavigationInputSuites()
     runZedSourceNavigationSuites()
     await runZedManagedNavigationSuites()
     print("Zed source navigation: \(totalChecks) checks, \(failures) failures")
@@ -374,6 +376,7 @@ if CommandLine.arguments.contains("--event-attention") {
     runHostSessionNavigationSuites()
     runZedSourceNavigationSuites()
     await runZedManagedNavigationSuites()
+    await runZedNavigationInputSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
@@ -807,6 +810,7 @@ Task { @MainActor in
     runHostSessionNavigationSuites()
     runZedSourceNavigationSuites()
     await runZedManagedNavigationSuites()
+    await runZedNavigationInputSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()

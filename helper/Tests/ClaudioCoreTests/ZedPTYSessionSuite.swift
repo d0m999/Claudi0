@@ -25,6 +25,6 @@ func runZedPTYSessionSuites() {
             else { expect(false, "fixture 应只返回脱敏检查结果"); continue }
             expect(passed, "真实 PTY：\(name)")
         }
-        expect(lines.count == 12, "运行全部 12 个真实 PTY 场景")
+        expect(lines.count == 15, "运行全部 15 个真实 PTY 场景")
     }
 }
