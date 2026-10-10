@@ -1030,22 +1030,34 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertNotEqual(self.settings_state()["detail"],"host-diagnostics")
 
     def test_five_integration_icons_share_size_and_identify_cli_or_desktop(self):
+        groups = [
+            ({"zh": "桌面应用", "en": "Desktop apps"}, "Desktop", ["workbuddy"]),
+            ({"zh": "命令行工具", "en": "CLI tools"}, "CLI", ["claude-code", "codex", "opencode", "kimi-code"]),
+        ]
         for theme in ["light", "dark"]:
             for lang in ["zh", "en"]:
                 self.open(win="1", pane="integrations", th=theme, lang=lang)
                 rows = self.page.locator(".integration-host-row")
                 self.assertEqual(rows.count(), 5)
-                for host in ["claude-code", "codex", "workbuddy", "opencode", "kimi-code"]:
-                    row = self.page.locator("#host-" + host)
-                    kind = "Desktop" if host == "workbuddy" else "CLI"
-                    self.assertEqual(row.locator(".host-kind").inner_text(), kind)
-                    image = row.locator(".host-icon img:visible")
-                    self.assertTrue(image.evaluate("el => el.complete && el.naturalWidth > 0"))
-                    dimensions = row.locator(".host-icon").evaluate(
-                        "el => ({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})"
+                sections = self.page.locator("#page-content .section")
+                self.assertEqual(sections.count(), 2)
+                headings = sections.locator(".section-heading h2").all_inner_texts()
+                self.assertEqual(headings, [heading[lang] for heading, _, _ in groups])
+                for index, (_, kind, members) in enumerate(groups):
+                    section_rows = sections.nth(index).locator(".integration-host-row")
+                    self.assertEqual(
+                        section_rows.evaluate_all("rows => rows.map(row => row.id)"),
+                        ["host-" + member for member in members],
                     )
-                    self.assertEqual(dimensions, {"width": 27, "height": 27})
-                    self.assertIn(kind, row.locator(".host-summary").get_attribute("aria-label"))
+                    for member in members:
+                        row = sections.nth(index).locator("#host-" + member)
+                        image = row.locator(".host-icon img:visible")
+                        self.assertTrue(image.evaluate("el => el.complete && el.naturalWidth > 0"))
+                        dimensions = row.locator(".host-icon").evaluate(
+                            "el => ({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})"
+                        )
+                        self.assertEqual(dimensions, {"width": 27, "height": 27})
+                        self.assertIn(kind, row.locator(".host-summary").get_attribute("aria-label"))
                 self.page.locator('[data-action="open-host:opencode"]').first.click()
                 self.assertEqual(self.page.locator(".host-kind").inner_text(), "CLI")
 
