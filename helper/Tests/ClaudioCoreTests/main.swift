@@ -23,6 +23,27 @@ import Foundation
 var totalChecks = 0
 var failures = 0
 
+if CommandLine.arguments.dropFirst().first == "--zed-pty-launch" {
+    let command = Array(CommandLine.arguments.dropFirst(2))
+    let descriptor = URL(
+        fileURLWithPath: ProcessInfo.processInfo.environment["CLAUDIO_TEST_PTY_DESCRIPTOR"]
+            ?? "/private/tmp/claudio-absent-test-navigation-descriptor.json")
+    // Exercise the same worker-thread signal mask as the real AsyncParsableCommand.
+    DispatchQueue.global().async {
+        do { exit(try ZedPTYSession.run(command: command, descriptor: descriptor)) } catch {
+            exit(65)
+        }
+    }
+    dispatchMain()
+}
+
+if CommandLine.arguments.contains("--zed-pty-bridge") {
+    runZedPTYBridgeSuites()
+    runZedPTYSessionSuites()
+    print("Zed PTY bridge: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.dropFirst().first == "--default-lock-probe" {
     exit(runDefaultLockChildProbe())
 }
@@ -115,6 +136,14 @@ if CommandLine.arguments.contains("--system-sounds") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--system-login-ancestry") {
+    runHostProcessAncestrySuites()
+    runHostNavigationEvidenceSuites()
+    runSystemLoginAncestrySuites()
+    print("System login ancestry: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 runEventSuites()
 runQuestionBindingSuites()
 runHostQuestionHookSuites()
@@ -127,6 +156,9 @@ runHostHookRunnerSuites()
 runHostEventSourceSuites()
 runHostProcessAncestrySuites()
 runHostNavigationEvidenceSuites()
+runSystemLoginAncestrySuites()
+runZedPTYBridgeSuites()
+runZedPTYSessionSuites()
 runHookInputReaderSuites()
 runEventNoticeTransportSuites()
 runConfigFileTransactionSuites()

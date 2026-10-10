@@ -429,14 +429,20 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 (
                     modules: buildDirectory.appendingPathComponent("Modules", isDirectory: true),
                     moduleMap: buildDirectory.appendingPathComponent(
-                        "ClaudioVersionC.build/module.modulemap")
+                        "ClaudioVersionC.build/module.modulemap"),
+                    ptyModuleMap: buildDirectory.appendingPathComponent(
+                        "ClaudioPTYC.build/module.modulemap")
                 ),
                 (
                     modules: buildDirectory,
                     moduleMap: buildDirectory.deletingLastPathComponent()
                         .deletingLastPathComponent()
                         .appendingPathComponent(
-                            "Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap")
+                            "Intermediates.noindex/GeneratedModuleMaps/ClaudioVersionC.modulemap"),
+                    ptyModuleMap: buildDirectory.deletingLastPathComponent()
+                        .deletingLastPathComponent()
+                        .appendingPathComponent(
+                            "Intermediates.noindex/GeneratedModuleMaps/ClaudioPTYC.modulemap")
                 ),
             ]
             guard
@@ -445,6 +451,7 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                         atPath: $0.modules.appendingPathComponent("ClaudioGUICore.swiftmodule").path
                     )
                         && FileManager.default.fileExists(atPath: $0.moduleMap.path)
+                        && FileManager.default.fileExists(atPath: $0.ptyModuleMap.path)
                 })
             else {
                 expect(false, "[129-ANN-RED] I-04 必须找到当前 harness 的 Swift/C 模块")
@@ -489,7 +496,11 @@ func runSoundPacksEditorAnnouncementGapRedSuites() async {
                 "swiftc", "-swift-version", "6", "-typecheck", "-package-name", "gui",
                 "-I", layout.modules.path,
                 "-Xcc", "-fmodule-map-file=\(layout.moduleMap.path)",
+                "-Xcc", "-fmodule-map-file=\(layout.ptyModuleMap.path)",
                 "-Xcc", "-I", "-Xcc", includeDirectory.path,
+                "-Xcc", "-I", "-Xcc",
+                guiTestRepositoryRoot()
+                    .appendingPathComponent("helper/Sources/ClaudioPTYC/include").path,
             ]
             let positiveResult = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),

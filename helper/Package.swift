@@ -45,7 +45,8 @@ let package = Package(
             ]
         ),
         // Pure-Foundation core: shared, testable domain types (no CLI deps).
-        .target(name: "ClaudioCore", dependencies: ["ClaudioVersionC"]),
+        .target(name: "ClaudioPTYC"),
+        .target(name: "ClaudioCore", dependencies: ["ClaudioVersionC", "ClaudioPTYC"]),
         // Hook stdin validation belongs to the CLI process boundary. Keeping it in a
         // separate Foundation-only target avoids linking that parser into the GUI bundle.
         .target(name: "ClaudioHookInput", dependencies: ["ClaudioCore"]),
@@ -67,7 +68,7 @@ let package = Package(
             name: "claudio-tests",
             dependencies: ["ClaudioCore", "ClaudioHookInput"],
             path: "Tests/ClaudioCoreTests",
-            exclude: ["Fixtures"]
+            exclude: ["Fixtures", "zed_pty_fixture.py"]
         ),
     ]
 )

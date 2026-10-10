@@ -533,6 +533,15 @@ final class MenuBarController: NSObject {
         }
     }
 
+    #if DEBUG
+    /// Mounts the existing production reading/navigation UI in the explicitly isolated app.
+    /// It neither synthesizes a notice nor changes banner reading or navigation deadlines.
+    func showZedNavigationInspection() {
+        openNoticeInPanel(nil)
+        panelWindow.keepVisibleForNativeInspection()
+    }
+    #endif
+
     fileprivate func openNoticeInPanel(_ action: EventNoticeAction?) {
         let model = eventNoticeRuntime.model
         if let action, !model.isCurrent(action) { return }

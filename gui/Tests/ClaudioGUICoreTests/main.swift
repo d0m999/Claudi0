@@ -347,6 +347,19 @@ if CommandLine.arguments.contains("--event-stack-native") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--zed-managed-navigation") {
+    await runZedManagedNavigationSuites()
+    print("Zed managed navigation: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--zed-source-navigation") {
+    runZedSourceNavigationSuites()
+    await runZedManagedNavigationSuites()
+    print("Zed source navigation: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-attention") {
     runQuestionIntentPresentationSuites()
     runCodexDevelopmentNoticeSuites()
@@ -359,6 +372,8 @@ if CommandLine.arguments.contains("--event-attention") {
     runEventNoticeFocusSuites()
     await runSessionNavigationSuites()
     runHostSessionNavigationSuites()
+    runZedSourceNavigationSuites()
+    await runZedManagedNavigationSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
@@ -790,6 +805,8 @@ Task { @MainActor in
     runEventNoticeFocusSuites()
     await runSessionNavigationSuites()
     runHostSessionNavigationSuites()
+    runZedSourceNavigationSuites()
+    await runZedManagedNavigationSuites()
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()

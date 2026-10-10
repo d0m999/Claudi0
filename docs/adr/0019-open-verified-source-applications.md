@@ -25,3 +25,24 @@ helper 仅在有效接收通道存在时捕获最多 16 层祖先的 PID 与操�
 ## 原生会话导航修订（2026-10-04）
 
 上述“正文静态”及 App 激活即收起的历史规则由 [ADR 0023](0023-return-to-verified-local-sessions.md) 替代。现有外观与唯一窗口 owner 保留；正文、主按钮、面板和活动诊断共用导航入口，仅精确返回消除对应提醒版本。自动检查与真实宿主验收分别记录。
+
+## 系统 login 的有限祖先链兼容（2026-10-09）
+
+官方 Zed 的本地 terminal 可以包含 `Zed → /usr/bin/login → shell → 宿主进程`。
+其中系统 `login` 的有效 UID 为 root、真实 UID 为当前用户，普通 `proc_pidinfo` 读取可能被拒绝。
+helper 和 GUI 共用 `HostProcessAncestry.read`：保留普通读取路径，只有该路径无法接受进程、
+且内核可执行路径恰为 `/usr/bin/login` 时才查询 `sysctl(KERN_PROC_PID)`。
+
+接受这个中间进程须同时验证返回 PID、有效启动身份、root 有效 UID、当前用户真实 UID，
+以及运行中代码满足 `anchor apple and identifier "com.apple.login"`。签名检查前后重新读取内核
+身份与路径；启动时间、父 PID、有效／真实 UID 或路径变化、权限拒绝、签名失败及进程退出均停止
+该段识别，不能跳过未知进程或其他用户去寻找应用。
+
+`HostProcessSnapshot.Kind.systemLogin` 只标记本机已复验的系统进程，按真实 UID 判断祖先归属，
+仍占用 16 层上限中的一层。有效／真实 UID、路径、签名及类型不进入消息；wire 仍只含 PID 和
+启动时间。该标记不允许把 `login` 自身解析成来源应用，也不增加第二份来源状态或权限要求。
+
+采集 TTY 的 `terminalProcess` 排除系统 `login`，复验普通用户进程的启动身份后继续绑定存活 shell，
+保留 Terminal／iTerm2 的 TTY 防复用语义。普通 Zed 的应用回退及显式受管理 PTY 实验边界见
+[ADR 0023](0023-return-to-verified-local-sessions.md)，
+自动及原生证据见 [验证记录](../validation/zed-source-navigation-2026-10-09.md)。

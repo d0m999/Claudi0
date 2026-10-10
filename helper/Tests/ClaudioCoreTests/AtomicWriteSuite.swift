@@ -507,6 +507,12 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
     // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
+    // Debug opt-in inspection only: fixed result code and peer count, atomically replaced;
+    // no source/TTY/argv/input/output. Ordinary builds do not write this diagnostic.
+    "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": [".write("],
+    // Streaming writes to the verified outer terminal or forkpty master only. Not file
+    // replacement; exact receivers, argument shapes and private functions are pinned below.
+    "helper/Sources/ClaudioCore/ZedPTYSession.swift": [".write(", "write("],
     // Fixed osascript/tmux actions only. Output is a bounded pipe; no shell or file output.
     "gui/Sources/ClaudioGUIComponents/NavigationCommand.swift": ["Process("],
     // —— helper ——
@@ -670,6 +676,7 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
+    "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,
     "helper/Sources/ClaudioCore/Log.swift": 2,
     // Play.swift now uses writePrivateAtomic; PlaySuite exercises FIFO replacement and exact bytes.
@@ -751,6 +758,19 @@ private func unauditedNonContentReplacingWrites(
     {
         // A second write call, a different receiver, or a different argument shape loses this
         // narrow exemption and must be reviewed by the write-surface audit.
+        return []
+    }
+    if path == "helper/Sources/ClaudioCore/ZedPTYSession.swift", arguments.count == 2,
+        source.components(separatedBy: "Darwin.write(").count - 1 == 2,
+        arguments.allSatisfy({ $0.filter { !$0.isWhitespace } == "fd,$0.baseAddress,data.count" }),
+        functionBody(named: "writeSmall", in: source)?.contains("Darwin.write(") == true,
+        functionBody(named: "drain", in: source)?.contains("Darwin.write(") == true,
+        source.contains("isatty(0) == 1"), source.contains("isatty(1) == 1"),
+        source.contains("claudio_pty_spawn("),
+        source.contains("drain(&toChild, fd: master)"), source.contains("drain(&toOuter, fd: 1)")
+    {
+        // Any additional receiver/call, arbitrary file open or changed argument shape loses
+        // the exemption. Byte preservation and backpressure also run on actual PTYs.
         return []
     }
     var consumedAuditedSite = false

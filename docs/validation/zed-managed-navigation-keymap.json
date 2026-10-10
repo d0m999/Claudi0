@@ -1,0 +1,11 @@
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-alt-cmd-shift-f16": "workspace::ActivatePaneLeft",
+      "ctrl-alt-cmd-shift-f17": "workspace::ActivatePaneRight",
+      "ctrl-alt-cmd-shift-f18": "workspace::ActivatePaneUp",
+      "ctrl-alt-cmd-shift-f19": "workspace::ActivatePaneDown"
+    }
+  }
+]

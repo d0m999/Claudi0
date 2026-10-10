@@ -25,7 +25,63 @@ status: accepted
 - 本地 tmux 绑定 server 启动身份、私有 socket 与稳定 pane ID；只接受唯一 live client，再核对 client 祖先所属来源应用。内部选择、外层 Terminal/iTerm/IDE 导航及 pane/client 读回全部成功才确认。多个 client、detach 或不同应用实例降级，不按 cwd/title 猜。
 - VS Code/Cursor 由用户主动安装配套 VSIX。GUI 私有 Unix stream socket 经内核 peer PID 确认同用户、本窗口扩展来源与 shell 祖先；每窗口独立注册、请求 UUID、实例 UUID、epoch、剩余期限、取消和确认。失连、terminal 退出、reload 使注册失效。只执行固定 focusWindow 与 terminal.show(false)，扩展确认焦点/activeTerminal，GUI 复验来源 App。未连接状态不能推断未安装；扩展状态栏区分未连接、已连接与版本不支持，安装检查与人工安装步骤见 README。
 - Codex 桌面仅对已确认 `com.openai.codex` 实例及有效 thread UUID 打开固定 `codex://threads/<id>`，记录 requestSent；没有会话读回，不产生 exactReturnConfirmed。
+- 官方 Zed 可经 [ADR 0019 的已验证系统 login](0019-open-verified-source-applications.md) 确认来源应用，
+  普通既有 terminal 继续走 `applicationFallback`，复用“已打开来源应用，未定位到会话”反馈。
+  提醒、横幅剩余阅读时间及原始三秒预算继续保留，不产生 `exactReturnConfirmed`。
+  截至 2026-10-09，已核对的 [公开 CLI](https://zed.dev/docs/reference/cli) 与
+  [扩展接口](https://zed.dev/docs/extensions/developing-extensions) 未提供本轮可用于 terminal 定位并读回
+  确认的入口；这是当前 Claudio 的支持边界，不是对所有未来官方接口的断言。
 
-不接受任意命令或任意 URL，不以标题/目录首个匹配生成目标。不覆盖 SSH、远程 IDE、容器、其他终端或 IDE 原生 AI 面板。
+导航消息和定位协议不接受任意命令或任意 URL，不以标题/目录首个匹配生成目标。不覆盖 SSH、远程 IDE、容器、其他终端或 IDE 原生 AI 面板。
 
 接口依据：[iTerm2 URL scheme](https://iterm2.com/documentation-url-scheme.html)、[VS Code Terminal API](https://code.visualstudio.com/api/references/vscode-api#Terminal)、[VS Code focusWindow](https://code.visualstudio.com/docs/configure/keybindings)、[tmux 官方手册](https://github.com/tmux/tmux/blob/master/tmux.1)、[Codex deep links](https://learn.chatgpt.com/docs/reference/commands)。公开接口用于独立实现，不代表本机真实宿主验收。
+
+Zed 的来源识别、两个同项目 terminal 的模型／协调器重放以及原生检查分别记录在
+[2026-10-09 验证记录](../validation/zed-source-navigation-2026-10-09.md)。消息 schema、数据路径和横幅
+外观保持现有合同。下述实验不把普通既有 terminal 升级为精确能力。
+
+## 2026-10-09：受管理 PTY 会话的显式实验
+
+用户在原语验证后授权“实现这个技术路径并测试”。Debug helper 增加
+`claudio zed-session -- <command> [arguments]`，在新会话开始时拥有外层 PTY，创建内层 PTY 并直接
+exec 参数，不经 shell 解释。stdin/stdout/stderr 必须属于同一控制终端，launcher 必须属于该终端的
+前台 process group；混合流和后台启动在修改模式与启动前拒绝。小型 C supervisor 保持命令的 job
+control；Swift loop 有界透传输入输出、终端协议、尺寸、信号和退出码。退出和暂停时恢复原始
+terminal mode、focus-report mode 与共享文件描述符的可变标志；后台继续运行时保持暂停，直到
+shell 将任务恢复到前台。它不接管已有 CLI 的 stdin。
+
+只有 Debug GUI 显式启用 `CLAUDIO_ZED_NAVIGATION_PROTOTYPE=1` 才接受这条路由；普通 Release 保持
+应用回退。GUI 沿用私有 Unix stream transport，在 `ClaudioPaths.root/zed-navigation.json` 发布 mode 600
+的运行期 socket 发现信息。文件只有 schema、epoch、socket 路径和 inode，不保存会话、TTY、命令或
+终端内容。注册、焦点报告和 snapshot barrier 在私有 socket 内存中传递；内核 peer UID/PID、双方启动
+身份、child 父链、内外层 TTY 和已确认 Zed 实例一致才接受。child 标识内层 PTY 的 supervisor，
+实际 CLI 位于其下。重连、退出和隐私清空使旧在途请求失效。
+现有 hook wire、schema 1、数据路径和 source provenance 不变；模型仍只保留版本绑定的 typed target。
+
+bridge 独占外层 DEC mode 1004，虚拟化 CLI 自己的 1004 请求与查询，其他字节透传。新 focus-in 必须
+属于随机会话身份、内核启动身份和 TTY 一致的目标；旧报告、focus-out、非唯一目标、输入干预、PID
+复用及过期 epoch 不可确认成功。snapshot barrier 排除已排队但尚未处理的 focus-out。
+
+原生实验只适用于已复核的官方 Zed 1.23.2、标准配置目录、已核实的 bundled base map、ABC/US 键盘
+布局以及**已具有** Accessibility/event posting 权限的 Claudio 进程。默认键位仅支持窗口与 tab 搜索。
+Terminal context 的 `cmd-k` 实际绑定清屏，不能用它作为方向 chord 的前缀。分屏方向必须采用
+[显式四键实验配置](../validation/zed-managed-navigation-keymap.json)，在 `Workspace` context 将四个专用功能键直接绑定
+`workspace::ActivatePaneLeft/Right/Up/Down`，使方向离开 terminal dock 后仍可返回；只接受与该公开文件字节完全相同、属于当前用户的普通
+`keymap.json`，不合并或自动安装配置。其他自定义目录/键位、未知版本、读取失败和权限缺失均在派发
+前停止，不自动请求或授予权限。配置存在、Zed 已加载绑定、实际焦点返回分别验证。它按具体 AX window
+对象选择已有窗口，以固定 tab-next 和 pane-direction 动作有界搜索，不使用标题、cwd、数据库或
+command palette 文本猜测目标，不创建窗口、pane 或 terminal。先检查各窗口当前项；有四键且
+没有任何受管理焦点时，用向下动作探测已有 terminal dock。屏障读回的唯一当前焦点（包括持续焦点）
+仅用于窗口排序，不替代目标自身的新回执。深扫先搜索已知 terminal 的 tab 和相邻 pane，最后才
+搜索无回执的 tab，避免 editor/sidebar 耗尽预算。四键不可用时跳过方向动作，保留默认窗口/tab
+搜索。目标确认仍必须有请求内的新 sequence、最终屏障与窗口/身份复验。搜索上限为四个窗口、每 pane 至多
+16 个 tab 和有限的方向扫掠，全部步骤共享协调器原始三秒预算；AX 单次 IPC 至多 250 ms 且不能超出
+剩余期限，`cannotComplete` 只允许进入具体窗口读回，不当作已选择成功或重复派发。复杂、不可达或 zoom 隐藏布局允许
+保留失败/超时，不宣称任意布局均能定位。
+
+只有目标新回执、最终仍聚焦、实际前台 Zed、具体 AX focused window 及内核身份复验共同成立才产生
+`exactReturnConfirmed`。失败可以在原预算内应用回退；取消后不再执行下一步，迟到回执不更新结果。
+已选择的中间 tab/pane 不在取消或截止时间之后自动回滚。横幅外观和提醒/阅读语义沿用现有协调器。
+
+本实验的编译接缝、真实 PTY 透传和原生点击证据分别记录在
+[受管理导航验证记录](../validation/zed-managed-navigation-2026-10-09.md)，不得互相替代。

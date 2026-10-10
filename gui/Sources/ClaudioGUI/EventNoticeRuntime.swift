@@ -10,7 +10,7 @@ import Foundation
 final class EventNoticeRuntime {
     let model: EventNoticeModel
     let health: EventNoticeHealthStore
-    let navigationAdapter = HostSessionNavigationAdapter()
+    let navigationAdapter: HostSessionNavigationAdapter
     private let navigationIngress: EventNoticeNavigationIngress
     private var receiver: EventNoticeReceiver?
     private var ingress: EventNoticeIngress!
@@ -22,8 +22,20 @@ final class EventNoticeRuntime {
     #endif
 
     init() {
+        #if DEBUG
+        let zedPrototype =
+            ProcessInfo.processInfo.environment["CLAUDIO_ZED_NAVIGATION_PROTOTYPE"] == "1"
+        #else
+        let zedPrototype = false
+        #endif
+        let adapter = HostSessionNavigationAdapter(zedPrototypeEnabled: zedPrototype)
+        navigationAdapter = adapter
         let model = EventNoticeModel(
             receiverEpoch: UUID(), noticeAuthorized: HostEventAuthorization().accepts,
+            resolveNavigationTarget: { [weak adapter] notice, application in
+                adapter?.zed.resolve(notice, application: application)
+                    ?? HostSessionTargetResolver.resolve(notice, application: application)
+            },
             resolveSourceApplication: SourceApplicationAdapter.resolve)
         self.model = model
         navigationIngress = EventNoticeNavigationIngress(model: model)
@@ -64,6 +76,7 @@ final class EventNoticeRuntime {
                 ingress?.enqueue(notice)
             }
             navigationAdapter.ide.start()
+            navigationAdapter.zed.start()
             receiver.start()
             self.receiver = receiver
             health.reportReady()
@@ -80,6 +93,7 @@ final class EventNoticeRuntime {
     func stopReceiver() {
         navigationIngress.clear()
         navigationAdapter.ide.stop()
+        navigationAdapter.zed.stop()
         #if DEBUG
         developmentObserver?.stop()
         developmentObserver = nil

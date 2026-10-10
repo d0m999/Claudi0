@@ -11,9 +11,15 @@ struct Claudio: AsyncParsableCommand {
         commandName: "claudi0",
         abstract: "claudi0 — Claude Code、Codex 与 WorkBuddy 的语义化提示音中心。",
         version: ClaudioVersion.current,
-        subcommands: [
-            Doctor.self, Play.self, Hook.self, Integrations.self, Acceptance.self,
-            Install.self, Uninstall.self, Use.self, Setup.self,
-        ]
+        subcommands: {
+            var commands: [ParsableCommand.Type] = [
+                Doctor.self, Play.self, Hook.self, Integrations.self, Acceptance.self,
+                Install.self, Uninstall.self, Use.self, Setup.self,
+            ]
+            #if DEBUG
+            commands.append(ZedSession.self)
+            #endif
+            return commands
+        }()
     )
 }

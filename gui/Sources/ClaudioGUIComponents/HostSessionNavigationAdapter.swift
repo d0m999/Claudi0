@@ -6,7 +6,10 @@ import Foundation
 @MainActor
 public final class HostSessionNavigationAdapter {
     public let ide = IDENavigationBridge()
-    public init() {}
+    public let zed: ZedPTYNavigationBridge
+    public init(zedPrototypeEnabled: Bool = false) {
+        zed = ZedPTYNavigationBridge(enabled: zedPrototypeEnabled)
+    }
 
     public func navigate(
         _ target: SessionNavigationTarget, application: SourceApplicationTarget,
@@ -57,6 +60,10 @@ public final class HostSessionNavigationAdapter {
                 outcome = await ide.navigate(
                     shells: shells, application: application,
                     isCurrent: current, deadline: deadline)
+            case .zedManaged(let session):
+                handoff()
+                outcome = await zed.navigate(
+                    session, application: application, isCurrent: current, deadline: deadline)
             case .codex(let thread):
                 guard current(), UUID(uuidString: thread) != nil,
                     application.bundleIdentifier == "com.openai.codex",

@@ -6,6 +6,7 @@ public enum HostSessionRoute: Sendable, Equatable, Hashable {
     case iterm(sessionID: String, tty: String)
     case tmux(TmuxNavigationEvidence)
     case ide(shells: [HostProcessIdentity])
+    case zedManaged(ZedPTYSessionIdentity)
     case codex(threadID: String)
 }
 
