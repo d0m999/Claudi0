@@ -833,6 +833,7 @@
 <tr><td><b>现行 macOS 设置整合到主原型</b></td><td>复用最新 Native Settings Alignment Prototype 的八页、统一工具栏、后退/前进历史、应用接入详情及诊断。面板与设置共享声音包、工作区、音量、事件开关和偏好；关闭设置按原入口归还焦点。</td><td>2026-10-06 用户要求整合既有 macOS 设置 UI；仅 HTML 演示，未改动 Swift 实现。</td></tr>
 <tr><td><b>系统风格设置呈现</b></td><td>八页使用 macOS 中性浅/深色、系统字体、252/210px 侧栏和单列分组表单；保留应用图标、详情层级、sheet 与键盘导航。</td><td>DESIGN.md 当前 macOS 设置与接入章节；原有独立设置设计稿作为来源保留。</td></tr>
 <tr><td><b>声音设置以声音包为中心</b></td><td>声音包列表进入五事件详情；设置／更换菜单承接 AI 生成、历史音频、本包音频、导入和系统音。草稿命名后保留，试听与选用分开；后台任务及保存失败结果从生成记录处理。声音页不显示工作区信息。</td><td>2026-10-08 用户逐项确认 D1–D54，并确认整体原型定稿；文件、生成与凭据均为模拟，原生尚未实现。</td></tr>
+<tr><td><b>集成页按应用形态分组</b></td><td>来源列表由单一分组拆为「桌面应用」与「命令行工具」两个分组，类型由组标题承载，行内 CLI/Desktop 徽标随之移除；组内保持既有顺序与行结构，详情层级不变。</td><td>2026-10-10 用户先确认 Sources Split Draft 原型后授权修改；仅 HTML 演示，未改动 Swift 实现。</td></tr>
     <tr>
       <td><b>面板顶部加入「需要你」条</b>（与横幅同源内容）</td>
       <td>面板的第一问题不是「我听的是哪套声音」，而是「有没有人在等我」。横幅是推送，面板是兜底入口，两者必须共用同一份内容投影，否则用户会读到两套说法</td>
@@ -5370,12 +5371,15 @@ function hostIntervention(h){
 const hostKind=h=>h.id==='workbuddy'?'Desktop':'CLI';
 function integrationHostRow(h){
  const issue=hostIssue(h),intervention=hostIntervention(h);
- return `<div class="row integration-host-row" id="host-${h.id}">${hostIcon(h.icon)}<button class="host-summary" data-action="open-host:${h.id}" aria-label="${esc(h.name+' '+hostKind(h)+' '+T('详情','details'))}"><strong>${h.name}<span class="host-kind">${hostKind(h)}</span></strong>${issue?`<small>${issue}</small>`:''}</button><span class="host-status ${issue?'attention':''}">${hostState(h)}</span>${toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled)}<button class="chevron-button" data-action="open-host:${h.id}" aria-label="${esc(T('查看 '+h.name+' 详情','View '+h.name+' details'))}">${icon('next','chevron')}</button></div>${intervention?`<div class="row host-action">${intervention}</div>`:''}`;
+ return `<div class="row integration-host-row" id="host-${h.id}">${hostIcon(h.icon)}<button class="host-summary" data-action="open-host:${h.id}" aria-label="${esc(h.name+' '+hostKind(h)+' '+T('详情','details'))}"><strong>${h.name}</strong>${issue?`<small>${issue}</small>`:''}</button><span class="host-status ${issue?'attention':''}">${hostState(h)}</span>${toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled)}<button class="chevron-button" data-action="open-host:${h.id}" aria-label="${esc(T('查看 '+h.name+' 详情','View '+h.name+' details'))}">${icon('next','chevron')}</button></div>${intervention?`<div class="row host-action">${intervention}</div>`:''}`;
 }
 function renderIntegrations(){
  if(S.detail==='host')return renderHostDetails();
  if(S.detail==='host-diagnostics')return renderHostDiagnostics();
- return `<p class="intro">${T('自动接收已启用应用的事件，并按声音设置播放提示音。','Automatically receive events from enabled apps and play cues using your sound settings.')}</p>`+section('',S.hosts.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.'));
+ const desktop=S.hosts.filter(h=>hostKind(h)==='Desktop'),cli=S.hosts.filter(h=>hostKind(h)==='CLI');
+ return `<p class="intro">${T('自动接收已启用应用的事件，并按声音设置播放提示音。','Automatically receive events from enabled apps and play cues using your sound settings.')}</p>`+
+ (desktop.length?section(T('桌面应用','Desktop apps'),desktop.map(integrationHostRow).join('')):'')+
+ (cli.length?section(T('命令行工具','CLI tools'),cli.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.')):'');
 }
 function hostBindings(h,i){
  const native=['UserPromptSubmit','Stop','StopFailure','Notification','SubagentStop'][i];

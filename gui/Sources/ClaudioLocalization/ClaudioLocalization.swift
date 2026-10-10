@@ -966,6 +966,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let integrationsAgentHint: Self = "integrations.destination.agent-hint"
     public static let integrationsToolCLI: Self = "integrations.tool.cli"
     public static let integrationsToolDesktop: Self = "integrations.tool.desktop"
+    public static let integrationsSectionDesktop: Self = "integrations.section.desktop"
+    public static let integrationsSectionCLI: Self = "integrations.section.cli"
     public static let integrationsConnectionSection: Self =
         "integrations.destination.connection-section"
     public static let integrationsCoverage: Self = "integrations.destination.coverage"
@@ -1584,6 +1586,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsNativeDeleteSoundPack, .settingsNativeGenerateCue, .aiCueGenerateCue,
         .aiCuePreviewAndChoose, .aiCueUseNamedEvent,
         .integrationsToolCLI, .integrationsToolDesktop,
+        .integrationsSectionDesktop, .integrationsSectionCLI,
         .integrationsAutoIntentUnavailable, .integrationsAutoRetry, .integrationsAutoCleaning,
         .integrationsAutoNoInstallation,
         .integrationsAutoNotInstalled, .integrationsAutoDisabled, .integrationsAutoPreparing,

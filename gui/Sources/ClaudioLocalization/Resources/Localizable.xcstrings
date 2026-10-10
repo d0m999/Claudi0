@@ -14466,6 +14466,38 @@
         }
       }
     },
+    "integrations.section.cli": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CLI tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令行工具"
+          }
+        }
+      }
+    },
+    "integrations.section.desktop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop apps"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "桌面应用"
+          }
+        }
+      }
+    },
     "integrations.tool.cli": {
       "localizations": {
         "en": {

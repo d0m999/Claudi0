@@ -440,15 +440,26 @@ public struct EventHostIndicatorPresentation: Identifiable, Sendable, Equatable 
     }
 }
 
+/// The integrated surface kind. One owner for the host→kind mapping: the Integrations destination
+/// groups agent rows by it, and the row accessibility label still speaks it.
+public enum IntegrationToolKind: String, Sendable, Equatable, CaseIterable {
+    case desktop
+    case cli
+}
+
+public func integrationToolKind(for host: HostID) -> IntegrationToolKind {
+    switch host {
+    case .workBuddy, .chatGPTDesktopAX, .claudeDesktopAX: .desktop
+    case .claudeCode, .codex, .opencode, .kimiCode: .cli
+    }
+}
+
 /// The label describes the integrated surface, rather than every client sold under that brand.
 public func integrationToolKindDisplayName(
     for host: HostID, language: ClaudioAppLanguage
 ) -> String {
-    let key: ClaudioL10nKey
-    switch host {
-    case .claudeCode, .codex, .opencode, .kimiCode: key = .integrationsToolCLI
-    case .workBuddy, .chatGPTDesktopAX, .claudeDesktopAX: key = .integrationsToolDesktop
-    }
+    let key: ClaudioL10nKey =
+        integrationToolKind(for: host) == .cli ? .integrationsToolCLI : .integrationsToolDesktop
     return ClaudioL10n(language: language).text(key)
 }
 

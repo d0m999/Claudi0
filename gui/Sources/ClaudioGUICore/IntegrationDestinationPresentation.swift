@@ -1,4 +1,5 @@
 import ClaudioCore
+import ClaudioLocalization
 import Foundation
 
 /// The four rows in the connection section are a typed contract. Keeping the order here makes
@@ -247,6 +248,40 @@ public func hostIntegrationMechanismDisplayName(_ mechanism: HostIntegrationMech
 /// different historical order.
 public func integrationAgentHostOrder() -> [HostID] {
     HostID.productVisibleCases
+}
+
+/// The Integrations destination groups agent rows by tool kind: the section header carries the
+/// kind, so the row itself stays free of a repeated badge. Section order is fixed desktop-first;
+/// row order within a section follows the incoming agents (productVisibleCases).
+public struct IntegrationAgentSectionPresentation: Identifiable, Sendable, Equatable {
+    public var id: IntegrationToolKind { kind }
+    public let kind: IntegrationToolKind
+    public let agents: [IntegrationAgentConnectionControlPresentation]
+
+    public init(
+        kind: IntegrationToolKind,
+        agents: [IntegrationAgentConnectionControlPresentation]
+    ) {
+        self.kind = kind
+        self.agents = agents
+    }
+}
+
+public func integrationAgentSections(
+    agents: [IntegrationAgentConnectionControlPresentation]
+) -> [IntegrationAgentSectionPresentation] {
+    IntegrationToolKind.allCases.compactMap { kind in
+        let members = agents.filter { integrationToolKind(for: $0.host) == kind }
+        guard !members.isEmpty else { return nil }
+        return IntegrationAgentSectionPresentation(kind: kind, agents: members)
+    }
+}
+
+public func integrationAgentSectionTitle(
+    for kind: IntegrationToolKind, language: ClaudioAppLanguage
+) -> String {
+    ClaudioL10n(language: language).text(
+        kind == .desktop ? .integrationsSectionDesktop : .integrationsSectionCLI)
 }
 
 /// Pure five-state action projection for the connection-status row.

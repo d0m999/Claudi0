@@ -91,7 +91,7 @@ struct IntegrationsSettingsDestinationView: View {
                                     .secondary
                                 )
                                 .fixedSize(horizontal: false, vertical: true)
-                            agentSection
+                            agentSections
                             Text(l10n.text(.integrationsAgentHint))
                                 .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -153,19 +153,26 @@ struct IntegrationsSettingsDestinationView: View {
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.integrations))
     }
 
-    private var agentSection: some View {
-        SettingsSectionCard(padding: 0) {
-            VStack(spacing: 0) {
-                ForEach(model.agentControls) { agent in
-                    agentRow(agent)
-                    if agent.host != model.agentControls.last?.host {
-                        Divider().padding(
-                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
+    private var agentSections: some View {
+        ForEach(integrationAgentSections(agents: model.agentControls)) { section in
+            SettingsSectionCard(
+                title: integrationAgentSectionTitle(
+                    for: section.kind, language: languageStore.language),
+                padding: 0
+            ) {
+                VStack(spacing: 0) {
+                    ForEach(section.agents) { agent in
+                        agentRow(agent)
+                        if agent.host != section.agents.last?.host {
+                            Divider().padding(
+                                .horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        }
                     }
                 }
             }
+            .accessibilityIdentifier(
+                "integrations.destination.agent-list.\(section.kind.rawValue)")
         }
-        .accessibilityIdentifier("integrations.destination.agent-list")
     }
 
     private func agentRow(_ agent: IntegrationAgentConnectionControlPresentation) -> AnyView {
@@ -180,27 +187,16 @@ struct IntegrationsSettingsDestinationView: View {
                 Button {
                     onIntegrationsRoute(IntegrationsSettingsRoute(surface: agent.host.surfaceID))
                 } label: {
-                    HStack(spacing: 8) {
-                        Text(agent.title)
-                            .font(SettingsAppearance.font(.body).weight(.semibold))
-                            .foregroundColor(SettingsAppearance.text(colorScheme))
-                        Text(
-                            integrationToolKindDisplayName(
-                                for: agent.host, language: languageStore.language)
-                        )
-                        .font(SettingsAppearance.font(.caption))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4).fill(Color.secondary.opacity(0.08)))
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        minHeight: SettingsAppearance.controlRowHeight
+                    Text(agent.title)
+                        .font(SettingsAppearance.font(.body).weight(.semibold))
+                        .foregroundColor(SettingsAppearance.text(colorScheme))
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: SettingsAppearance.controlRowHeight
                             - 2 * SettingsAppearance.controlRowVerticalPadding,
-                        alignment: .leading
-                    )
-                    .contentShape(Rectangle())
+                            alignment: .leading
+                        )
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .focused($focusedTarget, equals: .agent(agent.host))
