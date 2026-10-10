@@ -200,6 +200,11 @@ struct SettingsSoundsLibraryView: View {
                     Label(historyEntryTitle, systemImage: "clock.arrow.circlepath")
                 }.accessibilityIdentifier("settings.sounds.history")
             }
+            Text(l10n.format(.soundsFavoritesHint, maxStarredPacks))
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("settings.sounds.favorites-hint")
+                .soundPacksLayoutProbe("settings.sounds.favorites-hint")
             libraryStatus
             VStack(spacing: 0) {
                 ForEach(sounds?.packs ?? []) { item in
@@ -210,7 +215,10 @@ struct SettingsSoundsLibraryView: View {
                             HStack {
                                 Image(systemName: "waveform").frame(width: 28)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(item.name ?? item.id).foregroundColor(.primary)
+                                    Text(item.name ?? item.id).foregroundStyle(.primary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .soundPacksLayoutProbe(
+                                            "settings.sounds.pack.\(item.id).name")
                                     Text(
                                         l10n.text(
                                             item.isBuiltinReadOnly
@@ -223,16 +231,31 @@ struct SettingsSoundsLibraryView: View {
                             }.contentShape(Rectangle())
                         }.buttonStyle(.plain).accessibilityLabel(item.name ?? item.id)
                             .accessibilityIdentifier("settings.sounds.pack.\(item.id)")
+                            .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).detail")
                         if let star = item.toggleStarAction {
                             Button {
                                 invoke(star)
                             } label: {
-                                Image(systemName: item.isStarred ? "star.fill" : "star")
+                                Label(
+                                    l10n.text(item.isStarred ? .soundsFavorited : .soundsFavorite),
+                                    systemImage: item.isStarred ? "star.fill" : "star")
                             }
-                            .help(l10n.text(.soundsPanel)).accessibilityLabel(
-                                l10n.text(.soundsPanel)
+                            .fixedSize()
+                            .help(
+                                l10n.text(
+                                    item.isStarred ? .soundsUnfavoriteHelp : .soundsFavoriteHelp)
+                            )
+                            .accessibilityLabel(
+                                l10n.format(
+                                    item.isStarred ? .soundsFavoritedLabel : .soundsFavoriteLabel,
+                                    item.name ?? item.id)
+                            )
+                            .accessibilityHint(
+                                l10n.text(
+                                    item.isStarred ? .soundsUnfavoriteHelp : .soundsFavoriteHelp)
                             )
                             .accessibilityIdentifier("settings.sounds.pack.\(item.id).panel")
+                            .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).panel")
                         }
                     }.padding(12)
                     Divider()

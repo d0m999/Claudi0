@@ -147,6 +147,138 @@ func runSettingsSoundsLayoutSuites() async {
         }
     }
 
+    await suite("声音包收藏原生挂载：两状态、两语言、明暗及窄窗口") {
+        await withTempDirectory { root in
+            for language in [ClaudioAppLanguage.zhHans, .english] {
+                for dark in [false, true] {
+                    for width: CGFloat in [960, 1_240] {
+                        let packs = [
+                            (
+                                "favorite",
+                                language == .zhHans ? "已收藏的声音包" : "A favorited sound pack"
+                            ),
+                            (
+                                "available",
+                                language == .zhHans
+                                    ? "这是一个用于检查窄窗口中包名完整换行且收藏按钮保持独立可达的声音包名称"
+                                    : "A long sound pack name that wraps in a narrow window while the favorite button remains accessible"
+                            ),
+                        ]
+                        let owner = SoundPacksEditorOwner.stateGalleryFixture(
+                            previewConfig: ClaudioConfig(selectedPack: "favorite"),
+                            packCards: packs.map { id, name in
+                                PackCard(
+                                    id: id, name: name, isCC0: true,
+                                    presentEvents: Set(Event.allCases), state: .complete,
+                                    isSelected: id == "favorite")
+                            },
+                            selectedPackID: "favorite", selectedEventRows: [],
+                            starredPackIDs: ["favorite"],
+                            environment: makeAudioImportEnvironment(
+                                userPacksDirectory: root.appendingPathComponent("packs")))
+                        let fixture = SettingsPresentationFixtures.generalLogin(
+                            language: language, route: .sounds(.overview), soundPacksEditor: owner)
+                        let probe = SettingsSoundsNativeLayoutProbe(
+                            session: fixture.session, size: NSSize(width: width, height: 640),
+                            appearance: dark ? .darkAqua : .aqua)
+                        await probe.settle()
+                        let name = "\(language.rawValue) \(dark) \(width)"
+                        let hint =
+                            language == .zhHans
+                            ? "收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 \(maxStarredPacks) 个。"
+                            : "Favorite sound packs to access them quickly in the menu bar panel. Up to \(maxStarredPacks) packs."
+                        expect(
+                            probe.menuAccessibilityValue(
+                                identifier: "settings.sounds.favorites-hint") == hint,
+                            "\(name) 常驻说明使用当前语言和共享上限")
+                        for (id, packName) in packs {
+                            let starred = id == "favorite"
+                            let identifier = "settings.sounds.pack.\(id)"
+                            let title =
+                                language == .zhHans
+                                ? (starred ? "已收藏" : "收藏")
+                                : (starred ? "Favorited" : "Favorite")
+                            let label =
+                                language == .zhHans
+                                ? "\(packName)，\(starred ? "已收藏" : "未收藏")"
+                                : "\(packName), \(starred ? "favorited" : "not favorited")"
+                            let action =
+                                language == .zhHans
+                                ? (starred ? "取消收藏，从面板中移除" : "收藏，在面板中显示")
+                                : (starred
+                                    ? "Remove from favorites and the panel"
+                                    : "Favorite to show in the panel")
+                            expect(probe.controlLabel(identifier) == packName, "\(name) 包详情入口独立")
+                            expect(
+                                probe.controlLabel(identifier + ".panel") == label,
+                                "\(name) 收藏标签包含包名和状态")
+                            expect(
+                                probe.menuAccessibilityElement(identifier: identifier + ".panel")?
+                                    .accessibilityHelp?() == action,
+                                "\(name) 收藏提示说明点击动作")
+                            expect(
+                                probe.menuIsEnabled(identifier: identifier) == true
+                                    && probe.menuIsEnabled(identifier: identifier + ".panel")
+                                        == true,
+                                "\(name) 详情与收藏是两个可操作控件")
+                            let frames = SoundPacksLayoutRecorder.frames
+                            if let detail = frames[identifier + ".detail"],
+                                let button = frames[identifier + ".panel"],
+                                let packText = frames[identifier + ".name"],
+                                let reading = frames["settings.reading.sounds"]
+                            {
+                                expect(detail.maxX <= button.minX, "\(name) 收藏按钮不覆盖包详情")
+                                expect(
+                                    packText.width > (id == "available" ? 200 : 80)
+                                        && button.width > 40,
+                                    "\(name) 包名和按钮均有阅读空间")
+                                expect(button.maxX <= reading.maxX, "\(name) 收藏按钮不溢出阅读列")
+                                expect(
+                                    ClaudioL10n(language: language).text(
+                                        starred ? .soundsFavorited : .soundsFavorite) == title,
+                                    "\(name) 收藏标题按当前语言注册")
+                                expect(
+                                    probe.menuAccessibilityElement(
+                                        identifier: identifier + ".panel")?.accessibilityRole?()
+                                        == NSAccessibility.Role.button,
+                                    "\(name) 收藏控件保留原生按钮语义")
+                            } else {
+                                expect(false, "\(name) 必须挂载详情、包名和收藏按钮几何")
+                            }
+                        }
+                        if let directory = ProcessInfo.processInfo.environment[
+                            "CLAUDIO_LAYOUT_CAPTURE_DIR"]
+                        {
+                            expect(
+                                probe.saveScreenshot(
+                                    to: URL(fileURLWithPath: directory).appendingPathComponent(
+                                        "favorites-\(Int(width))-\(language.rawValue)-\(dark ? "dark" : "light").png"
+                                    )),
+                                "\(name) 收藏呈现截图可保存")
+                        }
+                        expect(
+                            probe.pressControl("settings.sounds.pack.available"), "\(name) 包详情独立可打开"
+                        )
+                        expect(
+                            fixture.session.state.soundsDetail == .pack(packID: "available"),
+                            "\(name) 详情入口只导航到目标包")
+                        expect(
+                            {
+                                if case .sounds(let sounds) = owner.presentation.mode {
+                                    return sounds.packs.filter(\.isStarred).map(\.id) == [
+                                        "favorite"
+                                    ]
+                                }
+                                return false
+                            }(),
+                            "\(name) 包详情导航不改变收藏")
+                        probe.close()
+                    }
+                }
+            }
+        }
+    }
+
     await suite("设置原生呈现：高对比度仍使用实色功能组") {
         for dark in [false, true] {
             let fixture = SettingsPresentationFixtures.generalLogin(

@@ -1366,7 +1366,8 @@ dialog p { overflow-wrap:anywhere; }
         </header>
         <div class="sf-body">
           <section data-route="library" aria-label="声音包列表">
-            <div class="sf-section-heading"><h2>声音包</h2><div class="sf-actions"><button type="button" class="sf-button cursor-interaction" data-act="import-pack"><i data-lucide="square-arrow-down" aria-hidden="true"></i>导入…</button><button type="button" class="sf-button sf-primary cursor-interaction" data-act="new-pack"><i data-lucide="plus" aria-hidden="true"></i>新建声音包…</button></div></div>
+            <div class="sf-section-heading"><div class="sf-actions"><button type="button" class="sf-button cursor-interaction" data-act="new-pack"><i data-lucide="plus" aria-hidden="true"></i>新建声音包…</button><button type="button" class="sf-button cursor-interaction" data-act="import-pack"><i data-lucide="square-arrow-down" aria-hidden="true"></i>导入…</button></div></div>
+            <p class="sf-secondary sf-favorites-hint" data-favorites-hint></p>
             <div class="sf-box" data-pack-list></div>
             <div class="sf-service sf-box"><i data-lucide="sparkles" aria-hidden="true"></i><div class="sf-grow"><div>AI 声音生成服务</div><div class="sf-secondary">SenseAudio · 中国 API</div></div><button type="button" class="sf-button cursor-interaction" data-act="service">管理…</button></div>
           </section>
@@ -1396,7 +1397,7 @@ dialog p { overflow-wrap:anywhere; }
     </div>
   </div>
 
-  <template data-tpl="pack-row"><button type="button" class="sf-pack-row cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><span class="sf-tag" data-tag></span><i data-lucide="chevron-right" aria-hidden="true"></i></button></template>
+  <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><span class="sf-tag" data-tag></span><i data-lucide="chevron-right" aria-hidden="true"></i></button><button type="button" class="sf-button sf-favorite cursor-interaction" data-act="favorite"><span data-star aria-hidden="true"></span><span data-favorite-title></span></button></div></template>
   <template data-tpl="event-row"><div class="sf-event"><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入音频…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>macOS 系统提示音…</button></div></div></template>
   <template data-tpl="choice-row"><div class="sf-audio-row"><label class="sf-audio-select cursor-interaction"><input type="radio" name="sf-audio-selection"><span class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></span></label><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><div class="sf-actions" data-extra></div></div></template>
   <template data-tpl="managed-audio"><div class="sf-audio-row"><div class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></div><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-icon cursor-interaction" data-rename aria-label="重命名音频"><i data-lucide="pencil" aria-hidden="true"></i></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash aria-label="移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div></template>
@@ -1454,13 +1455,19 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-cover-small svg { width:21px; height:21px; }
   #claudio-sounds-overview .sf-pack-row { padding:16px; display:flex; align-items:center; gap:13px; border:0; border-bottom:1px solid var(--sf-line); background:transparent; width:100%; text-align:left; color:var(--sf-text); }
   #claudio-sounds-overview .sf-pack-row:last-child { border-bottom:0; }
-  #claudio-sounds-overview .sf-pack-row>svg { width:15px; color:var(--sf-muted); }
+  #claudio-sounds-overview .sf-pack-detail { display:flex; align-items:center; gap:13px; flex:1; min-width:0; padding:0; border:0; background:transparent; color:var(--sf-text); text-align:left; }
+  #claudio-sounds-overview .sf-pack-detail .sf-medium { overflow-wrap:anywhere; }
+  #claudio-sounds-overview .sf-pack-detail>svg { width:15px; color:var(--sf-muted); flex-shrink:0; }
+  #claudio-sounds-overview .sf-favorite { flex-shrink:0; white-space:nowrap; }
+  #claudio-sounds-overview .sf-favorites-hint { margin:0 0 13px; }
   #claudio-sounds-overview .sf-pack-row:hover { background:var(--sf-soft); }
   #claudio-sounds-overview .sf-tag { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
   #claudio-sounds-overview .sf-service { display:flex; align-items:center; gap:12px; padding:16px; margin-top:24px; }
   #claudio-sounds-overview .sf-service>svg { width:20px; color:var(--sf-blue); }
   #claudio-sounds-overview .sf-history-entry { display:flex; align-items:center; gap:12px; padding:16px; margin-top:18px; width:100%; text-align:left; color:var(--sf-text); }
   #claudio-sounds-overview .sf-history-entry svg { width:17px; }
+  #claudio-sounds-overview .sf-section-heading>.sf-history-entry { width:auto; margin:0; padding:7px 11px; gap:6px; background:var(--sf-button); }
+  #claudio-sounds-overview .sf-section-heading>.sf-history-entry>svg { display:none; }
   #claudio-sounds-overview .sf-history-glyph { color:var(--sf-muted); display:flex; }
   #claudio-sounds-overview .sf-notice { color:var(--sf-blue); font-size:12px; }
   #claudio-sounds-overview .sf-pack-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
@@ -4980,9 +4987,18 @@ function createApprovedSoundsView(root,bridge) {
   }
   function renderLibrary() {
     const list=q('[data-pack-list]');list.replaceChildren();
-    state.packs.forEach(pack=>{const row=tpl('pack-row'),b=q('button',row);b.dataset.act='pack';b.dataset.id=pack.id;
+    q('[data-favorites-hint]').textContent=T('收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 '+bridge.favoriteLimit+' 个。','Favorite sound packs to access them quickly in the menu bar panel. Up to '+bridge.favoriteLimit+' packs.');
+    state.packs.forEach(pack=>{const row=tpl('pack-row'),b=q('.sf-pack-detail',row);b.dataset.act='pack';b.dataset.id=pack.id;
+      b.setAttribute('aria-label',pack.name);
       q('[data-name]',row).textContent=pack.name;q('[data-meta]',row).textContent=pack.kind==='draft'?'设置首个提示音后即可使用':count(pack)+' / 5 个事件已设置';
-      q('[data-tag]',row).textContent=pack.kind==='builtin'?'内置':pack.kind==='draft'?'草稿':'自定';list.append(row);
+      q('[data-tag]',row).textContent=pack.kind==='builtin'?'内置':pack.kind==='draft'?'草稿':'自定';
+      const favorite=q('[data-act="favorite"]',row),control=bridge.favoriteControl(pack.id);
+      favorite.hidden=pack.kind==='draft'||!control.enabled;favorite.dataset.id=pack.id;
+      const label=control.starred?T('已收藏','Favorited'):T('收藏','Favorite');
+      const help=control.starred?T('取消收藏，从面板中移除','Remove from favorites and the panel'):T('收藏，在面板中显示','Favorite to show in the panel');
+      q('[data-star]',row).textContent=control.starred?'★':'☆';q('[data-favorite-title]',row).textContent=label;
+      favorite.title=help;favorite.setAttribute('aria-label',pack.name+T('，',', ')+(control.starred?T('已收藏','favorited'):T('未收藏','not favorited')));
+      favorite.setAttribute('aria-description',help);list.append(row);
     });
   }
   function renderDetail() {
@@ -5119,8 +5135,15 @@ function createApprovedSoundsView(root,bridge) {
     q('[data-page-title]').textContent=ui.route==='history'?'生成记录':ui.route==='detail'?'声音包':'声音';
     q('[data-act="back"]').hidden=ui.route==='library';
     if(ui.route==='library') renderLibrary();if(ui.route==='detail') renderDetail();if(ui.route==='history') renderHistory();
-    q('[data-act="history"]').hidden=ui.route==='history';
+    const historyEntry=q('[data-act="history"]');
+    if(ui.route==='library') q('.sf-section-heading').append(historyEntry);
+    else q('.sf-body').insertBefore(historyEntry,q('[data-status]'));
+    historyEntry.hidden=ui.route==='history';
+    q('[data-act="new-pack"]').lastChild.textContent=T('新建声音包…','New Sound Pack…');
+    q('[data-act="import-pack"]').lastChild.textContent=T('导入…','Import…');
+    q('[data-act="history"] .sf-grow>span').textContent=T('生成记录','Generation History');
     const t=state.task,badge=q('[data-history-badge]');
+    q('[data-history-status]').hidden=ui.route==='library'&&!['running','pending'].includes(t?.phase);
     q('[data-history-status]').textContent=t?.phase==='running'?'正在生成 · 关闭表单后仍会继续':t?.phase==='pending'?'有音频尚未保存，点击继续处理':'查看、试听和管理生成的音频';
     badge.hidden=!(state.unseen||t?.phase==='pending');badge.textContent=t?.phase==='pending'?'待处理':state.unseen+' 条新音频';
     q('[data-status]').textContent=ui.status;renderDialog();all('.sf-inline-service>.sf-secondary,.sf-service .sf-secondary').forEach(el=>el.textContent=bridge.service());if(top()?.error&&!['name','audio-name'].includes(top().type))q('[data-dialog-body]').append(textNode(top().error,'sf-error'));icons();syncPreview();scheduleTask();
@@ -5141,6 +5164,7 @@ function createApprovedSoundsView(root,bridge) {
   root.addEventListener('click',event=>{
     const preview=event.target.closest('[data-preview]');if(preview&&!preview.disabled) {listen(preview.dataset.preview,preview.dataset.audioName,Number(preview.dataset.duration));return;}
     const b=event.target.closest('[data-act]');if(!b||b.disabled) return;const action=b.dataset.act,d=top(),pack=selectedPack();
+    if(action==='favorite') {bridge.toggleFavorite(b.dataset.id);q('[data-act="favorite"][data-id="'+b.dataset.id+'"]')?.focus();return;}
     if(action==='home') return navigate('library');
     if(action==='back') return navigate(ui.route==='history'?ui.returnRoute:'library');
     if(action==='pack') return navigate('detail',b.dataset.id);
@@ -5251,9 +5275,14 @@ function mountApprovedSounds(){
     const fragment=$('approvedSoundsTemplate').content.cloneNode(true);
     mount.append(fragment);
     const element=$('claudio-sounds-overview');
+    // Keep the view's scoped styles attached when a favorite update remounts this element.
+    mount.querySelectorAll('style').forEach(style=>element.append(style));
     approvedSoundsView=createApprovedSoundsView(element,{
       read:approvedSoundsSnapshot,write:writeApprovedSounds,guard:approvedSoundsGuard,prompt:value=>{S.approvedCues.prompt=value;},
       publish:()=>{if(bridgeReady&&!projecting)publish(S);},
+      favoriteLimit:4,
+      favoriteControl:id=>({starred:S.stars.includes(id),enabled:S.library==='ready'&&!S.operation&&(S.stars.includes(id)||(S.packs.find(p=>p.id===id)?.healthy&&S.stars.length<4))}),
+      toggleFavorite:id=>action('star:'+id),
       service:()=>profileName(profile()),
       outcome:()=>S.faults.generation?'generation-failure':S.faults.archive?'save-failure':'success',
       count:()=>S.faults.partial&&profile().partial&&cueRoute().id!=='speech'?2:3,
