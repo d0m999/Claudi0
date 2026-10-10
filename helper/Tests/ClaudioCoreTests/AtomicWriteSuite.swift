@@ -507,6 +507,12 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
     // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
+    // Debug opt-in inspection only: fixed result code and peer count, atomically replaced;
+    // no source/TTY/argv/input/output. Ordinary builds do not write this diagnostic.
+    "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": [".write("],
+    // Streaming writes to the verified outer terminal or forkpty master only. Not file
+    // replacement; exact receivers, argument shapes and private functions are pinned below.
+    "helper/Sources/ClaudioCore/ZedPTYSession.swift": [".write(", "write("],
     // Fixed osascript/tmux actions only. Output is a bounded pipe; no shell or file output.
     "gui/Sources/ClaudioGUIComponents/NavigationCommand.swift": ["Process("],
     // —— helper ——
@@ -670,6 +676,7 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
+    "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,
     "helper/Sources/ClaudioCore/Log.swift": 2,
     // Play.swift now uses writePrivateAtomic; PlaySuite exercises FIFO replacement and exact bytes.
@@ -751,6 +758,22 @@ private func unauditedNonContentReplacingWrites(
     {
         // A second write call, a different receiver, or a different argument shape loses this
         // narrow exemption and must be reviewed by the write-surface audit.
+        return []
+    }
+    if path == "helper/Sources/ClaudioCore/ZedPTYSession.swift", arguments.count == 1,
+        source.components(separatedBy: "Darwin.write(").count - 1 == 1,
+        arguments.allSatisfy({ $0.filter { !$0.isWhitespace } == "fd,$0.baseAddress,data.count" }),
+        functionBody(named: "writeComplete", in: source)?.contains("try drain(&pending, fd: fd)")
+            == true,
+        functionBody(named: "drain", in: source)?.contains("Darwin.write(") == true,
+        source.components(separatedBy: "writeComplete(").count - 1 == 6,
+        source.components(separatedBy: "writeComplete(1,").count - 1 == 5,
+        source.contains("isatty(0) == 1"), source.contains("isatty(1) == 1"),
+        source.contains("claudio_pty_spawn("),
+        source.contains("drain(&toChild, fd: master)"), source.contains("drain(&toOuter, fd: 1)")
+    {
+        // Any additional receiver/call, arbitrary file open or changed argument shape loses
+        // the exemption. Byte preservation and backpressure also run on actual PTYs.
         return []
     }
     var consumedAuditedSite = false
@@ -1144,6 +1167,28 @@ func runAtomicWriteSuites() {
             targetBody?.contains("Darwin.write(descriptor, pointer, remaining)") == true
                 && targetBody?.contains("Darwin.fchmod(descriptor, 0o600)") == false,
             "函数体审计必须在配平花括号处停止；相邻函数里的安全 token 不能替目标写者补齐契约")
+    }
+
+    suite("写盘绊线：PTY 完整写入复用唯一裸写点，调用形状变化仍拒绝") {
+        let path = "helper/Sources/ClaudioCore/ZedPTYSession.swift"
+        guard let source = scanned[path]?.codeWithoutStringLiterals else {
+            expect(false, "PTY 生产源码必须进入整树扫描"); return
+        }
+        func unaudited(_ source: String) -> [String] {
+            unauditedNonContentReplacingWrites(
+                path: path,
+                arguments: writeCallArguments(in: source).filter { !isContentReplacingWrite($0) },
+                source: source)
+        }
+        expect(unaudited(source).isEmpty, "完整模式写入通过已审计的 drain，不增加裸写点")
+        for changed in [
+            source + "\nDarwin.write(fd, $0.baseAddress, data.count)",
+            source.replacingOccurrences(of: "writeComplete(1,", with: "writeComplete(2,"),
+            source.replacingOccurrences(
+                of: "try drain(&pending, fd: fd)", with: "try otherDrain(&pending, fd: fd)"),
+        ] {
+            expect(!unaudited(changed).isEmpty, "新增裸写、替换终端或绕过完整写循环必须失去豁免")
+        }
     }
 
     suite("写盘绊线④：写意图的裸 fd —— 只允许逐文件登记并由专门不变量审计") {

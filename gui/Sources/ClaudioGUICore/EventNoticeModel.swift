@@ -42,10 +42,20 @@ fileprivate final class EventNoticeContent: Sendable, Equatable {
     let sourceApplication: SourceApplicationTarget?
     let navigationTarget: SessionNavigationTarget?
 
-    init(_ notice: HostEventNotice, sourceApplication: SourceApplicationTarget? = nil) {
+    convenience init(_ notice: HostEventNotice, sourceApplication: SourceApplicationTarget? = nil) {
+        self.init(
+            notice, sourceApplication: sourceApplication,
+            navigationTarget: HostSessionTargetResolver.resolve(
+                notice, application: sourceApplication))
+    }
+
+    init(
+        _ notice: HostEventNotice, sourceApplication: SourceApplicationTarget?,
+        navigationTarget: SessionNavigationTarget?
+    ) {
         payload = .hook(notice.removingProcessAncestors())
         self.sourceApplication = sourceApplication
-        navigationTarget = HostSessionTargetResolver.resolve(notice, application: sourceApplication)
+        self.navigationTarget = navigationTarget
     }
     init(_ observation: CodexQuestionObservation) {
         payload = .developmentObservation(observation)
@@ -503,6 +513,8 @@ public final class EventNoticeModel: ObservableObject {
     private let scheduler: EventNoticeScheduler
     private let resolveSourceApplication:
         @MainActor ([HostProcessIdentity], EventNoticeAction) -> SourceApplicationTarget?
+    private let resolveNavigationTarget:
+        @MainActor (HostEventNotice, SourceApplicationTarget?) -> SessionNavigationTarget?
     /// Empty in production. Only adapters with real submission-order evidence may opt in.
     private let noticeAuthorized: @MainActor (HostEventNotice) -> Bool
     private let verifiedSubmissionSurfaces: Set<HostSurfaceID>
@@ -554,6 +566,11 @@ public final class EventNoticeModel: ObservableObject {
         scheduler: EventNoticeScheduler = .live,
         verifiedSubmissionSurfaces: Set<HostSurfaceID> = [],
         noticeAuthorized: @escaping @MainActor (HostEventNotice) -> Bool = { _ in true },
+        resolveNavigationTarget:
+            @escaping @MainActor (HostEventNotice, SourceApplicationTarget?) ->
+            SessionNavigationTarget? = {
+                HostSessionTargetResolver.resolve($0, application: $1)
+            },
         resolveSourceApplication:
             @escaping @MainActor ([HostProcessIdentity], EventNoticeAction) ->
             SourceApplicationTarget? = { _, _ in nil }
@@ -562,6 +579,7 @@ public final class EventNoticeModel: ObservableObject {
         self.now = now
         self.scheduler = scheduler
         self.resolveSourceApplication = resolveSourceApplication
+        self.resolveNavigationTarget = resolveNavigationTarget
         self.verifiedSubmissionSurfaces = verifiedSubmissionSurfaces
         self.noticeAuthorized = noticeAuthorized
         epochStartedAt = now()
@@ -1150,12 +1168,14 @@ public final class EventNoticeModel: ObservableObject {
         let action = EventNoticeAction(
             id: id ?? notice.id, version: version, epoch: notice.receiverEpoch,
             installationID: notice.installationID)
-        let target = notice.processAncestors.flatMap { resolveSourceApplication($0, action) }
+        let resolved = notice.processAncestors.flatMap { resolveSourceApplication($0, action) }
+        let target = resolved?.action == action ? resolved : nil
         return Entry(
             id: action.id, version: version, event: notice.event, kind: kind,
             expiresAt: now() + Self.retentionDuration,
             content: EventNoticeContent(
-                notice, sourceApplication: target?.action == action ? target : nil),
+                notice, sourceApplication: target,
+                navigationTarget: resolveNavigationTarget(notice, target)),
             identity: identity)
     }
 

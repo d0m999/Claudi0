@@ -59,7 +59,10 @@ public struct HostNavigationEvidence: Codable, Sendable, Equatable, Hashable {
 
     public static func capture(
         ancestors: [HostProcessIdentity],
-        environment: [String: String] = ProcessInfo.processInfo.environment
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        userID: UInt32 = getuid(),
+        readProcess: (Int32) -> HostProcessSnapshot? = HostProcessAncestry.read,
+        readTTY: (Int32) -> String? = controllingTTY
     )
         -> Self?
     {
@@ -73,8 +76,8 @@ public struct HostNavigationEvidence: Codable, Sendable, Equatable, Hashable {
         {
             let parts = raw.split(separator: ",", omittingEmptySubsequences: false)
             if parts.count == 3, let pid = Int32(parts[1]),
-                let server = HostProcessAncestry.read(pid),
-                server.userID == getuid()
+                let server = readProcess(pid),
+                server.userID == userID
             {
                 let value = TmuxNavigationEvidence(
                     socketPath: String(parts[0]),
@@ -83,12 +86,17 @@ public struct HostNavigationEvidence: Codable, Sendable, Equatable, Hashable {
             }
         }
         let value = Self(
-            process: process, tty: controllingTTY(process.pid),
+            process: process, tty: readTTY(process.pid),
             itermSessionID: environment["ITERM_SESSION_ID"], tmux: tmux,
             codexThreadID: environment["CODEX_THREAD_ID"])
         // Invalid optional fields reduce only their individual capability.
         let terminalProcess = value.tty.flatMap { tty in
-            ancestors.reversed().first { controllingTTY($0.pid) == tty }
+            ancestors.reversed().first { identity in
+                guard let process = readProcess(identity.pid), process.identity == identity,
+                    process.kind == .ordinary, process.isOwned(by: userID)
+                else { return false }
+                return readTTY(identity.pid) == tty
+            }
         }
         return Self(
             process: process, terminalProcess: terminalProcess, tty: value.tty,

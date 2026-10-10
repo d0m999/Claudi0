@@ -238,6 +238,12 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
         menuBarController?.requestSettingsWindowPresentation()
         #endif
         #if DEBUG
+        if Bundle.main.bundleIdentifier == "com.claudio.app.zed-managed-inspection",
+            ProcessInfo.processInfo.environment["CLAUDIO_ZED_NAVIGATION_INSPECTION"] == "1",
+            ProcessInfo.processInfo.environment["CLAUDIO_ZED_NAVIGATION_PROTOTYPE"] == "1"
+        {
+            menuBarController?.showZedNavigationInspection()
+        }
         chatAXTracer = startExplicitChatAXTracerIfConfigured(
             environment: ProcessInfo.processInfo.environment)
         #endif

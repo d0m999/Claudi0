@@ -79,6 +79,12 @@ package final class MenuBarPanel: NSPanel {
         dismiss(.explicit)
     }
 
+    #if DEBUG
+    /// The isolated native inspection keeps this same production panel mounted until an
+    /// explicit close, so automation can observe it without dismissal on activation changes.
+    package func keepVisibleForNativeInspection() { removeDismissalObservers() }
+    #endif
+
     package override func cancelOperation(_ sender: Any?) {
         if onEscape?() == true { return }
         dismiss(.explicit)
