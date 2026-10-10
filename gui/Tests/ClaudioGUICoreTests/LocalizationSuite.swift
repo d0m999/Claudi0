@@ -33,20 +33,20 @@ func runLocalizationSuites() {
             english.text(.interfaceTitle) == "Interface",
             "explicit English lookup must not depend on Locale.current")
         expect(
-            chinese.text(.integrationsEventsAndSounds) == "默认组／工作区"
-                && chinese.text(.settingsDestinationEventsAndSounds) == "默认组／工作区"
-                && chinese.text(.settingsIntegrationsManageEvents) == "默认组／工作区…"
+            chinese.text(.integrationsEventsAndSounds) == "工作区"
+                && chinese.text(.settingsDestinationEventsAndSounds) == "工作区"
+                && chinese.text(.settingsIntegrationsManageEvents) == "工作区…"
                 && chinese.text(.integrationsSurfaceEventsCaption)
                     == "声音配置由默认组和各工作区独立管理。"
                 && chinese.text(.settingsIntegrationsManageEventsHint)
                     == "在当前设置窗口中打开按默认组和工作区管理的声音设置。",
-            "集成行、目的页、按钮、说明和无障碍提示应使用同一默认组／工作区语义")
+            "集成行、目的页、按钮、说明和无障碍提示应使用同一工作区入口语义")
         expect(
-            english.text(.integrationsEventsAndSounds) == "Default Group & Workspaces"
+            english.text(.integrationsEventsAndSounds) == "Workspace"
                 && english.text(.settingsDestinationEventsAndSounds)
-                    == "Default Group & Workspaces"
+                    == "Workspace"
                 && english.text(.settingsIntegrationsManageEvents)
-                    == "Default Group & Workspaces…"
+                    == "Workspace…"
                 && english.text(.integrationsSurfaceEventsCaption)
                     == "Sound settings are managed independently for the Default Group and each workspace."
                 && english.text(.settingsIntegrationsManageEventsHint)

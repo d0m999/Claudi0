@@ -109,13 +109,13 @@ func runIntegrationDestinationPresentationSuites() {
             "WorkBuddy 接入方式必须来自 descriptor，不伪造 Core 不存在的机制子类型")
         expect(
             section.row(.eventsAndSounds)?.actions == [.manageSoundScopes],
-            "声音入口不携带所选 Host；第三行只负责打开默认组／工作区")
+            "声音入口不携带所选 Host；第三行只负责打开工作区")
         let chinese = ClaudioL10n(language: .zhHans)
         expect(
             section.row(.eventsAndSounds)?.title == chinese.text(.integrationsEventsAndSounds)
                 && section.row(.eventsAndSounds)?.caption
                     == chinese.text(.integrationsSurfaceEventsCaption),
-            "第三行的基础投影与中文展示应表达相同的默认组／工作区语义")
+            "第三行的基础投影与中文展示应表达相同的工作区入口语义")
         for host in HostID.productVisibleCases {
             expect(
                 content.connectionSection(for: host)?.row(.eventsAndSounds)?.actions

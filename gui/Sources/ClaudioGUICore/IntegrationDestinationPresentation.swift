@@ -326,7 +326,7 @@ public func integrationConnectionSectionPresentation(
                     ? [] : [.copyConfigurationSource(facts.host)]),
             IntegrationConnectionRowPresentation(
                 kind: .eventsAndSounds,
-                title: "默认组／工作区",
+                title: "工作区",
                 caption: "声音配置由默认组和各工作区独立管理。",
                 actions: [.manageSoundScopes]),
             IntegrationConnectionRowPresentation(

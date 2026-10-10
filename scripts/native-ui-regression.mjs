@@ -171,7 +171,7 @@ export async function createNativeUIRegression({cua, app, buildEvidence, outputD
   }
   const destinations=['events-and-sounds','sounds','integrations','notifications','general','shortcuts','usage','about'];
   const sidebarLabels={
-    'events-and-sounds':['默认组／工作区','Default Group & Workspaces'],sounds:['声音','Sounds'],
+    'events-and-sounds':['工作区','Workspace'],sounds:['声音','Sounds'],
     integrations:['集成','Integrations'],notifications:['通知','Notifications'],general:['通用','General'],
     shortcuts:['快捷键','Shortcuts'],usage:['活动与诊断','Activity & Diagnostics'],about:['关于','About']
   };

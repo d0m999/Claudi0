@@ -8,8 +8,8 @@ import {createNativeUIRegression} from './native-ui-regression.mjs';
 
 const destinations=['events-and-sounds','sounds','integrations','notifications','general','shortcuts','usage','about'];
 const sidebarLabels={
-  'zh-Hans':['默认组／工作区','声音','集成','通知','通用','快捷键','活动与诊断','关于'],
-  en:['Default Group & Workspaces','Sounds','Integrations','Notifications','General','Shortcuts','Activity & Diagnostics','About'],
+  'zh-Hans':['工作区','声音','集成','通知','通用','快捷键','活动与诊断','关于'],
+  en:['Workspace','Sounds','Integrations','Notifications','General','Shortcuts','Activity & Diagnostics','About'],
 };
 const currentGaps=[0,0,0,16,0,16,0];
 
@@ -193,7 +193,7 @@ test('matrix rejects a native row whose selection did not update',async t=> {
 });
 
 test('matrix rejects ambiguous native source-list rows',async t=> {
-  const run=await createDriverFixture(t,currentGaps,{mutateState:state=>state+'\n  80 row\n    81 text 默认组／工作区'});
+  const run=await createDriverFixture(t,currentGaps,{mutateState:state=>state+'\n  80 row\n    81 text 工作区'});
   const result=await run.matrix(1);
   assert.equal(result.status,'failed');
   assert.match(result.reason,/Native source-list row is not unique: events-and-sounds/);

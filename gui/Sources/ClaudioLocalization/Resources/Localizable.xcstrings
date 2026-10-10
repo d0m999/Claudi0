@@ -9927,13 +9927,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default Group & Workspaces"
+            "value": "Workspace"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "默认组／工作区"
+            "value": "工作区"
           }
         }
       }
@@ -10759,13 +10759,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default Group & Workspaces"
+            "value": "Workspace"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "默认组／工作区"
+            "value": "工作区"
           }
         }
       }
@@ -11111,13 +11111,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default Group & Workspaces…"
+            "value": "Workspace…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "默认组／工作区…"
+            "value": "工作区…"
           }
         }
       }
@@ -12135,13 +12135,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Default Group & Workspaces for the panel's current valid Sound Scope."
+            "value": "Open Workspace for the panel's current valid Sound Scope."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为面板当前合法的声音作用域打开「默认组／工作区」。"
+            "value": "为面板当前合法的声音作用域打开「工作区」。"
           }
         }
       }
@@ -15431,13 +15431,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Return to Default Group & Workspaces"
+            "value": "Return to Workspace"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "返回默认组／工作区"
+            "value": "返回工作区"
           }
         }
       }
@@ -16945,13 +16945,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Configure sounds in Default Group & Workspaces…"
+            "value": "Configure sounds in Workspace…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在默认组／工作区中设置声音…"
+            "value": "在工作区中设置声音…"
           }
         }
       }

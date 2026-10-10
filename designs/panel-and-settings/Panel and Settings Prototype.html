@@ -1348,7 +1348,7 @@ dialog p { overflow-wrap:anywhere; }
       <div class="sf-brand">claudi<span>0</span></div>
       <nav aria-label="设置页面">
         <div class="sf-nav-group">
-          <span class="sf-nav"><i data-lucide="audio-lines" aria-hidden="true"></i><span>默认组／工作区</span></span>
+          <span class="sf-nav"><i data-lucide="audio-lines" aria-hidden="true"></i><span>工作区</span></span>
           <button type="button" class="sf-nav sf-current cursor-interaction" data-act="home" aria-current="page"><i data-lucide="volume-2" aria-hidden="true"></i><span>声音</span></button>
           <span class="sf-nav"><i data-lucide="plug" aria-hidden="true"></i><span>集成</span></span>
           <span class="sf-nav"><i data-lucide="bell" aria-hidden="true"></i><span>通知</span></span>
@@ -1671,7 +1671,7 @@ var L = {
       draftNote: "可用系统提示音或 AI 提示音新建声音包。首条声音保存成功后才进入声音包库。",
       usage: "正在使用此包的声音作用域：",
       inheritedUsage: function (n) { return n + "（继承全局默认）"; },
-      scopeIncomplete: "声音配置不完整。请检查默认组／工作区设置。",
+      scopeIncomplete: "声音配置不完整。请检查工作区设置。",
       shared: "修改此包会同步影响所有使用它的组。",
       copyAttribution: "若此包带有整包许可或作者声明，副本将不保留这些声明；原包及独立归属文件不变。",
       adoptAttribution: "采纳此提示音会移除目标包现有的整包许可和作者声明；独立归属文件不变。",
@@ -1684,7 +1684,7 @@ var L = {
       published: "首音采纳成功，声音包已发布。",
       missingAudio: "未配置"
     },
-    panes: { general: "通用", integrations: "集成", groups: "默认组／工作区", notifications: "通知", sounds: "声音", activity: "活动与诊断", shortcuts: "快捷键", about: "关于" },
+    panes: { general: "通用", integrations: "集成", groups: "工作区", notifications: "通知", sounds: "声音", activity: "活动与诊断", shortcuts: "快捷键", about: "关于" },
     paneSubs: {
       general: "启动行为、语言与菜单栏呈现。",
       integrations: "管理 claudi0 连接的应用、连接方式和事件能力。",
@@ -1699,7 +1699,7 @@ var L = {
     addWorkspace: "添加工作区", deleteWorkspace: "删除工作区",
     deleteConfirm: function (n) { return "删除工作区「" + n + "」？只删除声音规则，项目文件与声音包保留。"; },
     cancel: "取消", confirmDelete: "删除", generate: "生成提示音", adopt: "采纳",
-    notExpanded: "本原型只把「默认组／工作区」与「声音」两页做到可交互深度，其余页面给出真实导航与真实骨架，未展开的部分不填占位内容。"
+    notExpanded: "本原型只把「工作区」与「声音」两页做到可交互深度，其余页面给出真实导航与真实骨架，未展开的部分不填占位内容。"
   },
   en: {
     brand: "claudi0", sources: "3 shipped sources",
@@ -1809,7 +1809,7 @@ var L = {
       draftNote: "Create a sound group with a system sound or an AI cue. It becomes available after the first sound is saved.",
       usage: "Sound scopes using this pack:",
       inheritedUsage: function (n) { return n + " (inherits Global)"; },
-      scopeIncomplete: "Sound profiles are incomplete. Check Default Group & Workspaces settings.",
+      scopeIncomplete: "Sound profiles are incomplete. Check Workspace settings.",
       shared: "Changing this pack updates every group using it.",
       copyAttribution: "If this pack has whole-pack license or author claims, the copy will omit them. The original pack and separate attribution files remain unchanged.",
       adoptAttribution: "Adopting this cue will remove any whole-pack license and author claims from the edited pack. Separate attribution files remain unchanged.",
@@ -1822,7 +1822,7 @@ var L = {
       published: "The first sound was adopted, so the sound pack is now published.",
       missingAudio: "Not configured"
     },
-    panes: { general: "General", integrations: "Integrations", groups: "Default Group & Workspaces", notifications: "Notifications", sounds: "Sounds", activity: "Activity & Diagnostics", shortcuts: "Shortcuts", about: "About" },
+    panes: { general: "General", integrations: "Integrations", groups: "Workspace", notifications: "Notifications", sounds: "Sounds", activity: "Activity & Diagnostics", shortcuts: "Shortcuts", about: "About" },
     paneSubs: {
       general: "Launch behavior, language, and menu bar presentation.",
       integrations: "Manage the apps claudi0 connects to, how, and with which event capabilities.",
@@ -1837,7 +1837,7 @@ var L = {
     addWorkspace: "Add workspace", deleteWorkspace: "Delete workspace",
     deleteConfirm: function (n) { return "Delete workspace “" + n + "”? Only the sound rule is removed; project files and sound packs are kept."; },
     cancel: "Cancel", confirmDelete: "Delete", generate: "Generate cue", adopt: "Adopt",
-    notExpanded: "This prototype implements only “Default Group & Workspaces” and “Sounds” at interactive depth. Other panes ship real navigation and a real skeleton — no filler content."
+    notExpanded: "This prototype implements only “Workspace” and “Sounds” at interactive depth. Other panes ship real navigation and a real skeleton — no filler content."
   }
 };
 
@@ -3031,7 +3031,7 @@ function paneIntegrations() {
     if (open) {
       hostContent += '<div class="kv"><span class="k">' + tr("连接状态", "Connection") + '<span class="s">' + (st.on ? tr("已配置", "Configured") : tr("已断开连接", "Disconnected")) + '</span></span></div>' +
         '<div class="kv"><span class="k">' + tr("接入方式", "Mechanism") + '<span class="s">hooks</span></span><button class="mini-btn" data-copyhook="' + id + '" aria-label="' + tr("复制接入路径", "Copy integration path") + '">⧉</button></div>' +
-        '<div class="kv"><span class="k">' + tr("声音配置", "Sound profiles") + '</span><button class="sel-btn" data-goto-groups>' + tr("默认组／工作区…", "Default Group & Workspaces…") + '</button></div>' +
+        '<div class="kv"><span class="k">' + tr("声音配置", "Sound profiles") + '</span><button class="sel-btn" data-goto-groups>' + tr("工作区…", "Workspace…") + '</button></div>' +
         '<h3>' + tr("当前代次逐事件回执", "Per-binding receipts for this generation") + ' · ' + st.generation + '</h3>';
       var bindings = EVENTS.map(function (e) { return { id: e.id, label: evName(e), native: id === "codex" && e.id === "notification" ? "PermissionRequest" : t().natives[e.id], event: e.id }; });
       if (id === "claude") bindings.push({ id: "questionIntent", event: "notification", label: tr("即将提问", "Question intent"), native: "PreToolUse · AskUserQuestion" });
