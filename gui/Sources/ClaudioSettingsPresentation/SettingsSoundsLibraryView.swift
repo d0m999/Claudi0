@@ -200,7 +200,7 @@ struct SettingsSoundsLibraryView: View {
                     Label(historyEntryTitle, systemImage: "clock.arrow.circlepath")
                 }.accessibilityIdentifier("settings.sounds.history")
             }
-            Text(l10n.format(.soundsFavoritesHint, maxStarredPacks))
+            Text(l10n.format(.soundsFavoritesHint, Int64(maxStarredPacks)))
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.sounds.favorites-hint")
@@ -233,27 +233,24 @@ struct SettingsSoundsLibraryView: View {
                             .accessibilityIdentifier("settings.sounds.pack.\(item.id)")
                             .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).detail")
                         if let star = item.toggleStarAction {
+                            let starTitle = l10n.text(
+                                item.isStarred ? .soundsFavorited : .soundsFavorite)
+                            let starHelp = l10n.text(
+                                item.isStarred ? .soundsUnfavoriteHelp : .soundsFavoriteHelp)
+                            let starLabel = l10n.format(
+                                item.isStarred ? .soundsFavoritedLabel : .soundsFavoriteLabel,
+                                item.name ?? item.id)
                             Button {
                                 invoke(star)
                             } label: {
                                 Label(
-                                    l10n.text(item.isStarred ? .soundsFavorited : .soundsFavorite),
+                                    starTitle,
                                     systemImage: item.isStarred ? "star.fill" : "star")
                             }
                             .fixedSize()
-                            .help(
-                                l10n.text(
-                                    item.isStarred ? .soundsUnfavoriteHelp : .soundsFavoriteHelp)
-                            )
-                            .accessibilityLabel(
-                                l10n.format(
-                                    item.isStarred ? .soundsFavoritedLabel : .soundsFavoriteLabel,
-                                    item.name ?? item.id)
-                            )
-                            .accessibilityHint(
-                                l10n.text(
-                                    item.isStarred ? .soundsUnfavoriteHelp : .soundsFavoriteHelp)
-                            )
+                            .help(starHelp)
+                            .accessibilityLabel(starLabel)
+                            .accessibilityHint(starHelp)
                             .accessibilityIdentifier("settings.sounds.pack.\(item.id).panel")
                             .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).panel")
                         }

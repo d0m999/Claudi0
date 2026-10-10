@@ -1577,7 +1577,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .soundsUnfavoriteHelp,
         .soundsFavoriteLabel,
         .soundsFavoritedLabel,
-        .soundsPanel,
         .soundsKeepWaiting,
         .soundsQuit,
         .soundsQuitAnyway,

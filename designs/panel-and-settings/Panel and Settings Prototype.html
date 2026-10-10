@@ -4715,6 +4715,7 @@ function freshState(){return {
  about:{version:'0.0.0-dev',build:'prototype',architecture:'arm64',minimum:'12.0',macos:'Demo macOS'},resources:{license:true,attribution:true,privacy:true},diagnosticText:null,
  operation:null,epoch:0,serial:0
 };}
+const favoriteLimit=4;
 let S=freshState();
 const hostTimers=new Map();
 let audioContext=null,audioNodes=[],audioTimer=null,audioEpoch=0,workTimer=null,generationTimer=null,modalReturn=null,sheetModel=null,modalEpoch=0,scrollByRoute={};
@@ -5280,8 +5281,8 @@ function mountApprovedSounds(){
     approvedSoundsView=createApprovedSoundsView(element,{
       read:approvedSoundsSnapshot,write:writeApprovedSounds,guard:approvedSoundsGuard,prompt:value=>{S.approvedCues.prompt=value;},
       publish:()=>{if(bridgeReady&&!projecting)publish(S);},
-      favoriteLimit:4,
-      favoriteControl:id=>({starred:S.stars.includes(id),enabled:S.library==='ready'&&!S.operation&&(S.stars.includes(id)||(S.packs.find(p=>p.id===id)?.healthy&&S.stars.length<4))}),
+      favoriteLimit:favoriteLimit,
+      favoriteControl:id=>({starred:S.stars.includes(id),enabled:S.library==='ready'&&!S.operation&&(S.stars.includes(id)||(S.packs.find(p=>p.id===id)?.healthy&&S.stars.length<favoriteLimit))}),
       toggleFavorite:id=>action('star:'+id),
       service:()=>profileName(profile()),
       outcome:()=>S.faults.generation?'generation-failure':S.faults.archive?'save-failure':'success',
@@ -5305,7 +5306,7 @@ function renderSoundsLegacy(){
  if(!p)return html+reason(T('原声音包已移除。请显式重新选择。','The original pack was removed. Select explicitly.'),'error','target-unavailable')+feedback();
  html+=section(T('声音包信息','Sound pack information'),row(esc(packName(p)),p.builtin?T('内置包只读。','Built-in pack is read-only.'):T('用户声音包','User sound pack'),`<span class="value">${p.sounds.filter(Boolean).length}/5</span>`)+
  packActions(p)+brokenPack(p));
- html+=section(T('面板快捷入口','Panel shortcuts'),disclosure(T('面板显示集','Panel display set'),T('最多四项，查看完整声音包库后选择。','Choose up to four packs from the complete library.'),`${S.stars.length}/4`,'panel-packs'));
+ html+=section(T('面板快捷入口','Panel shortcuts'),disclosure(T('面板显示集','Panel display set'),T('最多四项，查看完整声音包库后选择。','Choose up to four packs from the complete library.'),`${S.stars.length}/${favoriteLimit}`,'panel-packs'));
  html+=compactService();
  html+=section(T('提示音','Event cues'),events.map((e,i)=>row(e.name(),mapped(p,i),previewButton(i,!p.sounds[i]||!p.healthy)+button(T('编辑…','Edit…'),`edit-pack:${i}`,'small-button',!!S.operation)+(p.builtin?'':button(T('生成…','Generate…'),`generate-pack:${i}`,'small-button',!p.healthy||S.library!=='ready'||!!S.operation)),{id:`sound-${e.id}`,icon:e.icon,color:e.color})).join('')+feedback(),T('修改包内映射会影响所有使用者。每组仍保留自己的音量和开关。','Pack mappings affect all users. Each group retains its own volume and switches.'));
  if(!p.builtin)html+=section(T('音频文件','Audio files'),disclosure(T('包内音频清单','Pack audio inventory'),T('指派未绑定音频、检查占用或删除文件。','Assign unbound audio, inspect usage, or delete files.'),`${p.audio.length}`,'audio-files',{icon:'file',disabled:!p.healthy}));
@@ -5314,7 +5315,7 @@ function renderSoundsLegacy(){
  return html+operationStatus();
 }
 function brokenPack(p){return p.healthy?'':reason(T('manifest 无法解析，当前包禁止写入。其他健康包不受影响。','The manifest could not be parsed. Writes to this pack are blocked; healthy packs are unaffected.'),'error')+row(T('损坏 manifest','Damaged manifest'),`Demo/packs/${esc(p.id)}/manifest.json`,button(T('在 Finder 中定位…','Reveal in Finder…'),'reveal-manifest')+button(T('重试读取','Retry read'),'retry-manifest'))+(p.builtin?row(T('工厂恢复','Factory restore'),'',button(T('恢复此包…','Restore this pack…'),'restore-pack')):'');}
-function renderPanelPacks(){return `<p class="intro">${T('恢复已有面板显示集能力的呈现。它是快捷入口集合，不是声音包库。','This presents the existing panel display-set capability. It is a shortcut collection within the full library.')}</p>`+section(T('面板显示集','Panel display set'),S.packs.map(p=>{const starred=S.stars.includes(p.id),why=!starred&&!p.healthy?T('声音包不可用，无法新增星标。','Pack unavailable; adding a star is blocked.'):!starred&&S.stars.length>=4?T('面板最多四项，先取消一颗星标。','The panel holds four packs. Remove a star first.'):'';return row(esc(packName(p)),why,button(starred?T('取消星标','Remove star'):T('显示在面板','Show in panel'),`star:${p.id}`,'small-button',!!why||!!S.operation));}).join(''),T('已有星标始终可取消，包括损坏包和手工写入的第五项。此操作不改组选包。','Existing stars can always be removed, including broken packs and a manually saved fifth entry. Group selections are unchanged.'))+feedback();}
+function renderPanelPacks(){return `<p class="intro">${T('恢复已有面板显示集能力的呈现。它是快捷入口集合，不是声音包库。','This presents the existing panel display-set capability. It is a shortcut collection within the full library.')}</p>`+section(T('面板显示集','Panel display set'),S.packs.map(p=>{const starred=S.stars.includes(p.id),why=!starred&&!p.healthy?T('声音包不可用，无法新增星标。','Pack unavailable; adding a star is blocked.'):!starred&&S.stars.length>=favoriteLimit?T('面板最多四项，先取消一颗星标。','The panel holds four packs. Remove a star first.'):'';return row(esc(packName(p)),why,button(starred?T('取消星标','Remove star'):T('显示在面板','Show in panel'),`star:${p.id}`,'small-button',!!why||!!S.operation));}).join(''),T('已有星标始终可取消，包括损坏包和手工写入的第五项。此操作不改组选包。','Existing stars can always be removed, including broken packs and a manually saved fifth entry. Group selections are unchanged.'))+feedback();}
 function renderSoundEditor(){
  const p=pack(),i=editorIndex(),e=events[i];if(!p||i<0)return reason(T('编辑目标不可用，请返回声音页重新选择。','Edit target unavailable. Return to Sounds and select again.'),'error','target-unavailable');
  const draft=S.draft?.id===p.id;const back=S.returnContext?button(T(`返回 ${S.returnContext.name}`,`Return to ${S.returnContext.name}`),'return-scope','link'):button(T('返回声音','Back to Sounds'),'back-sounds','link');
@@ -5739,7 +5740,7 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='reload-config'){S.ruleBroken=false;S.brokenRuleID=null;S.faults.config=false;S.configIntent=null;setNotice('配置已重新读取；保留当前目标身份，失效目标仍需显式重新选择。','Configuration reloaded. The selected identity is retained; unavailable targets still need explicit reselection.');render();return;}
  if(a==='retry-config'){const intent=S.configIntent;if(intent){S.faults.config=false;if(groupWrite(intent,true))setNotice('原配置操作已重试成功。','The original configuration edit was retried successfully.');}render();return;}
  if(a==='reveal-backup')return platformAction('Demo/config.backup.json');
- if(a==='star'){const p=S.packs.find(p=>p.id===id),starred=S.stars.includes(id);if(!p||(!starred&&(!p.healthy||S.stars.length>=4)))return;if(S.faults.config){setNotice('星标写入失败，原显示集保留。','Star write failed. Previous display set retained.','error');render();return;}S.stars=starred?S.stars.filter(v=>v!==id):[...S.stars,id];setNotice('面板显示集已更新，各组选包未改变。','Panel display set updated; group selections unchanged.');render();return;}
+ if(a==='star'){const p=S.packs.find(p=>p.id===id),starred=S.stars.includes(id);if(!p||(!starred&&(!p.healthy||S.stars.length>=favoriteLimit)))return;if(S.faults.config){setNotice('星标写入失败，原显示集保留。','Star write failed. Previous display set retained.','error');render();return;}S.stars=starred?S.stars.filter(v=>v!==id):[...S.stars,id];setNotice('面板显示集已更新，各组选包未改变。','Panel display set updated; group selections unchanged.');render();return;}
  if(a==='delete-workspace'){const g=scope();if(!g||g.id==='default')return;const captured=scopeIdentity(g);return confirmAction('移除此工作区？','Remove this workspace?',()=>`${esc(scopeName(g))} · ${esc(g.path)}<br>`+T('只删除声音规则，不删除项目或声音包。','Remove only the sound rule, preserving project files and sound packs.'),()=>T('移除','Remove'),()=>{if(!validScope(captured)||S.faults.config){setNotice('工作区删除失败或身份变化，规则与其他目标保留。','Workspace removal failed or its identity changed. Rules and other targets remain.','error');render();return;}S.scopes=S.scopes.filter(v=>v.id!==g.id);S.scope=g.id;S.invalidScope=captured;navigate('events');setNotice('声音规则已移除，请显式选择下一个作用域。项目和声音包保留。','Sound rule removed. Explicitly select the next scope. Project files and sound packs remain.');render();});}
  if(a==='cancel-operation')return cancelOperation();
 }

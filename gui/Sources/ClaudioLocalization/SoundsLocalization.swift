@@ -74,7 +74,6 @@ extension ClaudioL10nKey {
     public static let soundsUnfavoriteHelp: Self = "settings.sounds.redesign.unfavoriteHelp"
     public static let soundsFavoriteLabel: Self = "settings.sounds.redesign.favoriteLabel"
     public static let soundsFavoritedLabel: Self = "settings.sounds.redesign.favoritedLabel"
-    public static let soundsPanel: Self = "settings.sounds.redesign.panel"
     public static let soundsKeepWaiting: Self = "settings.sounds.redesign.keepWaiting"
     public static let soundsQuit: Self = "settings.sounds.redesign.quit"
     public static let soundsQuitAnyway: Self = "settings.sounds.redesign.quitAnyway"

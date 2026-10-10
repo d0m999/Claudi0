@@ -9,11 +9,11 @@
 
 ### 声音包收藏呈现（现行 · 2026-10-10）
 
-声音包列表在“新建／导入／生成记录”工具行下方、列表上方常驻次要说明：“收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 %d 个。”英文为“Favorite sound packs to access them quickly in the menu bar panel. Up to %d packs.”。数量取现有 `maxStarredPacks`，文字自然换行；这是收藏操作的后果说明。
+声音包列表在“新建／导入／生成记录”工具行下方、列表上方常驻次要说明：“收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 %lld 个。”英文为“Favorite sound packs to access them quickly in the menu bar panel. Up to %lld packs.”。数量取现有 `maxStarredPacks`，文字自然换行；这是收藏操作的后果说明。
 
 列表行的收藏按钮沿用系统样式，未收藏使用原生 `Label` 的 `star`＋“收藏”／“Favorite”，已收藏使用 `star.fill`＋“已收藏”／“Favorited”。帮助分别为“收藏，在面板中显示”和“取消收藏，从面板中移除”，英文分别为“Favorite to show in the panel”和“Remove from favorites and the panel”。包详情入口与收藏按钮独立，可分别通过键盘操作；无障碍标签包含包名及收藏状态，提示说明点击动作。包名允许换行，按钮文字完整显示。
 
-沿用既有 `toggleStarAction`、四个上限、持久化、权限门控及失败反馈，不增加写入 owner。HTML 仅演示同一呈现与操作；自动挂载、人工键盘与 VoiceOver 验证分别报告。
+沿用既有 `toggleStarAction`、四个上限、持久化、权限门控及失败反馈，不增加写入 owner。HTML 除演示同一呈现与操作外，还将列表工具行对齐原生：节标题不再保留“声音包”文字，新建在前、导入其次，生成记录入口收进节标题行；收进后仅在任务运行或待处理时显示进度说明，详情与记录页常驻状态文字。自动挂载、人工键盘与 VoiceOver 验证分别报告。
 
 ### App Motion 原生改造（现行 · 2026-10-08）
 

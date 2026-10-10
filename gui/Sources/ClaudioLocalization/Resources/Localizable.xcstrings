@@ -18180,13 +18180,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Favorite sound packs to access them quickly in the menu bar panel. Up to %d packs."
+            "value": "Favorite sound packs to access them quickly in the menu bar panel. Up to %lld packs."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 %d 个。"
+            "value": "收藏的声音包会显示在菜单栏面板中，方便快速切换。最多 %lld 个。"
           }
         }
       }
@@ -18289,23 +18289,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@，已收藏"
-          }
-        }
-      }
-    },
-    "settings.sounds.redesign.panel": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show in Panel"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在面板显示"
           }
         }
       }
