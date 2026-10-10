@@ -128,6 +128,8 @@ public final class PanelConfigController: ObservableObject {
     }
     public var workspaceRules: [WorkspaceSoundRule] { baseConfig.workspaceRules }
     public var workspaceRulesMalformed: Bool { baseConfig.workspaceRulesMalformed }
+    /// 完整声音包库（`.fullLibrary`）—— 设置窗口的包选择与修复判定读它。主面板的声音包下拉
+    /// 读 ``packCards``（面板显示集），不读这里。
     public var allSoundPacks: [PackCard] {
         guard let librarySnapshot else { return packCards }
         return librarySnapshot.packCards(
@@ -240,6 +242,8 @@ public final class PanelConfigController: ObservableObject {
             || baseConfig.invalidSurfaceOverrideKeys.contains(selectedSurface.rawValue)
     }
     @Published public private(set) var eventRows: [EventRow]
+    /// 面板显示集：星标 ∩ 磁盘、≤ 4（`.panelStarredDisplay`），主面板声音包下拉的唯一数据源。
+    /// 当前包未加星时合法地不在其中（下拉自插兜底项）；设置窗口读全库 ``allSoundPacks``。
     @Published public private(set) var packCards: [PackCard]
     @Published public private(set) var packSectionState: PanelPackSectionState
     @Published public private(set) var selectedPackIsBuiltinReadOnly: Bool
@@ -294,7 +298,7 @@ public final class PanelConfigController: ObservableObject {
     /// import view-model `retarget` 到新包）。参数是刚重载出来的 config —— retarget 要用它的 `selectedPack`。
     private let afterFullReload: @MainActor (ClaudioConfig) -> Void
     /// 管理窗口成功写发布的 revision。订阅只做 ``reload()``，绝不降级到
-    /// ``reloadConfigOnly()``，因为 manifest 与未来的星标写都可能改变 `packCards`。
+    /// ``reloadConfigOnly()``，因为 manifest 与星标写都可能改变 `packCards`。
     private var soundPacksRefreshCancellable: AnyCancellable?
     /// C1：owner 投影（显式选择 / `applyConfig` 重解析 / 陈旧度翻转）驱动读模型重投影。
     private var selectionProjectionCancellable: AnyCancellable?

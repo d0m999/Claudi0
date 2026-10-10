@@ -839,12 +839,13 @@ public struct PanelView: View {
                                 _ = panelModel.switchPack(to: $0); onAudibilityInputsChanged()
                             })
                     ) {
-                        if !panelModel.allSoundPacks.contains(where: {
+                        if !panelModel.packCards.contains(where: {
                             $0.id == panelModel.config.selectedPack
                         }) {
-                            Text(panelModel.config.selectedPack).tag(panelModel.config.selectedPack)
+                            Text(panelModel.selectedPackMetadata.displayName)
+                                .tag(panelModel.config.selectedPack)
                         }
-                        ForEach(panelModel.allSoundPacks, id: \.id) { pack in
+                        ForEach(panelModel.packCards, id: \.id) { pack in
                             Text(SelectedPackMetadata(id: pack.id, name: pack.name).displayName)
                                 .tag(
                                     pack.id)

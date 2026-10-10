@@ -790,6 +790,11 @@ func runViewWiringSuites() {
                 && panel.contains("libraryUnavailableSection")
                 && panel.contains("configFailureNotice()"),
             "事件写入必须消费共享可用性判断；声音库与 config 失败必须在当前 Panel 显式呈现")
+        expect(
+            panel.contains("ForEach(panelModel.packCards, id: \\.id)")
+                && !panel.contains("allSoundPacks"),
+            "声音包下拉必须消费面板显示集（星标 ∩ 磁盘 ≤4，PanelConfigController.packCards），"
+                + "全库 allSoundPacks 只属于设置窗口；当前包未加星时由下拉自插兜底项")
 
         guard
             let showStart = panel.range(
