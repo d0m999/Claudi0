@@ -81,6 +81,12 @@ if CommandLine.arguments.contains("--hook-baseline-observer") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--workspace-repository-identity") {
+    runWorkspaceRepositoryIdentitySuites()
+    print("Workspace repository identity: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--host-automation") {
     await runHostIntegrationAutomationSuites()
     print("\(totalChecks) checks, \(failures) failures")

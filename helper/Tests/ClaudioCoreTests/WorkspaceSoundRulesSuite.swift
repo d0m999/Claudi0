@@ -36,7 +36,7 @@ private final class WorkspaceHangingGitRunner: CommandRunning, @unchecked Sendab
 }
 
 @MainActor
-func runWorkspaceSoundRulesSuites() {
+func runWorkspaceRepositoryIdentitySuites() {
     suite("workspace directories: ordinary directory outside Git tree resolves") {
         withTempDirectory { root in
             let ordinary = root.appendingPathComponent("ordinary", isDirectory: true)
@@ -114,8 +114,44 @@ func runWorkspaceSoundRulesSuites() {
             expect(
                 try! config.resolveSoundProfile(for: .claudeCode, cwd: a.path).get().selectedPack
                     == "default", "inapplicable Surface uses Default Group")
+            // A submodule is its own repository even though its metadata lives in the parent.
+            git([
+                "-C", b.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                "commit", "--allow-empty", "-qm", "fixture",
+            ])
+            git([
+                "-C", a.path, "-c", "protocol.file.allow=always", "submodule", "add", "-q", b.path,
+                "module",
+            ])
+            let module = a.appendingPathComponent("module")
+            // The source must have a commit for submodule checkout.
+            let resolvedModule = try! WorkspaceDirectoryResolver.resolve(module.path).get()
+            expect(
+                resolvedModule.commonGitDirectory != directories[0].commonGitDirectory,
+                "submodule cannot inherit parent repository identity")
+            expect(
+                try! config.resolveSoundProfile(for: .codex, cwd: module.path).get().selectedPack
+                    == "parent",
+                "parent Git rule does not match a submodule")
         }
     }
+    suite("workspace Git lookup rejects stale .git targets") {
+        withTempDirectory { root in
+            let directory = root.appendingPathComponent("stale")
+            try! FileManager.default.createDirectory(
+                at: directory, withIntermediateDirectories: true)
+            writeFixture(
+                "gitdir: /no/such/claudio-git-target", to: directory.appendingPathComponent(".git"))
+            expect(
+                WorkspaceDirectoryResolver.resolve(directory.path) == .failure(.gitUnavailable),
+                "a stale .git marker cannot silently become an ordinary directory")
+        }
+    }
+}
+
+@MainActor
+func runWorkspaceSoundRulesSuites() {
+    runWorkspaceRepositoryIdentitySuites()
     suite("workspace Git lookup retries one transient deadline, but a persistent hang fails closed")
     {
         withTempDirectory { root in
@@ -172,18 +208,6 @@ func runWorkspaceSoundRulesSuites() {
                 realHang.outcomes == [.timedOut, .timedOut]
                     && Date().timeIntervalSince(started) < 10,
                 "both real child processes are stopped and the retry remains bounded")
-        }
-    }
-    suite("workspace Git lookup rejects stale .git targets") {
-        withTempDirectory { root in
-            let directory = root.appendingPathComponent("stale")
-            try! FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: true)
-            writeFixture(
-                "gitdir: /no/such/claudio-git-target", to: directory.appendingPathComponent(".git"))
-            expect(
-                WorkspaceDirectoryResolver.resolve(directory.path) == .failure(.gitUnavailable),
-                "a stale .git marker cannot silently become an ordinary directory")
         }
     }
     suite(
