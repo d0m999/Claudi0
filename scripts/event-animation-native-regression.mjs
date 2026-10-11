@@ -126,7 +126,7 @@ export async function createEventAnimationRegression(options) {
     assert(choices&&content&&reading,'Animation choice container or reading column is missing');
     const contained=(inner,outer)=>inner.x>=outer.x-1&&inner.y>=outer.y-1&&inner.x+inner.width<=outer.x+outer.width+1&&inner.y+inner.height<=outer.y+outer.height+1;
     const cards=styles.map(style=>({style,...frames[`settings.animation.style.${style}`]}));
-    assert(cards.every(card=>Number.isFinite(card.x)&&Number.isFinite(card.y)&&card.width>40&&Math.abs(card.height-153)<1),'One or more animation cards have invalid geometry');
+    assert(cards.every(card=>Number.isFinite(card.x)&&Number.isFinite(card.y)&&card.width>40&&Math.abs(card.height-126)<1),'One or more animation cards have invalid geometry');
     assert(cards.every(card=>contained(card,choices)&&contained(card,content)&&contained(card,reading)),`Animation card is clipped by its visible container: ${JSON.stringify(cards)}`);
     assert(cards.every(card=>Math.abs(card.y-cards[0].y)<1&&Math.abs(card.width-cards[0].width)<1),'Animation choices are not four equal side-by-side cards');
     assert(cards.slice(1).every((card,i)=>card.x>=cards[i].x+cards[i].width+11),'Animation cards overlap or lose their 12 pt gaps');

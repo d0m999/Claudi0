@@ -52,6 +52,48 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             time: performance.now()
         })""")
 
+    def open_animation_detail(self):
+        self.open(win="1", pane="notifications")
+        self.page.locator('[data-action="animation-detail"]').click()
+
+    def test_animation_character_switches_keep_space_focus_and_tab_order(self):
+        for control, field, adjacent, key in [
+            ("demo-character", "animationCharacter", "demo-static", "Tab"),
+            ("demo-static", "animationStatic", "demo-character", "Shift+Tab"),
+        ]:
+            with self.subTest(control=control):
+                self.open_animation_detail()
+                self.page.locator('[data-style="mechanicalDuck"]').click()
+                switch = self.page.locator(f'[data-control="{control}"]')
+                switch.focus()
+                for _ in range(2):
+                    previous = switch.is_checked()
+                    self.page.keyboard.press("Space")
+                    self.assertEqual(switch.is_checked(), not previous)
+                    self.assertEqual(self.settings_state()[field], not previous)
+                    self.assertTrue(switch.evaluate("el => el.getRootNode().activeElement === el"))
+                self.page.keyboard.press(key)
+                self.assertTrue(self.page.locator(f'[data-control="{adjacent}"]').evaluate(
+                    "el => el.getRootNode().activeElement === el"))
+
+    def test_animation_preview_track_shrinks_on_open_and_replay(self):
+        self.page.emulate_media(reduced_motion="no-preference")
+        self.open_animation_detail()
+        for replay in [False, True]:
+            with self.subTest(replay=replay):
+                if replay:
+                    self.page.locator('[data-replay]').click()
+                samples = self.page.locator('.anim-track > span').evaluate("""el => {
+                    const animation = el.getAnimations()[0];
+                    animation.pause();
+                    return [0, 2000, 4000, 5000].map(time => {
+                        animation.currentTime = time;
+                        return el.getBoundingClientRect().width / el.parentElement.getBoundingClientRect().width;
+                    });
+                }""")
+                for actual, remaining in zip(samples, [1, .5, 0, 0]):
+                    self.assertAlmostEqual(actual, remaining, delta=.001)
+
     def open_banner(self, reduced_motion="no-preference"):
         self.page.emulate_media(reduced_motion=reduced_motion)
         self.page.mouse.move(0, 0)
