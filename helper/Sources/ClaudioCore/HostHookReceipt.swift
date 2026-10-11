@@ -1220,28 +1220,41 @@ public struct HostHookReceiptStore: Sendable {
             return .failure(.writeFailure(reason: error.localizedDescription))
         }
         let cutoff = now.addingTimeInterval(-Self.historyRetention)
-        let regular = files.compactMap { file -> (url: URL, modified: Date, event: Date)? in
+        let regular = files.compactMap { file -> (url: URL, modified: Date)? in
             guard let values = try? file.resourceValues(forKeys: keys),
                 values.isRegularFile == true,
                 values.isSymbolicLink != true
             else { return nil }
-            let eventDate: Date
-            if case .success(let data) = readRegularFileBounded(
-                at: file, maxBytes: 1 << 16, followSymlink: false),
-                let receipt = try? Self.decode(data)
-            {
-                eventDate = receipt.timestamp
-            } else {
-                eventDate = .distantPast
-            }
-            return (file, values.contentModificationDate ?? .distantPast, eventDate)
-        }.sorted {
-            $0.event == $1.event ? $0.modified > $1.modified : $0.event > $1.event
+            return (file, values.contentModificationDate ?? .distantPast)
         }
-        for (index, entry) in regular.enumerated()
-        where entry.modified < cutoff || index >= Self.historyLimitPerSurface {
+        let removals: [URL]
+        let expired = regular.filter { $0.modified < cutoff }
+        if regular.count <= Self.historyLimitPerSurface, expired.count <= 1 {
+            // No count-based eviction is needed, and at most one unlink can fail.
+            // Multiple expired files retain the original order and partial-failure behavior.
+            removals = expired.map(\.url)
+        } else {
+            let ordered = regular.map { entry -> (url: URL, modified: Date, event: Date) in
+                let eventDate: Date
+                if case .success(let data) = readRegularFileBounded(
+                    at: entry.url, maxBytes: 1 << 16, followSymlink: false),
+                    let receipt = try? Self.decode(data)
+                {
+                    eventDate = receipt.timestamp
+                } else {
+                    eventDate = .distantPast
+                }
+                return (entry.url, entry.modified, eventDate)
+            }.sorted {
+                $0.event == $1.event ? $0.modified > $1.modified : $0.event > $1.event
+            }
+            removals = ordered.enumerated().compactMap { index, entry in
+                entry.modified < cutoff || index >= Self.historyLimitPerSurface ? entry.url : nil
+            }
+        }
+        for file in removals {
             do {
-                try FileManager.default.removeItem(at: entry.url)
+                try FileManager.default.removeItem(at: file)
             } catch {
                 return .failure(.writeFailure(reason: error.localizedDescription))
             }

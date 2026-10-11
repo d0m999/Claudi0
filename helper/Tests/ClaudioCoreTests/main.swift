@@ -1,4 +1,5 @@
 import ClaudioCore
+import Darwin
 import Foundation
 
 // Dependency-free test harness.
@@ -22,6 +23,7 @@ import Foundation
 
 var totalChecks = 0
 var failures = 0
+var receiptPruningTemporaryRoot: URL?
 
 if CommandLine.arguments.dropFirst().first == "--zed-pty-launch" {
     let command = Array(CommandLine.arguments.dropFirst(2))
@@ -72,6 +74,25 @@ func suite(_ name: String, _ body: @MainActor () -> Void) {
 func asyncSuite(_ name: String, _ body: @MainActor () async -> Void) async {
     print("• \(name)")
     await body()
+}
+
+if CommandLine.arguments.contains("--receipt-history-pruning") {
+    guard let path = ProcessInfo.processInfo.environment["CLAUDIO_RECEIPT_CONTRACT_ROOT"] else {
+        print("Receipt history pruning requires an explicit private fixture root")
+        exit(64)
+    }
+    var status = stat()
+    guard lstat(path, &status) == 0, status.st_mode & S_IFMT == S_IFDIR,
+        status.st_uid == geteuid(), status.st_mode & 0o077 == 0
+    else {
+        print("Receipt history pruning requires an owned private non-symlink directory")
+        exit(64)
+    }
+    receiptPruningTemporaryRoot = URL(fileURLWithPath: path, isDirectory: true)
+    runHostHookReceiptPruningSuites()
+    runHostHookReceiptSuites()
+    print("Receipt history pruning: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
 }
 
 if CommandLine.arguments.contains("--hook-baseline-observer") {
@@ -186,6 +207,7 @@ await runAdditionalHostMigrationSuites()
 runAdditionalHostHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
+runHostHookReceiptPruningSuites()
 runHookMeasurementSuites()
 runCodexVersionFallbackSuites()
 runHostVersionResolverSuites()

@@ -798,7 +798,7 @@ func injectedSetupPacksLock(under root: URL) -> URL {
 /// path — those are the user's actual machine state.
 @MainActor
 func withTempDirectory<T>(_ body: (URL) throws -> T) rethrows -> T {
-    let directory = FileManager.default.temporaryDirectory
+    let directory = (receiptPruningTemporaryRoot ?? FileManager.default.temporaryDirectory)
         .appendingPathComponent("claudio-tests-\(UUID().uuidString)", isDirectory: true)
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -810,7 +810,12 @@ func withTempDirectory<T>(_ body: (URL) throws -> T) rethrows -> T {
 func writeFixture(_ contents: String, to url: URL) {
     try? FileManager.default.createDirectory(
         at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try? contents.write(to: url, atomically: true, encoding: .utf8)
+    if receiptPruningTemporaryRoot != nil {
+        // Synthetic setup must not allocate Foundation's out-of-root replacement directory.
+        try? Data(contents.utf8).write(to: url)
+    } else {
+        try? contents.write(to: url, atomically: true, encoding: .utf8)
+    }
 }
 
 /// Creates a **FIFO** (named pipe) at `url` — the hostile-pack fixture for "this path has
