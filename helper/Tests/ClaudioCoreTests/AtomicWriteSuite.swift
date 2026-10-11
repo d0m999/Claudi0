@@ -506,6 +506,11 @@ private func isSimpleOptionMember(_ element: String) -> Bool {
 private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Six atomic fixture writes and one fixed diagnostic stream in the Core-only benchmark.
     "helper/Sources/claudio-hook-benchmark/main.swift": [".write("],
+    // Two atomic identity/corruption writes and synthetic locator links, all confined to
+    // a fresh private contract fixture root; no existing user files or links are replaced.
+    "helper/Sources/claudio-hook-benchmark/ClaudeCacheContract.swift": [
+        ".write(", ".createSymbolicLink(",
+    ],
     // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
     // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
@@ -678,6 +683,7 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
     "helper/Sources/claudio-hook-benchmark/main.swift": 6,
+    "helper/Sources/claudio-hook-benchmark/ClaudeCacheContract.swift": 2,
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
     "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,

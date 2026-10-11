@@ -48,26 +48,35 @@ final class ObservedRunner: CommandRunning, @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }; return results
     }
 }
-// Invocation-local version probe; persistent cache and signature checks are absent.
+// The default probe has no persistent cache; only synthetic cache contracts inject a resolver.
 final class Probe: @unchecked Sendable {
     private let lock = NSLock()
     private var resolved = false
     private var stored: String?
     let locator: HostExecutableLocator
     let runner: ObservedRunner
+    private let versionResolver: HostVersionResolver?
     init(locator: HostExecutableLocator, instant: Bool) {
         self.locator = locator
+        versionResolver = nil
         let base: any CommandRunning =
             instant
             ? InstantRunner()
             : SystemCommandRunner(environmentOverrides: ["PATH": locator.executableSearchPath])
         runner = ObservedRunner(base: base)
     }
+    init(resolver: HostVersionResolver, runner: ObservedRunner) {
+        locator = HostExecutableLocator(searchDirectories: [])
+        self.runner = runner
+        versionResolver = resolver
+    }
     func value() -> String? {
         lock.lock(); defer { lock.unlock() }
         if !resolved {
             stored = HostActivationScope.claudeCode(
-                executableLocator: locator, commandRunner: runner)
+                executableLocator: locator, commandRunner: runner,
+                versionResolver: versionResolver,
+                mode: versionResolver == nil ? .forceProbe : .reuseValidated)
             resolved = true
         }
         return stored
@@ -116,7 +125,10 @@ final class Fixture {
     let scope: String
     var heldLock: FileLock?
     var history: URL { store.historyRoot.appendingPathComponent(host.rawValue) }
-    init(root: URL, scenario: String, mode: String, host: HostID = .claudeCode) throws {
+    init(
+        root: URL, scenario: String, mode: String, host: HostID = .claudeCode,
+        scopeVersion: String? = nil
+    ) throws {
         self.root = root; self.scenario = scenario; self.mode = mode; self.host = host
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         store = HostHookReceiptStore(
@@ -186,7 +198,9 @@ final class Fixture {
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: tool.path)
         locator = mode == "real" ? .standard() : HostExecutableLocator(searchDirectories: [tools])
         let resolvedScope: String?
-        if mode == "real" {
+        if let scopeVersion {
+            resolvedScope = HostActivationScope.fingerprint(host: host, hostVersion: scopeVersion)
+        } else if mode == "real" {
             resolvedScope = Probe(locator: locator, instant: false).value()
         } else {
             resolvedScope = HostActivationScope.fingerprint(
@@ -218,7 +232,8 @@ final class Fixture {
         return document.buckets.reduce(0) { $0 + $1.count(host: host, event: .taskStart) }
     }
     func run(
-        observer: Bool, round: Int, pair: Int, position: Int, contract: Bool = false
+        observer: Bool, round: Int, pair: Int, position: Int, contract: Bool = false,
+        versionProbe: Probe? = nil, expectedProbeCount: Int = 1
     ) throws
         -> Sample
     {
@@ -241,7 +256,7 @@ final class Fixture {
         let payload = try JSONSerialization.data(withJSONObject: [
             "cwd": root.appendingPathComponent("workspace").path
         ])
-        let probe = Probe(locator: locator, instant: mode == "instant")
+        let probe = versionProbe ?? Probe(locator: locator, instant: mode == "instant")
         let play = PlayEnvironment(
             surfaceID: host.surfaceID, afplayPath: "/synthetic/afplay",
             lockFile: root.appendingPathComponent("play.lock"),
@@ -277,7 +292,7 @@ final class Fixture {
         let probeResults = probe.runner.snapshot
         try require(
             probeResults.count
-                == (authorized ? 1 : 0),
+                == (authorized ? expectedProbeCount : 0),
             "version probe count mismatch")
         let probeResult: String
         if !authorized {
@@ -287,6 +302,8 @@ final class Fixture {
             try require(
                 probeResults == [.timedOut], "timeout fixture did not confirm child cleanup")
             probeResult = "timed-out"
+        } else if expectedProbeCount == 0 {
+            probeResult = "cache-hit"
         } else {
             guard case .completed(0, _) = probeResults[0] else {
                 throw Failure(message: "successful version probe required")
@@ -393,6 +410,7 @@ func runContract() throws {
 
 func main() throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments == ["--claude-cache-contract"] { try runClaudeCacheContract(); return }
     if arguments == ["--contract"] { try runContract(); return }
     if arguments.first == "--fingerprint", arguments.count == 3,
         let host = HostID(rawValue: arguments[1]),
