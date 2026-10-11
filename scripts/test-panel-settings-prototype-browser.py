@@ -1181,6 +1181,53 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     expect(buttons.nth(2)).to_have_attribute("aria-pressed", "false")
                     self.assertEqual(buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))"), labels)
 
+    def test_favorite_write_failure_is_visible_and_retains_state(self):
+        for lang in ["zh", "en"]:
+            with self.subTest(lang=lang):
+                self.open(win="1", pane="sounds", lang=lang)
+                self.page.locator("#macSettingsScene").select_option("configConflict", force=True)
+                self.page.locator('[data-action="nav:sounds"]').click()
+                initial = self.settings_state()
+                pack_id = initial["stars"][0]
+                favorite = self.page.locator(f'[data-act="favorite"][data-id="{pack_id}"]')
+                title = favorite.locator("[data-favorite-title]")
+                feedback = self.page.locator("#operation-feedback")
+                favorited_label = "已收藏" if lang == "zh" else "Favorited"
+                favorite_label = "收藏" if lang == "zh" else "Favorite"
+                expect(title).to_have_text(favorited_label)
+                favorite.click()
+                failed = self.settings_state()
+                self.assertEqual(failed["stars"], initial["stars"])
+                self.assertEqual(failed["scopes"], initial["scopes"])
+                self.assertEqual(failed["packs"], initial["packs"])
+                self.assertEqual(failed["notice"]["kind"], "error")
+                self.assertEqual(feedback.count(), 1, "failed favorite writes need visible feedback")
+                expect(feedback).to_be_visible()
+                expect(feedback).to_be_in_viewport(ratio=1)
+                expect(feedback).to_have_text(failed["notice"][lang])
+                expect(title).to_have_text(favorited_label)
+                self.assertTrue(favorite.evaluate("el => el.getRootNode().activeElement === el"))
+
+                self.page.locator('[data-action="nav:events"]').click()
+                self.page.locator('[data-action="reload-config"]').click()
+                self.page.locator('[data-action="nav:sounds"]').click()
+                self.assertEqual(feedback.count(), 0, "navigation clears the previous feedback")
+                favorite.click()
+                removed = self.settings_state()
+                self.assertEqual(removed["stars"], [p for p in initial["stars"] if p != pack_id])
+                self.assertEqual(removed["notice"]["kind"], "success")
+                expect(feedback).to_be_visible()
+                expect(feedback).to_have_text(removed["notice"][lang])
+                expect(title).to_have_text(favorite_label)
+                favorite.press("Space")
+                restored = self.settings_state()
+                self.assertEqual(restored["stars"], removed["stars"] + [pack_id])
+                self.assertEqual(restored["scopes"], initial["scopes"])
+                self.assertEqual(restored["packs"], initial["packs"])
+                expect(title).to_have_text(favorited_label)
+                expect(feedback).to_have_text(restored["notice"][lang])
+                self.assertTrue(favorite.evaluate("el => el.getRootNode().activeElement === el"))
+
     def test_native_sounds_editor_and_ai_service_are_available(self):
         self.open(win="1",pane="sounds")
         self.page.locator('[data-control="pack"]').select_option("studio")

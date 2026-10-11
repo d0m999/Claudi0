@@ -5296,7 +5296,7 @@ function mountApprovedSounds(){
   approvedSoundsView.sync(S.detail,S.pack);
 }
 
-function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+'<div id="approved-sounds-mount"></div>';}
+function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+'<div id="approved-sounds-mount"></div>';}
 function packActions(p){return row(T('包操作','Pack actions'),'',button(T('在 Finder 中显示…','Reveal in Finder…'),'reveal-pack','small-button',!installed(p)));}
 function renderSoundsLegacy(){
  if(S.detail==='service')return renderService();if(S.detail==='audio')return renderAudioFiles();if(S.detail==='panel')return renderPanelPacks();if(editorIndex()>=0)return renderSoundEditor();
