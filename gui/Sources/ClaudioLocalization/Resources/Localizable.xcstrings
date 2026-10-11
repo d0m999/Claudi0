@@ -16393,13 +16393,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose original icons or a character. Changes take effect immediately."
+            "value": "Choose the icon or character shown in event banners. Changes apply immediately."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择原版图标或角色，切换后立即生效。"
+            "value": "选择横幅中显示的图标或角色，切换后立即生效。"
+          }
+        }
+      }
+    },
+    "event-animation.character-options": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Character options"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "角色选项"
           }
         }
       }
@@ -16576,6 +16592,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示角色"
+          }
+        }
+      }
+    },
+    "event-animation.style-section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "样式"
           }
         }
       }

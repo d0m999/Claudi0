@@ -1444,6 +1444,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
 
     public static let eventAnimationTitle: Self = "event-animation.title"
     public static let eventAnimationDescription: Self = "event-animation.description"
+    public static let eventAnimationStyleSection: Self = "event-animation.style-section"
+    public static let eventAnimationCharacterOptions: Self = "event-animation.character-options"
     public static let eventAnimationOriginal: Self = "event-animation.original"
     public static let eventAnimationMechanicalDuck: Self = "event-animation.mechanical-duck"
     public static let eventAnimationPixelGhost: Self = "event-animation.pixel-ghost"
@@ -1601,6 +1603,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .integrationsAutoDiagnosticsTitle,
         .eventAnimationTitle,
         .eventAnimationDescription,
+        .eventAnimationStyleSection,
+        .eventAnimationCharacterOptions,
         .eventAnimationOriginal,
         .eventAnimationMechanicalDuck,
         .eventAnimationPixelGhost,

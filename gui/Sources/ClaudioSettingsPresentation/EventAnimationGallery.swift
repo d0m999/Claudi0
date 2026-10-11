@@ -43,7 +43,7 @@ final class EventAnimationGalleryView: NSView {
         EventAnimationActionView(label: AnyView(EmptyView()))
     }
     override var intrinsicContentSize: NSSize {
-        NSSize(width: NSView.noIntrinsicMetric, height: 153)
+        NSSize(width: NSView.noIntrinsicMetric, height: 126)
     }
     override init(frame: NSRect) {
         super.init(frame: frame)
