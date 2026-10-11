@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Real helper subprocesses, isolated configuration, stub host versions and silent audio."""
 import argparse
-import ctypes
 import json
 import os
 from pathlib import Path
@@ -10,10 +9,14 @@ import subprocess
 import tempfile
 import uuid
 
+from hook_cli_fixture import register_fixture_lifetime
+
 REPO = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument("--debug-bin", type=Path)
 parser.add_argument("--release-bin", type=Path)
+parser.add_argument("--debug-only", action="store_true",
+                    help="Run temporary Debug fixtures; skip Release callbacks and status")
 args = parser.parse_args()
 checks = 0
 
@@ -33,7 +36,7 @@ def build(configuration):
 
 
 debug = args.debug_bin or build("debug")
-release = args.release_bin or build("release")
+release = None if args.debug_only else args.release_bin or build("release")
 
 
 def invoke(binary, arguments, env, data=b""):
@@ -77,30 +80,6 @@ def bytes_on_disk(root):
     return {str(file.relative_to(root)): file.read_bytes() for file in root.rglob("*") if file.is_file()}
 
 
-def register_fixture_lifetime(root):
-    # This test process stands in for the GUI lifetime only inside its temporary root.
-    # Capture the kernel identity rather than bypassing the production event gate.
-    class ProcBSDInfo(ctypes.Structure):
-        _fields_ = [(name, ctypes.c_uint32) for name in (
-            "flags", "status", "xstatus", "pid", "ppid", "uid", "gid", "ruid", "rgid", "svuid", "svgid", "reserved"
-        )] + [("comm", ctypes.c_char * 16), ("name", ctypes.c_char * 32),
-              ("nfiles", ctypes.c_uint32), ("pgid", ctypes.c_uint32), ("jobc", ctypes.c_uint32),
-              ("tty_device", ctypes.c_uint32), ("tty_pgid", ctypes.c_uint32),
-              ("nice", ctypes.c_int32), ("start_seconds", ctypes.c_uint64),
-              ("start_microseconds", ctypes.c_uint64)]
-
-    info = ProcBSDInfo()
-    library = ctypes.CDLL("/usr/lib/libproc.dylib")
-    library.proc_pidinfo.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]
-    library.proc_pidinfo.restype = ctypes.c_int
-    check(library.proc_pidinfo(os.getpid(), 3, 0, ctypes.byref(info), ctypes.sizeof(info)) == ctypes.sizeof(info)
-          and info.pid == os.getpid() and info.uid == os.getuid() and info.status != 5,
-          "fixture process has a verifiable live kernel identity")
-    (root / "gui-run.json").write_text(json.dumps({
-        "runID": str(uuid.uuid4()), "userID": os.getuid(),
-        "process": {"pid": os.getpid(), "startSeconds": info.start_seconds,
-                    "startMicroseconds": info.start_microseconds},
-    }))
 
 
 with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
@@ -209,13 +188,16 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
               "disconnect removes only owned bytes")
         check(protected.read_bytes() == original and legacy.read_bytes() == b"# old Kimi bytes\n",
               "third-party and old Kimi bytes preserved")
-        before_release = bytes_on_disk(root)
-        hook(release, host, events[0], replacement, payload(host, events[0]), env)
+        if release is not None:
+            before_release = bytes_on_disk(root)
+            hook(release, host, events[0], replacement, payload(host, events[0]), env)
         # Release deliberately ignores the test-home override. Never connect a now-visible
         # host here: that would install a fixture helper into the real user runtime.
-        check(bytes_on_disk(root) == before_release, "Release hook remains silent for an old fixture installation")
-    status = invoke(release, ["integrations", "status", "--json"], env)
-    check(status.returncode == 0 and [item["host"] for item in json.loads(status.stdout)] ==
-          ["claude-code", "codex", "workbuddy", "opencode", "kimi-code"],
-          "ordinary Release exposes sources with reviewed bindings")
-print(f"Additional host CLI: {checks} checks passed; fixtures only, real-host acceptance not performed")
+            check(bytes_on_disk(root) == before_release, "Release hook remains silent for an old fixture installation")
+    if release is not None:
+        status = invoke(release, ["integrations", "status", "--json"], env)
+        check(status.returncode == 0 and [item["host"] for item in json.loads(status.stdout)] ==
+              ["claude-code", "codex", "workbuddy", "opencode", "kimi-code"],
+              "ordinary Release exposes sources with reviewed bindings")
+mode = "Debug-only; Release not performed" if args.debug_only else "Debug and Release"
+print(f"Additional host CLI: {checks} checks passed; {mode}; real-host acceptance not performed")
