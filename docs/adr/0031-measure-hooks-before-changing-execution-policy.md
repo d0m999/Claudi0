@@ -22,6 +22,15 @@ status: accepted
 完整替代提案仍见 [ADR 0033](0033-refresh-host-version-cache-outside-hooks.md)，其状态保持 proposed。
 E1 完成后另行建议是否继续 E2；不自动进入 E2，不确认生产冷预算，也不启用生产缓存。
 
+2026-10-11 本地候选资格收窄：用户授权在无法证明 Codex resources/path 与完整 `--version`
+前置链无关时保留真实探测。因此当前隔离候选只接纳 Claude Code 原生版本目录；Codex standalone
+layout 1 也不具备缓存资格。下文双宿主资格是历史 E1 设计与证据范围，不适用于收窄后的候选。
+Codex 的两种解析模式均按原调用路径进行原有有界真实探测；显式刷新返回不具资格及真实探测结果，
+不签名、不读取/改写旧观察、不建立缓存根或锁；失败不用旧值。重新取得资格需另有依赖证明与授权，
+不递归扫描 resources/path 来扩大当前候选。此修订只同步已授权本地边界，不接受完整 ADR 0033、
+不放行核心合入或生产启用；性能失败、预算闸门及 E2 暂停保持不变。详见
+[ADR 0033 的资格与兼容核验边界](0033-refresh-host-version-cache-outside-hooks.md#本地候选资格与兼容核验)。
+
 沿用 `handleHostHook` 和已有环境注入，通过一个默认关闭的类型化测量上下文记录单调时钟跨度
 和有限结果。上下文只存内存，驱动器输出；不增加 hook 输出、普通日志或持久遥测。跨度可嵌套，
 不可相加推导总耗时。Core 隔离、Debug CLI、确切 Release helper、真实宿主及人耳听音分别列证据。
@@ -35,8 +44,8 @@ Kimi/OpenCode 不改变策略。不新增脱离宿主管理的进程或 helper �
 自有 hook 完整性检查与接入维护，备份、第三方顺序、未知字段、显式关闭及 Codex 信任边界不变。
 
 预算确认后的 `HostVersionResolver` 是版本观察缓存唯一 owner，提供验证后复用及强制探测。
-只存规范化宿主版本，完整 scope 仍结合 Claudio 版本与 binding 生成。首版只接纳 Claude Code
-原生版本目录和 Codex standalone layout 1；真实 `--version` 是版本值来源，布局/包元数据及
+只存规范化宿主版本，完整 scope 仍结合 Claudio 版本与 binding 生成。历史 E1 首版资格只接纳 Claude Code
+原生版本目录和 Codex standalone layout 1（当前本地候选范围见上述 2026-10-11 修订）；真实 `--version` 是版本值来源，布局/包元数据及
 系统签名 API 决定冷填充资格，禁止每事件启动 `codesign`。每次命中重新定位调用路径、实际目标
 和依赖元数据身份，执行保留原调用路径及 `argv[0]`。探测前后身份一致才发布缓存，探测不在
 事件发布许可内进行；私有、有界、原子发布，非阻塞写锁，每宿主四项，有效期上限 10 分钟，
