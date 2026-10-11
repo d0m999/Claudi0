@@ -115,6 +115,7 @@ func runWorkspaceRepositoryIdentitySuites() {
                 try! config.resolveSoundProfile(for: .claudeCode, cwd: a.path).get().selectedPack
                     == "default", "inapplicable Surface uses Default Group")
             // A submodule is its own repository even though its metadata lives in the parent.
+            // The source must have a commit for submodule checkout.
             git([
                 "-C", b.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
                 "commit", "--allow-empty", "-qm", "fixture",
@@ -124,7 +125,6 @@ func runWorkspaceRepositoryIdentitySuites() {
                 "module",
             ])
             let module = a.appendingPathComponent("module")
-            // The source must have a commit for submodule checkout.
             let resolvedModule = try! WorkspaceDirectoryResolver.resolve(module.path).get()
             expect(
                 resolvedModule.commonGitDirectory != directories[0].commonGitDirectory,
