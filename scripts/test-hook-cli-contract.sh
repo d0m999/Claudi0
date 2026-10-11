@@ -328,4 +328,3 @@ for expected in muted debounced; do
 done
 
 echo "PASS: claudi0 hook 真实子进程 exit/stdout/stderr、提问入口与 Debug-only root 契约"
-
