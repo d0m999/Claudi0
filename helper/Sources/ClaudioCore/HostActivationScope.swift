@@ -145,36 +145,43 @@ public enum HostActivationScope {
 
     public static func discoveredVersion(
         for host: HostID, executableLocator: HostExecutableLocator = .standard(),
-        commandRunner: (any CommandRunning)? = nil
+        commandRunner: (any CommandRunning)? = nil,
+        versionResolver: HostVersionResolver? = nil
     ) -> String? {
-        guard host == .claudeCode || host == .codex else { return nil }
-        return commandVersion(
-            command: host == .claudeCode ? "claude" : "codex",
-            executableLocator: executableLocator, commandRunner: commandRunner)
+        (versionResolver
+            ?? HostVersionResolver(
+                executableLocator: executableLocator, commandRunner: commandRunner))
+            .resolve(host, mode: .forceProbe)
     }
 
     public static func claudeCode(
         executableLocator: HostExecutableLocator = .standard(),
-        commandRunner: (any CommandRunning)? = nil
+        commandRunner: (any CommandRunning)? = nil,
+        versionResolver: HostVersionResolver? = nil,
+        mode: HostVersionResolutionMode = .forceProbe
     ) -> String? {
         guard
-            let version = commandVersion(
-                command: "claude",
-                executableLocator: executableLocator,
-                commandRunner: commandRunner)
+            let version =
+                (versionResolver
+                ?? HostVersionResolver(
+                    executableLocator: executableLocator, commandRunner: commandRunner))
+                .resolve(.claudeCode, mode: mode)
         else { return nil }
         return fingerprint(host: .claudeCode, hostVersion: version)
     }
 
     public static func codex(
         executableLocator: HostExecutableLocator = .standard(),
-        commandRunner: (any CommandRunning)? = nil
+        commandRunner: (any CommandRunning)? = nil,
+        versionResolver: HostVersionResolver? = nil,
+        mode: HostVersionResolutionMode = .forceProbe
     ) -> String? {
         guard
-            let version = commandVersion(
-                command: "codex",
-                executableLocator: executableLocator,
-                commandRunner: commandRunner)
+            let version =
+                (versionResolver
+                ?? HostVersionResolver(
+                    executableLocator: executableLocator, commandRunner: commandRunner))
+                .resolve(.codex, mode: mode)
         else { return nil }
         return fingerprint(host: .codex, hostVersion: "cli=\(version)")
     }
@@ -246,10 +253,13 @@ public enum HostActivationScope {
         return nil
     }
 
-    public static func current(for host: HostID) -> String? {
+    public static func current(
+        for host: HostID, versionResolver: HostVersionResolver? = nil,
+        mode: HostVersionResolutionMode = .forceProbe
+    ) -> String? {
         switch host {
-        case .claudeCode: claudeCode()
-        case .codex: codex()
+        case .claudeCode: claudeCode(versionResolver: versionResolver, mode: mode)
+        case .codex: codex(versionResolver: versionResolver, mode: mode)
         case .workBuddy: workBuddy()
         case .opencode, .kimiCode:
             additionalHost(host, configurationRoot: AdditionalHostPaths.currentRoot(host: host))

@@ -97,9 +97,10 @@ public func systemHostHookEnvironment(
     for host: HostID,
     eventNoticeChannel: HostEventNoticeChannel? = nil,
     sourcePayload: Data? = nil,
-    authorizationToken: HostEventAuthorizationToken? = nil
+    authorizationToken: HostEventAuthorizationToken? = nil,
+    versionResolver: HostVersionResolver? = nil
 ) -> HostHookEnvironment {
-    let questionScope = HookQuestionScopeSnapshot(host: host)
+    let questionScope = HookQuestionScopeSnapshot(host: host, versionResolver: versionResolver)
     return HostHookEnvironment(
         host: host,
         authorization: HostEventAuthorization(),
@@ -133,13 +134,19 @@ private final class HookQuestionScopeSnapshot: @unchecked Sendable {
     private var stored: String?
     private let host: HostID
 
-    init(host: HostID) { self.host = host }
+    private let versionResolver: HostVersionResolver?
+
+    init(host: HostID, versionResolver: HostVersionResolver?) {
+        self.host = host
+        self.versionResolver = versionResolver
+    }
 
     var value: String? {
         lock.lock()
         defer { lock.unlock() }
         if !hasResolved {
-            stored = HostActivationScope.current(for: host)
+            stored = HostActivationScope.current(
+                for: host, versionResolver: versionResolver, mode: .reuseValidated)
             hasResolved = true
         }
         return stored

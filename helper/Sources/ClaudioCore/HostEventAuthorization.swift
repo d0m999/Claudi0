@@ -187,6 +187,8 @@ public final class HostPublicationContext: @unchecked Sendable {
         .init(lockFile: lockFile)
     }
 
+    var isLeaseHeld: Bool { lease != nil }
+
     public func acquire() -> HostPublicationDecision {
         if lease != nil { return .allowed }
         let lock = FileLock(path: lockFile.path)

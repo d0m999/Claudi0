@@ -87,6 +87,27 @@ if CommandLine.arguments.contains("--workspace-repository-identity") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.count == 5, CommandLine.arguments[1] == "--host-version-cache-child" {
+    runVersionCacheChild(
+        root: URL(fileURLWithPath: CommandLine.arguments[2]), host: CommandLine.arguments[3],
+        action: CommandLine.arguments[4])
+    exit(0)
+}
+
+if CommandLine.arguments.contains("--codex-version-fallback") {
+    runCodexVersionFallbackSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--host-version-cache") {
+    runCodexVersionFallbackSuites()
+    runHostVersionResolverSuites()
+    runHostVersionRefreshSuites()
+    print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--host-automation") {
     await runHostIntegrationAutomationSuites()
     print("\(totalChecks) checks, \(failures) failures")
@@ -166,6 +187,9 @@ runAdditionalHostHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
 runHookMeasurementSuites()
+runCodexVersionFallbackSuites()
+runHostVersionResolverSuites()
+runHostVersionRefreshSuites()
 runHostHookRunnerSuites()
 runHostEventSourceSuites()
 runHostProcessAncestrySuites()
