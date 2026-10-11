@@ -69,6 +69,17 @@ public enum ClaudioColorHex {
     public static let clayHoverDark = "E68A5C"
     public static let clayHoverLight = "D97757"
 
+    // MARK: T2 × C1 品牌面（DESIGN.md「T2 × C1 品牌面用法约束」，两主题同值）
+
+    /// `brand-lime` 品牌酸柠——T2 酸柠容器的填充色（菜单栏图标、面板头部、关于页图标）。
+    /// 来自品牌包 claudi0-basic-kit v1.0；用法约束：**只**落在 `brandInk` 上，不对任何其他底色
+    /// （对暖白底色仅 ≈1.1:1，容器边缘靠 16% `brandInk` 发丝线界定）。不进入事件语义层。
+    public static let brandLime = "D8F447"
+
+    /// `brand-ink` 品牌深墨——T2 图形（酸柠容器上）与浅底横向字标的单色。对 `brandLime`
+    /// 实测 ≈10.6:1（`ContrastSuite` 钉 ≥4.5）。
+    public static let brandInk = "172B25"
+
     // MARK: 宿主连接状态（不是官方品牌色）
 
     /// 只用于事件行宿主 Logo 的“已连接”事实。几何标识归各宿主商标权利人所有；这些颜色属于

@@ -51,6 +51,26 @@ func runContrastSuites() {
             "light clay-hover drifted from DESIGN.md")
     }
 
+    suite("palette: T2 brand tokens stay on their documented surfaces") {
+        // 品牌包用法约束（DESIGN.md「T2 × C1 品牌要素」）：酸柠 #D8F447 只落在深墨 #172B25 上。
+        // 容器内图形、容器发丝线与字标都不允许 drift 到别的色面；实测余量很大，门槛取 ≥4.5。
+        expect(
+            contrastRatio(ClaudioColorHex.brandInk, ClaudioColorHex.brandLime) >= 4.5,
+            "深墨 T2 图形对酸柠容器必须 ≥4.5:1（菜单栏/面板头/关于页共用这一对）")
+        // 字标两主题色各自对最贴近的已文档化表面：浅底深墨对亮面板、深底酸柠对暗面板。
+        // 设置侧栏真实底是系统材质，panel token 是已文档化表面里最贴近的替身。
+        expect(
+            contrastRatio(ClaudioColorHex.brandInk, ClaudioColorHex.panelLight) >= 4.5,
+            "浅底字标深墨对亮面板必须 ≥4.5:1")
+        expect(
+            contrastRatio(ClaudioColorHex.brandLime, ClaudioColorHex.panelDark) >= 4.5,
+            "深底字标酸柠对暗面板必须 ≥4.5:1")
+        expect(
+            compositedHex(ClaudioColorHex.brandInk, over: ClaudioColorHex.brandLime, alpha: 0.16)
+                != nil,
+            "容器 16% 发丝线必须能合成出真实像素色（避免借不存在的颜色当描边）")
+    }
+
     suite("palette: Sound Scope opacity recipes preserve light/dark interaction contracts") {
         expect(
             ClaudioTheme.PanelSoundScopeOpacity.selectedInteractionOverlay(.dark) == 0.22

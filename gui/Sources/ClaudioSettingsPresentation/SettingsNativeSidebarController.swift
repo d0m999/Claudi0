@@ -25,7 +25,10 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
 
     package override func loadView() {
         view = NSView()
-        let brand = NSHostingView(rootView: ClaudioOrbitWordmark(height: 19))
+        // T2 官方横向组合（2026-10-11 品牌修订，高 38pt）。字标盒左缘置 6.5pt：
+        // 功能区图标列在 16pt（侧栏 12pt + 行内边距 4pt），字标 viewBox 左留白 9.5pt
+        // （36/504 × 133pt 宽），墨迹左缘因此对齐图标列。
+        let brand = NSHostingView(rootView: ClaudioT2Wordmark(height: 38))
         brand.setAccessibilityElement(false)
         let scroll = NSScrollView()
         scroll.drawsBackground = false
@@ -57,8 +60,8 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
         }
         NSLayoutConstraint.activate([
             brand.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            brand.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 26),
-            brand.heightAnchor.constraint(equalToConstant: 19),
+            brand.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6.5),
+            brand.heightAnchor.constraint(equalToConstant: 38),
             scroll.topAnchor.constraint(equalTo: brand.bottomAnchor, constant: 16),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),

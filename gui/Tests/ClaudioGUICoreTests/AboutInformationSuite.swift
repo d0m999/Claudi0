@@ -312,8 +312,9 @@ func runAboutInformationSuites() {
                 && view.contains("settings.about.diagnostics.copy"),
             "About must wire sidebar/title/first-action keyboard order and both copy actions")
         expect(
-            view.contains("ClaudioOrbitWordmark("),
-            "About identity must reuse the current Orbit Zero wordmark component")
+            view.contains("ClaudioT2Badge(") && view.contains("ClaudioT2Wordmark(")
+                && !view.contains("ClaudioOrbit"),
+            "About identity must reuse the current T2 badge and wordmark components")
         expect(
             view.contains("settingsAboutResourceMissing")
                 && view.contains("settings.about.feedback")

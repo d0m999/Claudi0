@@ -111,6 +111,22 @@ public enum ClaudioTheme {
         clay(scheme).opacity(scheme == .dark ? 0.15 : 0.12)
     }
 
+    /// `brand-lime` 品牌酸柠——T2 容器填充（菜单栏图标、面板头部、关于页图标），两主题同值。
+    /// 用法约束见 DESIGN.md「T2 × C1 品牌面用法约束」：只落在 `brandInk` 上。
+    public static var brandLime: Color {
+        Color(claudioHex: ClaudioColorHex.brandLime)
+    }
+
+    /// `brand-ink` 品牌深墨——T2 图形（酸柠容器上）与浅底横向字标，两主题同值。
+    public static var brandInk: Color {
+        Color(claudioHex: ClaudioColorHex.brandInk)
+    }
+
+    /// 横向字标的主题色：浅底深墨单色、深底酸柠（品牌包 `--brand-word` 两值）。
+    public static func brandWord(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? brandLime : brandInk
+    }
+
     public static func panelSoundScopeSelectedInteractionOverlay(
         _ scheme: ColorScheme
     ) -> Color {

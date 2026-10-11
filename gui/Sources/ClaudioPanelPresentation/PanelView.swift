@@ -285,7 +285,12 @@ public struct PanelView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 8) {
-            ClaudioOrbitWordmark(height: 22)
+            // 品牌头（2026-10-11 T2 修订）：22pt 酸柠容器 + 产品名文本，与原型 .p-head 同形制。
+            ClaudioT2Badge(size: 22, cornerRadius: 5, glyphSize: 14)
+            Text("claudi0")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .kerning(-0.13)
+                .foregroundColor(ClaudioTheme.text(colorScheme))
             Spacer(minLength: 8)
             Button(action: onOpenSettings) {
                 Label(l10n.text(.panelOpenSettings), systemImage: "gearshape")

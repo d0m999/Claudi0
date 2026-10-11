@@ -1,6 +1,8 @@
 import AppKit
+import ClaudioGUIComponents
 import ClaudioGUICore
 import Foundation
+import SwiftUI
 
 // MARK: - `ClaudioGUI` 这个 executable target 需要源码接线护栏
 //
@@ -487,48 +489,195 @@ func runViewWiringSuites() {
             "runtime 经共享模型清空隐私时，也必须丢弃旧的焦点归还动作")
     }
 
-    suite("Orbit Zero 字标是所有 UI 品牌入口的单一实现") {
+    suite("T2 图形与横向字标是所有 UI 品牌入口的单一实现") {
         guard
             let branding = codeOnly(
                 "gui/Sources/ClaudioGUIComponents/ClaudioBranding.swift"),
             let panel = codeOnly("gui/Sources/ClaudioPanelPresentation/PanelView.swift"),
-            let menuBarIcon = codeOnly("gui/Sources/ClaudioGUI/MenuBarIcon.swift")
+            let menuBarIcon = codeOnly("gui/Sources/ClaudioGUI/MenuBarIcon.swift"),
+            let sidebar = codeOnly(
+                "gui/Sources/ClaudioSettingsPresentation/SettingsNativeSidebarController.swift"
+            )
         else {
-            expect(false, "读不到 Orbit Zero 共享组件、面板标题或菜单栏图标源码")
+            expect(false, "读不到 T2 共享组件、面板标题、菜单栏图标或设置侧栏源码")
             return
         }
 
         expect(
-            branding.contains("public struct ClaudioOrbitWordmark")
-                && branding.contains("public struct ClaudioOrbitZeroMark")
-                && branding.contains(".accessibilityElement(children: .ignore)")
-                && branding.contains(".accessibilityLabel(\"claudi0\")")
-                && branding.contains(".accessibilityHidden(true)"),
-            "完整字标必须由共享组件绘制；轨道细节不拆成 VoiceOver 节点，字标本身仍有 claudi0 文本替代")
-
-        let normalizedBranding = collapsingWhitespace(branding)
+            branding.contains("public struct ClaudioT2Mark")
+                && branding.contains("public struct ClaudioT2Badge")
+                && branding.contains("public struct ClaudioT2Wordmark")
+                && branding.contains("public enum ClaudioT2Geometry")
+                && branding.contains(".accessibilityLabel(\"claudi0\")"),
+            "完整字标必须由共享 T2 几何绘制（单一几何真相源），字标本身仍有 claudi0 文本替代")
         expect(
-            normalizedBranding.components(separatedBy: ".offset(x: -size * 0.22)").count - 1 == 1
-                && normalizedBranding.contains(
-                    "} .offset(x: -size * 0.22) .frame(width: size * 1.36, height: size)")
-                && !normalizedBranding.contains(".offset(x: size * 0.10)"),
-            "Orbit Zero 的光晕、0 与斜轨必须共享 ZStack 中心，再由整个图形组统一左移")
-        expect(
-            !branding.contains("Circle()") && !branding.contains("signal dot"),
-            "应用内 Orbit Zero 字标不得绘制装饰点")
+            !branding.contains("ClaudioOrbit"),
+            "Orbit Zero 几何已被 T2 品牌包取代，共享组件里不得残留第二套品牌图形")
 
         expect(
-            panel.components(separatedBy: "ClaudioOrbitWordmark(").count - 1 == 1
-                && !panel.contains("Text(\"claudi0\")"),
-            "运行面板必须调用同一份 Orbit Zero 字标，不能退回两份手写 Text logo")
-
+            panel.components(separatedBy: "ClaudioT2Badge(").count - 1 == 1
+                && panel.contains("Text(\"claudi0\")")
+                && !panel.contains("ClaudioOrbit"),
+            "运行面板头必须调用同一份 T2 容器组件加产品名文本，不能退回两份手写 logo")
         expect(
             menuBarIcon.contains("static func make() -> NSImage")
-                && menuBarIcon.contains("drawOrbitZero()")
-                && menuBarIcon.contains("rotation.rotate(byDegrees: 16)")
-                && !menuBarIcon.contains("dot.fill()")
-                && menuBarIcon.contains("image.isTemplate = true"),
-            "菜单栏必须使用同源 Orbit Zero 减法几何，并保持 template image 自动适配亮暗菜单栏")
+                && menuBarIcon.contains("ClaudioT2Geometry")
+                && menuBarIcon.contains("badgeSize: CGFloat = 18")
+                && menuBarIcon.contains("glyphSize: CGFloat = 11.5")
+                && menuBarIcon.contains("cornerRadius: CGFloat = 4.5")
+                && menuBarIcon.contains("image.isTemplate = false"),
+            "菜单栏必须使用同源 T2 几何的 18pt 酸柠彩色容器（不走 template 单色惯例）")
+        expect(
+            sidebar.contains("ClaudioT2Wordmark(height: 38)")
+                && sidebar.contains("constant: 6.5"),
+            "设置侧栏字标必须是 38pt T2 横向组合，并把墨迹左缘对齐功能区图标列（16pt 列 − 9.5pt 字标内留白 = 6.5pt）")
+    }
+
+    suite("T2 几何：旋转、横向组合落位与笔画是可以量出来的品牌包数值") {
+        // 这几条断的是真实几何（ClaudioT2Geometry 产出的 CGPath），不是源码文本：
+        // 菜单栏（AppKit）与面板/侧栏/关于页（SwiftUI）从同一段 segment 数据绘制，
+        // 转录错一个控制点或转置一步 transform，这里就会红。
+        // 用 `boundingBoxOfPath`（不含贝塞尔控制点的紧包）。rect 取 41.6×41.6（= 官方
+        // viewBox 边长，缩放系数 1）：新语义是「元素尺寸即墨迹尺寸」，墨迹紧包 41.5563
+        // 居中后左缘 = (41.6 − 41.5563)/2 ≈ 0.0218（官方 viewBox 11.2 是它的取整平移）。
+        let rotated = ClaudioT2Geometry.glyphPath(
+            in: CGRect(x: 0, y: 0, width: 41.6, height: 41.6)
+        ).boundingBoxOfPath
+        expect(
+            abs(rotated.minX - (41.6 - 41.5563) / 2) < 0.001
+                && abs(rotated.minY - (41.6 - 41.5563) / 2) < 0.001
+                && abs(rotated.width - 41.5563) < 0.001
+                && abs(rotated.height - 41.5563) < 0.001,
+            "T2 图形旋转 -45° 后的紧包应等于官方精确值 41.5563（viewBox 41.6 居中），实测 \(NSStringFromRect(rotated))")
+
+        // 「元素尺寸即墨迹尺寸」是规格本身（viewBox 裁到墨迹盒）：60pt 的元素必须
+        // 渲染出约 59.94pt 的墨迹（41.5563/41.6）。按 64 母空间缩放会把图形缩到 65%。
+        let inkFill = ClaudioT2Geometry.glyphPath(
+            in: CGRect(x: 0, y: 0, width: 60, height: 60)
+        ).boundingBoxOfPath
+        expect(
+            abs(inkFill.width - 60 * 41.5563 / 41.6) < 0.05
+                && abs(inkFill.minX - (60 - 60 * 41.5563 / 41.6) / 2) < 0.05,
+            "glyphPath(in:) 的 rect 即墨迹尺寸（60pt 元素 ≈ 59.94pt 墨迹），实测 \(NSStringFromRect(inkFill))")
+
+        let wordmarkGlyph = ClaudioT2Geometry.wordmarkGlyphPath().boundingBoxOfPath
+        expect(
+            abs(wordmarkGlyph.minX - 36) < 0.01
+                && abs(wordmarkGlyph.minY - 32) < 0.01
+                && abs(wordmarkGlyph.width - 80) < 0.01,
+            "横向组合里的 T2 墨迹必须以 viewBox x=36 为起点、80px 见方，实测 \(NSStringFromRect(wordmarkGlyph))")
+
+        let letters = ClaudioT2Geometry.wordmarkLettersPath().boundingBoxOfPath
+        expect(
+            abs(letters.minX - 153) < 0.01
+                && abs(letters.maxX - 464) < 0.01
+                && abs(letters.minY - 44) < 0.01
+                && abs(letters.maxY - 103) < 0.01,
+            "claudi0 七个字母的路径外包必须落在官方 translate(153,38) 组内，实测 \(NSStringFromRect(letters))")
+        expect(
+            ClaudioT2Geometry.wordmarkStrokeWidth == 5.2
+                && abs(ClaudioT2Geometry.wordmarkAspect - 504.0 / 144.0) < 0.0001
+                && ClaudioT2Geometry.wordmarkDotRadius == 3.2
+                && ClaudioT2Geometry.wordmarkDotCenter == CGPoint(x: 404, y: 43)
+                && ClaudioT2Geometry.wordmarkLetterOffsets == [0, 43, 75, 135, 192, 247, 267],
+            "笔画 5.2、viewBox 504×144、i 点位置与逐字母平移必须逐字等于品牌包 SVG")
+    }
+
+    suite("T2 渲染：容器、字标在原生像素上成立") {
+        // 与 EventBannerLayoutSuite 同一手法：NSHostingView 离屏渲染成位图后断像素，
+        // 覆盖几何测试到不了的环节（Shape→Path→填充、主题色接线、发丝线混合）。
+        // 设 CLAUDIO_BRAND_SCREENSHOT_DIR 可把位图存成 PNG 供人工检查。
+
+        let badge = NSHostingView(
+            rootView: ClaudioT2Badge(size: 96, cornerRadius: 23, glyphSize: 60))
+        badge.frame = CGRect(x: 0, y: 0, width: 96, height: 96)
+        guard let badgeBitmap = claudioBrandRender(badge, name: "t2-badge-96") else {
+            expect(false, "T2 容器位图不可用")
+            return
+        }
+        let badgeScale = CGFloat(badgeBitmap.pixelsWide) / 96
+
+        // 容器四角（圆角 23 之内的 (8,8)）与四边内侧 8pt 必须是酸柠；探针集合对 y 翻转对称。
+        for probe in [(8, 8), (88, 8), (8, 88), (88, 88), (48, 7), (48, 89), (7, 48), (89, 48)] {
+            let pixel = claudioBrandPixel(
+                badgeBitmap,
+                x: Int(CGFloat(probe.0) * badgeScale),
+                y: Int(CGFloat(probe.1) * badgeScale))
+            expect(
+                pixel.map { claudioBrandMatches($0, claudioBrandLimeRGB) } ?? false,
+                "容器四角与边内 8pt 必须是酸柠（探针 \(probe.0),\(probe.1)pt）")
+        }
+
+        // 图形必须是深墨：全容器统计深墨像素占比（T2 两笔画约占容器 10%），
+        // 同时约束「第三种实色」占比，防接错色。
+        var inkCount = 0
+        var unknownCount = 0
+        for px in 0..<badgeBitmap.pixelsWide {
+            for py in 0..<badgeBitmap.pixelsHigh {
+                guard let pixel = claudioBrandPixel(badgeBitmap, x: px, y: py) else { continue }
+                if claudioBrandMatches(pixel, claudioBrandInkRGB) {
+                    inkCount += 1
+                } else if !claudioBrandMatches(pixel, claudioBrandLimeRGB)
+                    && !claudioBrandMatches(pixel, claudioBrandHairlineRGB, tolerance: 0.1)
+                {
+                    unknownCount += 1
+                }
+            }
+        }
+        let totalPixels = badgeBitmap.pixelsWide * badgeBitmap.pixelsHigh
+        let inkShare = Double(inkCount) / Double(totalPixels)
+        expect(
+            inkShare > 0.15 && inkShare < 0.28,
+            "96pt 容器内深墨图形占比应在 15%–28%（T2 两笔画约占墨迹盒 54% × 60²/96²，实测约 21.3%），实测 \(inkShare)")
+        expect(
+            Double(unknownCount) / Double(totalPixels) < 0.08,
+            "容器内不允许大面积出现酸柠/深墨/发丝线之外的实色（AA 混合边除外），实测 unknown=\(unknownCount)")
+
+        // 左缘发丝线：x≈0.5pt 中线处应为 16% 深墨覆酸柠的混合色。
+        let hairlineProbe = claudioBrandPixel(
+            badgeBitmap, x: Int(0.5 * badgeScale), y: badgeBitmap.pixelsHigh / 2)
+        expect(
+            hairlineProbe.map { claudioBrandMatches($0, claudioBrandHairlineRGB, tolerance: 0.1) }
+                ?? false,
+            "容器左缘 1pt 处必须渲染 16% 深墨发丝线")
+
+        // 字标：浅底深墨单色、深底酸柠，且墨迹左缘落在 viewBox x=36 处（38pt 高 → 9.5pt）。
+        for (appearanceName, expected, forbidden, label) in [
+            (NSAppearance.Name.aqua, claudioBrandInkRGB, claudioBrandLimeRGB, "light"),
+            (NSAppearance.Name.darkAqua, claudioBrandLimeRGB, claudioBrandInkRGB, "dark"),
+        ] {
+            let wordmark = NSHostingView(rootView: ClaudioT2Wordmark(height: 38))
+            wordmark.appearance = NSAppearance(named: appearanceName)
+            let width = 38 * ClaudioT2Geometry.wordmarkAspect
+            wordmark.frame = CGRect(x: 0, y: 0, width: width, height: 38)
+            guard let bitmap = claudioBrandRender(wordmark, name: "t2-wordmark-\(label)")
+            else {
+                expect(false, "T2 字标（\(label)）位图不可用")
+                continue
+            }
+            var firstExpectedX = Int.max
+            var expectedCount = 0
+            var forbiddenCount = 0
+            for px in 0..<bitmap.pixelsWide {
+                for py in 0..<bitmap.pixelsHigh {
+                    guard let pixel = claudioBrandPixel(bitmap, x: px, y: py) else { continue }
+                    if claudioBrandMatches(pixel, expected) {
+                        expectedCount += 1
+                        firstExpectedX = min(firstExpectedX, px)
+                    } else if claudioBrandMatches(pixel, forbidden) {
+                        forbiddenCount += 1
+                    }
+                }
+            }
+            let scale = CGFloat(bitmap.pixelsWide) / width
+            let inkOriginPt = CGFloat(firstExpectedX) / scale
+            expect(
+                forbiddenCount == 0 && expectedCount > 300,
+                "字标 \(label) 必须只渲染主题品牌色（实测 expected=\(expectedCount) forbidden=\(forbiddenCount)）")
+            expect(
+                abs(inkOriginPt - 9.5) < 1.5,
+                "字标墨迹左缘应在 9.5pt（38pt 高 × 36/504），实测 \(inkOriginPt)pt——侧栏对齐的渲染依据")
+        }
     }
 
     suite("Orbit Zero 品牌母版与打包位图不含旧装饰点") {
@@ -2858,4 +3007,63 @@ func runViewWiringSuites() {
             "任务开始身份字形必须与语义固定绑定到 paperplane.fill")
     }
 
+}
+
+// MARK: - T2 渲染断言的像素工具
+
+/// 从 ``ClaudioColorHex`` 解析 sRGB 分量——测试不手抄 hex 字面量（单一真相源）。
+private func claudioBrandRGB(_ hex: String) -> (CGFloat, CGFloat, CGFloat) {
+    var value: UInt64 = 0
+    Scanner(string: hex).scanHexInt64(&value)
+    return (
+        CGFloat((value & 0xFF0000) >> 16) / 255,
+        CGFloat((value & 0x00FF00) >> 8) / 255,
+        CGFloat(value & 0x0000FF) / 255)
+}
+
+/// 品牌深墨 `brandInk` 的 sRGB 分量。
+private let claudioBrandInkRGB = claudioBrandRGB(ClaudioColorHex.brandInk)
+
+/// 品牌酸柠 `brandLime` 的 sRGB 分量。
+private let claudioBrandLimeRGB = claudioBrandRGB(ClaudioColorHex.brandLime)
+
+/// 容器发丝线的真实渲染色：16% 深墨覆在酸柠上（`box-shadow: 0 0 0 1px rgba(23,43,37,.16) inset`）。
+private let claudioBrandHairlineRGB: (CGFloat, CGFloat, CGFloat) = (
+    0.16 * claudioBrandInkRGB.0 + 0.84 * claudioBrandLimeRGB.0,
+    0.16 * claudioBrandInkRGB.1 + 0.84 * claudioBrandLimeRGB.1,
+    0.16 * claudioBrandInkRGB.2 + 0.84 * claudioBrandLimeRGB.2)
+
+@MainActor
+private func claudioBrandRender(_ hosting: NSView, name: String) -> NSBitmapImageRep? {
+    hosting.layoutSubtreeIfNeeded()
+    guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
+        return nil
+    }
+    hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+    if let directory = ProcessInfo.processInfo.environment["CLAUDIO_BRAND_SCREENSHOT_DIR"] {
+        let output = URL(fileURLWithPath: directory, isDirectory: true)
+        try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        try? bitmap.representation(using: .png, properties: [:])?.write(
+            to: output.appendingPathComponent("\(name).png"))
+    }
+    return bitmap
+}
+
+private func claudioBrandPixel(
+    _ bitmap: NSBitmapImageRep, x: Int, y: Int
+) -> (CGFloat, CGFloat, CGFloat)? {
+    guard x >= 0, y >= 0, x < bitmap.pixelsWide, y < bitmap.pixelsHigh,
+        let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB)
+    else { return nil }
+    return (color.redComponent, color.greenComponent, color.blueComponent)
+}
+
+private func claudioBrandMatches(
+    _ pixel: (CGFloat, CGFloat, CGFloat),
+    _ expected: (CGFloat, CGFloat, CGFloat),
+    tolerance: CGFloat = 0.07
+) -> Bool {
+    abs(pixel.0 - expected.0) <= tolerance
+        && abs(pixel.1 - expected.1) <= tolerance
+        && abs(pixel.2 - expected.2) <= tolerance
 }
