@@ -27,10 +27,49 @@ fi
 INSTALLATION_ID="11111111-2222-4333-8444-555555555555"
 STALE_ID="aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
 
+# Resolve the same bounded version/scope contract as production without discovering a
+# developer's real host CLI. No callback or listening evidence is claimed by these stubs.
+FIXTURE_TOOLS="$TEST_ROOT/tools"
+mkdir -p "$FIXTURE_TOOLS" "$TEST_ROOT/home"
+for command in claude codex; do
+  cat > "$FIXTURE_TOOLS/$command" <<'SH'
+#!/bin/sh
+[ "$#" -eq 1 ] && [ "$1" = --version ] || exit 1
+printf '%s\n' 'hook-contract-version'
+SH
+  chmod 700 "$FIXTURE_TOOLS/$command"
+done
+export PATH="$FIXTURE_TOOLS:$PATH"
+export CLAUDIO_TEST_HOME="$TEST_ROOT/home"
+CLAUDIO_CONTRACT_VERSION="$("$DEBUG_BIN" --version)"
+CLAUDE_BINDINGS="$(jq -nr '[
+  "claude-code:UserPromptSubmit:task_start:none:v1",
+  "claude-code:Stop:stop:none:v1",
+  "claude-code:StopFailure:stop_failure:none:v1",
+  "claude-code:Notification:notification:none:v1",
+  "claude-code:PreToolUse:notification:question_intent_only:v1",
+  "claude-code:SubagentStop:subagent_stop:none:v1"
+] | sort | join(",")')"
+CODEX_BINDINGS="$(jq -nr '[
+  "codex:UserPromptSubmit:task_start:none:v1",
+  "codex:Stop:stop:none:v1",
+  "codex:PermissionRequest:notification:permission_request_only:v1",
+  "codex:SubagentStop:subagent_stop:none:v1"
+] | sort | join(",")')"
+CLAUDE_SCOPE="surface=claude-code;host=hook-contract-version;claudio=$CLAUDIO_CONTRACT_VERSION;bindings=$CLAUDE_BINDINGS"
+CODEX_SCOPE="surface=codex;host=cli=hook-contract-version;claudio=$CLAUDIO_CONTRACT_VERSION;bindings=$CODEX_BINDINGS"
+
 prepare_root() {
   local root="$1"
   local host="$2"
   local mode="$3"
+  local scope
+  case "$host" in
+    claude-code) scope="$CLAUDE_SCOPE" ;;
+    codex) scope="$CODEX_SCOPE" ;;
+    workbuddy) scope="test-hook-cli-contract:workbuddy" ;;
+    *) echo "FAIL: unknown fixture host $host" >&2; exit 1 ;;
+  esac
 
   mkdir -p "$root/integrations/installations"
   cat > "$root/integrations/installations/$host.json" <<JSON
@@ -38,7 +77,7 @@ prepare_root() {
   "schema": 2,
   "host": "$host",
   "installation_id": "$INSTALLATION_ID",
-  "scope_fingerprint": "test-hook-cli-contract:$host"
+  "scope_fingerprint": "$scope"
 }
 JSON
 
@@ -66,6 +105,7 @@ JSON
       exit 1
       ;;
   esac
+  python3 scripts/hook-cli-fixture.py authorize "$root" "$host" "$$"
 }
 
 run_silent_hook() {
@@ -96,44 +136,89 @@ run_silent_hook() {
 }
 
 receipt_result() {
-  /usr/bin/plutil -extract playback_result raw -o - "$1"
+  python3 scripts/hook-cli-fixture.py receipt-result "$1"
 }
+
+assert_receipt() {
+  local path="$1"
+  local expected="$2"
+  local actual
+  if ! actual="$(receipt_result "$path")"; then
+    exit 1
+  fi
+  if [[ "$actual" != "$expected" ]]; then
+    echo "FAIL: $path expected playback_result=$expected; actual=$actual" >&2
+    exit 1
+  fi
+}
+
+run_rejected_hook() {
+  local label="$1"
+  local root="$2"
+  shift 2
+  python3 scripts/hook-cli-fixture.py snapshot "$root" > "$TEST_ROOT/$label.before"
+  run_silent_hook "$label" "$root" "$@" < /dev/null
+  python3 scripts/hook-cli-fixture.py snapshot "$root" > "$TEST_ROOT/$label.after"
+  if ! cmp -s "$TEST_ROOT/$label.before" "$TEST_ROOT/$label.after"; then
+    echo "FAIL: $label rejected callback changed isolated state" >&2
+    exit 1
+  fi
+}
+
+# Exercise the real authorization gates before the positive receipt assertions.
+for gate in no-intent disabled no-gui stale-scope; do
+  root="$TEST_ROOT/rejected-$gate"
+  prepare_root "$root" claude-code ready
+  case "$gate" in
+    no-intent)
+      jq 'del(.host_integrations)' "$root/config.json" > "$root/next.json"
+      mv "$root/next.json" "$root/config.json"
+      ;;
+    disabled)
+      jq '.host_integrations.surfaces["claude-code"].enabled = false' \
+        "$root/config.json" > "$root/next.json"
+      mv "$root/next.json" "$root/config.json"
+      ;;
+    no-gui) rm "$root/gui-run.json" ;;
+    stale-scope)
+      jq '.scope_fingerprint = "test-hook-cli-contract:stale"' \
+        "$root/integrations/installations/claude-code.json" > "$root/next.json"
+      mv "$root/next.json" "$root/integrations/installations/claude-code.json"
+      ;;
+  esac
+  run_rejected_hook "$gate" "$root" \
+    claude-code UserPromptSubmit --installation-id "$INSTALLATION_ID"
+done
 
 READY_ROOT="$TEST_ROOT/ready"
 prepare_root "$READY_ROOT" claude-code ready
 run_silent_hook played "$READY_ROOT" \
   claude-code UserPromptSubmit --installation-id "$INSTALLATION_ID"
 READY_RECEIPT="$READY_ROOT/integrations/receipts/claude-code/UserPromptSubmit.json"
-if [[ "$(receipt_result "$READY_RECEIPT")" != "played" ]]; then
-  echo "FAIL: 首次 UserPromptSubmit 未写 played 回执" >&2
-  exit 1
+# Capture the first receipt before the next callback overwrites it, then inspect both
+# results after the adjacent invocations. Do not spend the 250 ms budget on a JSON tool.
+if [[ ! -f "$READY_RECEIPT" ]]; then
+  assert_receipt "$READY_RECEIPT" played
 fi
+cp "$READY_RECEIPT" "$TEST_ROOT/first-played.json"
 run_silent_hook debounced "$READY_ROOT" \
   claude-code UserPromptSubmit --installation-id "$INSTALLATION_ID"
-if [[ "$(receipt_result "$READY_RECEIPT")" != "debounced" ]]; then
-  echo "FAIL: 250ms 内重复 UserPromptSubmit 未写 debounced 回执" >&2
-  exit 1
-fi
+assert_receipt "$TEST_ROOT/first-played.json" played
+assert_receipt "$READY_RECEIPT" debounced
 
 MUTED_ROOT="$TEST_ROOT/muted"
 prepare_root "$MUTED_ROOT" codex muted
 run_silent_hook muted "$MUTED_ROOT" \
   codex UserPromptSubmit --installation-id "$INSTALLATION_ID"
 MUTED_RECEIPT="$MUTED_ROOT/integrations/receipts/codex/UserPromptSubmit.json"
-if [[ "$(receipt_result "$MUTED_RECEIPT")" != "muted" ]]; then
-  echo "FAIL: 任务开始单事件静音未写 muted 回执" >&2
-  exit 1
-fi
+assert_receipt "$MUTED_RECEIPT" "muted"
 
 MISSING_ROOT="$TEST_ROOT/not-ready"
 prepare_root "$MISSING_ROOT" claude-code not-ready
 run_silent_hook not-ready "$MISSING_ROOT" \
   claude-code UserPromptSubmit --installation-id "$INSTALLATION_ID"
 MISSING_RECEIPT="$MISSING_ROOT/integrations/receipts/claude-code/UserPromptSubmit.json"
-if [[ "$(receipt_result "$MISSING_RECEIPT")" != "not_ready" ]]; then
-  echo "FAIL: 缺少 task_start 映射时未写 not_ready 回执" >&2
-  exit 1
-fi
+assert_receipt "$MISSING_RECEIPT" "not_ready"
 
 PLAYBACK_FAILED_ROOT="$TEST_ROOT/playback-failed"
 prepare_root "$PLAYBACK_FAILED_ROOT" claude-code ready
@@ -143,14 +228,11 @@ mkdir -p "$PLAYBACK_FAILED_ROOT/integrations/claude-code-play.lock"
 run_silent_hook playback-failed "$PLAYBACK_FAILED_ROOT" \
   claude-code UserPromptSubmit --installation-id "$INSTALLATION_ID"
 PLAYBACK_FAILED_RECEIPT="$PLAYBACK_FAILED_ROOT/integrations/receipts/claude-code/UserPromptSubmit.json"
-if [[ "$(receipt_result "$PLAYBACK_FAILED_RECEIPT")" != "playback_failed" ]]; then
-  echo "FAIL: 播放锁文件系统失败未写 playback_failed 回执" >&2
-  exit 1
-fi
+assert_receipt "$PLAYBACK_FAILED_RECEIPT" "playback_failed"
 
-run_silent_hook unsupported "$MISSING_ROOT" \
+run_rejected_hook unsupported "$MUTED_ROOT" \
   codex StopFailure --installation-id "$INSTALLATION_ID"
-run_silent_hook stale-installation "$MISSING_ROOT" \
+run_rejected_hook stale-installation "$MISSING_ROOT" \
   claude-code UserPromptSubmit --installation-id "$STALE_ID"
 
 WORKBUDDY_ROOT="$TEST_ROOT/workbuddy"
@@ -158,9 +240,9 @@ prepare_root "$WORKBUDDY_ROOT" workbuddy muted
 # Scope 来自生产只读 collector；没有 Desktop 的机器仍验证旧 scope 零输出拒绝，
 # 正向 subtype/播放由可注入的 executable harness 覆盖。
 WORKBUDDY_SCOPE="$(CLAUDIO_TEST_ROOT="$WORKBUDDY_ROOT" "$DEBUG_BIN" acceptance workbuddy-preflight --json | jq -r '.scope.fingerprint // empty')"
-cat > "$WORKBUDDY_ROOT/config.json" <<'JSON'
-{"selected_pack":"minimal-chime","master_volume":0,"events":{"subagent_stop":false,"notification":false}}
-JSON
+jq '.events = {"subagent_stop":false,"notification":false}' \
+  "$WORKBUDDY_ROOT/config.json" > "$WORKBUDDY_ROOT/next.json"
+mv "$WORKBUDDY_ROOT/next.json" "$WORKBUDDY_ROOT/config.json"
 WORKBUDDY_RECEIPT="$WORKBUDDY_ROOT/integrations/receipts/workbuddy/SubagentStop.json"
 printf '%s' '{"hook_event_name":"SubagentStop"}' | run_silent_hook workbuddy-stale-scope \
   "$WORKBUDDY_ROOT" workbuddy SubagentStop --installation-id "$INSTALLATION_ID"
@@ -198,17 +280,11 @@ if [[ -n "$WORKBUDDY_SCOPE" ]]; then
   for subtype in permission_prompt idle_prompt; do
     printf '{"hook_event_name":"Notification","notification_type":"%s"}' "$subtype" | \
       run_silent_hook "workbuddy-$subtype" "$WORKBUDDY_ROOT" workbuddy Notification --installation-id "$INSTALLATION_ID"
-    if [[ "$(receipt_result "$NOTIFICATION_RECEIPT")" != "muted" ]]; then
-      echo "FAIL: WorkBuddy $subtype 未形成当前 muted 回执" >&2
-      exit 1
-    fi
+    assert_receipt "$NOTIFICATION_RECEIPT" "muted"
   done
   printf '%s' '{"hook_event_name":"SubagentStop"}' | run_silent_hook workbuddy-subagent \
     "$WORKBUDDY_ROOT" workbuddy SubagentStop --installation-id "$INSTALLATION_ID"
-  if [[ "$(receipt_result "$WORKBUDDY_RECEIPT")" != "muted" ]]; then
-    echo "FAIL: WorkBuddy 有效 stdin 未形成 SubagentStop muted 回执" >&2
-    exit 1
-  fi
+  assert_receipt "$WORKBUDDY_RECEIPT" "muted"
 
 else
   echo "SKIP: WorkBuddy Desktop absent; valid-subtype receipt covered by injectable harness"
@@ -217,30 +293,10 @@ fi
 # Question-intent entry contracts use only isolated machine state and a deterministic version
 # executable. This is CLI evidence, never a Claude Code callback or human audibility claim.
 QUESTION_ROOT="$TEST_ROOT/question"
-QUESTION_TOOLS="$TEST_ROOT/question-tools"
 prepare_root "$QUESTION_ROOT" claude-code muted
-mkdir -p "$QUESTION_TOOLS"
-cat > "$QUESTION_TOOLS/claude" <<'SH'
-#!/bin/sh
-printf '%s\n' 'question-contract-version'
-SH
-chmod 700 "$QUESTION_TOOLS/claude"
-CLAUDIO_CONTRACT_VERSION="$("$DEBUG_BIN" --version)"
-QUESTION_BINDINGS="$(jq -nr '[
-  "claude-code:UserPromptSubmit:task_start:none:v1",
-  "claude-code:Stop:stop:none:v1",
-  "claude-code:StopFailure:stop_failure:none:v1",
-  "claude-code:Notification:notification:none:v1",
-  "claude-code:PreToolUse:notification:question_intent_only:v1",
-  "claude-code:SubagentStop:subagent_stop:none:v1"
-] | sort | join(",")')"
-QUESTION_SCOPE="surface=claude-code;host=question-contract-version;claudio=$CLAUDIO_CONTRACT_VERSION;bindings=$QUESTION_BINDINGS"
-jq --arg scope "$QUESTION_SCOPE" '.scope_fingerprint = $scope' \
-  "$QUESTION_ROOT/integrations/installations/claude-code.json" > "$QUESTION_ROOT/current.json"
-mv "$QUESTION_ROOT/current.json" "$QUESTION_ROOT/integrations/installations/claude-code.json"
-cat > "$QUESTION_ROOT/config.json" <<'JSON'
-{"selected_pack":"minimal-chime","master_volume":0,"events":{"notification":false}}
-JSON
+jq '.events = {"notification":false}' \
+  "$QUESTION_ROOT/config.json" > "$QUESTION_ROOT/next.json"
+mv "$QUESTION_ROOT/next.json" "$QUESTION_ROOT/config.json"
 QUESTION_RECEIPT="$QUESTION_ROOT/integrations/receipts/claude-code/PreToolUse.json"
 for payload in \
   '{}' \
@@ -251,7 +307,7 @@ for payload in \
   '{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","session_id":"s","tool_use_id":"r","tool_input":{}}' \
   '{"hook_event_name":"Stop","tool_name":"AskUserQuestion","session_id":"s","tool_use_id":"r","tool_input":{}}' \
   '{broken'; do
-  printf '%s' "$payload" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook question-invalid \
+  printf '%s' "$payload" | run_silent_hook question-invalid \
     "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$INSTALLATION_ID"
   if [[ -e "$QUESTION_RECEIPT" || -e "$QUESTION_ROOT/integrations/claude-code-questions/consumed.json" ]]; then
     echo "FAIL: invalid question must have no receipt or consumption side effects" >&2
@@ -259,19 +315,17 @@ for payload in \
   fi
 done
 QUESTION_PAYLOAD='{"hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","session_id":"s","tool_use_id":"r","tool_input":{}}'
-printf '%s' "$QUESTION_PAYLOAD" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook question-stale \
+printf '%s' "$QUESTION_PAYLOAD" | run_silent_hook question-stale \
   "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$STALE_ID"
 if [[ -e "$QUESTION_RECEIPT" ]]; then
   echo "FAIL: stale question installation must not write a receipt" >&2
   exit 1
 fi
 for expected in muted debounced; do
-  printf '%s' "$QUESTION_PAYLOAD" | PATH="$QUESTION_TOOLS:$PATH" run_silent_hook "question-$expected" \
+  printf '%s' "$QUESTION_PAYLOAD" | run_silent_hook "question-$expected" \
     "$QUESTION_ROOT" claude-code PreToolUse --installation-id "$INSTALLATION_ID"
-  if [[ "$(receipt_result "$QUESTION_RECEIPT")" != "$expected" ]]; then
-    echo "FAIL: question expected $expected receipt" >&2
-    exit 1
-  fi
+  assert_receipt "$QUESTION_RECEIPT" "$expected"
 done
 
 echo "PASS: claudi0 hook 真实子进程 exit/stdout/stderr、提问入口与 Debug-only root 契约"
+
