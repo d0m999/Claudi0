@@ -504,6 +504,8 @@ private func isSimpleOptionMember(_ element: String) -> Bool {
 /// 一个全仓总数的 `>= N` 挡不住「某一处单独隐身、别处补上一处」（`/review e7c38ea` 的教训，
 /// 而上一版把它原样复发在了 `totalWriteSites >= 9` 上）。
 private let diskWriteSurfaceLedger: [String: Set<String>] = [
+    // Six atomic fixture writes and one fixed diagnostic stream in the Core-only benchmark.
+    "helper/Sources/claudio-hook-benchmark/main.swift": [".write("],
     // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
     // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
@@ -675,6 +677,7 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 计数**绑调用点**（`/review e7c38ea`：上一版是一个全仓总数 `totalWriteSites >= 9`，它挡的只是
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
+    "helper/Sources/claudio-hook-benchmark/main.swift": 6,
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
     "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,
@@ -749,6 +752,7 @@ private func unauditedNonContentReplacingWrites(
         return []
     }
     let diagnosticStreams: Set<String> = [
+        "helper/Sources/claudio-hook-benchmark/main.swift",
         "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift",
         "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift",
     ]
