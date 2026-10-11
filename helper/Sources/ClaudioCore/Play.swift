@@ -222,7 +222,9 @@ public func playSoundEvent(
     environment: PlayEnvironment = PlayEnvironment()
 ) -> PlayOutcome {
     guard let event = Event(cliName: eventName) else { return .unknownEvent }
-    let preparation = preparePlay(event: event, environment: environment)
+    let preparation = HookMeasurementContext.measure(.workspaceAndSound) {
+        preparePlay(event: event, environment: environment)
+    }
 
     if case .silent(let outcome) = preparation,
         !environment.debounceSilentOutcomes
@@ -230,7 +232,9 @@ public func playSoundEvent(
         return outcome
     }
 
-    return performDebouncedPlay(event: event, preparation: preparation, environment: environment)
+    return HookMeasurementContext.measure(.playbackLock) {
+        performDebouncedPlay(event: event, preparation: preparation, environment: environment)
+    }
 }
 
 /// The caller must validate and consume the question's request identity before calling this
@@ -247,7 +251,12 @@ public func playConsumedQuestion(environment: PlayEnvironment) -> PlayOutcome {
 /// Distinct sessions must not suppress each other through the legacy host-wide time window.
 public func playConsumedHostEvent(_ event: Event, environment: PlayEnvironment) -> PlayOutcome {
     guard environment.playbackAuthorized() else { return .notReady }
-    switch preparePlay(event: event, environment: environment) {
+    switch HookMeasurementContext.measure(
+        .workspaceAndSound,
+        {
+            preparePlay(event: event, environment: environment)
+        })
+    {
     case .silent(let outcome): return outcome
     case .ready(let volume, let audioFile):
         return spawnPreparedPlay(
@@ -353,8 +362,10 @@ private func performDebouncedPlay(
     case .ran(let outcome):
         return outcome
     case .skipped:
+        HookMeasurementContext.record(.playbackLock, .lockBusy)
         return .skippedDebounce
     case .failed(let code):
+        HookMeasurementContext.record(.playbackLock, .lockFailed)
         appendLogLine(
             event: event.cliName,
             reason: "play.lock 获取失败（errno \(code)）",
@@ -379,9 +390,11 @@ private func spawnPreparedPlay(
     defer { boundary?.release() }
     guard environment.publicationAuthorized() else { return .notReady }
     let volumeArgument = AfplayVolume.afplayArgument(forMasterVolume: volume)
-    let spawned = environment.spawner.spawn(
-        executablePath: environment.afplayPath,
-        arguments: ["-v", volumeArgument, audioFile.path])
+    let spawned = HookMeasurementContext.measure(.playerStart) {
+        environment.spawner.spawn(
+            executablePath: environment.afplayPath,
+            arguments: ["-v", volumeArgument, audioFile.path])
+    }
     environment.spawnResultObserver?(spawned)
     if !spawned {
         appendLogLine(

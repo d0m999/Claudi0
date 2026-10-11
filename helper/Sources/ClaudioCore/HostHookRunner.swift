@@ -183,9 +183,13 @@ public func handleHostHook(
     if let authorization = environment.authorization, HostPublicationContext.current == nil {
         guard
             let token = environment.authorizationToken
-                ?? authorization.capture(surface: host.surfaceID),
+                ?? HookMeasurementContext.measure(
+                    .inputAuthorization, { authorization.capture(surface: host.surfaceID) }),
             token.surface == host.surfaceID, token.intent.enabled, authorization.isCurrent(token)
-        else { return nil }
+        else {
+            HookMeasurementContext.record(.handling, .rejectedAuthorization)
+            return nil
+        }
         let boundary = HostPublicationContext(
             authorization: authorization, token: token,
             beforePublication: environment.beforePublication)
@@ -197,17 +201,26 @@ public func handleHostHook(
     }
     guard environment.host == host,
         let event = HostCapabilityCatalog.semanticEvent(host: host, nativeEvent: nativeEvent)
-    else { return nil }
+    else {
+        HookMeasurementContext.record(.handling, .rejectedBinding)
+        return nil
+    }
 
     let isQuestion = HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil
     let isAdditionalHost = host == .opencode || host == .kimiCode
     let additionalPayload = AdditionalHostHookPayload.parse(
         host: host, nativeEvent: nativeEvent,
         data: environment.sourcePayload)
-    guard !isAdditionalHost || additionalPayload != nil else { return nil }
+    guard !isAdditionalHost || additionalPayload != nil else {
+        HookMeasurementContext.record(.handling, .rejectedPayload)
+        return nil
+    }
     let questionPayload = HostQuestionHookPayload.parse(
         host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
-    guard !isQuestion || questionPayload != nil else { return nil }
+    guard !isQuestion || questionPayload != nil else {
+        HookMeasurementContext.record(.handling, .rejectedPayload)
+        return nil
+    }
 
     // This is the single timestamp shared by the activity fact, receipt, and any related
     // diagnostic line. Disconnected or replaced installations are rejected before playback.
@@ -234,19 +247,24 @@ public func handleHostHook(
         return installationMarkerIsCurrent()
     }
     guard installationIsCurrent() else {
+        HookMeasurementContext.record(
+            .handling, requiresScope && scope == nil ? .rejectedVersion : .rejectedInstallation)
         return HostHookHandlingOutcome(
             host: host, nativeEvent: nativeEvent, event: event,
             playbackResult: .notReady, activityRecordOutcome: .failed, receiptWritten: false)
     }
+    HookMeasurementContext.record(.handling, .accepted)
     let activityRecordOutcome: LocalActivityRecordOutcome
     if let activityStore = environment.activityStore {
         let record = {
-            activityStore.record(
-                host: host,
-                event: event,
-                installationID: installationID,
-                activeInstallationID: installationID,
-                occurredAt: occurredAt)
+            HookMeasurementContext.measure(.activity) {
+                activityStore.record(
+                    host: host,
+                    event: event,
+                    installationID: installationID,
+                    activeInstallationID: installationID,
+                    occurredAt: occurredAt)
+            }
         }
         activityRecordOutcome =
             HostPublicationContext.current?.perform(effect: .activity, rejected: .failed, record)
@@ -255,6 +273,11 @@ public func handleHostHook(
         activityRecordOutcome = .failed
     }
 
+    switch activityRecordOutcome {
+    case .committed: HookMeasurementContext.record(.activity, .activityCommitted)
+    case .deferred: HookMeasurementContext.record(.activity, .activityDeferred)
+    case .failed, .staleInstallation: HookMeasurementContext.record(.activity, .activityFailed)
+    }
     let capture = SpawnResultCapture()
     let base = environment.playEnvironment
     let isTaskStart = event == .taskStart
@@ -321,6 +344,18 @@ public func handleHostHook(
         playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
         shouldSendNotice = true
     }
+    HookMeasurementContext.record(
+        .handling,
+        {
+            switch playbackResult {
+            case .played: .played
+            case .muted: .muted
+            case .debounced: .debounced
+            case .notReady: .notReady
+            case .playbackFailed: .playbackFailed
+            case .unsupportedEvent: .rejectedBinding
+            }
+        }())
     let receipt = HostHookReceipt(
         installationID: installationID,
         host: host,
@@ -370,7 +405,17 @@ public func handleHostHook(
             navigationEvidence: HostNavigationEvidence.capture(ancestors: ancestors))
         // The send is best effort, but a known failure still earns one fixed redacted
         // diagnostic code on the existing log path; the payload never leaves this process.
-        let send = { channel.sender(notice) }
+        let send = {
+            HookMeasurementContext.measure(.notice) {
+                let result = channel.sender(notice)
+                if case .sent = result {
+                    HookMeasurementContext.record(.notice, .noticeSent)
+                } else {
+                    HookMeasurementContext.record(.notice, .noticeDropped)
+                }
+                return result
+            }
+        }
         if case .dropped(let failure) = HostPublicationContext.current?.perform(
             effect: .notice, rejected: .dropped(.invalidNotice), send) ?? send()
         {

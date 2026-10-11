@@ -21,14 +21,19 @@ extension Claudio {
                 let parsedID = UUID(uuidString: installationID)
             else { return }
             let authorization = HostEventAuthorization()
-            guard let token = authorization.capture(surface: parsedHost.surfaceID) else { return }
+            guard
+                let token = HookMeasurementContext.measure(
+                    .inputAuthorization, { authorization.capture(surface: parsedHost.surfaceID) })
+            else { return }
             // One bounded read serves directory resolution, the WorkBuddy input contract and
             // optional GUI notices. cwd never enters receipts or activity summaries.
             let descriptor = EventNoticeTransport.loadDescriptor()
             let needsInput =
                 parsedHost == .workBuddy
                 && WorkBuddyHookPayloadPolicy.requiresValidation(nativeEvent: nativeEvent)
-            let hookInput: HookInputReadResult? = HookInputReader.read()
+            let hookInput: HookInputReadResult? = HookMeasurementContext.measure(
+                .inputAuthorization
+            ) { HookInputReader.read() }
             guard
                 HostQuestionTrigger.binding(host: parsedHost, nativeEvent: nativeEvent) == nil
                     && parsedHost != .opencode && parsedHost != .kimiCode

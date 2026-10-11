@@ -38,7 +38,63 @@ final class HostEventNoticeCollector: @unchecked Sendable {
 }
 
 @MainActor
+func runHookMeasurementRunnerSuites() {
+    suite("hook measurement: opt-in preserves full hook outcome and side effects") {
+        withTempDirectory { root in
+            let id = UUID()
+            let offSpawner = HostHookRunnerSpawner()
+            let onSpawner = HostHookRunnerSpawner()
+            let off = makeHostHookRunnerEnvironment(
+                root: root.appendingPathComponent("off"), host: .claudeCode,
+                spawner: offSpawner, fixtureIsReady: true, activeInstallationID: id)
+            let on = makeHostHookRunnerEnvironment(
+                root: root.appendingPathComponent("on"), host: .claudeCode,
+                spawner: onSpawner, fixtureIsReady: true, activeInstallationID: id)
+            let expected = handleHostHook(
+                host: .claudeCode, nativeEvent: "UserPromptSubmit", installationID: id,
+                environment: off)
+            let observer = HookMeasurementContext()
+            let measured = HookMeasurementContext.$current.withValue(observer) {
+                handleHostHook(
+                    host: .claudeCode, nativeEvent: "UserPromptSubmit", installationID: id,
+                    environment: on)
+            }
+            expect(
+                expected == measured && measured?.playbackResult == .played
+                    && measured?.receiptWritten == true,
+                "measurement preserves full-play result")
+            expect(
+                offSpawner.callCount == 1 && onSpawner.callCount == 1,
+                "measurement cannot create a second spawn")
+            let expectedBytes = try! Data(
+                contentsOf: off.receiptStore.receiptFile(
+                    host: .claudeCode, nativeEvent: "UserPromptSubmit")!)
+            let measuredBytes = try! Data(
+                contentsOf: on.receiptStore.receiptFile(
+                    host: .claudeCode, nativeEvent: "UserPromptSubmit")!)
+            expect(expectedBytes == measuredBytes, "measurement does not alter receipt contents")
+            for stage in [
+                HookMeasurementContext.Stage.workspaceAndSound, .playbackLock, .playerStart,
+                .currentReceipt, .historyArchive, .historyPrune,
+            ] {
+                expect(
+                    observer.snapshot.contains { $0.stage == stage && $0.nanoseconds != nil },
+                    "full path records \(stage)")
+            }
+            expect(
+                observer.snapshot.filter { $0.result == .accepted }.count == 1,
+                "exactly one accepted event")
+            expect(
+                observer.snapshot.filter { $0.result == .historyPublished }.count == 1,
+                "archive publication is observed independently")
+        }
+    }
+
+}
+
+@MainActor
 func runHostHookRunnerSuites() {
+    runHookMeasurementRunnerSuites()
     suite("WorkBuddy hook：旧 scope 不得播放或写当前回执") {
         withTempDirectory { root in
             let id = UUID()

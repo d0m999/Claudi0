@@ -335,11 +335,14 @@ public struct HostHookReceiptStore: Sendable {
                         .staleInstallation)
                 }
                 defer { boundary?.release() }
-                switch publish(data, to: destination) {
+                switch HookMeasurementContext.measure(
+                    .currentReceipt, { publish(data, to: destination) })
+                {
                 case .failure(let error):
                     return Result<HostHookReceiptWriteOutcome, HostHookReceiptStoreError>.failure(
                         error)
                 case .success:
+                    HookMeasurementContext.record(.currentReceipt, .receiptPublished)
                     return archive(receipt, data: data)
                 }
             }
@@ -1189,11 +1192,14 @@ public struct HostHookReceiptStore: Sendable {
         let timestamp = UInt64(max(0, receipt.timestamp.timeIntervalSince1970) * 1_000_000)
         let destination = directory.appendingPathComponent(
             "\(timestamp)-\(UUID().uuidString.lowercased()).json")
-        switch publish(data, to: destination) {
+        switch HookMeasurementContext.measure(.historyArchive, { publish(data, to: destination) }) {
         case .failure(let error):
             return .failure(error)
         case .success:
-            return pruneHistory(host: receipt.host, now: Date())
+            HookMeasurementContext.record(.historyArchive, .historyPublished)
+            return HookMeasurementContext.measure(.historyPrune) {
+                pruneHistory(host: receipt.host, now: Date())
+            }
         }
     }
 

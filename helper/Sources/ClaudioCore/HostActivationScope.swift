@@ -284,10 +284,14 @@ public enum HostActivationScope {
             commandRunner
             ?? SystemCommandRunner(
                 environmentOverrides: ["PATH": executableLocator.executableSearchPath])
-        switch resolvedRunner.run(
-            executablePath: executablePath,
-            arguments: ["--version"],
-            timeout: 1.0)
+        switch HookMeasurementContext.measure(
+            .versionResolution,
+            {
+                resolvedRunner.run(
+                    executablePath: executablePath,
+                    arguments: ["--version"],
+                    timeout: 1.0)
+            })
         {
         case .completed(let exitCode, let stdout) where exitCode == 0:
             let normalized = stdout.split(whereSeparator: \.isWhitespace).joined(separator: " ")

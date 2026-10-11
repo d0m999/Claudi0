@@ -74,6 +74,13 @@ func asyncSuite(_ name: String, _ body: @MainActor () async -> Void) async {
     await body()
 }
 
+if CommandLine.arguments.contains("--hook-baseline-observer") {
+    runHookMeasurementSuites()
+    runHookMeasurementRunnerSuites()
+    print("Hook baseline observer: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--host-automation") {
     await runHostIntegrationAutomationSuites()
     print("\(totalChecks) checks, \(failures) failures")
@@ -152,6 +159,7 @@ await runAdditionalHostMigrationSuites()
 runAdditionalHostHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
+runHookMeasurementSuites()
 runHostHookRunnerSuites()
 runHostEventSourceSuites()
 runHostProcessAncestrySuites()
