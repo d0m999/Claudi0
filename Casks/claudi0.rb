@@ -11,6 +11,7 @@ cask "claudi0" do
   desc "Semantic sound cues for Claude Code and Codex"
   homepage "https://github.com/d0m999/Claudio"
 
+  depends_on arch: :arm64
   depends_on macos: ">= :monterey"
 
   app "claudi0.app"

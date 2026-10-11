@@ -12,7 +12,7 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 
 ## Development environment
 
-- macOS 12 or later.
+- Apple Silicon (`arm64`), macOS 12 or later. Intel distribution is no longer supported (ADR 0032).
 - Xcode Command Line Tools with Swift 6.
 - `jq` for validating the string catalog.
 - Node.js for the standalone sound-pack selector state regression.
@@ -59,7 +59,7 @@ Provider admission or establish real Keychain access or UI acceptance.
 
 `scripts/test-sound-pack-candidates.py` always checks generators and license records; audio checks for local candidate packs report a skip when their pack directories are absent. Present candidate packs retain all existing audio and ledger checks.
 
-`scripts/dev-bundle.sh` produces an ad-hoc signed, current-architecture app for local inspection only. It is not equivalent to the universal, Developer ID signed, notarized release artifact.
+`scripts/dev-bundle.sh` produces an ad-hoc signed, arm64-only app for local inspection only. It is not equivalent to the arm64-only, Developer ID signed, notarized release artifact.
 
 Bailian Audio 3.1 remains closed in ordinary builds until the resource contract and real adoption
 pass ADR 0027. Use `bash scripts/dev-bundle.sh --bailian-acceptance` for its explicit local bundle.
@@ -77,7 +77,12 @@ acceptance bundle. It compiles the same flag into GUI and helper and marks the a
 The plugin source is embedded in the helper and copied to `Resources/integrations/opencode/`;
 after editing `integrations/opencode/claudio.js`, regenerate with
 `python3 scripts/embed-opencode-plugin.py` and run the check above.
-Bundle builds use `-Osize` for the helper, preserving the existing executable-size budget.
+Bundle builds use SwiftPM `--experimental-lto-mode full` and `-Osize` for the helper,
+preserving the existing executable-size budget. Local compilation, binary-path queries and the
+arm64 release workflow use the same options. Debug, executable harness and LoginItem builds
+retain their existing options. This build choice does not enable the version cache.
+Run `python3 scripts/test-release-build-options.py` and
+`python3 scripts/test-bailian-bundle-identity.py` for the isolated build-command contracts.
 
 The migration suite exercises public adapters in isolated temporary roots under ordinary Release
 and explicit acceptance builds. Configuration ownership recognizes exact known historical templates
@@ -112,7 +117,7 @@ the signed Pages feed. See [the preview ledger](docs/preview-acceptance.md) and 
 If publication fails after creating the prerelease, retrying reuses it only when its tag resolves
 to the accepted source commit and all three assets match the original candidate bytes exactly.
 
-For local inspection only (current architecture, uncommitted source permitted):
+For local inspection only (arm64, uncommitted source permitted):
 
 ```bash
 CLAUDIO_VERSION=0.0.1 bash scripts/dev-bundle.sh --public-preview
@@ -126,7 +131,7 @@ universal framework is copied with its versioned links and signed inside out. It
 3,500,000-byte budget; original app/resource budgets remain enforced. A dev bundle lacks a feed;
 an installed preview uses the preview feed, and a formal bundle uses the formal feed. Formal
 framework tools require the same Developer ID team, runtime and timestamp gates as other binaries.
-Neither local inspection nor a universal candidate establishes Gatekeeper, login or two-version
+Neither local inspection nor an arm64 candidate establishes Gatekeeper, login or two-version
 upgrade acceptance. CI needs `SPARKLE_PRIVATE_KEY` (32-byte seed in base64); use stdin, never a
 command-line secret. The matching public key is checked in `config/sparkle-public-key.txt`.
 
@@ -151,6 +156,6 @@ Describe:
 4. Manual checks performed, especially native UI, VoiceOver, keyboard/focus, and real-host callbacks.
 5. Anything not verified.
 
-CI is required but does not establish native macOS or real-host acceptance. Maintainers may ask for Apple Silicon and Intel evidence for release-sensitive changes.
+CI is required but does not establish native macOS or real-host acceptance. Maintainers may ask for Apple Silicon runtime evidence for release-sensitive changes.
 
 By contributing, you agree that your contribution is licensed under the repository's [PolyForm Noncommercial License 1.0.0](LICENSE), and you grant d0m999 the right to also license your contribution under separate commercial terms. You will follow the [Code of Conduct](CODE_OF_CONDUCT.md).

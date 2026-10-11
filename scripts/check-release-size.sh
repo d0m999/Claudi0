@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Release bundle executable-size and export contract.
-# Budgets are per Mach-O architecture so the same gate applies to local arm64 bundles and CI's
-# arm64+x86_64 universal bundle.
+# Claudio-owned binaries must be exactly arm64. Existing byte budgets remain unchanged.
+# The separately budgeted upstream Sparkle framework may retain its universal slices.
 set -euo pipefail
 
 APP="${1:-dist/claudi0.app}"
@@ -59,11 +59,11 @@ if [ "$GUI_ARCHS" != "$HELPER_ARCHS" ] || [ "$GUI_ARCHS" != "$LOGIN_ITEM_ARCHS" 
   exit 1
 fi
 
-ARCH_COUNT="$(printf '%s\n' "$GUI_ARCHS" | awk '{print NF}')"
-if [ "$ARCH_COUNT" -lt 1 ]; then
-  echo "❌ 无法识别 Mach-O 架构：$GUI_BINARY" >&2
+if [ "$GUI_ARCHS" != "arm64" ]; then
+  echo "❌ Claudio 仅支持 arm64；实际 Mach-O 架构：[$GUI_ARCHS]" >&2
   exit 1
 fi
+ARCH_COUNT=1
 
 check_binary_budget() {
   local label="$1"

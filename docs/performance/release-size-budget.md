@@ -1,5 +1,24 @@
 # Release 体积预算
 
+## 2026-10-11：arm64 发布配方前置候选
+
+依据 ADR 0032，当前分发的 GUI/helper/LoginItem 必须精确为 arm64；历史 universal 数据保留。
+GUI **7,000,000 B**、helper **3,250,000 B**、LoginItem **500,000 B**、资源 **3,100,000 B**
+以及 Sparkle 独立 **3,500,000 B** 的上限均不改变，不借用已取消的 Intel 切片额度。
+
+helper 的三条分发命令（本地编译、路径查询、arm64 release workflow）统一使用 SwiftPM
+`--experimental-lto-mode full` 和 `-Osize`。GUI 保留既有 full LTO；Debug、harness 与
+LoginItem 不新增 LTO，不拆 helper，不改变业务代码或启用版本缓存。公开预览委托相同
+`dev-bundle.sh` 配方；本轮不更新实验 benchmark 驱动器，不追加 hook 性能测量。
+
+固定 `ee27afd850e2ac13b5fc1de953054b65486a2627` 加七路径核心的旧原配方，本地 helper 为
+**3,325,272 B**，超过门禁 **75,272 B**。它是此前失败证据，不等于核心的体积增量。
+本轮在同一源码上核验完整链接优化，记录编译、strip 前后及最终 ad-hoc 签名后的产物身份。
+具体产物数据见独立收尾报告；历史冻结包与样本不改写。通过本机门禁不等于固定 CI 工具链、
+Developer ID、公证、macOS 12 实机、真实宿主或性能验收通过。
+
+下文“按架构线性放大”及双架构命令描述为历史记录，当前 arm64-only 门禁不再放大上限。
+
 发布流程在 codesign 前执行 `scripts/check-release-size.sh`。门禁按 Mach-O 架构数线性放大：
 
 - `claudi0-app`：每架构最多 `7,000,000 B`；

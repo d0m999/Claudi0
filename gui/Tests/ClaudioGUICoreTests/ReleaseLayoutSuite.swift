@@ -29,9 +29,9 @@ private func runReleaseSizeGate(
         "CLAUDIO_NON_EXECUTABLE_BUNDLE_BYTES": "1000",
         "CLAUDIO_LIPO_BIN": fakeLipo.path,
         "CLAUDIO_NM_BIN": fakeNM.path,
-        "FAKE_GUI_ARCHS": "arm64 x86_64",
-        "FAKE_HELPER_ARCHS": "arm64 x86_64",
-        "FAKE_LOGIN_ITEM_ARCHS": "arm64 x86_64",
+        "FAKE_GUI_ARCHS": "arm64",
+        "FAKE_HELPER_ARCHS": "arm64",
+        "FAKE_LOGIN_ITEM_ARCHS": "arm64",
         "FAKE_GUI_ARM64_BYTES": "100",
         "FAKE_GUI_X86_64_BYTES": "100",
         "FAKE_HELPER_ARM64_BYTES": "80",
@@ -558,16 +558,15 @@ func runReleaseLayoutSuites() {
             "内置包脚本必须只复制批准清单，并把选择证据与音频许可台账一起装入 app bundle")
         expect(
             yaml.contains("swift build -c release --arch arm64 --product claudio")
-                && yaml.contains("swift build -c release --arch x86_64 --product claudio"),
+                && !yaml.contains("--arch x86_64"),
             "helper Release 构建必须显式选择 claudio product，不能顺带编译测试 executable")
         expect(
             yaml.contains("swift build -c release --arch arm64 --product ClaudioLoginItem")
-                && yaml.contains(
-                    "swift build -c release --arch x86_64 --product ClaudioLoginItem")
+                && !yaml.contains("--arch x86_64")
                 && yaml.contains(
                     #"bash scripts/assemble-login-item.sh \"#)
                 && yaml.contains("Contents/Library/LoginItems/claudi0 LoginItem.app"),
-            "macOS 12 LoginItem 必须双架构构建并内嵌到固定签名布局")
+            "macOS 12 LoginItem 必须 arm64 构建并内嵌到固定签名布局")
         expect(
             yaml.contains(
                 #"""
@@ -630,7 +629,7 @@ func runReleaseLayoutSuites() {
             "release workflow 必须在签名前执行可执行负载体积门禁")
     }
 
-    suite("分发脚本对 Release GUI 与 helper 启用体积优化，GUI 使用 full LTO") {
+    suite("分发脚本对 Release GUI 与 helper 使用 -Osize 和 full LTO") {
         let root = guiTestRepositoryRoot()
         guard
             let dev = try? String(
@@ -663,45 +662,52 @@ func runReleaseLayoutSuites() {
                 && ciReleaseGUICommands.allSatisfy(usesSwiftSizeOptimization),
             "CI Release GUI 构建必须使用 -Osize")
         expect(
-            releaseGUICommands.count == 2
+            releaseGUICommands.count == 1
                 && releaseGUICommands.allSatisfy(usesSwiftSizeOptimization)
                 && releaseGUICommands.contains { $0.contains("--arch arm64") }
-                && releaseGUICommands.contains { $0.contains("--arch x86_64") },
-            "双架构 release GUI 构建必须使用同一 -Osize 合同")
+                && !release.contains("--arch x86_64"),
+            "arm64 release GUI 构建必须使用同一 -Osize 合同")
         expect(
             devHelperCommands.count == 2
                 && devHelperCommands.allSatisfy(usesSwiftSizeOptimization)
-                && releaseHelperCommands.count == 2
+                && releaseHelperCommands.count == 1
                 && releaseHelperCommands.allSatisfy(usesSwiftSizeOptimization),
-            "本地 helper 构建／路径查询及双架构分发必须使用 -Osize，维持新增插件后的原体积预算")
+            "本地 helper 构建／路径查询及arm64 分发必须使用 -Osize，维持新增插件后的原体积预算")
 
         let optimizedCommands = [devCommands, ciCommands, releaseCommands]
             .flatMap { $0 }
             .filter(usesSwiftSizeOptimization)
         expect(
-            optimizedCommands.count == 9
+            optimizedCommands.count == 7
                 && optimizedCommands.allSatisfy {
                     isReleaseGUIBuildCommand($0) || isReleaseHelperBuildCommand($0)
                 },
-            "-Osize 只允许五条 Release GUI 与四条 helper 分发命令，不能扩散到 Debug、harness、"
+            "-Osize 只允许四条 Release GUI 与三条 helper 分发命令，不能扩散到 Debug、harness、"
                 + "LoginItem；实际命令：\(optimizedCommands)")
 
         expect(
             devReleaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
                 && ciReleaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
                 && releaseGUICommands.allSatisfy(usesSwiftFullLinkTimeOptimization),
-            "dev、CI 与双架构 release 的五条 GUI 构建必须使用相同 SwiftPM full LTO 合同")
+            "dev、CI 与arm64 release 的四条 GUI 构建必须使用相同 SwiftPM full LTO 合同")
+        expect(
+            devHelperCommands.count == 2
+                && devHelperCommands.allSatisfy(usesSwiftFullLinkTimeOptimization)
+                && releaseHelperCommands.count == 1
+                && releaseHelperCommands.allSatisfy(usesSwiftFullLinkTimeOptimization),
+            "helper 构建、路径查询与arm64 发行必须使用 full LTO，不放宽原体积门禁")
         let ltoCommands = [devCommands, ciCommands, releaseCommands]
             .flatMap { $0 }
             .filter { $0.contains("--experimental-lto-mode") }
         expect(
-            ltoCommands.count == 5
+            ltoCommands.count == 7
                 && ltoCommands.allSatisfy {
-                    isReleaseGUIBuildCommand($0) && usesSwiftSizeOptimization($0)
+                    (isReleaseGUIBuildCommand($0) || isReleaseHelperBuildCommand($0))
+                        && usesSwiftSizeOptimization($0)
                         && usesSwiftFullLinkTimeOptimization($0)
                 },
-            "full LTO 只能出现在五条 Release ClaudioGUI 命令，不能扩散到 Debug、harness、"
-                + "LoginItem 或 helper；实际命令：\(ltoCommands)")
+            "full LTO 只允许四条 Release GUI 与三条 helper 分发命令，不扩散到 Debug、"
+                + "harness 或 LoginItem；实际命令：\(ltoCommands)")
 
         let packageDump = dumpGUIPackageDescription(repositoryRoot: root)
         guard packageDump.status == 0 else {
@@ -827,7 +833,7 @@ func runReleaseLayoutSuites() {
             "flag 与 Release 条件分属不同 setting 时必须失败关闭")
     }
 
-    suite("HostIcons：SwiftPM、开发 bundle 与双架构 release 都 fail closed 复制同一资源 bundle") {
+    suite("HostIcons：SwiftPM、开发 bundle 与 arm64 release 都 fail closed 复制同一资源 bundle") {
         let root = guiTestRepositoryRoot()
         let packageURL = root.appendingPathComponent("gui/Package.swift")
         let resourceBundleURL = root.appendingPathComponent(
@@ -948,15 +954,13 @@ func runReleaseLayoutSuites() {
             "开发 app 必须复制 About 许可/隐私资源并写入 Orbit Zero bundle identity")
         expect(
             release.contains("gui/.build/arm64-apple-macosx/release")
-                && release.contains("gui/.build/x86_64-apple-macosx/release")
-                && release.contains(
-                    #"diff -qr "$ARM_GUI_RESOURCE_BUNDLE" "$X86_GUI_RESOURCE_BUNDLE""#)
+                && !release.contains("gui/.build/x86_64-apple-macosx/release")
                 && release.contains(#"cp -R "$ARM_GUI_RESOURCE_BUNDLE""#),
-            "release 必须分别解析双架构资源 bundle、确认完全一致后再复制")
+            "release 必须解析唯一 arm64 资源 bundle 后复制")
         expect(
-            release.contains(#"diff -qr "$ARM_LOCALIZATION_BUNDLE" "$X86_LOCALIZATION_BUNDLE""#)
+            release.contains("find_unique_localization_bundle")
                 && release.contains(#"cp -R "$ARM_LOCALIZATION_BUNDLE""#),
-            "release 必须分别解析双架构本地化 bundle、确认内容一致后再复制")
+            "release 必须解析唯一 arm64 本地化 bundle 后复制")
     }
 
     suite("dev/release 分发源包含 minimal-chime 1.1.0、第五音频与 CC0 台账") {
@@ -1049,9 +1053,9 @@ func runReleaseLayoutSuites() {
             let loginItemBinary = loginItem.appendingPathComponent(
                 "Contents/MacOS/claudi0-login-item")
             let loginItemPlist = loginItem.appendingPathComponent("Contents/Info.plist")
-            writeFixture("g", to: gui)
-            writeFixture("h", to: helper)
-            writeFixture("l", to: loginItemBinary)
+            writeFixture(String(repeating: "g", count: 100), to: gui)
+            writeFixture(String(repeating: "h", count: 80), to: helper)
+            writeFixture(String(repeating: "l", count: 40), to: loginItemBinary)
             writeFixture(
                 #"""
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -1106,7 +1110,7 @@ func runReleaseLayoutSuites() {
                   exit 2
                 fi
                 case "$(basename "$2")" in
-                  claudi0-app.arm64) arch="arm64"; exports="$FAKE_GUI_ARM64_EXPORTS" ;;
+                  claudi0-app|claudi0-app.arm64) arch="arm64"; exports="$FAKE_GUI_ARM64_EXPORTS" ;;
                   claudi0-app.x86_64) arch="x86_64"; exports="$FAKE_GUI_X86_64_EXPORTS" ;;
                   *) exit 3 ;;
                 esac
@@ -1143,12 +1147,12 @@ func runReleaseLayoutSuites() {
                 fakeLipo: fakeLipo,
                 fakeNM: fakeNM,
                 overrides: [
-                    "FAKE_GUI_X86_64_EXPORTS":
+                    "FAKE_GUI_ARM64_EXPORTS":
                         "__mh_execute_header\n_$s11ClaudioGUI6LeakedyyF\n"
                 ])
             expect(
                 exported.status != 0
-                    && exported.output.contains("claudi0-app [x86_64]")
+                    && exported.output.contains("claudi0-app [arm64]")
                     && exported.output.contains("_$s11ClaudioGUI6LeakedyyF"),
                 "任一 GUI 架构仍有产品导出符号时必须失败关闭并指出切片：\(exported.output)")
 
@@ -1163,22 +1167,36 @@ func runReleaseLayoutSuites() {
                     && inspectionFailure.output.contains("fixture nm failure for arm64"),
                 "nm 失败不能伪装成零导出：\(inspectionFailure.output)")
 
+            writeFixture(String(repeating: "g", count: 101), to: gui)
             let asymmetric = runReleaseSizeGate(
                 app: app,
                 fakeLipo: fakeLipo,
                 fakeNM: fakeNM,
-                overrides: ["FAKE_GUI_X86_64_BYTES": "101"])
+                overrides: [:])
             expect(
                 asymmetric.status != 0
-                    && asymmetric.output.contains("claudi0-app [x86_64]")
+                    && asymmetric.output.contains("claudi0-app [arm64]")
                     && asymmetric.output.contains("101 B > 100 B"),
-                "单个超预算切片不能被另一个小切片平均掉：\(asymmetric.output)")
+                "arm64 超出原预算 1 B 必须拒绝：\(asymmetric.output)")
+
+            writeFixture(String(repeating: "g", count: 100), to: gui)
+            for unsupported in ["x86_64", "arm64 x86_64", "", "arm64e"] {
+                let rejected = runReleaseSizeGate(
+                    app: app, fakeLipo: fakeLipo, fakeNM: fakeNM,
+                    overrides: [
+                        "FAKE_GUI_ARCHS": unsupported, "FAKE_HELPER_ARCHS": unsupported,
+                        "FAKE_LOGIN_ITEM_ARCHS": unsupported,
+                    ])
+                expect(
+                    rejected.status != 0 && rejected.output.contains("仅支持 arm64"),
+                    "不支持的架构必须拒绝：\(unsupported) \(rejected.output)")
+            }
 
             let mismatched = runReleaseSizeGate(
                 app: app,
                 fakeLipo: fakeLipo,
                 fakeNM: fakeNM,
-                overrides: ["FAKE_HELPER_ARCHS": "arm64"])
+                overrides: ["FAKE_HELPER_ARCHS": "x86_64"])
             expect(
                 mismatched.status != 0 && mismatched.output.contains("架构不一致"),
                 "GUI/helper 架构不一致必须拒绝：\(mismatched.output)")
@@ -1187,7 +1205,7 @@ func runReleaseLayoutSuites() {
                 app: app,
                 fakeLipo: fakeLipo,
                 fakeNM: fakeNM,
-                overrides: ["FAKE_LOGIN_ITEM_ARCHS": "arm64"])
+                overrides: ["FAKE_LOGIN_ITEM_ARCHS": "arm64 x86_64"])
             expect(
                 mismatchedLoginItem.status != 0
                     && mismatchedLoginItem.output.contains("LoginItem 架构不一致"),
@@ -1222,17 +1240,17 @@ func runReleaseLayoutSuites() {
                 app: app, fakeLipo: fakeLipo, fakeNM: fakeNM)
             expect(
                 bundleOverflow.status != 0
-                    && bundleOverflow.output.contains("app bundle 超出体积预算"),
-                "逐切片与资源都合格时，总 bundle 上限仍必须独立生效：\(bundleOverflow.output)")
-            writeFixture("g", to: gui)
-            writeFixture("h", to: helper)
+                    && bundleOverflow.output.contains("超出体积预算"),
+                "arm64 大文件不能借用已取消的第二架构预算：\(bundleOverflow.output)")
+            writeFixture(String(repeating: "g", count: 100), to: gui)
+            writeFixture(String(repeating: "h", count: 80), to: helper)
 
             try? FileManager.default.removeItem(at: helper)
             let missing = runReleaseSizeGate(app: app, fakeLipo: fakeLipo, fakeNM: fakeNM)
             expect(
                 missing.status != 0 && missing.output.contains("缺少 Release 可执行文件"),
                 "缺 helper 必须在任何预算计算前 fail closed：\(missing.output)")
-            writeFixture("h", to: helper)
+            writeFixture(String(repeating: "h", count: 80), to: helper)
             try? FileManager.default.removeItem(at: loginItemBinary)
             let missingLoginItem = runReleaseSizeGate(
                 app: app, fakeLipo: fakeLipo, fakeNM: fakeNM)
@@ -1677,7 +1695,8 @@ func runReleaseLayoutSuites() {
         }
 
         expect(
-            ruby.contains(#"depends_on macos: ">= :monterey""#)
+            ruby.contains(#"depends_on arch: :arm64"#)
+                && ruby.contains(#"depends_on macos: ">= :monterey""#)
                 && ruby.contains(#"app "claudi0.app""#)
                 && ruby.contains("claudi0-#{version}.dmg")
                 && ruby.contains("sha256"),

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# 本地走查用的 ad-hoc claudi0.app —— release.yml「Assemble claudi0.app」的单架构等价物。
-# CI 那份用 lipo 合双架构；走查只需要本机这一个架构。
+# 本地走查用的 arm64-only ad-hoc claudi0.app；正式发布另须 Developer ID 与公证。
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -54,7 +53,7 @@ fi
 gui_build() {
     # SwiftPM full LTO reduces GUI code size and preserves bundled resources.
     if [[ "$GUI_NATIVE_HOST_CARD_PROBE" == true ]]; then
-        swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
+        swift build -c release --arch arm64 --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
             -Xswiftc -DCLAUDIO_NATIVE_HOST_CARD_PROBE \
             "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
@@ -62,7 +61,7 @@ gui_build() {
             "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
             "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
     else
-        swift build -c release --package-path "$repo_root/gui" --product ClaudioGUI \
+        swift build -c release --arch arm64 --package-path "$repo_root/gui" --product ClaudioGUI \
             --experimental-lto-mode full -Xswiftc -Osize \
             "${BAILIAN_BUILD_OPTIONS[@]+"${BAILIAN_BUILD_OPTIONS[@]}"}" \
             "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
@@ -72,7 +71,7 @@ gui_build() {
 }
 
 login_item_build() {
-    swift build -c release --package-path "$repo_root/gui" --product ClaudioLoginItem \
+    swift build -c release --arch arm64 --package-path "$repo_root/gui" --product ClaudioLoginItem \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" "$@"
 }
 
@@ -146,8 +145,9 @@ assemble_dev_bundle() (
     verify_bailian_source_identity
     login_item_build
     verify_bailian_source_identity
-    # Size optimization keeps the plugin/parser inside the unchanged helper budget.
-    swift build -c release --package-path "$repo_root/helper" --product claudio -Xswiftc -Osize \
+    # Cross-module LTO keeps the complete helper inside the unchanged per-architecture budget.
+    swift build -c release --arch arm64 --package-path "$repo_root/helper" --product claudio \
+        --experimental-lto-mode full -Xswiftc -Osize \
         "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
             "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}"
@@ -165,8 +165,8 @@ assemble_dev_bundle() (
     cp -R "$repo_root/gui/AppResources/en.lproj" "$APP/Contents/Resources/en.lproj"
     cp -R "$repo_root/gui/AppResources/zh-Hans.lproj" \
         "$APP/Contents/Resources/zh-Hans.lproj"
-    HELPER_BIN_DIR="$(swift build -c release --package-path "$repo_root/helper" \
-        --product claudio -Xswiftc -Osize \
+    HELPER_BIN_DIR="$(swift build -c release --arch arm64 --package-path "$repo_root/helper" \
+        --product claudio --experimental-lto-mode full -Xswiftc -Osize \
         "${HOST_BUILD_OPTIONS[@]+"${HOST_BUILD_OPTIONS[@]}"}" \
             "${PREVIEW_BUILD_OPTIONS[@]+"${PREVIEW_BUILD_OPTIONS[@]}"}" \
         "${SWIFT_BUILD_OPTIONS[@]+"${SWIFT_BUILD_OPTIONS[@]}"}" --show-bin-path)"

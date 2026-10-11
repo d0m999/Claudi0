@@ -20,7 +20,12 @@ def write(path, text, executable=False):
         path.chmod(0o755)
 
 
-def run_case(phase):
+def require(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+def run_case(phase, *, bundle_source=None):
     with tempfile.TemporaryDirectory(prefix="claudio-bailian-identity-") as directory:
         root = Path(directory)
         for name in ["dev-bundle.sh", "pinned-output-directory.sh", "bailian-acceptance-source.py"]:
@@ -29,6 +34,8 @@ def run_case(phase):
                 destination = root / "scripts" / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, destination)
+        if bundle_source is not None:
+            (root / "scripts/dev-bundle.sh").write_text(bundle_source)
         asset = root / "gui/Sources/ClaudioGUICore/BailianAssetContract.swift"
         write(asset, 'static let hostname = "fixture.example"\nacceptedMediaTypes: ["audio/x-wav"]\n')
         original_asset = asset.read_bytes()
@@ -40,6 +47,7 @@ def run_case(phase):
         for path in ["LICENSE", "PRIVACY.md", "integrations/opencode/claudio.js", "assets/branding/claudi0.icns"]:
             write(root / path, "fixture\n")
         write(root / "scripts/embed-opencode-plugin.py", "pass\n")
+        write(root / "scripts/sparkle-bundle.py", "pass\n")
         write(root / "scripts/copy-bundled-packs.sh", "#!/bin/bash\nexit 0\n")
         write(root / "scripts/assemble-login-item.sh",
               '#!/bin/bash\nmkdir -p "$2/Contents/Library/LoginItems/claudi0 LoginItem.app/Contents/MacOS"\n'
@@ -69,7 +77,19 @@ import subprocess
 import sys
 args = sys.argv[1:]
 root = Path(os.environ["FIXTURE_ROOT"])
+with (root / "swift-argv.jsonl").open("a") as log:
+    import json
+    log.write(json.dumps(args) + "\\n")
+if "--arch" not in args or args[args.index("--arch") + 1] != "arm64":
+    sys.exit("build options contract: arm64 is required")
 product = args[args.index("--product") + 1]
+if product in ("ClaudioGUI", "claudio"):
+    if "--experimental-lto-mode" not in args or args[args.index("--experimental-lto-mode") + 1] != "full":
+        sys.exit("build options contract: full LTO is required")
+    if not any(args[i:i + 2] == ["-Xswiftc", "-Osize"] for i in range(len(args))):
+        sys.exit("build options contract: -Osize is required")
+elif "--experimental-lto-mode" in args or "-Osize" in args:
+    sys.exit("build options contract: LoginItem options must remain unchanged")
 directory = root / "bin" / ("helper" if product == "claudio" else "gui")
 directory.mkdir(parents=True, exist_ok=True)
 if "--show-bin-path" in args:
@@ -102,25 +122,28 @@ if os.environ["MUTATION_PHASE"].split("-")[0] == phase:
                                 env=env, text=True, capture_output=True)
         app = root / "dist/claudi0.app"
         if phase:
-            assert result.returncode != 0, f"{phase}: source drift must reject the bundle"
-            assert "source changed" in result.stderr, f"{phase}: must report the source identity failure"
-            assert not app.exists(), f"{phase}: rejected app must not remain launchable"
+            require(result.returncode != 0, f"{phase}: source drift must reject the bundle")
+            require("source changed" in result.stderr, f"{phase}: must report the source identity failure: {result.stderr}")
+            require(not app.exists(), f"{phase}: rejected app must not remain launchable")
         else:
-            assert result.returncode == 0, result.stderr
+            require(result.returncode == 0, result.stderr)
             identity = json.loads((app / "Contents/Resources/bailian-acceptance-source.json").read_text())
-            assert identity["source_files"][str(asset.relative_to(root))] == hashlib.sha256(original_asset).hexdigest()
-            assert identity["bailian_asset_policy"]["accepted_media_types"] == ["audio/x-wav"]
-            assert identity["distribution_eligible"] is False
-            assert "helper/Sources/Version/version.c" in identity["source_files"], "C input must be frozen too"
+            require(identity["source_files"][str(asset.relative_to(root))] == hashlib.sha256(original_asset).hexdigest(), "asset digest mismatch")
+            require(identity["bailian_asset_policy"]["accepted_media_types"] == ["audio/x-wav"], "asset policy mismatch")
+            require(identity["distribution_eligible"] is False, "fixture must not enable distribution")
+            require("helper/Sources/Version/version.c" in identity["source_files"], "C input must be frozen too")
+
+        return [json.loads(line) for line in (root / "swift-argv.jsonl").read_text().splitlines()]
 
 
-failures = []
-for phase in ["", "gui", "login", "helper", "assembly", "gui-add", "helper-delete", "gui-restore"]:
-    try:
-        run_case(phase)
-        print(f"PASS: {phase or 'stable source'}")
-    except AssertionError as error:
-        failures.append(str(error))
-        print(f"FAIL: {error}")
-if failures:
-    raise SystemExit(1)
+if __name__ == "__main__":
+    failures = []
+    for phase in ["", "gui", "login", "helper", "assembly", "gui-add", "helper-delete", "gui-restore"]:
+        try:
+            run_case(phase)
+            print(f"PASS: {phase or 'stable source'}")
+        except AssertionError as error:
+            failures.append(str(error))
+            print(f"FAIL: {error}")
+    if failures:
+        raise SystemExit(1)
