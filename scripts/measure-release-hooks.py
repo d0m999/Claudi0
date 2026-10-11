@@ -11,6 +11,7 @@ one matching result. Concurrent host activity invalidates a sample instead of be
 """
 import argparse
 from collections import Counter
+import ctypes
 from datetime import datetime, timezone
 import fcntl
 import hashlib
@@ -19,6 +20,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import plistlib
 import random
 import stat
 import subprocess
@@ -31,17 +33,35 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
 def receipt_files(root, host):
     history = root / 'integrations/receipt-history' / host
-    current = root / 'integrations/receipts' / (host + '.json')
-    files = list(history.glob('*.json'))
-    if current.exists():
-        files.append(current)
+    current = root / 'integrations/receipts' / host
+    files = list(history.glob('*.json')) + list(current.glob('*.json'))
     return {p: digest(p) for p in files}
 
 
 def percentile(values, q):
     return sorted(values)[max(0, math.ceil(len(values) * q) - 1)] / 1e6
+
+
+def live_gui_metadata(root):
+    """Require an actual GUI executable, in addition to the helper's kernel-identity gate."""
+    run = json.loads((root / 'gui-run.json').read_text())
+    pid = run['process']['pid']
+    os.kill(pid, 0)
+    library = ctypes.CDLL('/usr/lib/libproc.dylib')
+    library.proc_pidpath.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
+    library.proc_pidpath.restype = ctypes.c_int
+    buffer = ctypes.create_string_buffer(4096)
+    require(library.proc_pidpath(pid, buffer, len(buffer)) > 0, 'GUI executable identity unavailable')
+    executable = Path(os.fsdecode(buffer.value))
+    require(executable.name in {'claudi0-app', 'ClaudioGUI'}, 'a harness cannot stand in for the real GUI')
+    return {'gui_executable_sha256': digest(executable), 'real_gui_executable_verified': True}
 
 
 def main():
@@ -51,6 +71,9 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--build-metadata', type=Path,
                         help='Benchmark build metadata whose helper SHA-256 must match')
+    parser.add_argument('--workbuddy-app', type=Path,
+                        help='Actual WorkBuddy .app path used by the helper, including user or '
+                             'LaunchServices installations; defaults to /Applications/WorkBuddy.app')
     parser.add_argument('--samples', type=int, default=100)
     parser.add_argument('--warmup', type=int, default=10)
     parser.add_argument('--rounds', type=int, default=3)
@@ -68,32 +91,41 @@ def main():
             'Use scripts/benchmark-hooks.py for isolated measurements. '
             'Use --allow-live-state-replay only for explicitly authorized live-state testing '
             'in a disposable test account or VM.')
+    if args.workbuddy_app is not None and args.host != 'workbuddy':
+        parser.error('--workbuddy-app requires --host workbuddy')
     helper = args.helper.resolve()
-    assert b'CLAUDIO_TEST_ROOT' not in helper.read_bytes(), 'requires a production Release helper'
+    require(b'CLAUDIO_TEST_ROOT' not in helper.read_bytes(), 'requires a production Release helper')
     helper_hash = digest(helper)
     driver_hash = digest(Path(__file__))
     build_metadata = json.loads(args.build_metadata.read_text()) if args.build_metadata else {}
     if build_metadata:
-        assert build_metadata['helper_sha256'] == helper_hash, 'build metadata does not identify this helper'
+        require(build_metadata['helper_sha256'] == helper_hash, 'build metadata does not identify this helper')
         for name, expected in build_metadata['source_sha256'].items():
-            assert digest(Path(name)) == expected, 'compiled input changed since benchmark build'
-    host_version = (
-        subprocess.check_output(['claude' if args.host == 'claude-code' else 'codex', '--version'], text=True).strip()
-        if args.host != 'workbuddy' else subprocess.check_output(
-            ['/usr/libexec/PlistBuddy', '-c', 'Print :CFBundleShortVersionString',
-             '/Applications/WorkBuddy.app/Contents/Info.plist'], text=True).strip())
+            require(digest(Path(name)) == expected, 'compiled input changed since benchmark build')
+    if args.host == 'workbuddy':
+        application = (args.workbuddy_app or Path('/Applications/WorkBuddy.app')).expanduser().resolve()
+        with (application / 'Contents/Info.plist').open('rb') as info:
+            bundle = plistlib.load(info)
+        require(bundle.get('CFBundleIdentifier') == 'com.tencent.workbuddy.mac',
+                'WorkBuddy application identity mismatch')
+        host_version = bundle.get('CFBundleShortVersionString')
+        require(isinstance(host_version, str) and bool(host_version.strip()),
+                'WorkBuddy application version unavailable')
+        host_version = host_version.strip()
+    else:
+        host_version = subprocess.check_output(
+            ['claude' if args.host == 'claude-code' else 'codex', '--version'], text=True).strip()
     root = Path.home() / '.claudio'
     config_file = root / 'config.json'
     config_hash = digest(config_file)
     config = json.loads(config_file.read_text())
-    assert config['host_integrations']['surfaces'][args.host]['enabled'], 'source disabled'
-    run = json.loads((root / 'gui-run.json').read_text())
-    os.kill(run['process']['pid'], 0)  # Each helper additionally validates exact kernel identity.
+    require(config['host_integrations']['surfaces'][args.host]['enabled'], 'source disabled')
+    gui = live_gui_metadata(root)  # Each helper additionally validates exact kernel identity.
     marker = root / 'integrations/installations' / (args.host + '.json')
     marker_hash = digest(marker)
     installation = json.loads(marker.read_text())['installation_id']
     stale = str(uuid.uuid4())
-    assert stale.lower() != installation.lower()
+    require(stale.lower() != installation.lower(), 'stale installation must differ from current installation')
     args.output.mkdir(parents=True, exist_ok=False)
     samples = []
     rng = random.Random(0xC1A0D10)
@@ -110,9 +142,10 @@ def main():
         with os.fdopen(descriptor, 'r+b') as lock, (args.output / 'samples.jsonl').open('w') as output:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             for round_index in range(args.rounds):
+                first_order = rng.getrandbits(1)
                 for index in range(-args.warmup, args.samples):
                     order = ['lock-busy', 'stale-installation']
-                    if rng.getrandbits(1):
+                    if (index + args.warmup + first_order) % 2:
                         order.reverse()
                     for scenario in order:
                         before = receipt_files(root, args.host)
@@ -123,22 +156,28 @@ def main():
                              installation if scenario == 'lock-busy' else stale],
                             input=payload, capture_output=True, timeout=10)
                         elapsed = time.perf_counter_ns() - started
-                        assert result.returncode == 0 and not result.stdout and not result.stderr, 'CLI zero-output contract'
+                        require(result.returncode == 0 and not result.stdout and not result.stderr,
+                                'CLI zero-output contract')
                         after = receipt_files(root, args.host)
                         outcomes = []
                         if scenario == 'stale-installation':
-                            assert after == before, 'rejected event modified receipts or concurrent host event'
+                            require(after == before, 'rejected event modified receipts or concurrent host event')
                         else:
-                            new_history = [p for p in after if p not in before and p.parent.name == args.host]
-                            assert len(new_history) == 1, 'accepted event must create one archive; concurrency invalidates'
+                            history = root / 'integrations/receipt-history' / args.host
+                            new_history = [p for p in after if p not in before and p.parent == history]
+                            require(len(new_history) == 1,
+                                    'accepted event must create one archive; concurrency invalidates')
                             receipt = json.loads(new_history[0].read_text())
-                            assert receipt['installation_id'].lower() == installation.lower()
-                            assert receipt['native_event'] == 'UserPromptSubmit'
-                            assert receipt['playback_result'] == 'debounced', 'must execute the lock-busy branch'
+                            require(receipt['installation_id'].lower() == installation.lower(),
+                                    'archive installation does not match this invocation')
+                            require(receipt['native_event'] == 'UserPromptSubmit',
+                                    'archive event does not match this invocation')
+                            require(receipt['playback_result'] == 'debounced', 'must execute the lock-busy branch')
                             stamp = float(receipt['timestamp'])
-                            assert start_wall <= stamp <= time.time(), 'new archive must belong to this invocation'
+                            require(start_wall <= stamp <= time.time(), 'new archive must belong to this invocation')
                             outcomes = [receipt['playback_result']]
-                        assert digest(marker) == marker_hash and digest(config_file) == config_hash, 'intent/installation changed'
+                        require(digest(marker) == marker_hash and digest(config_file) == config_hash,
+                                'intent/installation changed')
                         if index >= 0:
                             sample = dict(round=round_index, pair=index, scenario=scenario,
                                           elapsed_ns=elapsed, driver_events_initiated=1,
@@ -148,11 +187,11 @@ def main():
                             output.write(json.dumps(sample) + '\n')
                             output.flush()
             fcntl.flock(lock, fcntl.LOCK_UN)
-    assert digest(helper) == helper_hash, 'binary changed during measurement'
-    assert digest(Path(__file__)) == driver_hash, 'measurement driver changed during measurement'
+    require(digest(helper) == helper_hash, 'binary changed during measurement')
+    require(digest(Path(__file__)) == driver_hash, 'measurement driver changed during measurement')
     if build_metadata:
         for name, expected in build_metadata['source_sha256'].items():
-            assert digest(Path(name)) == expected, 'compiled input changed during measurement'
+            require(digest(Path(name)) == expected, 'compiled input changed during measurement')
     summary = {}
     for scenario in ['lock-busy', 'stale-installation']:
         rows = [s for s in samples if s['scenario'] == scenario]
@@ -171,11 +210,14 @@ def main():
                     architecture=platform.machine(), macos=platform.mac_ver()[0],
                     samples_per_cell=args.samples, warmup=args.warmup, rounds=args.rounds,
                     seed=0xC1A0D10, playback='nonblocking lock held; no player starts',
+                    order='seeded initial order per round; alternating AB/BA thereafter',
+                    cache='no host-version cache; warm OS caches; current user history',
                     driver_sha256=driver_hash, host_version=host_version,
                     build=build_metadata.get('build', 'unverified; supply --build-metadata'),
                     compiled_source_sha256=build_metadata.get('source_sha256'),
                     current_authorization='real source intent, installation and live GUI; validated by every helper',
                     history='current production state; empty/full not artificially reset', complete=True)
+    metadata.update(gui)
     (args.output / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     (args.output / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     print(json.dumps(summary, indent=2))
