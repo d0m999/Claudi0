@@ -1,0 +1,89 @@
+{
+  "brand": "claudi0",
+  "version": "1.0",
+  "date": "2026-10-10",
+  "direction": "T2 / C1",
+  "color_space": "sRGB",
+  "colors": {
+    "acid_lime": {
+      "name": "酸柠",
+      "hex": "#D8F447",
+      "rgb": [
+        216,
+        244,
+        71
+      ],
+      "hsl": {
+        "h_degrees": 69.71,
+        "s_percent": 88.72,
+        "l_percent": 61.76
+      },
+      "cmyk_approx_percent": {
+        "c": 11.48,
+        "m": 0.0,
+        "y": 70.9,
+        "k": 4.31
+      }
+    },
+    "deep_ink": {
+      "name": "深墨",
+      "hex": "#172B25",
+      "rgb": [
+        23,
+        43,
+        37
+      ],
+      "hsl": {
+        "h_degrees": 162.0,
+        "s_percent": 30.3,
+        "l_percent": 12.94
+      },
+      "cmyk_approx_percent": {
+        "c": 46.51,
+        "m": 0.0,
+        "y": 13.95,
+        "k": 83.14
+      }
+    },
+    "warm_white": {
+      "name": "暖白",
+      "hex": "#F5F3E9",
+      "rgb": [
+        245,
+        243,
+        233
+      ],
+      "hsl": {
+        "h_degrees": 50.0,
+        "s_percent": 37.5,
+        "l_percent": 93.73
+      },
+      "cmyk_approx_percent": {
+        "c": 0.0,
+        "m": 0.82,
+        "y": 4.9,
+        "k": 3.92
+      }
+    }
+  },
+  "utility_monochrome": {
+    "black": "#000000",
+    "white": "#FFFFFF"
+  },
+  "contrast_ratios": {
+    "acid_lime_on_deep_ink": 12.033,
+    "warm_white_on_deep_ink": 13.402,
+    "acid_lime_on_warm_white": 1.114
+  },
+  "usage": {
+    "primary": "acid_lime mark and wordmark on deep_ink",
+    "light_surface": "deep_ink or pure-black monochrome mark and wordmark",
+    "app": "deep_ink mark on acid_lime container",
+    "minimum_clear_space": "at least one-quarter of mark ink height around combined logo ink bounds",
+    "primary_minimum_width_px": 180,
+    "standard_mark_minimum_px": 24,
+    "favicon_exception_px": 16
+  },
+  "cmyk_note": "Mathematical approximation only; no ICC profile, press proof or spot-color equivalence. Convert and proof for the actual press, stock and ink.",
+  "scope_note": "Static assets only. This package does not certify trademark clearance, App integration or platform acceptance."
+}
