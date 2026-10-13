@@ -21,7 +21,7 @@ _界面预览；原生 app 会跟随 Claudio 内选择的语言和 macOS 外观�
 ## 系统与宿主要求
 
 - macOS 12 Monterey 或更高版本。
-- Apple Silicon（`arm64`）与 Intel（`x86_64`）；Release DMG 内为 universal 二进制。
+- 仅支持 Apple Silicon（`arm64`）；不支持 Intel Mac。
 - Claude Code 与 Codex 均为可选，可只连接其中一个。
 - Claude Code 已验证兼容下限为 2.1.201。更旧版本可能不产生 `StopFailure`，Claudio 会给出警告，但不会阻断其它事件。
 - Codex 需要支持 `~/.codex/hooks.json` 的可组合 hooks；写入后还要通过 `/hooks` 确认。
@@ -228,7 +228,7 @@ git diff --check
 
 本地 CLI/app 版本固定显示 `0.0.0-dev`。Release workflow 只接受严格的 `vMAJOR.MINOR.PATCH` tag，并把同一个无 `v` 版本注入 CLI、app `Info.plist`、DMG 文件名、`SHA256SUMS.txt`、Release 标题和可选 cask。
 
-提交 PR 前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。CI 全绿仍不能替代原生 macOS、VoiceOver、键盘/焦点、Apple Silicon/Intel 以及 Claude Code/Codex 真实回执验收。
+提交 PR 前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。CI 全绿仍不能替代原生 macOS、VoiceOver、键盘/焦点、Apple Silicon 以及 Claude Code/Codex 真实回执验收。
 
 ## 安全、社区与许可证
 

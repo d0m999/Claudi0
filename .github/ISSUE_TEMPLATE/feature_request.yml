@@ -42,7 +42,7 @@ body:
     id: compatibility
     attributes:
       label: Compatibility and data impact
-      description: Note any effect on existing hooks, configuration, sound packs, receipts, backups, macOS versions, Intel, keyboard, or VoiceOver.
+      description: Note any effect on existing hooks, configuration, sound packs, receipts, backups, macOS versions, Apple Silicon, keyboard, or VoiceOver.
   - type: checkboxes
     id: scope
     attributes:

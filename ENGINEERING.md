@@ -523,7 +523,7 @@ Claude Code 的 `hooks.<Event>` 是数组，用户或别的工具可能已挂 ho
 - **渠道**：GitHub Releases（DMG，未签名 ad-hoc）+ 自建 Homebrew tap（`brew install --cask <user>/tap/claudi0`，抄 narlei/claudecodenotify 的成熟作业）。
 - **绕过指引（已按新系统更新）**：macOS Sequoia(15) 起，"右键→打开"已不再直接绕过 Gatekeeper。指引须写：**系统设置 > 隐私与安全性 > 下滑找到被拦的 claudi0 > 点"仍要打开"**。旧系统才用右键打开。
 - **尽早签名公证**：鉴于新系统绕过越来越烦，有第一批用户就上 Apple Developer（99 美元/年）签名 + 公证，彻底去掉摩擦。
-- **CI/CD**：GitHub Actions —— push tag → 编译 universal 二进制（Intel + Apple Silicon）→ 打 DMG →（有证书则签名公证）→ 传 Release → 自动更新 tap 的 cask formula。
+- **CI/CD**：GitHub Actions —— push tag → 编译 arm64-only 二进制（仅 Apple Silicon，见 ADR 0032）→ 打 DMG →（有证书则签名公证）→ 传 Release → 自动更新 tap 的 cask formula。
 - **现行接管机制**：helper-CLI 随 app 安装；GUI 首次运行只执行 `SharedRuntimeBootstrap`，不会静默改写任何宿主配置。用户在 `IntegrationsWindow` 分别连接 Claude Code 与 Codex；Codex 写入后还须在 `/hooks` 确认并以真实回执激活。`claudi0 setup`、`install`、`uninstall` 是用户入口；旧 `claudio` 路径保留 Claude Code v1 兼容语义，不代表 Codex 已连接。
 
 **→ 用户安装指南见 [docs/distribution.md](./docs/distribution.md)，包含 macOS 26+ 系统设置绕过指引、Homebrew / DMG 手动安装步骤、旧系统右键打开说明、未签名 v1 诚实标注、及未来签名公证计划。**

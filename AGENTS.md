@@ -76,12 +76,12 @@ git diff --check
 ```
 
 For bundle or release-sensitive work, also run the applicable scripts and Release builds documented
-in `CONTRIBUTING.md`. `scripts/dev-bundle.sh` produces a current-architecture, ad-hoc-signed local
-app; it is inspection evidence, not a universal signed or notarized release artifact.
+in `CONTRIBUTING.md`. `scripts/dev-bundle.sh` produces an arm64-only, ad-hoc-signed local
+app; it is inspection evidence, not a Developer ID signed or notarized release artifact.
 
 State evidence narrowly. Harnesses, source scans, builds, and localization checks do not establish
-native layout, keyboard/focus order, VoiceOver behavior, real audio, real-host callbacks, both CPU
-architectures, signing/notarization, production readiness, or formal acceptance. Report each manual
+native layout, keyboard/focus order, VoiceOver behavior, real audio, real-host callbacks,
+Apple Silicon runtime compatibility, signing/notarization, production readiness, or formal acceptance. Report each manual
 or external gate as verified or not verified.
 
 ## Git and Review

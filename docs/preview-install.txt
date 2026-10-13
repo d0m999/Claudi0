@@ -1,5 +1,8 @@
 claudi0 公开预览 / Public Preview
 
+仅支持 Apple Silicon（arm64），macOS 12+；不支持 Intel Mac。
+Requires Apple Silicon (arm64) and macOS 12 or later; Intel Macs are not supported.
+
 此构建为 ad-hoc 签名、未公证，无 Developer ID。
 This build is ad-hoc signed, not notarized and has no Developer ID.
 

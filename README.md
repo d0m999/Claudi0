@@ -21,7 +21,7 @@ _Interface preview. The native app follows your selected Claudio language and ma
 ## Requirements
 
 - macOS 12 Monterey or later.
-- Apple Silicon (`arm64`) or Intel (`x86_64`). Release DMGs contain universal binaries.
+- Apple Silicon (`arm64`) only. Intel Macs are not supported.
 - Claude Code or Codex is optional; connect either host independently.
 - Claude Code 2.1.201 and later is the verified compatibility range. Older versions may not emit `StopFailure`; Claudio reports that as a warning rather than blocking the other events.
 - Codex must expose composable hooks through `~/.codex/hooks.json`. Activation also requires confirming the hooks with `/hooks`.
@@ -202,7 +202,7 @@ git diff --check
 
 Local CLI/app builds report `0.0.0-dev`. A release workflow accepts only a strict `vMAJOR.MINOR.PATCH` tag and injects the same unprefixed version into the CLI, app `Info.plist`, DMG filename, checksum file, Release title, and optional cask.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Native macOS, VoiceOver, keyboard/focus, Apple Silicon/Intel, and real-host receipt checks remain manual release gates even when CI passes.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Native macOS, VoiceOver, keyboard/focus, Apple Silicon, and real-host receipt checks remain manual release gates even when CI passes.
 
 Maintainers closing the nine-page unified settings chain should also run the
 [fixed-baseline integration gate and evidence checklist](docs/settings-experience-acceptance.md).

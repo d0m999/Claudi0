@@ -1,5 +1,8 @@
 # SenseAudio 生产候选验收、证据身份与回滚台账
 
+> 2026-10-10 支持范围更新：[ADR 0032](adr/0032-support-apple-silicon-only.md) 规定新分发候选仅支持 arm64。
+> 下方历史 Intel/universal 记录保留；新候选不再要求双架构，其他 Provider、签名、公证与验收门禁不变。
+
 本文件是 `senseaudio-cn` 从受门禁实现走向生产暴露的唯一操作台账。领域与网络合同仍由
 `CONTEXT.md`、ADR 0011、ADR 0014 和 `plan/PLAN-CONSUMER-TTS-EXECUTION.md` 拥有；本文件只规定如何构造
 非分发验收候选、如何记录证据、何时允许 activation，以及如何安全回滚。

@@ -54,11 +54,11 @@ installation 的真实 `UserPromptSubmit` receipt 才算 observed。
 正式 release 由 `.github/workflows/release.yml` 负责：
 
 1. `workflow_dispatch` 只接受 `main` 上的首个 `0.1.0` RC，或推送严格匹配的 `vMAJOR.MINOR.PATCH` tag。
-2. workflow 校验 Apple Developer ID / notarization secrets，分别构建 arm64 与 x86_64 helper/GUI，
-   用 `lipo` 合并 universal binary，再组装 app、DMG、签名、公证、staple、checksum 和 release metadata。
+2. workflow 校验 Apple Developer ID / notarization secrets，构建 arm64-only helper/GUI/LoginItem，
+   逐一验证只有 arm64 架构，再组装 app、DMG、签名、公证、staple、checksum 和 release metadata。
 3. CI 在交付前运行 helper/GUI harness、hook/legacy contracts、localization JSON、size/layout gates。
 
-本地 `dev-bundle.sh` 只用于当前架构 inspection，不能证明 universal、Developer ID、notarization
+本地 `dev-bundle.sh` 只用于 arm64 inspection，不能证明 Developer ID、notarization
 或发布成功。release 失败时保留 CI artifact 和日志，先修复 workflow gate；不要用未签名本地
 bundle 代替发布产物。
 

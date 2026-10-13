@@ -1,5 +1,7 @@
 # 公开预览验收账本
 
+当前支持范围已按 [ADR 0032](adr/0032-support-apple-silicon-only.md) 改为 arm64-only；Intel 不再是新候选验收项。历史运行记录保持原样，不代表本次已通过。
+
 当前 `public_launch = not_evaluated`。本次实现分支基于 `f8662197a30939338ec74f87a7b26cb6142428aa`，
 有未提交实现；其本机检查不是可 publish 的候选身份。正式签名账本 `release-acceptance-0.1.0.md`
 继续独立。本文件记录证据；`preview-acceptance.json` 是 publish 唯一候选身份和 gate 来源。
@@ -7,7 +9,7 @@
 ## 候选登记
 
 每个条目固定 version、source_commit、run_id、artifact_id、artifact_digest（GitHub API 的
-`sha256:...`）、DMG SHA-256。不得在 artifact 下载后重编译或修改 DMG。当前 candidates 为空。`build-preview.py --inspection` 可从冻结的未提交源树生成本机 universal
+`sha256:...`）、DMG SHA-256。不得在 artifact 下载后重编译或修改 DMG。当前 candidates 为空。`build-preview.py --inspection` 可从冻结的未提交源树生成本机 arm64-only
 走查 DMG，manifest 的 channel 固定为 `local-inspection`，publish 验证器必定拒绝。
 收到真实候选后逐项记录人、时间、机器、OS、下载 URL、命令与脱敏原始输出，再按证据更新 JSON。
 发布 Secret、保护环境 `public-preview` 和 Pages Actions 部署均须在 GitHub 配置；本轮未写入。
@@ -16,12 +18,12 @@ JSON gate 必须全部精确为 `passed`；缺失、`not_evaluated`、风险接�
 
 | Gate | 必需证据 | 当前 |
 |---|---|---|
-| automation | 双 harness、Debug/Release、CLI/plugin、本地化、universal bundle、体积、版本比较、验签、发布字节回归 | 未完成，见下方运行记录 |
+| automation | 双 harness、Debug/Release、CLI/plugin、本地化、arm64-only bundle、体积、版本比较、验签、发布字节回归 | 未完成，见下方运行记录 |
 | browser_download_quarantine | 独立账号、浏览器真实下载；DMG 与 app/helper 各阶段正常 quarantine | not_evaluated |
 | two_version_https_upgrade | 固定两版 `0.0.1 → 0.0.2`；真实 HTTPS 检测、下载、替换、重启 | not_evaluated |
 | native_ui_keyboard_voiceover | 菜单／About 提醒、后台不抢焦点、标准窗口、键盘与 VoiceOver | not_evaluated |
 | real_host_receipts | 更新后 helper 字节、配置、显式 OFF、宿主维护、新代次真实回执 | not_evaluated |
-| arm64 / x86_64 | 两机器的 OS/CPU/候选 identity 与真实升级结果 | not_evaluated |
+| arm64 | Apple Silicon 的 OS/CPU/候选 identity 与真实升级结果 | not_evaluated |
 | macos12_login / macos13plus_login | 旧 LoginItem／现代注册；开关、授权、注销／重启后真实启动 | not_evaluated |
 | system_open_anyway | 真实系统拒绝／放行过程，确认下载安装指引对应该候选 | not_evaluated |
 | local_storage_provider_admission | SenseAudio 与百炼各自的真实调用／原生／最终构建准入；未准入服务保持关闭 | not_evaluated |

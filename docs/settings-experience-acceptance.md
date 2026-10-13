@@ -150,11 +150,10 @@ commit、干净工作树、bundle 路径、构建时间、macOS/CPU、语言、�
 | MiniMax global | NOT RUN / NOT VERIFIED | 独立限额 key、get-voice probe、hex MP3 生成/试听/采用 |
 | Qwen Singapore | NOT RUN / NOT VERIFIED | 独立 region key、保存零请求、首次显式生成验证、SSE PCM→WAV |
 | Qwen Beijing | NOT RUN / NOT VERIFIED | 独立 region key 与独立 smoke；不得复用 Singapore 结论 |
-| Apple Silicon | NOT RUN / NOT VERIFIED | 目标架构的原生手验和产物身份 |
-| Intel | NOT RUN / NOT VERIFIED | x86_64 原生手验和产物身份 |
+| Apple Silicon（arm64-only） | NOT RUN / NOT VERIFIED | 按 ADR 0032 核对产物架构和原生手验；Intel 已退出支持范围 |
 | Developer ID 签名 | NOT RUN / NOT VERIFIED | identity、hardened runtime、嵌套签名与 Gatekeeper |
 | notarization/staple | NOT RUN / NOT VERIFIED | Apple notarization 与 staple 结果 |
 | release/正式验收 | NOT RUN / NOT VERIFIED | 授权 workflow、CI、交付物、checksum 与维护者签字 |
 
-`scripts/dev-bundle.sh` 只生成当前架构的 ad-hoc-signed inspection bundle。它可以证明本机构建、资源
+`scripts/dev-bundle.sh` 只生成 arm64-only 的 ad-hoc-signed inspection bundle。它可以证明本机构建、资源
 组成、ad-hoc codesign 结构与 per-architecture size gate；不能证明上表任一真实系统或 release 项。

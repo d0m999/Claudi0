@@ -4,6 +4,8 @@ status: accepted
 
 # 分离 ad-hoc 公开预览与正式签名渠道，用固定 EdDSA 身份更新
 
+2026-10-10：本 ADR 的双架构支持和两 CPU 验收要求已由 [ADR 0032](0032-support-apple-silicon-only.md) 取代；其余发布、签名与验收合同保留。下文保留原始决策记录。
+
 所有者选择先提供无 Developer ID、未公证的公开预览构建，以 GitHub prerelease DMG 分发；支持目标仍为 macOS 12+、arm64 与 x86_64、登录时启动。首次预览为 `0.0.1`，后续 `0.0.N`，标签为 `preview-v0.0.N`。它不是 ADR 0014/0027 的非分发验收候选，也不取得未获准 Provider 的生产资格。正式 `vMAJOR.MINOR.PATCH` 流程保留 Developer ID、hardened runtime、公证与原有真机门禁，不因缺少 Apple 凭据回退。
 
 采用固定 Sparkle 2.10.0，仅 GUI executable 引入 Framework。一个 app-lifetime adapter 持有标准 updater；Foundation `AppUpdateModel` 只是 About 与菜单共享的投影。第二次启动询问检查意愿，同意后每日检查；禁止自动下载和安装。后台提醒不打开窗口、不激活 app；用户显式点击才交给标准窗口。DMG、只读卷或 Translocation 路径关闭更新，提示安装到应用程序目录。标准窗口的原生语言、焦点、权限与系统确认必须单独验收。

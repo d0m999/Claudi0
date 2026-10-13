@@ -1,5 +1,7 @@
 # claudi0 0.1.0 首发验收记录
 
+2026-10-10 支持范围变更：按 [ADR 0032](adr/0032-support-apple-silicon-only.md)，新候选只支持 arm64。下方历史 universal/Intel 记录保持原样；当前验收不再要求 Intel，其他门禁和未验证状态不变。
+
 状态：**未通过**。本记录是 `0.1.0` 的唯一人工验收账本；本地测试、RC 构建成功或单个截图均不能替代未完成项。
 
 ## 产物绑定
@@ -18,7 +20,7 @@
 | DMG 文件名 | `claudi0-0.1.0.dmg`（待核对） |
 | DMG SHA-256 | 待填 |
 | Apple Silicon 硬件 / macOS | 待填 |
-| Intel 硬件 / macOS 12 | 待填 |
+| Apple Silicon 硬件 / macOS 12 | 待填 |
 | Claude Code 版本 | 待填 |
 | Codex 版本 | 待填 |
 | 截图目录或附件 | 待填 |
@@ -279,12 +281,12 @@ bash scripts/verify-release-candidate.sh \
 
 - [ ] 三项 dispatch 输入与单独授权已预先记录；`target_commit` 同时匹配远程 `main` 触发 SHA 和 checkout HEAD。
 - [ ] RC workflow 完成，且只产生 SHA 绑定的 Actions artifact；未创建 tag、Release 或 tap 更新。
-- [ ] helper / GUI harness、CLI 子进程 contracts、universal build、签名、公证、staple、checksum 全部通过。
+- [ ] helper / GUI harness、CLI 子进程 contracts、arm64-only build、签名、公证、staple、checksum 全部通过。
 - [ ] helper/app 的 Developer ID team 与 hardened runtime 匹配；app 与 DMG 分别 notarize/staple 通过。
 - [ ] workflow 从最终挂载 DMG 复验 app/helper 架构、版本、资源、symlink、`codesign`、`spctl`、`stapler`、体积和 SHA-256。
 - [ ] 下载后的 verifier 同时匹配 live run、artifact、官方 archive digest、commit、版本、DMG 文件名、manifest/checksum 和实际 DMG 字节。
 - [ ] Apple Silicon 当前系统完成安装、启动、基础播放。
-- [ ] Intel / macOS 12 完成安装、启动、基础播放。
+- [ ] Apple Silicon / macOS 12 完成安装、启动、基础播放。
 - [ ] 隔离测试账户连接真实 Claude Code 与 Codex；Claude 为 5/5、Codex 为 4/5。
 - [ ] 真实事件产生脱敏 `played`、`muted`、`not_ready` receipt，installation / host / event 绑定正确。
 
@@ -347,4 +349,4 @@ bash scripts/verify-release-candidate.sh \
 - [ ] Release notes、支持矩阵、已知限制与安装说明完整。
 - [ ] 若启用 Homebrew，cask SHA 与正式 DMG 一致，并在干净环境完成安装/升级。
 
-任何 Intel、VoiceOver、Apple 凭据或真实回执缺失均保持本记录“未通过”；不得用本地绿色或自报结果改成通过。
+任何受支持 macOS、VoiceOver、Apple 凭据或真实回执缺失均保持本记录“未通过”；不得用本地绿色或自报结果改成通过。

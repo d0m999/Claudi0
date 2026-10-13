@@ -1,6 +1,10 @@
 # claudi0 分发、安装与恢复指南
 
-**支持范围：** macOS 12+，Apple Silicon 与 Intel。正式 Release 为 universal、Developer ID 签名并经过 Apple notarization 的 DMG。公开预览使用独立 ad-hoc 签名、未公证 DMG；首发仍须通过下述真机账本。
+**支持范围：** macOS 12+，仅 Apple Silicon（arm64），不支持 Intel Mac。正式 Release 为 arm64-only、Developer ID 签名并经过 Apple notarization 的 DMG。公开预览使用独立 ad-hoc 签名、未公证 DMG；首发仍须通过下述真机账本。
+
+支持范围决定见 [ADR 0032](adr/0032-support-apple-silicon-only.md)。公开预览的更新项必须带
+`sparkle:hardwareRequirements=arm64`；缺失时发布失败关闭，历史项保持不变。Sparkle framework
+保留上游 universal 字节，不代表 app 支持 Intel。此配置尚须通过实际升级与公开发布验收。
 
 产品概览与快速开始见 [中文 README](../README.zh-CN.md)；本文聚焦安装、宿主配置边界、修复和卸载。
 
@@ -33,7 +37,7 @@ helper 原始字节并原子替换，恢复宿主维护；期间事件不补播�
 
 候选 build 必须来自固定 clean commit。publish 只消费 [预览账本](preview-acceptance.md)
 中被明确验收的原始 artifact，核对 GitHub run/workflow/archive digest、manifest、DMG SHA、
-版本、universal 架构、ad-hoc 签名和更新签名；先创建 prerelease 并复验公网字节，再部署 feed。
+版本、arm64-only 架构、ad-hoc 签名和更新签名；先创建 prerelease 并复验公网字节，再部署 feed。
 缺 Secret、公钥不匹配、候选未验收、下载或验签失败均停止，不改上一份有效 feed。
 执行 build／本机打包不授权公开 publish；公开首发需另行明确授权。
 
@@ -79,7 +83,7 @@ ledger/manifest、checksum 与 DMG 的大小；这些边界为当前 release siz
 
 缺少任一 Apple 凭据（包括 `APPLE_DEVELOPER_TEAM_ID`）时直接失败，不回退为 ad-hoc 发布。
 
-`0.1.0` 的人工与真机门禁记录在 [`release-acceptance-0.1.0.md`](release-acceptance-0.1.0.md)。RC workflow 通过不等于首发验收通过；Intel/macOS 12、VoiceOver、真实宿主和真实回执缺一项都不得创建首发 tag。
+`0.1.0` 的人工与真机门禁记录在 [`release-acceptance-0.1.0.md`](release-acceptance-0.1.0.md)。RC workflow 通过不等于首发验收通过；Apple Silicon/macOS 12、VoiceOver、真实宿主和真实回执缺一项都不得创建首发 tag。
 
 ## 本机 pre-RC 基线
 
@@ -94,9 +98,9 @@ jq . dist/local-pre-rc-report.json
 架构和 ad-hoc 签名。它依次运行 patch whitespace、双 harness、Debug GUI build、localization、
 `dev-bundle` 与 release-size gate；任何失败、HEAD 漂移或非 clean checkout 都不会留下旧的成功报告。
 
-报告固定标记为 `pre_rc_only`：单架构结果不满足 universal，ad-hoc 签名不满足 Developer ID；
-notarization、stapling、Gatekeeper、DMG checksum 与 Intel 真机均为 `not_evaluated`。该入口不运行
-GitHub release workflow、不读取 Apple/GitHub secrets，也不能替代签名 universal RC、#18/#19
+报告固定标记为 `pre_rc_only`：arm64 架构通过不代表正式验收，ad-hoc 签名不满足 Developer ID；
+notarization、stapling、Gatekeeper 与 DMG checksum 均为 `not_evaluated`。该入口不运行
+GitHub release workflow、不读取 Apple/GitHub secrets，也不能替代签名 arm64 RC、#18/#19
 账本或正式人工验收。
 
 ### LoginItem 人工验收门禁
@@ -111,7 +115,7 @@ ad-hoc 签名不能证明 macOS 会在真实登录会话启动 Claudio；以下�
    退出 Claudio 后重新打开设置，确认状态仍来自系统注册事实。
 3. 每个平台都注销或重启后确认 Claudio 自动出现；再关闭“登录时打开”，重复注销或重启并确认
    不再自动出现。
-4. 分别记录 Apple Silicon 与 Intel 的 OS 版本、CPU、候选 commit、bundle 路径、签名 identity、
+4. 记录 Apple Silicon 的 OS 版本、CPU、候选 commit、bundle 路径、签名 identity、
    登录/重启结果，以及 VoiceOver、键盘和焦点结果。未记录的格子保持 `not_evaluated`。
 
 这些人工结果不得由 ad-hoc bundle、单架构构建、静态源码扫描或 ServiceManagement mock 替代。
