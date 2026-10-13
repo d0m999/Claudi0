@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Build one clean, commit-bound universal preview. Never publish from this entry point."""
+"""Build one clean, commit-bound arm64-only preview. Never publish from this entry point."""
 import argparse
 import hashlib
 import json
 import os
 from pathlib import Path
-import plistlib
 import re
 import shutil
 import subprocess
@@ -51,34 +50,9 @@ if __name__ == '__main__':
     stable(commit)
     env = dict(os.environ, CLAUDIO_VERSION=version)
     subprocess.run(['bash', 'scripts/dev-bundle.sh', '--public-preview'], cwd=ROOT, env=env, check=True)
-    sdk = ['--build-system', 'native', '--sdk', env['CLAUDIO_BUILD_SDK']] if env.get('CLAUDIO_BUILD_SDK') else []
-    products = [('gui', 'ClaudioGUI'), ('gui', 'ClaudioLoginItem'), ('helper', 'claudio')]
-    outputs = {}
-    for package, product in products:
-        flags = ['-Xswiftc', '-Osize', '-Xswiftc', '-DCLAUDIO_PUBLIC_PREVIEW']
-        if product == 'ClaudioGUI': flags += ['--experimental-lto-mode', 'full']
-        for arch in ['arm64', 'x86_64']:
-            command = ['swift', 'build', '-c', 'release', '--package-path', package, '--product', product, '--arch', arch, *flags, *sdk]
-            subprocess.run(command, cwd=ROOT, env=env, check=True)
-            outputs[product, arch] = Path(run(*command, '--show-bin-path', env=env)) / product
-            stable(commit)
+    stable(commit)
     app = ROOT / 'dist/claudi0.app'
-    binaries = {'ClaudioGUI': app / 'Contents/MacOS/claudi0-app',
-                'ClaudioLoginItem': app / 'Contents/Library/LoginItems/claudi0 LoginItem.app/Contents/MacOS/claudi0-login-item',
-                'claudio': app / 'Contents/Resources/bin/claudi0'}
-    for product, destination in binaries.items():
-        subprocess.run(['lipo', '-create', str(outputs[product, 'arm64']), str(outputs[product, 'x86_64']), '-output', str(destination)], check=True)
-        subprocess.run(['strip', *([] if product == 'ClaudioGUI' else ['-x']), str(destination)], check=True)
-    # Resources must be identical across architectures. Never take an unchecked first match.
-    arm_dir, x86_dir = outputs['ClaudioGUI', 'arm64'].parent, outputs['ClaudioGUI', 'x86_64'].parent
-    for suffix in ['ClaudioGUI.bundle', 'ClaudioLocalization.bundle']:
-        arm = list(arm_dir.glob('*_' + suffix)); x86 = list(x86_dir.glob('*_' + suffix))
-        assert len(arm) == len(x86) == 1
-        subprocess.run(['diff', '-qr', str(arm[0]), str(x86[0])], check=True)
-    subprocess.run(['codesign', '--force', '--sign', '-', str(binaries['claudio'])], check=True)
-    subprocess.run(['codesign', '--force', '--sign', '-', str(app / 'Contents/Library/LoginItems/claudi0 LoginItem.app')], check=True)
-    subprocess.run(['python3', 'scripts/sparkle-bundle.py', 'sign', str(app)], cwd=ROOT, check=True)
-    subprocess.run(['codesign', '--force', '--sign', '-', str(app)], check=True)
+    # dev-bundle owns the arm64 build, resources, strip and inside-out signing.
     subprocess.run(['python3', 'scripts/verify-preview.py', 'app', str(app), version], cwd=ROOT, check=True)
     staging = ROOT / 'dist/preview-dmg'
     staging.mkdir(exist_ok=False)
@@ -94,7 +68,7 @@ if __name__ == '__main__':
                     dmg=dmg.name, sha256=sha, size=dmg.stat().st_size,
                     sparkle_version='2.10.0', public_key=(ROOT / 'config/sparkle-public-key.txt').read_text().strip(),
                     run_id=os.environ.get('GITHUB_RUN_ID'), repository=os.environ.get('GITHUB_REPOSITORY'),
-                    signing='ad-hoc', notarized=False, architectures=['arm64', 'x86_64'])
+                    signing='ad-hoc', notarized=False, architectures=['arm64'])
     if args.inspection: manifest['source_tree_sha256'] = INSPECTION_DIGEST
     (ROOT / 'dist/PREVIEW_MANIFEST.json').write_text(json.dumps(manifest, indent=2) + '\n')
     (ROOT / 'dist/SHA256SUMS.txt').write_text(f'{sha}  {dmg.name}\n')

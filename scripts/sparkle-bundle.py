@@ -103,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--channel', choices=['development', 'preview', 'release'], default='development')
     parser.add_argument('--identity', default='-')
     parser.add_argument('--team')
-    parser.add_argument('--archs', default='arm64,x86_64')
+    parser.add_argument('--archs', default='arm64')
     args = parser.parse_args()
     if args.action == 'embed': embed(args.app, args.source)
     elif args.action == 'configure': configure(args.app, args.channel)

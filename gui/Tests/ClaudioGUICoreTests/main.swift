@@ -690,6 +690,7 @@ if CommandLine.arguments.contains("--panel-announcement") {
 if CommandLine.arguments.contains("--release-layout") {
     runBundledHelperResourcesSuites()
     runReleaseLayoutSuites()
+    runLocalPreRCSuites()
     print("Release layout: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }

@@ -28,7 +28,7 @@ def check_app(app, version):
         output = subprocess.check_output(['codesign', '-dv', '--verbose=4', str(path)], stderr=subprocess.STDOUT, text=True)
         assert 'Signature=adhoc' in output, 'preview must be ad-hoc'
     for path in paths:
-        assert set(subprocess.check_output(['lipo', '-archs', str(path)], text=True).split()) == {'arm64', 'x86_64'}
+        assert set(subprocess.check_output(['lipo', '-archs', str(path)], text=True).split()) == {'arm64'}
     assert subprocess.check_output([str(paths[1]), '--version'], text=True).strip() == version
     subprocess.run(['bash', 'scripts/verify-dev-bundle-signature.sh', str(app)], cwd=ROOT, check=True)
     subprocess.run(['python3', 'scripts/sparkle-bundle.py', 'verify', str(app)], cwd=ROOT, check=True)

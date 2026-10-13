@@ -17,7 +17,7 @@ KEY = ROOT / 'config/sparkle-public-key.txt'
 VERIFY = ROOT / 'scripts/verify-sparkle-signature.swift'
 NS = '{http://www.andymatuschak.org/xml-namespaces/sparkle}'
 GATES = ['automation', 'browser_download_quarantine', 'two_version_https_upgrade', 'native_ui_keyboard_voiceover',
-         'real_host_receipts', 'arm64', 'x86_64', 'macos12_login', 'macos13plus_login', 'system_open_anyway',
+         'real_host_receipts', 'arm64', 'macos12_login', 'macos13plus_login', 'system_open_anyway',
          'failure_recovery', 'local_storage_provider_admission']
 
 def load(path, limit=100000):
@@ -32,7 +32,7 @@ def validate(directory, commit, version, run_id=None):
     assert m['dmg'] == f'claudi0-{version}.dmg'
     assert m['public_key'] == KEY.read_text().strip() and m['sparkle_version'] == '2.10.0'
     assert m['signing'] == 'ad-hoc' and m['notarized'] is False
-    assert m['architectures'] == ['arm64', 'x86_64']
+    assert m['architectures'] == ['arm64']
     if run_id: assert str(m['run_id']) == str(run_id) and m['repository'] == 'd0m999/Claudi0'
     dmg = directory / m['dmg']
     assert dmg.is_file() and not dmg.is_symlink() and 0 < dmg.stat().st_size <= 40000000
@@ -58,6 +58,13 @@ def verify(mode, path, signature=None, secret=None):
     command = ['swift', str(VERIFY), mode, str(KEY), str(path)]
     if signature: command.append(signature)
     subprocess.run(command, input=secret, text=True, check=True)
+
+def arm64_item(tree, version):
+    matches = [item for item in tree.findall('./channel/item') if item.findtext(NS + 'version') == version]
+    assert len(matches) == 1, 'exactly one candidate feed item required'
+    requirements = matches[0].findall(NS + 'hardwareRequirements')
+    assert len(requirements) == 1 and requirements[0].text == 'arm64', 'arm64 hardware requirement missing'
+    return matches[0]
 
 def prepare(directory, output, previous):
     secret = os.environ.get('SPARKLE_PRIVATE_KEY')
@@ -93,9 +100,9 @@ def prepare(directory, output, previous):
         shutil.copyfile(staging / 'appcast.xml', feed)
     verify('feed', feed)
     tree = ET.parse(feed)
-    matches = [item for item in tree.findall('./channel/item') if item.findtext(NS + 'version') == m['version']]
-    assert len(matches) == 1
-    enclosure = matches[0].find('enclosure')
+    # generate_appcast derives this from the actual main executable. Check the signed result;
+    # never patch XML after signing or let an ARM-only update reach Intel installations.
+    enclosure = arm64_item(tree, m['version']).find('enclosure')
     assert enclosure is not None and enclosure.attrib['length'] == str(m['size'])
     assert enclosure.attrib['url'] == f"https://github.com/d0m999/Claudi0/releases/download/preview-v{m['version']}/{m['dmg']}"
     signature = enclosure.attrib[NS + 'edSignature']

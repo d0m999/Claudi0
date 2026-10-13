@@ -43,7 +43,11 @@ ns = '{http://www.andymatuschak.org/xml-namespaces/sparkle}'
 for version in ['0.0.1', '0.0.2']:
     payload = stage / ('payload-' + version); app = payload / 'Fixture.app'
     (app / 'Contents/MacOS').mkdir(parents=True)
-    shutil.copyfile('/usr/bin/true', app / 'Contents/MacOS/fixture')
+    # Build an actual arm64-only fixture, independent of the OS /usr/bin/true slices.
+    source = stage / 'fixture.c'
+    source.write_text('int main(void) { return 0; }\n')
+    subprocess.run(['xcrun', 'clang', '-arch', 'arm64', '-mmacosx-version-min=12.0',
+                    str(source), '-o', str(app / 'Contents/MacOS/fixture')], check=True)
     (app / 'Contents/MacOS/fixture').chmod(0o755)
     (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(dict(
         CFBundleIdentifier='com.claudio.sparkle.fixture', CFBundleName='Fixture',
@@ -66,6 +70,7 @@ for version in ['0.0.1', '0.0.2']:
     assert version in versions
     if version == '0.0.2': assert set(versions) == {'0.0.1', '0.0.2'}
     for item in feed_tree.findall('./channel/item'):
+        assert item.findtext(ns + 'hardwareRequirements') == 'arm64'
         enclosure = item.find('enclosure')
         archive_name = enclosure.attrib['url'].rsplit('/', 1)[1]
         check('archive', updates / archive_name, True, enclosure.attrib[ns + 'edSignature'])

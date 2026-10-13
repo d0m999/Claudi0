@@ -86,7 +86,7 @@ class PreviewReleaseSuite(unittest.TestCase):
         manifest = dict(schema=1, channel='public-preview', source_commit=COMMIT,
             version='0.0.1', dmg='claudi0-0.0.1.dmg', sha256=digest, size=len(dmg),
             sparkle_version='2.10.0', signing='ad-hoc', notarized=False,
-            architectures=['arm64', 'x86_64'],
+            architectures=['arm64'],
             public_key=(ROOT / 'config/sparkle-public-key.txt').read_text().strip())
         self.files = {'claudi0-0.0.1.dmg': dmg,
             'SHA256SUMS.txt': f'{digest}  claudi0-0.0.1.dmg\n'.encode(),

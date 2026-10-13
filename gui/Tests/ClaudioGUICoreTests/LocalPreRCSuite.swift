@@ -212,15 +212,13 @@ func runLocalPreRCSuites() {
         expect(
             formalEvidence
                 == [
-                    "universal": "not_satisfied",
                     "developer_id": "not_satisfied",
                     "notarization": "not_evaluated",
                     "stapling": "not_evaluated",
                     "gatekeeper": "not_evaluated",
                     "dmg_checksum": "not_evaluated",
-                    "intel_hardware": "not_evaluated",
                 ],
-            "当前架构或 ad-hoc 结果不得提升任何正式 RC/Intel 验收项：\(formalEvidence)")
+            "当前架构或 ad-hoc 结果不得提升任何正式 RC 验收项：\(formalEvidence)")
     }
 
     suite("本机 pre-RC：输出目录 symlink 在删除旧报告前失败关闭") {
@@ -818,7 +816,7 @@ func runLocalPreRCSuites() {
                 && distribution.contains("notarization")
                 && distribution.contains("Gatekeeper")
                 && distribution.contains("DMG checksum")
-                && distribution.contains("Intel 真机"),
+                && distribution.contains("arm64-only"),
             "分发文档必须明确 clean HEAD 与全部正式证据边界")
     }
 }

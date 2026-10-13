@@ -62,7 +62,7 @@ jobs:
           python3 scripts/test-preview-release.py
           bash scripts/test-sparkle-contract.sh
           git diff --check
-      - name: Build immutable universal preview
+      - name: Build immutable arm64-only preview
         run: python3 scripts/build-preview.py "$CLAUDIO_VERSION" "$TARGET_COMMIT"
       - uses: actions/upload-artifact@v4
         with:

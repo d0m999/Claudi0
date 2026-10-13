@@ -76,13 +76,11 @@ jq -e '
   and .qualification == "pre_rc_only"
   and .formal_release_candidate == false
   and .formal_evidence == {
-    "universal": "not_satisfied",
     "developer_id": "not_satisfied",
     "notarization": "not_evaluated",
     "stapling": "not_evaluated",
     "gatekeeper": "not_evaluated",
-    "dmg_checksum": "not_evaluated",
-    "intel_hardware": "not_evaluated"
+    "dmg_checksum": "not_evaluated"
   }
 ' "$contract_path" >/dev/null || fail "local pre-RC evidence boundary is invalid"
 
@@ -218,4 +216,4 @@ claudio_with_pinned_output_directory \
 
 echo "✅ local pre-RC verification passed for $expected_commit"
 echo "   report: $report_path"
-echo "   qualification: pre_rc_only (not a signed universal RC or formal acceptance)"
+echo "   qualification: pre_rc_only (not a signed arm64 RC or formal acceptance)"
