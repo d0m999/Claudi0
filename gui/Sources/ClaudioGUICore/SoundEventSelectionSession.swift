@@ -149,7 +149,12 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
             presentedRoute = route
             return origin
         }
-        return activate(route: route)
+        let hadOpenForm = presentationPhase == .form || presentationPhase == .invalidatedForm
+        let updatedOrigin = activate(route: route)
+        // An accepted operation can change the route before its form finishes dismissing.
+        // Revoke selection and playback, but let that form clear its modal navigation blocker.
+        if hadOpenForm { presentationPhase = .invalidatedForm }
+        return updatedOrigin
     }
 
     package func preservesPublishedDraft(route: SoundPacksWindowRoute) -> Bool {

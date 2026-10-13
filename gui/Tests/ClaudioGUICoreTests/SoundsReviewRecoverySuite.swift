@@ -160,6 +160,40 @@ func runSoundsReviewRecoverySuites() async {
         }
     }
 
+    await suite("声音新建恢复：自动进入草稿后关闭命名表单并恢复导航") {
+        let settings = SettingsPresentationFixtures.generalLogin(route: .sounds(.overview))
+        let probe = SettingsSoundsNativeLayoutProbe(
+            session: settings.session, size: NSSize(width: 960, height: 640))
+        defer { probe.close() }
+        await probe.settle()
+        expect(probe.pressControl("settings.sounds.new-pack"), "真实新建入口打开命名表单")
+        await probe.settle()
+        expect(
+            settings.session.state.eventPresentation.credentialSheetIsPresented,
+            "命名表单打开时阻止外层导航")
+        expect(
+            probe.setText("settings.sounds.name-input", value: "导航恢复草稿"),
+            "通过真实命名控件填写包名")
+        expect(probe.pressControl("settings.sounds.sheet.use"), "真实保存按钮创建命名草稿")
+        guard await waitForRecovery({ !probe.hasAttachedSheet }) else {
+            expect(false, "保存后实际命名表单必须关闭"); return
+        }
+        await probe.settle()
+        guard case .draft(let packID) = settings.session.state.soundsDetail else {
+            expect(false, "保存后应查看新建草稿"); return
+        }
+        expect(
+            settings.soundPacksEditor.draftStore.snapshot.drafts.contains {
+                $0.packID == packID && $0.name.value == "导航恢复草稿"
+            }, "关闭后仍保留已命名草稿")
+        expect(
+            !settings.session.state.eventPresentation.credentialSheetIsPresented,
+            "自动 overview → draft 后，实际关闭仍清除模态导航阻塞")
+        expect(
+            settings.session.send(.selectSidebar(.general)) == .routed,
+            "命名表单关闭后侧栏导航恢复")
+    }
+
     await suite("声音选用挂载：五个生产入口与关闭调用同一生命周期") {
         await withTempDirectory { root in
             let fixture = makeSoundEditorFixture(root: root, packIDs: ["target"])
