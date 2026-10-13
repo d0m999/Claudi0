@@ -2,6 +2,7 @@
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$root"
+python3 scripts/test-sparkle-bundle.py
 framework="gui/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
 temp="$(mktemp -d "${TMPDIR:-/tmp}/claudio-sparkle-contract.XXXXXX")"
 trap 'rm -rf "$temp"' EXIT

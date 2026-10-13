@@ -62,6 +62,16 @@ def sign(app, identity):
         subprocess.run(['codesign', *flags, str(p)], check=True)
     subprocess.run(['codesign', *flags, str(framework)], check=True)
 
+def verify_linkage(output):
+    # otool includes the inspected file's absolute path in each architecture header.
+    # Only dependency rows describe linkage; a bundle inside ROOT is valid.
+    links = [line.strip().split(' (')[0] for line in output.splitlines()
+             if line.startswith(('\t', ' ')) and '(compatibility version ' in line]
+    assert links, 'missing Mach-O dependencies'
+    for link in links:
+        assert '.build/' not in link and str(ROOT) not in link, f'build-path linkage: {link}'
+        assert link.startswith(('@rpath/', '@loader_path/', '@executable_path/', '/System/Library/', '/usr/lib/')), f'non-portable linkage: {link}'
+
 def verify(app, required_archs, team=None):
     framework = app / FRAMEWORK_REL
     assert framework.is_dir() and not framework.is_symlink()
@@ -78,13 +88,7 @@ def verify(app, required_archs, team=None):
         subprocess.run(['codesign', '--verify', '--strict', str(p)], check=True)
         if team:
             subprocess.run([str(ROOT / 'scripts/verify-release-signature.sh'), 'executable', team, str(p)], check=True)
-        links = run('otool', '-L', p)
-        assert '.build/' not in links and str(ROOT) not in links, f'build-path linkage: {p}'
-        for line in links.splitlines():
-            if '(compatibility version ' not in line:
-                continue
-            link = line.strip().split(' (')[0]
-            assert link.startswith(('@rpath/', '@loader_path/', '@executable_path/', '/System/Library/', '/usr/lib/')), f'non-portable linkage: {link}'
+        verify_linkage(run('otool', '-L', p))
     gui = app / 'Contents/MacOS/claudi0-app'
     assert '@rpath/Sparkle.framework/Versions/B/Sparkle' in run('otool', '-L', gui)
     assert '@executable_path/../Frameworks' in run('otool', '-l', gui)
