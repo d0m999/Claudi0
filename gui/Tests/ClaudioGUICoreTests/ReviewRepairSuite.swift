@@ -156,10 +156,9 @@ func runReviewRepairSuites() async {
         }
         let banner = source("gui/Sources/ClaudioGUI/EventNoticeWindowController.swift")
         expect(
-            banner.contains("EventNoticeStackLayout.resolve(")
-                && banner.contains(
-                    "onMeasurements: { [weak self] in self?.receiveMeasurements($0) }")
-                && banner.contains("navigation.$feedback"),
+            banner.contains("EventNoticeStackPresentation(")
+                && banner.contains("presentation: presentation")
+                && banner.contains("presentation.outputs.sink"),
             "窗口使用完整卡片测量并响应共享的逐动作导航反馈")
         expect(
             banner.contains("owner: owner")

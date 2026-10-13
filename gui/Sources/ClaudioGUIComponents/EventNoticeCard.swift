@@ -17,34 +17,28 @@ package struct EventNoticeCard: View {
     let activate: @MainActor () -> Void
     let dismiss: @MainActor () -> Void
     let focusChanged: @MainActor (Bool) -> Void
-    let retiredFeedback: ClaudioL10nKey?
+    let renderedContent: EventNoticeCardContent?
+
+    private var language: ClaudioAppLanguage { renderedContent?.language ?? preferences.language }
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedControl: String?
     @State private var bodyHasFocus = false
 
-    private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
+    private var l10n: ClaudioL10n { ClaudioL10n(language: language) }
     private var result: SessionNavigationActionResult { navigation.result(for: item.record.action) }
     private var canActivate: Bool { item.record.isActionable && !navigation.isNavigating }
     private var feedbackKey: ClaudioL10nKey? {
-        if item.phase == .exiting { return retiredFeedback }
+        if let renderedContent { return renderedContent.feedback }
         return EventNoticeProjection.navigationFeedbackKey(
             for: item.record, action: item.record.action, result: result)
     }
     private var actionTitle: String {
-        let retry =
-            item.phase == .exiting
-            ? retiredFeedback.map {
-                [
-                    ClaudioL10nKey.eventNoticeOpenFailed, .eventNoticeOpenUnavailable,
-                    .eventNoticeOpenTimeout,
-                ].contains($0)
-            } ?? false
-            : [.failed, .unavailable, .timedOut].contains(result)
-        if retry, item.record.isActionable {
+        if let renderedContent { return renderedContent.actionTitle }
+        if [.failed, .unavailable, .timedOut].contains(result), item.record.isActionable {
             return l10n.text(.commonRetry)
         }
-        return EventNoticeProjection.actionTitle(for: item.record, language: preferences.language)
+        return EventNoticeProjection.actionTitle(for: item.record, language: language)
     }
 
     package var body: some View {
@@ -59,10 +53,12 @@ package struct EventNoticeCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 EventNoticeBannerContent(
                     event: item.record.event,
-                    title: EventNoticeProjection.primaryLine(
-                        for: item.record, language: preferences.language),
-                    subtitle: EventNoticeProjection.secondaryLine(
-                        for: item.record, language: preferences.language, now: now),
+                    title: renderedContent?.title
+                        ?? EventNoticeProjection.primaryLine(
+                            for: item.record, language: language),
+                    subtitle: renderedContent?.subtitle
+                        ?? EventNoticeProjection.secondaryLine(
+                            for: item.record, language: language, now: now),
                     action: EventAnimationTimeline.action(
                         for: item.record.event, kind: item.record.kind),
                     preferences: preferences.eventAnimation, resources: resources,
@@ -134,16 +130,16 @@ package struct EventNoticeCard: View {
                     .strokeBorder(ClaudioTheme.text(colorScheme).opacity(0.14), lineWidth: 1)
                     .allowsHitTesting(false).accessibilityHidden(true)
             }
-            .noticeHeight("card.\(item.id.uuidString)")
             .opacity(measuring ? 1 : opacity(at: time))
             .offset(y: measuring ? 0 : offset(at: time))
         }
+        .disabled(measuring || !item.isInteractive)
         .allowsHitTesting(item.isInteractive && !measuring)
         .accessibilityHidden(!item.isInteractive || measuring)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(
             EventNoticeProjection.accessibilitySummary(
-                for: item.record, language: preferences.language, now: now)
+                for: item.record, language: language, now: now)
         )
         .accessibilityIdentifier("event-notice.capsule.\(item.id.uuidString)")
         .onChange(of: focusedControl) { _ in

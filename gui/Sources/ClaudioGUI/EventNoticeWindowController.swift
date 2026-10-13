@@ -19,12 +19,15 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     private let onViewInPanel: @MainActor (EventNoticeAction?) -> Void
     private let navigation: SessionNavigationCoordinator
     private let window: EventNoticePanel
-    private let geometry = EventNoticeStackGeometry()
+    private let presentation: EventNoticeStackPresentation
     private var subscriptions: Set<AnyCancellable> = []
     private var presentationScreen: NSScreen?
     private var isInteractive = false
-    private var isPositioning = false
-    private var measurements: [String: Double] = [:]
+    private var programmaticHide = false
+    private var hideGeneration: UInt64 = 0
+    private var viewportRefreshPending = false
+    private var hiddenLayoutPending = false
+    private var focusResetPending = false
     private var renderedEpoch: UUID
     private let modalPauseObserver: EventNoticeModalPauseObserver
     private let animationVisibility = EventAnimationVisibility(isVisible: false)
@@ -38,6 +41,8 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         onWillBecomeInteractive: @escaping @MainActor () -> (@MainActor () -> Void)? = { nil }
     ) {
         self.model = model
+        presentation = EventNoticeStackPresentation(
+            model: model, preferences: languageStore, navigation: navigation)
         modalPauseObserver = EventNoticeModalPauseObserver(model: model)
         self.navigation = navigation
         self.onViewInPanel = onViewInPanel
@@ -60,51 +65,107 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         window.delegate = self
         window.title = "claudi0 event notice"
         window.onEscape = { [weak self] in self?.close() }
-        model.setVisibleCapacity(0, measuredIDs: [])
         window.contentView = EventNoticeHostingView(
             rootView: EventNoticeView(
                 model: model, languageStore: languageStore, navigation: navigation,
                 eventAnimations: eventAnimations, animationVisibility: animationVisibility,
-                geometry: geometry,
+                presentation: presentation,
                 onViewSource: { [weak self] in self?.viewSource($0) },
                 onNavigate: { [weak self] action, id in
                     self?.openSourceApplication(action, owner: id)
                 },
                 onDismiss: { [weak self] in self?.closeBanner(id: $0) },
                 onQueueInteraction: { [weak self] in self?.toggleQueue() },
-                onMeasurements: { [weak self] in self?.receiveMeasurements($0) },
                 onClose: { [weak self] in self?.close() }))
-        // Published snapshots send before assignment; defer presentation until the model's
-        // transaction has committed, also coalescing redraws and one batch's new arrivals.
-        model.$stackSnapshot.sink { [weak self] snapshot in
-            if !snapshot.hasPresentation || self?.renderedEpoch != snapshot.receiverEpoch {
-                // Privacy and source removal must not leave a retired frame on screen while
-                // waiting for SwiftUI's next layout transaction.
-                self?.window.orderOut(nil)
-                self?.animationVisibility.isVisible = false
-            }
-            Task { @MainActor [weak self] in self?.render() }
-        }.store(in: &subscriptions)
-        navigation.$feedback.sink { [weak self] _ in
-            Task { @MainActor [weak self] in self?.repositionIfVisible() }
+        // Consume the committed callback value, including synchronous privacy withdrawal.
+        presentation.outputs.sink { [weak self] value in self?.render(value) }
+            .store(in: &subscriptions)
+        model.$stackSnapshot.sink { [weak self] _ in
+            self?.scheduleViewportRefresh()
         }.store(in: &subscriptions)
         NotificationCenter.default.publisher(
             for: NSApplication.didChangeScreenParametersNotification
         )
-        .sink { [weak self] _ in self?.repositionIfVisible() }.store(in: &subscriptions)
+        .sink { [weak self] _ in self?.updateViewport() }.store(in: &subscriptions)
     }
 
     func openInteractive() { onViewInPanel(nil) }
 
     #if DEBUG && CLAUDIO_UI_REGRESSION
+    private var regressionViewport: (width: Double, height: Double?)?
+    /// Fixed native scenario using the real retained panel and its delegate, with only the
+    /// viewport and domain clock substituted. This does not simulate external mouse clicks.
+    func runGeometryRegression(advance: @MainActor (TimeInterval) -> Void) async -> [String: Bool] {
+        var checks: [String: Bool] = [:]
+        func waitFor(_ predicate: @MainActor () -> Bool) async -> Bool {
+            let deadline = ProcessInfo.processInfo.systemUptime + 4
+            while !predicate() && ProcessInfo.processInfo.systemUptime < deadline {
+                try? await Task.sleep(nanoseconds: 20_000_000)
+            }
+            if !predicate() {
+                print(
+                    "geometry-regression timeout: visible=\(window.isVisible) key=\(window.isKeyWindow) eligible=\(presentation.output.isEligible) requests=\(presentation.output.requests.count) cards=\(model.stackSnapshot.visible.count) queued=\(model.stackSnapshot.queued.count) uptime=\(model.presentationUptime)"
+                )
+            }
+            return predicate()
+        }
+        checks["initialMeasuredWindow"] = await waitFor {
+            self.window.isVisible && self.presentation.output.requests.isEmpty
+        }
+        advance(0.5)
+        becomeInteractive()
+        checks["interactivePanelBecameKey"] = await waitFor { self.window.isKeyWindow }
+        let before = model.stackSnapshot
+        suspendGeometryForRegression()
+        checks["programmaticHide"] = await waitFor { !self.window.isVisible }
+        advance(10)
+        checks["hiddenReadingPaused"] =
+            model.stackSnapshot.pauseReasons.contains(.geometryUnavailable)
+            && model.stackSnapshot.visible.map(\.readingTime.remaining)
+                == before.visible.map(\.readingTime.remaining)
+        checks["programmaticResignPreservedStack"] =
+            model.stackSnapshot.visible.map(\.id) == before.visible.map(\.id)
+            && !before.visible.isEmpty
+        restoreGeometryForRegression()
+        checks["hiddenHostMeasuredAndRestored"] = await waitFor {
+            self.window.isVisible && self.presentation.output.requests.isEmpty
+        }
+        checks["restoreDidNotAcquireKey"] = !window.isKeyWindow
+        checks["entranceNotReplayed"] =
+            model.stackSnapshot.visible.map(\.entrance) == before.visible.map(\.entrance)
+        becomeInteractive()
+        _ = await waitFor { self.window.isKeyWindow }
+        let other = EventNoticePanel(
+            contentRect: NSRect(x: 40, y: 40, width: 160, height: 80),
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        other.isReleasedWhenClosed = false
+        other.allowsKeyboardInteraction = true
+        other.makeKeyAndOrderFront(nil)
+        checks["genuineNativeKeyHandoffClosesStack"] = await waitFor {
+            self.model.stackSnapshot.visible.isEmpty && self.model.stackSnapshot.queued.isEmpty
+        }
+        other.orderOut(nil); other.close()
+        model.clearForPrivacy()
+        return checks
+    }
+
     func focusForRegression() { becomeInteractive() }
+    func suspendGeometryForRegression() {
+        regressionViewport = (268, nil)
+        updateViewport()
+    }
+    func restoreGeometryForRegression() {
+        regressionViewport = nil
+        updateViewport()
+    }
     #endif
 
     private func becomeInteractive() {
         if !isInteractive { focusRestoration = onWillBecomeInteractive() }
         isInteractive = true
         window.allowsKeyboardInteraction = true
-        positionWindow()
+        updateViewport()
+        guard presentation.output.isEligible else { return }
         window.makeKeyAndOrderFront(nil)
         model.setPauseReason(.windowFocus, active: true)
     }
@@ -180,8 +241,7 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         animationVisibility.isVisible = false
         releaseInteraction()
         presentationScreen = nil
-        measurements.removeAll()
-        window.orderOut(nil)
+        hideWindow()
         navigation.reset()
         model.clearForPrivacy()
     }
@@ -195,8 +255,12 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
+        guard !programmaticHide else { return }
+        let generation = hideGeneration
         Task { @MainActor [weak self] in
-            guard let self, !self.window.isKeyWindow else { return }
+            guard let self, !self.window.isKeyWindow, !self.programmaticHide,
+                self.hideGeneration == generation, self.window.isVisible
+            else { return }
             self.finishResigningKey()
         }
     }
@@ -218,30 +282,63 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func render() {
-        let snapshot = model.stackSnapshot
-        if renderedEpoch != snapshot.receiverEpoch {
-            renderedEpoch = snapshot.receiverEpoch
-            measurements.removeAll()
-            releaseInteraction()
+    private func hideWindow() {
+        // orderOut can deliver resign-key synchronously or on the next run-loop turn. Release
+        // interaction first and retain a separate guard through that turn; never dismissStack.
+        programmaticHide = true
+        hideGeneration &+= 1
+        focusRestoration = nil
+        isInteractive = false
+        window.allowsKeyboardInteraction = false
+        window.orderOut(nil)
+        animationVisibility.isVisible = false
+        // Withdrawal can originate in the model's willSet publication. Only native hiding is
+        // synchronous here; defer model pause projection until that transaction has committed.
+        if !focusResetPending {
+            focusResetPending = true
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.focusResetPending = false
+                guard !self.isInteractive else { return }
+                self.model.setPauseReason(.windowFocus, active: false)
+                self.model.setKeyboardFocused(false)
+                self.model.setHovering(false)
+            }
         }
-        guard snapshot.hasPresentation else {
-            animationVisibility.isVisible = false
-            releaseInteraction()
-            model.setHovering(false)
-            presentationScreen = nil
-            if window.isVisible { window.orderOut(nil) }
+    }
+
+    private func render(_ value: EventNoticeStackPresentationOutput) {
+        if renderedEpoch != value.epoch {
+            renderedEpoch = value.epoch
+            hideWindow()
+        }
+        guard value.isEligible, let screen = presentationScreen else {
+            hideWindow()
+            // An ordered-out host still lays out pending measurement copies. Its proposed
+            // width must follow the request even while the visible geometry is suspended.
+            window.setContentSize(NSSize(width: value.width, height: max(1, value.height)))
+            if !hiddenLayoutPending {
+                hiddenLayoutPending = true
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.hiddenLayoutPending = false
+                    self.window.contentView?.needsLayout = true
+                    self.window.contentView?.layoutSubtreeIfNeeded()
+                }
+            }
             return
         }
-        let isModal = modalPauseObserver.isPaused
-        if model.stackSnapshot.pauseReasons.contains(.modal) != isModal {
-            model.setPauseReason(.modal, active: isModal)
-        }
-        positionWindow()
+        programmaticHide = false
+        let frame = NSRect(
+            x: EventNoticePlacement.clampedX(visibleFrame: screen.visibleFrame, width: value.width),
+            y: EventNoticePlacement.topAnchorY(
+                screenFrame: screen.frame, visibleFrame: screen.visibleFrame,
+                safeAreaTop: screen.safeAreaInsets.top, height: value.height),
+            width: value.width, height: value.height)
+        if window.frame != frame { window.setFrame(frame, display: true) }
         window.alphaValue = 1
         if !window.isVisible { window.orderFront(nil) }
         animationVisibility.isVisible = window.occlusionState.contains(.visible)
-        // An exiting-only frame is immediately ineligible for mouse and keyboard interaction.
         window.ignoresMouseEvents =
             model.stackSnapshot.visible.isEmpty && model.stackSnapshot.queued.isEmpty
         #if DEBUG
@@ -270,79 +367,47 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
     #endif
 
-    private func receiveMeasurements(_ values: [String: Double]) {
-        let current = model.stackSnapshot
-        let valid = Set((current.candidates + current.exiting).map { "card.\($0.id.uuidString)" })
-        for (key, height) in values where height.isFinite && height > 0 {
-            if !key.hasPrefix("card.") || valid.contains(key) { measurements[key] = height }
+    private func scheduleViewportRefresh() {
+        guard !viewportRefreshPending else { return }
+        viewportRefreshPending = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.viewportRefreshPending = false
+            self.updateViewport()
         }
-        measurements = measurements.filter { !$0.key.hasPrefix("card.") || valid.contains($0.key) }
-        // Preferences arrive during SwiftUI layout; never publish model changes inside that pass.
-        Task { @MainActor [weak self] in self?.repositionIfVisible() }
     }
 
-    private func repositionIfVisible() {
-        guard model.stackSnapshot.hasPresentation else { return }
-        positionWindow()
-    }
-
-    private func positionWindow() {
-        guard !isPositioning else { return }
-        isPositioning = true
-        defer { isPositioning = false }
+    private func updateViewport() {
+        guard model.stackSnapshot.hasPresentation else {
+            presentationScreen = nil
+            return
+        }
         if let presentationScreen, !NSScreen.screens.contains(where: { $0 === presentationScreen })
         {
             self.presentationScreen = nil
         }
         guard let screen = presentationScreen ?? screenUnderPointer() ?? NSScreen.main else {
+            presentation.updateViewport(width: presentation.output.width, availableHeight: nil)
             return
         }
-        if presentationScreen == nil { presentationScreen = screen }
-        let visible = screen.visibleFrame
-        let width = Double(EventNoticePlacement.clampedWidth(visibleFrame: visible))
-        if geometry.width != width {
-            geometry.width = width
-            measurements.removeAll()
+        presentationScreen = screen
+        model.setPauseReason(.modal, active: modalPauseObserver.isPaused)
+        #if DEBUG && CLAUDIO_UI_REGRESSION
+        if let regressionViewport {
+            presentation.updateViewport(
+                width: regressionViewport.width,
+                availableHeight: regressionViewport.height)
+            return
         }
-        let available = Double(
-            EventNoticePlacement.availableHeight(
-                screenFrame: screen.frame, visibleFrame: visible,
-                safeAreaTop: screen.safeAreaInsets.top))
-        let snapshot = model.stackSnapshot
-        let candidates = snapshot.candidates
-        let heights = candidates.map { measurements["card.\($0.id.uuidString)"] ?? 0 }
-        let layout = EventNoticeStackLayout.resolve(
-            cardHeights: heights, totalCount: snapshot.totalCount, availableHeight: available,
-            queueEntryHeight: measurements["queue-entry"] ?? 44,
-            capacityHintHeight: snapshot.capacityHintCount > 0
-                ? measurements["capacity-hint"] ?? 60 : 0,
-            queueExpanded: snapshot.isQueueExpanded,
-            queueContentHeight: measurements["queue-content"] ?? 220)
-        let measuredIDs = Set(
-            candidates.enumerated().compactMap { index, item in
-                heights[index] > 0 ? item.id : nil
-            })
-        model.setVisibleCapacity(layout.visibleCapacity, measuredIDs: measuredIDs)
-        var positions: [UUID: Double] = [:]
-        var top: Double = 0
-        for item in model.stackSnapshot.visible {
-            positions[item.id] = top
-            top +=
-                (measurements["card.\(item.id.uuidString)"] ?? 0) + EventNoticeStackLayout.spacing
-        }
-        model.updateDisplayPositions(positions)
-        if geometry.queueHeight != layout.queueHeight { geometry.queueHeight = layout.queueHeight }
-        let exitHeight =
-            model.stackSnapshot.exiting.map {
-                $0.positionY + (measurements["card.\($0.id.uuidString)"] ?? 0) + 6
-            }.max() ?? 0
-        let height = min(available, max(1, layout.height, exitHeight))
-        let x = EventNoticePlacement.clampedX(visibleFrame: visible, width: width)
-        let y = EventNoticePlacement.topAnchorY(
-            screenFrame: screen.frame, visibleFrame: visible,
-            safeAreaTop: screen.safeAreaInsets.top, height: height)
-        let frame = NSRect(x: x, y: y, width: width, height: height)
-        if window.frame != frame { window.setFrame(frame, display: true) }
+        #endif
+        presentation.updateViewport(
+            width: Double(EventNoticePlacement.clampedWidth(visibleFrame: screen.visibleFrame)),
+            availableHeight: Double(
+                EventNoticePlacement.availableHeight(
+                    screenFrame: screen.frame, visibleFrame: screen.visibleFrame,
+                    safeAreaTop: screen.safeAreaInsets.top)))
+        // A screen origin can change without changing available size.
+        render(presentation.output)
     }
 
     private func screenUnderPointer() -> NSScreen? {

@@ -402,7 +402,7 @@ private struct EventNoticeGalleryFrame: View {
     @StateObject private var model: EventNoticeModel
     @StateObject private var languageStore: ClaudioPreferences
     @StateObject private var navigationCoordinator: SessionNavigationCoordinator
-    @State private var noticeHeights: [String: Double] = [:]
+    @StateObject private var presentation: EventNoticeStackPresentation
     private let routeSimulation: RouteSimulationBox
 
     init(language: ClaudioAppLanguage, scenario: EventNoticeGalleryScenario) {
@@ -412,13 +412,18 @@ private struct EventNoticeGalleryFrame: View {
         self.routeSimulation = routeSimulation
         let model = EventNoticeModel(receiverEpoch: UUID())
         _model = StateObject(wrappedValue: model)
-        _languageStore = StateObject(wrappedValue: ClaudioPreferences(previewLanguage: language))
-        _navigationCoordinator = StateObject(
-            wrappedValue: SessionNavigationCoordinator(model: model) { _, complete in
-                EventNoticeScheduler.live.schedule(after: 0.15) {
-                    complete(routeSimulation.succeeds ? .exactReturnConfirmed : .failed)
-                }
-            })
+        let preferences = ClaudioPreferences(previewLanguage: language)
+        _languageStore = StateObject(wrappedValue: preferences)
+        let navigation = SessionNavigationCoordinator(model: model) { _, complete in
+            EventNoticeScheduler.live.schedule(after: 0.15) {
+                complete(routeSimulation.succeeds ? .exactReturnConfirmed : .failed)
+            }
+        }
+        _navigationCoordinator = StateObject(wrappedValue: navigation)
+        let presentation = EventNoticeStackPresentation(
+            model: model, preferences: preferences, navigation: navigation)
+        presentation.updateViewport(width: 440, availableHeight: 600)
+        _presentation = StateObject(wrappedValue: presentation)
     }
 
     var body: some View {
@@ -427,10 +432,8 @@ private struct EventNoticeGalleryFrame: View {
                 model: model,
                 languageStore: languageStore,
                 navigation: navigationCoordinator,
+                presentation: presentation,
                 onViewSource: { _ = model.viewSource($0) },
-                onMeasurements: { heights in
-                    Task { @MainActor in noticeHeights = heights }
-                },
                 onClose: { model.dismissStack() }
             )
             .frame(width: 440, height: noticeStackHeight)
@@ -462,19 +465,7 @@ private struct EventNoticeGalleryFrame: View {
         .onAppear(perform: seed)
     }
 
-    private var noticeStackHeight: Double {
-        let stack = model.stackSnapshot
-        return max(
-            1,
-            EventNoticeStackLayout.resolve(
-                cardHeights: stack.candidates.map {
-                    noticeHeights["card.\($0.id.uuidString)"] ?? 75
-                },
-                totalCount: stack.totalCount, availableHeight: 600,
-                queueEntryHeight: noticeHeights["queue-entry"] ?? 44,
-                queueExpanded: stack.isQueueExpanded
-            ).height)
-    }
+    private var noticeStackHeight: Double { presentation.output.height }
 
     /// S8 route simulation: builds a verified target from the current notice's own safe source
     /// fields, so success/failure is exercised without promising any real host navigation.
@@ -1003,7 +994,9 @@ private struct HostIntegrationSettingsFrame: View {
 
     var body: some View {
         SettingsWindowRouteFrame(
-            route: selectedSurface.map { SettingsRoute.integrations(IntegrationsSettingsRoute(surface: $0)) }
+            route: selectedSurface.map {
+                SettingsRoute.integrations(IntegrationsSettingsRoute(surface: $0))
+            }
                 ?? .destination(.integrations),
             availability: PreviewFixtures.settingsRouteAvailability,
             language: language,

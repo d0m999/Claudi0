@@ -56,6 +56,5 @@ package struct EventNoticeQueueEntry: View {
         .buttonStyle(.plain).padding(.top, 4)
         .accessibilityValue(snapshot.isQueueExpanded ? l10n.text(.eventNoticeQueueCollapse) : "")
         .accessibilityIdentifier("event-notice.queue-toggle")
-        .noticeHeight("queue-entry")
     }
 }

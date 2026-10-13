@@ -22,6 +22,7 @@ public struct EventNoticePauseReason: OptionSet, Sendable, Hashable {
     public static let windowFocus = Self(rawValue: 1 << 2)
     public static let queueExpansion = Self(rawValue: 1 << 3)
     public static let modal = Self(rawValue: 1 << 4)
+    public static let geometryUnavailable = Self(rawValue: 1 << 5)
 }
 
 public enum EventNoticeRecordStatus: String, Codable, Sendable, Equatable {
@@ -1012,16 +1013,58 @@ public final class EventNoticeModel: ObservableObject {
         publish()
     }
 
+    /// A measured plan commits capacity, admission and positions with one publication. Compare
+    /// domain identity, never sampled reading time or animation progress. A rejected plan has no
+    /// effects; the presentation collaborator schedules a fresh calculation.
+    package func commitStackLayout(
+        expected: EventNoticeStackSnapshot, capacity: Int, positions: [UUID: Double]
+    ) -> Bool {
+        let candidates = Array(presentations.prefix(3))
+        guard expected.receiverEpoch == receiverEpoch,
+            expected.totalCount == presentations.count,
+            expected.capacityHintCount == capacityHintCount,
+            expected.isQueueExpanded == isQueueExpanded,
+            expected.candidates.count == candidates.count,
+            zip(expected.candidates, candidates).allSatisfy({ old, current in
+                old.id == current.id && old.record == record(current.entry)
+            }),
+            (0...min(3, presentations.count)).contains(capacity)
+        else { return false }
+        let admitted = Array(presentations.prefix(capacity))
+        guard Set(positions.keys) == Set(admitted.map(\.id)) else { return false }
+        var previous: Double = -1
+        for item in admitted {
+            guard let position = positions[item.id], position.isFinite,
+                position >= 0, position > previous
+            else { return false }
+            previous = position
+        }
+        let ids = Set(admitted.map(\.id))
+        let admissionChanged = visibleCapacity != capacity || measuredPresentations != ids
+        if admissionChanged {
+            visibleCapacity = capacity
+            measuredPresentations = ids
+            reconcilePresentation()
+        }
+        let positionsChanged = applyDisplayPositions(positions)
+        if admissionChanged || positionsChanged { publish() }
+        return true
+    }
+
     /// Positions come from complete native measurements; the model owns only the shared motion
     /// schedule, never a second layout/height cache.
     public func updateDisplayPositions(_ positions: [UUID: Double]) {
+        if applyDisplayPositions(positions) { publish() }
+    }
+
+    private func applyDisplayPositions(_ positions: [UUID: Double]) -> Bool {
         var changed = false
         for (index, item) in presentations.prefix(visibleCount).enumerated() {
             guard let position = positions[item.id], position.isFinite else { continue }
             let hadPosition = item.hasMeasuredPosition
             item.hasMeasuredPosition = true
-            guard abs(item.positionY - position) > 0.5 else { continue }
-            if hadPosition && !usesReducedMotion {
+            guard item.positionY != position else { continue }
+            if hadPosition && !usesReducedMotion && abs(item.positionY - position) > 0.5 {
                 let offset = item.relocation?.offsetY(at: now(), reducedMotion: false) ?? 0
                 item.relocation = EventNoticeMotionPlan(
                     kind: .relocation, startedAt: now(), index: index,
@@ -1030,7 +1073,7 @@ public final class EventNoticeModel: ObservableObject {
             item.positionY = position
             changed = true
         }
-        if changed { publish() }
+        return changed
     }
 
     public func setAutomaticallySuppressed(_ value: Bool) {
@@ -1110,8 +1153,10 @@ public final class EventNoticeModel: ObservableObject {
     }
 
     public func setPauseReason(_ reason: EventNoticePauseReason, active: Bool) {
+        let updated = active ? pauseReasons.union(reason) : pauseReasons.subtracting(reason)
+        guard updated != pauseReasons else { return }
         let wasPaused = !pauseReasons.isEmpty
-        if active { pauseReasons.formUnion(reason) } else { pauseReasons.subtract(reason) }
+        pauseReasons = updated
         expireEntries()
         if !wasPaused && !pauseReasons.isEmpty {
             for item in presentations { pauseReading(item) }

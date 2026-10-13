@@ -32,7 +32,7 @@ regression_ocr_args=()
 if [[ -n "${CLAUDIO_UI_REGRESSION_SDK:-}" ]]; then regression_ocr_args+=( -sdk "$CLAUDIO_UI_REGRESSION_SDK" ); fi
 swiftc "${regression_ocr_args[@]}" "$repo_root/scripts/native-ui-screenshot-ocr.swift" -o "$regression_output/screenshot-ocr" >&2
 python3 - "$regression_app" "$regression_output" <<'PY'
-import hashlib,json,os,pathlib,platform,plistlib,subprocess,sys
+import hashlib,json,os,pathlib,platform,plistlib,stat,subprocess,sys
 app=pathlib.Path(sys.argv[1]); output=pathlib.Path(sys.argv[2])
 live_clock=os.environ.get('CLAUDIO_UI_REGRESSION_LIVE_CLOCK','0')=='1'
 motion=os.environ.get('CLAUDIO_UI_REGRESSION_MOTION','0')=='1'
@@ -43,7 +43,13 @@ tracked=git('ls-files','-z').split(b'\0'); untracked=git('ls-files','--others','
 entries=[]
 for raw in sorted(set(tracked+untracked)):
  if not raw: continue
- p=pathlib.Path(os.fsdecode(raw)); entries.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'deleted'})
+ p=pathlib.Path(os.fsdecode(raw))
+ try: mode=p.lstat().st_mode
+ except FileNotFoundError:
+  entries.append({'path':str(p),'sha256':'deleted'}); continue
+ if stat.S_ISLNK(mode): entries.append({'path':str(p),'symlink':os.readlink(p)})
+ elif stat.S_ISREG(mode): entries.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+ else: entries.append({'path':str(p),'type':'non-regular'})
 fingerprint=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest()
 base=git('rev-parse','--verify',os.environ.get('CLAUDIO_UI_REGRESSION_BASE_SHA','7ca63a4af0497b74b53e89225ccf4de30d900c12')+'^{commit}').decode().strip()
 prototype=pathlib.Path('designs/panel-and-settings/Panel and Settings Prototype.html')
@@ -52,17 +58,19 @@ manifest={'settingsPrototypeSHA256':prototype_sha,'sourceHEAD':git('rev-parse','
 manifest['clockMode']='live' if live_clock else 'manual'
 manifest['liveClock']=live_clock
 alignment_prototype=pathlib.Path('designs/macos-settings-native/Native Settings Alignment Prototype.html')
-if alignment_prototype.is_file():
+if alignment_prototype.exists() and stat.S_ISREG(alignment_prototype.lstat().st_mode):
  manifest['settingsNativeAlignmentPrototype']={'path':str(alignment_prototype),'sha256':hashlib.sha256(alignment_prototype.read_bytes()).hexdigest()}
 (output/'build-evidence.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 PY
 codesign --force --deep --sign - "$regression_app" >&2
 codesign --verify --deep --strict "$regression_app" >&2
 python3 - "$regression_app" "$regression_output/build-evidence.json" <<'PY'
-import hashlib,json,pathlib,sys
+import hashlib,json,os,pathlib,stat,sys
 app=pathlib.Path(sys.argv[1]); p=pathlib.Path(sys.argv[2]); manifest=json.loads(p.read_text()); records=[]
 for file in sorted(app.rglob('*')):
- if file.is_file(): records.append({'path':str(file.relative_to(app)),'sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'bytes':file.stat().st_size})
+ info=file.lstat()
+ if stat.S_ISLNK(info.st_mode): records.append({'path':str(file.relative_to(app)),'symlink':os.readlink(file),'bytes':0})
+ elif stat.S_ISREG(info.st_mode): records.append({'path':str(file.relative_to(app)),'sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'bytes':info.st_size})
 manifest['bundleFiles']=records;manifest['bundleSHA256']=hashlib.sha256(json.dumps(records,sort_keys=True).encode()).hexdigest();manifest['bundleBytes']=sum(x['bytes'] for x in records);p.write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 print(str(app))
 print(str(p))

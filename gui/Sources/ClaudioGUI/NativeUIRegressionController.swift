@@ -435,6 +435,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 case 1: self?.source("success")
                 case 17: self?.source("timeout")
                 case 5: self?.finishGeneration()
+                case 4: self?.suspendBannerGeometry()
+                case 38: self?.restoreBannerGeometry()
                 default: return false
                 }
                 return true
@@ -464,6 +466,20 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         ).write(
             to: FileManager.default.temporaryDirectory.appendingPathComponent(
                 "claudio-native-regression-active.json"), options: .atomic)
+        if CommandLine.arguments.contains("--event-stack-window-regression") {
+            Task { @MainActor [weak self] in
+                guard let self, let banner = self.banner else { return }
+                for window in NSApp.windows { window.orderOut(nil) }
+                self.notice()
+                let checks = await banner.runGeometryRegression(advance: { self.clock.advance($0) })
+                if let data = try? JSONSerialization.data(
+                    withJSONObject: checks, options: [.sortedKeys])
+                {
+                    print(String(decoding: data, as: UTF8.self))
+                }
+                NSApp.terminate(nil)
+            }
+        }
     }
 
     func finish() {
@@ -570,6 +586,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
     func source(_ mode: String) {
         sourceBehavior.succeeds = mode == "success"; sourceBehavior.timesOut = mode == "timeout"
     }
+    func suspendBannerGeometry() { banner?.suspendGeometryForRegression(); capture() }
+    func restoreBannerGeometry() { banner?.restoreGeometryForRegression(); capture() }
     func finishGeneration() { Task { await generator.finish() } }
     func generationOutcome(_ outcome: NativeRegressionGenerator.Outcome) {
         Task { await generator.setOutcome(outcome) }
@@ -625,6 +643,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "readingOpen": notices.readingSnapshot.isOpen,
             "banner": firstBanner?.phase.rawValue ?? "hidden",
             "bannerCount": stack.visible.count,
+            "bannerGeometryPaused": stack.pauseReasons.contains(.geometryUnavailable),
             "bannerQueuedCount": stack.queued.count,
             "remaining": readingTime?.remaining ?? 0,
             "clockMode": clock.isLive ? "live" : "manual",
@@ -819,6 +838,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                     owner.notice(verified: true, transient: true)
                 }
                 Button("Update reminder") { owner.notice(updated: true) }
+                Button("Suspend banner geometry") { owner.suspendBannerGeometry() }
+                Button("Restore banner geometry") { owner.restoreBannerGeometry() }
                 Button("Source failure") { owner.source("failure") }
                 Button("Source success") { owner.source("success") }
                 Button("Source timeout") { owner.source("timeout") }

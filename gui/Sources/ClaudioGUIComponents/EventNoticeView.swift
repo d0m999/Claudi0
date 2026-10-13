@@ -3,13 +3,13 @@ import ClaudioLocalization
 import SwiftUI
 
 /// One stack aggregates hover, keyboard and queue focus. Cards return stable display IDs while
-/// all source actions remain version captured. The retained native controller owns geometry.
+/// all source actions remain version captured. The shared presentation collaborator owns measured geometry.
 @MainActor
 public struct EventNoticeView: View {
     @ObservedObject private var model: EventNoticeModel
     @ObservedObject private var languageStore: ClaudioPreferences
     @ObservedObject private var navigation: SessionNavigationCoordinator
-    @ObservedObject private var geometry: EventNoticeStackGeometry
+    @ObservedObject private var presentation: EventNoticeStackPresentation
     private let eventAnimations: EventAnimationResources
     @ObservedObject private var animationVisibility: EventAnimationVisibility
     private let onViewSource: @MainActor (EventNoticeAction) -> Void
@@ -17,37 +17,42 @@ public struct EventNoticeView: View {
     private let onDismiss: @MainActor (UUID) -> Void
     private let onClose: @MainActor () -> Void
     private let onQueueInteraction: @MainActor () -> Void
-    private let onMeasurements: @MainActor ([String: Double]) -> Void
+    private let onMeasurements: @MainActor ([EventNoticeMeasurementToken: Double]) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var queueFocused: Bool
     @State private var focusedCards: Set<UUID> = []
-    // Only the last painted caption key, for the short inert retirement frame. Navigation
-    // results remain solely owned by the coordinator. This inert render snapshot contains no
-    // source contents and cannot drive navigation.
-    @State private var paintedFeedback: [UUID: ClaudioL10nKey] = [:]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    public init(
+    package init(
         model: EventNoticeModel, languageStore: ClaudioPreferences,
         navigation: SessionNavigationCoordinator? = nil,
         eventAnimations: EventAnimationResources? = nil,
         animationVisibility: EventAnimationVisibility? = nil,
-        geometry: EventNoticeStackGeometry? = nil,
+        presentation: EventNoticeStackPresentation? = nil,
         onViewSource: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onOpenSourceApplication: @escaping @MainActor (EventNoticeAction) -> Void = { _ in },
         onCopySessionID: @escaping @MainActor (EventNoticeAction) -> Bool = { _ in false },
         onNavigate: (@MainActor (EventNoticeAction, UUID) -> Void)? = nil,
         onDismiss: (@MainActor (UUID) -> Void)? = nil,
         onQueueInteraction: (@MainActor () -> Void)? = nil,
-        onMeasurements: @escaping @MainActor ([String: Double]) -> Void = { _ in },
+        onMeasurements: @escaping @MainActor ([EventNoticeMeasurementToken: Double]) -> Void = {
+            _ in
+        },
         onClose: (@MainActor () -> Void)? = nil
     ) {
         self.model = model
         self.languageStore = languageStore
-        self.navigation = navigation ?? SessionNavigationCoordinator(model: model)
+        let navigation = navigation ?? SessionNavigationCoordinator(model: model)
+        self.navigation = navigation
         self.eventAnimations = eventAnimations ?? EventAnimationResources()
         self.animationVisibility = animationVisibility ?? EventAnimationVisibility()
-        self.geometry = geometry ?? EventNoticeStackGeometry()
+        let shared =
+            presentation
+            ?? EventNoticeStackPresentation(
+                model: model, preferences: languageStore, navigation: navigation)
+        self.presentation = shared
+        if presentation == nil { shared.updateViewport(width: 440, availableHeight: 900) }
         self.onViewSource = onViewSource
         self.onNavigate = onNavigate ?? { action, _ in onOpenSourceApplication(action) }
         self.onDismiss = onDismiss ?? { model.dismissBanner(id: $0) }
@@ -80,70 +85,22 @@ public struct EventNoticeView: View {
 
     public var body: some View {
         let snapshot = model.stackSnapshot
+        let geometry = presentation.output
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            VStack(spacing: EventNoticeStackLayout.spacing) {
-                if !snapshot.visible.isEmpty || !snapshot.exiting.isEmpty {
-                    VStack(spacing: EventNoticeStackLayout.spacing) {
-                        ForEach(snapshot.visible) { item in
-                            card(item, now: context.date, measuring: false)
-                        }
-                    }
-                    .overlay(alignment: .topLeading) {
-                        ForEach(snapshot.exiting) { item in
-                            card(item, now: context.date, measuring: false)
-                                .offset(y: item.positionY)
-                        }
-                    }
-                }
-                if !snapshot.queued.isEmpty {
-                    EventNoticeQueueEntry(
-                        snapshot: snapshot, language: languageStore.language,
-                        action: onQueueInteraction
-                    )
-                    .focused($queueFocused)
-                }
-                if snapshot.capacityHintCount > 0 {
-                    Text(
-                        ClaudioL10n(language: languageStore.language).format(
-                            .eventNoticeCapacityHint, snapshot.capacityHintCount)
-                    )
-                    .font(.caption).fixedSize(horizontal: false, vertical: true)
-                    .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        ClaudioTheme.panel(colorScheme), in: RoundedRectangle(cornerRadius: 13)
-                    )
-                    .noticeHeight("capacity-hint")
-                    .accessibilityIdentifier("event-notice.capacity-hint")
-                }
-                if snapshot.isQueueExpanded, geometry.queueHeight > 0 {
-                    EventNoticeQueueList(
-                        snapshot: snapshot, language: languageStore.language, now: context.date,
-                        height: geometry.queueHeight, uptime: { model.presentationUptime })
-                }
-            }
-            .frame(width: geometry.width, alignment: .top)
-            .background(alignment: .top) {
-                // Measure the full FIFO prefix before admitting it to a small screen. Hidden
-                // measurement copies have no focus, hit testing or accessibility eligibility.
-                VStack(spacing: 0) {
-                    ForEach(snapshot.candidates) { item in
-                        card(item, now: context.date, measuring: true)
-                    }
-                    EventNoticeQueueEntry(
-                        snapshot: snapshot, language: languageStore.language, action: {})
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
-            }
-            .frame(maxHeight: .infinity, alignment: .top)
+            stack(snapshot: snapshot, geometry: geometry, now: context.date)
+                .onChange(of: context.date) { _ in presentation.refreshContent() }
         }
-        .onPreferenceChange(EventNoticeHeightPreference.self, perform: onMeasurements)
+        .onPreferenceChange(EventNoticeHeightPreference.self) { values in
+            presentation.receiveMeasurements(values)
+            onMeasurements(values)
+        }
         .onAppear {
             model.setReducedMotion(reduceMotion)
-            rememberPaintedFeedback(model.stackSnapshot)
+            presentation.updateFontEnvironment(String(describing: dynamicTypeSize))
         }
-        .onChange(of: snapshot) { rememberPaintedFeedback($0) }
-        .onChange(of: navigation.feedback) { _ in rememberPaintedFeedback(model.stackSnapshot) }
+        .onChange(of: dynamicTypeSize) {
+            presentation.updateFontEnvironment(String(describing: $0))
+        }
         .onChange(of: reduceMotion) { model.setReducedMotion($0) }
         .onHover { model.setHovering($0) }
         .onChange(of: queueFocused) { _ in synchronizeFocus() }
@@ -165,7 +122,69 @@ public struct EventNoticeView: View {
         )
     }
 
-    private func card(_ item: EventNoticeBannerItem, now: Date, measuring: Bool) -> some View {
+    private func stack(
+        snapshot: EventNoticeStackSnapshot,
+        geometry: EventNoticeStackPresentationOutput, now: Date
+    ) -> some View {
+        VStack(spacing: EventNoticeStackLayout.spacing) {
+            if !snapshot.visible.isEmpty {
+                VStack(spacing: EventNoticeStackLayout.spacing) {
+                    ForEach(snapshot.visible) { item in
+                        card(item, now: now, measuring: false)
+                            .frame(height: geometry.cardHeights[item.id].map { CGFloat($0) })
+                    }
+                }
+
+            }
+            if !snapshot.queued.isEmpty {
+                EventNoticeQueueEntry(
+                    snapshot: snapshot, language: languageStore.language,
+                    action: onQueueInteraction
+                )
+                .frame(height: geometry.queueEntryHeight > 0 ? geometry.queueEntryHeight : nil)
+                .focused($queueFocused)
+            }
+            if geometry.showsCapacityHint {
+                capacityHint(snapshot.capacityHintCount, language: languageStore.language)
+            }
+            if snapshot.isQueueExpanded, geometry.queueHeight > 0 {
+                EventNoticeQueueList(
+                    snapshot: snapshot, language: languageStore.language, now: now,
+                    height: geometry.queueHeight, uptime: { model.presentationUptime }
+                )
+                .padding(.top, geometry.queueClearance)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            ForEach(snapshot.exiting.filter { geometry.retiredContent[$0.id] != nil }) { item in
+                card(item, now: now, measuring: false)
+                    .frame(height: geometry.cardHeights[item.id].map { CGFloat($0) })
+                    .offset(y: item.positionY)
+            }
+        }
+        .frame(width: geometry.width, alignment: .top)
+        .background(alignment: .top) {
+            // Tokens and all size-affecting text are captured at request creation. Never
+            // attach a new token to content from an older native layout pass.
+            VStack(spacing: 0) {
+                ForEach(geometry.requests) { request in
+                    measurement(request, now: now)
+                        .frame(width: request.token.width)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .noticeHeight(request.token)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .hidden().disabled(true).allowsHitTesting(false).accessibilityHidden(true)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+
+    }
+
+    private func card(
+        _ item: EventNoticeBannerItem, now: Date, measuring: Bool,
+        content: EventNoticeCardContent? = nil
+    ) -> some View {
         EventNoticeCard(
             item: item, preferences: languageStore, navigation: navigation,
             resources: eventAnimations, isVisible: animationVisibility.isVisible,
@@ -174,18 +193,37 @@ public struct EventNoticeView: View {
             focusChanged: { focused in
                 if focused { focusedCards.insert(item.id) } else { focusedCards.remove(item.id) }
                 synchronizeFocus()
-            }, retiredFeedback: paintedFeedback[item.id])
+            }, renderedContent: content ?? presentation.output.retiredContent[item.id])
     }
 
-    private func rememberPaintedFeedback(_ snapshot: EventNoticeStackSnapshot) {
-        let retained = Set((snapshot.visible + snapshot.exiting).map(\.id))
-        var updated = paintedFeedback.filter { retained.contains($0.key) }
-        for item in snapshot.visible {
-            updated[item.id] = EventNoticeProjection.navigationFeedbackKey(
-                for: item.record, action: item.record.action,
-                result: navigation.result(for: item.record.action))
+    @ViewBuilder
+    private func measurement(_ request: EventNoticeMeasurementRequest, now: Date) -> some View {
+        switch request.token.role {
+        case .card:
+            if let item = request.card {
+                card(item, now: now, measuring: true, content: request.content)
+            }
+        case .queueEntry:
+            if let queue = request.queue {
+                EventNoticeQueueEntry(snapshot: queue, language: request.language, action: {})
+            }
+        case .capacityHint:
+            capacityHint(request.hintCount, language: request.language)
+        case .queueContent:
+            if let queue = request.queue {
+                EventNoticeQueueContent(
+                    snapshot: queue, language: request.language, now: request.capturedNow,
+                    uptime: { model.presentationUptime }, measuring: true)
+            }
         }
-        if updated != paintedFeedback { paintedFeedback = updated }
+    }
+
+    private func capacityHint(_ count: Int, language: ClaudioAppLanguage) -> some View {
+        Text(ClaudioL10n(language: language).format(.eventNoticeCapacityHint, count))
+            .font(.caption).fixedSize(horizontal: false, vertical: true)
+            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+            .background(ClaudioTheme.panel(colorScheme), in: RoundedRectangle(cornerRadius: 13))
+            .accessibilityIdentifier("event-notice.capacity-hint")
     }
 
     private func synchronizeFocus() {

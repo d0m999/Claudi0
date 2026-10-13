@@ -49,15 +49,15 @@ func runEventBannerLayoutSuites() {
         _ = model.accept(attentionNotice(epoch: model.receiverEpoch, native: "Stop"))
         clock.advance(0.26)
         let preferences = ClaudioPreferences(previewLanguage: .english)
-        var measuredHeight: Double = 0
+        let navigation = SessionNavigationCoordinator(model: model)
+        let presentation = EventNoticeStackPresentation(
+            model: model, preferences: preferences, navigation: navigation,
+            scheduler: clock.scheduler())
+        presentation.updateViewport(width: 440, availableHeight: 900)
         let hosting = EventNoticeHostingView(
             rootView: EventNoticeView(
                 model: model, languageStore: preferences,
-                onMeasurements: { heights in
-                    if let id = model.stackSnapshot.visible.first?.id {
-                        measuredHeight = heights["card.\(id.uuidString)"] ?? measuredHeight
-                    }
-                }))
+                navigation: navigation, presentation: presentation))
         var height = EventNoticeView.preferredHeight(for: model.bannerSnapshot)
         let window = EventNoticePanel(
             contentRect: NSRect(x: 100, y: 80, width: 440, height: height),
@@ -68,7 +68,10 @@ func runEventBannerLayoutSuites() {
         window.setFrame(NSRect(x: 100, y: 80, width: 440, height: height), display: true)
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+        settleEventBannerMeasurement(presentation, clock: clock, hosting: hosting)
+        let measuredHeight =
+            model.stackSnapshot.visible.first.flatMap { presentation.output.cardHeights[$0.id] }
+            ?? 0
         expect(measuredHeight > 0, "完整原生卡片有实测高度")
         height = measuredHeight
         window.setFrame(NSRect(x: 100, y: 80, width: 440, height: height), display: true)
@@ -241,23 +244,19 @@ func runEventBannerLayoutSuites() {
                     var closes = 0
                     let preferences = ClaudioPreferences(previewLanguage: language)
                     let width: CGFloat = kind == "long" ? 268 : 440
-                    let geometry = EventNoticeStackGeometry()
-                    geometry.width = width
-                    var measuredHeight: Double = 0
+                    let navigation = SessionNavigationCoordinator(model: model)
+                    let presentation = EventNoticeStackPresentation(
+                        model: model, preferences: preferences,
+                        navigation: navigation, scheduler: clock.scheduler())
+                    presentation.updateViewport(width: width, availableHeight: 900)
                     clock.advance(0.36)
                     let hosting = EventNoticeHostingView(
                         rootView: EventNoticeView(
                             model: model, languageStore: preferences,
-                            geometry: geometry,
+                            navigation: navigation, presentation: presentation,
                             onViewSource: { _ in details += 1 },
                             onOpenSourceApplication: { _ in opens += 1 },
-                            onDismiss: { _ in closes += 1 },
-                            onMeasurements: { heights in
-                                if let id = model.stackSnapshot.visible.first?.id {
-                                    measuredHeight =
-                                        heights["card.\(id.uuidString)"] ?? measuredHeight
-                                }
-                            }))
+                            onDismiss: { _ in closes += 1 }))
                     var height = EventNoticeView.preferredHeight(for: model.snapshot)
                     let window = NSWindow(
                         contentRect: NSRect(x: 0, y: 0, width: width, height: height),
@@ -268,8 +267,12 @@ func runEventBannerLayoutSuites() {
                     window.setFrame(NSRect(x: 0, y: 0, width: width, height: height), display: true)
                     window.orderFrontRegardless()
                     defer { window.orderOut(nil); window.close() }
-                    hosting.layoutSubtreeIfNeeded()
-                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+                    settleEventBannerMeasurement(presentation, clock: clock, hosting: hosting)
+                    clock.advance(0.36)
+                    let measuredHeight =
+                        model.stackSnapshot.visible.first.flatMap {
+                            presentation.output.cardHeights[$0.id]
+                        } ?? 0
                     expect(measuredHeight > 0, "\(kind)完整卡片可测量")
                     height = measuredHeight
                     window.setFrame(NSRect(x: 0, y: 0, width: width, height: height), display: true)
@@ -372,8 +375,10 @@ func runEventReadingLiveSuites() async {
                     rootView: EventNoticeView(
                         model: model, languageStore: ClaudioPreferences(previewLanguage: .english),
                         onMeasurements: { heights in
-                            if let id = model.stackSnapshot.visible.first?.id {
-                                measuredHeight = heights["card.\(id.uuidString)"] ?? measuredHeight
+                            if let id = model.stackSnapshot.candidates.first?.id {
+                                measuredHeight =
+                                    heights.first { $0.key.role == .card(id) }?.value
+                                    ?? measuredHeight
                             }
                         }))
                 let width: CGFloat = 440
@@ -603,4 +608,22 @@ private final class EventBannerTrackFixture {
 private func eventBannerColorDistance(_ lhs: NSColor, _ rhs: NSColor) -> CGFloat {
     abs(lhs.redComponent - rhs.redComponent) + abs(lhs.greenComponent - rhs.greenComponent)
         + abs(lhs.blueComponent - rhs.blueComponent)
+}
+
+/// Complete real measurement passes through the injected production scheduler. Synchronous
+/// AppKit suites cannot drain a live MainActor dispatcher while they occupy its executor.
+@MainActor
+private func settleEventBannerMeasurement(
+    _ presentation: EventNoticeStackPresentation, clock: ManualEventNoticeScheduler,
+    hosting: EventNoticeHostingView
+) {
+    let deadline = Date(timeIntervalSinceNow: 2)
+    repeat {
+        clock.advance(0)
+        hosting.needsLayout = true
+        hosting.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.025))
+        clock.advance(0)
+    } while Date() < deadline
+        && (!presentation.output.requests.isEmpty || !presentation.output.isEligible)
 }

@@ -405,6 +405,7 @@ if CommandLine.arguments.contains("--event-reader") {
 
 if CommandLine.arguments.contains("--event-stack") {
     runEventNoticeStackSuites()
+    runEventNoticeStackPresentationSuites()
     print("Event stack: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -438,6 +439,7 @@ if CommandLine.arguments.contains("--event-attention") {
     runNativePrototypeMigrationSuites()
     runEventNoticeModelSuites()
     runEventNoticeStackSuites()
+    runEventNoticeStackPresentationSuites()
     runIntegrationAutomationSuites()
     runEventBannerActionSuites()
     runEventNoticeFocusSuites()
@@ -883,6 +885,7 @@ Task { @MainActor in
     runNativePrototypeMigrationSuites()
     runEventNoticeModelSuites()
     runEventNoticeStackSuites()
+    runEventNoticeStackPresentationSuites()
     runIntegrationAutomationSuites()
     runEventBannerActionSuites()
     runEventNoticeFocusSuites()

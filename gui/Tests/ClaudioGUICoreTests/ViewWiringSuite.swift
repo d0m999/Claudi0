@@ -421,7 +421,7 @@ func runViewWiringSuites() {
                 ".accessibilityLabel(ClaudioL10n(language:languageStore.language).text(.eventNoticeStack))"
             )
                 && collapsingWhitespace(card).replacingOccurrences(of: " ", with: "").contains(
-                    "EventNoticeProjection.accessibilitySummary(for:item.record,language:preferences.language,now:now)"
+                    "EventNoticeProjection.accessibilitySummary(for:item.record,language:language,now:now)"
                 ),
             "栈使用中性双语标签，各卡交给共享记录投影")
         expect(
@@ -483,9 +483,10 @@ func runViewWiringSuites() {
         let render = closureBody(after: "private func render(", in: notice) ?? ""
         expect(
             closureBody(
-                after: "guard snapshot.hasPresentation", in: render)?
-                .contains("releaseInteraction()") == true
-                && release.contains("focusRestoration = nil"),
+                after: "guard value.isEligible", in: render)?
+                .contains("hideWindow()") == true
+                && closureBody(after: "private func hideWindow()", in: notice)?
+                    .contains("focusRestoration = nil") == true,
             "runtime 经共享模型清空隐私时，也必须丢弃旧的焦点归还动作")
     }
 
@@ -3018,7 +3019,8 @@ private func claudioBrandRGB(_ hex: String) -> (CGFloat, CGFloat, CGFloat) {
     return (
         CGFloat((value & 0xFF0000) >> 16) / 255,
         CGFloat((value & 0x00FF00) >> 8) / 255,
-        CGFloat(value & 0x0000FF) / 255)
+        CGFloat(value & 0x0000FF) / 255
+    )
 }
 
 /// 品牌深墨 `brandInk` 的 sRGB 分量。
@@ -3031,7 +3033,8 @@ private let claudioBrandLimeRGB = claudioBrandRGB(ClaudioColorHex.brandLime)
 private let claudioBrandHairlineRGB: (CGFloat, CGFloat, CGFloat) = (
     0.16 * claudioBrandInkRGB.0 + 0.84 * claudioBrandLimeRGB.0,
     0.16 * claudioBrandInkRGB.1 + 0.84 * claudioBrandLimeRGB.1,
-    0.16 * claudioBrandInkRGB.2 + 0.84 * claudioBrandLimeRGB.2)
+    0.16 * claudioBrandInkRGB.2 + 0.84 * claudioBrandLimeRGB.2
+)
 
 @MainActor
 private func claudioBrandRender(_ hosting: NSView, name: String) -> NSBitmapImageRep? {
