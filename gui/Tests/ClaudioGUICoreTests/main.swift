@@ -267,6 +267,25 @@ if CommandLine.arguments.contains("--event-notice-reader") {
     exit(failures == 0 ? 0 : 1)
 }
 
+// Keep a focused reproduction of the native reader contract without changing its assertions.
+if CommandLine.arguments.contains("--event-notice-presentation-live") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runEventNoticePresentationSuites()
+        print("Event notice presentation: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--event-notice-presentation") {
+    runEventNoticePresentationSuites()
+    print("Event notice presentation: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 // Live reading timers need AppKit's event loop rather than the synchronous layout harness.
 if CommandLine.arguments.contains("--event-modal-lifecycle") {
     let application = NSApplication.shared
