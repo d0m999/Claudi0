@@ -58,7 +58,7 @@ Claudio 适配器根据宿主消息、会话关系和执行证据定义的事件
 _Avoid_: 把 idle 当作响应结束、把工具返回当作子任务结束
 
 **当前激活（Current Activation）**:
-当前 installation、surface、事件绑定和版本 scope 下，由真实宿主回调生成的脱敏回执。静态配置、接口文档、测试通过或旧代次回执都不构成当前激活。
+当前 installation、surface、事件绑定和版本 scope 下，由真实宿主回调生成的脱敏回执。静态配置、接口文档、测试通过、版本缓存命中或旧代次回执都不构成当前激活。
 _Avoid_: 已配置、已支持、已测试
 
 **默认组（Default Sound Group）**:
