@@ -13,6 +13,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
     package private(set) var soundAdoptionCount = 0
 
     package let draftStore: SoundPackDraftStore
+    package private(set) lazy var soundSelection = SoundEventSelectionSession(editor: self)
     private let model: SoundPacksWindowModel
     @Published package private(set) var presentation: SoundPacksEditorPresentation
     private let refreshCoordinator: SoundPacksRefreshCoordinator?
@@ -271,11 +272,15 @@ package final class SoundPacksEditorOwner: ObservableObject {
             interfaceHasActivated = true
             pendingConfirmationState = nil
             let wasSoundsActive = context.isSounds
+            if soundSelection.editorWillChangeContext(from: context, to: nextContext) {
+                soundSelectionContexts.removeAll()
+            }
             actionEpoch &+= 1
             advanceCandidateGeneration(for: nextContext)
             context = nextContext
             switch nextContext {
             case .inactive:
+                cancelAICuePackDraft()
                 publish(from: model.editorProjectionSeed())
             case .sounds(let route, _):
                 let (_, seed) = captureModelTransition {
@@ -547,6 +552,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
         let selection = SoundEventSelectionContext(
             id: UUID(), packID: packID,
             event: event, expectedSource: expected, draft: currentAICueDraft)
+        soundSelectionContexts.removeAll()
         soundSelectionContexts[selection.id] = selection
         return selection
     }
@@ -698,6 +704,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                     stage, importedFile: imported, environment: importEnvironment)
                 {
                 case .success(let value):
+                    soundSelection.noteDraftPublished(packID: selection.packID)
                     currentAICueDraft = nil
                     Task { await draftStore.refresh() }
                     return .finalized(imported: value)
@@ -978,6 +985,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                     case .failure:
                         return .failed(.mutationFailed)
                     case .success(let published):
+                        soundSelection.noteDraftPublished(packID: binding.target.packID)
                         currentAICueDraft = nil
                         return .finalized(imported: published)
                     }
@@ -1190,10 +1198,14 @@ package final class SoundPacksEditorOwner: ObservableObject {
             },
             finishScope: { [self] changedDespiteFailure in
                 _ = captureModelTransition {
-                    model.finishEditorCompoundMutation(
-                        packID: packID,
-                        mutation: writeScope.mutation,
-                        changedDespiteFailure: changedDespiteFailure)
+                    if variant == .adoptCueDraftPublish, !changedDespiteFailure {
+                        model.finishPublishedDraft(packID: packID, mutation: writeScope.mutation)
+                    } else {
+                        model.finishEditorCompoundMutation(
+                            packID: packID,
+                            mutation: writeScope.mutation,
+                            changedDespiteFailure: changedDespiteFailure)
+                    }
                 }
             },
             discardRemnants: discardRemnants,
@@ -1750,6 +1762,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             }
             return .rejected(.mutationFailed)
         case .success:
+            soundSelection.noteDraftPublished(packID: draft.packID)
             currentAICueDraft = nil
             model.finishPublishedDraft(packID: draft.packID, mutation: mutation)
             return .assign(packID: draft.packID, result: .success(()))
@@ -3104,7 +3117,7 @@ extension SoundPackEditorOperationCompletion {
 }
 
 extension SoundPacksEditorContext {
-    fileprivate var isSounds: Bool {
+    var isSounds: Bool {
         if case .sounds = self { return true }
         return false
     }

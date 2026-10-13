@@ -110,7 +110,9 @@ package struct SettingsSoundsDetailArbitration {
     private var copyTransition: SettingsSoundsDetailCopyTransition?
     private var copyNavigationStamp: SettingsNavigationStamp?
     private var unavailableDetailIdentity: SoundPacksSettingsDetail?
-    private var lastPublication: SoundPacksEditorPresentation?
+    /// Only the previous publication's transition facts belong to this reducer. Retaining the
+    /// full editor snapshot duplicates its large mode payload without adding authority.
+    private var previousSoundsPublication: PreviousSoundsPublication?
     /// A copy transition may only start on the publication where its busy activity first
     /// appears — parity with the retired view constructing it at invoke time. A detail opened
     /// while the operation is already busy must never capture that in-flight operation later.
@@ -134,7 +136,16 @@ package struct SettingsSoundsDetailArbitration {
         _ publication: SoundPacksEditorPresentation,
         navigationStamp: SettingsNavigationStamp? = nil
     ) -> SettingsSoundsDetailEffects {
-        defer { lastPublication = publication }
+        defer {
+            if case .sounds(let sounds) = publication.mode {
+                previousSoundsPublication = PreviousSoundsPublication(
+                    selectedPackID: sounds.selectedPack?.id,
+                    maximumStatusRevision: sounds.windowStatuses.lazy.map(\.revision).max() ?? 0,
+                    draftPackID: sounds.draft?.packID)
+            } else {
+                previousSoundsPublication = nil
+            }
+        }
         guard case .sounds(let sounds) = publication.mode else {
             return SettingsSoundsDetailEffects()
         }
@@ -191,8 +202,8 @@ package struct SettingsSoundsDetailArbitration {
         // A newly busy fork/copy against the captured pack is the one accepted operation that
         // may later retarget this detail to its result identity.
         if copyTransition == nil, let capturedPackID = next.capturedPackID,
-            let previous = lastPublication, case .sounds(let previousSounds) = previous.mode,
-            previousSounds.selectedPack?.id == capturedPackID,
+            let previous = previousSoundsPublication,
+            previous.selectedPackID == capturedPackID,
             let activity = publication.activities.first(where: {
                 $0.phase == .busy && ($0.kind == .fork || $0.kind == .copy)
                     && $0.packID == capturedPackID
@@ -204,7 +215,7 @@ package struct SettingsSoundsDetailArbitration {
                 detail: next,
                 operationID: activity.operationID,
                 activityKind: activity.kind,
-                previousStatusRevision: previousSounds.windowStatuses.map(\.revision).max() ?? 0)
+                previousStatusRevision: previous.maximumStatusRevision)
         }
         for activity in publication.activities where activity.phase == .busy {
             seenBusyOperationIDs.insert(activity.operationID)
@@ -219,10 +230,7 @@ package struct SettingsSoundsDetailArbitration {
             copyTransition = nil
         }
 
-        let previousDraftID: String? = {
-            guard case .sounds(let previousSounds) = lastPublication?.mode else { return nil }
-            return previousSounds.draft?.packID
-        }()
+        let previousDraftID = previousSoundsPublication?.draftPackID
         if let draftID = sounds.draft?.packID, draftID != previousDraftID {
             next = .draft(packID: draftID)
         }
@@ -248,4 +256,10 @@ package struct SettingsSoundsDetailArbitration {
         }
         return effects
     }
+}
+
+private struct PreviousSoundsPublication {
+    let selectedPackID: String?
+    let maximumStatusRevision: Int
+    let draftPackID: String?
 }

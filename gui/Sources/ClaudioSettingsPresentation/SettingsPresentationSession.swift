@@ -162,17 +162,8 @@ package final class SettingsPresentationSession: ObservableObject {
                     guard let self, !self.isPerformingTransaction else { return }
                     switch self.lifecycleDestination {
                     case .sounds:
-                        // Archive recovery can change eligibility without changing the session
-                        // or candidate values. Only a saved generation can sign adoption permits.
-                        let generation: AICueGeneration?
-                        if case .saved = projection.2 {
-                            generation = projection.1
-                        } else {
-                            generation = nil
-                        }
-                        self.dependencies.soundPacksEditorOwner.updateAICueComposer(
-                            session: projection.0,
-                            generation: generation)
+                        // The editor's selection session owns archive eligibility and lifetime.
+                        break
                     case .eventsAndSounds:
                         // The old Events route remains a compatibility seam for already-open
                         // legacy sessions. Package-scoped sessions belong exclusively to Sounds.
@@ -467,13 +458,9 @@ package final class SettingsPresentationSession: ObservableObject {
     private func runSoundsDetailEffects(_ effects: SettingsSoundsDetailEffects) {
         guard !effects.isEmpty else { return }
         if effects.stopPreviewAndEndAISession {
-            dependencies.soundPacksEditorNativeEffects.stopPreview(
-                owner: dependencies.soundPacksEditorOwner)
+            dependencies.soundPacksEditorOwner.soundSelection.invalidateTarget(
+                viewedPackID: soundsDetailArbitration.detail.capturedPackID)
             eventSettingsSelection.noteCandidatePreviewStopped()
-            dependencies.aiCueViewModel.endSession()
-            dependencies.soundPacksEditorOwner.updateAICueComposer(
-                session: nil,
-                generation: nil)
         }
         if effects.cancelAICueDraft {
             dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
@@ -760,40 +747,8 @@ package final class SettingsPresentationSession: ObservableObject {
                         generation: nil)
                 }
             }
-        case .sounds(let soundRoute):
-            applySoundsRoute(soundRoute)
-        case .destination(.sounds):
-            applySoundsRoute(.overview)
-        case .destination, .notifications:
+        case .sounds, .destination, .notifications:
             break
-        }
-    }
-
-    private func applySoundsRoute(_ soundRoute: SoundPacksWindowRoute) {
-        let requestedTarget = soundRoute.editTarget
-        let currentSession = dependencies.aiCueViewModel.session
-        let sessionMatches: Bool = {
-            guard let currentSession, let requestedTarget else { return false }
-            return currentSession.packID == requestedTarget.packID
-                && currentSession.event == requestedTarget.event
-        }()
-        let hasDraft: Bool = {
-            guard
-                case .sounds(let sounds) = dependencies.soundPacksEditorOwner.presentation.mode
-            else { return false }
-            return sounds.draft != nil
-        }()
-        let routeRequiresCopyGuidance = soundRoute.isCopyAndApply
-        if (currentSession != nil || hasDraft)
-            && (!sessionMatches || routeRequiresCopyGuidance)
-        {
-            dependencies.soundPacksEditorNativeEffects.stopPreview(
-                owner: dependencies.soundPacksEditorOwner)
-            dependencies.aiCueViewModel.endSession()
-            dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
-            dependencies.soundPacksEditorOwner.updateAICueComposer(
-                session: nil,
-                generation: nil)
         }
     }
 
@@ -940,9 +895,7 @@ package final class SettingsPresentationSession: ObservableObject {
                     .sounds(
                         route: soundRoute,
                         requestRevision: explicitRouteRequestRevision + 1)))
-            dependencies.soundPacksEditorOwner.updateAICueComposer(
-                session: dependencies.aiCueViewModel.session,
-                generation: dependencies.aiCueViewModel.generation)
+            dependencies.soundPacksEditorOwner.soundSelection.synchronizeComposer()
         case .general, .notifications, .usage, .shortcuts, .about:
             break
         }
@@ -1022,11 +975,6 @@ package final class SettingsPresentationSession: ObservableObject {
             dependencies.soundPacksEditorNativeEffects.handleLifecycle(
                 windowIsClosing ? .settingsWindowWillClose : .soundsViewDisappeared,
                 owner: dependencies.soundPacksEditorOwner)
-            dependencies.aiCueViewModel.endSession()
-            dependencies.soundPacksEditorOwner.cancelAICuePackDraft()
-            dependencies.soundPacksEditorOwner.updateAICueComposer(
-                session: nil,
-                generation: nil)
             // The unmounted destination drops its detail exactly like the retired view-local
             // state; the next activation re-derives it from the retained route.
             soundsDetailArbitration.reset()

@@ -62,6 +62,8 @@ package struct SettingsPresentationDependencies {
         self.hostIntegrations = hostIntegrations
         self.integrationsModel = integrationsModel
         self.aiCueViewModel = aiCueViewModel
+        soundPacksEditorOwner.soundSelection.configure(
+            composer: aiCueViewModel, playback: soundPacksEditorNativeEffects.previewSession)
         let notices = eventNoticeModel ?? EventNoticeModel(receiverEpoch: UUID())
         self.eventNoticeModel = notices
         self.noticeNavigation = noticeNavigation ?? SessionNavigationCoordinator(model: notices)

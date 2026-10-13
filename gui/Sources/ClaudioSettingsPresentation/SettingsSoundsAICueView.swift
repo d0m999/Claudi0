@@ -54,6 +54,7 @@ struct SettingsSoundsAICueView: View {
         SettingsSoundsLibraryView(
             model: viewModel, owner: editorOwner, preferences: languageStore,
             effects: nativeEffects, coordinator: viewModel.coordinator,
+            selectionSession: editorOwner.soundSelection,
             history: viewModel.coordinator.history,
             drafts: editorOwner.draftStore, route: route, requestRevision: routeRequestRevision,
             navigate: onDetailIntent, modalIsPresented: $credentialSheetIsPresented)

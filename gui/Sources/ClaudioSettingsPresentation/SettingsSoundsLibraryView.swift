@@ -33,6 +33,7 @@ struct SettingsSoundsLibraryView: View {
     @ObservedObject var preferences: ClaudioPreferences
     @ObservedObject var effects: SoundPacksEditorNativeEffectsDispatcher
     @ObservedObject var coordinator: AICueGenerationCoordinator
+    @ObservedObject var selectionSession: SoundEventSelectionSession
     @ObservedObject var history: GenerationHistoryStore
     @ObservedObject var drafts: SoundPackDraftStore
     let route: SoundPacksWindowRoute
@@ -42,12 +43,9 @@ struct SettingsSoundsLibraryView: View {
 
     @State private var sheet: SoundsSheet?
     @State private var returnFromService: SoundsSheet?
-    @State private var selection: SoundEventSelectionContext?
     @State private var selectedItem: String?
     @State private var selectedCandidate: UUID?
     @State private var historySelection: HistorySelection?
-    @State private var localPreview: SoundLocalAudioPreview?
-    @State private var historyPreview: SoundLocalAudioPreview?
     @State private var preparedPack: PreparedSoundPack?
     @State private var inputName = ""
     @State private var errorText: String?
@@ -56,12 +54,16 @@ struct SettingsSoundsLibraryView: View {
     @State private var confirmation: SoundsConfirmation?
     @State private var collapsedGroups: Set<UUID> = []
     @State private var parentWindow: NSWindow?
-    @State private var previewRequestID = UUID()
     @State private var previewOrigin = ManualPreviewOrigin(.settings)
     @State private var afterSheetDestination: SoundPacksWindowRoute.Destination?
     @FocusState private var focusedEvent: Event?
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
+    private var selection: SoundEventSelectionContext? { selectionSession.context }
+    private var localPreview: SoundLocalAudioPreview? { selectionSession.localPreview }
+    private var isWorking: Bool {
+        working || selectionSession.isPreparingLocalSound || selectionSession.isUsingSound
+    }
     private var sounds: SoundsEditorPresentation? {
         guard case .sounds(let value) = owner.presentation.mode else { return nil }
         return value
@@ -119,8 +121,7 @@ struct SettingsSoundsLibraryView: View {
         .background(SoundsWindowProbe { parentWindow = $0 }.frame(width: 0, height: 0))
         .settingsMountIdentity("settings.sounds.library")
         .onAppear {
-            effects.stopPreview(owner: owner, origin: previewOrigin)
-            previewOrigin = ManualPreviewOrigin(.settings)
+            previewOrigin = selectionSession.activate(route: route)
         }
         .task {
             await drafts.refresh()
@@ -131,19 +132,16 @@ struct SettingsSoundsLibraryView: View {
             openLegacySheetIfNeeded()
         }
         .onChange(of: route) { _ in
-            previewRequestID = UUID()
-            effects.stopPreview(owner: owner, origin: previewOrigin)
-            previewOrigin = ManualPreviewOrigin(.settings)
+            if let origin = selectionSession.routeChanged(to: route, origin: previewOrigin) {
+                previewOrigin = origin
+            }
             errorText = nil
             if isHistory { coordinator.markHistoryRead(); Task { await history.refresh() } }
             if let event = route.editTarget?.event { focusedEvent = event }
             openLegacySheetIfNeeded()
         }
-        .onChange(of: model.generation) { _ in syncComposer() }
-        .onChange(of: model.session) { _ in syncComposer() }
-        .onChange(of: coordinator.state) { _ in syncComposer() }
         .onChange(of: model.providerProfileID) { _ in
-            selectedCandidate = nil; syncComposer()
+            selectedCandidate = nil
         }
         .onChange(of: model.phase) { phase in
             if phase == .applied { finishUse() }
@@ -153,7 +151,7 @@ struct SettingsSoundsLibraryView: View {
         }
         .sheet(item: $sheet, onDismiss: sheetClosed) { sheet in
             sheetContent(sheet)
-                .interactiveDismissDisabled(working)
+                .interactiveDismissDisabled(isWorking)
                 .alert(confirmationTitle, isPresented: confirmationBinding) {
                     confirmationButtons
                 } message: {
@@ -166,13 +164,7 @@ struct SettingsSoundsLibraryView: View {
             Text(confirmationMessage)
         }
         .onDisappear {
-            previewRequestID = UUID()
-            effects.stopPreview(owner: owner, origin: previewOrigin)
-            model.endSession()
-            owner.updateAICueComposer(session: nil, generation: nil)
-            if let selection { owner.endSoundSelection(selection) }
-            if let localPreview { Task { await localPreview.discard() } }
-            if let historyPreview { Task { await historyPreview.discard() } }
+            selectionSession.end(origin: previewOrigin)
             modalIsPresented = false
         }
     }
@@ -381,9 +373,10 @@ struct SettingsSoundsLibraryView: View {
                         }
                         Spacer()
                         if let action = row.previewAction {
-                            previewButton(id: "event.\(row.event.rawValue)") {
-                                togglePreview(
-                                    id: "event.\(row.event.rawValue)", action: action, owner: owner)
+                            previewButton(id: "event.\(row.event.rawValue)") { origin in
+                                selectionSession.preview(
+                                    id: "event.\(row.event.rawValue)", action: action,
+                                    origin: origin)
                             }
                         }
                         if canEdit {
@@ -517,9 +510,10 @@ struct SettingsSoundsLibraryView: View {
                     HStack {
                         Text(candidateName(candidate))
                         Spacer()
-                        previewButton(id: candidate.id.uuidString) {
-                            togglePreview(
-                                id: candidate.id.uuidString, fileURL: candidate.asset.fileURL)
+                        previewButton(id: candidate.id.uuidString) { origin in
+                            selectionSession.preview(
+                                id: candidate.id.uuidString, fileURL: candidate.asset.fileURL,
+                                origin: origin)
                         }
                     }
                 }
@@ -602,8 +596,8 @@ struct SettingsSoundsLibraryView: View {
                                         .soundsSeconds, Double(audio.durationMilliseconds) / 1_000)
                                 )
                                 .font(.caption).foregroundColor(.secondary)
-                                previewButton(id: audio.id.uuidString) {
-                                    previewHistory(batch.id, audio.id)
+                                previewButton(id: audio.id.uuidString) { origin in
+                                    previewHistory(batch.id, audio.id, origin: origin)
                                 }
                                 .disabled(audio.failure != nil)
                                 if !selecting {
@@ -666,7 +660,7 @@ struct SettingsSoundsLibraryView: View {
                 Text(sheetTitle(mode)).font(.title2.weight(.semibold))
                 if let selection {
                     Text(
-                        packName + " · "
+                        (selection.draft?.name.value ?? packName) + " · "
                             + localizedEventName(selection.event, language: preferences.language)
                     )
                     .foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -680,11 +674,11 @@ struct SettingsSoundsLibraryView: View {
                 if let selectionRecoveryURL {
                     recoveryButton(.recoveryRequired(selectionRecoveryURL))
                 }
-                if working { ProgressView().controlSize(.small) }
+                if isWorking { ProgressView().controlSize(.small) }
                 HStack {
                     Spacer()
                     Button(l10n.text(.soundsClose)) { closeSheet() }.keyboardShortcut(.cancelAction)
-                        .disabled(working).accessibilityIdentifier("settings.sounds.sheet.close")
+                        .disabled(isWorking).accessibilityIdentifier("settings.sounds.sheet.close")
                     if mode != .manage { sheetPrimaryButton(mode) }
                 }
             }.padding(24).frame(
@@ -726,9 +720,10 @@ struct SettingsSoundsLibraryView: View {
                         l10n.format(
                             .soundsSeconds, Double(localPreview.durationMilliseconds) / 1_000))
                     Spacer()
-                    previewButton(id: localPreview.id.uuidString) {
-                        togglePreview(
-                            id: localPreview.id.uuidString, fileURL: localPreview.fileURL)
+                    previewButton(id: localPreview.id.uuidString) { origin in
+                        selectionSession.preview(
+                            id: localPreview.id.uuidString, fileURL: localPreview.fileURL,
+                            origin: origin)
                     }
                 }
             } else {
@@ -802,10 +797,10 @@ struct SettingsSoundsLibraryView: View {
                                             Double(candidate.durationMilliseconds) / 1_000)
                                     )
                                     .foregroundColor(.secondary)
-                                    previewButton(id: candidate.id.uuidString) {
-                                        togglePreview(
+                                    previewButton(id: candidate.id.uuidString) { origin in
+                                        selectionSession.preview(
                                             id: candidate.id.uuidString,
-                                            fileURL: candidate.asset.fileURL)
+                                            fileURL: candidate.asset.fileURL, origin: origin)
                                     }
                                 }.tag(candidate.id)
                             }
@@ -895,9 +890,9 @@ struct SettingsSoundsLibraryView: View {
                         }
                         Spacer()
                         if let action = audio.previewAction {
-                            previewButton(id: "file.\(audio.fileName)") {
-                                togglePreview(
-                                    id: "file.\(audio.fileName)", action: action, owner: owner)
+                            previewButton(id: "file.\(audio.fileName)") { origin in
+                                selectionSession.preview(
+                                    id: "file.\(audio.fileName)", action: action, origin: origin)
                             }
                         }
                         if managing {
@@ -979,9 +974,9 @@ struct SettingsSoundsLibraryView: View {
                     if let url = owner.soundImportEnvironment.systemSoundCatalog.audioURL(
                         named: choice.source.name)
                     {
-                        previewButton(id: "system.\(choice.source.name)") {
-                            togglePreview(
-                                id: "system.\(choice.source.name)", fileURL: url)
+                        previewButton(id: "system.\(choice.source.name)") { origin in
+                            selectionSession.preview(
+                                id: "system.\(choice.source.name)", fileURL: url, origin: origin)
                         }
                     }
                 }.tag(choice.source.name).disabled(choice.action == nil)
@@ -996,9 +991,13 @@ struct SettingsSoundsLibraryView: View {
                     ? .settingsSoundsAICueSaveName
                     : mode == .importPack ? .soundsImport : .soundsUse)
         ) {
-            Task { await submit(mode) }
+            if SoundEventSelectionSession.Mode(rawValue: mode.rawValue) != nil {
+                submitSelection(mode)
+            } else {
+                Task { await submit(mode) }
+            }
         }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
-            .disabled(working || !canSubmit(mode)).accessibilityIdentifier(
+            .disabled(isWorking || !canSubmit(mode)).accessibilityIdentifier(
                 "settings.sounds.sheet.use")
     }
 
@@ -1051,45 +1050,44 @@ struct SettingsSoundsLibraryView: View {
                 try await owner.importPreparedPack(preparedPack)
                 self.preparedPack = nil;
                 closeSheet(navigatingTo: .pack(packID: preparedPack.packID))
-            case .local:
-                guard let selection, let localPreview else { return }
-                handleUseResult(await owner.useLocalSound(localPreview, selection: selection))
-            case .history:
-                guard let selection, let historySelection else { return }
-                handleUseResult(
-                    await owner.useHistorySound(
-                        batchID: historySelection.batchID,
-                        audioID: historySelection.audioID, history: history, selection: selection))
-            case .packFiles, .system:
-                guard let selectedItem, let selection else { return }
-                let source: PackEventSoundSource =
-                    mode == .system ? .systemSound(selectedItem) : .file(selectedItem)
-                if owner.useExistingSound(source, selection: selection) {
-                    finishUse()
-                } else {
-                    errorText = latestWriteFailure ?? l10n.text(.soundsChanged)
-                }
-            case .ai:
-                guard let candidate = selectedCandidate,
-                    let permit = sounds?.eventRows.first(where: { $0.event == selection?.event })?
-                        .aiCueAdoptionPermit
-                else { throw SoundAssetStorageError.changed }
-                model.adopt(candidateID: candidate, permit: permit) { candidate, name, permit in
-                    await owner.perform(
-                        .adoptAICue(candidate: candidate, displayName: name, permit: permit))
-                }
             default: break
             }
         } catch { errorText = storageMessage(error) }
     }
 
+    private func submitSelection(_ mode: SoundsSheet) {
+        let origin = previewOrigin
+        if mode == .ai {
+            guard let candidate = selectedCandidate else { return }
+            errorText = nil
+            if !selectionSession.adopt(candidateID: candidate, origin: origin) {
+                errorText = l10n.text(.soundsChanged)
+            }
+            return
+        }
+        let choice: SoundEventSelectionSession.Choice
+        switch mode {
+        case .local: choice = .local
+        case .history:
+            guard let historySelection else { return }
+            choice = .history(batchID: historySelection.batchID, audioID: historySelection.audioID)
+        case .packFiles, .system:
+            guard let selectedItem else { return }
+            choice = .existing(mode == .system ? .systemSound(selectedItem) : .file(selectedItem))
+        default: return
+        }
+        errorText = nil
+        Task { handleSelectionResult(await selectionSession.use(choice, origin: origin)) }
+    }
+
     private func begin(_ mode: SoundsSheet, event: Event) {
-        guard let selection = owner.beginSoundSelection(event: event) else {
+        guard let selectionMode = SoundEventSelectionSession.Mode(rawValue: mode.rawValue),
+            selectionSession.begin(event: event, mode: selectionMode) != nil
+        else {
             errorText = l10n.text(.soundsUnavailable); return
         }
-        self.selection = selection
+        previewOrigin = selectionSession.origin
         selectedCandidate = nil; selectedItem = nil; historySelection = nil
-        if mode == .ai { model.begin(packID: selection.packID, event: event); syncComposer() }
         if mode == .history { Task { await history.refresh() } }
         present(mode)
     }
@@ -1102,10 +1100,13 @@ struct SettingsSoundsLibraryView: View {
             if sheet == nil { modalIsPresented = false }
             return
         }
-        effects.stopPreview(owner: owner, origin: previewOrigin)
+        if selection == nil {
+            previewOrigin = selectionSession.activateForm(route: route)
+        } else {
+            effects.stopPreview(owner: owner, origin: previewOrigin)
+        }
         errorText = nil
         selectionRecoveryURL = nil
-        previewOrigin = ManualPreviewOrigin(.settings)
         sheet = mode
         modalIsPresented = true
     }
@@ -1115,15 +1116,12 @@ struct SettingsSoundsLibraryView: View {
         sheet = nil
     }
     private func sheetClosed() {
-        guard sheet == nil else { return }
-        previewRequestID = UUID()
-        effects.stopPreview(owner: owner, origin: previewOrigin)
-        if let selection { focusedEvent = selection.event; owner.endSoundSelection(selection) }
-        selection = nil
-        model.endSession()
-        owner.updateAICueComposer(session: nil, generation: nil)
-        if let localPreview { Task { await localPreview.discard() }; self.localPreview = nil }
-        if let historyPreview { Task { await historyPreview.discard() }; self.historyPreview = nil }
+        let event = selection?.event
+        guard sheet == nil, let origin = selectionSession.closeForm(origin: previewOrigin) else {
+            return
+        }
+        if let event { focusedEvent = event }
+        previewOrigin = origin
         if let preparedPack { Task { await preparedPack.discard() }; self.preparedPack = nil }
         returnFromService = nil
         modalIsPresented = false
@@ -1155,31 +1153,27 @@ struct SettingsSoundsLibraryView: View {
         }
     }
 
+    private func handleSelectionResult(_ result: SoundEventSelectionSession.UseResult) {
+        switch result {
+        case .assigned: finishUse()
+        case .assignmentRejected: errorText = latestWriteFailure ?? l10n.text(.soundsChanged)
+        case .completed(let completion): handleUseResult(completion.result)
+        case .superseded: break
+        }
+    }
+
     private var latestWriteFailure: String? {
         sounds?.windowStatuses.last(where: { $0.severity == .failure })?
             .message(language: preferences.language)
     }
 
-    private func syncComposer() {
-        let archived: Bool
-        if case .saved = coordinator.state { archived = true } else { archived = false }
-        owner.updateAICueComposer(
-            session: model.session, generation: archived ? model.generation : nil)
-    }
-
     private func chooseLocalFile() {
-        let context = selection?.id
+        let origin = previewOrigin
         Task {
-            guard let url = await chooseDirectoryOrAudio(directory: false) else { return }
-            working = true
-            defer { working = false }
-            do {
-                let preview = try await owner.prepareLocalSound(url)
-                guard selection?.id == context, sheet == .local else {
-                    await preview.discard(); return
-                }
-                localPreview = preview
-            } catch { errorText = storageMessage(error) }
+            let result = await selectionSession.prepareLocalSound(origin: origin) {
+                await chooseDirectoryOrAudio(directory: false)
+            }
+            if case .failed(let error) = result { errorText = storageMessage(error) }
         }
     }
 
@@ -1201,36 +1195,12 @@ struct SettingsSoundsLibraryView: View {
         return await chooseSoundAsset(attachedTo: parentWindow, directory: directory)
     }
 
-    private func previewHistory(_ batch: UUID, _ audio: UUID) {
-        let session = effects.previewSession
-        guard let token = session.prepare(origin: previewOrigin, target: audio.uuidString) else {
-            return
-        }
+    private func previewHistory(_ batch: UUID, _ audio: UUID, origin: ManualPreviewOrigin) {
         Task {
-            do {
-                let proof = try await history.audio(batchID: batch, audioID: audio)
-                guard session.isCurrent(token) else { return }
-                let preview = try await SoundLocalAudioPreview.prepare(history: proof)
-                guard session.isCurrent(token) else { await preview.discard(); return }
-                if let historyPreview { await historyPreview.discard() }
-                guard session.isCurrent(token) else { await preview.discard(); return }
-                historyPreview = preview
-                _ = session.start(token, fileURL: preview.fileURL, volume: 1)
-            } catch {
-                guard session.isCurrent(token) else { return }
-                session.fail(token)
-                errorText = storageMessage(error)
-            }
+            let result = await selectionSession.previewHistory(
+                batchID: batch, audioID: audio, history: history, origin: origin)
+            if case .failed(let error) = result { errorText = storageMessage(error) }
         }
-    }
-
-    private func togglePreview(id: String, fileURL: URL) {
-        effects.toggleSoundPreview(id: id, fileURL: fileURL, origin: previewOrigin)
-    }
-    private func togglePreview(
-        id: String, action: SoundPackEditorAction, owner: SoundPacksEditorOwner
-    ) {
-        effects.toggleSoundPreview(id: id, action: action, owner: owner, origin: previewOrigin)
     }
 
     private func trashHistory(_ batch: UUID, _ audio: UUID?) async {
@@ -1265,10 +1235,14 @@ struct SettingsSoundsLibraryView: View {
         }
         return l10n.text(profile.displayNameKey)
     }
-    private func previewButton(id: String, action: @escaping () -> Void) -> some View {
-        MotionPreviewButton(
-            isPlaying: effects.previewSession.isPlaying(id, origin: previewOrigin),
-            playLabel: l10n.text(.soundsPlay), stopLabel: l10n.text(.soundsStop), action: action
+    private func previewButton(
+        id: String, action: @escaping (ManualPreviewOrigin) -> Void
+    ) -> some View {
+        let origin = previewOrigin
+        return MotionPreviewButton(
+            isPlaying: effects.previewSession.isPlaying(id, origin: origin),
+            playLabel: l10n.text(.soundsPlay), stopLabel: l10n.text(.soundsStop),
+            action: { action(origin) }
         )
         .accessibilityIdentifier("settings.sounds.preview.\(id)")
     }

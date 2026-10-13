@@ -170,6 +170,12 @@ if CommandLine.arguments.contains("--sounds-redesign") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--sound-event-selection-lifecycle") {
+    await runSoundEventSelectionLifecycleSuites()
+    print("Sound event selection lifecycle: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--integration-automation-native") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -509,6 +515,12 @@ if CommandLine.arguments.contains("--sound-editor-interface") {
 if CommandLine.arguments.contains("--sound-editor-focus") {
     await runSoundPacksEditorViewSuites()
     print("Sound editor focus: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--settings-sounds-publications") {
+    runSettingsSoundsPublicationSuites()
+    print("Sounds publications: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -858,6 +870,7 @@ Task { @MainActor in
     await runSoundsRedesignCompositionSuites()
     await runGenerationHistorySuites()
     await runSoundsReviewRecoverySuites()
+    await runSoundEventSelectionLifecycleSuites()
     await runReviewFindingRepairSuites()
     await runAICueGenerationViewModelSuites()
     runAICuePackScopedSuites()
@@ -951,6 +964,7 @@ Task { @MainActor in
     runSettingsNavigationSuites()
     await runSettingsPresentationLifecycleSuites()
     runSettingsPresentationTargetSuites()
+    runSettingsSoundsPublicationSuites()
     await runSettingsPresentationSliceSuites()
     await runSettingsRootInteractionSuites()
     runSettingsProductImagesSuites()

@@ -22,7 +22,12 @@ private actor RecoveryCredentialManager: AICueCredentialManaging {
 private actor RecoveryGenerator: AICueGenerating {
     let result: AICueGeneration
     private(set) var requests = 0
-    init(_ result: AICueGeneration) { self.result = result }
+    private let holdsDiscard: Bool
+    private var discardContinuation: CheckedContinuation<Void, Never>?
+    private(set) var discards = 0
+    init(_ result: AICueGeneration, holdsDiscard: Bool = false) {
+        self.result = result; self.holdsDiscard = holdsDiscard
+    }
     func generate(
         description: String, locale: String, providerProfileID: AICueProviderProfileID,
         deadline: AICueGenerationDeadline
@@ -30,7 +35,11 @@ private actor RecoveryGenerator: AICueGenerating {
         requests += 1
         return result
     }
-    func discard(generationID: UUID) {}
+    func discard(generationID: UUID) async {
+        discards += 1
+        if holdsDiscard { await withCheckedContinuation { discardContinuation = $0 } }
+    }
+    func releaseDiscard() { discardContinuation?.resume(); discardContinuation = nil }
     func discardAll() {}
 }
 
@@ -151,6 +160,133 @@ func runSoundsReviewRecoverySuites() async {
         }
     }
 
+    await suite("声音选用挂载：五个生产入口与关闭调用同一生命周期") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["target"])
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            let settings = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(
+                    SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "target"))),
+                soundPacksEditor: fixture.owner)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: settings.session, size: NSSize(width: 960, height: 640))
+            defer { probe.close() }
+            await probe.settle()
+            for index in 0..<5 {
+                expect(probe.chooseSource(event: .stop, index: index), "生产来源菜单可打开第 \(index) 类表单")
+                await probe.settle()
+                guard let context = fixture.owner.soundSelection.context else {
+                    expect(false, "实际表单须经编辑生命周期签发上下文"); continue
+                }
+                expect(context.packID == "target" && context.event == .stop, "实际表单锁定包与事件")
+                expect(probe.pressControl("settings.sounds.sheet.close"), "实际关闭按钮结束表单")
+                await probe.settle()
+                expect(fixture.owner.soundSelection.context == nil, "关闭经同一 seam 撤销上下文")
+                expect(
+                    !fixture.owner.useExistingSound(.file("stop.mp3"), selection: context),
+                    "实际关闭不能留下可再次消费的旧凭证")
+            }
+        }
+    }
+
+    await suite("声音本机选用：资源就绪发布到真实表单，完成结果关闭并绑定") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["target"])
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            let settings = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(
+                    SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "target"))),
+                soundPacksEditor: fixture.owner)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: settings.session, size: NSSize(width: 960, height: 640))
+            defer { probe.close() }
+            await probe.settle()
+            expect(probe.chooseSource(event: .stop, index: 3), "从生产入口打开本机表单")
+            await probe.settle()
+            let source = root.appendingPathComponent("external.mp3")
+            writeFixture(validMP3ID3Data(), to: source)
+            expect(
+                await fixture.owner.soundSelection.prepareLocalSound { source } == .ready,
+                "经生产 seam 验证并暂存实际 fixture 字节")
+            await probe.settle()
+            expect(
+                probe.menuIsEnabled(identifier: "settings.sounds.sheet.use") == true,
+                "资源发布使真实选用按钮可操作")
+            expect(probe.pressControl("settings.sounds.sheet.use"), "真实按钮消费选用上下文")
+            await probe.settle()
+            expect(
+                !probe.hasAttachedSheet && fixture.owner.soundSelection.context == nil,
+                "原事务结果经表单完成回调关闭并撤销资格")
+            await fixture.owner.waitForMutationTransactionsToQuiesceForTesting()
+            _ = await fixture.library.refreshSnapshot(trigger: .write)
+            guard await waitForSoundEditorReady(fixture.owner, library: fixture.library) else {
+                expect(false, "完成后必须收到共享库的新映射"); return
+            }
+            guard case .sounds(let sounds) = fixture.owner.presentation.mode else {
+                expect(false, "完成后仍在声音页"); return
+            }
+            let assigned = sounds.eventRows.first(where: { $0.event == .stop })?.soundSource?.name
+            expect(assigned != nil && assigned != "stop.mp3", "显式选用确实绑定新的包内音频：\(assigned as Any)")
+        }
+    }
+
+    await suite("声音页面恢复：目标失效后同路由刷新允许新的显式试听") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["target"])
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            let player = RecoveryPlayback()
+            let settings = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(
+                    SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "target"))),
+                soundPacksEditor: fixture.owner,
+                nativeEffects: SoundPacksEditorNativeEffectsDispatcher(adapter: player))
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: settings.session, size: NSSize(width: 960, height: 640))
+            defer { probe.close() }
+            await probe.settle()
+            // Retain the mounted page and its route, then refresh the shared library normally.
+            fixture.owner.soundSelection.invalidateTarget(viewedPackID: "target")
+            _ = await fixture.library.refreshSnapshot(trigger: .retry)
+            await probe.settle()
+            expect(probe.pressControl("settings.sounds.preview.event.stop"), "恢复后的真实试听按钮可点击")
+            expect(player.plays == 1, "同路由恢复后的显式点击进入唯一试听 owner")
+        }
+    }
+
+    await suite("声音目标失效恢复：同源资格撤销后仍挂载的表单能关闭并恢复导航") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["target"])
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            let settings = SettingsPresentationFixtures.generalLogin(
+                route: .sounds(
+                    SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "target"))),
+                soundPacksEditor: fixture.owner)
+            let probe = SettingsSoundsNativeLayoutProbe(
+                session: settings.session, size: NSSize(width: 960, height: 640))
+            defer { probe.close() }
+            await probe.settle()
+            expect(probe.chooseSource(event: .stop, index: 4), "从真实事件入口打开系统音表单")
+            await probe.settle()
+            expect(
+                settings.session.state.eventPresentation.credentialSheetIsPresented,
+                "表单真实阻止外层导航")
+            // Exercise the production invalidation seam while deliberately retaining the native
+            // sheet. Deleting the whole pack can also unmount the sheet, which hides this race.
+            fixture.owner.soundSelection.invalidateTarget(viewedPackID: "target")
+            fixture.owner.soundSelection.invalidateTarget(viewedPackID: "target")
+            await probe.settle()
+            expect(fixture.owner.soundSelection.context == nil, "失效立即撤销旧写入资格")
+            expect(probe.pressControl("settings.sounds.sheet.close"), "失效表单仍可明确关闭")
+            await probe.settle()
+            expect(
+                !settings.session.state.eventPresentation.credentialSheetIsPresented,
+                "关闭同源失效表单清除其模态阻塞")
+            expect(
+                settings.session.send(.selectSidebar(.general)) == .routed,
+                "关闭后侧栏导航真实恢复")
+        }
+    }
+
     await suite("生成保存恢复：当前表单重获选用资格，关闭表单不复活旧资格") {
         for closeBeforeRetry in [false, true] {
             await withTempDirectory { root in
@@ -241,6 +377,81 @@ func runSoundsReviewRecoverySuites() async {
                     }
                 } catch { expect(false, "生成采用恢复失败：\(error)") }
             }
+        }
+    }
+
+    await suite("首音发布恢复：自动 draft → pack 不结束尚未完成的采用表单") {
+        await withTempDirectory { root in
+            do {
+                let fixture = makeSoundEditorFixture(root: root, packIDs: ["original"])
+                let owner = fixture.owner
+                _ = owner.send(.activate(.sounds(route: .overview, requestRevision: 1)))
+                _ = await fixture.library.refreshSnapshot(trigger: .initial)
+                guard await waitForSoundEditorReady(owner, library: fixture.library) else { return }
+                let draft = try await owner.createNamedDraft(AICuePackName("首音发布"))
+                let generation = historyGeneration(root.appendingPathComponent("input"), count: 1)
+                let generator = RecoveryGenerator(generation, holdsDiscard: true)
+                defer { Task { await generator.releaseDiscard() } }
+                let defaultsName = UUID().uuidString
+                let defaults = UserDefaults(suiteName: defaultsName)!
+                defer { defaults.removePersistentDomain(forName: defaultsName) }
+                let model = AICueGenerationViewModel(
+                    credentialManager: RecoveryCredentialManager(), generator: generator,
+                    providerProfileID: .elevenLabsGlobal,
+                    providerPreferences: AICueProviderPreferences(defaults: defaults),
+                    generationHistoryDirectory: root.appendingPathComponent("history"))
+                let settings = SettingsPresentationFixtures.generalLogin(
+                    route: .sounds(
+                        SoundPacksWindowRoute(
+                            surface: nil, destination: .draft(packID: draft.packID))),
+                    soundPacksEditor: owner, aiCueViewModel: model)
+                let probe = SettingsSoundsNativeLayoutProbe(
+                    session: settings.session, size: NSSize(width: 960, height: 640))
+                defer { probe.close() }
+                await probe.settle()
+                expect(probe.chooseSource(event: .stop, index: 0), "草稿事件从真实入口打开 AI 表单")
+                await probe.settle()
+                model.updateDescription("首音")
+                model.startGeneration(locale: "zh-Hans")
+                guard
+                    await waitForRecovery({
+                        if case .saved = model.coordinator.state { return true }; return false
+                    })
+                else { expect(false, "实际生成并归档完成"); return }
+                let context = owner.soundSelection.context
+                expect(
+                    owner.soundSelection.adopt(candidateID: generation.candidates[0].id),
+                    "显式选用进入生产采用链")
+                var discardEntered = false
+                for _ in 0..<200 {
+                    if await generator.discards > 0 { discardEntered = true; break }
+                    try? await Task.sleep(nanoseconds: 10_000_000)
+                }
+                guard discardEntered else { expect(false, "已写入采用等待原资产结算"); return }
+                await probe.settle()
+                expect(
+                    settings.session.state.routeResolution.route
+                        == .sounds(
+                            SoundPacksWindowRoute(
+                                surface: nil, destination: .pack(packID: draft.packID))),
+                    "原生浏览投影已从草稿转换为已安装包")
+                expect(
+                    owner.soundSelection.context == context && model.phase == .adopting,
+                    "同一目标的发布投影不能撤销采用上下文")
+                await generator.releaseDiscard()
+                expect(
+                    await waitForRecovery({ model.phase == .applied || model.session == nil }),
+                    "采用结算完成")
+                await probe.settle()
+                expect(
+                    probe.menuAccessibilityElement(identifier: "settings.sounds.sheet.ai") == nil,
+                    "采用完成后真实表单关闭")
+                expect(owner.soundSelection.context == nil && model.session == nil, "成功关闭只撤销已消费上下文")
+                expect(
+                    probe.menuAccessibilityElement(
+                        identifier: "settings.sounds.sheet.preview-failure") == nil,
+                    "首音采用未被误报为试听失败")
+            } catch { expect(false, "首音发布挂载回归失败：\(error)") }
         }
     }
 

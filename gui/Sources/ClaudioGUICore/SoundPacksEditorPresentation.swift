@@ -31,7 +31,9 @@ package enum SoundPackEditorLibraryFailureReason: Equatable, Sendable {
     case scanFailed
 }
 
-package enum SoundPacksEditorModePresentation: Equatable {
+/// The mode carries a large immutable projection. Value-semantic indirection keeps the outer
+/// snapshot and its queued copies small while preserving the associated facts and equality.
+package indirect enum SoundPacksEditorModePresentation: Equatable {
     case inactive
     case sounds(SoundsEditorPresentation)
     case events(EventsSoundPackPresentation)
@@ -444,7 +446,9 @@ package struct SoundPackEditorAnnouncement: Identifiable, Equatable {
     package let messageText: SoundPacksWindowStatusText?
 }
 
-package enum SoundPacksEditorContext: Equatable, Sendable {
+/// Capability ledgers retain this complete context. Indirection shares its immutable payload
+/// while keeping the full context, epoch and snapshot freshness checks in place.
+package indirect enum SoundPacksEditorContext: Equatable, Sendable {
     case inactive
     case sounds(route: SoundPacksWindowRoute, requestRevision: UInt64)
     case events(
