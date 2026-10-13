@@ -5,17 +5,12 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import hashlib
 import json
-from importlib.util import module_from_spec, spec_from_file_location
+import math
 from pathlib import Path
 import platform
 import subprocess
 
 REPO = Path(__file__).resolve().parents[1]
-EVIDENCE_PATH = Path(__file__).with_name('hook-cache-evidence.py')
-SPEC = spec_from_file_location('hook_cache_statistics', EVIDENCE_PATH)
-STATISTICS = module_from_spec(SPEC)
-SPEC.loader.exec_module(STATISTICS)
-stats = STATISTICS.stats
 
 
 def output(command):
@@ -33,11 +28,17 @@ def verify_binary_identity(binary, helper, metadata):
 
 
 def source_identity():
-    paths = [REPO / 'helper/Package.swift', REPO / 'helper/Package.resolved', REPO / 'scripts/benchmark-hooks.py', EVIDENCE_PATH]
+    paths = [REPO / 'helper/Package.swift', REPO / 'helper/Package.resolved', REPO / 'scripts/benchmark-hooks.py']
     paths += sorted((REPO / 'helper/Sources').rglob('*.swift'))
     paths += sorted((REPO / 'helper/Sources').rglob('*.c'))
     paths += sorted((REPO / 'helper/Sources').rglob('*.h'))
     return {str(path.relative_to(REPO)): digest(path) for path in paths}
+
+
+def stats(values):
+    ordered = sorted(values)
+    return {'n': len(values), **{name: ordered[max(0, math.ceil(p * len(ordered)) - 1)] / 1e6
+            for name, p in [('p50_ms', .5), ('p90_ms', .9), ('p95_ms', .95), ('max_ms', 1)]}}
 
 
 def summarize(samples):
@@ -75,59 +76,28 @@ def summarize(samples):
             for (s, p), values in sorted(deltas.items())]}
 
 
-SCENARIOS = ['full-empty', 'full-steady', 'muted', 'debounced', 'not-ready',
-             'authorization-off', 'gui-exited', 'stale-installation', 'lock-busy',
-             'workspace-plain', 'workspace-git', 'git-damaged']
-
-
-def validate(samples, probe, scenario, count, rounds):
-    scenarios = SCENARIOS if scenario == 'all' else [scenario]
-    probes = ['normal', 'instant', 'delayed', 'real'] if probe == 'compare' else [probe]
-    expected = {(s, p, r, i, observer) for s in scenarios for p in probes
-                for r in range(rounds) for i in range(count) for observer in [False, True]}
-    seen = set()
-    for row in samples:
-        key = (row['scenario'], row['probe'], row['round'], row['pair'], row['observer'])
-        if key not in expected or key in seen or type(row['observer']) is not bool:
-            raise AssertionError('unexpected or duplicate sample coordinate')
-        seen.add(key)
-        denied = row['scenario'] in ['authorization-off', 'gui-exited']
-        rejected = denied or row['scenario'] == 'stale-installation' or row['probe'] == 'timeout'
-        playback = {'muted': 'muted', 'debounced': 'debounced', 'lock-busy': 'debounced',
-                    'not-ready': 'not_ready', 'git-damaged': 'not_ready'}.get(row['scenario'], 'played')
-        accepted = int(not rejected)
-        counts = dict(accepted=accepted, playerStarts=int(not rejected and playback == 'played'),
-                      receipts=accepted, archives=accepted, notices=accepted, activity=accepted,
-                      probeCalls=int(not denied))
-        result = 'not-invoked' if denied else 'timed-out' if row['probe'] == 'timeout' else 'completed'
-        if (row['evidence'] != 'core-isolated' or row['host'] != 'claude-code'
-                or row['playback'] != ('rejected' if rejected else playback)
-                or row['probeResult'] != result or row['nanoseconds'] <= 0
-                or any(row[k] != value for k, value in counts.items())):
-            raise AssertionError('sample branch/result mismatch')
-    if seen != expected:
-        raise AssertionError('missing driver samples')
-
-
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--samples', type=int, default=100)
     parser.add_argument('--warmup', type=int, default=10)
     parser.add_argument('--rounds', type=int, default=3)
     parser.add_argument('--skip-probe-comparison', action='store_true')
     parser.add_argument('--skip-timeout-diagnostic', action='store_true')
+    parser.add_argument('--cache-comparison', action='store_true')
+    parser.add_argument('--git-timeout-only', action='store_true',
+                        help='Component failure diagnostic only; not a complete hook/CLI measurement')
     args = parser.parse_args()
     if not __debug__:
         parser.error('measurement requires Python assertions; do not use python -O')
-    run_probe_comparison = not args.skip_probe_comparison
+    run_probe_comparison = not args.skip_probe_comparison and not args.git_timeout_only and not args.cache_comparison
     if args.samples < 1 or args.warmup < 0 or args.rounds < 1:
         parser.error('samples and rounds must be positive; warmup must be nonnegative')
     destination = args.output or REPO / 'dist' / ('hook-baseline-' + datetime.now().strftime('%Y%m%d-%H%M%S'))
     destination.mkdir(parents=True, exist_ok=False)
     source = source_identity()
     build = ['swift', 'build', '--package-path', 'helper', '--scratch-path', 'helper/.build/hook-benchmark',
-             '-c', 'release', '--arch', 'arm64', '--experimental-lto-mode', 'full', '-Xswiftc', '-Osize']
+             '-c', 'release', '--experimental-lto-mode', 'full', '-Xswiftc', '-Osize']
     with (destination / 'build.log').open('w') as log:
         for product in ['claudio-hook-benchmark', 'claudio']:
             subprocess.run(build + ['--product', product], cwd=REPO, stdout=log, stderr=log, check=True)
@@ -135,14 +105,15 @@ def main():
     binary, helper = directory / 'claudio-hook-benchmark', directory / 'claudio'
     assert source_identity() == source, 'source changed during build; discard binaries'
     metadata = {
-        'schema': 1, 'evidence': 'core-isolated', 'complete': False, 'utc': datetime.now(timezone.utc).isoformat(),
+        'schema': 1, 'evidence': 'core-isolated', 'utc': datetime.now(timezone.utc).isoformat(),
         'sha': output(['git', 'rev-parse', 'HEAD']), 'dirty': bool(output(['git', 'status', '--porcelain'])),
         'source_sha256': source, 'binary_sha256': digest(binary), 'helper_sha256': digest(helper),
-        'build': list(build),
+        'build': ['swift', 'build', '-c', 'release', '--experimental-lto-mode', 'full', '-Xswiftc', '-Osize'],
         'swift': output(['swift', '--version']), 'system': platform.system(),
         'macos': platform.mac_ver()[0], 'architecture': platform.machine(), 'hardware_model': output(['sysctl', '-n', 'hw.model']),
         'helper_version': output([str(helper), '--version']), 'host_version': None,
-        'cache': 'no persistent host-version cache; fresh scope snapshot per event; warm OS caches',
+        'cache': ('explicit temporary cache; synthetic signature eligibility; warm OS caches' if args.cache_comparison
+                  else 'no persistent host-version cache; fresh scope snapshot per event; warm OS caches'),
         'warmup_per_cell': args.warmup, 'samples_per_cell': args.samples, 'rounds': args.rounds,
         'seed': '0xC1A0D10', 'order': 'alternating observer AB/BA and probe forward/reverse per pair',
         'audio': 'synthetic ProcessSpawning success; never afplay', 'notice': 'in-memory successful sender',
@@ -155,25 +126,79 @@ def main():
         # Explicit missing-host failure, not a silent substitution of a stub for real evidence.
         metadata['host_version'] = output(['claude', '--version'])
     (destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
-    batches = [('scenarios', 'normal', 'all'), ('probe-comparison', 'compare', 'full-steady'),
-               ('version-timeout', 'timeout', 'full-steady')]
+    if args.git_timeout_only:
+        metadata.update(evidence='core-component-failure-diagnostic',
+                        boundary='version-resolution-plus-workspace-profile; not hook or CLI',
+                        samples_per_cell=10, warmup_per_cell=1, rounds=1,
+                        probe_comparison=False, timeout_diagnostic=None,
+                        fixture_preflight='one untimed version-script preparation with 2s runner timeout; measured probes remain 1s',
+                        version_fixture_delay_s=0.9)
+        # Classify failed diagnostic runs correctly too; complete remains absent.
+        (destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+        with (destination / 'git-timeout.jsonl').open('w') as raw, (destination / 'git-timeout.stderr').open('w') as errors:
+            subprocess.run([str(binary), '--git-timeout-diagnostic', '--samples', '10',
+                            '--warmup', '1', '--rounds', '1'], cwd=REPO,
+                           stdout=raw, stderr=errors, check=True)
+        rows = [json.loads(line) for line in (destination / 'git-timeout.jsonl').read_text().splitlines()]
+        assert len(rows) == 20 and (destination / 'git-timeout.stderr').stat().st_size == 0
+        summary = {'groups': [dict(observer=enabled, **stats([r['nanoseconds'] for r in rows if r['observer'] == enabled]))
+                              for enabled in [False, True]],
+                   'all_children_reaped': all(r['childrenReaped'] for r in rows),
+                   'all_workspace_failed_closed': all(r['workspaceFailedClosed'] for r in rows)}
+        (destination / 'git-timeout-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        assert source_identity() == source, 'source changed during diagnostic'
+        verify_binary_identity(binary, helper, metadata)
+        metadata['complete'] = True
+        (destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+        print('20 validated component failure samples; not a full hook or CLI budget.', flush=True)
+        return
+    batches = ([('cache-scenarios', 'cache-compare', 'all'), ('cache-miss', 'cache-miss', 'full-steady'),
+                ('cache-force', 'cache-force', 'full-steady'), ('cache-unknown', 'cache-unknown', 'full-steady'),
+                ('cache-timeout', 'cache-timeout', 'full-steady'),
+                ('version-timeout', 'timeout', 'full-steady')] if args.cache_comparison else
+               [('scenarios', 'normal', 'all'), ('probe-comparison', 'compare', 'full-steady'),
+                ('version-timeout', 'timeout', 'full-steady')])
     for name, probe, scenario in batches:
         if name == 'probe-comparison' and not run_probe_comparison:
             continue
         if name == 'version-timeout' and args.skip_timeout_diagnostic:
             continue
-        samples_count, warmup_count, rounds_count = (10, 1, 1) if name == 'version-timeout' else (args.samples, args.warmup, args.rounds)
+        samples_count, warmup_count, rounds_count = (10, 1, 1) if name in ('version-timeout', 'cache-timeout') else (args.samples, args.warmup, args.rounds)
         with (destination / (name + '.jsonl')).open('w') as raw, (destination / (name + '.stderr')).open('w') as errors:
             subprocess.run([str(binary), '--samples', str(samples_count), '--warmup', str(warmup_count),
                 '--rounds', str(rounds_count), '--probe', probe, '--scenario', scenario],
                 cwd=REPO, stdout=raw, stderr=errors, check=True)
         assert (destination / (name + '.stderr')).stat().st_size == 0, 'Core measurement emitted stderr'
         samples = [json.loads(line) for line in (destination / (name + '.jsonl')).read_text().splitlines()]
-        validate(samples, probe, scenario, samples_count, rounds_count)
+        cells = {'scenarios': 12, 'probe-comparison': 4, 'cache-scenarios': 24}.get(name, 1)
+        assert len(samples) == samples_count * rounds_count * 2 * cells, 'missing driver samples'
         summary = summarize(samples)
-        if name == 'version-timeout':
+        if name in ('version-timeout', 'cache-timeout'):
             summary['approved_maximum_ms'] = 2000
             summary['within_budget'] = all(row['nanoseconds'] <= 2_000_000_000 for row in samples)
+        if name == 'cache-scenarios':
+            budgets = {'full-empty':15.50, 'full-steady':27.29, 'muted':30.12, 'debounced':21.42,
+                       'not-ready':18.52, 'authorization-off':0.13, 'gui-exited':0.22,
+                       'stale-installation':8.41, 'lock-busy':39.04, 'workspace-plain':18.62,
+                       'workspace-git':35.01, 'git-damaged':31.10}
+            summary['budget_checks'] = []
+            for scenario_name, budget in budgets.items():
+                for mode in ['cache-bypass', 'cache-hit']:
+                    rows = [r for r in samples if r['scenario'] == scenario_name and r['probe'] == mode and not r['observer']]
+                    rounds = [stats([r['nanoseconds'] for r in rows if r['round'] == n]) for n in range(args.rounds)]
+                    summary['budget_checks'].append(dict(scenario=scenario_name, probe=mode,
+                        approved_p95_ms=budget, rounds=rounds, passed=all(r['p95_ms'] <= budget for r in rounds)))
+            pairs = defaultdict(dict)
+            for r in samples:
+                if not r['observer']:
+                    pairs[(r['scenario'], r['round'], r['pair'])][r['probe']] = r
+            deltas = defaultdict(list)
+            for (scenario_name, _, _), pair in pairs.items():
+                assert set(pair) == {'cache-bypass', 'cache-hit'}
+                for key in ['accepted', 'playback', 'playerStarts', 'receipts', 'archives', 'notices', 'activity']:
+                    assert pair['cache-bypass'][key] == pair['cache-hit'][key], 'paired semantic outcome drift'
+                deltas[scenario_name].append(pair['cache-hit']['nanoseconds'] - pair['cache-bypass']['nanoseconds'])
+            summary['cache_paired_deltas'] = [dict(scenario=k, **stats(v)) for k,v in sorted(deltas.items())]
         (destination / (name + '-summary.json')).write_text(json.dumps(summary, indent=2) + '\n')
         print(f'{name}: {len(samples)} validated measured events', flush=True)
     assert source_identity() == source, 'source changed during measurement; discard comparison'

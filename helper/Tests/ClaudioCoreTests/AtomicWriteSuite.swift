@@ -504,13 +504,15 @@ private func isSimpleOptionMember(_ element: String) -> Bool {
 /// 一个全仓总数的 `>= N` 挡不住「某一处单独隐身、别处补上一处」（`/review e7c38ea` 的教训，
 /// 而上一版把它原样复发在了 `totalWriteSites >= 9` 上）。
 private let diskWriteSurfaceLedger: [String: Set<String>] = [
-    // Six atomic fixture writes and one fixed diagnostic stream in the Core-only benchmark.
-    "helper/Sources/claudio-hook-benchmark/main.swift": [".write("],
-    // Two atomic identity/corruption writes and synthetic locator links, all confined to
-    // a fresh private contract fixture root; no existing user files or links are replaced.
-    "helper/Sources/claudio-hook-benchmark/ClaudeCacheContract.swift": [
-        ".write(", ".createSymbolicLink(",
-    ],
+    // Isolated benchmark: six atomic temporary-fixture writes, plus one fixed stderr diagnostic.
+    // Benchmark-only symlink exposes the synthetic native version layout in a fresh private root.
+    // It never overwrites a user entry; fixture contents retain the six atomic write sites.
+    "helper/Sources/claudio-hook-benchmark/main.swift": [".createSymbolicLink(", ".write("],
+    // Component diagnostic: one atomic version-script fixture in a private temporary root.
+    "helper/Sources/claudio-hook-benchmark/GitTimeoutDiagnostic.swift": [".write("],
+    // Identity evidence streams installed host bytes through FileHandle(forReadingFrom:).
+    // This read-only handle cannot publish cache, configuration, receipts or activity bytes.
+    "helper/Sources/claudio-hook-benchmark/NativeHostIdentity.swift": ["FileHandle("],
     // Private IDE discovery descriptor contains schema/epoch/socket only, atomically replaced;
     // no source/workspace facts. Runtime owns socket lifecycle and same-user peer credentials.
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": [".write(", "unlink("],
@@ -682,8 +684,8 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 /// 计数**绑调用点**（`/review e7c38ea`：上一版是一个全仓总数 `totalWriteSites >= 9`，它挡的只是
 /// 「检测器整个瞎掉」；一处写盘单独从检测器眼皮底下消失、而别处新增一处，它照样绿）。
 private let contentReplacingWriteSites: [String: Int] = [
-    "helper/Sources/claudio-hook-benchmark/main.swift": 6,
-    "helper/Sources/claudio-hook-benchmark/ClaudeCacheContract.swift": 2,
+    "helper/Sources/claudio-hook-benchmark/main.swift": 7,
+    "helper/Sources/claudio-hook-benchmark/GitTimeoutDiagnostic.swift": 1,
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
     "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,

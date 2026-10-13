@@ -32,6 +32,24 @@ struct InstantRunner: CommandRunning {
         .completed(exitCode: 0, stdout: "benchmark-version\n")
     }
 }
+struct FailedVersionRunner: CommandRunning {
+    func run(executablePath: String, arguments: [String], timeout: TimeInterval) -> CommandRunResult
+    {
+        .launchFailed
+    }
+}
+
+final class BenchmarkObservationClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var offset: TimeInterval = 0
+    func expire() { lock.lock(); offset += 601; lock.unlock() }
+    var value: HostVersionObservationTime {
+        lock.lock(); defer { lock.unlock() }
+        return .init(
+            wall: Date().timeIntervalSince1970 + offset,
+            uptime: ProcessInfo.processInfo.systemUptime + offset)
+    }
+}
 final class ObservedRunner: CommandRunning, @unchecked Sendable {
     private let lock = NSLock()
     private let base: any CommandRunning
@@ -48,35 +66,65 @@ final class ObservedRunner: CommandRunning, @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }; return results
     }
 }
-// The default probe has no persistent cache; only synthetic cache contracts inject a resolver.
+// Synthetic signature eligibility is explicit for isolated timing only. Real vendor validation
+// is exercised separately; these fixtures cannot establish native cold-fill performance.
+struct BenchmarkSignature: HostVersionSignatureValidating {
+    func accepts(host: HostID, executable: URL) -> Bool { true }
+}
+
+// Mirrors the production invocation-local snapshot, never reused across events.
 final class Probe: @unchecked Sendable {
     private let lock = NSLock()
     private var resolved = false
     private var stored: String?
     let locator: HostExecutableLocator
     let runner: ObservedRunner
-    private let versionResolver: HostVersionResolver?
-    init(locator: HostExecutableLocator, instant: Bool) {
+    let resolver: HostVersionResolver?
+    let resolutionMode: HostVersionResolutionMode
+    let host: HostID
+    let signature = SignatureCounter()
+    init(
+        locator: HostExecutableLocator, instant: Bool, root: URL? = nil, cacheMode: String = "",
+        host: HostID = .claudeCode, native: Bool = false,
+        observationClock: BenchmarkObservationClock? = nil
+    ) {
+        self.host = host
         self.locator = locator
-        versionResolver = nil
-        let base: any CommandRunning =
-            instant
-            ? InstantRunner()
-            : SystemCommandRunner(environmentOverrides: ["PATH": locator.executableSearchPath])
-        runner = ObservedRunner(base: base)
-    }
-    init(resolver: HostVersionResolver, runner: ObservedRunner) {
-        locator = HostExecutableLocator(searchDirectories: [])
-        self.runner = runner
-        versionResolver = resolver
+        let commandRunner: any CommandRunning
+        if cacheMode == "native-failed" {
+            commandRunner = FailedVersionRunner()
+        } else if instant {
+            commandRunner = InstantRunner()
+        } else {
+            commandRunner = SystemCommandRunner(
+                environmentOverrides: ["PATH": locator.executableSearchPath])
+        }
+        runner = ObservedRunner(base: commandRunner)
+        resolutionMode =
+            ["cache-force", "native-force", "native-failed"].contains(cacheMode)
+            ? .forceProbe : .reuseValidated
+        if let root, !["cache-bypass", "native-bypass"].contains(cacheMode) {
+            resolver = HostVersionResolver(
+                cacheDirectory: root.appendingPathComponent("version-cache"),
+                homeDirectory: native ? FileManager.default.homeDirectoryForCurrentUser : root,
+                executableLocator: locator, commandRunner: runner,
+                signatureValidator: native ? signature : BenchmarkSignature(),
+                now: { observationClock?.value ?? .init() })
+        } else {
+            resolver = nil
+        }
     }
     func value() -> String? {
         lock.lock(); defer { lock.unlock() }
         if !resolved {
-            stored = HostActivationScope.claudeCode(
-                executableLocator: locator, commandRunner: runner,
-                versionResolver: versionResolver,
-                mode: versionResolver == nil ? .forceProbe : .reuseValidated)
+            stored =
+                host == .claudeCode
+                ? HostActivationScope.claudeCode(
+                    executableLocator: locator, commandRunner: runner, versionResolver: resolver,
+                    mode: resolutionMode)
+                : HostActivationScope.codex(
+                    executableLocator: locator, commandRunner: runner, versionResolver: resolver,
+                    mode: resolutionMode)
             resolved = true
         }
         return stored
@@ -101,6 +149,8 @@ struct Sample: Encodable {
     let notices: Int
     let activity: Int
     let probeCalls: Int
+    let signatureCalls: Int
+    let signatureNanoseconds: UInt64
     let probeResult: String
     let stages: [HookMeasurementContext.Record]
 }
@@ -116,6 +166,8 @@ final class Fixture {
     let mode: String
     let host: HostID
     let nativeEvent = "UserPromptSubmit"
+    var native: Bool { mode.hasPrefix("native-") }
+    let observationClock = BenchmarkObservationClock()
     let id = UUID()
     let effects = Effects()
     let store: HostHookReceiptStore
@@ -125,10 +177,7 @@ final class Fixture {
     let scope: String
     var heldLock: FileLock?
     var history: URL { store.historyRoot.appendingPathComponent(host.rawValue) }
-    init(
-        root: URL, scenario: String, mode: String, host: HostID = .claudeCode,
-        scopeVersion: String? = nil
-    ) throws {
+    init(root: URL, scenario: String, mode: String, host: HostID = .claudeCode) throws {
         self.root = root; self.scenario = scenario; self.mode = mode; self.host = host
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         store = HostHookReceiptStore(
@@ -186,28 +235,101 @@ final class Fixture {
         let run = try runs.register().get()
         if scenario == "gui-exited" { _ = runs.revoke(runID: run.runID) }
         authorization = HostEventAuthorization(intents: intents, runs: runs)
-        let tools = root.appendingPathComponent("tools")
-        try FileManager.default.createDirectory(at: tools, withIntermediateDirectories: true)
-        let tool = tools.appendingPathComponent("claude")
-        let delay = mode == "delayed" ? "/bin/sleep 0.3\n" : ""
-        let script =
-            mode == "timeout"
-            ? "#!/bin/sh\nexec /usr/bin/perl -e '$SIG{TERM}=\"IGNORE\"; sleep 5'\n"
-            : "#!/bin/sh\n\(delay)printf 'benchmark-version\\n'\n"
-        try Data(script.utf8).write(to: tool, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: tool.path)
-        locator = mode == "real" ? .standard() : HostExecutableLocator(searchDirectories: [tools])
-        let resolvedScope: String?
-        if let scopeVersion {
-            resolvedScope = HostActivationScope.fingerprint(host: host, hostVersion: scopeVersion)
-        } else if mode == "real" {
-            resolvedScope = Probe(locator: locator, instant: false).value()
+        if mode.hasPrefix("native-") {
+            if ["native-identity", "native-unknown"].contains(mode) {
+                let command = host == .claudeCode ? "claude" : "codex"
+                guard
+                    let original = HostExecutableLocator.standard().executablePath(command: command)
+                else { throw Failure(message: "native call unavailable") }
+                let tools = root.appendingPathComponent("tools")
+                try FileManager.default.createDirectory(
+                    at: tools, withIntermediateDirectories: true)
+                let call = tools.appendingPathComponent(command)
+                if mode == "native-identity" {
+                    try FileManager.default.createSymbolicLink(
+                        atPath: call.path, withDestinationPath: original)
+                } else {
+                    let quoted = "'" + original.replacingOccurrences(of: "'", with: "'\\''") + "'"
+                    try Data("#!/bin/sh\nexec \(quoted) \"$@\"\n".utf8).write(
+                        to: call, options: .atomic)
+                    try FileManager.default.setAttributes(
+                        [.posixPermissions: 0o700], ofItemAtPath: call.path)
+                }
+                locator = .init(searchDirectories: [tools])
+            } else {
+                locator = .standard()
+            }
         } else {
-            resolvedScope = HostActivationScope.fingerprint(
-                host: host, hostVersion: "benchmark-version")
+            let tools = root.appendingPathComponent("tools")
+            try FileManager.default.createDirectory(at: tools, withIntermediateDirectories: true)
+            let cachedLayout = mode.hasPrefix("cache-") && mode != "cache-unknown"
+            let tool =
+                cachedLayout
+                ? root.appendingPathComponent(".local/share/claude/versions/2.1.282")
+                : tools.appendingPathComponent("claude")
+            try FileManager.default.createDirectory(
+                at: tool.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if cachedLayout {
+                try FileManager.default.createSymbolicLink(
+                    atPath: tools.appendingPathComponent("claude").path,
+                    withDestinationPath: tool.path)
+            }
+            let fixtureVersion =
+                mode.hasPrefix("cache-") ? "2.1.282 (Claude Code)" : "benchmark-version"
+            let delay = mode == "delayed" ? "/bin/sleep 0.3\n" : ""
+            let script =
+                ["timeout", "cache-timeout", "native-failed"].contains(mode)
+                ? "#!/bin/sh\nexec /usr/bin/perl -e '$SIG{TERM}=\"IGNORE\"; sleep 5'\n"
+                : "#!/bin/sh\n\(delay)printf '\(fixtureVersion)\\n'\n"
+            try Data(script.utf8).write(to: tool, options: .atomic)
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o700], ofItemAtPath: tool.path)
+            locator =
+                mode == "real" ? .standard() : HostExecutableLocator(searchDirectories: [tools])
+        }
+        let resolvedScope: String?
+        if mode.hasPrefix("native-") || mode == "real" {
+            let initial = Probe(locator: locator, instant: false, host: host)
+            resolvedScope = initial.value()
+        } else {
+            let version = mode.hasPrefix("cache-") ? "2.1.282 (Claude Code)" : "benchmark-version"
+            resolvedScope = HostActivationScope.fingerprint(host: host, hostVersion: version)
         }
         guard let scope = resolvedScope else { throw Failure(message: "host version unavailable") }
         self.scope = scope
+        if [
+            "cache-hit", "cache-force", "native-hit", "native-expired", "native-force",
+            "native-failed", "native-identity",
+        ].contains(mode) {
+            let hitMode = native ? "native-hit" : "cache-hit"
+            let preload = Probe(
+                locator: locator, instant: false, root: root, cacheMode: hitMode,
+                host: host, native: native, observationClock: observationClock)
+            let refreshed = preload.resolver!.refresh(host)
+            let preloadedScope = refreshed.status == .published ? preload.value() : nil
+            guard preloadedScope == scope else {
+                // Keep fixture failures out of timing; report bounded result categories only.
+                // Do not retry, print host output/paths, or weaken the expected scope assertion.
+                let results = preload.runner.snapshot.map { result in
+                    switch result {
+                    case .completed(let code, _): "completed(\(code))"
+                    case .timedOut: "timed-out"
+                    case .cleanupFailed: "cleanup-failed"
+                    case .launchFailed: "launch-failed"
+                    }
+                }.joined(separator: ",")
+                throw Failure(
+                    message:
+                        "cache fixture cold-fill failed: mode=\(mode), resolved=\(preloadedScope != nil), probes=[\(results)]"
+                )
+            }
+            let check = Probe(
+                locator: locator, instant: false, root: root, cacheMode: hitMode,
+                host: host, native: native, observationClock: observationClock)
+            try require(
+                check.value() == scope && check.runner.snapshot.isEmpty,
+                "cache fixture must hit before timing")
+        }
         _ = try store.activate(host: host, installationID: id, scopeFingerprint: scope).get()
         if scenario != "full-empty" {
             for offset in 0..<20 {
@@ -232,12 +354,12 @@ final class Fixture {
         return document.buckets.reduce(0) { $0 + $1.count(host: host, event: .taskStart) }
     }
     func run(
-        observer: Bool, round: Int, pair: Int, position: Int, contract: Bool = false,
-        versionProbe: Probe? = nil, expectedProbeCount: Int = 1
+        observer: Bool, round: Int, pair: Int, position: Int, probeMode: String? = nil,
+        versionCacheRoot: URL? = nil
     ) throws
         -> Sample
     {
-        let mode = self.mode
+        let mode = probeMode ?? self.mode
         // All fixture preparation and result validation are outside the timed interval.
         let now = Date()
         let state = root.appendingPathComponent("task-start.state")
@@ -256,7 +378,34 @@ final class Fixture {
         let payload = try JSONSerialization.data(withJSONObject: [
             "cwd": root.appendingPathComponent("workspace").path
         ])
-        let probe = versionProbe ?? Probe(locator: locator, instant: mode == "instant")
+        if mode == "cache-miss" {
+            try? FileManager.default.removeItem(
+                at: root.appendingPathComponent("version-cache/\(host.rawValue).json"))
+        }
+        if mode == "native-cold" {
+            // Empty cache miss must not create a directory or sign inside the hook.
+            let directory = root.appendingPathComponent("version-cache")
+            if FileManager.default.fileExists(atPath: directory.path) {
+                try FileManager.default.removeItem(at: directory)
+            }
+            try require(
+                !FileManager.default.fileExists(atPath: directory.path),
+                "native cold cache directory was not removed")
+        }
+        if mode == "native-identity" {
+            let command = host == .claudeCode ? "claude" : "codex"
+            let call = URL(fileURLWithPath: locator.executablePath(command: command)!)
+            let destination = try FileManager.default.destinationOfSymbolicLink(atPath: call.path)
+            try FileManager.default.removeItem(at: call)
+            try FileManager.default.createSymbolicLink(
+                atPath: call.path, withDestinationPath: destination)
+        }
+        if mode == "native-expired" { observationClock.expire() }
+        let probe = Probe(
+            locator: locator, instant: mode == "instant",
+            root: versionCacheRoot ?? (mode.hasPrefix("cache-") || native ? root : nil),
+            cacheMode: mode,
+            host: host, native: native, observationClock: observationClock)
         let play = PlayEnvironment(
             surfaceID: host.surfaceID, afplayPath: "/synthetic/afplay",
             lockFile: root.appendingPathComponent("play.lock"),
@@ -275,7 +424,7 @@ final class Fixture {
                 sender: { [effects] in effects.send($0) }),
             scopeFingerprint: { probe.value() }, now: { now })
         let context = observer ? HookMeasurementContext() : nil
-        let start = contract ? 0 : DispatchTime.now().uptimeNanoseconds
+        let start = DispatchTime.now().uptimeNanoseconds
         let outcome = autoreleasepool {
             HookMeasurementContext.$current.withValue(context) {
                 handleHostHook(
@@ -284,32 +433,42 @@ final class Fixture {
                     environment: environment)
             }
         }
-        let duration = contract ? 0 : DispatchTime.now().uptimeNanoseconds - start
+        let duration = DispatchTime.now().uptimeNanoseconds - start
         let rejected =
-            mode == "timeout"
+            ["timeout", "cache-timeout", "native-failed"].contains(mode)
             || ["authorization-off", "gui-exited", "stale-installation"].contains(scenario)
         let authorized = !["authorization-off", "gui-exited"].contains(scenario)
+        if mode == "native-cold" {
+            try require(
+                !FileManager.default.fileExists(
+                    atPath: root.appendingPathComponent("version-cache").path),
+                "ordinary cold miss created cache state")
+        }
         let probeResults = probe.runner.snapshot
         try require(
             probeResults.count
-                == (authorized ? expectedProbeCount : 0),
+                == (authorized && !["cache-hit", "native-hit"].contains(mode) ? 1 : 0),
             "version probe count mismatch")
         let probeResult: String
         if !authorized {
             probeResult = "not-invoked"
             try require(outcome == nil, "authorization rejection returned an accepted outcome")
-        } else if mode == "timeout" {
+        } else if ["cache-hit", "native-hit"].contains(mode) {
+            probeResult = "cache-hit"
+        } else if mode == "native-failed" {
+            try require(probeResults == [.launchFailed], "controlled version failure mismatch")
+            probeResult = "controlled-launch-failure"
+        } else if ["timeout", "cache-timeout"].contains(mode) {
             try require(
                 probeResults == [.timedOut], "timeout fixture did not confirm child cleanup")
             probeResult = "timed-out"
-        } else if expectedProbeCount == 0 {
-            probeResult = "cache-hit"
         } else {
             guard case .completed(0, _) = probeResults[0] else {
                 throw Failure(message: "successful version probe required")
             }
             probeResult = "completed"
         }
+        try require(probe.signature.calls == 0, "hook resolution must never sign")
         let expected: HostHookPlaybackResult =
             switch scenario {
             case "muted": .muted
@@ -360,7 +519,7 @@ final class Fixture {
                 let reason: HookMeasurementContext.Result =
                     !authorized
                     ? .rejectedAuthorization
-                    : mode == "timeout"
+                    : ["timeout", "cache-timeout", "native-failed"].contains(mode)
                         ? .rejectedVersion : .rejectedInstallation
                 try require(
                     context!.snapshot.filter { $0.result == reason }.count == 1,
@@ -368,7 +527,7 @@ final class Fixture {
             }
         }
         return Sample(
-            evidence: "core-isolated",
+            evidence: native ? "core-isolated-native-version" : "core-isolated",
             host: host.rawValue, scenario: scenario, probe: mode, observer: observer, round: round,
             pair: pair,
             position: position,
@@ -376,74 +535,80 @@ final class Fixture {
             playback: rejected ? "rejected" : expected.rawValue, playerStarts: starts,
             receipts: rejected ? 0 : 1, archives: archives, notices: notices,
             activity: Int(activities),
-            probeCalls: probeResults.count,
+            probeCalls: probeResults.count, signatureCalls: probe.signature.calls,
+            signatureNanoseconds: probe.signature.nanoseconds,
             probeResult: probeResult,
             stages: context?.snapshot ?? [])
     }
 }
-func runContract() throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(
-        "claudio-benchmark-contract-\(UUID())")
-    defer { try? FileManager.default.removeItem(at: root) }
-    var branches: [String: String] = [:]
-    var verified = 0
-    for scenario in scenarioNames {
-        let fixture = try Fixture(
-            root: root.appendingPathComponent(scenario), scenario: scenario, mode: "instant")
-        for (position, observer) in [false, true].enumerated() {
-            let row = try fixture.run(
-                observer: observer, round: 0, pair: 0, position: position, contract: true)
-            try require(row.nanoseconds == 0, "contract must not collect total durations")
-            branches[scenario] = row.playback
-            verified += 1
-        }
-    }
-    print(
-        String(
-            decoding: try JSONSerialization.data(
-                withJSONObject: [
-                    "evidence": "synthetic-branch-contract", "cases": verified,
-                    "branches": branches,
-                    "performanceMeasured": false, "realHostCallbacks": false, "audioPlayed": false,
-                ], options: .sortedKeys), as: UTF8.self))
-}
-
 func main() throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
-    if arguments == ["--claude-cache-contract"] { try runClaudeCacheContract(); return }
-    if arguments == ["--contract"] { try runContract(); return }
+    func option(_ name: String, _ fallback: String) -> String {
+        guard let i = arguments.firstIndex(of: name), i + 1 < arguments.count else {
+            return fallback
+        }
+        return arguments[i + 1]
+    }
     if arguments.first == "--fingerprint", arguments.count == 3,
         let host = HostID(rawValue: arguments[1]),
         let value = HostActivationScope.fingerprint(host: host, hostVersion: arguments[2])
     {
         print(value); return
     }
-    let allowed = Set(["--samples", "--warmup", "--rounds", "--probe", "--scenario"])
-    try require(arguments.count.isMultiple(of: 2), "invalid arguments")
-    var options: [String: String] = [:]
-    for index in stride(from: 0, to: arguments.count, by: 2) {
-        let key = arguments[index]
-        try require(allowed.contains(key) && options[key] == nil, "invalid arguments")
-        options[key] = arguments[index + 1]
-    }
-    let count = Int(options["--samples"] ?? "100") ?? 0
-    let warmup = Int(options["--warmup"] ?? "10") ?? -1
-    let rounds = Int(options["--rounds"] ?? "3") ?? 0
-    let mode = options["--probe"] ?? "normal"
-    let selected = options["--scenario"] ?? "all"
+    let count = Int(option("--samples", "100")) ?? 0
+    let warmup = Int(option("--warmup", "10")) ?? -1
+    let rounds = Int(option("--rounds", "3")) ?? 0
+    let mode = option("--probe", "normal")
+    let selected = option("--scenario", "all")
     try require(count > 0 && warmup >= 0 && rounds > 0, "invalid sample configuration")
+    if arguments.contains("--native-host-identities") {
+        try nativeHookHostIdentities(selectedHost: option("--host", "all"))
+        return
+    }
+    if arguments.contains("--native-hook-cache") {
+        try runNativeHookCacheBenchmark(
+            samples: count, warmup: warmup, rounds: rounds, scenario: selected,
+            selectedHost: option("--host", "all"))
+        return
+    }
+    if arguments.contains("--native-version-refresh") {
+        try runNativeVersionRefreshBenchmark(
+            samples: count, warmup: warmup, rounds: rounds,
+            selectedHost: option("--host", "all"))
+        return
+    }
+    if arguments.contains("--native-version-cache-diagnostic") {
+        try runNativeVersionCacheDiagnostic(samples: count)
+        return
+    }
+    if arguments.contains("--native-signature-diagnostic") {
+        try runNativeSignatureDiagnostic(samples: count)
+        return
+    }
+    if arguments.contains("--git-timeout-diagnostic") {
+        try runGitTimeoutDiagnostic(samples: count, warmup: warmup, rounds: rounds)
+        return
+    }
     try require(
-        ["instant", "normal", "delayed", "real", "compare", "timeout"].contains(mode),
+        [
+            "instant", "normal", "delayed", "real", "compare", "timeout", "cache-compare",
+            "cache-hit", "cache-bypass", "cache-miss", "cache-force", "cache-unknown",
+            "cache-timeout",
+        ].contains(mode),
         "invalid probe")
     try require(selected == "all" || scenarioNames.contains(selected), "invalid scenario")
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(
-        "claudio-benchmark-\(UUID())")
+        "claudio-benchmark-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: root) }
     let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+    // Fixed seed chooses the first A/B order; every next pair alternates AB/BA.
     let seed: UInt64 = 0xC1A0D10
     for scenario in selected == "all" ? scenarioNames : [selected] {
         for round in 0..<rounds {
-            let modes = mode == "compare" ? ["normal", "instant", "delayed", "real"] : [mode]
+            let modes =
+                mode == "compare"
+                ? ["normal", "instant", "delayed", "real"]
+                : mode == "cache-compare" ? ["cache-bypass", "cache-hit"] : [mode]
             var fixtures: [String: Fixture] = [:]
             for value in modes {
                 fixtures[value] = try autoreleasepool {
@@ -454,7 +619,8 @@ func main() throws {
             }
             for pair in -warmup..<count {
                 let first = (UInt64(pair + warmup + round) &+ seed) % 2 == 0
-                for mode in first ? modes : modes.reversed() {
+                let order = first ? modes : Array(modes.reversed())
+                for mode in order {
                     for (position, enabled) in [first, !first].enumerated() {
                         try autoreleasepool {
                             let sample = try fixtures[mode]!.run(
@@ -470,6 +636,7 @@ func main() throws {
     }
 }
 do { try main() } catch {
+    // Fixed diagnostics only; filesystem errors can contain private temporary paths.
     let message = (error as? Failure)?.message ?? "fixture setup or validation failed"
     FileHandle.standardError.write(Data("benchmark failed: \(message)\n".utf8)); exit(1)
 }

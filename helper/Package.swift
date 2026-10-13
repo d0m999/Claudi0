@@ -59,7 +59,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
-        // Core benchmark only; never bundled as the production hook helper.
+        // Measurement driver only; never bundled as the production hook helper.
         .executableTarget(name: "claudio-hook-benchmark", dependencies: ["ClaudioCore"]),
         // Tests run as a dependency-free executable harness: this machine has
         // CommandLineTools only (no Xcode), so neither XCTest nor Swift Testing is

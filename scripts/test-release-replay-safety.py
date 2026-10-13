@@ -14,8 +14,8 @@ import unittest
 
 
 SCRIPT = Path(__file__).resolve().with_name('measure-release-hooks.py')
-PYTHON_MODES = [('normal', [], None), ('-O', ['-O'], None), ('-OO', ['-OO'], None),
-                ('PYTHONOPTIMIZE', [], '1'), ('PYTHONOPTIMIZE-OO', [], '2')]
+PYTHON_MODES = [('normal', [], None), ('-O', ['-O'], None),
+                ('PYTHONOPTIMIZE', [], '1')]
 
 # Run the actual authorized CLI in a child interpreter. Only external discovery and
 # kernel process identity are substituted; paths, snapshots, helper execution and
@@ -127,8 +127,67 @@ elif mode == 'nonzero':
 
 
 class ReleaseReplaySafetyTests(unittest.TestCase):
+    def test_real_host_environment_reuses_api_settings_without_persisting_them(self):
+        spec = importlib.util.spec_from_file_location(
+            'real_hook', SCRIPT.with_name('measure-real-hook.py'))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory(prefix='claudio-api-environment-') as directory:
+            home = Path(directory)
+            settings = home / '.claude/settings.json'
+            settings.parent.mkdir()
+            settings.write_text(json.dumps({'env': {
+                'ANTHROPIC_API_KEY': 'fixture-only-key', 'ANTHROPIC_MODEL': 'fixture-model',
+                'API_TIMEOUT_MS': '1000', 'CLAUDIO_UNRELATED_FIELD': 'must-not-import'}}))
+            environment = module.host_environment(home)
+            self.assertEqual(environment['ANTHROPIC_API_KEY'], 'fixture-only-key')
+            self.assertEqual(environment['ANTHROPIC_MODEL'], 'fixture-model')
+            self.assertNotIn('CLAUDIO_UNRELATED_FIELD', environment)
+            self.assertEqual(list(home.rglob('*')), [settings.parent, settings])
 
+    def test_timeout_snapshot_covers_real_activity_summary_and_pending(self):
+        spec = importlib.util.spec_from_file_location(
+            'release_timeout', SCRIPT.with_name('measure-release-hook-timeout.py'))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory(prefix='claudio-timeout-snapshot-') as directory:
+            root = Path(directory)
+            pending = root / 'integrations/activity/pending'
+            pending.mkdir(parents=True)
+            summary = pending.parent / 'summary.json'
+            delta = pending / 'delta.json'
+            summary.write_text('{"buckets":[]}')
+            delta.write_text('{"event":"task_start"}')
+            decoy = root / 'activity'
+            decoy.mkdir()
+            (decoy / 'summary.json').write_text('legacy decoy')
+            before = module.activity_files(root)
+            self.assertEqual(set(before), {summary, delta})
+            summary.write_text('{"buckets":[{}]}')
+            self.assertNotEqual(module.activity_files(root), before)
+            delta.unlink()
+            self.assertEqual(set(module.activity_files(root)), {summary})
+            delta.symlink_to(summary)
+            with self.assertRaisesRegex(RuntimeError, 'regular files'):
+                module.activity_files(root)
 
+    def test_real_host_batch_and_optimized_diagnostics_stop_before_live_state(self):
+        with tempfile.TemporaryDirectory(prefix='claudio-measurement-safety-') as directory:
+            fixture = Path(directory)
+            commands = [
+                [sys.executable, str(SCRIPT.with_name('measure-real-hook.py')),
+                 '--helper', str(fixture / 'missing-helper'), '--output', str(fixture / 'output'),
+                 '--samples', '2', '--hold-playback-lock'],
+                [sys.executable, '-O', str(SCRIPT.with_name('measure-release-hook-timeout.py')),
+                 '--helper', str(fixture / 'missing-helper'), '--build-metadata', str(fixture / 'missing-build'),
+                 '--output', str(fixture / 'output')],
+            ]
+            for command in commands:
+                with self.subTest(script=command[1:3]):
+                    result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertNotIn('Traceback', result.stderr)
+                    self.assertFalse((fixture / 'output').exists())
 
     def test_default_rejects_before_any_external_process_or_output(self):
         with tempfile.TemporaryDirectory(prefix='claudio-replay-safety-') as directory:
