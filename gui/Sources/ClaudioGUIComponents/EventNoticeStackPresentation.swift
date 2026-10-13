@@ -12,7 +12,11 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
     private let outputSubject: CurrentValueSubject<EventNoticeStackPresentationOutput, Never>
     package var output: EventNoticeStackPresentationOutput { outputSubject.value }
     package var outputs: AnyPublisher<EventNoticeStackPresentationOutput, Never> {
-        outputSubject.eraseToAnyPublisher()
+        outputSubject
+            // A previous subscriber can synchronously withdraw this value while send is still
+            // visiting subscribers. Validate at each delivery, before a window can render it.
+            .filter { [weak self] value in self?.output == value }
+            .eraseToAnyPublisher()
     }
     private let model: EventNoticeModel
     private let preferences: ClaudioPreferences
@@ -103,6 +107,14 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
         return output.isEligible && output.width == width && output.height <= available
     }
 
+    private func canPreserveGeometry(for snapshot: EventNoticeStackSnapshot) -> Bool {
+        let visibleIDs = snapshot.visible.map(\.id)
+        // Removing a card leaves a safe ordered subset of the painted stack. Keep that frame
+        // while controls are remeasured; newly admitted cards still need current measurements.
+        return canPreserveGeometry
+            && committedIDs.filter { visibleIDs.contains($0) } == visibleIDs
+    }
+
     private func suspendGeometry() {
         var value = output
         value.isEligible = false
@@ -119,6 +131,9 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
         if snapshot.receiverEpoch != epoch || !old.subtracting(retained).isEmpty
             || !snapshot.hasPresentation
         {
+            let preserveRemaining =
+                snapshot.receiverEpoch == epoch
+                && !snapshot.visible.isEmpty && canPreserveGeometry(for: snapshot)
             if snapshot.receiverEpoch != epoch {
                 epoch = snapshot.receiverEpoch
                 generation &+= 1
@@ -134,7 +149,7 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
             painted = painted.filter { retained.contains($0.key) }
             var value = output
             value.epoch = epoch
-            value.isEligible = false
+            value.isEligible = preserveRemaining
             value.requests = Array(requests.filter { measurements[$0.token] == nil }.prefix(8))
             value.cardHeights = value.cardHeights.filter { retained.contains($0.key) }
             value.retiredContent = value.retiredContent.filter { retained.contains($0.key) }
@@ -192,7 +207,7 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
         let heights = snapshot.candidates.map { height(for: .card($0.id)) ?? 0 }
         let missingVisible = snapshot.visible.contains { height(for: .card($0.id)) == nil }
         if missingVisible {
-            value.isEligible = canPreserveGeometry && committedIDs == snapshot.visible.map(\.id)
+            value.isEligible = canPreserveGeometry(for: snapshot)
             if !value.isEligible { value.width = width }
             publish(value)
             synchronizeGeometryPause()
@@ -208,7 +223,7 @@ package final class EventNoticeStackPresentation: @preconcurrency ObservableObje
             })
             .allSatisfy({ measurements[$0.token] != nil })
         else {
-            value.isEligible = canPreserveGeometry && committedIDs == snapshot.visible.map(\.id)
+            value.isEligible = canPreserveGeometry(for: snapshot)
             if !value.isEligible { value.width = width }
             publish(value)
             synchronizeGeometryPause()

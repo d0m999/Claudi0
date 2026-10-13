@@ -150,6 +150,83 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
     }
 
     func focusForRegression() { becomeInteractive() }
+    /// Exercises the production output subscription, retained panel and keyboard gate together.
+    func runStackReviewRegression(
+        advance: @MainActor (TimeInterval) -> Void, withdrawOutput: Bool = false
+    ) async -> [String: Bool] {
+        func waitFor(_ predicate: @MainActor () -> Bool) async -> Bool {
+            let deadline = ProcessInfo.processInfo.systemUptime + 4
+            while !predicate() && ProcessInfo.processInfo.systemUptime < deadline {
+                try? await Task.sleep(nanoseconds: 20_000_000)
+            }
+            return predicate()
+        }
+        var checks: [String: Bool] = [:]
+        checks["initialMeasuredWindow"] = await waitFor {
+            // Mount the fixture for initial measurements, as the native stack harness does.
+            // After setup, only the production subscription controls window visibility.
+            self.window.orderFront(nil)
+            self.window.contentView?.needsLayout = true
+            self.window.contentView?.layoutSubtreeIfNeeded()
+            return self.presentation.output.isEligible && self.presentation.output.requests.isEmpty
+        }
+        guard checks["initialMeasuredWindow"] == true else { return checks }
+        if withdrawOutput {
+            var armed = false, cleared = false, hiddenSynchronously = false, staleDelivery = false
+            let observation = presentation.outputs.sink { [self] value in
+                guard armed else { return }
+                if cleared && value.isEligible { staleDelivery = true }
+                if value.isEligible && !cleared {
+                    cleared = true
+                    model.clearForPrivacy()
+                    hiddenSynchronously = !window.isVisible
+                }
+            }
+            armed = true
+            presentation.updateFontEnvironment("review-withdrawal")
+            checks["reentrantWithdrawalTriggered"] = await waitFor { cleared }
+            checks["privacyWithdrawsSynchronously"] = cleared && hiddenSynchronously
+            checks["privacyWindowStaysHidden"] = await waitFor {
+                !self.window.isVisible && !self.presentation.output.isEligible
+                    && self.presentation.output.requests.isEmpty
+            }
+            checks["noStaleDelivery"] = !staleDelivery
+            observation.cancel()
+            return checks
+        }
+        advance(0.5)
+        becomeInteractive()
+        checks["interactivePanelBecameKey"] = await waitFor { self.window.isKeyWindow }
+        let before = model.stackSnapshot.visible
+        guard before.count == 3 else { checks["threeVisibleCards"] = false; return checks }
+        var lostEligibility = false
+        let observation = presentation.outputs.sink {
+            if !$0.isEligible { lostEligibility = true }
+        }
+        closeBanner(id: before[1].id)
+        checks["remainingCardsMeasured"] = await waitFor {
+            self.presentation.output.requests.isEmpty
+                && self.model.stackSnapshot.visible.prefix(2).map(\.id)
+                    == [before[0].id, before[2].id]
+        }
+        checks["dismissalPreservesKeyboard"] =
+            window.isKeyWindow && window.allowsKeyboardInteraction && isInteractive
+        advance(0.2)
+        checks["exitReclaimed"] = await waitFor {
+            self.model.stackSnapshot.exiting.isEmpty && self.presentation.output.requests.isEmpty
+        }
+        checks["retirementPreservesKeyboard"] =
+            window.isKeyWindow && window.allowsKeyboardInteraction && isInteractive
+        checks["neverWithdrewRemainingWindow"] = !lostEligibility
+        checks["focusStillPausesReading"] = model.stackSnapshot.pauseReasons.contains(.windowFocus)
+        observation.cancel()
+        window.cancelOperation(nil)
+        checks["escapeStillDismissesStack"] =
+            model.stackSnapshot.visible.isEmpty && model.stackSnapshot.queued.isEmpty
+        clearForPrivacy()
+        return checks
+    }
+
     func suspendGeometryForRegression() {
         regressionViewport = (268, nil)
         updateViewport()

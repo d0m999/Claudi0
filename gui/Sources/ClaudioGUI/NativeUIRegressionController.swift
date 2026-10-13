@@ -480,6 +480,23 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 NSApp.terminate(nil)
             }
         }
+        if CommandLine.arguments.contains("--event-stack-review-regression") {
+            Task { @MainActor [weak self] in
+                guard let self, let banner = self.banner else { return }
+                for window in NSApp.windows { window.orderOut(nil) }
+                let withdrawOutput = CommandLine.arguments.contains("--event-stack-review-privacy")
+                let count = CommandLine.arguments.contains("--event-stack-review-four") ? 4 : 3
+                for _ in 0..<(withdrawOutput ? 1 : count) { self.notice(transient: true) }
+                let results = await banner.runStackReviewRegression(
+                    advance: { self.clock.advance($0) }, withdrawOutput: withdrawOutput)
+                if let data = try? JSONSerialization.data(
+                    withJSONObject: results, options: [.sortedKeys])
+                {
+                    print(String(decoding: data, as: UTF8.self))
+                }
+                NSApp.terminate(nil)
+            }
+        }
     }
 
     func finish() {

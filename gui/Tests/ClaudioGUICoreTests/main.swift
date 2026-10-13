@@ -410,6 +410,12 @@ if CommandLine.arguments.contains("--event-stack") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--event-stack-motion-native") {
+    runEventNoticeStackMotionNativeSuites()
+    print("Event stack motion native: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--event-stack-native") {
     runEventNoticeStackNativeSuites()
     print("Event stack native: \(totalChecks) checks, \(failures) failures")

@@ -351,6 +351,53 @@ func runEventNoticeStackPresentationSuites() {
         expect(f.presentation.output.requests.isEmpty, "重入不遗留旧测量")
         observation.cancel()
     }
+    suite("Stack presentation：双订阅者不接收重入撤回后的旧输出") {
+        let f = StackPresentationFixture(count: 1)
+        var cleared = false
+        var withdrawnObservers: Set<Int> = []
+        let observations = (0..<2).map { observer in
+            f.presentation.outputs.sink { value in
+                expect(value == f.presentation.output, "每个订阅者只收到当前已提交输出")
+                if cleared {
+                    expect(!value.isEligible, "嵌套撤回后不能继续向其他订阅者投递旧可显示值")
+                    withdrawnObservers.insert(observer)
+                } else if value.isEligible {
+                    cleared = true
+                    f.model.clearForPrivacy()
+                }
+            }
+        }
+        f.measure()
+        expect(cleared && withdrawnObservers == [0, 1], "双订阅者都同步收到隐私撤回")
+        expect(!f.presentation.output.isEligible, "最终窗口资格仍已撤回")
+        observations.forEach { $0.cancel() }
+    }
+    suite("Stack presentation：关闭中间横幅与退场回收保留剩余安全几何") {
+        for (count, reducedMotion) in [(3, false), (4, false), (3, true), (4, true)] {
+            let f = StackPresentationFixture(count: count)
+            f.model.setReducedMotion(reducedMotion)
+            f.measure(); f.clock.advance(0.5)
+            f.model.setPauseReason(.windowFocus, active: true)
+            let before = f.model.stackSnapshot.visible
+            let survivors = [before[0].id, before[2].id]
+            var lostEligibility = false
+            let observation = f.presentation.outputs.sink {
+                if !$0.isEligible { lostEligibility = true }
+            }
+            f.model.dismissBanner(id: before[1].id)
+            f.clock.advance(0)
+            expect(f.presentation.output.isEligible, "入口重测期间保留 A/C 的已提交安全几何")
+            expect(f.model.stackSnapshot.visible.map(\.id) == survivors, "旧几何不准入等待项")
+            f.clock.advance(0.2)
+            expect(f.model.stackSnapshot.exiting.isEmpty, "B 的退场生命周期已结束")
+            expect(!lostEligibility, "退场回收也不能撤销剩余窗口资格")
+            f.measure()
+            expect(!lostEligibility, "重测和 FIFO 补位全过程不隐藏窗口")
+            expect(f.model.stackSnapshot.visible.prefix(2).map(\.id) == survivors, "A/C 保持 FIFO 身份")
+            expect(f.model.stackSnapshot.pauseReasons.contains(.windowFocus), "保留交互阅读暂停")
+            observation.cancel()
+        }
+    }
     suite("Stack presentation：隐私和撤回同步失效、退场高度") {
         let f = StackPresentationFixture(count: 3)
         f.measure(); f.clock.advance(0.5)

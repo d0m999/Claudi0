@@ -9,6 +9,7 @@ import SwiftUI
 
 @MainActor
 func runEventNoticeStackNativeSuites() {
+    runEventNoticeStackMotionNativeSuites()
     suite("Banner Stack native：英中、浅深、窄宽完整卡片测量与逐条动作身份") {
         for language in [ClaudioAppLanguage.english, .zhHans] {
             for scheme in [ColorScheme.light, .dark] {
@@ -202,6 +203,66 @@ func runEventNoticeStackNativeSuites() {
 }
 
 @MainActor
+func runEventNoticeStackMotionNativeSuites() {
+    suite("Banner Stack native：关闭 B 后等待实测跨帧，C 不上跳或回跳") {
+        for (count, width) in [(3, 440.0), (4, 440.0), (3, 268.0), (4, 268.0)] {
+            let fixture = EventNoticeStackNativeFixture(count: count, width: width)
+            defer { fixture.close() }
+            let before = fixture.model.stackSnapshot
+            let b = before.visible[1], c = before.visible[2]
+            @MainActor func top() -> CGFloat? {
+                guard
+                    let frame = fixture.element(
+                        "event-notice.body.\(c.id.uuidString)", role: .button)?
+                        .accessibilityFrame?()
+                else { return nil }
+                return fixture.window.frame.maxY - frame.maxY
+            }
+            guard let original = top() else { expect(false, "C 的实际绘制框可读"); return }
+            expect(fixture.press("event-notice.close.\(b.id.uuidString)"), "通过 B 的原生关闭动作触发")
+            fixture.clock.advance(0)
+            expect(!fixture.presentation.output.requests.isEmpty, "关闭后等待当前入口实测")
+            for _ in 0..<3 {
+                fixture.paintWithoutMeasurementCommit()
+                guard let waiting = top() else { expect(false, "等待期间 C 仍可交互"); return }
+                expect(
+                    abs(waiting - original) < 1,
+                    "等待实测的绘制帧保留 C 的已提交位置（偏移 \(waiting - original) pt）")
+            }
+            expect(fixture.presentation.output.isEligible, "等待期间窗口保持资格")
+            expect(fixture.model.stackSnapshot.visible[1].positionY == c.positionY, "尚未提交新位置")
+            fixture.settle()
+            guard let committed = top() else { expect(false, "提交后 C 的绘制框可读"); return }
+            expect(abs(committed - original) < 1, "让位计划的起始绘制帧与等待帧连续")
+            let relocated = fixture.model.stackSnapshot.visible.first { $0.id == c.id }!
+            expect(
+                relocated.relocation != nil && relocated.positionY < c.positionY, "提交建立模型拥有的上移计划")
+            fixture.clock.advance(0.04)
+            fixture.settle()
+            if let delayed = top() {
+                expect(abs(delayed - original) < 1, "让位延迟期保持起始帧")
+            } else {
+                expect(false, "延迟期间 C 仍可访问")
+            }
+            fixture.clock.advance(0.12)
+            fixture.settle()
+            if let moving = top() {
+                expect(
+                    moving < original && moving > original - (c.positionY - relocated.positionY),
+                    "中间帧只朝目标位置上移")
+            } else {
+                expect(false, "让位期间 C 仍可访问")
+            }
+            fixture.clock.advance(0.3)
+            fixture.settle()
+            guard let completed = top() else { expect(false, "让位完成后 C 的绘制框可读"); return }
+            let travel = c.positionY - relocated.positionY
+            expect(abs(completed - original + travel) < 1, "仅按已提交计划完成一次上移")
+        }
+    }
+}
+
+@MainActor
 private final class EventNoticeStackNativeFixture {
     private static var preparedAccessibility = false
     let clock = ManualEventNoticeScheduler()
@@ -305,6 +366,15 @@ private final class EventNoticeStackNativeFixture {
             if output.isEligible { window.orderFront(nil) } else { window.orderOut(nil) }
             stable = before == output && output.requests.isEmpty ? stable + 1 : 0
         }
+    }
+
+    func paintWithoutMeasurementCommit() {
+        // Leave the manual scheduler frozen while real SwiftUI layout and paint cross a frame.
+        // Preference callbacks may arrive, but the shared presenter cannot commit them yet.
+        hosting.needsLayout = true
+        hosting.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.04))
+        hosting.displayIfNeeded()
     }
 
     func element(_ id: String, role: NSAccessibility.Role? = nil) -> AnyObject? {

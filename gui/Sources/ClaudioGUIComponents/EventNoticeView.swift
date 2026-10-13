@@ -126,15 +126,22 @@ public struct EventNoticeView: View {
         snapshot: EventNoticeStackSnapshot,
         geometry: EventNoticeStackPresentationOutput, now: Date
     ) -> some View {
-        VStack(spacing: EventNoticeStackLayout.spacing) {
+        let cardAreaHeight =
+            snapshot.visible.map {
+                $0.positionY + (geometry.cardHeights[$0.id] ?? 0)
+            }.max() ?? 0
+        return VStack(spacing: EventNoticeStackLayout.spacing) {
             if !snapshot.visible.isEmpty {
-                VStack(spacing: EventNoticeStackLayout.spacing) {
+                // Removal may precede the next measurement transaction. Keep each committed
+                // position and its occupied space until the model installs the relocation plan.
+                ZStack(alignment: .topLeading) {
                     ForEach(snapshot.visible) { item in
                         card(item, now: now, measuring: false)
                             .frame(height: geometry.cardHeights[item.id].map { CGFloat($0) })
+                            .offset(y: item.positionY)
                     }
                 }
-
+                .frame(height: cardAreaHeight, alignment: .topLeading)
             }
             if !snapshot.queued.isEmpty {
                 EventNoticeQueueEntry(
