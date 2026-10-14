@@ -43,16 +43,17 @@ final class EventNoticeWindowController: NSObject, NSWindowDelegate {
         self.model = model
         presentation = EventNoticeStackPresentation(
             model: model, preferences: languageStore, navigation: navigation)
-        modalPauseObserver = EventNoticeModalPauseObserver(model: model)
         self.navigation = navigation
         self.onViewInPanel = onViewInPanel
         self.languageStore = languageStore
         self.onWillBecomeInteractive = onWillBecomeInteractive
         renderedEpoch = model.receiverEpoch
-        window = EventNoticePanel(
+        let noticeWindow = EventNoticePanel(
             contentRect: NSRect(x: 0, y: 0, width: 440, height: 44),
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered, defer: true)
+        window = noticeWindow
+        modalPauseObserver = EventNoticeModalPauseObserver(model: model, owner: noticeWindow)
         super.init()
         window.isOpaque = false
         window.backgroundColor = .clear

@@ -5,11 +5,22 @@ import Foundation
 
 @MainActor
 func runEventNoticeModalLifecycleSuites() async {
+    suite("Event Notice Modal：设置 sheet 保持打开也不延长横幅阅读预算") {
+        let fixture = EventNoticeModalLifecycleFixture()
+        defer { fixture.close() }
+        fixture.clock.advance(1)
+        let (settings, sheet) = fixture.beginSheet()
+        expect(!fixture.observer.isPaused, "其他窗口的 sheet 不拥有横幅的暂停状态")
+        fixture.clock.advance(3.01 + EventNoticeModel.fadeDuration)
+        expect(!fixture.model.stackSnapshot.hasPresentation, "设置未关闭时横幅也按剩余三秒自动收起")
+        expect(settings.isVisible && sheet.isVisible, "横幅收起不关闭设置或其 sheet")
+    }
+
     suite("Event Notice Modal：关闭 sheet 父窗口后恢复剩余预算并自动收起") {
         let fixture = EventNoticeModalLifecycleFixture()
         defer { fixture.close() }
         fixture.clock.advance(1)
-        let (parent, sheet) = fixture.beginSheet()
+        let (parent, sheet) = fixture.beginSheet(on: fixture.noticeWindow)
         expect(fixture.observer.isPaused, "真实 beginSheet 通知暂停阅读")
         let saved = fixture.model.stackSnapshot.visible[0].readingTime.remaining
         expect(abs(saved - 3) < 0.001, "暂停保存已消耗一秒后的剩余预算")
@@ -29,7 +40,7 @@ func runEventNoticeModalLifecycleSuites() async {
         let fixture = EventNoticeModalLifecycleFixture()
         defer { fixture.close() }
         fixture.clock.advance(2)
-        let (parent, sheet) = fixture.beginSheet()
+        let (parent, sheet) = fixture.beginSheet(on: fixture.noticeWindow)
         fixture.clock.advance(30)
         parent.endSheet(sheet)
         sheet.orderOut(nil)
@@ -39,11 +50,11 @@ func runEventNoticeModalLifecycleSuites() async {
         expect(!fixture.model.stackSnapshot.hasPresentation, "正常结束也只消费剩余两秒")
     }
 
-    await suite("Event Notice Modal：关闭一个父窗口保留其他 sheet 的暂停") {
+    await suite("Event Notice Modal：关闭设置 sheet 不解除横幅自己 sheet 的暂停") {
         let fixture = EventNoticeModalLifecycleFixture()
         defer { fixture.close() }
+        let (second, secondSheet) = fixture.beginSheet(on: fixture.noticeWindow)
         let (first, firstSheet) = fixture.beginSheet()
-        let (second, secondSheet) = fixture.beginSheet()
         first.close()
         expect(fixture.observer.isPaused, "第二个 sheet 仍打开时不能恢复阅读")
         first.endSheet(firstSheet)
@@ -59,10 +70,10 @@ func runEventNoticeModalLifecycleSuites() async {
         expect(!fixture.model.stackSnapshot.hasPresentation, "恢复后可以正常自动收回")
     }
 
-    suite("Event Notice Modal：嵌套 sheet 随父窗口关闭，悬停与文件选择器仍独立暂停") {
+    suite("Event Notice Modal：横幅嵌套 sheet 随父窗口关闭，设置文件选择器不暂停横幅") {
         let fixture = EventNoticeModalLifecycleFixture()
         defer { fixture.close() }
-        let (parent, sheet) = fixture.beginSheet()
+        let (parent, sheet) = fixture.beginSheet(on: fixture.noticeWindow)
         _ = fixture.beginSheet(on: sheet)
         fixture.model.setHovering(true)
         parent.close()
@@ -77,9 +88,9 @@ func runEventNoticeModalLifecycleSuites() async {
         center.post(name: .claudioSettingsModalWillBegin, object: nil)
         fixture.model.setHovering(false)
         center.post(name: .claudioSettingsModalDidEnd, object: nil)
-        expect(fixture.observer.isPaused, "文件选择器的嵌套计数仍独立有效")
+        expect(!fixture.observer.isPaused, "设置文件选择器不暂停横幅预算")
         center.post(name: .claudioSettingsModalDidEnd, object: nil)
-        expect(!fixture.observer.isPaused, "最后一个文件选择器结束后恢复")
+        expect(!fixture.observer.isPaused, "设置文件选择器结束也不改变横幅暂停状态")
         fixture.clock.advance(4.01 + EventNoticeModel.fadeDuration)
         expect(!fixture.model.stackSnapshot.hasPresentation, "解除所有真实暂停后自动收回")
     }
@@ -98,6 +109,7 @@ private final class EventNoticeModalLifecycleFixture {
     let clock = ManualEventNoticeScheduler()
     let model: EventNoticeModel
     let observer: EventNoticeModalPauseObserver
+    let noticeWindow: NSWindow
     private var sheets: [(NSWindow, NSPanel)] = []
 
     init() {
@@ -105,7 +117,11 @@ private final class EventNoticeModalLifecycleFixture {
         let clock = clock
         model = EventNoticeModel(
             receiverEpoch: UUID(), now: { clock.time }, scheduler: clock.scheduler())
-        observer = EventNoticeModalPauseObserver(model: model)
+        noticeWindow = NSWindow(
+            contentRect: NSRect(x: 100, y: 100, width: 240, height: 160),
+            styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        noticeWindow.isReleasedWhenClosed = false
+        observer = EventNoticeModalPauseObserver(model: model, owner: noticeWindow)
         _ = model.accept(attentionNotice(epoch: model.receiverEpoch, native: "Stop"))
         clock.advance(EventNoticeModel.fadeDuration)
     }
@@ -135,5 +151,6 @@ private final class EventNoticeModalLifecycleFixture {
             sheet.close()
         }
         model.clearForPrivacy()
+        noticeWindow.close()
     }
 }

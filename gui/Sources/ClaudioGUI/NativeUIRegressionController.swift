@@ -529,11 +529,14 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         panel.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         capture()
     }
-    func notice(verified: Bool = false, updated: Bool = false, transient: Bool = false) {
+    func notice(
+        verified: Bool = false, updated: Bool = false, transient: Bool = false,
+        preservingSettings: Bool = false
+    ) {
         if clock.isLive {
             // Keep the automatic banner nonactivating and independently capturable. These are
             // fixture-owned windows; no user settings or host windows are affected.
-            _ = settings.closeForMutualExclusion()
+            if !preservingSettings { _ = settings.closeForMutualExclusion() }
             panel.close()
             controls?.orderOut(nil)
         }
@@ -618,6 +621,8 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
         let readingTime = firstBanner?.readingTime
         let pauseReasons: [String] = [
             (EventNoticePauseReason.hover, "hover"), (.keyboardFocus, "keyboardFocus"),
+            (.windowFocus, "windowFocus"), (.queueExpansion, "queueExpansion"),
+            (.modal, "modal"), (.geometryUnavailable, "geometryUnavailable"),
         ].compactMap { reason, name in
             stack.pauseReasons.contains(reason) ? name : nil
         }
@@ -853,6 +858,9 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 Button("Verified-source reminder") { owner.notice(verified: true) }
                 Button("Verified-source ordinary notice") {
                     owner.notice(verified: true, transient: true)
+                }
+                Button("Ordinary notice with settings open") {
+                    owner.notice(transient: true, preservingSettings: true)
                 }
                 Button("Update reminder") { owner.notice(updated: true) }
                 Button("Suspend banner geometry") { owner.suspendBannerGeometry() }
