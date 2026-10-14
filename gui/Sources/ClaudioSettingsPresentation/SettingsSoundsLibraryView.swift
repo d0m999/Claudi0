@@ -665,7 +665,15 @@ struct SettingsSoundsLibraryView: View {
                     )
                     .foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                ScrollView { sheetBody(mode) }
+                // 列表型主体自带滚动，必须直接占据 VStack 的弹性位；只有表单型主体才包
+                // ScrollView。曾无条件外包 ScrollView，内部 List 在嵌套滚动容器里塌到
+                // minHeight 附近，高 sheet 里列表与底部按钮之间实测留下 241–400pt 死区
+                // （系统提示音 sheet 的列表只占约三成高度）。
+                if sheetIsListBacked(mode) {
+                    sheetBody(mode)
+                } else {
+                    ScrollView { sheetBody(mode) }
+                }
                 if effects.previewSession.failedOrigin == previewOrigin {
                     errorLabel(l10n.text(.soundsUnavailable))
                         .accessibilityIdentifier("settings.sounds.sheet.preview-failure")
@@ -692,6 +700,16 @@ struct SettingsSoundsLibraryView: View {
         }
     }
 
+    /// 主体是自带滚动的 `List`／滚动区的 sheet：必须由外层 VStack 直接给足弹性高度，
+    /// 不再包 `ScrollView`。其余（命名、AI、本机导入、整包导入）是表单型，保留外层滚动。
+    private static let listBackedSheetModes: Set<SoundsSheet> = [
+        .system, .packFiles, .manage, .history,
+    ]
+
+    private func sheetIsListBacked(_ mode: SoundsSheet) -> Bool {
+        Self.listBackedSheetModes.contains(mode)
+    }
+
     @ViewBuilder private func sheetBody(_ mode: SoundsSheet) -> some View {
         switch mode {
         case .newPack, .renamePack, .copyPack, .renameAudio:
@@ -711,7 +729,9 @@ struct SettingsSoundsLibraryView: View {
                     .font(.caption).foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            ScrollView { historyContent(selecting: true) }.frame(minHeight: 180, maxHeight: 380)
+            ScrollView { historyContent(selecting: true) }
+                .frame(maxWidth: .infinity, minHeight: 180, maxHeight: .infinity)
+                .soundPacksLayoutProbe("settings.sounds.sheet.history.list")
         case .local:
             if let localPreview {
                 HStack {
@@ -911,8 +931,11 @@ struct SettingsSoundsLibraryView: View {
                             !managing && !audio.usedByEvents.isEmpty
                                 && !audio.usedByEvents.contains(selection?.event ?? .taskStart))
                 }
-            }.frame(minHeight: 160, maxHeight: 340)
+            }
+            .frame(maxWidth: .infinity, minHeight: 160, maxHeight: .infinity)
+            .soundPacksLayoutProbe("settings.sounds.sheet.files.list")
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder private var inventoryStatus: some View {
@@ -981,7 +1004,9 @@ struct SettingsSoundsLibraryView: View {
                     }
                 }.tag(choice.source.name).disabled(choice.action == nil)
             }
-        }.frame(minHeight: 180, maxHeight: 340)
+        }
+        .frame(maxWidth: .infinity, minHeight: 180, maxHeight: .infinity)
+        .soundPacksLayoutProbe("settings.sounds.sheet.system.list")
     }
 
     private func sheetPrimaryButton(_ mode: SoundsSheet) -> some View {

@@ -635,8 +635,21 @@ if CommandLine.arguments.contains("--settings-sounds-layout") {
     Task { @MainActor in
         runSettingsNativeMigrationSuites()
         await runSettingsSoundsLayoutSuites()
+        await runSettingsSoundsSheetLayoutSuites()
         await runIntegrationAutomationNativeSuites()
         print("Settings sounds layout: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--settings-sounds-sheet-layout") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsSoundsSheetLayoutSuites()
+        print("Settings sounds sheet layout: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }
     application.run()
@@ -969,6 +982,7 @@ Task { @MainActor in
     await runSettingsRootInteractionSuites()
     runSettingsProductImagesSuites()
     await runSettingsSoundsLayoutSuites()
+    await runSettingsSoundsSheetLayoutSuites()
     runAICueTaskSurfaceSuites()
     await runIntegrationAutomationNativeSuites()
     runSettingsNativeMigrationSuites()
