@@ -13,6 +13,24 @@ import SwiftUI
 /// 表单型 sheet（命名、AI、本机导入）继续走外层 `ScrollView`，一并守住不回归。
 @MainActor
 func runSettingsSoundsSheetLayoutSuites() async {
+    suite("声音设置 sheet 滚动探针：重算布局后的终点且重试有界") {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 572, height: 400))
+        let clip = SheetListHeightUpdatingClipView(frame: scroll.contentView.frame)
+        scroll.contentView = clip
+        let document = NSView(frame: NSRect(x: 0, y: 0, width: 572, height: 500))
+        scroll.documentView = document
+        scroll.layoutSubtreeIfNeeded()
+
+        // 模拟真实 List 首次滚动后行高测量使文档从 500pt 增至 524pt。
+        clip.remainingHeightUpdates = 1
+        expect(scrollSheetListToBottom(scroll), "行高更新后仍能滚动到最新文档底部")
+        expect(document.frame.height == 524, "回归 fixture 必须实际触发首次滚动的高度更新")
+
+        clip.remainingHeightUpdates = Int.max
+        clip.scrollRequests = 0
+        expect(!scrollSheetListToBottom(scroll), "文档持续增高时不得伪报已到底")
+        expect(clip.scrollRequests <= 4, "无法到达底部时滚动尝试必须有界")
+    }
     await suite("声音设置 sheet 布局：四个列表型 sheet 铺满弹性区且滚动可达") {
         await withTempDirectory { root in
             let sounds = root.appendingPathComponent("system", isDirectory: true)
@@ -212,7 +230,7 @@ private func sheetListRowCount(_ contentView: NSView?) -> Int? {
     return find(in: contentView)
 }
 
-/// 把 sheet 内的主滚动容器滚到底，返回是否到达文档底部。
+/// 行高可能在首次滚动后才测量完成；布局后重算终点，最多尝试四次验证最新底部。
 @MainActor
 private func scrollSheetListToBottom(_ contentView: NSView?) -> Bool {
     guard let contentView else { return false }
@@ -224,10 +242,35 @@ private func scrollSheetListToBottom(_ contentView: NSView?) -> Bool {
         return false
     }
     let clip = scroll.contentView
-    let bottom = max(document.bounds.minY, document.bounds.maxY - clip.bounds.height)
-    clip.scroll(to: NSPoint(x: document.bounds.minX, y: bottom))
-    scroll.reflectScrolledClipView(clip)
-    return scroll.documentVisibleRect.maxY >= document.bounds.maxY - 1
+    for _ in 0..<4 {
+        contentView.layoutSubtreeIfNeeded()
+        let bottom = max(document.bounds.minY, document.bounds.maxY - clip.bounds.height)
+        clip.scroll(to: NSPoint(x: document.bounds.minX, y: bottom))
+        scroll.reflectScrolledClipView(clip)
+        contentView.layoutSubtreeIfNeeded()
+        if scroll.documentVisibleRect.maxY >= document.bounds.maxY - 1 { return true }
+    }
+    return false
+}
+
+/// 在实际 NSClipView 滚动边界注入行高更新，独立验证探针对几何变化的处理。
+@MainActor
+private final class SheetListHeightUpdatingClipView: NSClipView {
+    var remainingHeightUpdates = 0
+    var scrollRequests = 0
+    private var isUpdatingHeight = false
+
+    override func scroll(to newOrigin: NSPoint) {
+        super.scroll(to: newOrigin)
+        guard !isUpdatingHeight else { return }
+        scrollRequests += 1
+        guard remainingHeightUpdates > 0, let documentView else { return }
+        remainingHeightUpdates -= 1
+        isUpdatingHeight = true
+        documentView.setFrameSize(
+            NSSize(width: documentView.frame.width, height: documentView.frame.height + 24))
+        isUpdatingHeight = false
+    }
 }
 
 @MainActor
