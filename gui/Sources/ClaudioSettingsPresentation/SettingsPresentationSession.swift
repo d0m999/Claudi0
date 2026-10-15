@@ -42,7 +42,8 @@ package final class SettingsPresentationSession: ObservableObject {
         (request: WorkspaceDeletionRequest, stamp: SettingsNavigationStamp)?
     /// The in-session sound-pack delete the current browsing entry waits on. A navigation
     /// during the transaction changes the stamp and revokes this transaction.
-    private var soundPackDeletionNavigation: (packID: String, stamp: SettingsNavigationStamp)?
+    private var soundPackDeletionNavigation:
+        (packID: String, operationID: SoundPackEditorOperationID, stamp: SettingsNavigationStamp)?
     private var explicitRouteRequestRevision: UInt64 = 0
     private var focusDebt: SettingsFocusDebt?
     private var windowPhase: SettingsWindowPhase = .hidden
@@ -127,6 +128,17 @@ package final class SettingsPresentationSession: ObservableObject {
                     self.publishProjection()
                 }
             }
+        // No value dedup here: activation republishes an unchanged snapshot on the
+        // failure→recovery path, and every emission must still reach the detail reducer.
+        // Observe delete receipts before shell availability so a disappearing pack cannot
+        // invalidate the browsing entry while its accepted operation is still settling.
+        soundPackEditorCancellable = dependencies.soundPacksEditorOwner.$presentation
+            .sink { [weak self] publication in
+                MainActor.assumeIsolated {
+                    self?.synchronizeSoundPackDeletion(publication)
+                    self?.applySoundEditorPublication(publication)
+                }
+            }
         soundPackProjectionCancellable = settingsSoundPackShellProjections(
             editor: dependencies.soundPacksEditorOwner,
             hostIntegrations: dependencies.hostIntegrations,
@@ -136,14 +148,6 @@ package final class SettingsPresentationSession: ObservableObject {
                 self?.applyAvailabilityProjection(projection)
             }
         }
-        // No value dedup here: activation republishes an unchanged snapshot on the
-        // failure→recovery path, and every emission must still reach the detail reducer.
-        soundPackEditorCancellable = dependencies.soundPacksEditorOwner.$presentation
-            .sink { [weak self] publication in
-                MainActor.assumeIsolated {
-                    self?.applySoundEditorPublication(publication)
-                }
-            }
         aboutSurfaceCancellable = dependencies.hostIntegrations.$safeSurfaceFacts
             .removeDuplicates()
             .sink { [weak self] surfaceFacts in
@@ -1046,7 +1050,6 @@ package final class SettingsPresentationSession: ObservableObject {
 
     private func applyAvailabilityProjection(_ projection: SettingsSoundPackShellProjection) {
         pendingSoundPackOwnerAnnouncement = projection.pendingAnnouncement
-        synchronizeSoundPackDeletion(projection.editorPresentation)
         applyAvailability(projection.availability)
     }
 
@@ -1133,20 +1136,34 @@ package final class SettingsPresentationSession: ObservableObject {
             soundPackDeletionNavigation = nil
             return
         }
-        let phase = publication.activities
-            .first { $0.kind == .deletePack && $0.packID == browsedPackID }?.phase
+        let transaction = soundPackDeletionNavigation
         let remembersPendingTransaction =
-            soundPackDeletionNavigation?.stamp == stamp
-            && soundPackDeletionNavigation?.packID == browsedPackID
+            transaction?.stamp == stamp && transaction?.packID == browsedPackID
+        // Terminal activities remain until their announcement is acknowledged. Capture the
+        // accepted busy operation, then follow its ID so an earlier failure cannot mask a retry.
+        guard
+            let activity = publication.activities.first(where: { activity in
+                guard activity.kind == .deletePack, activity.packID == browsedPackID else {
+                    return false
+                }
+                if remembersPendingTransaction {
+                    return activity.operationID == transaction?.operationID
+                }
+                return activity.phase == .busy
+            })
+        else {
+            soundPackDeletionNavigation = nil
+            return
+        }
         switch settingsSoundPackDeletionTransition(
             browsedPackID: browsedPackID,
-            phase: phase,
+            phase: activity.phase,
             remembersPendingTransaction: remembersPendingTransaction
         ) {
         case .inactive:
             soundPackDeletionNavigation = nil
         case .pending:
-            soundPackDeletionNavigation = (browsedPackID, stamp)
+            soundPackDeletionNavigation = (browsedPackID, activity.operationID, stamp)
         case .convert:
             guard isPresented else { return }
             soundPackDeletionNavigation = nil

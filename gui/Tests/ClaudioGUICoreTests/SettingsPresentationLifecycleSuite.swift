@@ -1222,80 +1222,119 @@ func runSettingsPresentationLifecycleSuites() async {
             "取消删除不得转换")
     }
 
-    await suite("Settings session：删除正在查看的声音包后转换到总览，不落入失效页") {
-        await withTempDirectory { root in
-            let editorFixture = makeSoundEditorFixture(
-                root: root,
-                packIDs: ["keep-pack", "delete-pack"],
-                moveUserPackToTrashForTesting: { isolated in
-                    let trash = root.appendingPathComponent("trash", isDirectory: true)
-                    try FileManager.default.createDirectory(
-                        at: trash, withIntermediateDirectories: true)
-                    let destination = trash.appendingPathComponent(
-                        isolated.lastPathComponent, isDirectory: true)
-                    try FileManager.default.moveItem(at: isolated, to: destination)
-                    return destination
-                })
-            let fixture = SettingsPresentationFixtures.generalLogin(
-                temporaryParent: root,
-                route: .sounds(.overview),
-                availability: SettingsRouteAvailability(
-                    integrationSurfaces: [.workBuddy],
-                    eventScopes: [.global],
-                    soundScopes: [.global],
-                    soundPackIDs: ["keep-pack", "delete-pack"],
-                    events: Set(Event.allCases)),
-                soundPacksEditor: editorFixture.owner)
-            let session = fixture.session
-            await waitForSoundEditorReady(editorFixture.owner, library: editorFixture.library)
-            expect(
-                session.send(.requestSoundsDetail(.pack(packID: "delete-pack"))) == .routed,
-                "浏览包详情意图必须被 session 接受")
-            await waitForSoundEditorReady(editorFixture.owner, library: editorFixture.library)
-            guard case .sounds(let browsed) = editorFixture.owner.presentation.mode,
-                let inspect = browsed.packs.first(where: { $0.id == "delete-pack" })?
-                    .inspectAction,
-                editorFixture.owner.send(.invoke(inspect)) == .applied,
-                case .sounds(let selected) = editorFixture.owner.presentation.mode,
-                let deleteAction = selected.selectedPack?.deleteAction
-            else {
-                expect(false, "被查看的用户包必须提供删除入口")
-                return
-            }
-            let deleteRequest = editorFixture.owner.send(.invoke(deleteAction))
-            guard case .confirmation(let confirmation) = deleteRequest
-            else {
-                expect(false, "删除必须签发确认")
-                return
-            }
-            let entriesBefore = session.navigationHistory.entries.count
-            let scansBefore = editorFixture.recorder.requests.count
-            let confirmResult = editorFixture.owner.send(.invoke(confirmation.confirmAction))
-            guard case .accepted(let operationID) = confirmResult
-            else {
-                expect(false, "删除确认必须接受 scheduled operation")
-                return
-            }
-            await waitForSoundEditorOperation(editorFixture.owner, operationID: operationID)
-            await waitForSoundEditorScanCount(
-                editorFixture.recorder, atLeast: scansBefore + 1)
-            await editorFixture.library.waitUntilIdleForTesting()
-            await waitForSoundEditorPackAbsence(editorFixture.owner, packID: "delete-pack")
+    for failuresBeforeSuccess in 0...1 {
+        await suite("Settings session：删除正在查看的声音包，此前失败 \(failuresBeforeSuccess) 次") {
+            await withTempDirectory { root in
+                var trashAttempts = 0
+                let editorFixture = makeSoundEditorFixture(
+                    root: root,
+                    packIDs: ["keep-pack", "delete-pack"],
+                    moveUserPackToTrashForTesting: { isolated in
+                        trashAttempts += 1
+                        if trashAttempts <= failuresBeforeSuccess {
+                            throw CocoaError(.fileWriteUnknown)
+                        }
+                        let trash = root.appendingPathComponent("trash", isDirectory: true)
+                        try FileManager.default.createDirectory(
+                            at: trash, withIntermediateDirectories: true)
+                        let destination = trash.appendingPathComponent(
+                            isolated.lastPathComponent, isDirectory: true)
+                        try FileManager.default.moveItem(at: isolated, to: destination)
+                        return destination
+                    })
+                let fixture = SettingsPresentationFixtures.generalLogin(
+                    temporaryParent: root,
+                    route: .sounds(.overview),
+                    availability: SettingsRouteAvailability(
+                        integrationSurfaces: [.workBuddy],
+                        eventScopes: [.global],
+                        soundScopes: [.global],
+                        soundPackIDs: ["keep-pack", "delete-pack"],
+                        events: Set(Event.allCases)),
+                    soundPacksEditor: editorFixture.owner)
+                let session = fixture.session
+                await waitForSoundEditorReady(editorFixture.owner, library: editorFixture.library)
+                expect(
+                    session.send(.requestSoundsDetail(.pack(packID: "delete-pack"))) == .routed,
+                    "浏览包详情意图必须被 session 接受")
+                await waitForSoundEditorReady(editorFixture.owner, library: editorFixture.library)
+                guard case .sounds(let browsed) = editorFixture.owner.presentation.mode,
+                    let inspect = browsed.packs.first(where: { $0.id == "delete-pack" })?
+                        .inspectAction,
+                    editorFixture.owner.send(.invoke(inspect)) == .applied
+                else {
+                    expect(false, "被查看的用户包必须提供删除入口")
+                    return
+                }
+                let entriesBefore = session.navigationHistory.entries.count
+                let scansBefore = editorFixture.recorder.requests.count
+                var failedOperationID: SoundPackEditorOperationID?
+                for attempt in 0...failuresBeforeSuccess {
+                    guard case .sounds(let selected) = editorFixture.owner.presentation.mode,
+                        let deleteAction = selected.selectedPack?.deleteAction,
+                        case .confirmation(let confirmation) = editorFixture.owner.send(
+                            .invoke(deleteAction))
+                    else {
+                        expect(false, "首次删除及重试必须分别签发确认")
+                        return
+                    }
+                    guard
+                        case .accepted(let operationID) = editorFixture.owner.send(
+                            .invoke(confirmation.confirmAction))
+                    else {
+                        expect(false, "删除确认必须接受 scheduled operation")
+                        return
+                    }
+                    expect(
+                        editorFixture.owner.presentation.activities.first(where: {
+                            $0.operationID == operationID
+                        })?.phase == .busy,
+                        "本次接受的删除必须先发布 busy")
+                    if let failedOperationID {
+                        expect(
+                            operationID != failedOperationID
+                                && editorFixture.owner.presentation.activities.first(where: {
+                                    $0.operationID == failedOperationID
+                                })?.phase == .failed(.mutationFailed),
+                            "重试 busy 必须与未公告确认清除的旧失败同时存在")
+                    }
+                    await waitForSoundEditorOperation(editorFixture.owner, operationID: operationID)
+                    let phase = editorFixture.owner.presentation.activities.first(where: {
+                        $0.operationID == operationID
+                    })?.phase
+                    if attempt < failuresBeforeSuccess {
+                        failedOperationID = operationID
+                        expect(phase == .failed(.mutationFailed), "首次 Trash 失败必须结算为失败")
+                        expect(
+                            session.state.routeResolution.failure == nil
+                                && session.state.soundsDetail == .pack(packID: "delete-pack")
+                                && session.navigationHistory.entries.count == entriesBefore,
+                            "删除失败必须保留当前包详情和浏览条目以供重试")
+                    } else {
+                        expect(phase == .succeeded, "本次删除必须独立结算成功")
+                    }
+                }
+                await waitForSoundEditorScanCount(
+                    editorFixture.recorder, atLeast: scansBefore + 1)
+                await editorFixture.library.waitUntilIdleForTesting()
+                await waitForSoundEditorPackAbsence(editorFixture.owner, packID: "delete-pack")
 
-            expect(
-                session.state.routeResolution.failure == nil,
-                "删除成功不得落入声音包失效页")
-            expect(
-                session.state.routeResolution.route
-                    == .sounds(SoundPacksWindowRoute.overview(scope: .global)),
-                "删除成功必须把当前浏览条目转换为总览")
-            expect(
-                session.navigationHistory.entries.count == entriesBefore
-                    && session.navigationHistory.current?.location.viewedPackID == nil,
-                "转换只更新当前条目，不产生新历史位置，也不保留已删包身份")
-            expect(
-                session.state.soundsDetail == .overview,
-                "详情仲裁必须跟随转换落到总览")
+                expect(
+                    session.state.routeResolution.failure == nil,
+                    "删除成功不得落入声音包失效页")
+                expect(
+                    session.state.routeResolution.route
+                        == .sounds(SoundPacksWindowRoute.overview(scope: .global)),
+                    "删除成功必须把当前浏览条目转换为总览")
+                expect(
+                    session.navigationHistory.entries.count == entriesBefore
+                        && session.navigationHistory.current?.location.viewedPackID == nil,
+                    "转换只更新当前条目，不产生新历史位置，也不保留已删包身份")
+                expect(
+                    session.state.soundsDetail == .overview,
+                    "详情仲裁必须跟随转换落到总览")
+                expect(trashAttempts == failuresBeforeSuccess + 1, "必须经过实际 Trash 失败及成功路径")
+            }
         }
     }
 
