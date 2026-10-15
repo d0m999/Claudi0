@@ -12050,22 +12050,6 @@
         }
       }
     },
-    "settings.route.stale-pack": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The sound pack %@ is no longer available. No other pack was selected."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "声音包 %@ 已不可用；未选择其他声音包。"
-          }
-        }
-      }
-    },
     "settings.route.stale-event": {
       "localizations": {
         "en": {
@@ -12110,6 +12094,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Surface %@ 已不可用；未选择其他 Surface。"
+          }
+        }
+      }
+    },
+    "settings.route.unavailable-title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound Pack Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此声音包已不可用"
+          }
+        }
+      }
+    },
+    "settings.route.unavailable-generic-title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此目标已不可用"
+          }
+        }
+      }
+    },
+    "settings.route.unavailable-message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sound pack you were viewing was deleted or is no longer in the library. No other pack was selected automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你查看的声音包已被删除或已不在声音包库中；应用未自动改用其他声音包。"
+          }
+        }
+      }
+    },
+    "settings.route.unavailable-browse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse Sound Packs…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览声音包…"
           }
         }
       }

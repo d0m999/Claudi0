@@ -920,7 +920,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let settingsRouteStaleScope: Self = "settings.route.stale-scope"
     public static let settingsRouteStaleEvent: Self = "settings.route.stale-event"
     public static let settingsRouteInvalidPack: Self = "settings.route.invalid-pack"
-    public static let settingsRouteStalePack: Self = "settings.route.stale-pack"
+    public static let settingsRouteUnavailableTitle: Self = "settings.route.unavailable-title"
+    public static let settingsRouteUnavailableGenericTitle: Self =
+        "settings.route.unavailable-generic-title"
+    public static let settingsRouteUnavailableMessage: Self = "settings.route.unavailable-message"
+    public static let settingsRouteUnavailableBrowse: Self = "settings.route.unavailable-browse"
     public static let settingsRouteReturnToSidebar: Self = "settings.route.return-to-sidebar"
     public static let integrationsClearReceiptHistoryConfirm: Self =
         "integrations.clear-receipt-history.confirm"
@@ -1918,7 +1922,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsRouteIdentity,
         .settingsRouteReady, .settingsRouteInvalidSurface, .settingsRouteStaleSurface,
         .settingsRouteStaleScope, .settingsRouteStaleEvent, .settingsRouteInvalidPack,
-        .settingsRouteStalePack,
+        .settingsRouteUnavailableTitle, .settingsRouteUnavailableGenericTitle,
+        .settingsRouteUnavailableMessage, .settingsRouteUnavailableBrowse,
         .settingsRouteReturnToSidebar,
         .integrationsRedetect,
         .integrationsRedetectLabel,

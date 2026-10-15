@@ -666,22 +666,29 @@ package struct SettingsDestinationContentView: View {
             })
     }
 
+    /// A requested target that no longer names an available object keeps its identity and
+    /// navigation (DESIGN.md, unified settings shell contract); this card is that unavailable
+    /// state with one explicit way forward instead of a silent fallback.
     private func routeFailure(_ failure: SettingsRouteFailure) -> some View {
-        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
-        Label {
-            Text(settingsFailureMessage(failure))
-                .fixedSize(horizontal: false, vertical: true)
-        } icon: {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
-        }
-        .padding(14)
-        .background(Color.red.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .focusable()
-        .focused($focusedTarget, equals: .routeFailure(destination))
-        .accessibilityIdentifier("settings.route.failure.\(destination.rawValue)")
-        .settingsMountIdentity("settings.route.failure.\(destination.rawValue)")
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: routeFailureIcon(failure))
+                    .font(.system(size: 24))
+                    .foregroundStyle(routeFailureIconColor(failure))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(routeFailureTitle(failure))
+                        .font(SettingsAppearance.font(.sectionTitle))
+                        .accessibilityAddTraits(.isHeader)
+                    Text(settingsFailureMessage(failure))
+                        .font(SettingsAppearance.font(.secondary))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .focusable()
+                .focused($focusedTarget, equals: .routeFailure(destination))
+                .accessibilityElement(children: .combine)
+            }
             if let location = settingsPresentationSession.navigationHistory.current?.location,
                 let directory = location.workspaceRoute?.workspaceTarget?.directory
                     ?? {
@@ -694,17 +701,60 @@ package struct SettingsDestinationContentView: View {
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.route.captured-directory")
             }
-            if case .staleSoundScope = failure {
-                Button(l10n.text(.workspaceChooseDefaultGroup)) {
-                    if destination == .sounds {
-                        settingsPresentationSession.send(.route(.sounds(.overview)))
-                    } else {
-                        settingsPresentationSession.send(
-                            .navigateWorkspace(EventSettingsWindowRoute(scope: .global)))
-                    }
+            routeFailureActions(failure)
+        }
+        .padding(20)
+        .modifier(SettingsSectionSurface())
+        .frame(maxWidth: 460)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityIdentifier("settings.route.failure.\(destination.rawValue)")
+        .settingsMountIdentity("settings.route.failure.\(destination.rawValue)")
+    }
+
+    @ViewBuilder
+    private func routeFailureActions(_ failure: SettingsRouteFailure) -> some View {
+        if case .staleSoundScope = failure {
+            Button(l10n.text(.workspaceChooseDefaultGroup)) {
+                if destination == .sounds {
+                    settingsPresentationSession.send(.route(.sounds(.overview)))
+                } else {
+                    settingsPresentationSession.send(
+                        .navigateWorkspace(EventSettingsWindowRoute(scope: .global)))
                 }
-                .settingsMountIdentity("workspace.choose-default-group")
             }
+            .settingsMountIdentity("workspace.choose-default-group")
+        }
+        if destination == .sounds {
+            Button(l10n.text(.settingsRouteUnavailableBrowse)) {
+                settingsPresentationSession.send(.route(.sounds(.overview)))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(SettingsAppearance.accent(colorScheme))
+            .frame(minHeight: ClaudioTheme.Metrics.regularControlHeight)
+            .settingsMountIdentity("settings.route.failure.browse-packs")
+        }
+    }
+
+    private func routeFailureIcon(_ failure: SettingsRouteFailure) -> String {
+        switch failure {
+        case .staleSoundPack, .invalidSoundPackID: "speaker.slash"
+        default: "exclamationmark.triangle.fill"
+        }
+    }
+
+    private func routeFailureIconColor(_ failure: SettingsRouteFailure) -> Color {
+        switch failure {
+        case .staleSoundPack, .invalidSoundPackID:
+            SettingsAppearance.secondaryText(colorScheme)
+        default: Color.orange
+        }
+    }
+
+    private func routeFailureTitle(_ failure: SettingsRouteFailure) -> String {
+        switch failure {
+        case .staleSoundPack, .invalidSoundPackID:
+            l10n.text(.settingsRouteUnavailableTitle)
+        default: l10n.text(.settingsRouteUnavailableGenericTitle)
         }
     }
 
@@ -720,8 +770,8 @@ package struct SettingsDestinationContentView: View {
             l10n.format(.settingsRouteStaleEvent, event.cliName as NSString)
         case .invalidSoundPackID:
             l10n.text(.settingsRouteInvalidPack)
-        case .staleSoundPack(let packID):
-            l10n.format(.settingsRouteStalePack, packID as NSString)
+        case .staleSoundPack:
+            l10n.text(.settingsRouteUnavailableMessage)
         }
     }
 

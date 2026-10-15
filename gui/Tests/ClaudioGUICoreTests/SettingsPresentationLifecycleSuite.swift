@@ -681,10 +681,13 @@ func runSettingsPresentationLifecycleSuites() async {
                 resolution: fixture.session.state.routeResolution)
             let failureIsMounted = SettingsMountRecorder.identifiers.contains(
                 "settings.route.failure.sounds")
+            let browseIsMounted = SettingsMountRecorder.identifiers.contains(
+                "settings.route.failure.browse-packs")
             expect(
                 result == .rejected(failure)
-                    && requestedFocus == .routeFailure(.sounds) && failureIsMounted,
-                "\(route) 必须请求并挂载 Sounds 失败说明：\(result), \(String(describing: requestedFocus)), mounted=\(failureIsMounted)"
+                    && requestedFocus == .routeFailure(.sounds) && failureIsMounted
+                    && browseIsMounted,
+                "\(route) 必须请求并挂载 Sounds 失败说明与浏览恢复入口：\(result), \(String(describing: requestedFocus)), mounted=\(failureIsMounted), browse=\(browseIsMounted)"
             )
         }
         withExtendedLifetime(hostingView) {}
