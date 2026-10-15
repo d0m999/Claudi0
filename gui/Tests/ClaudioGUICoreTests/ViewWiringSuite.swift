@@ -529,9 +529,8 @@ func runViewWiringSuites() {
                 && menuBarIcon.contains("image.isTemplate = false"),
             "菜单栏必须使用同源 T2 几何的 18pt 酸柠彩色容器（不走 template 单色惯例）")
         expect(
-            sidebar.contains("ClaudioT2Wordmark(height: 38)")
-                && sidebar.contains("constant: 6.5"),
-            "设置侧栏字标必须是 38pt T2 横向组合，并把墨迹左缘对齐功能区图标列（16pt 列 − 9.5pt 字标内留白 = 6.5pt）")
+            sidebar.contains("ClaudioT2Wordmark(height: 38)"),
+            "设置侧栏字标必须复用 38pt T2 横向组合；实际墨迹与图标对齐由原生布局测试验证")
     }
 
     suite("T2 几何：旋转、横向组合落位与笔画是可以量出来的品牌包数值") {

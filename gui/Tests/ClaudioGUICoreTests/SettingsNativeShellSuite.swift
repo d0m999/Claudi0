@@ -4,6 +4,7 @@ import ClaudioGUICore
 import ClaudioLocalization
 import ClaudioSettingsPresentation
 import Foundation
+import SwiftUI
 
 @MainActor
 func runSettingsNativeShellSuites() async {
@@ -116,6 +117,28 @@ func runSettingsNativeShellSuites() async {
                         expect(
                             probe.shell.view.bounds.width <= width + 1,
                             "Shell stays within the window width")
+                        let sidebar = probe.shell.sidebarController
+                        if let brand = sidebar.view.subviews.first(where: {
+                            $0 is NSHostingView<ClaudioT2Wordmark>
+                        }),
+                            let cell = sidebar.table.view(
+                                atColumn: 0, row: 0, makeIfNecessary: true),
+                            let icon = cell.subviews.first
+                        {
+                            let glyph = ClaudioT2Geometry.wordmarkGlyphPath(
+                                extraTransform: ClaudioT2Geometry.designTransform(for: brand.bounds)
+                            ).boundingBoxOfPath
+                            let brandX = brand.convert(glyph, to: sidebar.view).minX
+                            let iconX = icon.convert(icon.bounds, to: sidebar.view).minX
+                            expect(
+                                abs(brandX - iconX) < 0.5,
+                                "\(language)/\(dark)/\(width) sidebar brand ink x=\(brandX) must align with icon x=\(iconX)"
+                            )
+                        } else {
+                            expect(
+                                false,
+                                "Native sidebar must mount its brand and first destination icon")
+                        }
                         for (index, name) in [
                             language == .english ? "Back" : "返回",
                             language == .english ? "Forward" : "前进",

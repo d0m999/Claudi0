@@ -14,6 +14,9 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
     private var rows: [SettingsDestination?] = []
     private var synchronizingSelection = false
     private var language: ClaudioAppLanguage?
+    private var brandLeadingConstraint: NSLayoutConstraint?
+    private static let brandHeight: CGFloat = 38
+    private static let iconLeadingInset: CGFloat = 4
     package var isNavigationEnabled = true
 
     package init(session: SettingsPresentationSession) {
@@ -25,9 +28,7 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
 
     package override func loadView() {
         view = NSView()
-        // T2 官方横向组合（2026-10-11 品牌修订，高 38pt）。字标盒左缘置 6.5pt：
-        // 功能区图标列在 16pt（侧栏 12pt + 行内边距 4pt），字标 viewBox 左留白 9.5pt
-        // （36/504 × 133pt 宽），墨迹左缘因此对齐图标列。
+        // 原生 source list 另有系统内缩；布局完成后按实际 cell 位置对齐字标墨迹。
         let brand = NSHostingView(rootView: ClaudioT2Wordmark(height: 38))
         brand.setAccessibilityElement(false)
         let scroll = NSScrollView()
@@ -58,10 +59,12 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
             child.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(child)
         }
+        let brandLeading = brand.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        brandLeadingConstraint = brandLeading
         NSLayoutConstraint.activate([
             brand.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            brand.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6.5),
-            brand.heightAnchor.constraint(equalToConstant: 38),
+            brandLeading,
+            brand.heightAnchor.constraint(equalToConstant: Self.brandHeight),
             scroll.topAnchor.constraint(equalTo: brand.bottomAnchor, constant: 16),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
@@ -71,6 +74,21 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
             notice.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
         ])
         update(session.state)
+    }
+
+    package override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let row = rows.firstIndex(where: { $0 != nil }),
+            let brandLeadingConstraint
+        else { return }
+        let cellFrame = table.convert(table.frameOfCell(atColumn: 0, row: row), to: view)
+        let inkInset =
+            Self.brandHeight / ClaudioT2Geometry.wordmarkViewBox.height
+            * ClaudioT2Geometry.wordmarkInkOriginX
+        let leading = cellFrame.minX + Self.iconLeadingInset - inkInset
+        if abs(brandLeadingConstraint.constant - leading) > 0.01 {
+            brandLeadingConstraint.constant = leading
+        }
     }
 
     package func update(_ state: SettingsPresentationState) {
@@ -153,7 +171,8 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
             child.translatesAutoresizingMaskIntoConstraints = false; cell.addSubview(child)
         }
         NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+            icon.leadingAnchor.constraint(
+                equalTo: cell.leadingAnchor, constant: Self.iconLeadingInset),
             icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
             icon.widthAnchor.constraint(equalToConstant: 20),
             icon.heightAnchor.constraint(equalToConstant: 20),
