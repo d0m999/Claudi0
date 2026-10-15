@@ -40,6 +40,9 @@ package final class SettingsPresentationSession: ObservableObject {
     private var activeSoundsRequestRevision: UInt64?
     private var workspaceDeletionNavigation:
         (request: WorkspaceDeletionRequest, stamp: SettingsNavigationStamp)?
+    /// The in-session sound-pack delete the current browsing entry waits on. A navigation
+    /// during the transaction changes the stamp and revokes this transaction.
+    private var soundPackDeletionNavigation: (packID: String, stamp: SettingsNavigationStamp)?
     private var explicitRouteRequestRevision: UInt64 = 0
     private var focusDebt: SettingsFocusDebt?
     private var windowPhase: SettingsWindowPhase = .hidden
@@ -1016,6 +1019,7 @@ package final class SettingsPresentationSession: ObservableObject {
         navigationHistory.clear()
         pendingViewedSoundPackRestoration = nil
         workspaceDeletionNavigation = nil
+        soundPackDeletionNavigation = nil
         navigationRestoration = nil
         renderedNavigationStamp = nil
         modalNavigationBlockers.removeAll()
@@ -1042,6 +1046,7 @@ package final class SettingsPresentationSession: ObservableObject {
 
     private func applyAvailabilityProjection(_ projection: SettingsSoundPackShellProjection) {
         pendingSoundPackOwnerAnnouncement = projection.pendingAnnouncement
+        synchronizeSoundPackDeletion(projection.editorPresentation)
         applyAvailability(projection.availability)
     }
 
@@ -1071,6 +1076,20 @@ package final class SettingsPresentationSession: ObservableObject {
 
         let wasPerformingTransaction = isPerformingTransaction
         isPerformingTransaction = true
+        // The library snapshot can drop the pack before the writer's terminal receipt lands.
+        // An in-session delete of the browsed pack keeps its browsing entry alive until
+        // `synchronizeSoundPackDeletion` converts it on confirmed success.
+        if previousResolution.failure == nil,
+            case .staleSoundPack(let packID) = resolved.failure,
+            let transaction = soundPackDeletionNavigation,
+            transaction.packID == packID,
+            transaction.stamp == navigationHistory.stamp
+        {
+            isPerformingTransaction = wasPerformingTransaction
+            synchronizePendingSoundPackAnnouncement()
+            publishProjection()
+            return
+        }
         routeResolution = resolved
         if previousResolution.failure == nil, resolved.failure != nil {
             if let lifecycleDestination {
@@ -1099,6 +1118,96 @@ package final class SettingsPresentationSession: ObservableObject {
         }
         isPerformingTransaction = wasPerformingTransaction
         synchronizePendingSoundPackAnnouncement()
+        publishProjection()
+    }
+
+    /// A sound pack this session just deleted converts its current browsing entry to the
+    /// Sounds overview once the writer confirms, instead of parking the user on the deleted
+    /// pack's unavailable page. Deep links and deletions that happen outside this session keep
+    /// their failure page; only this in-session transaction earns the conversion.
+    private func synchronizeSoundPackDeletion(_ publication: SoundPacksEditorPresentation) {
+        guard case .sounds = publication.mode,
+            let stamp = navigationHistory.stamp,
+            let browsedPackID = currentBrowsedSoundPackID()
+        else {
+            soundPackDeletionNavigation = nil
+            return
+        }
+        let phase = publication.activities
+            .first { $0.kind == .deletePack && $0.packID == browsedPackID }?.phase
+        let remembersPendingTransaction =
+            soundPackDeletionNavigation?.stamp == stamp
+            && soundPackDeletionNavigation?.packID == browsedPackID
+        switch settingsSoundPackDeletionTransition(
+            browsedPackID: browsedPackID,
+            phase: phase,
+            remembersPendingTransaction: remembersPendingTransaction
+        ) {
+        case .inactive:
+            soundPackDeletionNavigation = nil
+        case .pending:
+            soundPackDeletionNavigation = (browsedPackID, stamp)
+        case .convert:
+            guard isPresented else { return }
+            soundPackDeletionNavigation = nil
+            convertBrowsedSoundPackDeletionToOverview(matching: stamp)
+        }
+    }
+
+    /// The pack the current browsing entry names: an explicit route destination first, then the
+    /// viewed-pack fallback the arbitration keeps for overview selections.
+    private func currentBrowsedSoundPackID() -> String? {
+        guard let current = navigationHistory.current,
+            current.location.destination == .sounds
+        else { return nil }
+        if case .sounds(let route) = current.location.route,
+            let packID = route.destinationPackID
+        {
+            return packID
+        }
+        return current.location.viewedPackID
+    }
+
+    private func convertBrowsedSoundPackDeletionToOverview(
+        matching stamp: SettingsNavigationStamp
+    ) {
+        // The writer already removed the pack. Convert only its current browsing entry; a
+        // navigation during the transaction revoked this permission through the stamp.
+        let scope: PanelSoundScopeID
+        let workspaceTarget: WorkspaceSoundWriteTarget?
+        if case .sounds(let current) = routeResolution.route {
+            scope = current.scope
+            workspaceTarget = current.workspaceTarget
+        } else {
+            scope = .global
+            workspaceTarget = nil
+        }
+        let overviewRoute = SoundPacksWindowRoute(
+            scope: scope, destination: .overview, workspaceTarget: workspaceTarget)
+        explicitRouteRequestRevision &+= 1
+        activeSoundsRequestRevision = explicitRouteRequestRevision
+        routeResolution = resolveSettingsRoute(.sounds(overviewRoute), availability: availability)
+        navigationHistory.replaceCurrent(
+            SettingsLocation(route: routeResolution.route, viewedPackID: nil),
+            matching: stamp)
+        renderedNavigationStamp = nil
+        soundsDetailArbitration.invalidateNavigationTransition()
+        lifecycleDestination = .sounds
+        _ = dependencies.soundPacksEditorOwner.send(
+            .activate(
+                .sounds(
+                    route: overviewRoute,
+                    requestRevision: explicitRouteRequestRevision)))
+        dependencies.soundPacksEditorOwner.soundSelection.synchronizeComposer()
+        if let restoration = navigationRestoration, restoration.stamp == stamp,
+            let current = navigationHistory.current
+        {
+            navigationRestoration = SettingsNavigationRestoration(
+                stamp: restoration.stamp,
+                location: current.location,
+                bookmark: .init(),
+                focus: restoration.focus)
+        }
         publishProjection()
     }
 
