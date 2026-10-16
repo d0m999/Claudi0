@@ -14434,22 +14434,6 @@
         }
       }
     },
-    "workspace.volume-confirm": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirm this volume"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确认使用此音量"
-          }
-        }
-      }
-    },
     "workspace.migration": {
       "localizations": {
         "en": {

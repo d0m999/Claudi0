@@ -1361,7 +1361,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let workspaceEvidencePending: Self = "workspace.evidence-pending"
     public static let workspaceEdit: Self = "workspace.edit"
     public static let workspacePreviewNote: Self = "workspace.preview-note"
-    public static let workspaceVolumeConfirm: Self = "workspace.volume-confirm"
     public static let workspaceMigration: Self = "workspace.migration"
     public static let workspaceDismiss: Self = "workspace.dismiss"
     public static let workspaceAllSources: Self = "workspace.all-sources"
@@ -1716,7 +1715,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .workspaceEvidencePending,
         .workspaceEdit,
         .workspacePreviewNote,
-        .workspaceVolumeConfirm,
         .workspaceMigration,
         .workspaceDismiss,
         .workspaceAllSources,

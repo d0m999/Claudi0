@@ -1229,7 +1229,6 @@ private struct AddWorkspaceSoundRuleView: View {
     @State private var directory: WorkspaceDirectory?
     @State private var selectedPack = ""
     @State private var volume = ClaudioConfig.defaultMasterVolume
-    @State private var volumeConfirmed = false
     @State private var surfaces = WorkspaceSurfaceEligibility.verified
     @State private var resolving = false
     @State private var failure: WorkspaceSoundError?
@@ -1271,12 +1270,8 @@ private struct AddWorkspaceSoundRuleView: View {
             HStack {
                 Text(l10n.text(.panelMasterVolume))
                 Slider(value: $volume, in: 0...1).accessibilityLabel(l10n.text(.panelMasterVolume))
-                    .onChange(of: volume) { _ in
-                        volumeConfirmed = false
-                    }
                 Text("\(Int(volume * 100))%").monospacedDigit()
             }
-            Toggle(l10n.text(.workspaceVolumeConfirm), isOn: $volumeConfirmed)
             Text(l10n.text(.workspaceSurfaces)).font(SettingsAppearance.font(.sectionTitle))
             ForEach(WorkspaceSurfaceEligibility.candidates, id: \.rawValue) { surface in
                 Toggle(
@@ -1306,7 +1301,7 @@ private struct AddWorkspaceSoundRuleView: View {
                         profile: WorkspaceSoundProfile(selectedPack: selectedPack, volume: volume))
                     if model.changeWorkspace(.add(rule)) { onCreated(rule.id) }
                 }.disabled(
-                    directory == nil || selectedPack.isEmpty || !volumeConfirmed || resolving
+                    directory == nil || selectedPack.isEmpty || resolving
                 )
                 .keyboardShortcut(.defaultAction)
             }
