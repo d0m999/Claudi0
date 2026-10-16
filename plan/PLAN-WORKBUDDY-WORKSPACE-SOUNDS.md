@@ -1,6 +1,6 @@
 # WorkBuddy Notification 独立接入与后续工作区声音
 
-状态：**阶段 A 的 Notification 独立实现、自动回归与本地候选已落地；本机最终连接为 configured / awaiting_receipt，真实四格、听音和原生 UI 尚未完成。阶段 B 的 StopFailure 仍受真实 Desktop 证据门阻塞，未开放 WorkBuddy 工作区来源**。目录前提见 `docs/validation/workspace-sound-rules-2026-09-24.md`；本轮结果见 `docs/validation/workbuddy-notification-2026-09-25.md`。
+状态：**阶段 A 的 Notification 独立实现、自动回归与本地候选已落地；本机最终连接为 configured / awaiting_receipt，真实四格、听音和原生 UI 尚未完成。2026-10-16 在 Desktop 5.8.3 上重采目录证据：UserPromptSubmit/Stop/SubagentStop/Notification 两 subtype 的 A/B 证据已取齐，StopFailure 经三种受控触发法均为零回调（与随包代码静态分析一致），按 ADR 0005 证据门不开放 WorkBuddy 工作区资格，阶段 B 保持阻塞。证据见 `docs/validation/workbuddy-workspace-sounds-5.8.3-2026-10-16.md`。** 目录前提见 `docs/validation/workspace-sound-rules-2026-09-24.md`；2026-09-25 记录见 `docs/validation/workbuddy-notification-2026-09-25.md`。
 
 ## 阶段 A：Notification 独立接入（本轮）
 
