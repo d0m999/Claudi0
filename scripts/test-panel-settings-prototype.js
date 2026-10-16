@@ -159,6 +159,7 @@ for (const lang of ["zh", "en"]) {
     assert.ok(!markup.includes(lang === "zh" ? "适用来源：" : "Applies to: "));
     assert.ok(!markup.includes("editWorkspaceBtn"));
     assert.ok(markup.includes('id="gearBtn"'));
+    assert.ok(markup.includes(lang === "zh" ? "打开设置" : "Open Settings"));
     assert.ok(markup.includes('title="' + (lang === "zh" ? "试听只验证" : "Preview checks")));
     runtime.mountControls(markup);
     document.getElementById("gearBtn").click();
@@ -205,8 +206,10 @@ for (const lang of ["zh", "en"]) {
     document.querySelectorAll("[data-listen]").find(button => button.getAttribute("data-listen") === "stop").click();
     assert.ok(messages.at(-1).includes(pack.files.stop), "preview still resolves the actual selected sound");
     assert.equal(JSON.stringify(group), before);
+    // S-41: paneSounds() is the bridge-less legacy fallback pane, not the approved Sounds page.
+    // The approved view is exercised by the browser harness (test-panel-settings-prototype-browser.py).
     context.S.soundPack = pack.id;
-    assert.ok(context.paneSounds().includes(pack.files.stop), "file metadata remains in Sounds settings");
+    assert.ok(context.paneSounds().includes(pack.files.stop), "file metadata remains in the bridge-less Sounds fallback pane");
   });
   test(`${lang}: unavailable panel previews keep readable and accessible failure reasons`, () => {
     const { context } = loadPrototype();
@@ -214,12 +217,13 @@ for (const lang of ["zh", "en"]) {
     const group = context.curGroup(), pack = context.packById(group.pack);
     pack.files.stop = null;
     let markup = context.panelHTML();
-    assert.ok(markup.includes('<span class="ev-reason" id="preview-reason-stop">' + (lang === "zh" ? "未映射" : "Not mapped") + '</span>'));
+    assert.ok(markup.includes('<span class="ev-reason" id="preview-reason-stop">' + (lang === "zh" ? "尚未配置声音；请在设置的「声音」页绑定音频" : "No sound is configured; bind audio on the Sounds page in Settings") + '</span>'));
     assert.ok(/data-listen="stop" disabled aria-describedby="preview-reason-stop"/.test(markup));
-    assert.ok(!/Configure sound|Choose a sound|设置声音/.test(markup));
+    assert.ok(/data-recover="configure"/.test(markup));
     pack.files.stop = "stop.aiff"; group.volume = 0;
     markup = context.panelHTML();
     assert.ok(markup.includes(lang === "zh" ? "音量为零" : "volume is zero"));
+    assert.ok(/data-recover="adjust"/.test(markup));
     pack.broken = true;
     assert.ok(context.panelHTML().includes(lang === "zh" ? "声音包损坏" : "Pack damaged"));
   });
@@ -274,106 +278,120 @@ function openCredentialSheet(profile, status, lang = "zh") {
   return runtime;
 }
 
-for (const profile of ["qwen-singapore", "qwen-beijing"]) {
-  for (const status of ["verified", "deferred", "rejected"]) {
-    test(`${profile}/${status}: save replaces active through cancellable pending`, () => {
-      const runtime = openCredentialSheet(profile, status);
-      const { context, document } = runtime;
-      const { S } = context;
-      const credentialsBefore = JSON.stringify(S.ai.cred);
-      const generationBefore = S.ai.generationID;
-      document.getElementById("sheetSave").click();
-      assert.equal(S.ai.activity, "pendingReplacement");
-      runtime.flushTimers();
-      assert.equal(S.ai.cred[profile], status, "saving a replacement preserves the active validation");
-      assert.equal(S.ai.pendingReplacement[profile], true);
-      assert.ok(context.aiCredentialStatusHTML(context.aiProfile()).includes(context.t().ai.pendingReplacement));
-      assert.equal(S.ai.generationID, generationBefore, "saving does not start generation");
-      assert.equal(S.ai.description, '说“你好”');
-      assert.equal(JSON.stringify(S.ai.cred), credentialsBefore, "other profiles remain independent");
-      runtime.mountControls(context.aiServiceCard());
-      document.getElementById("aiCancelReplacement").click();
-      assert.equal(S.ai.pendingReplacement[profile], undefined);
-      assert.equal(S.ai.cred[profile], status, "cancel restores the same active validation");
-    });
-  }
-  test(`${profile}: first save creates deferred active without pending`, () => {
-    const runtime = openCredentialSheet(profile, "missing");
+for (const status of ["verified", "deferred", "rejected"]) {
+  test(`bailian-beijing/${status}: save probes both model permissions and replaces atomically`, () => {
+    const runtime = openCredentialSheet("bailian-beijing", status);
     const { context, document } = runtime;
+    const { S } = context;
+    const generationBefore = S.ai.generationID;
     document.getElementById("sheetSave").click();
-    assert.equal(context.S.ai.activity, "saving");
+    assert.equal(S.ai.activity, "probing");
     runtime.flushTimers();
-    assert.equal(context.S.ai.cred[profile], "deferred");
-    assert.equal(context.S.ai.pendingReplacement[profile], undefined);
-    assert.equal(context.S.ai.stage, "editing");
-    assert.equal(context.S.ai.cands.length, 0);
+    assert.equal(S.ai.activity, null);
+    assert.equal(S.ai.cred["bailian-beijing"], "deferred", "saving bailian defers verification to the first explicit generation");
+    assert.equal(S.ai.pendingReplacement["bailian-beijing"], undefined);
+    assert.ok(context.aiCredentialStatusHTML(context.aiProfile()).includes(context.t().ai.permissionsOnly));
+    assert.equal(S.ai.generationID, generationBefore, "saving does not start generation");
+    assert.equal(S.ai.description, '说“你好”');
+    assert.equal(S.ai.stage, "editing");
+    assert.equal(S.ai.cands.length, 0);
   });
-  for (const lang of ["zh", "en"]) {
-    for (const status of ["verified", "deferred", "rejected"]) {
-      test(`${lang}/${profile}/${status}: rejected pending generation keeps active and returns to editing`, () => {
-        const runtime = openCredentialSheet(profile, status, lang);
-        const { context, document } = runtime;
-        const { S } = context;
-        document.getElementById("sheetSave").click();
-        runtime.flushTimers();
-        assert.equal(S.ai.pendingReplacement[profile], true);
-        S.soundPack = "my-pack";
-        S.aiEvent = "notification";
-        S.ai.injectFail = "credentialInvalid";
-        const credentialsBefore = JSON.stringify(S.ai.cred);
-        const packsBefore = JSON.stringify(context.PACKS);
-        const event = context.EVENTS.find(candidate => candidate.id === S.aiEvent);
-        runtime.mountControls(context.aiComposerHTML(context.packById(S.soundPack), event));
-        document.getElementById("aiGenBtn").click();
-        assert.equal(S.ai.stage, "generating");
-        runtime.flushTimers();
-        assert.equal(S.ai.stage, "editing");
-        assert.equal(S.ai.failure, "credentialInvalid");
-        assert.equal(S.ai.pendingReplacement[profile], undefined);
-        assert.equal(JSON.stringify(S.ai.cred), credentialsBefore);
-        assert.equal(JSON.stringify(context.PACKS), packsBefore);
-        assert.equal(S.ai.description, '说“你好”');
-        assert.equal(S.ai.cands.length, 0);
-        assert.equal(S.ai.injectFail, null);
-        assert.equal(runtime.messages.at(-1), context.t().ai.errors.credentialInvalid);
-        assert.match(context.aiComposerHTML(context.packById(S.soundPack), event), /class="err-line" role="alert"/);
-      });
-    }
-  }
-  test(`${profile}: generation failures other than authentication keep pending`, () => {
-    for (const failure of ["generation", "rateLimited", "credits", "audioInvalid", "noValidCandidates"]) {
-      const runtime = openCredentialSheet(profile, "verified");
-      const { context, document } = runtime;
-      document.getElementById("sheetSave").click();
-      runtime.flushTimers();
-      context.S.soundPack = "my-pack";
-      context.S.aiEvent = "notification";
-      context.S.ai.injectFail = failure;
-      context.aiGenerate();
-      runtime.flushTimers();
-      assert.equal(context.S.ai.stage, "editing");
-      assert.equal(context.S.ai.failure, failure);
-      assert.equal(context.S.ai.cred[profile], "verified");
-      assert.equal(context.S.ai.pendingReplacement[profile], true, failure);
-    }
+}
+test("bailian-beijing: first save stores deferred without a pending slot", () => {
+  const runtime = openCredentialSheet("bailian-beijing", "missing");
+  const { context, document } = runtime;
+  document.getElementById("sheetSave").click();
+  assert.equal(context.S.ai.activity, "probing");
+  runtime.flushTimers();
+  assert.equal(context.S.ai.cred["bailian-beijing"], "deferred");
+  assert.equal(context.S.ai.pendingReplacement["bailian-beijing"], undefined);
+  assert.equal(context.S.ai.stage, "editing");
+  assert.equal(context.S.ai.cands.length, 0);
+});
+for (const lang of ["zh", "en"]) {
+  test(`${lang}/bailian-beijing: failed model-permission probe keeps the saved configuration`, () => {
+    const runtime = openCredentialSheet("bailian-beijing", "deferred", lang);
+    const { context, document } = runtime;
+    const { S } = context;
+    const credentialsBefore = JSON.stringify(S.ai.cred);
+    S.ai.injectFail = "bailianPermissionFailure";
+    document.getElementById("sheetSave").click();
+    runtime.flushTimers();
+    assert.equal(S.ai.cred["bailian-beijing"], "deferred", "a failed probe must not replace the saved configuration");
+    assert.equal(JSON.stringify(S.ai.cred), credentialsBefore);
+    assert.equal(S.ai.injectFail, null);
+    assert.equal(S.ai.activity, null);
+    assert.equal(S.ai.pendingReplacement["bailian-beijing"], undefined);
+    assert.equal(S.ai.credentialFailure?.["bailian-beijing"], "bailianPermissionFailure");
+    assert.equal(runtime.messages.at(-1), context.t().ai.errors.bailianPermissionFailure);
+    const serviceCard = context.aiServiceCard();
+    assert.match(serviceCard, /class="err-line" role="alert"/);
+    assert.ok(serviceCard.includes(context.t().ai.errors.bailianPermissionFailure));
+    assert.ok(serviceCard.includes(context.t().ai.localConfiguration), "bailian storage copy is the local configuration sentence");
+    assert.ok(context.aiCredentialStatusHTML(context.aiProfile()).includes(context.t().ai.permissionsOnly));
   });
-  test(`${profile}: authentication failure without pending rejects the attempted active`, () => {
+  test(`${lang}/bailian-beijing: rejected generation marks the deferred record rejected`, () => {
     const runtime = loadPrototype();
     const { context } = runtime;
-    context.S.window = true;
-    context.S.pane = "sounds";
-    context.S.soundPack = "my-pack";
-    context.S.aiEvent = "notification";
-    context.S.ai.profile = profile;
-    context.S.ai.cred[profile] = "deferred";
-    context.S.ai.description = '说“你好”';
-    context.S.ai.injectFail = "credentialInvalid";
+    const { S } = context;
+    S.lang = lang;
+    S.window = true;
+    S.pane = "sounds";
+    S.soundPack = "my-pack";
+    S.aiEvent = "notification";
+    S.ai.profile = "bailian-beijing";
+    S.ai.cred["bailian-beijing"] = "deferred";
+    S.ai.description = '说“你好”';
+    S.ai.injectFail = "credentialInvalid";
     context.aiGenerate();
     runtime.flushTimers();
-    assert.equal(context.S.ai.stage, "editing");
-    assert.equal(context.S.ai.failure, "credentialInvalid");
-    assert.equal(context.S.ai.cred[profile], "rejected");
-    assert.equal(context.S.ai.cands.length, 0);
+    assert.equal(S.ai.stage, "editing");
+    assert.equal(S.ai.failure, "credentialInvalid");
+    assert.equal(S.ai.cred["bailian-beijing"], "rejected");
+    assert.equal(S.ai.cands.length, 0);
+    assert.equal(S.ai.injectFail, null);
+    assert.equal(runtime.messages.at(-1), context.t().ai.errors.credentialInvalid);
+  });
+  for (const failure of ["serviceUnavailable", "assetContractUnavailable"]) {
+    test(`${lang}/bailian-beijing: ${failure} keeps the saved configuration`, () => {
+      const runtime = loadPrototype();
+      const { context } = runtime;
+      const { S } = context;
+      S.lang = lang;
+      S.window = true;
+      S.pane = "sounds";
+      S.soundPack = "my-pack";
+      S.aiEvent = "notification";
+      S.ai.profile = "bailian-beijing";
+      S.ai.cred["bailian-beijing"] = "deferred";
+      S.ai.description = '说“你好”';
+      S.ai.injectFail = failure;
+      context.aiGenerate();
+      runtime.flushTimers();
+      assert.equal(S.ai.stage, "editing");
+      assert.equal(S.ai.failure, failure);
+      assert.equal(S.ai.cred["bailian-beijing"], "deferred", "failure must leave the saved configuration untouched");
+      assert.equal(S.ai.injectFail, null);
+      assert.equal(runtime.messages.at(-1), context.t().ai.errors[failure]);
+    });
+  }
+  test(`${lang}/bailian-beijing: first successful generation confirms the deferred save`, () => {
+    const runtime = loadPrototype();
+    const { context } = runtime;
+    const { S } = context;
+    S.lang = lang;
+    S.window = true;
+    S.pane = "sounds";
+    S.soundPack = "my-pack";
+    S.aiEvent = "notification";
+    S.ai.profile = "bailian-beijing";
+    S.ai.cred["bailian-beijing"] = "deferred";
+    S.ai.description = '说“你好”';
+    context.aiGenerate();
+    runtime.flushTimers();
+    assert.equal(S.ai.stage, "candidates");
+    assert.equal(S.ai.cred["bailian-beijing"], "verified", "first successful generation confirms the deferred record");
+    assert.equal(S.ai.cands.length, 3);
   });
 }
 
@@ -484,7 +502,7 @@ test("language matching normalizes both sides without broadening exact tags", ()
   assert.equal(context.aiLocaleSupported(["zh*"], "zhuang"), false);
 });
 
-const profiles = ["elevenlabs-global", "minimax-global", "qwen-singapore", "qwen-beijing", "senseaudio-cn"];
+const profiles = ["elevenlabs-global", "minimax-global", "bailian-beijing", "senseaudio-cn"];
 for (const lang of ["zh", "en"]) {
   for (const profile of profiles) {
     for (const scene of ["candidates", "generating", "applied"]) {
@@ -724,7 +742,8 @@ for (const lang of ["zh", "en"]) {
     runtime.advanceTime(450);
     assert.equal(context.S.banners[0].failure, "unavailable");
     assert.equal(context.S.bannerSerial, serial);
-    assert.ok(context.bannerHTML().includes('role="alert"'));
+    assert.ok(context.bannerHTML().includes('class="banner-error"'));
+    assert.ok(context.bannerHTML().includes(lang === "zh" ? "未能打开来源应用" : "Could not open the source app"));
     assert.ok(context.bannerHTML().includes(lang === "zh" ? "重试" : "Retry"));
     runtime.mountControls(context.bannerHTML());
     document.getElementById("bannerAct-1").click();
@@ -810,6 +829,7 @@ test("whole-pack import creates an independent pack and preserves existing selec
     const audio = (id, name, filename, duration=1.4) => ({id,name,filename,duration});
     const events = ['task_start','stop','stop_failure','notification','subagent_stop'].map(id=>({id,name:id}));
     const sampleService='demo';
+    const T = (zh, en) => zh;
     ${source.slice(start, end)}
     globalThis.reduce = action => Model.reduce(globalThis.input,action);
   `).runInContext(context);
@@ -1033,4 +1053,80 @@ test("a navigation result arriving beyond the original three seconds cannot cons
   runtime.advanceTime(500);
   assert.ok(context.REMINDERS.some(r => r.id === reminder));
   assert.equal(context.S.bannerNavigationID,null);
+});
+
+// The approved Sounds bridge: restore is the damaged pack's recovery path, so it
+// passes the pack health gate and re-marks the restored pack healthy on write.
+// The bridge lives in the prototype's block-scoped approved section, so exercise
+// it through the same source-extraction seam as the reducer test above.
+function loadApprovedBridge() {
+  const source = scripts[0][1];
+  const start = source.indexOf("function approvedSoundsSnapshot(packs=S.packs){");
+  const end = source.indexOf("function mountApprovedSounds(){", start);
+  assert.ok(start >= 0 && end > start, "the approved section exposes its bridge seam");
+  const context = vm.createContext({ structuredClone, console });
+  new vm.Script(`
+    const T = (zh, en) => zh;
+    const events = ['task_start','stop','stop_failure','notification','subagent_stop']
+      .map(id => ({id, name: id}));
+    const packName = p => p?.name || '不可用';
+    const hasCredential = () => true;
+    const users = () => [];
+    const factoryPacks = () => ['minimal','soft'].map(id => ({
+      id, name: id, builtin: true, healthy: true, license: 'CC0',
+      sounds: events.map((e,i) => id + '-' + (i+1) + '.wav'),
+      sources: events.map(() => 'file'),
+      audio: events.map((e,i) => id + '-' + (i+1) + '.wav')}));
+    globalThis.S = {
+      library: 'ready', operation: null, referencesComplete: true, scopes: [],
+      stars: ['minimal'], serial: 3, faults: {}, description: '',
+      packs: [
+        {id:'minimal', name:'Minimal', builtin:true, healthy:false, license:'CC0',
+          sounds:['broken.wav',null,null,null,null], sources:['file',null,null,null,null],
+          audio:['broken.wav']},
+        {id:'soft', name:'Soft', builtin:true, healthy:false, license:'CC0',
+          sounds:['s1.wav','s2.wav','s3.wav','s4.wav','s5.wav'],
+          sources:['file','file','file','file','file'],
+          audio:['s1.wav','s2.wav','s3.wav','s4.wav','s5.wav']},
+        {id:'studio', name:'Studio', builtin:false, healthy:false,
+          sounds:['intro.wav'], sources:['file'], audio:['intro.wav']},
+      ],
+    };
+    ${source.slice(start, end)}
+    globalThis.bridge = {guard: approvedSoundsGuard, write: writeApprovedSounds,
+      snapshot: approvedSoundsSnapshot};
+  `).runInContext(context);
+  return context;
+}
+
+test("approved bridge: restore passes the damaged-pack gate and heals the restored pack", () => {
+  const bridge = loadApprovedBridge();
+  const blocked = bridge.bridge.guard({ type: "clear", packID: "minimal", event: "stop" });
+  assert.ok(blocked.includes("不可用"), "ordinary writes to a damaged pack stay blocked");
+  assert.equal(
+    bridge.bridge.guard({ type: "restore-pack", packID: "minimal" }), "",
+    "restore-pack is the damaged pack's recovery path and must not hit the health gate");
+  bridge.bridge.write(bridge.bridge.snapshot(), { type: "restore-pack", packID: "minimal" });
+  const restored = bridge.S.packs.find(p => p.id === "minimal");
+  assert.equal(restored.healthy, true, "restore re-marks the pack healthy");
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.sounds)),
+    ["broken.wav", null, null, null, null],
+    "write passes the reducer-restored content through untouched");
+});
+
+test("approved bridge: restore-all heals only the factory packs it re-publishes", () => {
+  const bridge = loadApprovedBridge();
+  bridge.bridge.write(bridge.bridge.snapshot(), { type: "restore-all" });
+  assert.equal(bridge.S.packs.find(p => p.id === "minimal").healthy, true,
+    "restore-all re-marks the damaged built-in healthy");
+  assert.equal(bridge.S.packs.find(p => p.id === "soft").healthy, true);
+  assert.equal(bridge.S.packs.find(p => p.id === "studio").healthy, false,
+    "a damaged user pack is not part of the factory restore");
+});
+
+test("approved bridge: the restore fault still blocks recovering a damaged pack", () => {
+  const bridge = loadApprovedBridge();
+  bridge.S.faults.restore = true;
+  const message = bridge.bridge.guard({ type: "restore-pack", packID: "minimal" });
+  assert.ok(message.includes("恢复出厂声音失败"), "the restore fault stays authoritative");
 });

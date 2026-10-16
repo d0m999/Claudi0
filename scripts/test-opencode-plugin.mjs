@@ -464,7 +464,7 @@ await check("dispose lets admitted helper callbacks finish within their existing
 // segment. Fixtures drive both shapes.
 // ---------------------------------------------------------------------------
 
-function v2Fixture({ lookup, clock, events } = {}) {
+function v2Fixture({ lookup, clock, events, claims } = {}) {
   const queue = [];
   const waiters = [];
   const stream = {
@@ -493,7 +493,7 @@ function v2Fixture({ lookup, clock, events } = {}) {
   f.setup = () => module.default.setup(context, {
     dispatch: (name, payload) => dispatched.push({ name, payload }),
     clock: clock ?? (() => 1000),
-    claims: new Map(),
+    claims: claims ?? new Map(),
   });
   f.events = dispatched;
   f.push = (event) => {
@@ -532,6 +532,79 @@ function v2Fixture({ lookup, clock, events } = {}) {
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+for (const outcome of ["succeeded", "failed", "interrupted"]) {
+  await check("V2 queued user admission survives the active execution " + outcome, async () => {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.sessionCreated();
+    await f.admit();
+    await f.startExecution();
+    await f.step();
+    await f.admit("s", "prompt-2");
+    await f.emitEvent("session.execution." + outcome, { sessionID: "s", error: { name: "APIError" } });
+    await f.startExecution();
+    await f.step("s", "msg-2");
+    await f.succeeded();
+    const first = outcome === "succeeded" ? ["UserTurnStarted", "ResponseCompleted"]
+      : outcome === "failed" ? ["UserTurnStarted", "ResponseFailed"] : ["UserTurnStarted"];
+    assert.deepEqual(f.names(), [...first, "UserTurnStarted", "ResponseCompleted"]);
+    assert.equal(f.events.at(-2).payload.turn_id, "prompt-2");
+    assert.equal(f.events.at(-1).payload.turn_id, "prompt-2");
+    assert.equal(f.events.at(-1).payload.message_id, "msg-2");
+    await cleanup();
+  });
+}
+
+for (const outcome of ["succeeded", "failed", "interrupted"]) {
+  await check("V2 queued user admission survives an unadmitted synthetic execution " + outcome,
+    async () => {
+      const f = v2Fixture();
+      const cleanup = await f.setup();
+      await f.sessionCreated();
+      // A synthetic or automatic execution never establishes an active turn:
+      // its step is unadmitted. Its terminal must retire only the admission it
+      // carried, not a real user prompt queued while it was executing.
+      await f.admitSynthetic("s", "synthetic-1");
+      await f.startExecution();
+      await f.step("s", "synthetic-msg");
+      await f.admit("s", "prompt-2");
+      await f.emitEvent("session.execution." + outcome, { sessionID: "s", error: { name: "APIError" } });
+      await f.startExecution();
+      await f.step("s", "msg-2");
+      await f.succeeded();
+      assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+      assert.equal(f.events[0].payload.turn_id, "prompt-2");
+      assert.equal(f.events[0].payload.message_id, "msg-2");
+      assert.equal(f.events[1].payload.turn_id, "prompt-2");
+      await cleanup();
+    });
+}
+
+for (const outcome of ["failed", "interrupted"]) {
+  for (const executionStarted of [false, true]) {
+    await check("V2 pre-step " + outcome + " retires admission, execution started: " + executionStarted, async () => {
+      const f = v2Fixture();
+      const cleanup = await f.setup();
+      await f.sessionCreated();
+      await f.admit();
+      if (executionStarted) await f.startExecution();
+      await f.emitEvent("session.execution." + outcome, { sessionID: "s", error: { name: "APIError" } });
+      await f.admitSynthetic();
+      await f.startExecution();
+      await f.step("s", "synthetic-msg");
+      await f.succeeded();
+      assert.deepEqual(f.names(), [], "a cancelled admission cannot authorize synthetic execution");
+      await f.admit("s", "fresh-prompt");
+      await f.startExecution();
+      await f.step("s", "fresh-msg");
+      await f.succeeded();
+      assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+      assert.equal(f.events[0].payload.turn_id, "fresh-prompt");
+      await cleanup();
+    });
+  }
+}
 
 await check("V2 ordinary turn needs admitted prompt, execution and step", async () => {
   const f = v2Fixture();
@@ -660,6 +733,30 @@ await check("V2 interrupted executions never play", async () => {
   assert.deepEqual(f.names(), ["UserTurnStarted"]);
   await cleanup();
 });
+
+for (const type of ["session.created", "session.updated"]) {
+  for (const shape of ["data", "properties"]) {
+    await check("V2 nested child identity survives top-level sessionID: " + type + " / " + shape, async () => {
+      const f = v2Fixture();
+      const cleanup = await f.setup();
+      const session = { sessionID: "child", info: { id: "child", parentID: "parent",
+        title: "PRIVATE_TITLE", summary: { additions: 1 } } };
+      if (shape === "data") await f.emitEvent(type, session);
+      else await f.emitProperties(type, session);
+      await f.emitEvent("permission.asked", { sessionID: "child", id: "child-permission" });
+      assert.equal(f.events[0].payload.session_kind, "child");
+      assert.equal(f.events[0].payload.parent_session_id, "parent");
+      await f.startExecution("child");
+      await f.step("child", "child-msg");
+      await f.succeeded("child");
+      assert.deepEqual(f.names(), ["PermissionRequested", "SubagentCompleted"]);
+      assert.equal(f.events[1].payload.parent_session_id, "parent");
+      assert.equal(f.events[1].payload.session_id, "child");
+      assert.equal(JSON.stringify(f.events).includes("PRIVATE_"), false);
+      await cleanup();
+    });
+  }
+}
 
 await check("V2 child session completion is subagent_stop with parent identity", async () => {
   const f = v2Fixture();
@@ -809,6 +906,59 @@ await check("V2 unrelated stream events never emit or retain bodies", async () =
   assert.deepEqual(f.names(), []);
   assert.equal(JSON.stringify(f.events).includes("PRIVATE"), false);
   await cleanup();
+});
+
+await check("V2 global requests use their session directory even when another instance claims first", async () => {
+  const claims = new Map();
+  const events = [];
+  const a = v2Fixture({ claims, events });
+  const b = v2Fixture({ claims, events });
+  const cleanupA = await a.setup();
+  const cleanupB = await b.setup();
+  const session = { sessionID: "session-b", info: { id: "session-b", directory: b.context.location.directory } };
+  await a.emitProperties("session.created", session);
+  await b.emitProperties("session.created", session);
+  const request = { sessionID: "session-b", id: "permission-b" };
+  await a.emitEvent("permission.asked", request);
+  await b.emitEvent("permission.asked", request);
+  assert.equal(events.length, 1, "global claim still deduplicates the request");
+  assert.equal(events[0].payload.cwd, b.context.location.directory);
+  await cleanupA();
+  await cleanupB();
+});
+
+for (const source of ["created", "updated", "lookup"]) {
+  await check("V2 session directory comes from " + source + " evidence", async () => {
+    const f = v2Fixture({ lookup: async () => ({ data: { id: "s", directory: "/fixture/session-owner" } }) });
+    const cleanup = await f.setup();
+    if (source === "created") {
+      await f.emitEvent("session.created", { sessionID: "s", directory: "/fixture/session-owner" });
+    } else if (source === "updated") {
+      await f.sessionCreated();
+      await f.emitProperties("session.updated", { sessionID: "s", info: { id: "s", directory: "/fixture/session-owner" } });
+    }
+    await f.emitEvent("permission.asked", { sessionID: "s", id: "permission" });
+    assert.equal(f.events[0].payload.cwd, "/fixture/session-owner");
+    await f.admit();
+    await f.startExecution();
+    await f.step();
+    await f.succeeded();
+    assert.deepEqual(f.names(), ["PermissionRequested", "UserTurnStarted", "ResponseCompleted"]);
+    assert.equal(f.events.every(({ payload }) => payload.cwd === "/fixture/session-owner"), true);
+    await cleanup();
+  });
+}
+
+await check("V2 unknown or unsafe session directories never use the subscriber directory", async () => {
+  for (const directory of [undefined, "relative/path", 42, "/unsafe\npath", "/bad\u202epath", "/" + "x".repeat(4096)]) {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.emitEvent("session.created", { sessionID: "s", info: { id: "s", directory } });
+    await f.emitEvent("permission.asked", { sessionID: "s", id: "permission" });
+    assert.deepEqual(f.names(), ["PermissionRequested"]);
+    assert.equal(Object.hasOwn(f.events[0].payload, "cwd"), false);
+    await cleanup();
+  }
 });
 
 await check("V2 duplicate instances claim emissions only once per host event", async () => {

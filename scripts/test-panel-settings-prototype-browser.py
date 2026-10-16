@@ -619,15 +619,15 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 mute.click()
                 self.assertEqual(self.settings_state()["scopes"], original)
                 self.assertEqual(mute.get_attribute("aria-pressed"), "false")
-                feedback = self.page.locator('#popover [role="alert"]')
+                feedback = self.page.locator("#popover #panelWriteFailure")
                 self.assertTrue(feedback.is_visible())
-                self.assertIn("写入冲突" if language == "zh" else "Write conflict", feedback.inner_text())
+                self.assertIn("写入失败" if language == "zh" else "Could not save", feedback.inner_text())
                 self.page.locator("#gearBtn").click()
                 self.page.locator('[data-action="nav:events"]').click()
                 self.page.locator('[data-action="retry-config"]').click()
                 self.page.locator("#window-close").click()
                 self.assertEqual(mute.get_attribute("aria-pressed"), "true")
-                self.assertEqual(self.page.locator('#popover [role="alert"]').count(), 0)
+                self.assertEqual(self.page.locator("#popover #panelWriteFailure").count(), 0)
 
     def test_panel_rejected_pack_write_restores_selection_and_shows_reason(self):
         for language in ["zh", "en"]:
@@ -638,9 +638,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.page.locator("#panelPack").select_option(attempted_pack)
                     self.assertEqual(self.settings_state()["scopes"], original)
                     self.assertEqual(self.page.locator("#panelPack").input_value(), "minimal")
-                    feedback = self.page.locator('#popover [role="alert"]')
+                    feedback = self.page.locator("#popover #panelWriteFailure")
                     self.assertTrue(feedback.is_visible())
-                    self.assertIn("写入冲突" if language == "zh" else "Write conflict", feedback.inner_text())
+                    self.assertIn("写入失败" if language == "zh" else "Could not save", feedback.inner_text())
 
     def test_panel_rejected_volume_write_restores_slider_and_shows_reason(self):
         for language in ["zh", "en"]:
@@ -652,9 +652,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.assertEqual(self.settings_state()["scopes"], original)
                     self.assertEqual(self.page.locator("#volRange").input_value(), "65")
                     self.assertEqual(self.page.locator("#volPct").inner_text(), "65%")
-                    feedback = self.page.locator('#popover [role="alert"]')
+                    feedback = self.page.locator("#popover #panelWriteFailure")
                     self.assertTrue(feedback.is_visible())
-                    self.assertIn("写入冲突" if language == "zh" else "Write conflict", feedback.inner_text())
+                    self.assertIn("写入失败" if language == "zh" else "Could not save", feedback.inner_text())
 
     def test_settings_retry_clears_the_matching_panel_write_failure(self):
         for language in ["zh", "en"]:
@@ -668,7 +668,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.page.locator("#volRange").fill("30")
                     self.assertEqual(self.settings_state()["scopes"], original)
                     self.assertEqual(self.settings_state()["panelWriteFailure"]["scope"], scope)
-                    self.assertTrue(self.page.locator('#popover [role="alert"]').is_visible())
+                    self.assertTrue(self.page.locator("#popover #panelWriteFailure").is_visible())
                     self.page.locator("#gearBtn").click()
                     self.page.locator('[data-action="nav:events"]').click()
                     self.page.locator('[data-action="retry-config"]').click()
@@ -680,7 +680,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.assertEqual(self.page.locator("#volRange").input_value(), "30")
                     self.assertEqual(self.page.locator("#volPct").inner_text(), "30%")
                     self.assertIsNone(self.settings_state()["panelWriteFailure"])
-                    self.assertEqual(self.page.locator('#popover [role="alert"]').count(), 0)
+                    self.assertEqual(self.page.locator("#popover #panelWriteFailure").count(), 0)
 
     def test_collapsed_settings_reminders_update_without_navigation(self):
         self.open(win="1", pane="activity")
@@ -710,24 +710,39 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertEqual(len(self.settings_state()["reading"]), len(original) + 1)
         self.assertEqual(self.page.locator('[data-action^="notice:"]').count(), len(original) + 1)
 
-    def test_closing_empty_draft_publishes_restored_pack_before_reopening(self):
-        for close_control in ["#window-close", "#viewPanel"]:
-            with self.subTest(close_control=close_control):
+    def test_named_empty_draft_survives_navigation_and_window_close(self):
+        for exit_control in ['[data-action="nav:general"]', "#window-close", "#viewPanel"]:
+            with self.subTest(exit_control=exit_control):
                 self.open(win="1", pane="sounds")
                 original = self.settings_state()
-                self.page.locator('[data-action="new-pack"]').click()
-                draft = self.settings_state()["draft"]["id"]
-                self.assertEqual(self.page.evaluate("S.soundPack"), draft)
-                self.page.locator(close_control).click()
-                self.assertIsNone(self.settings_state()["draft"])
-                self.assertEqual(self.settings_state()["pack"], original["pack"])
-                self.assertEqual(self.page.evaluate("S.soundPack"), original["pack"])
-                self.assertEqual(self.settings_state()["scopes"], original["scopes"])
-                self.page.locator("#viewWindow").click()
-                self.assertEqual(self.settings_state()["pack"], original["pack"])
-                self.assertEqual(self.page.locator('[data-control="pack"]').input_value(), original["pack"])
-                self.assertNotIn("原声音包已移除", self.page.locator("#page-content").inner_text())
-                self.assertNotIn(draft, [p["id"] for p in self.settings_state()["packs"]])
+                self.page.locator('[data-act="new-pack"]').click()
+                self.page.locator("#sf-name-input").fill("Retained draft")
+                self.page.locator('[data-act="save-name"]').click()
+                created = self.settings_state()
+                draft = created["pack"]
+                self.assertNotEqual(draft, original["pack"], "the new pack becomes the selection")
+                self.assertTrue(next(p for p in created["packs"] if p["id"] == draft)["draft"],
+                                "a pack without cue bindings stays an unpublished draft")
+                self.page.locator(exit_control).click()
+                closed = self.settings_state()
+                self.assertEqual(closed["scopes"], original["scopes"], "closing does not change group selections")
+                retained = next((p for p in closed["packs"] if p["id"] == draft), None)
+                self.assertIsNotNone(retained, "a confirmed name must survive leaving Sounds")
+                self.assertTrue(retained["draft"])
+                self.assertEqual(retained["name"], "Retained draft")
+                self.assertEqual(retained["sounds"], [None] * 5)
+                self.assertNotIn(draft, closed["stars"])
+                if exit_control == '[data-action="nav:general"]':
+                    self.page.locator('[data-action="nav:sounds"]').click()
+                else:
+                    self.page.locator("#viewWindow").click()
+                if self.page.locator('[data-act="back"]').is_visible():
+                    self.page.locator('[data-act="back"]').click()
+                self.page.locator(f'[data-act="pack"][data-id="{draft}"]').click()
+                self.assertEqual(self.settings_state()["pack"], draft)
+                self.assertNotIn("原声音包已移除", self.page.evaluate(
+                    "document.getElementById('window').shadowRoot.getElementById('page-content').textContent"))
+                self.assertTrue(next(p for p in self.settings_state()["packs"] if p["id"] == draft)["draft"])
 
     def test_full_queue_publishes_reminders_to_already_open_consumers(self):
         self.open(win="1", pane="activity")
@@ -812,7 +827,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.assertNotIn(removed, self.page.evaluate("[...S.banners,...S.bannerQueue].map(n=>n.reminderID)"))
 
     def test_ai_deep_links_initialize_the_rendered_settings_owner(self):
-        for profile in ["elevenlabs-global", "minimax-global", "qwen-singapore", "qwen-beijing", "senseaudio-cn"]:
+        for profile in ["elevenlabs-global", "minimax-global", "bailian-beijing", "senseaudio-cn"]:
             for lang in ["zh", "en"]:
                 for scene in ["credential", "candidates", "generating", "applied"]:
                     with self.subTest(profile=profile, lang=lang, scene=scene):
@@ -847,7 +862,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                                 self.assertNotIn("license", pack)
 
     def test_ai_deep_links_keep_partial_policy_and_failure_preserves_binding(self):
-        for profile, count in [("senseaudio-cn", 2), ("elevenlabs-global", 3), ("qwen-singapore", 3)]:
+        for profile, count in [("senseaudio-cn", 2), ("elevenlabs-global", 3), ("bailian-beijing", 3)]:
             with self.subTest(profile=profile):
                 self.open(win="1", pane="sounds", ai="candidates", aiProfile=profile, aiPartial="1")
                 state = self.settings_state()
@@ -861,7 +876,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertEqual(next(p for p in state["packs"] if p["id"] == "studio")["sounds"][3], "knock.wav")
 
     def test_ai_generating_deep_link_discards_late_results_after_navigation(self):
-        self.open(win="1", pane="sounds", ai="generating", aiProfile="qwen-beijing")
+        self.open(win="1", pane="sounds", ai="generating", aiProfile="bailian-beijing")
         self.assertEqual(self.settings_state()["generation"], "busy")
         self.page.locator('[data-action="nav:general"]').click()
         self.page.wait_for_timeout(1200)
@@ -899,13 +914,16 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.assertTrue(self.page.locator("#window").is_visible())
                 self.assertEqual(self.settings_state()["page"], state)
 
-    def test_escape_from_settings_uses_settings_handback(self):
+    def test_escape_from_settings_focuses_sidebar_and_keeps_window_open(self):
         self.open(panel="1")
         self.page.locator("#gearBtn").click()
         self.page.keyboard.press("Escape")
-        self.assertFalse(self.page.locator("#window").is_visible())
-        self.assertTrue(self.page.locator("#popover").is_visible())
-        self.assertTrue(self.page.locator("#gearBtn").evaluate("el => el === document.activeElement"))
+        self.assertTrue(self.page.locator("#window").is_visible())
+        self.assertTrue(
+            self.page.locator("#settings-nav .nav-item.active").evaluate(
+                "el => el === el.getRootNode().activeElement"
+            )
+        )
 
     def test_native_shortcut_sheet_captures_then_releases_keyboard(self):
         self.open(win="1", pane="shortcuts")
@@ -920,7 +938,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.page.keyboard.press("Meta+v")
         self.assertEqual(self.settings_state()["keys"][0], "⌘ K")
 
-    def test_native_sheet_escape_cancels_before_settings_window_closes(self):
+    def test_native_sheet_escape_cancels_recording_and_never_closes_settings(self):
         self.open(win="1", pane="shortcuts")
         self.page.locator('[data-action="record-key:0"]').click()
         self.page.keyboard.press("Escape")
@@ -928,7 +946,12 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#window").is_visible())
         self.assertEqual(self.settings_state()["keys"][0], "⌃ ⌥ C")
         self.page.keyboard.press("Escape")
-        self.assertFalse(self.page.locator("#window").is_visible())
+        self.assertTrue(self.page.locator("#window").is_visible())
+        self.assertTrue(
+            self.page.locator("#settings-nav .nav-item.active").evaluate(
+                "el => el === el.getRootNode().activeElement"
+            )
+        )
 
     def test_native_close_button_preserves_preferences_and_reopens(self):
         self.open(win="1", pane="notifications")
@@ -996,33 +1019,36 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             self.assertTrue(self.page.locator(f'[data-action="nav:{page}"]').evaluate("el => el === el.getRootNode().activeElement"))
 
     def test_settings_close_paths_clear_the_window_history_before_reopening(self):
-        for close_path in ["outer_escape", "window_button"]:
-            with self.subTest(close_path=close_path):
-                self.open(win="1", pane="general")
-                original_scopes = self.settings_state()["scopes"]
-                self.page.locator('[data-action="nav:notifications"]').click()
-                self.page.locator('[data-action="nav:sounds"]').click()
-                self.page.locator("#detail-back").click()
-                before = self.page.evaluate("MacSettings.review.navigation.getState()")
-                self.assertGreater(before["cursor"], 0)
-                self.assertFalse(self.page.locator("#detail-forward").is_disabled())
-                if close_path == "outer_escape":
-                    self.page.locator("#mbIcon").focus()
-                    self.page.keyboard.press("Escape")
-                else:
-                    self.page.locator("#window-close").click()
-                self.assertFalse(self.page.locator("#window").is_visible())
-                closed = self.page.evaluate("MacSettings.review.navigation.getState()")
-                self.assertEqual(closed["entries"], [])
-                self.assertEqual(closed["cursor"], -1)
-                self.assertGreater(closed["version"], before["version"])
-                self.assertEqual(self.settings_state()["scopes"], original_scopes)
-                self.page.locator("#viewWindow").click()
-                reopened = self.page.evaluate("MacSettings.review.navigation.getState()")
-                self.assertEqual(len(reopened["entries"]), 1)
-                self.assertEqual(reopened["cursor"], 0)
-                self.assertTrue(self.page.locator("#detail-back").is_disabled())
-                self.assertTrue(self.page.locator("#detail-forward").is_disabled())
+        # Escape never closes the window (native contract) and must not clear its history.
+        self.open(win="1", pane="general")
+        original_scopes = self.settings_state()["scopes"]
+        self.page.locator('[data-action="nav:notifications"]').click()
+        self.page.locator('[data-action="nav:sounds"]').click()
+        self.page.locator("#detail-back").click()
+        before = self.page.evaluate("MacSettings.review.navigation.getState()")
+        self.assertGreater(before["cursor"], 0)
+        self.assertFalse(self.page.locator("#detail-forward").is_disabled())
+        self.page.locator("#mbIcon").focus()
+        self.page.keyboard.press("Escape")
+        self.assertTrue(self.page.locator("#window").is_visible())
+        self.assertEqual(
+            self.page.evaluate("MacSettings.review.navigation.getState()")["cursor"],
+            before["cursor"],
+        )
+        # The window close button clears browsing history before reopening.
+        self.page.locator("#window-close").click()
+        self.assertFalse(self.page.locator("#window").is_visible())
+        closed = self.page.evaluate("MacSettings.review.navigation.getState()")
+        self.assertEqual(closed["entries"], [])
+        self.assertEqual(closed["cursor"], -1)
+        self.assertGreater(closed["version"], before["version"])
+        self.assertEqual(self.settings_state()["scopes"], original_scopes)
+        self.page.locator("#viewWindow").click()
+        reopened = self.page.evaluate("MacSettings.review.navigation.getState()")
+        self.assertEqual(len(reopened["entries"]), 1)
+        self.assertEqual(reopened["cursor"], 0)
+        self.assertTrue(self.page.locator("#detail-back").is_disabled())
+        self.assertTrue(self.page.locator("#detail-forward").is_disabled())
 
     def test_background_host_completion_keeps_sidebar_focus_and_arrow_navigation(self):
         for language in ["zh", "en"]:
@@ -1069,7 +1095,12 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#page-title").evaluate("el => el === el.getRootNode().activeElement"))
         self.page.keyboard.press("Escape")
         self.assertTrue(self.page.locator("#window").is_visible())
-        self.assertNotEqual(self.settings_state()["detail"],"host-diagnostics")
+        self.assertEqual(self.settings_state()["detail"],"host-diagnostics")
+        self.assertTrue(
+            self.page.locator("#settings-nav .nav-item.active").evaluate(
+                "el => el === el.getRootNode().activeElement"
+            )
+        )
 
     def test_five_integration_icons_share_size_and_identify_cli_or_desktop(self):
         groups = [
@@ -1187,18 +1218,27 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         for lang in ["zh", "en"]:
             with self.subTest(lang=lang):
                 self.open(win="1", pane="sounds", lang=lang)
-                self.page.locator('[data-control="pack"]').select_option("studio")
                 initial = self.settings_state()
-                self.page.locator('[data-action="generate-pack:0"]').click()
-                self.assertEqual(self.settings_state()["expandedEvent"], 0)
-                self.page.locator('[data-action="back-sounds"]').click()
-                self.page.locator('[data-action="new-pack"]').click()
-                self.assertIsNone(self.settings_state()["expandedEvent"])
-                self.assertFalse(self.page.locator("#cue-description").is_visible())
-                self.page.locator('[data-action="system-sound"]').click()
-                self.page.locator('[data-choice="Glass"]').click()
+                self.page.locator('[data-act="pack"][data-id="studio"]').click()
+                event = '.sf-event[data-event="task_start"]'
+                self.page.locator(f'{event} [data-act="sources"]').click()
+                self.page.locator(f'{event} [data-source="ai"]').click()
+                self.assertTrue(self.page.locator("#sf-ai-prompt").is_visible())
+                self.page.locator('[data-act="close"]').click()
+                self.page.locator("#detail-back").click()
+                self.assertTrue(self.page.locator('[data-act="new-pack"]').is_visible())
+                self.page.locator('[data-act="new-pack"]').click()
+                self.page.locator('[data-act="save-name"]').click()
+                draft = self.settings_state()["pack"]
+                self.assertNotEqual(draft, initial["pack"])
+                self.assertFalse(self.page.locator("#sf-ai-prompt").is_visible(),
+                                 "the previous pack's generation form must not leak into the new draft")
+                self.page.locator(f'{event} [data-act="sources"]').click()
+                self.page.locator(f'{event} [data-source="system"]').click()
+                self.page.locator('[data-choice="Glass"]').check()
+                self.page.locator('[data-act="adopt"]').click()
                 published = self.settings_state()
-                self.assertIsNone(published["draft"])
+                self.assertIsNone(published["approvedCues"]["task"])
                 self.assertEqual(len(published["packs"]), len(initial["packs"]) + 1)
                 self.assertEqual(published["scopes"], initial["scopes"])
                 pack = next(p for p in published["packs"] if p["id"] == published["pack"])
@@ -1270,18 +1310,131 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 expect(feedback).to_have_text(restored["notice"][lang])
                 self.assertTrue(favorite.evaluate("el => el.getRootNode().activeElement === el"))
 
+    def test_empty_library_restores_factory_packs_from_independent_source(self):
+        expected_ids = ["minimal", "soft", "night", "pizzicato", "bowl", "station"]
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="sounds", lang=language)
+                self.page.evaluate("MacSettings.review.setScene('empty')")
+                before = self.settings_state()
+                self.assertEqual(before["packs"], [])
+                self.page.locator('[data-act="restore-all"]').click()
+                self.page.locator('.sf-sheet [data-act="close"]').click()
+                self.assertEqual(self.settings_state()["packs"], [])
+                self.page.locator('[data-act="restore-all"]').click()
+                self.page.locator('.sf-sheet [data-act="confirm"]').click()
+                restored = self.settings_state()
+                self.assertEqual([p["id"] for p in restored["packs"]], expected_ids)
+                self.assertEqual(restored["scopes"], before["scopes"])
+                for pack in restored["packs"]:
+                    self.assertTrue(pack["builtin"] and pack["healthy"])
+                    self.assertEqual(pack["sounds"], [f'{pack["id"]}-{i}.wav' for i in range(1, 6)])
+                    self.assertEqual(pack["audio"], pack["sounds"])
+                    self.assertEqual(pack["license"], "CC0")
+                    self.assertEqual(pack["author"], "Factory attribution")
+
+    def test_damaged_builtin_pack_restore_entry_repairs_the_pack(self):
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="sounds", lang=language)
+                self.page.evaluate("MacSettings.review.setScene('brokenBuiltin')")
+                self.page.locator('[data-act="pack"][data-id="minimal"]').click()
+                self.page.locator('[data-act="restore-pack"]').click()
+                self.page.locator('.sf-sheet [data-act="confirm"]').click()
+                state = self.settings_state()
+                pack = next(p for p in state["packs"] if p["id"] == "minimal")
+                self.assertTrue(pack["healthy"], "restore re-marks the damaged built-in healthy")
+                self.assertEqual(pack["sounds"], [f"minimal-{i}.wav" for i in range(1, 6)])
+                self.assertEqual(pack["audio"], pack["sounds"])
+                self.assertFalse(self.page.locator(".sf-sheet").evaluate("el => el.open"))
+                self.assertEqual(self.page.locator("[data-status]").inner_text(),
+                                 "已恢复出厂声音。" if language == "zh" else "Restored the factory sound.")
+
+    def open_approved_ai_form(self):
+        self.page.locator('[data-act="pack"][data-id="studio"]').click()
+        event = '.sf-event[data-event="task_start"]'
+        self.page.locator(f'{event} [data-act="sources"]').click()
+        self.page.locator(f'{event} [data-source="ai"]').click()
+
+    def test_shared_service_management_selects_all_profiles_from_both_entry_points(self):
+        profiles = ["elevenlabs-global", "minimax-global", "bailian-beijing", "senseaudio-cn"]
+        for origin in ["library", "ai-form"]:
+            with self.subTest(origin=origin):
+                self.open(win="1", pane="sounds")
+                if origin == "ai-form":
+                    self.open_approved_ai_form()
+                    self.page.locator("#sf-ai-prompt").fill("Retain this description")
+                self.page.locator('[data-service-manage]:visible').click()
+                picker = self.page.locator('.sf-sheet [data-control="profile"]')
+                self.assertEqual(picker.count(), 1, "both Manage entries must expose the shared profile selector")
+                # The shared card's Data & fees button precedes the profile selector.
+                self.page.keyboard.press("Tab")
+                self.assertTrue(picker.evaluate("el => el === el.getRootNode().activeElement"))
+                self.assertEqual(picker.locator("option").evaluate_all("items => items.map(item => item.value)"), profiles)
+                for profile in profiles[1:] + profiles[:1]:
+                    picker.select_option(profile)
+                    self.assertEqual(self.settings_state()["profile"], profile)
+                self.page.locator('.sf-sheet [data-act="close"]').click()
+                state = self.settings_state()
+                self.assertIsNone(state["approvedCues"]["task"], "selecting a service never starts generation")
+                if origin == "ai-form":
+                    self.assertEqual(self.page.locator("#sf-ai-prompt").input_value(), "Retain this description")
+
+    def test_bailian_management_reuses_credential_validation_and_preserves_failures(self):
+        for result in ["valid", "rejected", "unavailable", "writeFailure"]:
+            with self.subTest(result=result):
+                self.open(win="1", pane="sounds", aiProfile="bailian-beijing")
+                self.page.locator('[data-service-manage]:visible').click()
+                manager = self.page.locator('.sf-sheet [data-action="credential"]')
+                manager.click()
+                self.assertEqual(self.page.locator("#credential-workspace").count(), 1,
+                                 "the real management entry must reuse the workspace and model-permission flow")
+                self.assertTrue(self.page.locator("#credential-key").get_attribute("readonly") is not None)
+                if result != "valid":
+                    self.page.locator('[data-action="save-credential"]').click()
+                    self.page.wait_for_function("MacSettings.getState().operation === null")
+                    self.page.locator('.sf-sheet [data-action="credential"]').click()
+                before = self.settings_state()
+                self.page.locator("#credential-demo").select_option(result)
+                self.page.locator('[data-action="save-credential"]').click()
+                self.page.wait_for_function("MacSettings.getState().operation === null")
+                after = self.settings_state()
+                if result == "valid":
+                    self.assertEqual(after["credentials"]["bailian-beijing"]["status"], "deferred")
+                else:
+                    self.assertEqual(after["credentials"], before["credentials"])
+                self.assertIsNone(after["approvedCues"]["task"])
+                self.assertEqual(after["scopes"], before["scopes"])
+                self.assertEqual(after["packs"], before["packs"])
+
     def test_native_sounds_editor_and_ai_service_are_available(self):
-        self.open(win="1",pane="sounds")
-        self.page.locator('[data-control="pack"]').select_option("studio")
-        self.page.locator('[data-action="edit-pack:0"]').click()
-        self.assertEqual(self.settings_state()["detail"],"edit:task_start")
-        self.page.locator('[data-action="open-generation"]').click()
-        self.assertTrue(self.page.locator("#cue-description").is_visible())
-        self.page.locator("#cue-description").fill("清脆的短铃声")
-        self.page.locator('[data-action="generate"]').click()
+        self.open(win="1", pane="sounds")
+        self.page.locator('[data-act="service"]').click()
+        self.assertTrue(self.page.locator('.sf-sheet [data-control="profile"]').is_visible())
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        self.open_approved_ai_form()
+        self.assertTrue(self.page.locator("#sf-ai-prompt").is_visible())
+        self.page.locator("#sf-ai-prompt").fill("清脆的短铃声")
+        self.page.locator('.sf-sheet [data-act="service"]').click()
+        self.page.locator('.sf-sheet [data-action="credential"]').click()
+        self.assertTrue(self.page.locator("#credential-key").is_visible())
+        self.page.locator('[data-action="save-credential"]').click()
+        self.page.wait_for_function("MacSettings.getState().operation === null")
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        self.assertTrue(self.page.locator("#sf-ai-prompt").is_visible())
+        self.assertEqual(self.page.locator("#sf-ai-prompt").input_value(), "清脆的短铃声")
+        self.assertIsNone(self.settings_state()["approvedCues"]["task"])
+        self.page.locator('[data-act="generate"]').click()
+        self.assertEqual(self.settings_state()["approvedCues"]["task"]["phase"], "running")
+        self.page.locator('[data-act="close"]').click()
         self.page.locator('[data-action="nav:general"]').click()
-        self.assertIsNone(self.settings_state()["generation"])
-        self.assertEqual(self.settings_state()["candidates"],[])
+        state = self.settings_state()
+        self.assertEqual(state["page"], "general")
+        self.assertIsNotNone(state["approvedCues"]["task"], "generation continues after leaving Sounds")
+        self.assertEqual(next(p for p in state["packs"] if p["id"] == "studio")["sounds"][0], "intro.wav",
+                         "leaving mid-generation does not bind a cue")
+        self.page.locator('[data-action="nav:sounds"]').click()
+        self.assertFalse(self.page.locator("#sf-ai-prompt").is_visible())
 
 
 if __name__ == "__main__":

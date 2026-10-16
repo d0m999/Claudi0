@@ -10,6 +10,9 @@ const RETENTION = 30 * 60 * 1000;
 const identifier = (v) => typeof v === "string" && v.length > 0 &&
   Buffer.byteLength(v) <= 256 && !/[\s\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/u.test(v);
 const finiteTime = (v) => typeof v === "number" && Number.isFinite(v) && v > 0;
+const directoryPath = (v) => typeof v === "string" && v.startsWith("/") &&
+  Buffer.byteLength(v) <= 4096 &&
+  !/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/u.test(v) ? v : undefined;
 const terminalErrors = new Set([
   "APIError", "ProviderAuthError", "UnknownError", "MessageOutputLengthError", "StructuredOutputError",
 ]);
@@ -56,11 +59,8 @@ function makeEmitter({ dispatch, now, directory }) {
       };
       if (state.parentID) payload.parent_session_id = state.parentID;
       // Directory is an ephemeral source label only. The helper uses the Default Group.
-      if (typeof directory === "string" && directory.startsWith("/") &&
-          Buffer.byteLength(directory) <= 4096 &&
-          !/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/u.test(directory)) {
-        payload.cwd = directory;
-      }
+      const cwd = directoryPath(state.directory ?? directory);
+      if (cwd) payload.cwd = cwd;
       if (typeof dispatch === "function") {
         try { dispatch(event, payload); } catch { /* best effort */ }
         return;
@@ -414,7 +414,9 @@ async function setup(context, options = {}) {
   const completed = new Map();
   const lookupBusy = new Set();
   const pending = [];
-  const emitter = makeEmitter({ dispatch: options.dispatch, now, directory });
+  // The V2 stream is global: the subscriber's location does not identify the
+  // event's project. Only a directory confirmed for this session may label it.
+  const emitter = makeEmitter({ dispatch: options.dispatch, now });
   const controller = new AbortController();
   let disposed = false;
   let draining = false;
@@ -442,6 +444,8 @@ async function setup(context, options = {}) {
 
   function remember(info) {
     rememberSession(sessions, info, now);
+    const state = sessions.get(info?.id);
+    if (state && directoryPath(info.directory)) state.directory = info.directory;
   }
 
   // A session created before this instance loaded, or one the host never
@@ -492,6 +496,10 @@ async function setup(context, options = {}) {
   function startExecution(sessionID) {
     const state = sessions.get(sessionID);
     if (!state) return;
+    // The admission present now belongs to this execution; one that arrives
+    // later belongs to a queued user prompt and must survive this execution.
+    state.carriedTurn = { turnID: state.pendingTurn?.turnID,
+      admitted: state.pendingTurn?.admitted === true };
     // Admission may arrive before or after the execution starts, so preserve it;
     // every execution starts without a synthetic mark of its own.
     state.pendingTurn = {
@@ -516,11 +524,23 @@ async function setup(context, options = {}) {
   }
 
   function finishExecution(state, outcome, errorName) {
-    if (!state?.active?.started) return;
+    if (!state) return;
+    if (!state.active?.started) {
+      // A terminal before the first step retires only the admission this
+      // execution carried; one that arrived after it began belongs to a
+      // queued user prompt and must survive.
+      const carried = state.carriedTurn;
+      if (!carried || (state.pendingTurn?.turnID === carried.turnID &&
+          state.pendingTurn?.admitted === carried.admitted)) {
+        state.pendingTurn = undefined;
+      }
+      return;
+    }
     const active = state.active;
     const key = JSON.stringify([state.id, active.turnID]);
     state.active = undefined;
-    state.pendingTurn = undefined;
+    // stepStarted consumed this turn's admission; any pending admission now
+    // belongs to a queued user prompt and must survive this terminal.
     if (!consume(completed, key)) return;
     if (outcome === "succeeded") {
       if (!active.assistantID) return;
@@ -556,7 +576,8 @@ async function setup(context, options = {}) {
       case "session.created":
       case "session.updated": {
         const info = data?.info ?? data;
-        remember({ id: info?.sessionID ?? info?.id, parentID: info?.parentID });
+        remember({ id: info?.sessionID ?? info?.id, parentID: info?.parentID,
+          directory: info?.directory });
         return;
       }
       case "session.deleted": {
@@ -635,13 +656,15 @@ async function setup(context, options = {}) {
       messageID: keep(data.messageID), id: keep(data.id) ?? keep(data.requestID),
       requestID: keep(data.requestID),
       parentID: keep(data.parentID), assistantMessageID: keep(data.assistantMessageID),
+      directory: directoryPath(data.directory),
       error: data.error && typeof data.error === "object"
         ? { name: keep(data.error.name) } : undefined,
       info: undefined,
     };
-    if (data.info && typeof data.info === "object" && !data.sessionID) {
+    if (data.info && typeof data.info === "object") {
       projected.sessionID ??= keep(data.info.sessionID) ?? keep(data.info.id);
       projected.parentID ??= keep(data.info.parentID);
+      projected.directory ??= directoryPath(data.info.directory);
     }
     if (data.form && typeof data.form === "object") {
       projected.form = { id: keep(data.form.id), sessionID: keep(data.form.sessionID) };
