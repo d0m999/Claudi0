@@ -16,6 +16,11 @@ enum AdditionalHostConfiguration {
     // Fixture: Tests/ClaudioCoreTests/Fixtures/opencode-3bf3840.js. Never authorize by marker alone.
     private static let legacyPluginTemplateSHA256 =
         "209dacc1341c7496246975b35c3c4f02d889432dcbce7e46bf841cdc0cb72216"
+    // Exact V1-only template shipped before the OpenCode 2 dual-contract port.
+    // Fixture: tests construct it from the same source contract. Existing installs
+    // keep their identity and migrate on reconnect instead of reading as foreign.
+    private static let previousPluginTemplateSHA256 =
+        "da22bceea841b3a420655f498fadbba04ba29d91a31bf16f02f7ad605cd89698"
     private static let blockStart = "# >>> Claudio Kimi Code hooks v1"
     private static let blockEnd = "# <<< Claudio Kimi Code hooks v1"
 
@@ -108,9 +113,9 @@ enum AdditionalHostConfiguration {
             guard
                 isCurrentTemplate
                     || (data.starts(with: prefix)
-                        && SHA256.hash(data: data.dropFirst(prefix.count))
-                            .map { String(format: "%02x", $0) }.joined()
-                            == legacyPluginTemplateSHA256)
+                        && [legacyPluginTemplateSHA256, previousPluginTemplateSHA256].contains(
+                            SHA256.hash(data: data.dropFirst(prefix.count))
+                                .map { String(format: "%02x", $0) }.joined()))
             else {
                 throw rejected("OpenCode 的 claudio.js 为第三方文件或已被修改，已拒绝覆盖／删除")
             }

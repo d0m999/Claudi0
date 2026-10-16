@@ -203,8 +203,9 @@ public enum HostActivationScope {
             let version = additionalHostVersion(
                 host, executableLocator: executableLocator,
                 commandRunner: commandRunner),
-            // The new Kimi CLI is distinct from the Python 1.x CLI with the same command name.
-            let parsed = SemanticVersion(parsing: version),
+            // OpenCode 1 printed a bare version ("1.18.34"); OpenCode 2 prints a
+            // branded line ("opencode v2.0.27"). Compare the numeric token only.
+            let parsed = additionalHostParsedVersion(version),
             (host == .opencode && parsed >= SemanticVersion(major: 1, minor: 18, patch: 34))
                 || (host == .kimiCode && parsed >= SemanticVersion(major: 2, minor: 1, patch: 1)),
             let base = fingerprint(host: host, hostVersion: version)
@@ -280,6 +281,22 @@ public enum HostActivationScope {
             buildVersion.flatMap { $0.isEmpty ? nil : "build=\($0)" },
         ].compactMap { $0 }
         return components.isEmpty ? nil : components.joined(separator: ";")
+    }
+
+    /// Additional-host CLIs print heterogeneous version lines: OpenCode 1 printed a
+    /// bare version ("1.18.34"), OpenCode 2 prints a branded line ("opencode
+    /// v2.0.27"), and a future line may mix tokens. Only a full numeric token is
+    /// accepted; the last one wins so a trailing version beats a leading name.
+    /// The new Kimi CLI is distinct from the Python 1.x CLI with the same command
+    /// name, so its floor stays separate below.
+    static func additionalHostParsedVersion(_ output: String) -> SemanticVersion? {
+        output
+            .split(whereSeparator: \.isWhitespace)
+            .compactMap { token -> SemanticVersion? in
+                let trimmed = token.hasPrefix("v") ? String(token.dropFirst()) : String(token)
+                return SemanticVersion(parsing: trimmed)
+            }
+            .last
     }
 
     private static func commandVersion(

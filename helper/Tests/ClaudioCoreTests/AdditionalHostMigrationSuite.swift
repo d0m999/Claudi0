@@ -5,6 +5,8 @@ import Foundation
 func runAdditionalHostMigrationSuites() async {
     let tests = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     let legacy = try! Data(contentsOf: tests.appendingPathComponent("Fixtures/opencode-3bf3840.js"))
+    let previous = try! Data(
+        contentsOf: tests.appendingPathComponent("Fixtures/opencode-v1-only.js"))
     let current = try! Data(
         contentsOf: tests.deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("integrations/opencode/claudio.js"))
@@ -20,7 +22,10 @@ func runAdditionalHostMigrationSuites() async {
             AdditionalHostReleasePolicy.isAcceptanceBuild
             ? candidates
             : (host == .opencode ? ["UserTurnStarted", "ResponseCompleted"] : ["TurnStarted"])
-        let templates = host == .opencode ? [legacy, current] : [Data()]
+        // Known owned templates: the 3bf3840 original, the V1-only template before the
+        // OpenCode 2 dual-contract port, and the current source. Older templates rotate
+        // the installation identity on reconnect; only the current one is configured.
+        let templates = host == .opencode ? [legacy, previous, current] : [Data()]
         for (version, template) in templates.enumerated() {
             await asyncSuite("\(host.rawValue)：已知配置版本 \(version) 安全迁移及直接断开") {
                 for (disconnectOnly, preserveBackup) in [
@@ -51,7 +56,7 @@ func runAdditionalHostMigrationSuites() async {
                         guard case .success(let snapshot) = result else { continue }
                         expect(snapshot.configuration == .configured, "迁移后完整配置")
                         let needsMigration =
-                            (host == .opencode && version == 0) || candidates != expected
+                            (host == .opencode && version < 2) || candidates != expected
                         expect(
                             (snapshot.installationID != id) == needsMigration, "模板或准入集合变化须轮换安装身份")
                         let installed = try! Data(contentsOf: f.file)

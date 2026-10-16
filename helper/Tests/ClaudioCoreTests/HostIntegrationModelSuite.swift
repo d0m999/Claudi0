@@ -102,6 +102,53 @@ func runHostIntegrationModelSuites() {
         }
     }
 
+    suite("activation scope：OpenCode 2 的品牌版本行仍解析数字版本并进入作用域") {
+        withTempDirectory { root in
+            let binary = root.appendingPathComponent(".opencode/bin/opencode")
+            writeFixture("#!/bin/sh\nprintf 'opencode v2.0.27\\n'\n", to: binary)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o755], ofItemAtPath: binary.path)
+            let locator = HostExecutableLocator(
+                searchDirectories: [binary.deletingLastPathComponent()])
+            expect(
+                HostActivationScope.additionalHost(
+                    .opencode, configurationRoot: root.appendingPathComponent(".config/opencode"),
+                    executableLocator: locator)?
+                    .contains("host=opencode v2.0.27") == true,
+                "OpenCode 2 的品牌版本行必须原样进入 activation scope")
+
+            // A bare line keeps working for OpenCode 1 installs.
+            let legacyBinary = root.appendingPathComponent("legacy-bin/opencode")
+            try! FileManager.default.createDirectory(
+                at: legacyBinary.deletingLastPathComponent(), withIntermediateDirectories: true)
+            writeFixture("#!/bin/sh\nprintf '1.18.34\\n'\n", to: legacyBinary)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o755], ofItemAtPath: legacyBinary.path)
+            let legacyLocator = HostExecutableLocator(
+                searchDirectories: [legacyBinary.deletingLastPathComponent()])
+            expect(
+                HostActivationScope.additionalHost(
+                    .opencode, configurationRoot: root.appendingPathComponent(".config/opencode"),
+                    executableLocator: legacyLocator)?.contains("host=1.18.34") == true,
+                "OpenCode 1 的裸版本行仍可识别")
+
+            // A line without any numeric token never authorizes an old CLI.
+            let broken = root.appendingPathComponent("broken-bin/opencode")
+            try! FileManager.default.createDirectory(
+                at: broken.deletingLastPathComponent(), withIntermediateDirectories: true)
+            writeFixture("#!/bin/sh\nprintf 'opencode (beta)\\n'\n", to: broken)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o755], ofItemAtPath: broken.path)
+            let brokenLocator = HostExecutableLocator(
+                searchDirectories: [broken.deletingLastPathComponent()])
+            expect(
+                HostActivationScope.additionalHost(
+                    .opencode, configurationRoot: root.appendingPathComponent(".config/opencode"),
+                    executableLocator: brokenLocator) == nil,
+                "没有数字版本的行不能激活来源")
+        }
+    }
+
     suite("activation scope：Volta/mise dispatcher 必须通过原始 shim 路径执行") {
         withTempDirectory { root in
             let shimDirectory = root.appendingPathComponent(".volta/bin", isDirectory: true)

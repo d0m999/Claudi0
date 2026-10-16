@@ -40,3 +40,14 @@ DEBUG 或显式 `CLAUDIO_ADDITIONAL_HOST_ACCEPTANCE` 构建用于后续隔离验
 
 2026-10-06 的真实宿主、用户原生提示／听音确认与封包结果见
 [逐绑定验收记录](../validation/opencode-kimi-code-2026-10-06.md)。未观察绑定继续关闭。
+
+2026-10-16 OpenCode 2.0.27 起宿主更改了插件契约（default 导出须含 `id` 与 `setup()`，
+V1 返回 hooks 对象的 `server()` 写法会被 schema 拒绝；事件经 `ctx.event.subscribe()`
+异步订阅、载荷为 `{ type, data }`；`chat.message` 对应 `ctx.session.hook("prompt")`）。
+本决定定义的六个桥接事件及其证据规则不变：插件改为同一 default 导出同时提供
+`server()`（1.18.29+）与 `setup()`（2.x），任务开始仍以“已确认主会话、真实用户输入
+（prompt 准入）、实际执行消息”为证据，`session.inbox.delivered` 因对合成与自动执行
+同样投递而不作为用户输入证据；helper 侧增加 OpenCode 2 品牌版本行
+（`opencode v2.0.27`）的数字版本提取，激活作用域门槛不变。适配依据、本机真实事件流
+观测与未完成的真机听音验收见
+[移植验证记录](../validation/opencode-v2-plugin-2026-10-16.md)。

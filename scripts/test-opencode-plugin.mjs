@@ -19,6 +19,10 @@ assert.equal(module.default?.id, "claudio.opencode.v1",
   "the real host loader must discover a default PluginModule with a stable id");
 assert.equal(module.default?.server, module.server,
   "the real host loader must initialize the same public server entry point");
+// OpenCode 2 requires a default definition with an id and a setup function and
+// ignores the legacy server export. The dual shape keeps 1.18.29+ working.
+assert.equal(typeof module.default?.setup, "function",
+  "OpenCode 2 must discover setup() on the same default PluginModule");
 let count = 0;
 let fixtureNumber = 0;
 
@@ -451,6 +455,463 @@ await check("dispose lets admitted helper callbacks finish within their existing
     await hooks.dispose();
     await rm(root, { recursive: true, force: true });
   }
+});
+
+// ---------------------------------------------------------------------------
+// OpenCode 2 contract: default { id, setup }, ctx.event.subscribe({ signal })
+// as an async iterator, domain hooks on ctx.session. 2.0.27 delivers
+// { type, data }; newer builds use { type, properties } and a "next" family
+// segment. Fixtures drive both shapes.
+// ---------------------------------------------------------------------------
+
+function v2Fixture({ lookup, clock, events } = {}) {
+  const queue = [];
+  const waiters = [];
+  const stream = {
+    [Symbol.asyncIterator]() { return this; },
+    next() {
+      return queue.length
+        ? Promise.resolve({ value: queue.shift(), done: false })
+        : new Promise((resolve) => waiters.push(resolve));
+    },
+    return() { return Promise.resolve({ done: true }); },
+  };
+  const hooks = {};
+  const context = {
+    location: { directory: "/fixture/v2-project-" + fixtureNumber++ },
+    event: { subscribe: (options) => stream },
+    session: {
+      // OpenCode 2 reads { sessionID }; the plugin also tolerates { path: { id } }.
+      get: lookup ?? (async () => ({ data: undefined })),
+      hook: async (name, handler) => { (hooks[name] ??= []).push(handler); },
+    },
+  };
+  const dispatched = events ?? [];
+  const f = {};
+  f.context = context;
+  f.hooks = hooks;
+  f.setup = () => module.default.setup(context, {
+    dispatch: (name, payload) => dispatched.push({ name, payload }),
+    clock: clock ?? (() => 1000),
+    claims: new Map(),
+  });
+  f.events = dispatched;
+  f.push = (event) => {
+    if (waiters.length) waiters.shift()({ value: event, done: false });
+    else queue.push(event);
+  };
+  f.emitEvent = async (type, data) => { f.push({ type, data }); await settle(); };
+  f.emitProperties = async (type, properties) => { f.push({ type, properties }); await settle(); };
+  f.names = () => dispatched.map((entry) => entry.name);
+  f.sessionCreated = async (id = "s", parentID) => f.emitEvent("session.created",
+    { sessionID: id, parentID, slug: "slug", projectID: "p", version: "2" });
+  f.admit = async (sessionID = "s", messageID = "prompt-1") => {
+    // Admission is the pre-admission prompt hook; durable inbox delivery alone
+    // never evidences a user turn because OpenCode 2 delivers it for synthetic
+    // and automatic executions too.
+    for (const handler of f.hooks.prompt ?? []) {
+      await handler({ sessionID, messageID, parts: [{ type: "text", synthetic: false }] });
+    }
+    await settle();
+  };
+  f.admitSynthetic = async (sessionID = "s", messageID = "synthetic-1") => {
+    for (const handler of f.hooks.prompt ?? []) {
+      await handler({ sessionID, messageID, parts: [{ type: "text", synthetic: true }] });
+    }
+    await settle();
+  };
+  f.deliverInbox = async (sessionID = "s", inboxID = "inb-1") =>
+    f.emitEvent("session.inbox.delivered", { sessionID, inboxID });
+  f.startExecution = async (sessionID = "s") => f.emitEvent("session.execution.started", { sessionID });
+  f.step = async (sessionID = "s", assistantMessageID = "msg-1") =>
+    f.emitEvent("session.step.started", { sessionID, assistantMessageID, started: 1000 });
+  f.succeeded = async (sessionID = "s") => f.emitEvent("session.execution.succeeded", { sessionID });
+  f.failed = async (sessionID = "s", name = "APIError") => f.emitEvent("session.execution.failed",
+    { sessionID, error: { name } });
+  return f;
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+await check("V2 ordinary turn needs admitted prompt, execution and step", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.startExecution();
+  await f.step();
+  assert.deepEqual(f.names(), [], "execution without admitted user input never starts");
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await f.succeeded();
+  await f.succeeded();
+  assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+  assert.equal(f.events[0].payload.session_kind, "main");
+  assert.equal(f.events[0].payload.turn_id, "prompt-1");
+  assert.equal(f.events[0].payload.message_id, "msg-1");
+  assert.equal(f.events[1].payload.terminal, "success");
+  await cleanup();
+});
+
+await check("V2 inbox delivery alone never starts a turn", async () => {
+  // OpenCode 2 delivers durable prompt delivery for synthetic and automatic
+  // executions too; only pre-admission prompt admission evidences user input.
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.deliverInbox();
+  await f.startExecution();
+  await f.step();
+  await f.succeeded();
+  assert.deepEqual(f.names(), []);
+  await cleanup();
+});
+
+await check("V2 synthetic prompt parts and noReply never admit a turn", async () => {
+  for (const mode of ["synthetic", "noReply"]) {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.sessionCreated();
+    for (const handler of f.hooks.prompt ?? []) {
+      await handler(mode === "noReply"
+        ? { sessionID: "s", messageID: "p", noReply: true, parts: [{ type: "text" }] }
+        : { sessionID: "s", messageID: "p", parts: [{ type: "text", synthetic: true }] });
+    }
+    await f.startExecution();
+    await f.step();
+    await f.succeeded();
+    assert.deepEqual(f.names(), [], mode + " must not start a turn");
+    await cleanup();
+  }
+});
+
+await check("V2 a later synthetic event never retracts an admitted real turn", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.admit();
+  await f.emitEvent("session.synthetic", { sessionID: "s", text: "PRIVATE_SYNTHETIC" });
+  await f.startExecution();
+  await f.step();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await f.succeeded();
+  assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+  await cleanup();
+});
+
+for (const name of ["APIError", "ProviderAuthError", "UnknownError", "MessageOutputLengthError",
+  "StructuredOutputError"]) {
+  await check("V2 terminal failure " + name + " emits stop_failure once", async () => {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.sessionCreated();
+    await f.admit();
+    await f.startExecution();
+    await f.step();
+    await f.failed("s", name);
+    await f.failed("s", name);
+    assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseFailed"]);
+    assert.equal(f.events[1].payload.error_kind, name);
+    assert.equal(f.events[1].payload.terminal, "failure");
+    await cleanup();
+  });
+}
+
+for (const name of ["MessageAbortedError", "AbortError", "ContextOverflowError", "ContentFilterError"]) {
+  await check("V2 retryable error " + name + " never becomes failure or success", async () => {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.sessionCreated();
+    await f.admit();
+    await f.startExecution();
+    await f.step();
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      await f.emitEvent("session.retry.scheduled", { sessionID: "s",
+        assistantMessageID: "msg-1", attempt, at: 2000, error: { name } });
+      await f.step();
+    }
+    await f.succeeded();
+    assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+    await cleanup();
+  });
+
+  await check("V2 execution failure with non-terminal kind " + name + " stays silent", async () => {
+    const f = v2Fixture();
+    const cleanup = await f.setup();
+    await f.sessionCreated();
+    await f.admit();
+    await f.startExecution();
+    await f.step();
+    await f.failed("s", name);
+    assert.deepEqual(f.names(), ["UserTurnStarted"]);
+    await cleanup();
+  });
+}
+
+await check("V2 interrupted executions never play", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  await f.emitEvent("session.execution.interrupted", { sessionID: "s", reason: "user" });
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await cleanup();
+});
+
+await check("V2 child session completion is subagent_stop with parent identity", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated("child", "parent");
+  await f.startExecution("child");
+  await f.step("child", "child-msg");
+  assert.deepEqual(f.names(), [], "a child turn is not a user turn");
+  await f.succeeded("child");
+  assert.deepEqual(f.names(), ["SubagentCompleted"]);
+  assert.equal(f.events[0].payload.session_kind, "child");
+  assert.equal(f.events[0].payload.parent_session_id, "parent");
+  assert.equal(f.events[0].payload.session_id, "child");
+  await cleanup();
+});
+
+await check("V2 failed child is never a successful subagent or main failure", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated("child", "parent");
+  await f.startExecution("child");
+  await f.step("child", "child-msg");
+  await f.failed("child", "APIError");
+  assert.deepEqual(f.names(), []);
+  await cleanup();
+});
+
+await check("V2 question and permission requests deduplicate independently", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.emitEvent("permission.asked", { sessionID: "s", id: "perm-1" });
+  await f.emitEvent("permission.asked", { sessionID: "s", id: "perm-1" });
+  await f.emitEvent("form.created", { form: { id: "form-1", sessionID: "s" } });
+  await f.emitEvent("form.created", { form: { id: "form-1", sessionID: "s" } });
+  await f.emitEvent("question.asked", { sessionID: "s", id: "q-1" });
+  assert.deepEqual(f.names(), ["PermissionRequested", "QuestionAsked", "QuestionAsked"]);
+  await settle();
+  await cleanup();
+});
+
+await check("V2 settlement tombstones suppress late duplicate asked events", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  for (const [settled, asked] of [["form.replied", "form.created"],
+    ["form.cancelled", "form.created"], ["permission.replied", "permission.asked"]]) {
+    await f.emitEvent(settled, { sessionID: "s", id: "r-" + settled });
+    await f.emitEvent(asked, settled.startsWith("form")
+      ? { form: { id: "r-" + settled, sessionID: "s" } }
+      : { sessionID: "s", id: "r-" + settled });
+  }
+  await f.emitEvent("question.rejected", { sessionID: "s", requestID: "q-late" });
+  await f.emitEvent("question.asked", { sessionID: "s", id: "q-late" });
+  assert.deepEqual(f.names(), []);
+  await cleanup();
+});
+
+await check("V2 unknown session identity fails closed until a look-up proves it", async () => {
+  const calls = [];
+  const f = v2Fixture({ lookup: async (input) => {
+    // OpenCode 2's real session.get shape is { sessionID }.
+    const id = input?.sessionID ?? input?.path?.id;
+    calls.push(id);
+    return { data: { id, parentID: "parent" } };
+  } });
+  const cleanup = await f.setup();
+  await f.emitEvent("permission.asked", { sessionID: "ghost", id: "r" });
+  await settle();
+  assert.deepEqual(calls, ["ghost"], "one bounded identity look-up, no history");
+  await settle();
+  assert.deepEqual(f.names(), ["PermissionRequested"]);
+  assert.equal(f.events[0].payload.session_kind, "child");
+  await cleanup();
+});
+
+await check("V2 step for a session created before load still needs its own identity", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  // No session.created: the execution, admission and step stay unconfirmed.
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  await f.succeeded();
+  assert.deepEqual(f.names(), []);
+  await cleanup();
+});
+
+await check("V2 one-shot CLI turn proves identity through the { sessionID } look-up", async () => {
+  // OpenCode's `opencode run` submits without session.created in the stream;
+  // the only identity evidence is the real { sessionID } look-up shape.
+  const calls = [];
+  const f = v2Fixture({ lookup: async (input) => {
+    const id = input?.sessionID ?? input?.path?.id;
+    calls.push(id);
+    return { data: { id } };
+  } });
+  const cleanup = await f.setup();
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  await f.succeeded();
+  assert.deepEqual(calls, ["s"]);
+  assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+  assert.equal(f.events[0].payload.turn_id, "prompt-1");
+  await cleanup();
+});
+
+await check("V2 a failed look-up keeps the turn unconfirmed", async () => {
+  const f = v2Fixture({ lookup: async () => { throw new Error("unavailable"); } });
+  const cleanup = await f.setup();
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  await f.succeeded();
+  assert.deepEqual(f.names(), []);
+  await cleanup();
+});
+
+await check("V2 next-prefixed and properties-shaped events normalize to the same bridge", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.emitProperties("session.created", { sessionID: "s", info: { id: "s" } });
+  for (const handler of f.hooks.prompt ?? []) {
+    await handler({ sessionID: "s", messageID: "prompt-2",
+      parts: [{ type: "text", synthetic: false }] });
+  }
+  await f.emitProperties("session.next.execution.started", { sessionID: "s" });
+  await f.emitProperties("session.next.step.started",
+    { sessionID: "s", assistantMessageID: "msg-2" });
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await f.emitProperties("session.next.execution.succeeded", { sessionID: "s" });
+  assert.deepEqual(f.names(), ["UserTurnStarted", "ResponseCompleted"]);
+  assert.equal(f.events[0].payload.turn_id, "prompt-2");
+  await cleanup();
+});
+
+await check("V2 unrelated stream events never emit or retain bodies", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.emitEvent("session.reasoning.delta", { sessionID: "s", delta: "PRIVATE_REASONING" });
+  await f.emitEvent("session.tool.called", { sessionID: "s",
+    input: { command: "PRIVATE_COMMAND" }, executed: true });
+  await f.emitEvent("session.text.delta", { sessionID: "s", delta: "PRIVATE_TEXT" });
+  await f.emitEvent("model.updated", {});
+  assert.deepEqual(f.names(), []);
+  assert.equal(JSON.stringify(f.events).includes("PRIVATE"), false);
+  await cleanup();
+});
+
+await check("V2 duplicate instances claim emissions only once per host event", async () => {
+  // OpenCode 2 instantiates the plugin per location and delivers the whole
+  // stream to each instance; one host event must still sound exactly once.
+  const streams = [];
+  const broadcast = (event) => {
+    for (const stream of streams) stream.push(event);
+  };
+  const makeStream = () => {
+    const queue = [];
+    const waiters = [];
+    const stream = {
+      [Symbol.asyncIterator]() { return this; },
+      next() {
+        return queue.length
+          ? Promise.resolve({ value: queue.shift(), done: false })
+          : new Promise((resolve) => waiters.push(resolve));
+      },
+      return() { return Promise.resolve({ done: true }); },
+      push(event) {
+        if (waiters.length) waiters.shift()({ value: event, done: false });
+        else queue.push(event);
+      },
+    };
+    streams.push(stream);
+    return stream;
+  };
+  const shared = new Map();
+  const dispatched = [];
+  const instances = [];
+  const promptHandlers = [];
+  for (const directory of ["/fixture/v2-a", "/fixture/v2-b", "/fixture/v2-c"]) {
+    const context = {
+      location: { directory },
+      event: { subscribe: (options) => makeStream() },
+      session: {
+        get: async () => ({ data: undefined }),
+        hook: async (name, handler) => { if (name === "prompt") promptHandlers.push(handler); },
+      },
+    };
+    instances.push(await module.default.setup(context, {
+      dispatch: (name, payload) => dispatched.push({ name, payload }),
+      clock: () => 1000,
+      claims: shared,
+    }));
+  }
+  broadcast({ type: "session.created", data: { sessionID: "s", slug: "x" } });
+  for (const handler of promptHandlers) {
+    await handler({ sessionID: "s", messageID: "prompt-1",
+      parts: [{ type: "text", synthetic: false }] });
+  }
+  broadcast({ type: "session.execution.started", data: { sessionID: "s" } });
+  broadcast({ type: "session.step.started", data: { sessionID: "s", assistantMessageID: "m" } });
+  broadcast({ type: "session.execution.succeeded", data: { sessionID: "s" } });
+  await settle();
+  assert.deepEqual(dispatched.map((entry) => entry.name),
+    ["UserTurnStarted", "ResponseCompleted"]);
+  for (const cleanup of instances) await cleanup();
+});
+
+await check("V2 setup refuses to double-claim the same location and installation", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  const duplicate = await module.default.setup(f.context, {
+    dispatch: () => { throw Error("duplicate"); }, claims: new Map(),
+  });
+  assert.deepEqual(duplicate, {});
+  await f.sessionCreated();
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await cleanup();
+});
+
+await check("V2 cleanup stops subsequent emissions and releases the instance", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  await f.admit();
+  await f.startExecution();
+  await f.step();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+  await cleanup();
+  await f.startExecution();
+  await f.step();
+  await f.succeeded();
+  assert.deepEqual(f.names(), ["UserTurnStarted"]);
+});
+
+await check("V2 malformed event identities and shapes never emit", async () => {
+  const f = v2Fixture();
+  const cleanup = await f.setup();
+  await f.sessionCreated();
+  for (const id of [undefined, null, 1, "", "space id", "x".repeat(257), "bad\u202eid"]) {
+    await f.emitEvent("permission.asked", { sessionID: "s", id });
+    await f.emitEvent("permission.asked", { sessionID: id, id: "r" });
+    await f.emitEvent("form.created", { form: { id, sessionID: "s" } });
+  }
+  await settle();
+  assert.deepEqual(f.names(), []);
+  await cleanup();
 });
 
 console.log(`OpenCode plugin: ${count} scenarios passed`);

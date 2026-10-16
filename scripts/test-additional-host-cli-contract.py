@@ -86,20 +86,29 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
     base = Path(temporary)
     tools = base / "tools"
     tools.mkdir()
-    for command, version in (("opencode", "1.18.34"), ("kimi", "2.1.1")):
-        file = tools / command
-        file.write_text(f"#!/bin/sh\nprintf '{version}\\n'\n")
-        file.chmod(0o700)
-    for host, events in (
-        ("opencode", ["UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested", "QuestionAsked", "SubagentCompleted"]),
-        ("kimi-code", ["TurnStarted", "PermissionRequest", "PreToolUse", "SubagentStop"]),
+    for command, version, override in (
+        ("opencode", "1.18.34", "CLAUDIO_TEST_OPENCODE_VERSION"),
+        ("kimi", "2.1.1", None),
     ):
-        home = base / host / "home"
+        file = tools / command
+        if override:
+            # OpenCode 1 printed a bare version; OpenCode 2 prints "opencode v2.0.27".
+            file.write_text(
+                f"#!/bin/sh\nprintf '%s\\n' \"${{{override}:-{version}}}\"\n")
+        else:
+            file.write_text(f"#!/bin/sh\nprintf '{version}\\n'\n")
+        file.chmod(0o700)
+    for label, host, events, version_env in (
+        ("opencode", "opencode", ["UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested", "QuestionAsked", "SubagentCompleted"], {}),
+        ("opencode-v2", "opencode", ["UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested", "QuestionAsked", "SubagentCompleted"], {"CLAUDIO_TEST_OPENCODE_VERSION": "opencode v2.0.27"}),
+        ("kimi-code", "kimi-code", ["TurnStarted", "PermissionRequest", "PreToolUse", "SubagentStop"], {}),
+    ):
+        home = base / label / "home"
         root = home / ".claudio"
         root.mkdir(parents=True)
         shutil.copytree(REPO / "packs/minimal-chime", root / "packs/minimal-chime")
         (root / "config.json").write_text('{"selected_pack":"minimal-chime","master_volume":0,"events":{}}')
-        config_root = base / host / "configuration"
+        config_root = base / label / "configuration"
         config_root.mkdir()
         plugin = config_root / "plugins/claudio.js"
         file = plugin if host == "opencode" else config_root / "config.toml"
@@ -112,7 +121,8 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
         legacy.write_bytes(b"# old Kimi bytes\n")
         env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ.get("PATH", ""),
                    CLAUDIO_TEST_HOME=str(home), CLAUDIO_TEST_ROOT=str(root),
-                   OPENCODE_CONFIG_DIR=str(config_root), KIMI_CODE_HOME=str(config_root))
+                   OPENCODE_CONFIG_DIR=str(config_root), KIMI_CODE_HOME=str(config_root),
+                   **version_env)
         marker = root / "integrations/installations" / (host + ".json")
 
         def connect():
