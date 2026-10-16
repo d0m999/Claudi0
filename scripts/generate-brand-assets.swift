@@ -3,134 +3,79 @@
 import AppKit
 import Foundation
 
+// 从 claudi0-basic-kit v1.0 的官方 App 图标素材派生仓库内运行资产：
+// 1024px 母版 PNG 与 `claudi0.icns`（finder / Dock 使用同一图形）。
+// 品牌包是唯一几何来源；本脚本只做缩放与容器封装，不重绘、不改色、不加效果。
+
 private let repositoryRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
 private let outputDirectory = repositoryRoot.appendingPathComponent("assets/branding", isDirectory: true)
+private let sourceIcon = outputDirectory
+    .appendingPathComponent("claudi0-basic-kit", isDirectory: true)
+    .appendingPathComponent("02-icons", isDirectory: true)
+    .appendingPathComponent("app-icon-1024.png")
 private let fileManager = FileManager.default
 
-private let canvas: CGFloat = 1024
-private let background = NSColor(srgbRed: 43 / 255, green: 38 / 255, blue: 32 / 255, alpha: 1)
-private let cream = NSColor(srgbRed: 241 / 255, green: 233 / 255, blue: 223 / 255, alpha: 1)
-private let clay = NSColor(srgbRed: 196 / 255, green: 99 / 255, blue: 60 / 255, alpha: 1)
+private let canvasSize = 1024
 
-private func scaled(_ value: CGFloat, for size: Int) -> CGFloat {
-    value * CGFloat(size) / canvas
+private func fail(_ message: String) -> Never {
+    FileHandle.standardError.write(Data("✗ \(message)\n".utf8))
+    exit(1)
 }
 
-private func makeIcon(size: Int) throws -> Data {
-    guard let bitmap = NSBitmapImageRep(
-        bitmapDataPlanes: nil,
-        pixelsWide: size,
-        pixelsHigh: size,
-        bitsPerSample: 8,
-        samplesPerPixel: 4,
-        hasAlpha: true,
-        isPlanar: false,
-        colorSpaceName: .deviceRGB,
-        bytesPerRow: 0,
-        bitsPerPixel: 0
-    ) else {
-        throw NSError(domain: "claudi0.branding", code: 1, userInfo: [
-            NSLocalizedDescriptionKey: "无法创建 \(size)×\(size) 位图"
-        ])
-    }
-
-    bitmap.size = NSSize(width: size, height: size)
-    let graphicsContext = NSGraphicsContext(bitmapImageRep: bitmap)
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = graphicsContext
-    defer { NSGraphicsContext.restoreGraphicsState() }
-
-    NSColor.clear.setFill()
-    NSRect(x: 0, y: 0, width: size, height: size).fill()
-
-    let backgroundRect = NSRect(
-        x: scaled(72, for: size),
-        y: scaled(72, for: size),
-        width: scaled(880, for: size),
-        height: scaled(880, for: size))
-    let backgroundPath = NSBezierPath(
-        roundedRect: backgroundRect,
-        xRadius: scaled(210, for: size),
-        yRadius: scaled(210, for: size))
-    background.setFill()
-    backgroundPath.fill()
-
-    if size >= 64 {
-        let insetRect = backgroundRect.insetBy(dx: scaled(5, for: size), dy: scaled(5, for: size))
-        let insetPath = NSBezierPath(
-            roundedRect: insetRect,
-            xRadius: scaled(205, for: size),
-            yRadius: scaled(205, for: size))
-        NSColor.white.withAlphaComponent(0.07).setStroke()
-        insetPath.lineWidth = max(1, scaled(10, for: size))
-        insetPath.stroke()
-    }
-
-    func point(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
-        NSPoint(x: scaled(x, for: size), y: CGFloat(size) - scaled(y, for: size))
-    }
-
-    func drawEllipse(
-        centerX: CGFloat, centerY: CGFloat,
-        radiusX: CGFloat, radiusY: CGFloat,
-        color: NSColor, opacity: CGFloat,
-        lineWidth: CGFloat, rotationDegrees: CGFloat = 0
-    ) {
-        let center = point(centerX, centerY)
-        let path = NSBezierPath(ovalIn: NSRect(
-            x: center.x - scaled(radiusX, for: size),
-            y: center.y - scaled(radiusY, for: size),
-            width: scaled(radiusX * 2, for: size),
-            height: scaled(radiusY * 2, for: size)))
-        if rotationDegrees != 0 {
-            var rotation = AffineTransform()
-            rotation.translate(x: center.x, y: center.y)
-            rotation.rotate(byDegrees: rotationDegrees)
-            rotation.translate(x: -center.x, y: -center.y)
-            path.transform(using: rotation)
-        }
-        path.lineWidth = max(1, scaled(lineWidth, for: size))
-        color.withAlphaComponent(opacity).setStroke()
-        path.stroke()
-    }
-
-    // Orbit Zero：大尺寸保留两层暖色光晕，小尺寸只画核心 0 与轨道。
-    if size >= 64 {
-        drawEllipse(
-            centerX: 512, centerY: 512, radiusX: 236, radiusY: 340,
-            color: clay, opacity: 0.10, lineWidth: 54)
-        drawEllipse(
-            centerX: 512, centerY: 512, radiusX: 194, radiusY: 320,
-            color: clay, opacity: 0.18, lineWidth: 34)
-    }
-    drawEllipse(
-        centerX: 512, centerY: 512, radiusX: 170, radiusY: 300,
-        color: clay, opacity: 1, lineWidth: 66)
-    drawEllipse(
-        centerX: 512, centerY: 512, radiusX: 356, radiusY: 128,
-        color: cream, opacity: 0.74, lineWidth: 20, rotationDegrees: 16)
-
-    guard let png = bitmap.representation(using: .png, properties: [:]) else {
-        throw NSError(domain: "claudi0.branding", code: 2, userInfo: [
-            NSLocalizedDescriptionKey: "无法编码 \(size)×\(size) PNG"
-        ])
-    }
-    return png
+guard let sourceData = try? Data(contentsOf: sourceIcon),
+    let sourceRep = NSBitmapImageRep(data: sourceData),
+    let sourceImage = sourceRep.cgImage
+else {
+    fail("读不到品牌包 App 图标素材：assets/branding/claudi0-basic-kit/02-icons/app-icon-1024.png")
 }
 
-private func writeIcon(_ size: Int, to destination: URL) throws {
-    try makeIcon(size: size).write(to: destination, options: .atomic)
+guard sourceRep.pixelsWide == canvasSize, sourceRep.pixelsHigh == canvasSize else {
+    fail(
+        "品牌包 App 图标素材必须是 \(canvasSize)×\(canvasSize)，实得 "
+            + "\(sourceRep.pixelsWide)×\(sourceRep.pixelsHigh)")
+}
+
+private func downscaledPNG(to size: Int) -> Data? {
+    guard
+        let context = CGContext(
+            data: nil,
+            width: size,
+            height: size,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    else { return nil }
+    context.interpolationQuality = .high
+    context.clear(CGRect(x: 0, y: 0, width: size, height: size))
+    context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: size, height: size))
+    guard let scaled = context.makeImage() else { return nil }
+    let rep = NSBitmapImageRep(cgImage: scaled)
+    rep.size = NSSize(width: size, height: size)
+    return rep.representation(using: .png, properties: [:])
 }
 
 try fileManager.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
-try writeIcon(1024, to: outputDirectory.appendingPathComponent("claudi0-app-icon.png"))
+
+// 1024px 母版与品牌包素材同字节，作为预览与商店素材来源。
+let masterPNG = outputDirectory.appendingPathComponent("claudi0-app-icon.png")
+try? fileManager.removeItem(at: masterPNG)
+do {
+    try sourceData.write(to: masterPNG, options: .atomic)
+} catch {
+    fail("写入 claudi0-app-icon.png 失败：\(error.localizedDescription)")
+}
 
 let temporaryRoot = fileManager.temporaryDirectory
     .appendingPathComponent("claudi0-branding-\(UUID().uuidString)", isDirectory: true)
 let iconset = temporaryRoot.appendingPathComponent("claudi0.iconset", isDirectory: true)
-try fileManager.createDirectory(at: iconset, withIntermediateDirectories: true)
+do {
+    try fileManager.createDirectory(at: iconset, withIntermediateDirectories: true)
+} catch {
+    fail("无法创建 iconset 目录：\(error.localizedDescription)")
+}
 defer { try? fileManager.removeItem(at: temporaryRoot) }
 
 let iconsetFiles: [(String, Int)] = [
@@ -146,7 +91,14 @@ let iconsetFiles: [(String, Int)] = [
     ("icon_512x512@2x.png", 1024),
 ]
 for (filename, size) in iconsetFiles {
-    try writeIcon(size, to: iconset.appendingPathComponent(filename))
+    guard let png = downscaledPNG(to: size) else {
+        fail("无法编码 \(size)×\(size) PNG")
+    }
+    do {
+        try png.write(to: iconset.appendingPathComponent(filename), options: .atomic)
+    } catch {
+        fail("写入 \(filename) 失败：\(error.localizedDescription)")
+    }
 }
 
 let iconutil = Process()
@@ -156,12 +108,14 @@ iconutil.arguments = [
     iconset.path,
     "--output", outputDirectory.appendingPathComponent("claudi0.icns").path,
 ]
-try iconutil.run()
+do {
+    try iconutil.run()
+} catch {
+    fail("无法运行 iconutil：\(error.localizedDescription)")
+}
 iconutil.waitUntilExit()
 guard iconutil.terminationStatus == 0 else {
-    throw NSError(domain: "claudi0.branding", code: Int(iconutil.terminationStatus), userInfo: [
-        NSLocalizedDescriptionKey: "iconutil 生成 claudi0.icns 失败"
-    ])
+    fail("iconutil 生成 claudi0.icns 失败（状态 \(iconutil.terminationStatus)）")
 }
 
-print("✓ 已生成 Orbit Zero assets/branding/claudi0-app-icon.png 与 claudi0.icns")
+print("✓ 已从 claudi0-basic-kit 派生 assets/branding/claudi0-app-icon.png 与 claudi0.icns")

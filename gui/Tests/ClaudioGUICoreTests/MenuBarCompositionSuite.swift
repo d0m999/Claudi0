@@ -158,7 +158,7 @@ final class CompositionFixture {
                     return AboutSettingsModel(
                         bundleFacts: projectAboutBundleFacts(
                             AboutBundleFactsInput(
-                                brandName: nil, productName: nil, version: nil, build: nil,
+                                productName: nil, version: nil, build: nil,
                                 architecture: nil, minimumSystemVersion: nil,
                                 operatingSystemVersion: nil)),
                         resources: [], pathFacts: [], surfaceFacts: facts,

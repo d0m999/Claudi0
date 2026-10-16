@@ -3,6 +3,20 @@ import CryptoKit
 import Foundation
 
 // MARK: - app bundle 布局契约：GUI 是消费者，release.yml 是生产者（T17）
+
+/// 本文件是 Foundation-only 的仓库契约 suite，不 import AppKit；这里只读 PNG 的 IHDR
+/// 头拿宽高，不解码像素（渲染与像素分类由 `ViewWiringSuite` 的 AppKit 位图套件负责）。
+private func pngPixelSize(_ data: Data) -> (width: Int, height: Int)? {
+    let signature = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+    guard data.count >= 24, data.prefix(8) == signature,
+        data[data.startIndex + 12..<data.startIndex + 16] == Data("IHDR".utf8)
+    else { return nil }
+    func bigEndianUInt32(at offset: Int) -> Int {
+        let start = data.startIndex + offset
+        return data[start..<start + 4].reduce(0) { ($0 << 8) | Int($1) }
+    }
+    return (bigEndianUInt32(at: 16), bigEndianUInt32(at: 20))
+}
 //
 // ``bundledHelperBinary(in:)`` 去 `Contents/Resources/bin/claudi0` 找 helper，
 // `performFirstRunSetup` 再从那条路径反推 `Contents/Resources/packs`。这条布局契约的**另一端**
@@ -592,7 +606,7 @@ func runReleaseLayoutSuites() {
 
         expect(
             copyLines.contains { $0.contains("Contents/Resources/claudi0.icns") },
-            "release.yml 必须把 Orbit Zero 的 claudi0.icns 放进 app Resources。实际的 cp 行：\(copyLines)")
+            "release.yml 必须把 T2 品牌包派生的 claudi0.icns 放进 app Resources。实际的 cp 行：\(copyLines)")
         expect(
             yaml.contains("<key>CFBundleIconFile</key><string>claudi0.icns</string>"),
             "Info.plist 必须通过 CFBundleIconFile 指向 claudi0.icns")
@@ -600,8 +614,8 @@ func runReleaseLayoutSuites() {
             yaml.contains("APP_NAME: claudi0"),
             "发布 app、DMG 与 Finder 显示名必须统一使用 claudi0")
         expect(
-            yaml.contains("<key>ClaudioBrandName</key><string>Orbit Zero</string>"),
-            "发布 Info.plist 必须携带 About 消费的 Orbit Zero 真实品牌字段")
+            !yaml.contains("ClaudioBrandName"),
+            "发布 Info.plist 不再写入品牌名字段（身份只由 T2 图形与产品名表达）")
         expect(
             copyLines.contains { $0.contains(#"LICENSE "$APP/Contents/Resources/LICENSE""#) }
                 && copyLines.contains {
@@ -950,8 +964,8 @@ func runReleaseLayoutSuites() {
             dev.contains(#"cp "$repo_root/LICENSE" "$APP/Contents/Resources/LICENSE""#)
                 && dev.contains(
                     #"cp "$repo_root/PRIVACY.md" "$APP/Contents/Resources/PRIVACY.md""#)
-                && dev.contains("<key>ClaudioBrandName</key><string>Orbit Zero</string>"),
-            "开发 app 必须复制 About 许可/隐私资源并写入 Orbit Zero bundle identity")
+                && !dev.contains("ClaudioBrandName"),
+            "开发 app 必须复制 About 许可/隐私资源，且不写入品牌名字段")
         expect(
             release.contains("gui/.build/arm64-apple-macosx/release")
                 && !release.contains("gui/.build/x86_64-apple-macosx/release")
@@ -1311,23 +1325,23 @@ func runReleaseLayoutSuites() {
             "脚本默认值、ENV reference 与实测基线必须一起重定，不能只抬高门禁数字")
     }
 
-    suite("Orbit Zero App 图标母版与 icns 都在仓库中") {
+    suite("App 图标 icns 由品牌包素材派生且在仓库中") {
         let branding = guiTestRepositoryRoot().appendingPathComponent(
             "assets/branding", isDirectory: true)
-        let svg = branding.appendingPathComponent("claudi0-app-icon.svg")
+        let kit = branding.appendingPathComponent("claudi0-basic-kit/02-icons/app-icon-1024.png")
+        let png = branding.appendingPathComponent("claudi0-app-icon.png")
         let icns = branding.appendingPathComponent("claudi0.icns")
-        let svgText = (try? String(contentsOf: svg, encoding: .utf8)) ?? ""
+        let kitData = try? Data(contentsOf: kit)
+        let pngData = try? Data(contentsOf: png)
         let icnsData = try? Data(contentsOf: icns)
+        let kitSize = kitData.flatMap { pngPixelSize($0) }
 
         expect(
-            svgText.contains("<ellipse cx=\"512\" cy=\"512\" rx=\"170\" ry=\"300\""),
-            "App 图标必须保留 Orbit Zero 的纵向 0 几何")
+            kitSize?.width == 1024 && kitSize?.height == 1024,
+            "品牌包必须携带 1024×1024 App 图标素材")
         expect(
-            svgText.contains("rx=\"356\" ry=\"128\" transform=\"rotate(-16 512 512)\""),
-            "App 图标必须保留穿过 0 的斜轨几何")
-        expect(
-            !svgText.contains("<circle"),
-            "App 图标遵循现行 DESIGN，不带历史装饰点")
+            pngData != nil && pngData == kitData,
+            "claudi0-app-icon.png 必须与品牌包素材同字节")
         expect(icnsData?.prefix(4) == Data("icns".utf8), "claudi0.icns 必须是有效的 icns 容器")
     }
 

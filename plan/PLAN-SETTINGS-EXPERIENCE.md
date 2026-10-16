@@ -36,7 +36,7 @@
 > 来源级编辑／采用、唯一全局主音量、四档界面文字、可变 Panel 宽度、`Aa` 入口及以每 Surface
 > receipt history 推算用量的文字均为历史计划，不再是生产要求。声音作用域以 `CONTEXT.md`、
 > ADR 0005/0016 及下文 §5.3 现行合同为准；设置窗口与动态静默分别遵循 ADR 0008/0009。
-> Panel 固定 312 pt／紧凑密度；2026-09-28 起 Display 页与活动状态点退役，Orbit Zero 固定无装饰点；「活动与诊断」消费七日本地活动摘要。
+> Panel 固定 312 pt／紧凑密度；2026-09-28 起 Display 页与活动状态点退役，品牌图形固定不带装饰点；「活动与诊断」消费七日本地活动摘要。
 > 旧原型、§1 的原始差距和 §7 的实施任务保留用于追溯，不作为新实施或验收指令。
 
 ## 0. 目标与完成定义
@@ -478,7 +478,7 @@ GUI 把授权后的最小事实发布成 ADR 0009 定义的动态静默快照。
 
 ### 5.5 显示（2026-09-28 废止，历史规格）
 
-本节仅记录原九页方案，不再作为生产实施或验收要求。现行侧栏无 Display 目的页；`display` 历史值启动时投影到「通用」且不报损坏、不改写原值。`Claudio.MenuBarStatusDot` 的 `true`、`false` 或异常值均保持原样，应用不再读取、写入或以它切换图标。菜单栏始终使用无装饰点的 Orbit Zero，并继续使用本地化 VoiceOver 标签。
+本节仅记录原九页方案，不再作为生产实施或验收要求。现行侧栏无 Display 目的页；`display` 历史值启动时投影到「通用」且不报损坏、不改写原值。`Claudio.MenuBarStatusDot` 的 `true`、`false` 或异常值均保持原样，应用不再读取、写入或以它切换图标。菜单栏始终使用不带装饰点的品牌图形，并继续使用本地化 VoiceOver 标签。
 
 用户结果：在显示页确认菜单栏活动状态点，并明确知道 Panel 固定使用紧凑布局；不产生字号或面板宽度
 第二套状态。
@@ -488,7 +488,7 @@ GUI 把授权后的最小事实发布成 ADR 0009 定义的动态静默快照。
 - **固定布局说明**：生产 UI 使用原第一档紧凑密度，Panel 固定 312pt 宽，设置窗口仍由 1240×820
   默认值和 960×640 最小值控制；旧 `Claudio.InterfaceTextSize`、`Claudio.PanelWidthPreference`
   值停止读取和写入，不新增一次性清理迁移；
-- **菜单栏显示状态点**：只控制 Orbit Zero 的状态点/活动变体，不隐藏状态项、不改变事件语义；
+- **菜单栏显示状态点**：只控制菜单栏品牌图形的状态点/活动变体，不隐藏状态项、不改变事件语义；
 - 状态点写入继续通过现有 typed preferences；固定布局说明不提供可写控件。
 
 验收：显示页只有一个生产 Toggle；Panel 不存在 `Aa`、宽度选择器、动态宽度分支或旧 preference 读取；
@@ -616,7 +616,7 @@ Apple 对全局 `NSEvent` key monitor 的权限说明见
 
 内容与行为：
 
-- 显示 Orbit Zero 图标、`claudi0`、`CFBundleShortVersionString`、build、当前架构和最低 macOS；
+- 显示 T2 品牌图标、`claudi0`、`CFBundleShortVersionString`、build、当前架构和最低 macOS；
 - 提供复制版本信息、打开开源许可/声音包 attribution、打开隐私说明；
 - 「复制诊断摘要」只包含版本、架构、macOS、已发布 Surface 的语义状态和路径是否存在，不包含路径值、
   receipt 内容、API key、prompt、response、Calendar 或个人声音包名称；

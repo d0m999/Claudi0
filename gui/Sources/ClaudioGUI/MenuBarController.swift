@@ -325,8 +325,8 @@ final class MenuBarController: NSObject {
 
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         self.statusItem = statusItem
-        // Template image, auto light/dark. The 16pt Orbit Zero reduction lives in
-        // `MenuBarIcon`; panel/onboarding headers use the matching full wordmark.
+        // The settings sidebar renders the official T2 horizontal wordmark itself; the menu bar
+        // uses the matching 18pt lime container from `MenuBarIcon`.
         Self.applyMenuBarIcon(language: languageStore.language, to: statusItem)
 
         super.init()

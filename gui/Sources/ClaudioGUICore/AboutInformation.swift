@@ -6,7 +6,6 @@ import Foundation
 /// projector value-only lets missing or malformed bundle fields fail to `nil` without teaching the
 /// Settings view how to inspect a bundle.
 public struct AboutBundleFactsInput: Sendable, Equatable {
-    public let brandName: String?
     public let productName: String?
     public let version: String?
     public let build: String?
@@ -15,7 +14,6 @@ public struct AboutBundleFactsInput: Sendable, Equatable {
     public let operatingSystemVersion: String?
 
     public init(
-        brandName: String?,
         productName: String?,
         version: String?,
         build: String?,
@@ -23,7 +21,6 @@ public struct AboutBundleFactsInput: Sendable, Equatable {
         minimumSystemVersion: String?,
         operatingSystemVersion: String?
     ) {
-        self.brandName = brandName
         self.productName = productName
         self.version = version
         self.build = build
@@ -37,7 +34,6 @@ public struct AboutBundleFactsInput: Sendable, Equatable {
 /// rather than inventing a release identity when a development process or damaged app is missing
 /// metadata.
 public struct AboutBundleFacts: Sendable, Equatable {
-    public let brandName: String?
     public let productName: String?
     public let version: String?
     public let build: String?
@@ -46,7 +42,6 @@ public struct AboutBundleFacts: Sendable, Equatable {
     public let operatingSystemVersion: String?
 
     init(
-        brandName: String?,
         productName: String?,
         version: String?,
         build: String?,
@@ -54,7 +49,6 @@ public struct AboutBundleFacts: Sendable, Equatable {
         minimumSystemVersion: String?,
         operatingSystemVersion: String?
     ) {
-        self.brandName = brandName
         self.productName = productName
         self.version = version
         self.build = build
@@ -66,7 +60,6 @@ public struct AboutBundleFacts: Sendable, Equatable {
 
 public func projectAboutBundleFacts(_ input: AboutBundleFactsInput) -> AboutBundleFacts {
     AboutBundleFacts(
-        brandName: safeAboutDisplayValue(input.brandName),
         productName: safeAboutDisplayValue(input.productName),
         version: safeAboutDiagnosticToken(input.version),
         build: safeAboutDiagnosticToken(input.build),
@@ -265,7 +258,6 @@ public func aboutVersionInformation(
     let l10n = ClaudioL10n(language: language)
     let unknown = l10n.text(.settingsAboutUnknown)
     return [
-        "\(l10n.text(.settingsAboutBrand)): \(facts.brandName ?? unknown)",
         "\(l10n.text(.settingsAboutProduct)): \(facts.productName ?? unknown)",
         "\(l10n.text(.settingsAboutVersion)): \(facts.version ?? unknown)",
         "\(l10n.text(.settingsAboutBuild)): \(facts.build ?? unknown)",

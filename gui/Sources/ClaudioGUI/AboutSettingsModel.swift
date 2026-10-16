@@ -20,7 +20,6 @@ func makeSystemAboutSettingsModel(
 ) -> AboutSettingsModel {
     let facts = projectAboutBundleFacts(
         AboutBundleFactsInput(
-            brandName: bundle.object(forInfoDictionaryKey: "ClaudioBrandName") as? String,
             productName: bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String,
             version: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
             build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String,

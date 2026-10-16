@@ -513,7 +513,7 @@ func runViewWiringSuites() {
             "完整字标必须由共享 T2 几何绘制（单一几何真相源），字标本身仍有 claudi0 文本替代")
         expect(
             !branding.contains("ClaudioOrbit"),
-            "Orbit Zero 几何已被 T2 品牌包取代，共享组件里不得残留第二套品牌图形")
+            "共享组件里只允许 T2 一套品牌图形，不得残留第二套 logo 实现")
 
         expect(
             panel.components(separatedBy: "ClaudioT2Badge(").count - 1 == 1
@@ -680,11 +680,13 @@ func runViewWiringSuites() {
         }
     }
 
-    suite("Orbit Zero 品牌母版与打包位图不含旧装饰点") {
+    suite("App 图标运行资产派生自 T2 品牌包，且不含旧品牌几何") {
         guard
-            let mark = source("assets/branding/claudi0-mark.svg"),
-            let appIcon = source("assets/branding/claudi0-app-icon.svg"),
             let generator = codeOnly("scripts/generate-brand-assets.swift"),
+            let kitData = try? Data(
+                contentsOf: repoRoot().appendingPathComponent(
+                    "assets/branding/claudi0-basic-kit/02-icons/app-icon-1024.png")),
+            let kitPNG = NSBitmapImageRep(data: kitData),
             let pngData = try? Data(
                 contentsOf: repoRoot().appendingPathComponent(
                     "assets/branding/claudi0-app-icon.png")),
@@ -695,19 +697,59 @@ func runViewWiringSuites() {
             let icns1024 = icns.representations.first(where: { $0.pixelsWide == 1024 })
                 as? NSBitmapImageRep
         else {
-            expect(false, "必须能读取 Orbit Zero 母版、生成脚本、PNG 与 .icns")
+            expect(false, "必须能读取品牌包 App 图标素材、派生 PNG 与 .icns")
             return
         }
         expect(
-            !mark.contains("<circle") && !appIcon.contains("<circle")
+            kitPNG.pixelsWide == 1024 && kitPNG.pixelsHigh == 1024,
+            "品牌包 App 图标素材必须是 1024×1024")
+        expect(
+            png.pixelsWide == 1024 && png.pixelsHigh == 1024 && pngData == kitData,
+            "claudi0-app-icon.png 必须逐字节等于品牌包素材")
+        expect(
+            generator.contains("claudi0-basic-kit") && !generator.contains("NSBezierPath")
                 && !generator.contains("dot.fill()"),
-            "两个 SVG 和图标生成脚本不得绘制原偏心装饰点")
+            "图标生成脚本只从品牌包素材缩放派生，不得自绘几何或装饰点")
+
+        // 运行资产只允许出现酸柠容器与深墨图形（旧黏土 / 奶油 / 深底三色一旦回归即红），
+        // 且圆角外保持透明（macOS 不重复遮罩）。
+        func classify(_ bitmap: NSBitmapImageRep) -> (lime: Int, ink: Int, other: Int, opaque: Int)
+        {
+            var lime = 0
+            var ink = 0
+            var other = 0
+            var opaque = 0
+            for x in stride(from: 0, to: bitmap.pixelsWide, by: 16) {
+                for y in stride(from: 0, to: bitmap.pixelsHigh, by: 16) {
+                    guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB)
+                    else { continue }
+                    if color.alphaComponent < 0.5 { continue }
+                    opaque += 1
+                    let pixel = (color.redComponent, color.greenComponent, color.blueComponent)
+                    if claudioBrandMatches(pixel, claudioBrandLimeRGB, tolerance: 0.12) {
+                        lime += 1
+                    } else if claudioBrandMatches(pixel, claudioBrandInkRGB, tolerance: 0.12) {
+                        ink += 1
+                    } else {
+                        other += 1
+                    }
+                }
+            }
+            return (lime, ink, other, opaque)
+        }
+
         for (name, bitmap) in [("PNG", png), (".icns", icns1024)] {
-            let oldDot = bitmap.colorAt(x: 755, y: 303)
-            let background = bitmap.colorAt(x: 755, y: 280)
+            let counts = classify(bitmap)
             expect(
-                oldDot != nil && oldDot?.isEqual(background) == true,
-                "\(name) 的原状态点中心应与周围底色一致")
+                counts.opaque > 0 && counts.other <= max(4, counts.opaque / 100)
+                    && counts.lime > counts.opaque / 5 && counts.ink > counts.opaque / 10,
+                "\(name) 只允许酸柠容器与深墨图形（other=\(counts.other), "
+                    + "lime=\(counts.lime)/\(counts.opaque)）")
+            let topLeft = bitmap.colorAt(x: 4, y: 4)?.alphaComponent
+            let bottomRight = bitmap.colorAt(x: 1019, y: 1019)?.alphaComponent
+            expect(
+                (topLeft ?? 1) < 0.05 && (bottomRight ?? 1) < 0.05,
+                "\(name) 的圆角外必须保持透明，避免 macOS 重复遮罩")
         }
     }
 

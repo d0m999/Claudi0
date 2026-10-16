@@ -10370,22 +10370,6 @@
         }
       }
     },
-    "settings.about.brand": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brand"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "品牌"
-          }
-        }
-      }
-    },
     "settings.about.product": {
       "localizations": {
         "en": {

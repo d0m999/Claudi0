@@ -650,7 +650,6 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let appUpdateRecovery: Self = "app.update.recovery"
     public static let aiCuePreviewKeychainUnavailable: Self = "ai-cue.preview.keychain-unavailable"
     public static let settingsAboutUnknown: Self = "settings.about.unknown"
-    public static let settingsAboutBrand: Self = "settings.about.brand"
     public static let settingsAboutProduct: Self = "settings.about.product"
     public static let settingsAboutVersion: Self = "settings.about.version"
     public static let settingsAboutBuild: Self = "settings.about.build"
@@ -1856,7 +1855,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .settingsSidebarAdvanced, .settingsSidebarProduct, .settingsSidebarLocalFirst,
         .settingsAnnouncementValue,
         .settingsIntegrationsManageEvents, .settingsIntegrationsManageEventsHint,
-        .settingsAboutUnknown, .settingsAboutBrand, .settingsAboutProduct,
+        .settingsAboutUnknown, .settingsAboutProduct,
         .settingsAboutVersion, .settingsAboutBuild, .settingsAboutArchitecture,
         .settingsAboutMinimumMacOS, .settingsAboutCurrentMacOS,
         .settingsAboutCopyVersion, .settingsAboutCopyVersionHint,

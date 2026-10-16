@@ -131,7 +131,6 @@ public enum PreviewFixtures {
 
     public static let aboutBundleFacts = projectAboutBundleFacts(
         AboutBundleFactsInput(
-            brandName: "Orbit Zero",
             productName: "claudi0",
             version: "0.1.0",
             build: "42",

@@ -27,8 +27,7 @@ import Foundation
 func runPreviewFixturesSuites() {
     suite("PreviewFixtures supplies the complete About state gallery values") {
         expect(
-            PreviewFixtures.aboutBundleFacts.brandName == "Orbit Zero"
-                && PreviewFixtures.aboutBundleFacts.productName == "claudi0",
+            PreviewFixtures.aboutBundleFacts.productName == "claudi0",
             "About identity fixture must come from the canonical PreviewFixtures catalog")
         expect(
             PreviewFixtures.aboutBundledResources.map(\.kind)

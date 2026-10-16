@@ -60,7 +60,7 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 | 七日本地活动摘要、事件覆盖、诊断脱敏、独立清理与失败保留旧事实 | `ActivityOverviewSuite`、`LocalActivitySummarySuite`、`ActivityDiagnosticsSuite` |
 | Carbon shortcut 注册、替换事务、冲突回滚与损坏持久化 fail closed | `GlobalShortcutsSuite` |
 | 登录项状态、退役 Display 值的平稳回退、关于页脱敏摘要与双语 catalog | `LoginItemManagementSuite`、`SettingsPreferencesSuite`、`AboutInformationSuite`、`LocalizationSuite` |
-| Orbit Zero 无装饰点，菜单栏 VoiceOver 标签保留 | `ViewWiringSuite`、品牌资产检查 |
+| 品牌图形固定不带装饰点（T2 容器），菜单栏 VoiceOver 标签保留 | `ViewWiringSuite`、品牌资产检查 |
 
 这些 suite 使用受控 fixture，不会读取真实 API key、请求真实 Provider、修改真实 host、注册真实登录项，
 或证明声音质量。若 suite 文件存在但从 `main.swift` 移除，总门禁会先在注册检查失败。

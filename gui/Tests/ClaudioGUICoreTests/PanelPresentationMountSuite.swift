@@ -39,7 +39,7 @@ func runPanelPresentationMountSuites() {
             let hostIntegrations = HostIntegrationPresentationStore(
                 state: integrationDestinationTestState())
             let preferences = ClaudioPreferences(
-                defaults: UserDefaults(suiteName: "com.orbitzero.claudio.panel-mount")!,
+                defaults: UserDefaults(suiteName: "com.claudio.tests.panel-mount")!,
                 preferredLanguageIdentifiers: { ["en"] })
             let panel = PanelView(
                 previewPanelModel: panelModel,
@@ -78,7 +78,7 @@ func runPanelPresentationMountSuites() {
                 libraryPresentationState: .refreshFailed(reason: "fixture scan failure"),
                 environment: environment)
             let preferences = ClaudioPreferences(
-                defaults: UserDefaults(suiteName: "com.orbitzero.claudio.panel-refresh-mount")!,
+                defaults: UserDefaults(suiteName: "com.claudio.tests.panel-refresh-mount")!,
                 preferredLanguageIdentifiers: { ["zh-Hans"] })
             let panel = PanelView(
                 previewPanelModel: panelModel,
@@ -119,7 +119,7 @@ func runPanelPresentationMountSuites() {
             let player = MountedPanelPreviewPlayer()
             var announcements: [String] = []
             let preferences = ClaudioPreferences(
-                defaults: UserDefaults(suiteName: "com.orbitzero.claudio.panel-preview-mount")!,
+                defaults: UserDefaults(suiteName: "com.claudio.tests.panel-preview-mount")!,
                 preferredLanguageIdentifiers: { ["en"] })
             let panel = PanelView(
                 previewPanelModel: model,

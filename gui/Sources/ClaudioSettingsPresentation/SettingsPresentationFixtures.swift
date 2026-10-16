@@ -611,7 +611,6 @@ package func makeSettingsFixtureAboutSettings(
         bundleFacts: empty
             ? projectAboutBundleFacts(
                 AboutBundleFactsInput(
-                    brandName: nil,
                     productName: nil,
                     version: nil,
                     build: nil,

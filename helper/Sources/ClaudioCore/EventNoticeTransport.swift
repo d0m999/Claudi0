@@ -204,7 +204,7 @@ public final class EventNoticeReceiver: @unchecked Sendable {
         self.callback = callback
         self.currentInstallationID = currentInstallationID
         self.noticeAuthorized = noticeAuthorized
-        ioQueue = DispatchQueue(label: "com.orbitzero.claudio.event-notices", qos: .userInitiated)
+        ioQueue = DispatchQueue(label: "com.claudio.event-notices", qos: .userInitiated)
 
         try ensurePrivateDirectoryTree(at: ownerLockFile.deletingLastPathComponent())
         let owner = FileLock(path: ownerLockFile.path)

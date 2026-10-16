@@ -199,7 +199,6 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <dict>
   <key>CFBundleName</key><string>claudi0</string>
   <key>CFBundleDisplayName</key><string>claudi0</string>
-  <key>ClaudioBrandName</key><string>Orbit Zero</string>
   <key>CFBundleIdentifier</key><string>com.claudio.app</string>
   <key>CFBundleVersion</key><string>$BUNDLE_VERSION</string>
   <key>CFBundleShortVersionString</key><string>$BUNDLE_VERSION</string>
@@ -265,7 +264,7 @@ PLIST
     python3 "$repo_root/scripts/sparkle-bundle.py" verify "$APP" --archs "$(uname -m)"
     bash "$repo_root/scripts/check-release-size.sh" "$APP"
     verify_bailian_source_identity
-    echo "✅ dist/${APP}（$(uname -m)）—— 用 open dist/${APP} 启动（菜单栏出现 Orbit Zero 图标）"
+    echo "✅ dist/${APP}（$(uname -m)）—— 用 open dist/${APP} 启动（菜单栏出现 T2 图标）"
 )
 
 claudio_with_pinned_output_directory "$repo_root" "dist" assemble_dev_bundle

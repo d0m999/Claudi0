@@ -26,15 +26,13 @@ func runAboutInformationSuites() {
     suite("About bundle facts are honest pure values") {
         let facts = projectAboutBundleFacts(
             AboutBundleFactsInput(
-                brandName: " Orbit Zero ",
-                productName: "claudi0",
+                productName: " claudi0 ",
                 version: "0.1.0",
                 build: "42",
                 architecture: "arm64",
                 minimumSystemVersion: "12.0",
                 operatingSystemVersion: "15.6.1"))
-        expect(facts.brandName == "Orbit Zero", "brand must trim bundle whitespace")
-        expect(facts.productName == "claudi0", "product must come from the supplied bundle fact")
+        expect(facts.productName == "claudi0", "product must trim bundle whitespace")
         expect(facts.version == "0.1.0" && facts.build == "42", "version/build must stay exact")
         expect(
             facts.architecture == "arm64"
@@ -44,7 +42,6 @@ func runAboutInformationSuites() {
 
         let missing = projectAboutBundleFacts(
             AboutBundleFactsInput(
-                brandName: "  ",
                 productName: "bad\nname",
                 version: "/Users/private/version",
                 build: "secret value",
@@ -52,7 +49,7 @@ func runAboutInformationSuites() {
                 minimumSystemVersion: "12.0 beta",
                 operatingSystemVersion: ""))
         expect(
-            missing.brandName == nil && missing.productName == nil && missing.version == nil
+            missing.productName == nil && missing.version == nil
                 && missing.build == nil && missing.architecture == nil
                 && missing.minimumSystemVersion == nil
                 && missing.operatingSystemVersion == nil,
@@ -105,7 +102,6 @@ func runAboutInformationSuites() {
             AboutDiagnosticFacts(
                 bundle: projectAboutBundleFacts(
                     AboutBundleFactsInput(
-                        brandName: secret,
                         productName: secret,
                         version: "0.1.0",
                         build: "42",
@@ -125,7 +121,13 @@ func runAboutInformationSuites() {
             summary.contains("path.bundled-helper: missing"),
             "summary must include missing path bit")
         expect(!summary.contains(secret), "diagnostic must discard every rich-row free-form field")
-        expect(!summary.contains("Orbit Zero"), "diagnostic must not copy display-only identity")
+        expect(
+            summary.split(separator: "\n").allSatisfy { line in
+                ["claudi0-version:", "claudi0-build:", "architecture:", "macos:", "minimum-macos:"]
+                    .contains(where: line.hasPrefix)
+                    || line.hasPrefix("surface.") || line.hasPrefix("path.")
+            },
+            "diagnostic must only carry the closed safe-token categories, never display identity")
     }
 
     suite("About diagnostic production sources do not access sensitive domains") {
@@ -232,7 +234,6 @@ func runAboutInformationSuites() {
         let model = AboutSettingsModel(
             bundleFacts: projectAboutBundleFacts(
                 AboutBundleFactsInput(
-                    brandName: "Orbit Zero",
                     productName: "claudi0",
                     version: "0.1.0",
                     build: "42",
@@ -312,9 +313,9 @@ func runAboutInformationSuites() {
                 && view.contains("settings.about.diagnostics.copy"),
             "About must wire sidebar/title/first-action keyboard order and both copy actions")
         expect(
-            view.contains("ClaudioT2Badge(") && view.contains("ClaudioT2Wordmark(")
-                && !view.contains("ClaudioOrbit"),
-            "About identity must reuse the current T2 badge and wordmark components")
+            view.contains("ClaudioT2Badge(") && !view.contains("ClaudioT2Wordmark(")
+                && !view.contains("bundleFacts.brandName") && !view.contains("ClaudioOrbit"),
+            "About identity must be the T2 badge plus the product name only（无字标、无品牌行）")
         expect(
             view.contains("settingsAboutResourceMissing")
                 && view.contains("settings.about.feedback")
@@ -358,8 +359,8 @@ func runAboutInformationSuites() {
                     && assembly.contains("Contents/Resources/packs"),
                 "each app assembler must ship license, privacy, and sound-attribution sources")
             expect(
-                assembly.contains("<key>ClaudioBrandName</key><string>Orbit Zero</string>"),
-                "each real app Info.plist must carry the About brand identity")
+                !assembly.contains("ClaudioBrandName"),
+                "each real app Info.plist must carry no brand-name key（身份只由 T2 图形与产品名表达）")
         }
         let englishProfileLines = privacy.split(separator: "\n").map(String.init).filter {
             $0.hasPrefix("- Profile ")
@@ -402,7 +403,6 @@ func runAboutInformationSuites() {
     suite("About copied version information localizes unknown values") {
         let facts = projectAboutBundleFacts(
             AboutBundleFactsInput(
-                brandName: "Orbit Zero",
                 productName: "claudi0",
                 version: nil,
                 build: "42",
@@ -415,5 +415,9 @@ func runAboutInformationSuites() {
         expect(chinese.contains("版本: 未知"), "Chinese copy must expose missing version")
         expect(english.contains("Architecture: x86_64"), "copy must include architecture")
         expect(chinese.contains("最低 macOS: 12.0"), "copy must include minimum macOS")
+        expect(
+            english.contains("App: claudi0") && !english.contains("Brand:")
+                && chinese.contains("应用: claudi0") && !chinese.contains("品牌:"),
+            "copy must name the product only；品牌行已移除")
     }
 }

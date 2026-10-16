@@ -108,11 +108,13 @@
 
 本节替代下文历史 Global/Surface 声音选择、稀疏覆盖、唯一全局主音量与按声音作用域统计活动的规则；字体、主题、固定 312pt 面板宽度与单一 retained 设置窗口继续有效。下文标为 2026-09-06 的旧面板解剖及四档字号画廊只供追溯，不恢复其声音或字号模型。
 
-**设置与品牌修订（2026-09-28）**：统一设置侧栏现有八页，依次为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于。原「显示」页与菜单栏活动状态点开关已退役；Orbit Zero 在菜单栏、App/Dock 图标和应用内字标中固定不带装饰点。下文 2026-08-04 品牌点与 2026-08-26 九页决策记录保留为历史，以上述现行修订为准。
+**设置与品牌修订（2026-09-28）**：统一设置侧栏现有八页，依次为默认组／工作区、声音、集成、通知、通用、快捷键、活动与诊断、关于。原「显示」页与菜单栏活动状态点开关已退役；菜单栏、App/Dock 图标和应用内品牌图形固定不带装饰点。下文 2026-08-04 品牌点与 2026-08-26 九页决策记录保留为历史，以上述现行修订为准。
 
 **设置命名修订（2026-10-10）**：「默认组／工作区」目的页改名「工作区」（English: “Workspace”），集成页声音入口、管理按钮、声音页返回入口与快捷键说明等入口名称同步改为「工作区」。页面职责不变：仍管理默认组与各工作区的包、音量与五事件；raw route `events-and-sounds`、八页顺序与上文各合同继续有效，本节之前同名描述按新名理解。
 
-**T2 × C1 品牌要素修订（2026-10-11，取代 2026-09-28 修订中关于菜单栏与应用内字标的条款）**：应用内四个品牌面统一改用 T2 图形与官方横向字标（claudi0-basic-kit v1.0），同一资产贯穿深浅主题——菜单栏图标 = 18pt 酸柠容器 + 11.5pt 深墨 T2 图形（圆角 4.5pt）；面板头部 = 22pt 容器 + 14pt 图形（圆角 5pt）+ 产品名文本；设置侧栏 = 38pt 官方横向组合，T2 图形墨迹左缘对齐功能区图标列（按原生 source-list 实际 cell 左缘 + 行内边距 4pt 确定图标列，再减去字标内 9.5pt 留白；包含系统内缩，不固定假设图标列为 16pt）；关于页 = 96pt 容器 + 60pt 图形（圆角 23pt）+ 38pt 字标纵向居中排列。菜单栏图标坚持酸柠彩色容器，不走 macOS template 单色惯例（高亮与置灰态留待原生自定义）；容器边缘以 16% 深墨发丝线界定（酸柠对暖白底色仅 ≈1.1:1）。App/Dock 图标与打包位图在品牌包正式入库前维持 Orbit 母版不动。几何实现见 `ClaudioGUIComponents/ClaudioBranding.swift` 的 `ClaudioT2Geometry`（单一真相源，菜单栏 AppKit 与 SwiftUI 视图共用同一段路径数据）。
+**T2 × C1 品牌要素修订（2026-10-11，取代 2026-09-28 修订中关于菜单栏与应用内字标的条款）**：应用内品牌面统一改用 T2 图形与官方横向字标（claudi0-basic-kit v1.0），同一资产贯穿深浅主题——菜单栏图标 = 18pt 酸柠容器 + 11.5pt 深墨 T2 图形（圆角 4.5pt）；面板头部 = 22pt 容器 + 14pt 图形（圆角 5pt）+ 产品名文本；设置侧栏 = 38pt 官方横向组合，T2 图形墨迹左缘对齐功能区图标列（按原生 source-list 实际 cell 左缘 + 行内边距 4pt 确定图标列，再减去字标内 9.5pt 留白；包含系统内缩，不固定假设图标列为 16pt）；关于页 = 96pt 容器 + 60pt 图形（圆角 23pt）+ 产品名（字标与独立品牌行已按下方 2026-10-15 修订移除）。菜单栏图标坚持酸柠彩色容器，不走 macOS template 单色惯例（高亮与置灰态留待原生自定义）；容器边缘以 16% 深墨发丝线界定（酸柠对暖白底色仅 ≈1.1:1）。App/Dock 图标与打包位图从品牌包素材派生，见下方 2026-10-15 修订。几何实现见 `ClaudioGUIComponents/ClaudioBranding.swift` 的 `ClaudioT2Geometry`（单一真相源，菜单栏 AppKit 与 SwiftUI 视图共用同一段路径数据）。
+
+**关于页身份与 App 图标资产修订（2026-10-15，取代 2026-10-11 修订中关于页身份与 App 图标资产的条款）**：关于页身份块只保留 96pt 酸柠容器（60pt 图形、圆角 23pt）与产品名 `claudi0`（17pt semibold，纵向居中，间距 14pt）——38pt 横向字标与独立品牌行移除，`ClaudioBrandName` bundle 字段及复制版本信息中的品牌行一并删除；侧栏字标、面板头部与菜单栏品牌面不变。App/Dock 图标与打包位图改从品牌包 `claudi0-basic-kit/02-icons/app-icon-1024.png` 派生：`claudi0-app-icon.png` 与该素材同字节，`claudi0.icns` 由 `scripts/generate-brand-assets.swift` 缩放并封装（脚本不自绘几何），仓库不再保留旧品牌 SVG 母版。自动检查只证明资产同源与容器颜色；真实 Dock/Finder 渲染仍需人工走查。
 
 - 「事件与提示音」改为「默认组／工作区」：默认组与工作区列表进入同窗口详情。详情提供完整声音包、独立音量、五事件、目录范围、适用 Surface、试听及真实适用状态。添加目录从子目录明确定位仓库根；必须选包并确认音量，事件初始全开。
 - 固定层级：在「声音」编辑包内声音，在「默认组／工作区」选择使用哪个包。组详情保留试听、开关及同窗口「声音」链接；事件来源菜单与独立清除按上方 2026-10-08 声音合同。内置包先复制再编辑，AI 生成对用户声音包按单条事件开放。
@@ -584,14 +586,14 @@ N/3 个可用候选”。partial 不改变单候选试听、命名、采用或�
 `ClaudioTheme`、事件色与语义色。生产宽度固定 **312pt**，首选高度 **560pt**；高度不足只压缩
 中间滚动视口，生产视图不再有 maximum 档或用户宽度分支。
 
-头部固定 Orbit/`claudi0` wordmark 与齿轮「设置」，头部不随内容滚动；中间是独立 `ScrollView`，按
+头部固定 22pt T2 容器 + `claudi0` 产品名文本与齿轮「设置」，头部不随内容滚动；中间是独立 `ScrollView`，按
 Sound Scope → 活动概览 → 五事件 → 仅主音量的播放设置排列；底部固定「关闭」。活动概览的四段交互
 目标高至少 29pt，但可见色条高 13pt；四段固定为用户发起、响应结束、等待介入、子任务结束，执行中断
 单独显示。旧字号入口、声音包标题/数量、管理声音、重置 Surface、bootstrap 管理卡和第二个设置 CTA
 均不进入生产面板。
 
 ```text
-Orbit Zero                                                            Aa⌄
+claudi0                                                                Aa⌄
 当前包
 N 个已发布来源 · 5 个声音事件
 声音作用域                                      缺失字段继承全局默认
@@ -830,12 +832,12 @@ N 个已发布来源 · 5 个声音事件
 
 ## App Icon（图标）
 
-- **现行主方向：Orbit Zero（2026-09-28 修订）**。末尾 `0` 是持续工作的信号容器；倾斜轨道表达 AI coding 的运行方向。偏心装饰点已从菜单栏、App/Dock 图标和应用内字标移除；真实宿主状态仍由状态组件表达。窗口与面板使用完整 `claudi0 + Orbit Zero` 横向字标，菜单栏与 App Icon 使用同源的 `Orbit 0` 减法图形。
+- **现行主方向：T2 图形 × C1 配色（2026-10-11 品牌修订，2026-10-15 换用品牌包资产）**。酸柠 `#D8F447` 容器 + 深墨 `#172B25` 图形；Finder / Dock / About 使用同一图形，容器圆角外保持透明，由 macOS 原样呈现。品牌图形固定不带装饰点；真实宿主状态仍由状态组件表达。
 - **品牌写法**：产品名固定写作小写 `claudi0`，仍读作 “Claudio”。数字 `0` 只承担视觉记忆点，不要求用户改变读法。
 - Claude/OpenAI 标识不得进入 claudi0 的 logo、wordmark 或品牌渐变；唯一例外是上文事件行中经来源校验的单色宿主 Logo，仅作事实状态指示，并始终遵守权利人的使用指南。claudi0 自身图标仍只表达自己的声音与状态母题。
-- **全彩图标**：深色硬件底 `#2B2620` + 黏土色 `0` `#C4633C` + 奶油轨道 `#F1E9DF`；Finder / Dock 使用同一图形。亮色平面可使用黏土单色标志。
-- **菜单栏模板版**：16×16pt 只保留纵向 `0` 与斜轨，纯 alpha 自动适配亮 / 暗菜单栏，不带彩色底板或光晕；保留原有本地化 VoiceOver 状态标签。
-- **资产已落地**：`assets/branding/claudi0-mark.svg`、`claudi0-app-icon.svg`、1024px PNG 与 `claudi0.icns` 同源；`scripts/generate-brand-assets.swift` 生成全部位图尺寸。`ClaudioOrbitWordmark` 负责 App 内横向字标，`MenuBarIcon.swift` 使用同一母题的 16pt 减法几何。打包脚本与 release workflow 都写入 `CFBundleIconFile = claudi0.icns`。
+- **全彩图标**：来自 `assets/branding/claudi0-basic-kit/02-icons/app-icon-1024.png`（App 用法：酸柠容器 + 深墨图形，图形占比约 63%）；浅底横向字标用深墨单色，深底用酸柠。Finder / Dock 使用同一图形。
+- **菜单栏**：18pt 酸柠彩色容器 + 11.5pt 深墨 T2 图形（圆角 4.5pt），不走 macOS template 单色惯例；保留原有本地化 VoiceOver 状态标签。
+- **资产已落地**：`assets/branding/claudi0-app-icon.png`（品牌包素材的同字节副本）与 `claudi0.icns`（16–1024 全尺寸）；`scripts/generate-brand-assets.swift` 只做缩放与容器封装，不自绘几何。打包脚本与 release workflow 都写入 `CFBundleIconFile = claudi0.icns`。
 
 ## macOS 平台注记
 
@@ -847,7 +849,8 @@ N 个已发布来源 · 5 个声音事件
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-09-28 | 统一设置改为八页，移除「显示」页与 Orbit Zero 装饰点 | 固定紧凑布局不需要独立设置页，装饰点不是宿主状态事实；保留真实状态组件与菜单栏 VoiceOver 标签。此行取代 2026-08-04 点几何和 2026-08-26 九页清单的相应部分。 |
+| 2026-10-15 | 关于页身份块只保留 96pt T2 容器 + 产品名 `claudi0`（17pt semibold）；移除 38pt 横向字标、独立品牌行与 `ClaudioBrandName` bundle 字段；App/Dock 图标与打包位图改从品牌包 App 图标素材派生，删除旧品牌 SVG 母版 | 品牌包已入库，Finder / Dock 图标应与关于页容器同源；关于页再挂横向字标与侧栏字标重复，独立品牌行也不是版本事实。自动检查只证明资产同源，真实 Dock/Finder 渲染另走人工走查。 |
+| 2026-09-28 | 统一设置改为八页，移除「显示」页与品牌图形装饰点 | 固定紧凑布局不需要独立设置页，装饰点不是宿主状态事实；保留真实状态组件与菜单栏 VoiceOver 标签。此行取代 2026-08-04 点几何和 2026-08-26 九页清单的相应部分。 |
 | 2026-09-17 | AI 提示音改为在「声音」中面向用户包生成和采纳；Global/Surface 仅选择使用的包，ADR 0016 取代下行来源独占设计 | 普通包可共享，包级映射的修改本来同时影响所有有效使用者；空组首音成功才发布、复制与深链应用分开，避免隐式切换作用域。候选与 Provider 安全合同保留，Swift 与原生验收另计。 |
 | 2026-08-26 | AI 提示音进入 scoped「事件与提示音」窗口：页面级 BYOK，逐事件两步生成，候选阶段命名，声音方案隐藏 | 用户的创作输入只应是声音描述；名称属于采用元数据，不应污染 provider 请求。manifest 是 pack-wide，因此只有明确 Surface 的独立用户包能安全承诺“只影响此来源”；其余目标必须可见地 fail closed。 |
 | 2026-08-25 | 菜单栏生产面板改为全宽 Global/Surface 作用域菜单 + 当前来源五事件 + 两行播放设置组；「打开设置」进入 scoped 「事件与提示音」窗口，逐事件编辑委托 Sound Packs Window | Surface 声音偏好必须以 Global 与稀疏覆盖为同一条可见主线；事件能力由显式 support/implementation 模型驱动，WorkBuddy 诚实显示 2/5。事件窗口保留 scope，Sound Packs 路由只负责完整音频映射，错误 scope fail closed；继续支持浅色/深色与 312/360pt，并保留配置 schema 与未知字段。 |
@@ -887,7 +890,7 @@ N 个已发布来源 · 5 个声音事件
 | 2026-08-01 | Claudio 升级为 Claude Code + Codex 双宿主声音中心；黏土色明确为 Claudio 自有品牌；菜单栏双来源行、4×2 能力矩阵与 retained `IntegrationsWindow` 成为现行规范 | 宿主入口与交互权重并列，但能力差异诚实呈现：Claude Code `4/4`、Codex `3/4` 都是正常态；Codex 待响应仅映射 `PermissionRequest`，`StopFailure` 不支持。连接绿色以当前 installation ID 的真实回执为证据，配置完成不等于已激活。 |
 | 2026-08-04 | 新增首位语义「任务开始」与 5×2 能力矩阵；`paperplane.fill` + info blue，声音包覆盖轨与映射编辑器扩为 5-slot / 五行 | Claude Code 与 Codex 的 `UserPromptSubmit` 均映射 `task_start`；Claude 为 `5/5`、Codex 为正常 `4/5`。激活只认当前代次 `UserPromptSubmit`，其它回执只作 latest diagnosis；旧包缺第五映射时明确显示缺失，不跨包 fallback。 |
 | 2026-08-02 | 产品品牌改为小写 `claudi0`（仍读作 “Claudio”），主图标改为 **C / Signal** | 数字 `0` 提供更独特的字标与域名 / icon 延展空间；C 外环、脉冲、信号点在 16px 到 1024px 保持同一几何。对外 app / DMG / CLI alias 使用 `claudi0`；为避免用户设置与 hooks 失效，`ClaudioCore` / `ClaudioGUI`、`~/.claudio/`、`~/.claudio/bin/claudio` 与 `com.claudio.app` 保持兼容。 |
-| 2026-08-04 | 全部 UI 品牌标识切换为 **Orbit Zero** | 用户以官网 Orbit Zero 字标稿拍板替换现有 UI logo。面板与首次启动页共用 `ClaudioOrbitWordmark`；菜单栏压缩为 `0 + 斜轨 + 信号点`；App Icon、SVG、PNG 与 `.icns` 同源更新。完整横向字标不硬塞进 16pt 状态栏，避免可读性退化；VoiceOver 仍只朗读 `claudi0` 与既有状态句。 |
+| 2026-08-04 | 全部 UI 品牌标识切换为官网选定的字标稿（2026-10-11 起由 T2 × C1 品牌包取代） | 用户以官网字标稿拍板替换现有 UI logo。面板与首次启动页共用当时的横向字标组件；菜单栏压缩为减法几何；App Icon、SVG、PNG 与 `.icns` 同源更新。完整横向字标不硬塞进 16pt 状态栏，避免可读性退化；VoiceOver 仍只朗读 `claudi0` 与既有状态句。 |
 | 2026-08-07 | 菜单栏事件行删除来源副标题，改为共享能力矩阵驱动的 Claude Code / Codex 只读 Logo；`notification` 的全产品名称统一为“待响应” | Logo 只表达“该工具当前是否连接并支持此事件”，不成为 claudi0 品牌或交互开关。`.audible/.muted/.missingSound/.legacy` 彩色，其余状态与缺格灰色；22/19pt、间距 5pt、无框无底无 hover。VoiceOver 信息合并进既有事件编辑入口，焦点顺序不变；底层 `notification` 契约不变。两枚 24×24 母版生成 template PDF，以兼容 macOS 12。 |
 | 2026-08-10 | 采用批准稿 C 修正版，收紧事件区排版并替换 Codex 几何 | **替代 2026-08-07 的 22/19pt、5pt 规格与社区 Codex 几何记录**：事件标题标准档定为 12.5pt SF Pro Rounded medium，并经 `@ScaledMetric(relativeTo: .body)` 响应四档界面文字；两种布局的宿主 Logo 统一 18×18pt，Logo 间距 4pt，事件字形与标题间距 6pt，标准行 37pt、两行 52pt。Codex 母版改用批准的 OpenAI 2025 Blossom；Claude Spark、状态语义、VoiceOver 合并方式、映射胶囊、试听、静音、能力矩阵与底层事件键均不变。 |
 | 2026-08-05 | 「界面文字」采用方案 C 步进调节：固定 `Aa⌄` 触发器 + 固定 280pt 子 Popover + 原生两侧 A 按钮 | 方案 C 在保持暖色原生面板的同时减少一层菜单；实时 `Binding<ClaudioInterfaceTextSize>` 继续写入共享 `@AppStorage`，四档、非法值回退、跨窗口同步和现有 Panel 首焦点契约不变。 |

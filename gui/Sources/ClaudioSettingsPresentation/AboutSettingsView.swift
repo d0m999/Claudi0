@@ -54,21 +54,14 @@ struct AboutSettingsView: View {
     }
 
     private var identity: some View {
-        // T2 关于页形制（2026-10-11 品牌修订）：96pt 酸柠容器 + 38pt 官方横向字标
-        // + 产品名，纵向居中排列（与主原型 about-identity 同结构）；事实行与复制
-        // 按钮保持在身份块内，原有键盘焦点与无障碍接线不变。
+        // T2 关于页形制（2026-10-11 品牌修订；2026-10-15 简化）：96pt 酸柠容器 + 产品名，
+        // 纵向居中排列（与主原型 about-identity 同结构）。横向字标与品牌行已移除；事实行与
+        // 复制按钮保持在身份块内，原有键盘焦点与无障碍接线不变。
         VStack(spacing: 14) {
             VStack(alignment: .center, spacing: 14) {
                 ClaudioT2Badge(size: 96, cornerRadius: 23, glyphSize: 60, dropShadow: true)
-                ClaudioT2Wordmark(height: 38)
-
-                VStack(alignment: .center, spacing: 3) {
-                    Text(model.bundleFacts.brandName ?? unknown)
-                        .font(SettingsAppearance.font(.productTitle))
-                    Text(model.bundleFacts.productName ?? unknown)
-                        .font(SettingsAppearance.font(.sectionTitle))
-                        .foregroundColor(.secondary)
-                }
+                Text(model.bundleFacts.productName ?? unknown)
+                    .font(SettingsAppearance.font(.productTitle))
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)

@@ -313,7 +313,6 @@ jobs:
           <dict>
             <key>CFBundleName</key><string>$APP_NAME</string>
             <key>CFBundleDisplayName</key><string>$APP_NAME</string>
-            <key>ClaudioBrandName</key><string>Orbit Zero</string>
             <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
             <key>CFBundleVersion</key><string>$CLAUDIO_VERSION</string>
             <key>CFBundleShortVersionString</key><string>$CLAUDIO_VERSION</string>
