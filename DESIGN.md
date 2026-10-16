@@ -270,11 +270,12 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 - 主原型表达窗口、层级、留白、字标、图标、颜色、动效与导航 affordance。它的 HTML 状态和点击结果仅用于演示；页面可用状态、实际操作、权限、焦点、无障碍、持久化及 host 回调仍以 Swift/AppKit 实现和 ADR 为准。原生接受度须单独验证。
 - `Native Settings Alignment Prototype.html` 和旧独立 `claudi0 macOS Settings Prototype.html` 已于 2026-10-07 随原型合并删除（唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）；其迁移来源与历史样式由本节文字及验证记录留存。
 
+> **2026-10-15 原型合并**：T2 × C1 品牌修订先行交付的原型变体 `Panel and Settings Prototype (T2C1 Rebrand).html` 已并入本文件并删除；`designs/settings-unavailable-pack/Unavailable Sound Pack Prototype.html`、`docs/frontend-ux-review-20260918-prototype.html` 与 `mockups/ai-app-manager-native-macos.svg` 同轮退役。pixel-motion 源原型、来源归档与导出／校验脚本见下方事件动画节。主原型继续保持全仓唯一画面 SoT。
+
 ## 事件动画（现行 · 2026-10-06，#216）
 
-角色画面、逐帧时长、循环范围和静态帧以已批准的[绘制来源归档](designs/pixel-motion/reference/approved-source.html)
-为准，SHA-256 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc`。
-> **2026-10-09 来源归档修复**：独立原型于 2026-10-07 退役。上述已批准的动画绘制与时序输入按原指纹归档为 [`reference/approved-source.html`](designs/pixel-motion/reference/approved-source.html)，仅供导出与固定来源校验；现行产品画面仍由主原型拥有。来源身份与用途见[归档说明](designs/pixel-motion/reference/README.md)。
+角色画面、逐帧时长、循环范围和静态帧以已交付的图集与 [`samples` 回放边界参考](designs/pixel-motion/samples/playback-reference.json)、[像素参考](designs/pixel-motion/samples/pixel-reference.json) 为准；两份参考记录已批准源指纹 `447509d637fef2e11bb8c3c65e249476bc8dbd127f771fa219729b428ded22fc`。
+> **2026-10-15 原型合并**：已批准的绘制来源归档、归档副本、来源校验脚本与导出工具已随本轮原型合并退役删除（可由 Git 历史恢复）；现行呈现与验收以已交付资源及上述参考为准。
 原生统一设置在「通知 → 事件动画」并排提供原版图标、机械小鸭、像素幽灵、比特币，默认原版。
 原生窗口、控件和功能组沿用上方 macOS 八页设置合同；设置预览和真实横幅使用同一导出资源及播放组件。
 角色约 32 pt，透明背景、最近邻缩放，小鸭分别使用明暗图集。静态偏好或系统 Reduce Motion

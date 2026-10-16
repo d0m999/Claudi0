@@ -7,7 +7,7 @@
 ## Solution
 
 以打磨后的 Pixel Motion Prototype 为角色画面、逐帧时长、循环范围和静态帧的唯一准据。在原生统一设置窗口的「通知 → 事件动画」中并排提供原版图标、机械小鸭、像素幽灵、比特币四种选择，默认原版。设置预览与真实横幅使用相同资源和播放器。由 Codex 自动完成资源、行为、原生操作、截图及适用工程验证，不另设人工验收关卡。
-> **2026-10-09 来源归档修复**：独立原型于 2026-10-07 退役。已批准的原始绘制与时序输入按下方 SHA-256 归档为 [`reference/approved-source.html`](../designs/pixel-motion/reference/approved-source.html)，仅供导出及固定来源校验，不恢复独立产品原型。现行产品画面继续由主原型拥有；详见[归档说明](../designs/pixel-motion/reference/README.md)。
+> **2026-10-15 原型合并**：独立原型于 2026-10-07 退役后又按 SHA-256 归档的来源曾存于 `reference/approved-source.html`；本轮将来源归档、归档副本、导出脚本（`export-original-samples.py`、`export_runtime.py`）与校验脚本（`test-event-animation-prototype.py`、`test-event-animation-resources.py`）一并退役删除，可由 Git 历史恢复。角色画面、时序与静态帧继续由已交付资源及 `designs/pixel-motion/samples/` 的 `playback-reference.json`／`pixel-reference.json` 承接；现行产品画面继续由主原型拥有。
 
 ## User Stories
 

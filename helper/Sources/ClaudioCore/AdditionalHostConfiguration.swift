@@ -21,6 +21,10 @@ enum AdditionalHostConfiguration {
     // keep their identity and migrate on reconnect instead of reading as foreign.
     private static let previousPluginTemplateSHA256 =
         "da22bceea841b3a420655f498fadbba04ba29d91a31bf16f02f7ad605cd89698"
+    // Exact first dual-contract template, before the V2 lifecycle/identity fixes.
+    // Fixture: Tests/ClaudioCoreTests/Fixtures/opencode-84f841f.js.
+    private static let previousV2PluginTemplateSHA256 =
+        "ea4573b460aca0a1e9cbc61065336a59a462afb6d944eb073545a154baf46341"
     private static let blockStart = "# >>> Claudio Kimi Code hooks v1"
     private static let blockEnd = "# <<< Claudio Kimi Code hooks v1"
 
@@ -113,7 +117,10 @@ enum AdditionalHostConfiguration {
             guard
                 isCurrentTemplate
                     || (data.starts(with: prefix)
-                        && [legacyPluginTemplateSHA256, previousPluginTemplateSHA256].contains(
+                        && [
+                            legacyPluginTemplateSHA256, previousPluginTemplateSHA256,
+                            previousV2PluginTemplateSHA256,
+                        ].contains(
                             SHA256.hash(data: data.dropFirst(prefix.count))
                                 .map { String(format: "%02x", $0) }.joined()))
             else {

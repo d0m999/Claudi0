@@ -1,0 +1,722 @@
+// Claudio OpenCode server plugin. Source contracts: OpenCode 1.18.34 (V1 hooks) and
+// 2.0.27 (V2 setup + native event stream). Installation values are prepended by the
+// adapter. No message/tool body is retained or sent.
+import { spawn } from "node:child_process";
+
+export const id = "claudio.opencode.v1";
+const MAX_SESSIONS = 128;
+const MAX_IDENTITIES = 256;
+const RETENTION = 30 * 60 * 1000;
+const identifier = (v) => typeof v === "string" && v.length > 0 &&
+  Buffer.byteLength(v) <= 256 && !/[\s\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/u.test(v);
+const finiteTime = (v) => typeof v === "number" && Number.isFinite(v) && v > 0;
+const terminalErrors = new Set([
+  "APIError", "ProviderAuthError", "UnknownError", "MessageOutputLengthError", "StructuredOutputError",
+]);
+
+// ---------------------------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------------------------
+
+// One emission per real host event per process. OpenCode 2 instantiates the
+// plugin once per active location and delivers the whole event stream to every
+// instance, so per-instance ledgers alone would multiply sounds; the first
+// instance to observe an event identity wins. Cross-process duplicates remain
+// the helper's own host-level debounce. Tests inject a fresh claim map.
+const claimRegistryKey = Symbol.for("claudio.opencode.emissions.v1");
+const claimRegistry = globalThis[claimRegistryKey] ??= new Map();
+
+function claimEmission(claims, key, now) {
+  const cutoff = now() - RETENTION;
+  for (const [entry, time] of claims) if (time < cutoff) claims.delete(entry);
+  if (claims.has(key) || claims.size >= MAX_IDENTITIES) return false;
+  claims.set(key, now());
+  return true;
+}
+
+function makeEmitter({ dispatch, now, directory }) {
+  const children = new Set();
+  let disposed = false;
+  // Helper callbacks for one turn can start milliseconds apart (a fast response),
+  // and the helper's per-host installation lock is deliberately non-blocking.
+  // Serializing spawns keeps every billed event's sound and receipt instead of
+  // letting a concurrent sibling lose the lock. Each child exits right after it
+  // spawns afplay, so the queue costs one short helper lifetime, not one sound.
+  let chain = Promise.resolve();
+  return {
+    dispose() { disposed = true; },
+    emit(event, state, fields = {}) {
+      if (disposed || !installation.enabled_events.includes(event)) return;
+      const payload = {
+        bridge_schema: 1,
+        hook_event_name: event,
+        session_id: state.id,
+        session_kind: state.parentID ? "child" : "main",
+        ...fields,
+      };
+      if (state.parentID) payload.parent_session_id = state.parentID;
+      // Directory is an ephemeral source label only. The helper uses the Default Group.
+      if (typeof directory === "string" && directory.startsWith("/") &&
+          Buffer.byteLength(directory) <= 4096 &&
+          !/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/u.test(directory)) {
+        payload.cwd = directory;
+      }
+      if (typeof dispatch === "function") {
+        try { dispatch(event, payload); } catch { /* best effort */ }
+        return;
+      }
+      if (children.size >= 8) return;
+      const bytes = JSON.stringify(payload);
+      if (Buffer.byteLength(bytes) > 8192) return;
+      chain = chain.then(() => new Promise((resolve) => {
+        try {
+          const child = spawn(installation.helper_path,
+            ["hook", "opencode", event, "--installation-id", installation.installation_id],
+            { stdio: ["pipe", "ignore", "ignore"] });
+          children.add(child);
+          const timer = setTimeout(() => { child.kill("SIGKILL"); }, 1500);
+          timer.unref?.();
+          const finish = () => { clearTimeout(timer); children.delete(child); resolve(); };
+          child.once("error", finish);
+          child.once("close", finish);
+          child.stdin.on("error", () => {});
+          child.stdin.end(bytes);
+          child.unref();
+        } catch { resolve(); /* no host output, approval or retry */ }
+      }), () => {});
+    },
+  };
+}
+
+// Session identity shared by both contracts: a child session carries a parentID.
+function rememberSession(sessions, info, now) {
+  if (!info || !identifier(info.id) ||
+      (info.parentID !== undefined && !identifier(info.parentID))) return;
+  pruneSessions(sessions, now);
+  const previous = sessions.get(info.id);
+  if (previous) {
+    // Contradictory parent evidence cannot change a main turn into a child or vice versa.
+    if (previous.parentID !== info.parentID) sessions.delete(info.id);
+    return;
+  }
+  if (sessions.size >= MAX_SESSIONS) return;
+  // candidates/active are V1 per-session state; V2 tracks its own turn state on
+  // the same record. Both contracts share one identity shape.
+  sessions.set(info.id, {
+    id: info.id, parentID: info.parentID, touched: now(),
+    candidates: new Map(), active: undefined,
+  });
+}
+
+function pruneSessions(sessions, now) {
+  const cutoff = now() - RETENTION;
+  for (const [key, value] of sessions) if (value.touched < cutoff) sessions.delete(key);
+}
+
+// ---------------------------------------------------------------------------
+// V1 contract: OpenCode 1.18.29+ loads the default PluginModule before legacy
+// named exports, calls server(context) and uses the returned hooks object.
+// Public plugin interface is also the regression-test seam: JSON plugin options
+// cannot supply functions; the test harness supplies a dispatcher and clock.
+// ---------------------------------------------------------------------------
+
+export async function server(context, options = {}) {
+  const registryKey = Symbol.for("claudio.opencode.instances.v1");
+  const registry = globalThis[registryKey] ??= new Set();
+  const instanceKey = JSON.stringify([context.directory, installation.installation_id]);
+  if (registry.has(instanceKey) || registry.size >= MAX_SESSIONS) return {};
+  registry.add(instanceKey);
+  const now = typeof options.clock === "function" ? options.clock : Date.now;
+  const bootTime = now();
+  const sessions = new Map();
+  const requests = new Map();
+  const completed = new Map();
+  const pending = [];
+  const emitter = makeEmitter({
+    dispatch: options.dispatch, now, directory: context.directory,
+  });
+  let disposed = false;
+  let draining = false;
+
+  function prune() {
+    const cutoff = now() - RETENTION;
+    pruneSessions(sessions, now);
+    for (const ledger of [requests, completed]) {
+      for (const [key, time] of ledger) if (time < cutoff) ledger.delete(key);
+    }
+  }
+
+  function consume(ledger, key) {
+    prune();
+    if (ledger.has(key) || ledger.size >= MAX_IDENTITIES) return false;
+    ledger.set(key, now());
+    return true;
+  }
+
+  function emit(event, state, fields = {}) {
+    emitter.emit(event, state, fields);
+  }
+
+  function remember(info) {
+    rememberSession(sessions, info, now);
+  }
+
+  async function session(sessionID) {
+    if (!identifier(sessionID)) return;
+    prune();
+    if (sessions.has(sessionID)) return sessions.get(sessionID);
+    if (sessions.size >= MAX_SESSIONS || !context.client?.session?.get) return;
+    const controller = new AbortController();
+    let timer;
+    try {
+      // Only fetch session identity, never message/history content. Timeout is independent of
+      // SDK cancellation support and prevents a hung lookup from growing the serialized queue.
+      const result = await Promise.race([
+        context.client.session.get({ path: { id: sessionID }, signal: controller.signal }),
+        new Promise((resolve) => {
+          timer = setTimeout(() => { controller.abort(); resolve(undefined); }, 300);
+        }),
+      ]);
+      const info = result?.data;
+      if (!disposed && info?.id === sessionID) remember(info);
+    } catch { /* unknown identity fails closed */ }
+    finally { clearTimeout(timer); }
+    return disposed ? undefined : sessions.get(sessionID);
+  }
+
+  function finish(state) {
+    const active = state.active;
+    if (!active || !active.idle || !active.terminal || active.cancelled) return;
+    const terminal = active.terminal;
+    if (terminal.result === "failure" && !active.errors.has(terminal.errorKind)) return;
+    if (!state.parentID && !active.started) return;
+    if (state.parentID && terminal.result !== "success") return;
+    const key = JSON.stringify([state.id, active.userID]);
+    if (!consume(completed, key)) return;
+    emit(state.parentID ? "SubagentCompleted" :
+      terminal.result === "success" ? "ResponseCompleted" : "ResponseFailed", state, {
+      turn_id: active.userID, message_id: terminal.messageID,
+      terminal: terminal.result, ...(terminal.errorKind ? { error_kind: terminal.errorKind } : {}),
+    });
+    state.active = undefined;
+    state.candidates.delete(active.userID);
+  }
+
+  async function message(info) {
+    if (!info || info.role !== "assistant" || !identifier(info.id) ||
+        !identifier(info.parentID) || !finiteTime(info.time?.created) ||
+        info.time.created < bootTime) return;
+    const state = await session(info.sessionID);
+    if (!state) return;
+    state.touched = now();
+    const key = JSON.stringify([state.id, info.parentID]);
+    if (completed.has(key)) return;
+    if (state.active && state.active.userID !== info.parentID) {
+      // Compaction and automatic continuation create new parents without chat.message.
+      // Their idle cannot finish the old response, even when the new turn is ineligible.
+      state.candidates.delete(state.active.userID);
+      state.active = undefined;
+    }
+    if (info.summary === true) return;
+    const candidate = state.candidates.get(info.parentID);
+    if (!state.parentID && !candidate) return;
+    if (state.active?.userID !== info.parentID) {
+      // A new main response must belong to a confirmed non-synthetic live user message.
+      state.active = {
+        userID: info.parentID, started: false, idle: false, cancelled: false,
+        errors: new Set(), terminal: undefined,
+      };
+    }
+    const active = state.active;
+    if (!state.parentID && !active.started) {
+      active.started = true;
+      emit("UserTurnStarted", state, { turn_id: info.parentID, message_id: info.id,
+        origin_kind: "user", executing: true });
+    }
+    // A later assistant step invalidates an earlier terminal candidate (e.g. tool continuation).
+    if (active.messageID !== info.id) {
+      active.terminal = undefined;
+      active.idle = false;
+      active.errors.clear();
+    }
+    active.messageID = info.id;
+    if (!finiteTime(info.time?.completed) || info.time.completed < info.time.created) return;
+    if (info.error) {
+      const name = info.error.name;
+      if (name === "MessageAbortedError" || name === "AbortError") active.cancelled = true;
+      if (terminalErrors.has(name)) active.terminal = {
+        result: "failure", errorKind: name, messageID: info.id,
+      };
+    } else if (info.finish === "stop" || info.finish === "length") {
+      active.terminal = { result: "success", messageID: info.id };
+    }
+    finish(state);
+  }
+
+  async function event(input) {
+    const event = input?.event;
+    const p = event?.properties;
+    if (!p || typeof p !== "object") return;
+    if (event.type === "session.created" || event.type === "session.updated") {
+      remember(p.info);
+      return;
+    }
+    if (event.type === "session.deleted") {
+      if (identifier(p.info?.id)) sessions.delete(p.info.id);
+      return;
+    }
+    if (event.type === "message.updated") return message(p.info);
+    if (["question.replied", "question.rejected", "permission.replied"].includes(event.type)) {
+      if (identifier(p.sessionID) && identifier(p.requestID)) {
+        consume(requests, JSON.stringify([event.type.split(".")[0], p.sessionID, p.requestID]));
+      }
+      return;
+    }
+    if (event.type === "question.asked" || event.type === "permission.asked") {
+      if (!identifier(p.id)) return;
+      const state = await session(p.sessionID);
+      if (!state) return;
+      const kind = event.type.split(".")[0];
+      if (!consume(requests, JSON.stringify([kind, state.id, p.id]))) return;
+      emit(kind === "question" ? "QuestionAsked" : "PermissionRequested", state,
+        { request_id: p.id });
+      return;
+    }
+    const state = sessions.get(p.sessionID);
+    if (!state?.active) return;
+    state.touched = now();
+    if (event.type === "session.error" && typeof p.error?.name === "string") {
+      if (p.error.name === "MessageAbortedError" || p.error.name === "AbortError") {
+        state.active.cancelled = true;
+      }
+      if (terminalErrors.has(p.error.name)) state.active.errors.add(p.error.name);
+      finish(state);
+    } else if (event.type === "session.idle") {
+      state.active.idle = true;
+      finish(state);
+    } else if (event.type === "session.status" && p.status?.type === "busy") {
+      state.active.idle = false;
+    }
+  }
+
+  function schedule(job) {
+    if (disposed || pending.length >= 64) return Promise.resolve();
+    return new Promise((resolve) => {
+      pending.push({ job, resolve });
+      if (draining) return;
+      draining = true;
+      void (async () => {
+        try {
+          while (pending.length && !disposed) {
+            const next = pending.shift();
+            try { await next.job(); } catch { /* malformed upstream data fails closed */ }
+            next.resolve();
+          }
+        } finally { draining = false; }
+      })();
+    });
+  }
+
+  function projectEvent(input) {
+    const event = input?.event;
+    const p = event?.properties;
+    if (!p || typeof p !== "object" || ![
+      "session.created", "session.updated", "session.deleted", "session.idle", "session.status",
+      "session.error", "message.updated", "permission.asked", "permission.replied", "question.asked",
+      "question.replied", "question.rejected",
+    ].includes(event.type)) return undefined;
+    const info = p.info;
+    if (info?.parentID !== undefined && !identifier(info.parentID)) return undefined;
+    const isMessage = event.type === "message.updated";
+    // Session.summary is a diff-stat object; Message.summary is a compaction flag.
+    if (isMessage && info?.summary !== undefined && typeof info.summary !== "boolean") return undefined;
+    const safeID = (value) => identifier(value) ? value : undefined;
+    // Select fields synchronously, before queuing. Queued jobs never retain raw event objects,
+    // prompts, message parts, tool output, questions, answers or error messages/stacks.
+    const properties = {
+      sessionID: safeID(p.sessionID), id: safeID(p.id), requestID: safeID(p.requestID),
+      status: p.status ? { type: safeID(p.status.type) } : undefined,
+      error: p.error ? { name: safeID(p.error.name) } : undefined,
+      info: info ? {
+        id: safeID(info.id), sessionID: safeID(info.sessionID), parentID: safeID(info.parentID),
+        role: safeID(info.role), summary: isMessage ? info.summary : undefined, finish: safeID(info.finish),
+        time: info.time ? { created: finiteTime(info.time.created) ? info.time.created : undefined,
+          completed: finiteTime(info.time.completed) ? info.time.completed : undefined } : undefined,
+        error: info.error ? { name: safeID(info.error.name) } : undefined,
+      } : undefined,
+    };
+    return { event: { type: event.type, properties } };
+  }
+
+  return {
+    event: (input) => {
+      const projected = projectEvent(input);
+      return projected ? schedule(() => event(projected)) : Promise.resolve();
+    },
+    "chat.message": (input, output) => {
+      const sessionID = identifier(input?.sessionID) ? input.sessionID : undefined;
+      const messageID = identifier(output?.message?.id) ? output.message.id : undefined;
+      const human = output?.message?.role === "user" && messageID && sessionID &&
+        output.message.sessionID === sessionID && input.noReply !== true &&
+        Array.isArray(output.parts) && output.parts.length <= 256 && output.parts.some((part) =>
+          (part?.type === "text" || part?.type === "file") &&
+          (part.synthetic === undefined || part.synthetic === false));
+      return schedule(async () => {
+        if (!human) return;
+        const state = await session(sessionID);
+        if (!state || state.candidates.size >= 64) return;
+        state.touched = now();
+        state.candidates.set(messageID, true);
+      });
+    },
+    dispose: async () => {
+      disposed = true;
+      emitter.dispose();
+      sessions.clear(); requests.clear(); completed.clear();
+      for (const { resolve } of pending.splice(0)) resolve();
+      // Already admitted callbacks may still be starting when a short-lived host exits.
+      // Let them finish; each child retains its existing bounded timeout while the host lives.
+      registry.delete(instanceKey);
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// V2 contract: OpenCode 2 loads the default PluginModule, requires id + setup,
+// and ignores a legacy server export. Hooks are no longer a returned object:
+// subscribe to the public event stream and register domain hooks on ctx.
+// 2.0.27 delivers { type, data }; newer builds renamed the family with a
+// "next" segment and moved payloads to properties, so both shapes are accepted
+// and unknown events are ignored. Bridge evidence mirrors the V1 rules: a task
+// start needs a confirmed session, real user input and an executing message;
+// a completion needs the matching terminal; cancels, recoverable errors,
+// synthetic prompts and compaction continuations never play.
+// ---------------------------------------------------------------------------
+
+const normalizeType = (type) => typeof type === "string"
+  ? type.replace(/\.next\./g, ".").replace(/\.[0-9]+$/, "") : undefined;
+const payloadOf = (event) => (event && typeof event === "object"
+  ? (event.data ?? event.properties ?? {}) : {});
+const claimOf = (options) => options?.claims instanceof Map ? options.claims : claimRegistry;
+
+async function setup(context, options = {}) {
+  const directory = context?.location?.directory ?? context?.directory;
+  const registryKey = Symbol.for("claudio.opencode.instances.v1");
+  const registry = globalThis[registryKey] ??= new Set();
+  const instanceKey = JSON.stringify([directory, installation.installation_id]);
+  if (registry.has(instanceKey) || registry.size >= MAX_SESSIONS) return {};
+  registry.add(instanceKey);
+  const now = typeof options.clock === "function" ? options.clock : Date.now;
+  const bootTime = now();
+  const claims = claimOf(options);
+  const sessions = new Map();
+  const requests = new Map();
+  const completed = new Map();
+  const lookupBusy = new Set();
+  const pending = [];
+  const emitter = makeEmitter({ dispatch: options.dispatch, now, directory });
+  const controller = new AbortController();
+  let disposed = false;
+  let draining = false;
+
+  function prune() {
+    pruneSessions(sessions, now);
+    const cutoff = now() - RETENTION;
+    for (const ledger of [requests, completed]) {
+      for (const [key, time] of ledger) if (time < cutoff) ledger.delete(key);
+    }
+  }
+
+  function consume(ledger, key) {
+    prune();
+    if (ledger.has(key) || ledger.size >= MAX_IDENTITIES) return false;
+    ledger.set(key, now());
+    return true;
+  }
+
+  function emit(event, state, fields = {}) {
+    const key = JSON.stringify([event, state.id, fields.turn_id ?? fields.request_id ?? ""]);
+    if (!claimEmission(claims, key, now)) return;
+    emitter.emit(event, state, fields);
+  }
+
+  function remember(info) {
+    rememberSession(sessions, info, now);
+  }
+
+  // A session created before this instance loaded, or one the host never
+  // announced with session.created, is only trusted after a bounded identity
+  // look-up; unknown identity fails closed. Only identity is fetched, never
+  // message or history content. OpenCode 2 reads { sessionID }; older and newer
+  // shapes stay as fallbacks.
+  async function stateOf(sessionID) {
+    if (!identifier(sessionID)) return undefined;
+    prune();
+    const known = sessions.get(sessionID);
+    if (known) { known.touched = now(); return known; }
+    if (lookupBusy.has(sessionID) || !context?.session?.get) return undefined;
+    lookupBusy.add(sessionID);
+    try {
+      const result = await Promise.race([
+        Promise.resolve(context.session.get({ sessionID })).catch(() =>
+          context.session.get({ path: { id: sessionID } })),
+        new Promise((resolve) => { setTimeout(resolve, 300).unref?.(); }),
+      ]);
+      const info = result?.data ?? result;
+      if (!disposed && info?.id === sessionID) remember(info);
+    } catch { /* unknown identity fails closed */ }
+    finally { lookupBusy.delete(sessionID); }
+    return sessions.get(sessionID);
+  }
+
+  // A pending turn waits for real-user-input evidence before any executing
+  // message can start it. OpenCode 2 delivers durable prompt delivery
+  // (session.inbox.delivered) for every execution, including synthetic and
+  // automatic ones, so it never evidences a user turn; only pre-admission
+  // prompt admission does — the V2 destination of V1's chat.message hook.
+  function admit(state, turnID) {
+    if (!state || !identifier(turnID)) return;
+    state.pendingTurn ??= { turnID: undefined, admitted: false, synthetic: false };
+    state.pendingTurn.admitted = true;
+    state.pendingTurn.turnID ??= turnID;
+  }
+
+  function markSynthetic(sessionID) {
+    const state = sessions.get(sessionID);
+    // A confirmed user turn is never retracted; only a pending turn without
+    // admission evidence stays marked as not-a-user-turn.
+    if (!state?.pendingTurn || state.pendingTurn.admitted) return;
+    state.pendingTurn.synthetic = true;
+  }
+
+  function startExecution(sessionID) {
+    const state = sessions.get(sessionID);
+    if (!state) return;
+    // Admission may arrive before or after the execution starts, so preserve it;
+    // every execution starts without a synthetic mark of its own.
+    state.pendingTurn = {
+      turnID: state.pendingTurn?.turnID, admitted: state.pendingTurn?.admitted === true,
+      synthetic: false,
+    };
+  }
+
+  function stepStarted(state, assistantMessageID) {
+    if (!state || !identifier(assistantMessageID)) return;
+    const turn = state.pendingTurn ?? {};
+    // A main turn needs real user input before an executing message can start
+    // it; a child session only needs its own execution evidence.
+    if (!state.parentID && (!turn.admitted || turn.synthetic || !turn.turnID)) return;
+    state.active = {
+      turnID: turn.turnID ?? assistantMessageID, started: true, assistantID: assistantMessageID,
+    };
+    state.pendingTurn = undefined;
+    if (state.parentID) return;
+    emit("UserTurnStarted", state, { turn_id: state.active.turnID, message_id: assistantMessageID,
+      origin_kind: "user", executing: true });
+  }
+
+  function finishExecution(state, outcome, errorName) {
+    if (!state?.active?.started) return;
+    const active = state.active;
+    const key = JSON.stringify([state.id, active.turnID]);
+    state.active = undefined;
+    state.pendingTurn = undefined;
+    if (!consume(completed, key)) return;
+    if (outcome === "succeeded") {
+      if (!active.assistantID) return;
+      emit(state.parentID ? "SubagentCompleted" : "ResponseCompleted", state, {
+        turn_id: active.turnID, message_id: active.assistantID, terminal: "success",
+      });
+    } else if (outcome === "failed" && !state.parentID) {
+      // Only the documented terminal error kinds become stop_failure; cancels,
+      // recoverable errors and unknown kinds stay silent.
+      const kind = identifier(errorName) && terminalErrors.has(errorName) ? errorName : undefined;
+      if (!kind || !active.assistantID) return;
+      emit("ResponseFailed", state, { turn_id: active.turnID, message_id: active.assistantID,
+        terminal: "failure", error_kind: kind });
+    }
+    // interrupted, superseded, shutdown and inactivity never play.
+  }
+
+  async function requestEvent(kind, sessionID, requestID) {
+    const state = await stateOf(sessionID);
+    if (!state || !identifier(requestID)) return;
+    if (!consume(requests, JSON.stringify([kind, state.id, requestID]))) return;
+    emit(kind === "question" ? "QuestionAsked" : "PermissionRequested", state,
+      { request_id: requestID });
+  }
+
+  function requestSettled(kind, sessionID, requestID) {
+    if (!identifier(sessionID) || !identifier(requestID)) return;
+    consume(requests, JSON.stringify([kind, sessionID, requestID]));
+  }
+
+  async function applyEvent(type, data) {
+    switch (type) {
+      case "session.created":
+      case "session.updated": {
+        const info = data?.info ?? data;
+        remember({ id: info?.sessionID ?? info?.id, parentID: info?.parentID });
+        return;
+      }
+      case "session.deleted": {
+        const id = identifier(data?.sessionID) ? data.sessionID
+          : identifier(data?.info?.id) ? data.info.id : undefined;
+        if (id) sessions.delete(id);
+        return;
+      }
+      case "session.synthetic":
+        markSynthetic(data?.sessionID);
+        return;
+      case "session.execution.started":
+        startExecution(data?.sessionID);
+        return;
+      case "session.step.started": {
+        const state = await stateOf(data?.sessionID);
+        if (!state) return;
+        stepStarted(state, data?.assistantMessageID);
+        return;
+      }
+      case "session.step.ended":
+      case "session.step.streamed": {
+        const state = await stateOf(data?.sessionID);
+        if (state?.active && identifier(data?.assistantMessageID)) {
+          state.active.assistantID = data.assistantMessageID;
+        }
+        return;
+      }
+      case "session.execution.succeeded":
+        finishExecution(await stateOf(data?.sessionID), "succeeded");
+        return;
+      case "session.execution.failed":
+        finishExecution(await stateOf(data?.sessionID), "failed", data?.error?.name);
+        return;
+      case "session.execution.interrupted":
+        finishExecution(await stateOf(data?.sessionID), "interrupted");
+        return;
+      case "permission.asked":
+        await requestEvent("permission", data?.sessionID, data?.id);
+        return;
+      case "permission.replied":
+      case "permission.rejected":
+        requestSettled("permission", data?.sessionID, data?.requestID ?? data?.id);
+        return;
+      case "question.asked":
+        await requestEvent("question", data?.sessionID, data?.id);
+        return;
+      case "question.replied":
+      case "question.rejected":
+        requestSettled("question", data?.sessionID, data?.requestID ?? data?.id);
+        return;
+      case "form.created":
+        await requestEvent("question", data?.form?.sessionID ?? data?.sessionID,
+          data?.form?.id ?? data?.id);
+        return;
+      case "form.replied":
+      case "form.cancelled":
+        requestSettled("question", data?.sessionID, data?.id ?? data?.form?.id);
+        return;
+      default:
+        return; // Reasoning, text, tool, shell, usage, catalog and unknown events never emit.
+    }
+  }
+
+  function projectEvent(event) {
+    const type = normalizeType(event?.type);
+    if (!type) return undefined;
+    const data = payloadOf(event);
+    if (!data || typeof data !== "object") return undefined;
+    // Select fields synchronously, before queuing. Queued jobs never retain raw
+    // event objects, prompts, message parts, tool input/output, questions,
+    // answers, error bodies or session content.
+    const keep = (value) => identifier(value) ? value : undefined;
+    const projected = {
+      sessionID: keep(data.sessionID) ?? keep(data.form?.sessionID),
+      messageID: keep(data.messageID), id: keep(data.id) ?? keep(data.requestID),
+      requestID: keep(data.requestID),
+      parentID: keep(data.parentID), assistantMessageID: keep(data.assistantMessageID),
+      error: data.error && typeof data.error === "object"
+        ? { name: keep(data.error.name) } : undefined,
+      info: undefined,
+    };
+    if (data.info && typeof data.info === "object" && !data.sessionID) {
+      projected.sessionID ??= keep(data.info.sessionID) ?? keep(data.info.id);
+      projected.parentID ??= keep(data.info.parentID);
+    }
+    if (data.form && typeof data.form === "object") {
+      projected.form = { id: keep(data.form.id), sessionID: keep(data.form.sessionID) };
+    }
+    const hasEvidence = Object.values(projected).some((value) =>
+      value !== undefined && value !== null && typeof value !== "object");
+    return hasEvidence ? { type, data: projected } : undefined;
+  }
+
+  function schedule(job) {
+    if (disposed || pending.length >= 64) return Promise.resolve();
+    return new Promise((resolve) => {
+      pending.push({ job, resolve });
+      if (draining) return;
+      draining = true;
+      void (async () => {
+        try {
+          while (pending.length && !disposed) {
+            const next = pending.shift();
+            try { await next.job(); } catch { /* malformed upstream data fails closed */ }
+            next.resolve();
+          }
+        } finally { draining = false; }
+      })();
+    });
+  }
+
+  // Pre-admission prompt evidence: the V2 destination of V1's chat.message hook.
+  // An unavailable or renamed hook registration must never break the plugin.
+  // Without this admission a turn never starts, matching the V1 evidence rule.
+  try {
+    if (typeof context?.session?.hook === "function") {
+      await context.session.hook("prompt", async (event) => {
+        const data = event?.data ?? event?.properties ?? event ?? {};
+        const parts = Array.isArray(data?.parts) ? data.parts
+          : Array.isArray(data?.prompt?.parts) ? data.prompt.parts : undefined;
+        const synthetic = parts
+          ? parts.every((part) => part?.synthetic === true)
+          : data?.synthetic === true;
+        if (data?.noReply === true) return;
+        const state = await stateOf(data?.sessionID);
+        if (!state) return;
+        if (synthetic) {
+          markSynthetic(state.id);
+          return;
+        }
+        admit(state, data?.messageID ?? data?.id);
+      });
+    }
+  } catch { /* hook name unavailable on this build; a turn then never starts */ }
+
+  const subscribe = context?.event?.subscribe;
+  if (typeof subscribe === "function") {
+    void (async () => {
+      try {
+        for await (const event of subscribe.call(context.event, { signal: controller.signal })) {
+          if (disposed) break;
+          const projected = projectEvent(event);
+          if (projected) await schedule(() => applyEvent(projected.type, projected.data));
+        }
+      } catch { /* stream ended, aborted or failed; cleanup still runs */ }
+    })();
+  }
+
+  return async () => {
+    disposed = true;
+    controller.abort();
+    emitter.dispose();
+    sessions.clear(); requests.clear(); completed.clear();
+    for (const { resolve } of pending.splice(0)) resolve();
+    registry.delete(instanceKey);
+  };
+}
+
+// OpenCode's module loader selects the default PluginModule before legacy exports.
+// V1 (1.18.29+) reads server() and its returned hooks; V2 reads setup() and
+// ignores server. Both implementations stay on their own API.
+export default { id, server, setup };

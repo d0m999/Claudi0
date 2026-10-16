@@ -38,7 +38,7 @@ private func multiProviderPrototypeCollapsed(_ source: String) -> String {
 
 @MainActor
 func runMultiProviderPrototypeContractSuites() {
-    suite("规范原型：现行五个 profile 与路线能力保持同步") {
+    suite("规范原型：现行四个 profile 与路线能力保持同步") {
         guard
             let html = multiProviderPrototypeSource(
                 "designs/panel-and-settings/Panel and Settings Prototype.html"),
@@ -60,7 +60,7 @@ func runMultiProviderPrototypeContractSuites() {
         expect(
             profiles.contains("routes:['speech'],styled:false")
                 && profiles.contains("workspace:true"),
-            "MiniMax 与 Qwen 保持各自候选和验证政策")
+            "MiniMax 与百炼保持各自候选和验证政策")
     }
 
     suite("prototype compatibility boundary is synchronized across both plans") {

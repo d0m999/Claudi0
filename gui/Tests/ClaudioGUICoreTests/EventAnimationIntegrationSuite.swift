@@ -243,11 +243,7 @@ func runEventAnimationReferenceSuites() async -> EventAnimationResources {
                 contentsOf: animationRepository.appendingPathComponent(
                     "designs/pixel-motion/samples/playback-reference.json"))
             let reference = try JSONDecoder().decode(AnimationBoundaryReference.self, from: data)
-            let html = try Data(
-                contentsOf: animationRepository.appendingPathComponent(
-                    "designs/pixel-motion/reference/approved-source.html"))
-            let digest = SHA256.hash(data: html).map { String(format: "%02x", $0) }.joined()
-            expect(reference.sourceSHA256 == digest, "参考必须绑定批准源归档，不接受过期参考")
+            // 2026-10-15 原型合并：批准源 HTML 已退役删除；sourceSHA256 仅保留历史指纹，不再回读源文件核对。
             expect(reference.samples.count == 2_809, "五类事件全部循环，须覆盖完整首轮及后续循环边界")
             for sample in reference.samples {
                 guard let frames = resources.loaded(sample.style, dark: false),
@@ -271,11 +267,7 @@ func runEventAnimationReferenceSuites() async -> EventAnimationResources {
                 contentsOf: animationRepository.appendingPathComponent(
                     "designs/pixel-motion/samples/pixel-reference.json"))
             let reference = try JSONDecoder().decode(AnimationPixelReference.self, from: data)
-            let source = try Data(
-                contentsOf: animationRepository.appendingPathComponent(
-                    "designs/pixel-motion/reference/approved-source.html"))
-            let digest = SHA256.hash(data: source).map { String(format: "%02x", $0) }.joined()
-            expect(reference.sourceSHA256 == digest, "像素参考也必须绑定同一批准源归档")
+            // 2026-10-15 原型合并：同一批准源 HTML 已退役删除；像素参考不再回读源文件核对。
             expect(reference.samples.count == 480, "三角色五事件16帧双外观必须齐全")
             for sample in reference.samples {
                 guard

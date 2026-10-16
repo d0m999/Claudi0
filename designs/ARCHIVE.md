@@ -1,8 +1,21 @@
 # 设计归档与素材管理索引
 
-更新日期：2026-10-02。本索引登记来源角色与后续归档决策；不移动、删除或忽略当前实现／检查依赖。当前 UI 与实现状态见 [对齐记录](../docs/validation/sot-implementation-alignment-2026-10-02.md)。
+更新日期：2026-10-15（第二轮原型合并）。本索引登记来源角色与后续归档决策；不移动、删除或忽略当前实现／检查依赖。当前 UI 与实现状态见 [对齐记录](../docs/validation/sot-implementation-alignment-2026-10-02.md)。
 
 本次提交只交付文档与忽略规则；标为“工作树待提交”的原型、素材和固定证据尚未纳入 Git。下方“应进入版本管理”表示后续交付要求。
+
+## 2026-10-15 原型合并（第二轮）
+
+按用户确认，全仓继续只维护唯一画面 SoT `designs/panel-and-settings/Panel and Settings Prototype.html`；下列文件退役删除，均可由 Git 历史恢复：
+
+- `panel-and-settings/Panel and Settings Prototype (T2C1 Rebrand).html`：T2 × C1 品牌内容已并入主原型文件（恢复点 `7caba1d`）。
+- `settings-unavailable-pack/Unavailable Sound Pack Prototype.html`：失效声音包路由改版已进生产与测试（恢复点 `6b6b6a0`）。
+- `docs/frontend-ux-review-20260918-prototype.html`：历史评审样稿（恢复点 `39c996e`）。
+- `mockups/ai-app-manager-native-macos.svg`：最后的 mockup 帧（恢复点 `3cec0af`、`cbd536e`）。
+- `pixel-motion/source/`、`pixel-motion/reference/`：源原型与批准来源归档（含说明）；动画资产的固定来源校验一并退役。源字节恢复点 `3bf3840`。
+- `pixel-motion/export-original-samples.py`、`export_runtime.py` 与 `scripts/test-event-animation-prototype.py`、`test-event-animation-resources.py`：随来源退役删除；`EventAnimationIntegrationSuite` 保留 `samples/` 参考校验，不再回读源文件。
+
+`macos-native-references/` 空目录同轮移除。
 
 ## 历史方向与替代关系
 
@@ -15,10 +28,9 @@
 
 ## 应进入版本管理的素材
 
-- 批准的源原型、导出脚本与对应规格。
-- `pixel-motion/reference/approved-source.html` 与说明：2026-10-09 按原 SHA-256 保存的动画绘制／时序固定输入，仅供导出校验；不恢复已退役的独立产品原型。
+- 批准的源原型、导出脚本与对应规格：2026-10-15 随原型合并退役；如需重建由 Git 历史恢复。
 - `gui/Sources/ClaudioGUI/Resources/EventAnimations/` 的正式图集、时序与清单。
-- `designs/pixel-motion/samples/` 的 provenance、播放／像素参考、E/G/H 规范样本，以及 `previewFiles` 登记的 17 张预览。导出检查、集成 suite 或来源审计直接依赖这些文件。
+- `designs/pixel-motion/samples/` 的 provenance、播放／像素参考、E/G/H 规范样本，以及 `previewFiles` 登记的 17 张预览。集成 suite 直接依赖这些文件；导出检查已随来源退役。
 - `macos-settings-native/screenshots/`、`verification/` 和 `VERIFICATION.json` 的固定历史证据，以及引用它们的文档。
 
 “可生成”本身不足以决定忽略；应用、检查或固定证据依赖的素材应与代码和来源一起保存。
@@ -37,9 +49,8 @@ ZIP 是脚本生成的分发包，当前检查不以它为输入；两个比较 
 
 浏览器回归默认将逐次运行输出写入系统临时目录；当前无需追加整个截图、验证或素材目录的忽略规则。现有 `.build/`、`dist/`、`__pycache__/` 和机器私有数据规则继续适用。
 
-## 动画来源恢复（2026-10-09）
+## 动画来源恢复（2026-10-09；2026-10-15 退役）
 
-[Pixel Motion 归档源](pixel-motion/source/README.md) 从删除前 Git 历史按原字节恢复，
-与 `reference/approved-source.html` 逐字节一致。合入 `main` 后，导出脚本与回归统一读取
-后者；预览分支的副本仅保留归档记录。应用不打包 HTML，当前 UI 合同不由该历史界面决定。
-固定 provenance 与资源字节保持不变。
+Pixel Motion 归档源曾于 2026-10-09 从删除前 Git 历史按原字节恢复，与 `reference/approved-source.html` 逐字节一致；当时导出脚本与回归统一读取后者，预览分支的副本仅保留归档记录。
+
+**2026-10-15 更新**：`source/` 归档副本与 `reference/approved-source.html`（含两份说明）已按用户决定随第二轮原型合并退役删除，导出与校验脚本同步退役；本段保留为 Git 历史恢复记录（源字节恢复点 `3bf3840`）。应用不打包 HTML，当前 UI 合同不由该历史界面决定。
