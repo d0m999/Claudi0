@@ -16201,13 +16201,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The name comes from the selected directory. Confirm the volume before creation; zero eligible sources is allowed."
+            "value": "The name comes from the selected directory. Choose a sound pack and set the volume; zero eligible sources is allowed."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "名称由所选目录派生。创建前明确确认音量；允许零适用来源。"
+            "value": "名称由所选目录派生。请选择声音包并设置音量；允许零适用来源。"
           }
         }
       }
