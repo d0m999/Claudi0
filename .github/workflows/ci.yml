@@ -185,6 +185,12 @@ jobs:
       - name: Verify native sidebar backing grids
         run: swift run --skip-build --package-path gui claudio-gui-tests --settings-sidebar-backing
 
+      - name: Verify native event animation layout
+        run: swift run --skip-build --package-path gui claudio-gui-tests --event-animation-layout
+
+      - name: Verify native notification navigation
+        run: swift run --skip-build --package-path gui claudio-gui-tests --settings-notification-navigation
+
       - name: Run GUI harness
         run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests
 

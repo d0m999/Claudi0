@@ -1659,6 +1659,10 @@ func runReleaseLayoutSuites() {
                 && ci.contains(
                     "python3 scripts/run-ci-gui-harness.py --timeout 2400 -- "
                         + "swift run --skip-build --package-path gui claudio-gui-tests\n")
+                && ci.contains(
+                    "swift run --skip-build --package-path gui claudio-gui-tests --event-animation-layout\n")
+                && ci.contains(
+                    "swift run --skip-build --package-path gui claudio-gui-tests --settings-notification-navigation\n")
                 && ci.contains("swift build -c debug --package-path gui --product ClaudioGUI")
                 && ci.contains("swift build -c release --package-path gui --product ClaudioGUI")
                 && ci.contains(
