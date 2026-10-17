@@ -29,6 +29,14 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
         fileprivate init(_ result: SoundPacksEditorOperationResult) { self.result = result }
     }
 
+    /// 事件行拖放的受理身份：受理瞬间的呈现 origin 与退役代数。URL 装载悬挂期间，呈现一旦
+    /// 退役或轮换（换包、开关表单、离开页面）origin 即更换；目标失效收回采用权保留页面
+    /// origin 供恢复，但退役代数已递增——两条任一变化都作废旧受理（ADR 0008 迟到结果隔离）。
+    package struct EventSoundDropAcceptance: Sendable {
+        fileprivate let origin: ManualPreviewOrigin
+        fileprivate let epoch: UInt64
+    }
+
     package let objectWillChange = ObservableObjectPublisher()
     package private(set) var context: SoundEventSelectionContext? {
         willSet { objectWillChange.send() }
@@ -52,6 +60,9 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
     private var mode: Mode?
     private enum PresentationPhase { case inactive, page, form, invalidatedForm }
     private var presentationPhase: PresentationPhase = .inactive
+    /// 退役代数：每次 retirePresentation 递增。`invalidateTarget` 保留页面 origin 供恢复，
+    /// 受理令牌靠它区分「同一页面身份的不同时代」。
+    private var presentationEpoch: UInt64 = 0
     private var presentationIsActive: Bool {
         presentationPhase == .page || presentationPhase == .form
     }
@@ -204,6 +215,18 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
         return activate(route: presentedRoute)
     }
 
+    /// 受理事件行拖放：固定当前呈现身份。仅在页面/表单活跃时可受理；URL 装载完成后的
+    /// 迟到回调必须先经 ``acceptanceIsCurrent(_:)`` 重验，不得接管换包或新表单上下文。
+    package func acceptEventSoundDrop() -> EventSoundDropAcceptance? {
+        guard presentationIsActive else { return nil }
+        return EventSoundDropAcceptance(origin: origin, epoch: presentationEpoch)
+    }
+
+    /// 受理身份仅在呈现仍活跃、未轮换且未经历退役（含目标失效收回）时有效。
+    package func acceptanceIsCurrent(_ acceptance: EventSoundDropAcceptance) -> Bool {
+        isCurrent(acceptance.origin) && presentationEpoch == acceptance.epoch
+    }
+
     @discardableResult
     package func begin(event: Event, mode: Mode) -> SoundEventSelectionContext? {
         guard let editor, let selection = editor.beginSoundSelection(event: event) else {
@@ -241,6 +264,7 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
 
     private func retirePresentation(detachComposer: Bool) {
         guard presentationPhase != .inactive else { return }
+        presentationEpoch &+= 1
         let selection = context
         presentationPhase = .inactive
         localRequestID = UUID()

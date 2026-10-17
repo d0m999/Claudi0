@@ -110,3 +110,12 @@ public func panelFirstFocusTarget(
     }
     return order.first(where: { $0 == .soundScope }) ?? order.first
 }
+
+/// 面板触发的 Sounds 深链在关闭设置后的归还焦点：事件级路由（editEvent/copyAndApply）
+/// 还给触发的事件入口，其余 Sounds 路由还给作用域选择器（DESIGN：关闭 retained window
+/// 必须把焦点还给精确触发控件）。
+public func panelReturnFocusTarget(forSoundsRoute route: SoundPacksWindowRoute)
+    -> PanelFocusTarget
+{
+    route.editTarget.map { .eventSoundEntry($0.event) } ?? .soundScope
+}

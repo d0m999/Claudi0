@@ -187,4 +187,115 @@ func runEventRowSoundEntrySuites() async {
                 "出厂包详情页：事件行不接受拖放、不出现导向说明行")
         }
     }
+
+    await suite("声音页拖放受理：URL 装载悬挂期间的上下文更替作废受理（ADR 0008 迟到结果隔离）") {
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["a", "b"])
+            let owner = fixture.owner
+            let routeA = SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "a"))
+            _ = owner.send(.activate(.sounds(route: routeA, requestRevision: 1)))
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            guard await waitForSoundEditorReady(owner, library: fixture.library) else { return }
+            let session = owner.soundSelection
+            expect(
+                session.acceptEventSoundDrop() == nil,
+                "呈现未激活（页面未挂载）时不得受理拖放")
+            _ = session.activate(route: routeA)
+            guard let acceptance = session.acceptEventSoundDrop() else {
+                expect(false, "已挂载的用户包页面必须能受理事件行拖放")
+                return
+            }
+            expect(
+                session.acceptanceIsCurrent(acceptance),
+                "受理当下的身份必须有效")
+            _ = owner.send(.activate(.sounds(route: routeA, requestRevision: 2)))
+            expect(
+                session.acceptanceIsCurrent(acceptance),
+                "同路由重请求不退役呈现，悬挂中的受理保持有效")
+            let routeB = SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "b"))
+            _ = owner.send(.activate(.sounds(route: routeB, requestRevision: 3)))
+            expect(
+                !session.acceptanceIsCurrent(acceptance),
+                "悬挂期间切到包 B：迟到回调不得在新 owner 上建立选用会话")
+            _ = session.activate(route: routeB)
+            expect(
+                !session.acceptanceIsCurrent(acceptance),
+                "包 B 页面重新挂载后旧受理不得复活")
+            _ = owner.send(.activate(.sounds(route: routeA, requestRevision: 4)))
+            _ = session.activate(route: routeA)
+            expect(
+                !session.acceptanceIsCurrent(acceptance),
+                "即便回到原包，已作废的受理也不得复活（呈现身份已轮换）")
+            session.end()
+        }
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["a"])
+            let owner = fixture.owner
+            let route = SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "a"))
+            _ = owner.send(.activate(.sounds(route: route, requestRevision: 1)))
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            guard await waitForSoundEditorReady(owner, library: fixture.library) else { return }
+            let session = owner.soundSelection
+            _ = session.activate(route: route)
+            guard let acceptance = session.acceptEventSoundDrop() else {
+                expect(false, "已挂载页面必须能受理拖放")
+                return
+            }
+            guard session.begin(event: .stop, mode: .local) != nil else {
+                expect(false, "用户包事件可开始本机导入表单")
+                return
+            }
+            expect(
+                !session.acceptanceIsCurrent(acceptance),
+                "悬挂期间打开任一表单（呈现轮换）即作废受理，迟到的 drop 不得接管该表单上下文")
+            session.end()
+        }
+        await withTempDirectory { root in
+            let fixture = makeSoundEditorFixture(root: root, packIDs: ["a"])
+            let owner = fixture.owner
+            let route = SoundPacksWindowRoute(surface: nil, destination: .pack(packID: "a"))
+            _ = owner.send(.activate(.sounds(route: route, requestRevision: 1)))
+            _ = await fixture.library.refreshSnapshot(trigger: .initial)
+            guard await waitForSoundEditorReady(owner, library: fixture.library) else { return }
+            let session = owner.soundSelection
+            _ = session.activate(route: route)
+            guard let acceptance = session.acceptEventSoundDrop() else {
+                expect(false, "已挂载页面必须能受理拖放")
+                return
+            }
+            session.invalidateTarget(viewedPackID: "a")
+            expect(
+                !session.acceptanceIsCurrent(acceptance),
+                "目标失效收回采用权即作废受理，即使页面仍挂载等待恢复")
+            guard let renewed = session.acceptEventSoundDrop() else {
+                expect(false, "恢复后的页面仍可受理新的显式拖放")
+                return
+            }
+            expect(
+                session.acceptanceIsCurrent(renewed),
+                "目标失效后页面身份保留，新受理正常工作（预览/表单恢复可用）")
+            session.end()
+        }
+    }
+
+    suite("事件入口的归还焦点身份：事件深链还给触发入口，其余 Sounds 路由还给作用域选择器") {
+        expect(
+            panelReturnFocusTarget(
+                forSoundsRoute: .editEvent(scope: .global, packID: "a", event: .stop))
+                == .eventSoundEntry(.stop),
+            "编辑事件深链：关闭设置必须把焦点还给触发的事件入口（DESIGN 精确触发控件归还）")
+        expect(
+            panelReturnFocusTarget(
+                forSoundsRoute: .copyAndApply(scope: .global, packID: "a", event: .notification))
+                == .eventSoundEntry(.notification),
+            "新文件名链接（复制并应用）深链同样还给触发入口")
+        expect(
+            panelReturnFocusTarget(forSoundsRoute: .overview(scope: .global)) == .soundScope,
+            "概览路由无事件身份，保持归还作用域选择器")
+        expect(
+            panelReturnFocusTarget(
+                forSoundsRoute: SoundPacksWindowRoute(
+                    scope: .global, destination: .pack(packID: "a"))) == .soundScope,
+            "包页路由不携带事件身份，归还作用域选择器")
+    }
 }

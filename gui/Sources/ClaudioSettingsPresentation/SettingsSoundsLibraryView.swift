@@ -1261,16 +1261,19 @@ struct SettingsSoundsLibraryView: View {
     }
 
     /// drop = 打开导入流程的预览态（文件预填），手动试听、显式「选用」才绑定（Q3）；
-    /// 在出厂包行上松手复用点击路径的「复制为我的包」引导（Q7）。
+    /// 在出厂包行上松手复用点击路径的「复制为我的包」引导（Q7）。受理时固定呈现身份；
+    /// URL 装载悬挂期间换包或开表单都作废受理，迟到回调不得接管新上下文（ADR 0008）。
     private func handleEventSoundDrop(_ providers: [NSItemProvider], event: Event) -> Bool {
         let provider = providers.first {
             $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
         }
         if sounds?.acceptsEventSoundDrop == true {
-            guard sheet == nil, !isWorking, let provider
+            guard sheet == nil, !isWorking, let provider,
+                let acceptance = selectionSession.acceptEventSoundDrop()
             else { return false }
             Task {
                 guard let url = await loadSoundPacksDropURL(from: provider) else { return }
+                guard selectionSession.acceptanceIsCurrent(acceptance) else { return }
                 begin(.local, event: event)
                 let result = await selectionSession.prepareLocalSound(
                     fromDrop: url, origin: previewOrigin)

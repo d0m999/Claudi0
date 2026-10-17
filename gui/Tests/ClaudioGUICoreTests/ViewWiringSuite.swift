@@ -2331,6 +2331,61 @@ func runViewWiringSuites() {
             "窗口必须把 owner 签发的 clear capability 回送唯一 interface，不得旁路调用 raw model")
     }
 
+    suite("事件声音入口归还接线：onConfigureSound 把路由的事件身份传入 Settings 归还链路") {
+        guard
+            let menu = codeWithoutStrings("gui/Sources/ClaudioGUI/MenuBarController.swift")
+        else {
+            expect(false, "读不到 MenuBarController.swift")
+            return
+        }
+        let flat = collapsingWhitespace(menu)
+        guard
+            let wiring = closureBody(after: "onConfigureSound:", in: flat)
+        else {
+            expect(false, "无法定位 MenuBarController 的 onConfigureSound 接线闭包")
+            return
+        }
+        expect(
+            wiring.contains("requestSoundsSettings(")
+                && wiring.contains("panelReturnFocusTarget(forSoundsRoute: route)")
+                && !wiring.contains("returnFocusTo: .soundScope"),
+            "事件深链的归还焦点必须由路由的 editTarget 推导（.eventSoundEntry），"
+                + "不得固定归还作用域选择器（DESIGN 精确触发控件归还）")
+    }
+
+    suite("声音页拖放接线：受理身份先于 URL 装载固定，迟到回调经重验拒止") {
+        guard
+            let library = codeWithoutStrings(
+                "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsLibraryView.swift")
+        else {
+            expect(false, "读不到 SettingsSoundsLibraryView.swift")
+            return
+        }
+        let flat = collapsingWhitespace(library)
+        guard
+            let handler = closureBody(after: "private func handleEventSoundDrop(", in: flat)
+        else {
+            expect(false, "无法定位 handleEventSoundDrop 闭包体")
+            return
+        }
+        guard
+            let accept = handler.range(of: "selectionSession.acceptEventSoundDrop()"),
+            let load = handler.range(of: "loadSoundPacksDropURL(from: provider)"),
+            let revalidate = handler.range(
+                of: "selectionSession.acceptanceIsCurrent(acceptance)"),
+            let begin = handler.range(of: "begin(.local, event: event)")
+        else {
+            expect(false, "拖放受理链路缺少受理捕获、迟到重验或 begin")
+            return
+        }
+        expect(
+            accept.lowerBound < load.lowerBound
+                && load.lowerBound < revalidate.lowerBound
+                && revalidate.lowerBound < begin.lowerBound,
+            "必须在 URL 装载前固定受理身份，并在恢复后、begin 前重验；"
+                + "迟到回调不得接管新上下文（ADR 0008 迟到结果隔离）")
+    }
+
     suite("生产面板事件行：旧版绑定详情来自共享矩阵并进入可见文案与 VoiceOver") {
         guard
             let panel = codeWithoutStrings(

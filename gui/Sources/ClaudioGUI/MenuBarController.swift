@@ -286,7 +286,8 @@ final class MenuBarController: NSObject {
                     route: route, returnFocusTo: .soundScope)
             },
             onConfigureSound: { [weak actionRouter] route in
-                actionRouter?.requestSoundsSettings(route: route, returnFocusTo: .soundScope)
+                actionRouter?.requestSoundsSettings(
+                    route: route, returnFocusTo: panelReturnFocusTarget(forSoundsRoute: route))
             },
             onOpenRecentNotices: { [weak eventNoticeWindowController] in
                 eventNoticeWindowController?.openInteractive()
