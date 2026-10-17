@@ -15,6 +15,7 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
     private var synchronizingSelection = false
     private var language: ClaudioAppLanguage?
     private var brandLeadingConstraint: NSLayoutConstraint?
+    private var brandView: NSHostingView<ClaudioT2Wordmark>?
     private static let brandHeight: CGFloat = 38
     private static let iconLeadingInset: CGFloat = 4
     package var isNavigationEnabled = true
@@ -30,7 +31,17 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
         view = NSView()
         // 原生 source list 另有系统内缩；布局完成后按实际 cell 位置对齐字标墨迹。
         let brand = NSHostingView(rootView: ClaudioT2Wordmark(height: 38))
+        brandView = brand
         brand.setAccessibilityElement(false)
+        // A 38 pt wordmark has a 9.5 pt ink inset. On a 1x backing grid AppKit
+        // rounds a half-point hosting origin, shifting the ink by half a point.
+        // Symmetric viewport padding makes the inset integral without resizing the glyph.
+        let inkInset =
+            Self.brandHeight / ClaudioT2Geometry.wordmarkViewBox.height
+            * ClaudioT2Geometry.wordmarkInkOriginX
+        let brandWidth =
+            Self.brandHeight * ClaudioT2Geometry.wordmarkAspect
+            + 2 * (inkInset.rounded(.up) - inkInset)
         let scroll = NSScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
@@ -65,6 +76,7 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
             brand.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             brandLeading,
             brand.heightAnchor.constraint(equalToConstant: Self.brandHeight),
+            brand.widthAnchor.constraint(equalToConstant: brandWidth),
             scroll.topAnchor.constraint(equalTo: brand.bottomAnchor, constant: 16),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
@@ -79,13 +91,14 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
     package override func viewDidLayout() {
         super.viewDidLayout()
         guard let row = rows.firstIndex(where: { $0 != nil }),
-            let brandLeadingConstraint
+            let brandLeadingConstraint, let brand = brandView,
+            let cell = table.view(atColumn: 0, row: row, makeIfNecessary: true),
+            let icon = cell.subviews.first, !icon.bounds.isEmpty, !brand.bounds.isEmpty
         else { return }
-        let cellFrame = table.convert(table.frameOfCell(atColumn: 0, row: row), to: view)
-        let inkInset =
-            Self.brandHeight / ClaudioT2Geometry.wordmarkViewBox.height
-            * ClaudioT2Geometry.wordmarkInkOriginX
-        let leading = cellFrame.minX + Self.iconLeadingInset - inkInset
+        let glyph = ClaudioT2Geometry.wordmarkGlyphPath(
+            extraTransform: ClaudioT2Geometry.designTransform(for: brand.bounds)
+        ).boundingBoxOfPath
+        let leading = icon.convert(icon.bounds, to: view).minX - glyph.minX
         if abs(brandLeadingConstraint.constant - leading) > 0.01 {
             brandLeadingConstraint.constant = leading
         }

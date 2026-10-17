@@ -778,6 +778,18 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-sidebar-backing") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsSidebarBackingSuites()
+        print("Settings sidebar backing: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-review-repairs") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -1025,6 +1037,7 @@ Task { @MainActor in
 
     await runSettingsNavigationHistorySuites()
     await runSettingsNativeShellSuites()
+    await runSettingsSidebarBackingSuites()
     await runSettingsNativeControlsSuites()
     await runSettingsScopePickerSuites()
     await runSettingsNotificationNavigationSuites()
