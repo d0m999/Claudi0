@@ -2444,6 +2444,33 @@ func runViewWiringSuites() {
             "共享组件必须保留 24×24、双声波、静音弱化与斜线几何")
     }
 
+    suite("生产面板事件行声音入口：形制锁在变体 D（mono 弱文字链接 + hover/焦点黏土），不回退系统 link 蓝") {
+        // 变体 D 定稿（designs/panel-and-settings/panel-event-row-entry-PROTOTYPE.html，issue #220）：
+        // 静止 10.5 mono medium `text-muted`，hover 转 clay + 下划线，焦点 clay + 2pt 环。
+        // `.buttonStyle(.link)` 会把静止态渲染成系统 accent 蓝，正是实机走查指出的偏差。
+        guard
+            let panel = codeWithoutStrings(
+                "gui/Sources/ClaudioPanelPresentation/PanelView.swift"),
+            let rowBody = closureBody(after: "private struct PanelAgentEventRow: View", in: panel),
+            let entry = closureBody(
+                after: "private var soundEntryButton: some View", in: rowBody)
+        else {
+            expect(false, "切不出生产事件行的声音入口")
+            return
+        }
+        let flat = collapsingWhitespace(entry)
+        expect(
+            flat.contains("design: .monospaced")
+                && flat.contains("ClaudioTheme.textMuted(colorScheme)")
+                && flat.contains("ClaudioTheme.clay(colorScheme)")
+                && flat.contains(".onHover")
+                && flat.contains("strokeBorder"),
+            "入口必须是 10.5 mono、静止 text-muted、hover/焦点转 clay 并自绘焦点环的变体 D 形制")
+        expect(
+            !flat.contains(".buttonStyle(.link)"),
+            "系统 link 样式把静止态涂成 accent 蓝，违背变体 D 的弱文字静止色")
+    }
+
     suite("全状态画廊：声音包窗口用生产视图覆盖复杂库与失败态，且预览不读用户磁盘") {
         guard
             let gallery = codeOnly(
