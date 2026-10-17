@@ -764,57 +764,73 @@ struct SettingsSoundsLibraryView: View {
         Self.listBackedSheetModes.contains(mode)
     }
 
-    @ViewBuilder private func sheetBody(_ mode: SoundsSheet) -> some View {
+    // A sheet item already fixes the presentation identity. Erase only this internal visual
+    // boundary so each form does not expand the outer sheet's generic conditional type.
+    private func sheetBody(_ mode: SoundsSheet) -> AnyView {
         switch mode {
         case .newPack, .renamePack, .copyPack, .renameAudio:
-            SoundsNameInput(
-                title: l10n.text(mode == .renameAudio ? .soundsAudioName : .soundsPackName),
-                text: $inputName)
-            if mode == .copyPack {
-                Text(l10n.text(.settingsSoundsAICueCopyAttribution))
-                    .font(.caption).foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        case .ai:
-            aiComposer
-        case .history:
-            if pack != nil {
-                Text(l10n.text(.settingsSoundsAICueAdoptAttribution))
-                    .font(.caption).foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            ScrollView { historyContent(selecting: true) }
-                .frame(maxWidth: .infinity, minHeight: 180, maxHeight: .infinity)
-                .soundPacksLayoutProbe("settings.sounds.sheet.history.list")
-        case .local:
-            if let localPreview {
-                HStack {
-                    Text(localPreview.name.value)
-                    Text(
-                        l10n.format(
-                            .soundsSeconds, Double(localPreview.durationMilliseconds) / 1_000))
-                    Spacer()
-                    previewButton(id: localPreview.id.uuidString) { origin in
-                        selectionSession.preview(
-                            id: localPreview.id.uuidString, fileURL: localPreview.fileURL,
-                            origin: origin)
+            return AnyView(
+                Group {
+                    SoundsNameInput(
+                        title: l10n.text(mode == .renameAudio ? .soundsAudioName : .soundsPackName),
+                        text: $inputName)
+                    if mode == .copyPack {
+                        Text(l10n.text(.settingsSoundsAICueCopyAttribution))
+                            .font(.caption).foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                }
-            } else {
-                Button(l10n.text(.soundsFromFile)) { chooseLocalFile() }
-            }
+                })
+        case .ai:
+            return AnyView(aiComposer)
+        case .history:
+            return AnyView(
+                Group {
+                    if pack != nil {
+                        Text(l10n.text(.settingsSoundsAICueAdoptAttribution))
+                            .font(.caption).foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ScrollView { historyContent(selecting: true) }
+                        .frame(maxWidth: .infinity, minHeight: 180, maxHeight: .infinity)
+                        .soundPacksLayoutProbe("settings.sounds.sheet.history.list")
+                })
+        case .local:
+            return AnyView(
+                Group {
+                    if let localPreview {
+                        HStack {
+                            Text(localPreview.name.value)
+                            Text(
+                                l10n.format(
+                                    .soundsSeconds,
+                                    Double(localPreview.durationMilliseconds) / 1_000))
+                            Spacer()
+                            previewButton(id: localPreview.id.uuidString) { origin in
+                                selectionSession.preview(
+                                    id: localPreview.id.uuidString, fileURL: localPreview.fileURL,
+                                    origin: origin)
+                            }
+                        }
+                    } else {
+                        Button(l10n.text(.soundsFromFile)) { chooseLocalFile() }
+                    }
+                })
         case .packFiles, .manage:
-            inventoryContent(managing: mode == .manage)
+            return AnyView(inventoryContent(managing: mode == .manage))
         case .system:
-            systemContent
+            return AnyView(systemContent)
         case .importPack:
-            if let preparedPack {
-                Text(preparedPack.name).font(.headline)
-                Text(
-                    l10n.format(
-                        .soundsImportSummary, preparedPack.eventCount, preparedPack.fileCount))
-            }
-        case .service: EmptyView()
+            return AnyView(
+                Group {
+                    if let preparedPack {
+                        Text(preparedPack.name).font(.headline)
+                        Text(
+                            l10n.format(
+                                .soundsImportSummary, preparedPack.eventCount,
+                                preparedPack.fileCount))
+                    }
+                })
+        case .service: return AnyView(EmptyView())
         }
     }
 

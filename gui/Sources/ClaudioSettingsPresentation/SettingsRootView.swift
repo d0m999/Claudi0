@@ -162,24 +162,22 @@ package struct SettingsDestinationContentView: View {
                     }
                 }
             case .sounds:
-                SettingsSoundsDestinationView(
-                    aiCueViewModel: aiCueViewModel,
-                    editorOwner: soundPacksEditorOwner,
+                SettingsSoundsLibraryView(
+                    model: aiCueViewModel,
+                    owner: soundPacksEditorOwner,
+                    preferences: preferences,
+                    effects: soundPacksEditorNativeEffects,
+                    coordinator: aiCueViewModel.coordinator,
+                    selectionSession: soundPacksEditorOwner.soundSelection,
+                    history: aiCueViewModel.coordinator.history,
+                    drafts: soundPacksEditorOwner.draftStore,
                     route: soundsRoute,
-                    routeRequestRevision:
+                    requestRevision:
                         settingsPresentationSession.state.explicitRouteRequestRevision,
-                    detail: settingsPresentationSession.state.soundsDetail,
-                    onDetailIntent: {
+                    navigate: {
                         settingsPresentationSession.send(.requestSoundsDetail($0))
                     },
-                    onInspectPack: { settingsPresentationSession.send(.inspectSoundPack($0)) },
-                    languageStore: preferences,
-                    nativeEffects: soundPacksEditorNativeEffects,
-                    pageHeader: destinationTitle,
-                    scopePicker: SettingsSoundScopePicker(session: settingsPresentationSession),
-                    returnToScope: soundScopeReturnAction,
-                    onAnnouncement: onAnnouncement,
-                    credentialSheetIsPresented: Binding(
+                    modalIsPresented: Binding(
                         get: {
                             settingsPresentationSession.state.eventPresentation
                                 .credentialSheetIsPresented
@@ -192,21 +190,9 @@ package struct SettingsDestinationContentView: View {
                                 settingsPresentationSession.eventSettingsSelection
                                     .dismissCredentialSheet()
                             }
-                        }),
-                    playingCandidateID: Binding(
-                        get: {
-                            settingsPresentationSession.state.eventPresentation.playingCandidateID
-                        },
-                        set: { id in
-                            if let id {
-                                settingsPresentationSession.eventSettingsSelection
-                                    .beginCandidatePreview(id: id)
-                            } else {
-                                settingsPresentationSession.eventSettingsSelection
-                                    .noteCandidatePreviewStopped()
-                            }
                         })
                 )
+                .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.sounds))
                 .soundPacksLayoutProbe("settings.sounds.editor-slot")
             case .usage:
                 standardDestination {
@@ -245,13 +231,6 @@ package struct SettingsDestinationContentView: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         SettingsDestinationPage(destination: destination, content: content)
-    }
-
-    private var destinationTitle: some View { EmptyView() }
-
-    private var soundScopeReturnAction: (@MainActor () -> Void)? {
-        guard settingsPresentationSession.soundReturnContext != nil else { return nil }
-        return { _ = settingsPresentationSession.returnToSoundScope() }
     }
 
     private var soundsRoute: SoundPacksWindowRoute {

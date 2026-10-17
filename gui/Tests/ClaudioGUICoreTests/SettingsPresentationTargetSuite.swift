@@ -325,6 +325,32 @@ func runSettingsPresentationTargetSuites() {
 
 @MainActor
 func runSettingsPresentationSliceSuites() async {
+    suite("Settings published snapshots retain their values after routing and close") {
+        let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.general))
+        let session = fixture.session
+        let original = session.state
+        let originalRevision = original.presentationRevision
+        session.send(.route(.notifications(.eventAnimation)))
+        let routed = session.state
+        expect(
+            original.routeResolution.route == .destination(.general)
+                && original.chrome.destination == .general,
+            "A retained publication keeps its original destination after a newer route")
+        expect(
+            routed.routeResolution.route == .notifications(.eventAnimation)
+                && routed.chrome.destination == .notifications && routed != original,
+            "The next publication contains the newly routed values")
+        session.send(.windowWillClose)
+        expect(
+            original.presentationRevision == originalRevision
+                && routed.presentationRevision > originalRevision,
+            "Later publications and close cannot mutate retained revisions")
+        expect(
+            routed.routeResolution.route == .notifications(.eventAnimation)
+                && session.navigationHistory.entries.isEmpty,
+            "Closing the live session preserves the retained routed snapshot")
+    }
+
     suite("Settings presentation announcement：语义在单一 owner 穷尽本地化") {
         let english = ClaudioAppLanguage.english
         let zhHans = ClaudioAppLanguage.zhHans

@@ -791,6 +791,14 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-navigation-core") {
+    runSettingsNavigationSuites()
+    await runSettingsNavigationHistorySuites()
+    await runSettingsPresentationSliceSuites()
+    print("Settings navigation core: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--settings-sidebar-backing") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
