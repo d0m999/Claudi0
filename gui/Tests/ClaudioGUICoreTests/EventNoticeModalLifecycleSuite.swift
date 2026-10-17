@@ -27,6 +27,12 @@ func runEventNoticeModalLifecycleSuites() async {
         fixture.clock.advance(60)
         expect(fixture.model.stackSnapshot.visible.count == 1, "弹窗打开期间不收起横幅")
         let windowIDs: Set<Int> = [parent.windowNumber, sheet.windowNumber]
+        let appearanceDeadline = Date(timeIntervalSinceNow: 3)
+        while eventNoticeOnscreenWindowIDs().map({ windowIDs.isSubset(of: $0) }) != true,
+            Date() < appearanceDeadline
+        {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
         expect(
             eventNoticeOnscreenWindowIDs().map { windowIDs.isSubset(of: $0) } == true,
             "关闭前父窗口与 sheet 必须真实显示在屏幕上")

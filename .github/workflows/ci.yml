@@ -151,8 +151,9 @@ jobs:
         env:
           CLAUDIO_HANG_DIAGNOSTICS: "1"
         run: |
+          swift build --package-path gui --product claudio-gui-tests
           set -u
-          swift run --package-path gui claudio-gui-tests --event-attention &
+          swift run --skip-build --package-path gui claudio-gui-tests --event-attention &
           HARNESS_PID=$!
           (
             sleep 240 &

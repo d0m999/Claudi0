@@ -21,7 +21,7 @@ package struct EventNoticeCard: View {
 
     private var language: ClaudioAppLanguage { renderedContent?.language ?? preferences.language }
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let reduceMotion: Bool
     @FocusState private var focusedControl: String?
     @State private var bodyHasFocus = false
 

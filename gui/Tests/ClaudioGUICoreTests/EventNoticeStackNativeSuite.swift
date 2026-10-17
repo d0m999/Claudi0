@@ -9,7 +9,32 @@ import SwiftUI
 
 @MainActor
 func runEventNoticeStackNativeSuites() {
+    print(
+        "Native stack system Reduce Motion: \(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)"
+    )
     runEventNoticeStackMotionNativeSuites()
+    suite("Banner Stack native：显式覆盖两种 Reduce Motion 呈现") {
+        for reducedMotion in [false, true] {
+            let fixture = EventNoticeStackNativeFixture(count: 3, reducedMotion: reducedMotion)
+            defer { fixture.close() }
+            let before = fixture.model.stackSnapshot.visible
+            let closed = before[1]
+            expect(
+                fixture.press("event-notice.close.\(closed.id.uuidString)"),
+                "两种动效偏好都使用真实关闭按钮")
+            fixture.settle()
+            let stack = fixture.model.stackSnapshot
+            expect(stack.visible.map(\.id) == [before[0].id, before[2].id], "动效偏好不改变关闭身份")
+            expect(fixture.presentation.output.isEligible, "动效偏好不撤销剩余卡片几何资格")
+            if reducedMotion {
+                expect(stack.exiting.isEmpty, "Reduce Motion 不保留退场帧")
+                expect(stack.visible.allSatisfy { $0.relocation == nil }, "Reduce Motion 不建立让位动效")
+            } else {
+                expect(stack.exiting.map(\.id) == [closed.id], "普通动效保留捕获的退场帧")
+                expect(stack.visible.last?.relocation != nil, "普通动效按共享实测结果建立让位计划")
+            }
+        }
+    }
     suite("Banner Stack native：英中、浅深、窄宽完整卡片测量与逐条动作身份") {
         for language in [ClaudioAppLanguage.english, .zhHans] {
             for scheme in [ColorScheme.light, .dark] {
@@ -276,7 +301,7 @@ private final class EventNoticeStackNativeFixture {
 
     init(
         count: Int, language: ClaudioAppLanguage = .english, scheme: ColorScheme = .light,
-        width: Double = 440
+        width: Double = 440, reducedMotion: Bool = false
     ) {
         _ = NSApplication.shared
         viewportWidth = width
@@ -313,7 +338,8 @@ private final class EventNoticeStackNativeFixture {
         hosting = EventNoticeHostingView(
             rootView: EventNoticeView(
                 model: model, languageStore: preferences,
-                navigation: navigation, presentation: presentation))
+                navigation: navigation, presentation: presentation,
+                reduceMotionOverride: reducedMotion))
         window = EventNoticePanel(
             contentRect: NSRect(x: 100, y: 80, width: width, height: 44),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)

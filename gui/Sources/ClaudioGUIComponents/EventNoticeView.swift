@@ -19,6 +19,9 @@ public struct EventNoticeView: View {
     private let onQueueInteraction: @MainActor () -> Void
     private let onMeasurements: @MainActor ([EventNoticeMeasurementToken: Double]) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // Native fixtures pin this read-only system environment; production leaves it unset.
+    private let reduceMotionOverride: Bool?
+    private var usesReducedMotion: Bool { reduceMotionOverride ?? reduceMotion }
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var queueFocused: Bool
     @State private var focusedCards: Set<UUID> = []
@@ -39,9 +42,11 @@ public struct EventNoticeView: View {
         onMeasurements: @escaping @MainActor ([EventNoticeMeasurementToken: Double]) -> Void = {
             _ in
         },
-        onClose: (@MainActor () -> Void)? = nil
+        onClose: (@MainActor () -> Void)? = nil,
+        reduceMotionOverride: Bool? = nil
     ) {
         self.model = model
+        self.reduceMotionOverride = reduceMotionOverride
         self.languageStore = languageStore
         let navigation = navigation ?? SessionNavigationCoordinator(model: model)
         self.navigation = navigation
@@ -95,13 +100,13 @@ public struct EventNoticeView: View {
             onMeasurements(values)
         }
         .onAppear {
-            model.setReducedMotion(reduceMotion)
+            model.setReducedMotion(usesReducedMotion)
             presentation.updateFontEnvironment(String(describing: dynamicTypeSize))
         }
         .onChange(of: dynamicTypeSize) {
             presentation.updateFontEnvironment(String(describing: $0))
         }
-        .onChange(of: reduceMotion) { model.setReducedMotion($0) }
+        .onChange(of: usesReducedMotion) { model.setReducedMotion($0) }
         .onHover { model.setHovering($0) }
         .onChange(of: queueFocused) { _ in synchronizeFocus() }
         .onChange(of: snapshot.visible.map(\.id)) { ids in
@@ -200,7 +205,8 @@ public struct EventNoticeView: View {
             focusChanged: { focused in
                 if focused { focusedCards.insert(item.id) } else { focusedCards.remove(item.id) }
                 synchronizeFocus()
-            }, renderedContent: content ?? presentation.output.retiredContent[item.id])
+            }, renderedContent: content ?? presentation.output.retiredContent[item.id],
+            reduceMotion: usesReducedMotion)
     }
 
     @ViewBuilder

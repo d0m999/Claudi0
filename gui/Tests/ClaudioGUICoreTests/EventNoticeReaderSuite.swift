@@ -299,14 +299,32 @@ private func eventReaderClick(_ identifier: String, in window: NSWindow) -> Bool
     window.contentView?.layoutSubtreeIfNeeded()
     let point = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
     guard window.contentView?.frame.contains(point) == true else { return false }
-    for (number, type) in [NSEvent.EventType.leftMouseDown, .leftMouseUp].enumerated() {
-        guard
-            let event = NSEvent.mouseEvent(
-                with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-                context: nil, eventNumber: number, clickCount: 1, pressure: 1)
-        else { return false }
-        window.sendEvent(event)
+    let timestamp = ProcessInfo.processInfo.systemUptime
+    guard
+        let down = NSEvent.mouseEvent(
+            with: .leftMouseDown, location: point, modifierFlags: [],
+            timestamp: timestamp, windowNumber: window.windowNumber,
+            context: nil, eventNumber: 0, clickCount: 1, pressure: 1),
+        let up = NSEvent.mouseEvent(
+            with: .leftMouseUp, location: point, modifierFlags: [],
+            timestamp: timestamp + 0.01, windowNumber: window.windowNumber,
+            context: nil, eventNumber: 1, clickCount: 1, pressure: 0)
+    else { return false }
+    // AppKit's native button may track synchronously inside mouseDown. Queue the release
+    // before dispatching the press so that tracking can receive it on older macOS too.
+    NSApp.postEvent(up, atStart: true)
+    window.sendEvent(down)
+    if let pending = NSApp.nextEvent(
+        matching: .leftMouseUp, until: .distantPast, inMode: .default, dequeue: true)
+    {
+        // Queue round-trips copy NSEvent and round its timestamp below microsecond precision.
+        if pending.windowNumber == up.windowNumber && pending.eventNumber == up.eventNumber
+            && abs(pending.timestamp - up.timestamp) < 0.000_001
+        {
+            window.sendEvent(pending)
+        } else {
+            NSApp.postEvent(pending, atStart: true)
+        }
     }
     if let hosting = window.contentView { eventReaderSettle(hosting) }
     return true

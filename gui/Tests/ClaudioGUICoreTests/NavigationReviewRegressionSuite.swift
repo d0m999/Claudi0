@@ -79,9 +79,11 @@ func runNavigationReviewRegressionSuites() async {
                     ])
             }
             var publications = 0
+            var publishedCounts: [Int] = []
             var interleavedCount: Int?
             let sink = model.$readingSnapshot.dropFirst().sink { _ in
                 publications += 1
+                publishedCounts.append(model.resourceUsage.deduplicationEntries)
                 if slow && publications == 1 {
                     Task { @MainActor in interleavedCount = resolutions }
                 }
@@ -96,7 +98,14 @@ func runNavigationReviewRegressionSuites() async {
             if slow {
                 expect(interleavedCount.map { $0 < 32 } == true, "4ms预算之后允许其他MainActor任务执行")
             } else {
-                expect(publications == 1, "32条只发布一次readingSnapshot")
+                // A reduction stops at either 32 notices or 4ms. A slower runner may
+                // legitimately need several reductions; the direct model suite separately
+                // asserts that each acceptBatch call publishes exactly once.
+                expect(publications > 0 && publishedCounts.last == 32, "所有有界批次发布最终32条")
+                expect(
+                    zip([0] + publishedCounts, publishedCounts).allSatisfy {
+                        (1...32).contains($0.1 - $0.0)
+                    }, "各次有界批次发布都推进且不超过32条")
             }
             withExtendedLifetime(sink) {}
         }
