@@ -11,6 +11,7 @@ public enum PanelFocusTarget: Sendable, Hashable {
     case activityRange
     case activityMetric(Event)
     case libraryRefreshRetry
+    case eventSoundEntry(Event)
     case eventPreview(Event)
     case eventMute(Event)
     case masterVolume
@@ -63,7 +64,7 @@ public enum PanelFocusScope: Sendable, Equatable {
         hasWorkspaceDetails: Bool = false)
 }
 
-/// 生产顺序与视觉顺序相同：作用域 → 启动/配置恢复 → 每行可用试听/静音 → 播放设置 →
+/// 生产顺序与视觉顺序相同：作用域 → 启动/配置恢复 → 每行声音入口/试听/静音 → 播放设置 →
 /// 条件 reset → 固定退出 footer。禁用动作不制造幽灵 Tab stop。
 public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
     switch scope {
@@ -81,6 +82,7 @@ public func panelFocusOrder(_ scope: PanelFocusScope) -> [PanelFocusTarget] {
         if hasRefreshFailedNotice { order.append(.libraryRefreshRetry) }
         if hasConfigFailureNotice { order.append(.configReveal) }
         for event in events {
+            if event.soundEntry != nil { order.append(.eventSoundEntry(event.event)) }
             if event.controls.previewEnabled { order.append(.eventPreview(event.event)) }
             if event.controls.muteEnabled { order.append(.eventMute(event.event)) }
         }

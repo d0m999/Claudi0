@@ -317,6 +317,15 @@ package final class SoundEventSelectionSession: @preconcurrency ObservableObject
         }
     }
 
+    /// 拖放导入与文件选择面板共享同一本地导入流程：来源 URL 已由拖拽给出，只是跳过系统
+    /// 面板的悬挂。硬化校验、预览态与「选用」提交与面板路径完全一致。
+    package func prepareLocalSound(
+        fromDrop source: URL,
+        origin expectedOrigin: ManualPreviewOrigin? = nil
+    ) async -> ResourceResult {
+        await prepareLocalSound(origin: expectedOrigin) { source }
+    }
+
     /// History management uses the same resource seam without acquiring adoption authority.
     package func previewHistory(
         batchID: UUID, audioID: UUID, history: GenerationHistoryStore,

@@ -60,6 +60,10 @@ package struct SoundsEditorPresentation: Equatable {
     package let packs: [SoundPackEditorPackPresentation]
     package let selectedPack: SoundPackEditorPackPresentation?
     package let eventRows: [SoundPackEditorEventPresentation]
+    /// 事件行是否接受音频文件拖放（进入导入预览态），按包可编辑性投影：用户包/草稿为
+    /// true，出厂只读包为 false；同时要求库快照新鲜且无忙碌操作。驱动事件行的拖放目标
+    /// 高亮与 drop 受理；常驻导向说明行由页面更宽的可编辑性（草稿或可写包）决定。
+    package var acceptsEventSoundDrop: Bool = false
     package let draft: AICuePackDraftPresentation?
     package let inventory: SoundPackEditorInventoryPresentation
     package let requestImportAction: SoundPackEditorAction?

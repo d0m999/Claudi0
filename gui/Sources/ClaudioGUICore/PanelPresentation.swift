@@ -390,6 +390,36 @@ public struct PanelEventControlAvailability: Sendable, Equatable {
     }
 }
 
+/// 面板事件行的「更换声音」入口事实：可用性、目标路由与动词键都由投影按包性质给出，
+/// 视图只读投影，不自行判断包性质。行投影的 `nil` 表示该行不提供入口（如工作区配置页）。
+public struct PanelEventSoundEntry: Sendable, Equatable {
+    /// 与预览恢复链接共用的深链动词：用户包定向编辑，出厂包定向复制并编辑。
+    public enum Route: Sendable, Equatable {
+        case editEvent
+        case copyAndApply
+    }
+
+    public let route: Route
+    public let tooltipKey: ClaudioL10nKey
+    /// 以事件名格式化的无障碍标签键（「更换声音，%@」／「查看声音，%@」）。
+    public let accessibilityLabelKey: ClaudioL10nKey
+
+    public init(route: Route, tooltipKey: ClaudioL10nKey, accessibilityLabelKey: ClaudioL10nKey) {
+        self.route = route
+        self.tooltipKey = tooltipKey
+        self.accessibilityLabelKey = accessibilityLabelKey
+    }
+}
+
+/// 调用方持有的选中包性质事实；没有选中包（或该呈现面不提供入口）时传 `nil`。
+public struct PanelSoundEntryContext: Sendable, Equatable {
+    public let isBuiltinReadOnly: Bool
+
+    public init(isBuiltinReadOnly: Bool) {
+        self.isBuiltinReadOnly = isBuiltinReadOnly
+    }
+}
+
 /// 菜单栏单一来源的五行事件呈现。Global 行使用 claudi0 事件 ID；Surface 行使用能力
 /// catalog 的原生事件名、接口支持和实现事实。
 public struct PanelEventPresentation: Sendable, Equatable, Identifiable {
@@ -405,6 +435,7 @@ public struct PanelEventPresentation: Sendable, Equatable, Identifiable {
     public let implementation: HostCapabilityImplementation?
     public let controls: PanelEventControlAvailability
     public let accessibilityLabel: String
+    public var soundEntry: PanelEventSoundEntry? = nil
 }
 
 public func panelEventPresentations(
@@ -413,7 +444,8 @@ public func panelEventPresentations(
     masterVolume: Double,
     language: ClaudioAppLanguage,
     configWritesAllowed: Bool = true,
-    safetyFailures: [Event: EventPreviewSafetyFailure] = [:]
+    safetyFailures: [Event: EventPreviewSafetyFailure] = [:],
+    soundEntryContext: PanelSoundEntryContext? = nil
 ) -> [PanelEventPresentation] {
     let l10n = ClaudioL10n(language: language)
     let separator = language == .english ? ", " : "，"
@@ -496,6 +528,14 @@ public func panelEventPresentations(
             localizedEventName(event, language: language), nativeEventText, capabilityText,
             soundFileText, enabledText,
         ]
+        let soundEntry = soundEntryContext.map { context in
+            PanelEventSoundEntry(
+                route: context.isBuiltinReadOnly ? .copyAndApply : .editEvent,
+                tooltipKey: context.isBuiltinReadOnly
+                    ? .panelEventSoundEntryView : .panelEventSoundEntryChange,
+                accessibilityLabelKey: context.isBuiltinReadOnly
+                    ? .panelEventSoundEntryViewLabel : .panelEventSoundEntryChangeLabel)
+        }
         return PanelEventPresentation(
             event: event,
             title: localizedEventName(event, language: language),
@@ -507,7 +547,8 @@ public func panelEventPresentations(
             support: binding?.support,
             implementation: binding?.implementation,
             controls: controls,
-            accessibilityLabel: clauses.joined(separator: separator))
+            accessibilityLabel: clauses.joined(separator: separator),
+            soundEntry: soundEntry)
     }
 }
 

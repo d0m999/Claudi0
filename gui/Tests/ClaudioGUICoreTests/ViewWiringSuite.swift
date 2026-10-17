@@ -2592,7 +2592,7 @@ func runViewWiringSuites() {
             "power 图标必须从 AX 树隐藏，避免 VoiceOver 重复朗读")
         expect(
             collapsingWhitespace(panel).contains(
-                "case .eventPreview, .eventMute: true default: false"),
+                "case .eventSoundEntry, .eventPreview, .eventMute: true default: false"),
             "PanelView.isEventFocusTarget 必须明确把 quitApplication 归为 false")
     }
 

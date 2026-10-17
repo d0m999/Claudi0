@@ -626,7 +626,40 @@ public struct PanelView: View {
             masterVolume: panelModel.config.masterVolume,
             language: languageStore.language,
             configWritesAllowed: panelModel.soundControlsEnabled,
-            safetyFailures: panelModel.previewSafetyFailures)
+            safetyFailures: panelModel.previewSafetyFailures,
+            soundEntryContext: panelModel.config.selectedPack.isEmpty
+                ? nil
+                : PanelSoundEntryContext(
+                    isBuiltinReadOnly: panelModel.selectedPackIsBuiltinReadOnly))
+    }
+
+    /// 事件行的声音入口与预览恢复链接共用同一条 typed route 编排：面板不新增写路径，
+    /// 只把当前作用域、选中包与工作区目标交给统一的 Sounds 深链。陈旧目标 fail-closed。
+    private func openEventSoundSettings(event: Event) {
+        guard !panelModel.config.selectedPack.isEmpty else { return }
+        let target = soundScopeSelection.projection.writeTarget
+        let targetMatchesScope =
+            selectedScope.scope.workspaceID == nil
+            || target?.id == selectedScope.scope.workspaceID
+        guard targetMatchesScope else {
+            onAnnounce(localizedWorkspaceError(.staleRule, language: languageStore.language))
+            return
+        }
+        if panelModel.selectedPackIsBuiltinReadOnly {
+            onConfigureSound(
+                .copyAndApply(
+                    scope: selectedScope.scope,
+                    packID: panelModel.config.selectedPack,
+                    event: event,
+                    workspaceTarget: target))
+        } else {
+            onConfigureSound(
+                .editEvent(
+                    scope: selectedScope.scope,
+                    packID: panelModel.config.selectedPack,
+                    event: event,
+                    workspaceTarget: target))
+        }
     }
 
     private var eventSection: some View {
@@ -692,38 +725,14 @@ public struct PanelView: View {
                             case .adjustGroupVolume:
                                 focusedTarget = .masterVolume
                             case .editSound, .repairSound:
-                                guard !panelModel.config.selectedPack.isEmpty else { return }
-                                let target = soundScopeSelection.projection.writeTarget
-                                let targetMatchesScope =
-                                    selectedScope.scope.workspaceID == nil
-                                    || target?.id == selectedScope.scope.workspaceID
-                                guard targetMatchesScope else {
-                                    onAnnounce(
-                                        localizedWorkspaceError(
-                                            .staleRule, language: languageStore.language))
-                                    return
-                                }
-                                if panelModel.selectedPackIsBuiltinReadOnly {
-                                    onConfigureSound(
-                                        .copyAndApply(
-                                            scope: selectedScope.scope,
-                                            packID: panelModel.config.selectedPack,
-                                            event: event.event,
-                                            workspaceTarget: target))
-                                } else {
-                                    onConfigureSound(
-                                        .editEvent(
-                                            scope: selectedScope.scope,
-                                            packID: panelModel.config.selectedPack,
-                                            event: event.event,
-                                            workspaceTarget: target))
-                                }
+                                openEventSoundSettings(event: event.event)
                             }
                         },
                         onToggleMute: {
                             panelModel.toggleMute(event.event)
                             onAudibilityInputsChanged()
-                        })
+                        },
+                        onSoundEntry: { openEventSoundSettings(event: event.event) })
                     if index < eventPresentations.count - 1 {
                         Rectangle()
                             .fill(ClaudioTheme.hairline(colorScheme))
@@ -1060,7 +1069,7 @@ public struct PanelView: View {
 
     private func isEventFocusTarget(_ target: PanelFocusTarget?) -> Bool {
         switch target {
-        case .eventPreview, .eventMute: true
+        case .eventSoundEntry, .eventPreview, .eventMute: true
         default: false
         }
     }
@@ -1112,6 +1121,7 @@ private struct PanelAgentEventRow: View {
     let onPreview: () -> Bool
     let onRecovery: (EventPreviewRecoveryAction) -> Void
     let onToggleMute: () -> Void
+    let onSoundEntry: () -> Void
     private let focusedTarget: FocusState<PanelFocusTarget?>.Binding
 
     @Environment(\.colorScheme) private var colorScheme
@@ -1127,7 +1137,8 @@ private struct PanelAgentEventRow: View {
         focusedTarget: FocusState<PanelFocusTarget?>.Binding,
         onPreview: @escaping () -> Bool,
         onRecovery: @escaping (EventPreviewRecoveryAction) -> Void,
-        onToggleMute: @escaping () -> Void
+        onToggleMute: @escaping () -> Void,
+        onSoundEntry: @escaping () -> Void
     ) {
         self.presentation = presentation
         self.adaptation = adaptation
@@ -1139,6 +1150,7 @@ private struct PanelAgentEventRow: View {
         self.onPreview = onPreview
         self.onRecovery = onRecovery
         self.onToggleMute = onToggleMute
+        self.onSoundEntry = onSoundEntry
     }
 
     var body: some View {
@@ -1147,11 +1159,15 @@ private struct PanelAgentEventRow: View {
                 if adaptation.eventActionsMoveBelow {
                     VStack(alignment: .leading, spacing: 6) {
                         identity
+                        soundEntryButton
                         actions.padding(.leading, 30)
                     }
                 } else {
                     HStack(alignment: .center, spacing: 8) {
-                        identity
+                        VStack(alignment: .leading, spacing: 3) {
+                            identity
+                            soundEntryButton
+                        }
                         Spacer(minLength: 4)
                         actions
                     }
@@ -1271,11 +1287,24 @@ private struct PanelAgentEventRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 5))
     }
 
-    private var soundFileText: some View {
-        Text(presentation.soundFileText)
-            .font(.system(size: 9.5, design: .rounded))
-            .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-            .lineLimit(adaptation.rowWrapsToTwoLines ? 2 : 1)
+    /// 声音文件名即「更换声音」入口（Q1/Q4：链接形制、单动作、无菜单）。动词由投影按包
+    /// 性质给出；写在身份区但独立于合并的 title 无障碍元素，保持自身可聚焦可朗读。
+    @ViewBuilder private var soundEntryButton: some View {
+        if let entry = presentation.soundEntry {
+            Button(action: onSoundEntry) {
+                Text(presentation.soundFileText)
+                    .font(.system(size: 9.5, design: .rounded))
+                    .lineLimit(adaptation.rowWrapsToTwoLines ? 2 : 1)
+            }
+            .buttonStyle(.link)
+            .padding(.leading, 30)
+            .focused(focusedTarget, equals: .eventSoundEntry(presentation.event))
+            .help(ClaudioL10n(language: language).text(entry.tooltipKey))
+            .accessibilityLabel(
+                ClaudioL10n(language: language).format(
+                    entry.accessibilityLabelKey, presentation.title))
+            .accessibilityIdentifier("panel.event.\(presentation.event.rawValue).sound-entry")
+        }
     }
 
     private var previewHelp: String {

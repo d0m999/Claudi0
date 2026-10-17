@@ -85,4 +85,6 @@ extension ClaudioL10nKey {
     public static let soundsDone: Self = "settings.sounds.redesign.done"
     public static let soundsFailed: Self = "settings.sounds.redesign.failed"
     public static let soundsPackProtected: Self = "settings.sounds.redesign.packProtected"
+    public static let soundsEventDropHint: Self = "settings.sounds.redesign.eventDropHint"
+    public static let soundsEventDropBadge: Self = "settings.sounds.redesign.eventDropBadge"
 }

@@ -2090,6 +2090,9 @@ package final class SoundPacksEditorOwner: ObservableObject {
         let selectedCoverage = selectedPack.flatMap {
             seed.eventCoverageByPackID[$0.id]
         }
+        let acceptsEventSoundDrop =
+            (selectedIsWritable || currentAICueDraft != nil)
+            && seed.library.isFresh && !hasBusyOperation
         let eventRows = Event.allCases.map { event in
             let sourceRow = selectedRows[event]
             let coverage: CoverageState
@@ -2134,9 +2137,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
                                 == .systemSound(name)
                         } : []
                     let canAssign =
-                        (selectedIsWritable || currentAICueDraft != nil)
-                        && seed.library.isFresh && !hasBusyOperation
-                        && (usedBy.isEmpty || usedBy.contains(event))
+                        acceptsEventSoundDrop && (usedBy.isEmpty || usedBy.contains(event))
                     return SoundPackEditorSourceChoicePresentation(
                         source: .systemSound(name), usedByEvents: usedBy,
                         action: canAssign
@@ -2208,6 +2209,7 @@ package final class SoundPacksEditorOwner: ObservableObject {
             packs: packs,
             selectedPack: selectedPack,
             eventRows: eventRows,
+            acceptsEventSoundDrop: acceptsEventSoundDrop,
             draft: currentAICueDraft.map {
                 AICuePackDraftPresentation(
                     packID: $0.packID,

@@ -294,6 +294,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let eventPreviewPlaybackFailed: Self = "event.preview.playback-failed"
     public static let eventPreviewAdjustGroupVolume: Self = "event.preview.adjust-group-volume"
     public static let eventPreviewRepairSound: Self = "event.preview.repair-sound"
+    public static let panelEventSoundEntryChange: Self = "panel.event.sound-entry.change"
+    public static let panelEventSoundEntryView: Self = "panel.event.sound-entry.view"
+    public static let panelEventSoundEntryChangeLabel: Self = "panel.event.sound-entry.change-label"
+    public static let panelEventSoundEntryViewLabel: Self = "panel.event.sound-entry.view-label"
     public static let eventNoticeDemandInterrupted: Self = "event-notice.demand.interrupted"
     public static let eventNoticeDemandStop: Self = "event-notice.demand.stop"
     public static let eventNoticeDemandSubagentStop: Self = "event-notice.demand.subagent-stop"
@@ -1592,6 +1596,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .soundsDone,
         .soundsFailed,
         .soundsPackProtected,
+        .soundsEventDropHint, .soundsEventDropBadge,
         .settingsNativeRemoveWorkspace, .settingsNativeWorkspaceRemovalSummary,
         .settingsNativeDeleteSoundPack, .settingsNativeGenerateCue, .aiCueGenerateCue,
         .aiCuePreviewAndChoose, .aiCueUseNamedEvent,
@@ -2063,6 +2068,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventPreviewUnsafe, .eventPreviewUnsafeFile, .eventPreviewUnreadableFile,
         .eventPreviewAssetChanged, .eventPreviewPlaybackFailed,
         .eventPreviewAdjustGroupVolume, .eventPreviewRepairSound,
+        .panelEventSoundEntryChange, .panelEventSoundEntryView,
+        .panelEventSoundEntryChangeLabel, .panelEventSoundEntryViewLabel,
         .eventNoticeDemandInterrupted,
         .eventNoticeDemandStop,
         .eventNoticeDemandSubagentStop,

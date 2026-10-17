@@ -23,7 +23,7 @@ import Foundation
 // `PackRestoreSuite.swift`,
 // `EventMuteControllerSuite.swift`, `MasterVolumeControllerSuite.swift`,
 // `PanelFocusOrderSuite.swift`, `ContrastSuite.swift`,
-// `PanelSoundScopeInteractionSuite.swift`,
+// `PanelSoundScopeInteractionSuite.swift`, `EventRowSoundEntrySuite.swift`,
 // `ContrastHexParsingSuite.swift`,
 // `PanelTypeSizeSuite.swift`, `PanelAccessibilitySuite.swift`, `PanelConfigSuite.swift`,
 // `PanelFocusCoordinatorSuite.swift`,
@@ -173,6 +173,12 @@ if CommandLine.arguments.contains("--sounds-redesign") {
 if CommandLine.arguments.contains("--sound-event-selection-lifecycle") {
     await runSoundEventSelectionLifecycleSuites()
     print("Sound event selection lifecycle: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--event-row-sound-entry") {
+    await runEventRowSoundEntrySuites()
+    print("Event row sound entry: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -932,6 +938,7 @@ Task { @MainActor in
     await runEventAttentionStressSuites()
     runManualAudioPreviewSessionSuites()
     runPanelSoundScopeInteractionSuites()
+    await runEventRowSoundEntrySuites()
     await runPanelPresentationSuites()
     runEventSettingsWindowSelectionSuites()
     runWorkspaceDeletionPresentationSuites()

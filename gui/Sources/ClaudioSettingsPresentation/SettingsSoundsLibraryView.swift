@@ -5,6 +5,7 @@ import ClaudioGUICore
 import ClaudioLocalization
 import SoundPacksWindow
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum SoundsSheet: String, Identifiable {
     case newPack, renamePack, copyPack, ai, local, history, packFiles, system, manage, importPack,
@@ -56,6 +57,7 @@ struct SettingsSoundsLibraryView: View {
     @State private var parentWindow: NSWindow?
     @State private var previewOrigin = ManualPreviewOrigin(.settings)
     @State private var afterSheetDestination: SoundPacksWindowRoute.Destination?
+    @State private var dropTargetEvent: Event?
     @FocusState private var focusedEvent: Event?
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
@@ -323,6 +325,13 @@ struct SettingsSoundsLibraryView: View {
             Text(l10n.text(sounds?.draft != nil ? .soundsDraftHint : .soundsSharedWarning))
                 .font(.callout).foregroundColor(.secondary).fixedSize(
                     horizontal: false, vertical: true)
+            if canEdit {
+                Text(l10n.text(.soundsEventDropHint))
+                    .font(.callout).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("settings.sounds.event-drop-hint")
+                    .soundPacksLayoutProbe("settings.sounds.event-drop-hint")
+            }
             HStack {
                 if let pack {
                     Button(l10n.text(.soundsCopy)) {
@@ -397,8 +406,42 @@ struct SettingsSoundsLibraryView: View {
                                     "settings.sounds.event.\(row.event.rawValue).clear")
                             }
                         }
-                    }.padding(14).soundPacksLayoutProbe(
-                        "sound-packs.event-row.\(row.event.rawValue)")
+                    }.padding(14)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(
+                                dropTargetEvent == row.event
+                                    ? Color.accentColor.opacity(0.12) : Color.clear)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                dropTargetEvent == row.event
+                                    ? Color.accentColor : Color.clear,
+                                lineWidth: 1)
+                    }
+                    .overlay(alignment: .top) {
+                        if dropTargetEvent == row.event {
+                            Text(
+                                l10n.format(
+                                    .soundsEventDropBadge,
+                                    localizedEventName(
+                                        row.event, language: preferences.language))
+                            )
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(Color.accentColor))
+                            .foregroundStyle(.white)
+                            .accessibilityIdentifier(
+                                "settings.sounds.event.\(row.event.rawValue).drop-badge")
+                        }
+                    }
+                    .onDrop(
+                        of: [UTType.fileURL.identifier],
+                        isTargeted: eventDropTargetBinding(for: row.event),
+                        perform: { providers in handleEventSoundDrop(providers, event: row.event) }
+                    )
+                    .soundPacksLayoutProbe("sound-packs.event-row.\(row.event.rawValue)")
                     if row.event != Event.allCases.last { Divider() }
                 }
             }.settingsSectionSurface().soundPacksLayoutProbe("sound-packs.events.group")
@@ -1200,6 +1243,49 @@ struct SettingsSoundsLibraryView: View {
             }
             if case .failed(let error) = result { errorText = storageMessage(error) }
         }
+    }
+
+    /// 只有可写包（用户包/草稿）的事件行才跟踪拖放目标高亮；出厂包行不注册为目标，
+    /// 界面不谎称可写（Q7）。是否可写由 owner 投影的 acceptsEventSoundDrop 给出。
+    private func eventDropTargetBinding(for event: Event) -> Binding<Bool>? {
+        guard sounds?.acceptsEventSoundDrop == true else { return nil }
+        return Binding(
+            get: { dropTargetEvent == event },
+            set: { targeted in
+                if targeted {
+                    dropTargetEvent = event
+                } else if dropTargetEvent == event {
+                    dropTargetEvent = nil
+                }
+            })
+    }
+
+    /// drop = 打开导入流程的预览态（文件预填），手动试听、显式「选用」才绑定（Q3）；
+    /// 在出厂包行上松手复用点击路径的「复制为我的包」引导（Q7）。
+    private func handleEventSoundDrop(_ providers: [NSItemProvider], event: Event) -> Bool {
+        let provider = providers.first {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        if sounds?.acceptsEventSoundDrop == true {
+            guard sheet == nil, !isWorking, let provider
+            else { return false }
+            Task {
+                guard let url = await loadSoundPacksDropURL(from: provider) else { return }
+                begin(.local, event: event)
+                let result = await selectionSession.prepareLocalSound(
+                    fromDrop: url, origin: previewOrigin)
+                if case .failed(let error) = result { errorText = storageMessage(error) }
+            }
+            return true
+        }
+        if sounds?.draft == nil, pack?.isBuiltinReadOnly == true, pack?.copyAction != nil,
+            provider != nil
+        {
+            inputName = ""
+            present(.copyPack)
+            return true
+        }
+        return false
     }
 
     private func choosePack() {

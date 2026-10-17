@@ -18909,6 +18909,108 @@
           }
         }
       }
+    },
+    "panel.event.sound-entry.change": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Sound…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更换声音…"
+          }
+        }
+      }
+    },
+    "panel.event.sound-entry.view": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Sound…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看声音…"
+          }
+        }
+      }
+    },
+    "panel.event.sound-entry.change-label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change sound, %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更换声音，%@"
+          }
+        }
+      }
+    },
+    "panel.event.sound-entry.view-label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View sound, %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看声音，%@"
+          }
+        }
+      }
+    },
+    "settings.sounds.redesign.eventDropHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This pack provides the sound for each of the five events. Drop an audio file onto an event row to import it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "五个事件的声音由本包提供。把音频文件拖到事件行上即可导入。"
+          }
+        }
+      }
+    },
+    "settings.sounds.redesign.eventDropBadge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to import into “%@”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "松开导入到「%@」"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
