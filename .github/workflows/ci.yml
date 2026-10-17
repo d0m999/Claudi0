@@ -43,6 +43,7 @@ jobs:
         run: |
           python3 scripts/test-ci-cache-identity.py
           python3 scripts/test-ci-whitespace.py
+          python3 scripts/test-ci-gui-harness.py
 
       - name: Restore SwiftPM build cache
         uses: actions/cache@v5
@@ -108,11 +109,12 @@ jobs:
     name: GUI and bundle
     runs-on: macos-15
     # Cold SDK 26 builds include native harnesses, standard Release and LTO bundle variants.
-    timeout-minutes: 25
+    timeout-minutes: 60
     env:
       # GUI consumes SDK 26 APIs and needs the newer SwiftUI isolation compiler.
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
       NSUnbufferedIO: YES
+      CLAUDIO_TEST_SUITE_TIMINGS: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -176,8 +178,11 @@ jobs:
           wait "$WATCHDOG_PID" 2>/dev/null || true
           exit "$STATUS"
 
+      - name: Verify native sidebar backing grids
+        run: swift run --skip-build --package-path gui claudio-gui-tests --settings-sidebar-backing
+
       - name: Run GUI harness
-        run: swift run --package-path gui claudio-gui-tests
+        run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests
 
       - name: Build ClaudioGUI (Debug)
         run: swift build -c debug --package-path gui --product ClaudioGUI

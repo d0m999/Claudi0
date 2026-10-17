@@ -53,6 +53,8 @@ func expect(
 
 @MainActor
 func suite(_ name: String, _ body: @MainActor () -> Void) {
+    let started = ProcessInfo.processInfo.systemUptime
+    defer { reportSuiteDuration(name, started: started) }
     print("• \(name)")
     body()
 }
@@ -61,8 +63,19 @@ func suite(_ name: String, _ body: @MainActor () -> Void) {
 /// The presence of `await` at the call site selects this overload.
 @MainActor
 func suite(_ name: String, _ body: @MainActor () async -> Void) async {
+    let started = ProcessInfo.processInfo.systemUptime
+    defer { reportSuiteDuration(name, started: started) }
     print("• \(name)")
     await body()
+}
+
+@MainActor
+private func reportSuiteDuration(_ name: String, started: TimeInterval) {
+    guard ProcessInfo.processInfo.environment["CLAUDIO_TEST_SUITE_TIMINGS"] == "1" else { return }
+    print(
+        String(
+            format: "  Suite duration %.3fs: %@", ProcessInfo.processInfo.systemUptime - started,
+            name))
 }
 
 // A separate process holds the same flock as the production manifest writer. The parent
