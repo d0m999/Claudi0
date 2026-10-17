@@ -1048,6 +1048,7 @@ private struct PanelAgentEventRow: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var soundEntryHovered = false
 
     init(
         presentation: PanelEventPresentation,
@@ -1086,7 +1087,7 @@ private struct PanelAgentEventRow: View {
                     }
                 } else {
                     HStack(alignment: .center, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 2) {
                             identity
                             soundEntryButton
                         }
@@ -1211,22 +1212,55 @@ private struct PanelAgentEventRow: View {
 
     /// 声音文件名即「更换声音」入口（Q1/Q4：链接形制、单动作、无菜单）。动词由投影按包
     /// 性质给出；写在身份区但独立于合并的 title 无障碍元素，保持自身可聚焦可朗读。
+    /// 形制 = 变体 D 定稿（panel-event-row-entry-PROTOTYPE.html）：10.5 mono medium、
+    /// 静止 text-muted；hover 转 clay 并加下划线；焦点 clay + 2pt 环（外扩 1pt 间隙）。
+    /// 文字与标题左缘对齐：标题列起点 = 字形 23 + 间距 7，链接自身内边距 2，故外缩 28。
     @ViewBuilder private var soundEntryButton: some View {
         if let entry = presentation.soundEntry {
+            let isFocused = focusedTarget.wrappedValue == .eventSoundEntry(presentation.event)
             Button(action: onSoundEntry) {
                 Text(presentation.soundFileText)
-                    .font(.system(size: 9.5, design: .rounded))
+                    .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                    .underline(soundEntryHovered)
+                    .foregroundColor(
+                        soundEntryHovered || isFocused
+                            ? ClaudioTheme.clay(colorScheme)
+                            : ClaudioTheme.textMuted(colorScheme))
                     .lineLimit(adaptation.rowWrapsToTwoLines ? 2 : 1)
+                    .padding(.horizontal, 2)
             }
-            .buttonStyle(.link)
-            .padding(.leading, 30)
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .onHover { setSoundEntryHovered($0) }
+            .overlay {
+                if isFocused {
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color.accentColor, lineWidth: 2)
+                        .padding(-3)
+                }
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: soundEntryHovered)
+            .padding(.leading, 28)
             .focused(focusedTarget, equals: .eventSoundEntry(presentation.event))
+            .onDisappear { setSoundEntryHovered(false) }
             .help(ClaudioL10n(language: language).text(entry.tooltipKey))
             .accessibilityLabel(
                 ClaudioL10n(language: language).format(
                     entry.accessibilityLabelKey, presentation.title)
             )
             .accessibilityIdentifier("panel.event.\(presentation.event.rawValue).sound-entry")
+        }
+    }
+
+    /// 链接指针（原型 `cursor: pointer`，`.link` 样式原本自带）：push/pop 严格成对，
+    /// 状态去重防双重 push；点击即关面板，onDisappear 兜底 pop，指针不停留在栈上。
+    private func setSoundEntryHovered(_ hovering: Bool) {
+        guard hovering != soundEntryHovered else { return }
+        soundEntryHovered = hovering
+        if hovering {
+            NSCursor.pointingHand.push()
+        } else {
+            NSCursor.pop()
         }
     }
 

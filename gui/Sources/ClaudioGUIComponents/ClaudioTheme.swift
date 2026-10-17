@@ -77,6 +77,14 @@ public enum ClaudioTheme {
             : Color(claudioHex: ClaudioColorHex.text2Light)
     }
 
+    /// `text-muted` 弱文字——只给面板事件行声音入口链接的静止态（变体 D，issue #220）。
+    /// 不作正文：对底不足 4.5:1，链接可发现性由 hover 下划线、焦点环与 tooltip 承担。
+    public static func textMuted(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(claudioHex: ClaudioColorHex.textMutedDark)
+            : Color(claudioHex: ClaudioColorHex.textMutedLight)
+    }
+
     public static func panel(_ scheme: ColorScheme) -> Color {
         scheme == .dark
             ? Color(claudioHex: ClaudioColorHex.panelDark)

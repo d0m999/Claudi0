@@ -59,6 +59,7 @@ struct SettingsSoundsLibraryView: View {
     @State private var afterSheetDestination: SoundPacksWindowRoute.Destination?
     @State private var dropTargetEvent: Event?
     @FocusState private var focusedEvent: Event?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var selection: SoundEventSelectionContext? { selectionSession.context }
@@ -325,13 +326,6 @@ struct SettingsSoundsLibraryView: View {
             Text(l10n.text(sounds?.draft != nil ? .soundsDraftHint : .soundsSharedWarning))
                 .font(.callout).foregroundColor(.secondary).fixedSize(
                     horizontal: false, vertical: true)
-            if canEdit {
-                Text(l10n.text(.soundsEventDropHint))
-                    .font(.callout).foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("settings.sounds.event-drop-hint")
-                    .soundPacksLayoutProbe("settings.sounds.event-drop-hint")
-            }
             HStack {
                 if let pack {
                     Button(l10n.text(.soundsCopy)) {
@@ -365,6 +359,15 @@ struct SettingsSoundsLibraryView: View {
             }
             if pack?.isBuiltinReadOnly == true {
                 Text(l10n.text(.soundsReadOnly)).font(.callout).foregroundColor(.secondary)
+            }
+            // 导向说明行（变体 4 定稿的唯一教学位）：紧贴事件列表上沿，先讲本页事实再教拖拽捷径；
+            // 原型 11px 弱文字，对应 .caption。
+            if canEdit {
+                Text(l10n.text(.soundsEventDropHint))
+                    .font(.caption).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("settings.sounds.event-drop-hint")
+                    .soundPacksLayoutProbe("settings.sounds.event-drop-hint")
             }
             VStack(spacing: 0) {
                 ForEach(sounds?.eventRows ?? []) { row in
@@ -420,22 +423,30 @@ struct SettingsSoundsLibraryView: View {
                                     ? Color.accentColor : Color.clear,
                                 lineWidth: 1)
                     }
-                    .overlay(alignment: .top) {
+                    .overlay(alignment: .topTrailing) {
                         if dropTargetEvent == row.event {
+                            // 「松开导入到『事件名』」浮标（变体 4）：9.5 semibold 胶囊，
+                            // 右上跨骑行框上缘（right 10 / top -9）。
                             Text(
                                 l10n.format(
                                     .soundsEventDropBadge,
                                     localizedEventName(
                                         row.event, language: preferences.language))
                             )
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                            .padding(.horizontal, 8).padding(.vertical, 1.5)
                             .background(Capsule().fill(Color.accentColor))
                             .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
+                            .padding(.trailing, 10)
+                            .offset(y: -9)
+                            .transition(.opacity)
                             .accessibilityIdentifier(
                                 "settings.sounds.event.\(row.event.rawValue).drop-badge")
                         }
                     }
+                    .animation(
+                        reduceMotion ? nil : .easeOut(duration: 0.12), value: dropTargetEvent)
                     .onDrop(
                         of: [UTType.fileURL.identifier],
                         isTargeted: eventDropTargetBinding(for: row.event),

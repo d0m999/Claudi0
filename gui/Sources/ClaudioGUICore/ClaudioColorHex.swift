@@ -31,6 +31,12 @@ public enum ClaudioColorHex {
     public static let text2Dark = "B0AEA5"
     public static let text2Light = "75685A"
 
+    /// `text-muted` 弱文字（DESIGN.md 配色表：暗色两版一致 `#6F665B`；亮色糖果盘⑧现行 `#AB9E8E`）。
+    /// 只用处：面板事件行「更换声音」入口链接的静止色（变体 D 定稿，issue #220）——它刻意低于正文
+    /// 4.5:1，可发现性由 hover 下划线、焦点环与 tooltip 承担，不作正文、不作静音态文字（那是 text-2）。
+    public static let textMutedDark = "6F665B"
+    public static let textMutedLight = "AB9E8E"
+
     /// `panel` 面板底——事件行、面板正文的真实底色。
     public static let panelDark = "1A1815"
     public static let panelLight = "FFFDFA"
