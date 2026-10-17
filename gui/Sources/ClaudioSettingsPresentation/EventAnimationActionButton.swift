@@ -145,36 +145,3 @@ struct EventAnimationActionLabel<Content: View>: View {
                     hovered ? Color(nsColor: .tertiaryLabelColor) : .clear, lineWidth: 1))
     }
 }
-
-@MainActor
-struct EventAnimationSwitch: NSViewRepresentable {
-    let title: String
-    let identifier: String
-    @Binding var isOn: Bool
-
-    func makeNSView(context _: Context) -> EventAnimationActionView<EventAnimationSwitchLabel> {
-        EventAnimationActionView(label: EventAnimationSwitchLabel(title: title, isOn: isOn))
-    }
-
-    func updateNSView(
-        _ view: EventAnimationActionView<EventAnimationSwitchLabel>, context: Context
-    ) {
-        view.host.rootView = EventAnimationActionLabel(
-            content: EventAnimationSwitchLabel(title: title, isOn: isOn))
-        view.onActivate = { isOn.toggle() }
-        view.isEnabled = context.environment.isEnabled
-        view.setAccessibilityRole(.checkBox)
-        view.setAccessibilityLabel(title)
-        view.setAccessibilityIdentifier(identifier)
-        view.setAccessibilityValue(NSNumber(value: isOn))
-        view.invalidateIntrinsicContentSize()
-    }
-}
-
-struct EventAnimationSwitchLabel: View {
-    let title: String
-    let isOn: Bool
-    var body: some View {
-        Toggle(title, isOn: .constant(isOn)).toggleStyle(.switch).font(.system(size: 13))
-    }
-}

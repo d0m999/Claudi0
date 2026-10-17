@@ -298,6 +298,18 @@ if CommandLine.arguments.contains("--event-notice-presentation") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--hit-targets") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runHitTargetSuites()
+        print("Hit targets: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 // Live reading timers need AppKit's event loop rather than the synchronous layout harness.
 if CommandLine.arguments.contains("--event-modal-lifecycle") {
     let application = NSApplication.shared

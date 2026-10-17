@@ -2225,65 +2225,6 @@ private final class CatalogCache: @unchecked Sendable {
     }
 }
 
-private struct CatalogDocument: Decodable {
-    let strings: [String: CatalogEntry]
-
-    enum CodingKeys: String, CodingKey {
-        case strings
-    }
-}
-
-private struct CatalogEntryDecoder: Decodable {
-    let localizations: [String: LocalizationValue]
-
-    enum CodingKeys: String, CodingKey {
-        case localizations
-    }
-}
-
-private struct LocalizationValue: Decodable {
-    let stringUnit: StringUnit?
-    let variations: Variations?
-
-    enum CodingKeys: String, CodingKey {
-        case stringUnit
-        case variations
-    }
-}
-
-private struct StringUnit: Decodable {
-    let value: String
-}
-
-private struct Variations: Decodable {
-    let plural: [String: LocalizationValue]?
-
-    enum CodingKeys: String, CodingKey {
-        case plural
-    }
-}
-
-extension CatalogEntry: Decodable {
-    init(from decoder: Decoder) throws {
-        let value = try decoder.container(keyedBy: CatalogEntryDecoder.CodingKeys.self)
-        let localizations = try value.decode(
-            [String: LocalizationValue].self,
-            forKey: .localizations)
-        var strings: [String: String] = [:]
-        var plurals: [String: [String: String]] = [:]
-        for (language, localization) in localizations {
-            if let stringUnit = localization.stringUnit {
-                strings[language] = stringUnit.value
-            }
-            if let plural = localization.variations?.plural {
-                plurals[language] = plural.compactMapValues { $0.stringUnit?.value }
-            }
-        }
-        self.strings = strings
-        self.plurals = plurals
-    }
-}
-
 /// Explicit catalog lookup and formatting. The language is an input to every lookup, which keeps
 /// tests and retained windows independent of `Locale.current` and `AppleLanguages`.
 public struct ClaudioL10n {

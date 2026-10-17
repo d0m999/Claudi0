@@ -219,7 +219,7 @@ func runHitTargetSuites() {
         probe.settle()
         expect(
             recorder.state(for: "integration")?.actionHovered == false,
-            "条件胶囊卸载再恢复时不得复活陈旧 action hover")
+            "条件胶囊卸载再恢复时不得复活陈旧 action hover：\(recorder.transitions)")
     }
 
     suite("生产接线：声音包使用显式命中合同") {
@@ -350,9 +350,15 @@ private final class SoundScopeControlsNativeModel: ObservableObject {
 @MainActor
 private final class SoundScopeControlsNativeRecorder {
     private var states: [String: PanelSoundScopeRowTransientState] = [:]
+    private(set) var transitions: [String] = []
 
     func recordState(_ state: PanelSoundScopeRowTransientState, for row: String) {
         states[row] = state
+        transitions.append("\(row): state=\(state)")
+    }
+
+    func recordActionPresence(_ present: Bool) {
+        transitions.append("integration: hasAction=\(present)")
     }
 
     func state(for row: String) -> PanelSoundScopeRowTransientState? {
@@ -399,7 +405,10 @@ private struct SoundScopeControlsNativeFixture: View {
                     SoundScopeTransientStateProbe(
                         row: "integration",
                         state: state,
-                        recorder: recorder))
+                        recorder: recorder)
+                )
+                .onAppear { recorder.recordActionPresence(model.hasIntegrationAction) }
+                .onChange(of: model.hasIntegrationAction) { recorder.recordActionPresence($0) }
             }
 
             PanelSoundScopeRowInteractionContainer(hasAction: false) { state, _ in

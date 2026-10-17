@@ -692,8 +692,21 @@ func runEventAnimationIntegrationSuites() async {
                                 appearance: dark ? .darkAqua : .aqua)
                             defer { probe.close() }
                             let cards = EventAnimationStyle.allCases.compactMap {
-                                SoundPacksLayoutRecorder.frames[
-                                    "settings.animation.style.\($0.rawValue)"]
+                                style -> CGRect? in
+                                // The native radio group owns these views; measure their live
+                                // bounds in the recorder's window-content coordinate system.
+                                guard
+                                    let view = probe.menuAccessibilityElement(
+                                        identifier: "settings.animation.style.\(style.rawValue)")
+                                        as? NSView,
+                                    view.accessibilityRole() == .radioButton,
+                                    !view.bounds.isEmpty, let content = view.window?.contentView
+                                else { return nil }
+                                var frame = view.convert(view.bounds, to: content)
+                                if !content.isFlipped {
+                                    frame.origin.y = content.bounds.maxY - frame.maxY
+                                }
+                                return frame
                             }
                             expect(cards.count == 4, "四个真实样式控件必须挂载")
                             if let reading = SoundPacksLayoutRecorder.frames[

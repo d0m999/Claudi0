@@ -16,7 +16,7 @@ func runEventNoticeModalLifecycleSuites() async {
         expect(settings.isVisible && sheet.isVisible, "横幅收起不关闭设置或其 sheet")
     }
 
-    suite("Event Notice Modal：关闭 sheet 父窗口后恢复剩余预算并自动收起") {
+    await suite("Event Notice Modal：关闭 sheet 父窗口后恢复剩余预算并自动收起") {
         let fixture = EventNoticeModalLifecycleFixture()
         defer { fixture.close() }
         fixture.clock.advance(1)
@@ -26,14 +26,29 @@ func runEventNoticeModalLifecycleSuites() async {
         expect(abs(saved - 3) < 0.001, "暂停保存已消耗一秒后的剩余预算")
         fixture.clock.advance(60)
         expect(fixture.model.stackSnapshot.visible.count == 1, "弹窗打开期间不收起横幅")
+        let windowIDs: Set<Int> = [parent.windowNumber, sheet.windowNumber]
+        expect(
+            eventNoticeOnscreenWindowIDs().map { windowIDs.isSubset(of: $0) } == true,
+            "关闭前父窗口与 sheet 必须真实显示在屏幕上")
         parent.close()
-        expect(!parent.isVisible && !sheet.isVisible, "父窗口关闭后两个原生窗口均不可见")
         expect(!fixture.observer.isPaused, "即使没有 didEndSheet，父窗口关闭也释放 modal")
         expect(!fixture.model.stackSnapshot.pauseReasons.contains(.modal), "模型恢复阅读")
         fixture.clock.advance(saved - 0.01)
         expect(fixture.model.stackSnapshot.visible.count == 1, "用完剩余预算之前仍可读")
         fixture.clock.advance(0.02 + EventNoticeModel.fadeDuration)
         expect(!fixture.model.stackSnapshot.hasPresentation, "用完剩余预算后自动收回")
+        // With older linked SDK behavior, AppKit keeps the hidden sheet's isVisible flag set.
+        // Observe WindowServer after the close animation without ending or ordering out the sheet.
+        let deadline = Date(timeIntervalSinceNow: 3)
+        while eventNoticeOnscreenWindowIDs()?.isDisjoint(with: windowIDs) != true,
+            Date() < deadline
+        {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        expect(
+            !parent.isVisible
+                && eventNoticeOnscreenWindowIDs()?.isDisjoint(with: windowIDs) == true,
+            "父窗口关闭后两个原生窗口均不可见")
     }
 
     await suite("Event Notice Modal：正常结束 sheet 恢复阅读且不重置预算") {
@@ -94,6 +109,14 @@ func runEventNoticeModalLifecycleSuites() async {
         fixture.clock.advance(4.01 + EventNoticeModel.fadeDuration)
         expect(!fixture.model.stackSnapshot.hasPresentation, "解除所有真实暂停后自动收回")
     }
+}
+
+private func eventNoticeOnscreenWindowIDs() -> Set<Int>? {
+    guard
+        let windows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID)
+            as? [[String: Any]]
+    else { return nil }
+    return Set(windows.compactMap { $0[kCGWindowNumber as String] as? Int })
 }
 
 @MainActor

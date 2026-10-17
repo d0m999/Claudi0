@@ -474,84 +474,6 @@ public struct PanelView: View {
         .accessibilityIdentifier("panel.activity.totals")
     }
 
-    private func activityMetric(title: String, value: UInt64?, identifier: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 10.5, weight: .medium, design: .rounded))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(value.map { String($0) } ?? "—")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundColor(ClaudioTheme.text(colorScheme))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(identifier)
-    }
-
-    private func activitySegment(
-        _ segment: ActivityOverviewSegmentLayout
-    ) -> some View {
-        let color = ClaudioTheme.event(segment.event, colorScheme)
-        let isSupported = segment.availability == .supported
-        return Button {
-            focusedTarget = .activityMetric(segment.event)
-        } label: {
-            ZStack {
-                Color.clear
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isSupported && (segment.count ?? 0) > 0 ? color : .clear)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 5)
-                            .strokeBorder(
-                                isSupported ? color : ClaudioTheme.secondaryText(colorScheme),
-                                style: StrokeStyle(
-                                    lineWidth: 1.5,
-                                    dash: isSupported ? [] : [3, 2]))
-                    }
-                    .overlay {
-                        if !isSupported {
-                            Image(systemName: "slash.circle")
-                                .font(.caption2)
-                                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
-                        }
-                    }
-                    .frame(height: ActivityOverviewBarLayout.visibleBarHeight)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(
-            PanelActivitySegmentButtonStyle(
-                cornerRadius: ClaudioTheme.Radius.control)
-        )
-        .focused($focusedTarget, equals: .activityMetric(segment.event))
-        .accessibilityLabel(localizedEventName(segment.event, language: languageStore.language))
-        .accessibilityValue(activityTooltipText(segment))
-        .accessibilityHint(
-            l10n.format(
-                .settingsActivityCoverage,
-                Int64(activityPresentation.event(segment.event)?.coverage.supportedCount ?? 0),
-                Int64(activityPresentation.event(segment.event)?.coverage.totalCount ?? 0))
-        )
-        .help(activityTooltipText(segment))
-        .accessibilityIdentifier("panel.activity.segment.\(segment.event.cliName)")
-    }
-
-    private func activityTooltipText(_ segment: ActivityOverviewSegmentLayout) -> String {
-        let event = activityPresentation.event(segment.event)
-        let today = activityCountText(event?.todayCount)
-        let sevenDays = activityCountText(event?.sevenDayCount)
-        let coverage = l10n.format(
-            .settingsActivityCoverage,
-            Int64(event?.coverage.supportedCount ?? 0),
-            Int64(event?.coverage.totalCount ?? 0))
-        let label = localizedEventName(segment.event, language: languageStore.language)
-        return "\(label) · \(l10n.text(.settingsActivityRangeToday)) \(today) · "
-            + "\(l10n.text(.settingsActivityRangeSevenDays)) \(sevenDays) · \(coverage)"
-    }
-
     private func activityStatusText(_ status: ActivityOverviewStatus) -> String? {
         switch status {
         case .ready, .empty: return nil
@@ -1302,7 +1224,8 @@ private struct PanelAgentEventRow: View {
             .help(ClaudioL10n(language: language).text(entry.tooltipKey))
             .accessibilityLabel(
                 ClaudioL10n(language: language).format(
-                    entry.accessibilityLabelKey, presentation.title))
+                    entry.accessibilityLabelKey, presentation.title)
+            )
             .accessibilityIdentifier("panel.event.\(presentation.event.rawValue).sound-entry")
         }
     }
@@ -1429,71 +1352,6 @@ package enum PanelPreviewMountRecorder {
     }
 }
 #endif
-
-/// Activity segments keep their 29pt target and 13pt visible bar while exposing the same warm
-/// interaction language as the shared icon actions. Geometry never changes between states.
-private struct PanelActivitySegmentButtonStyle: ButtonStyle {
-    let cornerRadius: CGFloat
-
-    func makeBody(configuration: Configuration) -> some View {
-        PanelActivitySegmentButtonStyleBody(
-            configuration: configuration,
-            cornerRadius: cornerRadius)
-    }
-}
-
-private struct PanelActivitySegmentButtonStyleBody: View {
-    let configuration: ButtonStyleConfiguration
-    let cornerRadius: CGFloat
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.isFocused) private var isFocused
-    @State private var isHovered = false
-
-    private var interactionState: ClaudioIconButtonInteractionState {
-        ClaudioIconButtonInteractionState(
-            isEnabled: isEnabled,
-            isHovered: isHovered,
-            isFocused: isFocused,
-            isPressed: configuration.isPressed)
-    }
-
-    private var isHighlighted: Bool {
-        interactionState == .hovered || interactionState == .focused
-    }
-
-    private var backgroundColor: Color {
-        if isHighlighted { return ClaudioTheme.claySoft(colorScheme) }
-        if interactionState == .pressed { return ClaudioTheme.elevated(colorScheme) }
-        return .clear
-    }
-
-    private var borderColor: Color {
-        isHighlighted ? ClaudioTheme.clay(colorScheme) : .clear
-    }
-
-    var body: some View {
-        configuration.label
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(backgroundColor)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(
-                        borderColor,
-                        lineWidth: ClaudioTheme.Metrics.hairline)
-            )
-            .contentShape(Rectangle())
-            .animation(
-                reduceMotion ? nil : .easeOut(duration: 0.12),
-                value: interactionState
-            )
-            .onHover { isHovered = $0 }
-    }
-}
 
 /// The custom Touch Bar speaker remains the visual mask; the shared button style owns its actual
 /// foreground so hover, focus, disabled and Reduce Motion states cannot be overridden locally.

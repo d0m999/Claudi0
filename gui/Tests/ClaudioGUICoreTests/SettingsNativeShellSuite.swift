@@ -173,7 +173,9 @@ func runSettingsNativeReadingSuites() async {
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
         defer { probe.close() }
         await probe.presentAndSettle()
-        expect(probe.window.isKeyWindow, "Reading restoration exercises a real key window")
+        expect(
+            probe.window.isKeyWindow,
+            "Reading restoration exercises a real key window: \(probe.readingRestorationStatus)")
         guard probe.window.isKeyWindow, let maximum = probe.maximumReadingOffset,
             let viewportHeight = probe.readingScrollView?.contentView.bounds.height
         else { return }
@@ -227,7 +229,10 @@ func runSettingsNativeReadingSuites() async {
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
         defer { probe.close() }
         await probe.presentAndSettle()
-        expect(probe.window.isKeyWindow, "Ambiguous-anchor restoration exercises a real key window")
+        expect(
+            probe.window.isKeyWindow,
+            "Ambiguous-anchor restoration exercises a real key window: \(probe.readingRestorationStatus)"
+        )
         guard probe.window.isKeyWindow, let maximum = probe.maximumReadingOffset,
             let stamp = fixture.session.navigationHistory.stamp
         else { return }
@@ -322,7 +327,7 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
     var readingRestorationStatus: String {
         let request = session.state.navigationRestoration
         return
-            "key=\(window.isKeyWindow), canKey=\(window.canBecomeKey), visible=\(window.isVisible), deferred=\(window.defersAutomaticFocusForPanel), appKey=\(NSApp.keyWindow === window), shellWindow=\(shell.view.window === window), stamp=\(request?.stamp == session.navigationHistory.stamp), ready=\(session.renderedNavigationStamp == session.navigationHistory.stamp), requestReady=\(request?.stamp == session.renderedNavigationStamp), enabled=\(session.state.chrome.navigationEnabled), sheet=\(window.attachedSheet != nil), request=\(String(describing: request?.focus))"
+            "key=\(window.isKeyWindow), canKey=\(window.canBecomeKey), visible=\(window.isVisible), deferred=\(window.defersAutomaticFocusForPanel), appKey=\(NSApp.keyWindow === window), shellWindow=\(shell.view.window === window), stamp=\(request?.stamp == session.navigationHistory.stamp), ready=\(session.renderedNavigationStamp == session.navigationHistory.stamp), requestReady=\(request?.stamp == session.renderedNavigationStamp), enabled=\(session.state.chrome.navigationEnabled), sheet=\(window.attachedSheet != nil), request=\(String(describing: request?.focus)), appHidden=\(NSApp.isHidden), appActive=\(NSApp.isActive), keyType=\(NSApp.keyWindow.map { String(describing: type(of: $0)) } ?? "nil"), modalType=\(NSApp.modalWindow.map { String(describing: type(of: $0)) } ?? "nil")"
     }
     var readingScrollView: NSScrollView? {
         guard shell.splitViewItems.count == 2 else { return nil }

@@ -248,37 +248,6 @@ public struct ClaudioEventGlyph: View {
     }
 }
 
-public struct ClaudioStatusCapsule: View {
-    public let text: String
-    public var isEmphasized: Bool
-    @Environment(\.colorScheme) private var colorScheme
-
-    public init(_ text: String, isEmphasized: Bool = false) {
-        self.text = text
-        self.isEmphasized = isEmphasized
-    }
-
-    public var body: some View {
-        Text(text)
-            .font(ClaudioTheme.font(.caption).weight(.semibold))
-            .foregroundColor(
-                isEmphasized
-                    ? ClaudioTheme.clay(colorScheme) : ClaudioTheme.secondaryText(colorScheme)
-            )
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(
-                Capsule()
-                    .fill(
-                        isEmphasized
-                            ? ClaudioTheme.clay(colorScheme).opacity(0.12)
-                            : ClaudioTheme.elevated(colorScheme))
-            )
-            .overlay(Capsule().stroke(ClaudioTheme.hairline(colorScheme)))
-            .accessibilityLabel(text)
-    }
-}
-
 public enum ClaudioIconButtonInteractionState: Equatable, Sendable {
     case rest
     case hovered

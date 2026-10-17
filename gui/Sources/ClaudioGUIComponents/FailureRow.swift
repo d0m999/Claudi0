@@ -18,24 +18,14 @@ private enum FailureRowColor {
     }
 }
 
-private extension Color {
-    init(failureRowHex: String) {
+extension Color {
+    fileprivate init(failureRowHex: String) {
         var value: UInt64 = 0
         Scanner(string: failureRowHex).scanHexInt64(&value)
         self.init(
             red: Double((value & 0xFF0000) >> 16) / 255,
             green: Double((value & 0x00FF00) >> 8) / 255,
             blue: Double(value & 0x0000FF) / 255)
-    }
-}
-
-/// Shared surfaces consume the existing DESIGN.md clay token without depending on the executable's
-/// private `DesignTokens.swift` implementation or retyping its hex values.
-public enum ClaudioSharedColor {
-    public static func clay(_ scheme: ColorScheme) -> Color {
-        scheme == .dark
-            ? Color(failureRowHex: ClaudioColorHex.clayDark)
-            : Color(failureRowHex: ClaudioColorHex.clayLight)
     }
 }
 
