@@ -27,15 +27,15 @@ concurrency:
 jobs:
   build:
     if: inputs.mode == 'build'
-    runs-on: macos-15
+    runs-on: macos-26
     env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       CLAUDIO_VERSION: ${{ inputs.version }}
       TARGET_COMMIT: ${{ inputs.target_commit }}
     steps:
       - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.3'
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
       - name: Validate fixed source
         run: |
           [[ "$GITHUB_REF" == refs/heads/main ]]
@@ -74,7 +74,7 @@ jobs:
             dist/SHA256SUMS.txt
   publish:
     if: inputs.mode == 'publish' && inputs.release_authorized
-    runs-on: macos-15
+    runs-on: macos-26
     environment: public-preview
     permissions:
       contents: write
@@ -82,15 +82,15 @@ jobs:
       pages: write
       id-token: write
     env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ inputs.version }}
       TARGET_COMMIT: ${{ inputs.target_commit }}
       CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
     steps:
       - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.3'
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
       - name: Download and verify exact accepted artifact
         run: |
           [[ "$GITHUB_REF" == refs/heads/main ]]

@@ -39,9 +39,9 @@ env:
 jobs:
   build:
     name: Build, sign, notarize, and verify
-    runs-on: macos-15
+    runs-on: macos-26
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     permissions:
       contents: read
     outputs:
@@ -110,6 +110,9 @@ jobs:
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "CLAUDIO_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Building $APP_NAME $VERSION"
+
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
 
       - name: Validate Apple credentials and create temporary keychain
         env:
@@ -189,8 +192,8 @@ jobs:
           set -euo pipefail
           SWIFT_VERSION="$(swift --version)"
           printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Apple\ Swift\ version\ 6\. ]]; then
-            echo "::error::Swift 6 is required; selected toolchain reported: $SWIFT_VERSION"
+          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
+            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
             exit 1
           fi
 
@@ -209,7 +212,7 @@ jobs:
 
       - name: Build helper (arm64)
         working-directory: helper
-        run: swift build -c release --arch arm64 --product claudio --experimental-lto-mode full -Xswiftc -Osize
+        run: swift build -c release --arch arm64 --product claudio --experimental-lto-mode full -Xswiftc -Osize --build-system native
 
       - name: Stage arm64 helper
         shell: bash
@@ -223,11 +226,11 @@ jobs:
       # Match dev-bundle.sh's SwiftPM full LTO size contract and retain all GUI resources.
       - name: Build GUI (arm64)
         working-directory: gui
-        run: swift build -c release --arch arm64 --product ClaudioGUI --experimental-lto-mode full -Xswiftc -Osize
+        run: swift build -c release --arch arm64 --product ClaudioGUI --experimental-lto-mode full -Xswiftc -Osize --build-system native
 
       - name: Build LoginItem (arm64)
         working-directory: gui
-        run: swift build -c release --arch arm64 --product ClaudioLoginItem
+        run: swift build -c release --arch arm64 --product ClaudioLoginItem --build-system native
 
       - name: Stage arm64 GUI
         shell: bash

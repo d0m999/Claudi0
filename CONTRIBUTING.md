@@ -19,8 +19,16 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 - Python 3 and Node.js for the embedded OpenCode plugin and additional-host CLI contracts.
 - `ffmpeg` and `ffprobe` for curated sound-pack measurements.
 
-CI keeps the Helper lane on Xcode 16.4 and pins GUI/bundle checks to Xcode 26.3 for
-SDK 26 APIs and SwiftUI compiler compatibility. The macOS deployment target remains 12.
+CI keeps the Helper compatibility lane on macOS 15 / Xcode 16.4. GUI/bundle, preview,
+and release lanes use macOS 26 / Xcode 26.6 with its macOS 26.5 SDK and the official
+[Swift 6.4.1 release toolchain](https://www.swift.org/install/macos/).
+`scripts/setup-ci-swift.py` pins the installer SHA-256,
+requires the trusted Swift Open Source installer signature, checks the exact compiler
+version, and verifies existing tool hashes and POSIX modes remain unchanged. It only
+installs on disposable GitHub Actions runners. This aligns the compiler used for the
+unchanged 7,000,000-byte GUI budget; Swift 6.2/6.3 generate larger binaries from the same
+source. Release builds explicitly select SwiftPM's native build system to retain their
+recorded binary paths. The macOS deployment target remains 12.
 The GUI lane configures its disposable runner's virtual display to 1920×1080 before
 native layout checks, preserving the 1240×820 settings-window test premise.
 

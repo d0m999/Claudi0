@@ -44,6 +44,7 @@ jobs:
           python3 scripts/test-ci-cache-identity.py
           python3 scripts/test-ci-whitespace.py
           python3 scripts/test-ci-gui-harness.py
+          python3 scripts/test-ci-swift-toolchain.py
 
       - name: Restore SwiftPM build cache
         uses: actions/cache@v5
@@ -107,17 +108,20 @@ jobs:
 
   gui:
     name: GUI and bundle
-    runs-on: macos-15
+    runs-on: macos-26
     # Cold SDK 26 builds include native harnesses, standard Release and LTO bundle variants.
     timeout-minutes: 60
     env:
-      # GUI consumes SDK 26 APIs and needs the newer SwiftUI isolation compiler.
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      # Match the measured stable compiler and SDK used by all bundle-producing lanes.
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       NSUnbufferedIO: YES
       CLAUDIO_TEST_SUITE_TIMINGS: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
 
       - name: Toolchain
         id: toolchain
@@ -126,8 +130,8 @@ jobs:
           set -euo pipefail
           SWIFT_VERSION="$(swift --version)"
           printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Apple\ Swift\ version\ 6\. ]]; then
-            echo "::error::Swift 6 is required; selected toolchain reported: $SWIFT_VERSION"
+          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
+            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
             exit 1
           fi
           FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"

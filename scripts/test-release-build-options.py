@@ -99,6 +99,8 @@ class ReleaseBuildOptionsSuite(unittest.TestCase):
                              {"claudio", "ClaudioGUI", "ClaudioLoginItem"})
             for args in calls:
                 self.assert_options(args)
+                self.assertEqual(args[args.index("--build-system") + 1], "native",
+                                 "release staging paths require SwiftPM's native build system")
 
 
 if __name__ == "__main__":

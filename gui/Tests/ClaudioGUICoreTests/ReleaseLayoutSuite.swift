@@ -1670,8 +1670,10 @@ func runReleaseLayoutSuites() {
         let xcodeDeveloperDirectory =
             "DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer"
         let guiDeveloperDirectory =
-            "DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer"
+            "DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer"
         let swift6VersionPattern = #"Apple\ Swift\ version\ 6\."#
+        let bundleSwiftVersionPattern = #"Swift\ version\ 6\.4\.1([[:space:]]|$)"#
+        let selectBundleToolchain = "run: python3 scripts/setup-ci-swift.py"
         guard let helperJob = ci.range(of: "\n  helper:\n"),
             let guiJob = ci.range(of: "\n  gui:\n"),
             let verifyJob = ci.range(of: "\n  verify:\n"),
@@ -1681,25 +1683,35 @@ func runReleaseLayoutSuites() {
             expect(false, "CI 必须保留独立的 Helper、GUI 与汇总 job")
             return
         }
-        let macOSJobs = [
-            (ci[helperJob.upperBound..<guiJob.lowerBound], xcodeDeveloperDirectory),
-            (ci[guiJob.upperBound..<verifyJob.lowerBound], guiDeveloperDirectory),
-        ]
+        let helper = ci[helperJob.upperBound..<guiJob.lowerBound]
+        let gui = ci[guiJob.upperBound..<verifyJob.lowerBound]
         expect(
-            macOSJobs.allSatisfy { job, developerDirectory in
-                job.contains("runs-on: macos-15")
-                    && job.contains(developerDirectory)
-                    && job.contains(swift6VersionPattern)
-                    && job.contains("::error::Swift 6 is required")
-            }
+            helper.contains("runs-on: macos-15")
+                && helper.contains(xcodeDeveloperDirectory)
+                && helper.contains(swift6VersionPattern)
+                && helper.contains("::error::Swift 6 is required")
+                && gui.contains("runs-on: macos-26")
+                && gui.contains(guiDeveloperDirectory)
+                && gui.contains(selectBundleToolchain)
+                && gui.contains(bundleSwiftVersionPattern)
+                && gui.contains("::error::Swift 6.4.1 is required")
                 && ci[verifyJob.lowerBound...].contains("needs: [helper, gui]")
                 && release.contains(
-                    "name: Build, sign, notarize, and verify\n    runs-on: macos-15")
-                && release.contains(xcodeDeveloperDirectory)
-                && release.contains(swift6VersionPattern)
-                && release.contains("::error::Swift 6 is required"),
-            "CI 的 Helper/GUI 必须固定 macos-15 与 Xcode 16.4/26.3，release 保留 Xcode 16.4，"
-                + "并在执行 SwiftPM 前失败关闭非 Swift 6 工具链")
+                    "name: Build, sign, notarize, and verify\n    runs-on: macos-26")
+                && release.contains(guiDeveloperDirectory)
+                && release.contains(selectBundleToolchain)
+                && release.contains(bundleSwiftVersionPattern)
+                && release.contains("::error::Swift 6.4.1 is required"),
+            "Helper 保留 Swift 6 兼容性基线；GUI 与 release 必须共用固定的 Swift 6.4.1、"
+                + "Xcode 26.6 / SDK 26.5，并在构建前失败关闭工具链漂移")
+        let preview = try? String(
+            contentsOf: root.appendingPathComponent(".github/workflows/preview.yml"),
+            encoding: .utf8)
+        expect(
+            preview?.components(separatedBy: selectBundleToolchain).count == 3
+                && preview?.components(separatedBy: "runs-on: macos-26").count == 3
+                && preview?.components(separatedBy: guiDeveloperDirectory).count == 3,
+            "preview 构建与原包发布校验必须使用同一固定工具链")
     }
 
     suite("Homebrew cask 保持可选、签名分发且卸载不删除用户数据") {
