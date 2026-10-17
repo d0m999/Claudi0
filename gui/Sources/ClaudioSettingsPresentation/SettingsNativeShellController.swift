@@ -13,6 +13,9 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
     package let navigationControl = NSSegmentedControl()
     package let pageTitle = NSTextField(labelWithString: "")
     private let session: SettingsPresentationSession
+    /// Deterministic-render seam: native layout probes pin Reduce Motion so assertions do not
+    /// depend on the runner's system setting. Production passes nil and follows AppKit.
+    private let reduceMotionOverride: Bool?
     private let contentController: NSHostingController<AnyView>
     private var presentationSubscription: AnyCancellable?
     private var windowObservers: [NSObjectProtocol] = []
@@ -23,11 +26,14 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
     private var restorationScheduled = false
     private var isSynchronizingLayout = false
 
-    package init(session: SettingsPresentationSession) {
+    package init(session: SettingsPresentationSession, reduceMotionOverride: Bool? = nil) {
         self.session = session
+        self.reduceMotionOverride = reduceMotionOverride
         sidebarController = SettingsNativeSidebarController(session: session)
         contentController = NSHostingController(
-            rootView: AnyView(SettingsDestinationContentView(session: session)))
+            rootView: Self.applyingReduceMotionOverride(
+                reduceMotionOverride,
+                to: AnyView(SettingsDestinationContentView(session: session))))
         super.init(nibName: nil, bundle: nil)
         if #available(macOS 13, *) { contentController.sizingOptions = [] }
         contentController.view.setContentCompressionResistancePriority(
@@ -92,9 +98,11 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         }
         if compactLayout != compact {
             compactLayout = compact
-            contentController.rootView = AnyView(
-                SettingsDestinationContentView(session: session)
-                    .environment(\.settingsUsesCompactLayout, compact))
+            contentController.rootView = Self.applyingReduceMotionOverride(
+                reduceMotionOverride,
+                to: AnyView(
+                    SettingsDestinationContentView(session: session)
+                        .environment(\.settingsUsesCompactLayout, compact)))
         }
         if let window = view.window, installedWindow !== window { install(in: window) }
         view.layoutSubtreeIfNeeded()
@@ -184,6 +192,15 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         windowObservers.removeAll()
         installedWindow = nil
         lastContentFocusIdentifier = nil
+    }
+
+    private static func applyingReduceMotionOverride(_ pinned: Bool?, to root: AnyView)
+        -> AnyView
+    {
+        guard let pinned else { return root }
+        // The public environment value is read-only. This SDK-provided setter drives the
+        // same value the content views read, without changing system settings.
+        return AnyView(root.environment(\._accessibilityReduceMotion, pinned))
     }
 
     package func toolbarDefaultItemIdentifiers(_: NSToolbar) -> [NSToolbarItem.Identifier] {

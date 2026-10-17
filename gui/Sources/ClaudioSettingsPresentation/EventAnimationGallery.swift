@@ -1,5 +1,6 @@
 import AppKit
 import ClaudioGUICore
+import SoundPacksWindow
 import SwiftUI
 
 /// A radio group with separate selection, hover and native keyboard focus.
@@ -70,4 +71,14 @@ final class EventAnimationGalleryView: NSView {
     }
     convenience init() { self.init(frame: .zero) }
     required init?(coder: NSCoder) { nil }
+    override func layout() {
+        super.layout()
+        #if DEBUG
+        for (index, button) in buttons.enumerated() {
+            SoundPacksLayoutRecorder.recordNative(
+                "settings.animation.style.\(EventAnimationStyle.allCases[index].rawValue)",
+                view: button)
+        }
+        #endif
+    }
 }

@@ -22,6 +22,9 @@ package struct SettingsNativeSelectionControl<Value: Hashable>: NSViewRepresenta
         control.segmentStyle = .automatic
         control.controlSize = .regular
         control.segmentDistribution = .fillEqually
+        // Long localized segment titles must compress (truncate) instead of pushing the
+        // row past the card edge at the minimum window width.
+        control.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         control.target = context.coordinator
         control.action = #selector(Coordinator.choose(_:))
         return control

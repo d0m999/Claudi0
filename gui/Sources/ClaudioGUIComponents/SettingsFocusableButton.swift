@@ -54,6 +54,12 @@ private final class SettingsActionView: NSView {
         button.action = #selector(activate)
         button.setAccessibilityElement(false)
         addSubview(button)
+        // A push button is always content-sized; without this, SwiftUI stretches the
+        // representable into a full-width bar when the row offers extra space.
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .vertical)
         focusRingType = .exterior
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
