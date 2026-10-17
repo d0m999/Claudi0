@@ -16564,6 +16564,22 @@
         }
       }
     },
+    "event-animation.preview-event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "事件"
+          }
+        }
+      }
+    },
     "event-animation.preview-isolation": {
       "localizations": {
         "en": {

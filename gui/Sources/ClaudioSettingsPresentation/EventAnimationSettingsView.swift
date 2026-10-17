@@ -99,11 +99,13 @@ struct EventAnimationSettingsView: View {
             )
             .frame(height: 126)
             .soundPacksLayoutProbe("settings.animation.choices")
-            Text(status).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                .accessibilityIdentifier("settings.animation.status")
-                .soundPacksLayoutProbe("settings.animation.status")
+            if let status {
+                Text(status).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .accessibilityIdentifier("settings.animation.status")
+                    .soundPacksLayoutProbe("settings.animation.status")
+            }
         }
     }
 
@@ -159,6 +161,7 @@ struct EventAnimationSettingsView: View {
                     preview.replay()
                 }
                 .accessibilityIdentifier("settings.animation.replay")
+                .soundPacksLayoutProbe("settings.animation.replay")
             }
             SettingsSectionCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -193,19 +196,19 @@ struct EventAnimationSettingsView: View {
                     .accessibilityIdentifier("settings.animation.banner-preview")
                     .soundPacksLayoutProbe("settings.animation.banner-preview")
                     Divider()
-                    SettingsNativeSelectionControl(
-                        title: l10n.text(.eventAnimationPreview),
-                        selection: Binding(get: { preview.event }, set: { preview.select($0) }),
-                        options: Event.allCases.map {
-                            SettingsMenuOption(
-                                $0,
-                                localizedEventName($0, language: preferences.language))
-                        }, identifier: "settings.animation.event-selection"
-                    )
-                    .accessibilityIdentifier("settings.animation.event-selection")
-                    .frame(height: 28)
+                    SettingsControlRow(title: l10n.text(.eventAnimationPreviewEvent)) {
+                        SettingsNativeSelectionControl(
+                            title: l10n.text(.eventAnimationPreview),
+                            selection: Binding(get: { preview.event }, set: { preview.select($0) }),
+                            options: Event.allCases.map {
+                                SettingsMenuOption(
+                                    $0,
+                                    localizedEventName($0, language: preferences.language))
+                            }, identifier: "settings.animation.event-selection"
+                        )
+                    }
                     .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                    .padding(.vertical, 12)
+                    .soundPacksLayoutProbe("settings.animation.event-row")
                 }
             }
             Text(l10n.text(.eventAnimationPreviewIsolation)).font(.caption).foregroundStyle(
@@ -216,17 +219,18 @@ struct EventAnimationSettingsView: View {
         }
     }
 
-    private var status: String {
+    /// `nil` when the gallery selection already tells the whole story; the caption only
+    /// reports states the tiles cannot show (character hidden, still expressions).
+    private var status: String? {
         let effective = resources.effectiveStyle(for: selected, dark: dark)
-        let name = l10n.text(effective.localizationKey)
-        let base = l10n.format(.eventAnimationCurrentStyle, name)
+        let base = l10n.format(.eventAnimationCurrentStyle, l10n.text(effective.localizationKey))
         if !selected.showsCharacter {
             return base + " · " + l10n.text(.eventAnimationSelectionKept)
         }
         if effective != .original, reduceMotion || selected.usesStaticExpression {
             return base + " · " + l10n.text(.eventAnimationStaticExpression)
         }
-        return base
+        return nil
     }
 
     private var characterBinding: Binding<Bool> {

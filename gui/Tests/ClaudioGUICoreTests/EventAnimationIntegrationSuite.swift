@@ -703,6 +703,13 @@ func runEventAnimationIntegrationSuites() async {
                                     cards.allSatisfy {
                                         reading.insetBy(dx: -1, dy: -1).contains($0)
                                     }, "选择卡不裁切或横向溢出")
+                                if let eventRow = SoundPacksLayoutRecorder.frames[
+                                    "settings.animation.event-row"]
+                                {
+                                    expect(
+                                        reading.insetBy(dx: -1, dy: -1).contains(eventRow),
+                                        "事件分段控件在最小窗口与英文长标签下不横向溢出")
+                                }
                             }
                             for pair in zip(cards, cards.dropFirst()) {
                                 expect(
@@ -712,6 +719,14 @@ func runEventAnimationIntegrationSuites() async {
                             expect(
                                 SoundPacksLayoutRecorder.frames["settings.animation.banner-preview"]
                                     != nil, "真实共享横幅内容必须挂载")
+                            if let replay = SoundPacksLayoutRecorder.frames[
+                                "settings.animation.replay"]
+                            {
+                                expect(replay.width <= 160, "重播是紧凑按钮，不得铺成通栏")
+                            }
+                            expect(
+                                SoundPacksLayoutRecorder.frames["settings.animation.status"]
+                                    == nil, "常规选择已由画廊勾选表达，不再重复状态行")
                             expect(probe.scrollToEnd(), "最小窗口底部开关与状态必须可达")
                             if let output = ProcessInfo.processInfo.environment[
                                 "CLAUDIO_LAYOUT_CAPTURE_DIR"]

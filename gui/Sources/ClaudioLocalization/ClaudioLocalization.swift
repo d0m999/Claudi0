@@ -1460,6 +1460,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     package static let eventAnimationForward: Self = "event-animation.forward"
     public static let eventAnimationPreview: Self = "event-animation.preview"
     public static let eventAnimationPreviewSubtitle: Self = "event-animation.preview-subtitle"
+    public static let eventAnimationPreviewEvent: Self = "event-animation.preview-event"
     public static let eventAnimationPreviewIsolation: Self = "event-animation.preview-isolation"
     public static let eventAnimationReplay: Self = "event-animation.replay"
     public static let eventAnimationShowCharacter: Self = "event-animation.show-character"
@@ -1620,6 +1621,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .eventAnimationForward,
         .eventAnimationPreview,
         .eventAnimationPreviewSubtitle,
+        .eventAnimationPreviewEvent,
         .eventAnimationPreviewIsolation,
         .eventAnimationReplay,
         .eventAnimationShowCharacter,
