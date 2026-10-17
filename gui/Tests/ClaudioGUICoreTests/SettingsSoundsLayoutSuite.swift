@@ -560,12 +560,14 @@ final class SettingsSoundsNativeLayoutProbe {
     init(
         session: SettingsPresentationSession,
         size: NSSize,
-        appearance: NSAppearance.Name = .aqua
+        appearance: NSAppearance.Name = .aqua,
+        reduceMotionOverride: Bool? = nil
     ) {
         _ = NSApplication.shared
         SoundPacksLayoutRecorder.reset()
         self.session = session
-        shell = SettingsNativeShellController(session: session)
+        shell = SettingsNativeShellController(
+            session: session, reduceMotionOverride: reduceMotionOverride)
         requestedSize = size
         window = RetainedSettingsWindow(
             contentRect: NSRect(origin: .zero, size: size),

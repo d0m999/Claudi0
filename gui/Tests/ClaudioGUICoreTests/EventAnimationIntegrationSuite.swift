@@ -689,7 +689,8 @@ func runEventAnimationIntegrationSuites() async {
                                 preferences: preferences, eventAnimations: resources)
                             let probe = SettingsSoundsNativeLayoutProbe(
                                 session: fixture.session, size: size,
-                                appearance: dark ? .darkAqua : .aqua)
+                                appearance: dark ? .darkAqua : .aqua,
+                                reduceMotionOverride: false)
                             defer { probe.close() }
                             let cards = EventAnimationStyle.allCases.compactMap {
                                 SoundPacksLayoutRecorder.frames[
@@ -726,7 +727,7 @@ func runEventAnimationIntegrationSuites() async {
                             }
                             expect(
                                 SoundPacksLayoutRecorder.frames["settings.animation.status"]
-                                    == nil, "常规选择已由画廊勾选表达，不再重复状态行")
+                                    == nil, "固定关闭 Reduce Motion 的常规选择已由画廊勾选表达，不再重复状态行")
                             expect(probe.scrollToEnd(), "最小窗口底部开关与状态必须可达")
                             if let output = ProcessInfo.processInfo.environment[
                                 "CLAUDIO_LAYOUT_CAPTURE_DIR"]
@@ -738,6 +739,32 @@ func runEventAnimationIntegrationSuites() async {
                             }
                         }
                     }
+                }
+            }
+        }
+        suite("事件动画：Reduce Motion 开启时保留静态表情状态行") {
+            for style in EventAnimationStyle.allCases {
+                let preferences = ClaudioPreferences(
+                    defaults: SettingsFixtureDefaults(
+                        file: FileManager.default.temporaryDirectory
+                            .appendingPathComponent("animation-layout-rm-\(UUID()).plist"))
+                )
+                preferences.selectEventAnimationStyle(style)
+                let fixture = SettingsPresentationFixtures.generalLogin(
+                    route: .notifications(.eventAnimation),
+                    preferences: preferences, eventAnimations: resources)
+                let probe = SettingsSoundsNativeLayoutProbe(
+                    session: fixture.session, size: NSSize(width: 1_240, height: 820),
+                    reduceMotionOverride: true)
+                defer { probe.close() }
+                if style == .original {
+                    expect(
+                        SoundPacksLayoutRecorder.frames["settings.animation.status"] == nil,
+                        "原版在 Reduce Motion 下仍由画廊勾选表达，不挂状态行")
+                } else {
+                    expect(
+                        SoundPacksLayoutRecorder.frames["settings.animation.status"] != nil,
+                        "Reduce Motion 开启时 \(style.rawValue) 必须保留静态表情状态行")
                 }
             }
         }
