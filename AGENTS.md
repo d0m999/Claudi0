@@ -86,6 +86,20 @@ or external gate as verified or not verified.
 
 ## Git and Review
 
+After a task is merged into `main`, automatically clean up its local linked worktree and temporary
+source copies; this cleanup is authorized without another confirmation. First verify that the task's
+changes are present in `main`, inspect tracked, untracked and ignored content, and check active
+processes. Remove Git-recoverable copies, regenerable build outputs and obsolete review probes/logs
+directly. Preserve independently useful unmerged work or actively used directories and report any
+cleanup left incomplete. Keep the main checkout, unrelated work and branch refs unless their removal
+is separately authorized. Use exact-path `git worktree remove` for registered worktrees, then recheck
+`git worktree list` and `git worktree prune --dry-run` for leftovers.
+
+Do not create or retain full source/build backups for routine task cleanup. Keep only explicitly
+requested evidence or the smallest patch/file set needed for unresolved unique work; Git-covered
+source and rebuildable artifacts do not justify an archive. This applies to task leftovers, not user
+sound packs, runtime backups or receipts protected above.
+
 Use concise imperative commits such as `feat(gui): ...`, `fix: ...`, `test(gui): ...`, or
 `docs: ...`. Stage only intended paths and keep generated `dist/`, `.build/`, `local-packs/`,
 machine-specific files, private prompts/responses, host configuration, receipts, logs, signing
