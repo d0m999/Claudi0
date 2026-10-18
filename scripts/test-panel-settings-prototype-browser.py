@@ -1134,6 +1134,82 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.page.locator('[data-action="open-host:opencode"]').first.click()
                 self.assertEqual(self.page.locator(".host-kind").inner_text(), "CLI")
 
+    def test_drop_prototype_variants_hide_the_inactive_surface(self):
+        path = PROTOTYPE.with_name("event-row-drop-PROTOTYPE.html")
+        for theme in ["dark", "light"]:
+            with self.subTest(theme=theme):
+                self.page.goto(path.as_uri() + "?variant=A")
+                self.page.evaluate("theme => document.documentElement.dataset.theme = theme", theme)
+                for variant in ["A", "B", "C", "A"]:
+                    with self.subTest(variant=variant):
+                        window = self.page.locator("#win")
+                        panel = self.page.locator("#panelBox")
+                        self.assertEqual(window.is_visible(), variant != "C")
+                        self.assertEqual(panel.is_visible(), variant == "C")
+                        self.page.locator("#next").click()
+
+    def test_panel_entry_prototype_only_shows_pack_toggle_in_variant_d(self):
+        path = PROTOTYPE.with_name("panel-event-row-entry-PROTOTYPE.html")
+        for variant in ["A", "B", "C", "D"]:
+            with self.subTest(variant=variant):
+                self.page.goto(path.as_uri() + "?variant=" + variant)
+                toggle = self.page.locator("#packToggle")
+                if variant == "D":
+                    expect(toggle).to_be_visible()
+                    toggle.locator('[data-pt="factory"]').click()
+                    self.page.locator(".sound-jump").first.hover()
+                    expect(self.page.locator("#tip")).to_contain_text("查看声音…")
+                else:
+                    self.assertFalse(toggle.is_visible())
+
+    def test_panel_sound_entry_consumes_each_request_in_visible_settings(self):
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="sounds", lang=language)
+                self.page.evaluate("window.retainedSettingsForTest = document.getElementById('window')")
+                before = self.settings_state()
+                for event in ["stop", "stop", "notification"]:
+                    self.page.locator("#mbIcon").click()
+                    self.page.locator("#scopeBtn").click()
+                    self.page.locator('[data-scope="claudio"]').click()
+                    self.page.locator(f'[data-sound-jump="{event}"]').click()
+                    state = self.settings_state()
+                    self.assertEqual((state["page"], state["detail"], state["pack"]),
+                                     ("sounds", "edit:" + event, "studio"))
+                    expect(self.page.locator(
+                        f'.sf-event[data-event="{event}"] [data-act="sources"]'
+                    )).to_be_focused()
+                    self.assertFalse(self.page.locator(".sf-sheet").is_visible())
+                    self.assertTrue(self.page.evaluate(
+                        "retainedSettingsForTest === document.getElementById('window')"))
+                    self.assertEqual(state["scopes"], before["scopes"])
+                    self.assertEqual(state["packs"], before["packs"])
+                    self.page.locator('[data-action="nav:sounds"]').click()
+                    self.assertIsNone(self.settings_state()["detail"],
+                                      "ordinary redraw must not replay the last explicit route")
+
+    def test_panel_sound_entry_opens_closed_settings_and_returns_event_focus(self):
+        for scope, pack, target in [
+            ("default", "minimal", '[data-act="copy-pack"]'),
+            ("claudio", "studio", '.sf-event[data-event="stop"] [data-act="sources"]'),
+        ]:
+            with self.subTest(scope=scope):
+                self.open(panel="1")
+                if scope != "default":
+                    self.page.locator("#scopeBtn").click()
+                    self.page.locator(f'[data-scope="{scope}"]').click()
+                before = self.settings_state()
+                self.page.locator('[data-sound-jump="stop"]').click()
+                state = self.settings_state()
+                self.assertEqual((state["page"], state["detail"], state["pack"]),
+                                 ("sounds", "edit:stop", pack))
+                expect(self.page.locator(target)).to_be_focused()
+                self.assertFalse(self.page.locator(".sf-sheet").is_visible())
+                self.assertEqual(state["scopes"], before["scopes"])
+                self.assertEqual(state["packs"], before["packs"])
+                self.page.locator("#window-close").click()
+                expect(self.page.locator('[data-sound-jump="stop"]')).to_be_focused()
+
     def test_panel_and_settings_round_trip_workspace_pack_volume_and_event_state(self):
         self.open(panel="1")
         self.page.locator("#scopeBtn").click()
@@ -1262,6 +1338,89 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                             self.assertEqual(buttons.nth(index - 1).get_attribute("aria-label"), labels[index - 1])
                     expect(buttons.nth(2)).to_have_attribute("aria-pressed", "false")
                     self.assertEqual(buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))"), labels)
+
+    def test_favorite_variant_switch_from_panel_keeps_sounds_open(self):
+        self.open()
+        self.page.locator("#gearBtn").click()
+        self.page.locator('[data-action="nav:sounds"]').click()
+        self.page.locator('[data-act="favorite"][data-id="soft"]').click()
+        before = self.settings_state()
+        self.page.locator('#fav-switcher [data-fav-dir="1"]').click()
+        expect(self.page.locator("#window")).to_be_visible(timeout=1000)
+        expect(self.page.locator("#fav-switcher")).to_be_visible(timeout=1000)
+        expect(self.page.locator("#claudio-sounds-overview")).to_have_attribute(
+            "data-fav-variant", "a", timeout=1000
+        )
+        self.assertEqual(self.settings_state()["page"], "sounds")
+        for field in ["stars", "packs", "scopes"]:
+            self.assertEqual(self.settings_state()[field], before[field])
+
+    def test_favorite_variant_file_query_switch_survives_reload(self):
+        self.open(win="1", pane="sounds", fav="a")
+        overview = self.page.locator("#claudio-sounds-overview")
+        expect(overview).to_have_attribute("data-fav-variant", "a")
+        for direction, variant in [(1, "b"), (1, "c"), (1, "d"), (1, "base"), (-1, "d"), (1, "base")]:
+            self.page.locator(f'#fav-switcher [data-fav-dir="{direction}"]').click()
+            expect(overview).to_have_attribute("data-fav-variant", variant, timeout=1000)
+            self.page.reload()
+            expect(overview).to_have_attribute("data-fav-variant", variant, timeout=1000)
+            expect(self.page.locator("#fav-switcher code")).to_have_text("?fav=" + variant)
+
+    def test_favorite_variant_arrows_work_inside_settings(self):
+        self.open(win="1", pane="sounds", fav="a")
+        overview = self.page.locator("#claudio-sounds-overview")
+        for selector in ['#fav-switcher [data-fav-dir="1"]', '[data-act="pack"][data-id="soft"]']:
+            self.page.locator(selector).focus()
+            self.page.keyboard.press("ArrowRight")
+            expect(overview).to_have_attribute("data-fav-variant", "b", timeout=1000)
+            expect(self.page.locator(selector)).to_be_focused()
+            self.page.keyboard.press("ArrowLeft")
+            expect(overview).to_have_attribute("data-fav-variant", "a", timeout=1000)
+            expect(self.page.locator(selector)).to_be_focused()
+        expect(self.page.locator("#window")).to_be_visible()
+        self.assertEqual(self.settings_state()["page"], "sounds")
+
+    def test_favorite_variant_keys_preserve_editing_and_page_navigation(self):
+        self.open(win="1", pane="sounds", fav="a")
+        overview = self.page.locator("#claudio-sounds-overview")
+        self.page.locator('#fav-switcher [data-fav-dir="1"]').focus()
+        for key in ["Meta+ArrowRight", "Control+ArrowRight", "Alt+ArrowRight", "Shift+ArrowRight"]:
+            self.page.keyboard.press(key)
+            expect(overview).to_have_attribute("data-fav-variant", "a")
+
+        self.page.locator('[data-act="new-pack"]').click()
+        name = self.page.locator("#sf-name-input")
+        name.fill("abc")
+        self.page.keyboard.press("End")
+        self.page.keyboard.press("ArrowLeft")
+        self.page.keyboard.type("X")
+        expect(name).to_have_value("abXc")
+        self.page.locator('.sf-sheet [data-act="close"]').focus()
+        self.page.keyboard.press("ArrowRight")
+        expect(overview).to_have_attribute("data-fav-variant", "a")
+        self.page.keyboard.press("Escape")
+
+        self.page.locator('[data-action="nav:general"]').click()
+        self.page.keyboard.press("ArrowRight")
+        self.assertEqual(self.settings_state()["page"], "general")
+        self.page.locator('[data-action="nav:sounds"]').click()
+        expect(overview).to_have_attribute("data-fav-variant", "a")
+
+    def test_favorite_variant_http_switch_keeps_query_and_current_state(self):
+        url = "https://claudio.invalid/prototype.html"
+        self.page.route(url + "*", lambda route: route.fulfill(path=str(PROTOTYPE), content_type="text/html"))
+        self.page.goto(url + "?clean=1&win=1&pane=sounds&fav=a&lang=en#review")
+        overview = self.page.locator("#claudio-sounds-overview")
+        self.page.locator('[data-act="favorite"][data-id="soft"]').click()
+        before = self.settings_state()
+        self.page.locator('#fav-switcher [data-fav-dir="1"]').click()
+        expect(overview).to_have_attribute("data-fav-variant", "b")
+        self.assertEqual(self.settings_state(), before)
+        self.assertEqual(self.page.url, url + "?clean=1&win=1&pane=sounds&fav=b&lang=en#review")
+        self.page.reload()
+        expect(overview).to_have_attribute("data-fav-variant", "b")
+        self.page.locator('#fav-switcher [data-fav-dir="-1"]').click()
+        expect(overview).to_have_attribute("data-fav-variant", "a")
 
     def test_favorite_write_failure_is_visible_and_retains_state(self):
         for lang in ["zh", "en"]:
@@ -1406,6 +1565,80 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.assertIsNone(after["approvedCues"]["task"])
                 self.assertEqual(after["scopes"], before["scopes"])
                 self.assertEqual(after["packs"], before["packs"])
+
+    def test_dropped_audio_is_previewed_and_only_explicitly_adopted(self):
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="sounds", lang=language)
+                self.page.locator('[data-act="pack"][data-id="studio"]').click()
+                before = self.settings_state()
+                transfer = self.page.evaluate_handle("""() => {
+                    const transfer = new DataTransfer();
+                    transfer.items.add(new File(['synthetic audio'], 'dropped-铃声.wav', {type:'audio/wav'}));
+                    return transfer;
+                }""")
+                self.addCleanup(transfer.dispose)
+                row = self.page.locator('.sf-event[data-event="stop"]')
+                for finish in ["close", "adopt"]:
+                    row.dispatch_event("drop", {"dataTransfer": transfer})
+                    choice = self.page.locator('.sf-sheet .sf-audio-row')
+                    expect(choice).to_have_count(1)
+                    expect(choice.locator('[data-name]')).to_have_text("dropped-铃声.wav")
+                    expect(choice.locator('[data-preview]')).to_have_attribute("aria-pressed", "false")
+                    self.assertEqual(self.settings_state()["packs"], before["packs"])
+                    choice.locator('[data-preview]').click()
+                    expect(choice.locator('[data-preview]')).to_have_attribute("aria-pressed", "true")
+                    self.assertEqual(self.settings_state()["packs"], before["packs"])
+                    choice.locator('input').check()
+                    self.page.locator(f'.sf-sheet [data-act="{finish}"]').click()
+                    self.assertEqual(transfer.evaluate("value => value.files[0].name"), "dropped-铃声.wav")
+                    if finish == "close":
+                        self.assertEqual(self.settings_state()["packs"], before["packs"])
+                after = self.settings_state()
+                old_pack = next(pack for pack in before["packs"] if pack["id"] == "studio")
+                new_pack = next(pack for pack in after["packs"] if pack["id"] == "studio")
+                self.assertEqual(new_pack["sounds"][1], "dropped-铃声.wav")
+                self.assertEqual(len(new_pack["audio"]), len(old_pack["audio"]) + 1)
+                self.assertEqual(after["scopes"], before["scopes"])
+                for index in [0, 2, 3, 4]:
+                    self.assertEqual(new_pack["sounds"][index], old_pack["sounds"][index])
+
+    def test_drop_validation_retains_menu_import_and_builtin_copy_flow(self):
+        self.open(win="1", pane="sounds")
+        self.page.locator('[data-act="pack"][data-id="studio"]').click()
+        before = self.settings_state()
+        transfer = self.page.evaluate_handle("""() => {
+            const transfer = new DataTransfer();
+            transfer.items.add(new File(['notes'], 'notes.txt', {type:'text/plain'}));
+            return transfer;
+        }""")
+        self.addCleanup(transfer.dispose)
+        row = self.page.locator('.sf-event[data-event="stop"]')
+        row.dispatch_event("drop", {"dataTransfer": transfer})
+        expect(self.page.locator('.sf-sheet .sf-error')).to_have_text("请拖入支持的音频文件。")
+        expect(self.page.locator('.sf-sheet [data-act="adopt"]')).to_be_disabled()
+        expect(self.page.locator('.sf-sheet .sf-audio-row')).to_have_count(0)
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        row.locator('[data-act="sources"]').click()
+        row.locator('[data-source="import"]').click()
+        expect(self.page.locator('.sf-sheet .sf-audio-row')).to_have_count(2)
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        self.assertEqual(self.settings_state()["packs"], before["packs"])
+        self.page.locator('[data-action="nav:sounds"]').click()
+        self.page.locator('[data-act="pack"][data-id="minimal"]').click()
+        transfer = self.page.evaluate_handle("""() => {
+            const transfer = new DataTransfer();
+            transfer.items.add(new File(['synthetic audio'], 'factory-drop.wav', {type:'audio/wav'}));
+            return transfer;
+        }""")
+        self.addCleanup(transfer.dispose)
+        row = self.page.locator('.sf-event[data-event="stop"]')
+        row.dispatch_event("dragover", {"dataTransfer": transfer})
+        expect(self.page.locator('.sf-drop-target')).to_have_count(0)
+        row.dispatch_event("drop", {"dataTransfer": transfer})
+        expect(self.page.locator("#sf-name-input")).to_be_visible()
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        self.assertEqual(self.settings_state()["packs"], before["packs"])
 
     def test_native_sounds_editor_and_ai_service_are_available(self):
         self.open(win="1", pane="sounds")

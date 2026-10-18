@@ -97,6 +97,8 @@ if CommandLine.arguments.contains("--receipt-history-pruning") {
 
 if CommandLine.arguments.contains("--codex-approval") {
     runCodexApprovalRoutingSuites()
+    runHostHookRunnerSuites()
+    runAtomicWriteSuites()
     print("Codex approval: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }

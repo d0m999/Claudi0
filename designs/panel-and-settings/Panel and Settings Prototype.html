@@ -233,6 +233,15 @@
   .ev-row .rt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .ev-row .t { font-size: 12.5px; font-weight: 600; }
   .ev-row .s { font: 500 10.5px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 声音文件名即「更换声音」入口（变体 D 定稿）：静止 muted，hover 转 clay + 下划线，焦点 clay + 2pt 环 */
+  .ev-row .sound-jump {
+    font: 500 10.5px var(--mono); color: var(--muted); background: none; border: none;
+    padding: 0 2px; margin-left: -2px; cursor: pointer; border-radius: 4px; text-align: left;
+    align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: color 120ms var(--ease-enter);
+  }
+  .ev-row .sound-jump:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 2px; }
+  .ev-row .sound-jump:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; color: var(--clay); }
   .ev-row .acts { display: flex; align-items: center; gap: 2px; flex: none; }
   .mini-btn {
     width: 28px; height: 28px; border: none; background: transparent; border-radius: 8px;
@@ -1454,6 +1463,7 @@ dialog p { overflow-wrap:anywhere; }
             <p class="sf-secondary sf-pack-hint" data-pack-hint></p>
             <div class="sf-detail-actions"><button type="button" class="sf-button cursor-interaction" data-act="copy-pack" data-copy-label>复制并编辑…</button><button type="button" class="sf-button cursor-interaction" data-act="rename-pack">重命名…</button><button type="button" class="sf-button cursor-interaction" data-act="reveal-pack">在访达中显示</button><button type="button" class="sf-button cursor-interaction" data-act="restore-pack">恢复出厂声音…</button><span class="sf-grow" aria-hidden="true"></span><button type="button" class="sf-button cursor-interaction" data-act="files">管理包内音频…</button></div>
             <p class="sf-secondary sf-read-only" data-pack-read-only hidden></p>
+            <p class="sf-secondary sf-drop-hint" data-drop-hint hidden></p>
             <div class="sf-box sf-event-box" data-event-list></div>
             <div class="sf-delete-row"><button type="button" class="sf-button sf-danger cursor-interaction" data-act="delete-pack">移到废纸篓</button><span class="sf-secondary" data-pack-delete-reason></span><span class="sf-grow" aria-hidden="true"></span><span class="sf-license" data-pack-license hidden>CC0</span></div>
           </section>
@@ -1477,7 +1487,7 @@ dialog p { overflow-wrap:anywhere; }
   </div>
 
   <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><i data-lucide="chevron-right" aria-hidden="true"></i></button><button type="button" class="sf-button sf-favorite cursor-interaction" data-act="favorite"><span class="sf-star" data-star aria-hidden="true"><i data-lucide="star-fill"></i><i data-lucide="star"></i></span><span data-favorite-title></span></button></div></template>
-  <template data-tpl="event-row"><div class="sf-event"><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入本地文件…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>选择系统提示音…</button></div></div></template>
+  <template data-tpl="event-row"><div class="sf-event"><span class="sf-drop-badge" data-drop-badge aria-hidden="true"></span><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入本地文件…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>选择系统提示音…</button></div></div></template>
   <template data-tpl="choice-row"><div class="sf-audio-row"><label class="sf-audio-select cursor-interaction"><input type="radio" name="sf-audio-selection"><span class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></span></label><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><div class="sf-actions" data-extra></div></div></template>
   <template data-tpl="managed-audio"><div class="sf-audio-row"><div class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></div><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-icon cursor-interaction" data-rename aria-label="重命名音频"><i data-lucide="pencil" aria-hidden="true"></i></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash aria-label="移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div></template>
   <template data-tpl="history-group"><section class="sf-box sf-history-group"><div class="sf-history-header"><button type="button" class="sf-disclosure cursor-interaction" data-expand aria-expanded="true"><span data-chevron aria-hidden="true">⌄</span><span class="sf-grow"><span class="sf-medium" data-description></span><span class="sf-secondary" data-metadata></span></span></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash-group aria-label="将整组音频移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div><div class="sf-group-audio" data-audio-list></div></section></template>
@@ -1619,7 +1629,13 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-detail-actions { display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin-top:15px; }
   #claudio-sounds-overview .sf-detail-actions .sf-grow { flex:1 1 12px; }
   #claudio-sounds-overview .sf-read-only { margin:10px 0 0; }
+  #claudio-sounds-overview .sf-drop-hint { margin:10px 0 0; font-size:11px; }
   #claudio-sounds-overview .sf-event-box { margin-top:20px; }
+  /* 事件行拖放（变体 4 定稿）：目标行 accent 描边 + 12% 底，「松开导入」浮标右上跨行框上缘 */
+  #claudio-sounds-overview .sf-event { transition:background-color 120ms ease-out, box-shadow 120ms ease-out; }
+  #claudio-sounds-overview .sf-event.sf-drop-target { background:color-mix(in srgb, var(--sf-blue) 12%, transparent); border-radius:8px; box-shadow:0 0 0 1px var(--sf-blue); }
+  #claudio-sounds-overview .sf-drop-badge { position:absolute; top:-9px; right:10px; z-index:5; font-size:9.5px; font-weight:600; padding:1.5px 8px; border-radius:999px; background:var(--sf-blue); color:var(--sf-on-blue); box-shadow:0 1px 1.5px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:opacity 120ms ease-out; }
+  #claudio-sounds-overview .sf-event.sf-drop-target .sf-drop-badge { opacity:1; }
   #claudio-sounds-overview .sf-license { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
   #claudio-sounds-overview .sf-empty-library { display:grid; gap:12px; justify-items:center; padding:26px 16px; text-align:center; }
   #claudio-sounds-overview .sf-empty-library .sf-actions { justify-content:center; }
@@ -2049,7 +2065,7 @@ var S = {
   srcCounts: { claude: { today: 7, week: 46 }, codex: { today: 4, week: 27 }, wb: { today: 1, week: 9 }
   },
   hostOpen: null,
-  soundPack: "minimal-chime", aiEvent: null,
+  soundPack: "minimal-chime", aiEvent: null, soundEntryReturn: null,
   /* AI 提示音生成：唯一事实源。阶段、候选、逐 profile 凭据与未发布草稿都只存这一份。 */
   ai: {
     profile: "elevenlabs-global",
@@ -2139,6 +2155,20 @@ function previewReason(pk, eventID, group) {
     return tr("该组音量无效，请重新设置音量", "Group volume is invalid. Set its volume again.");
   if (group && group.volume === 0) return tr("所选组音量为零；调高所选组音量后可以试听", "Selected group volume is zero; raise it to preview");
   return "";
+}
+/* 面板事件行「更换声音」入口的文件名文本（原生 PanelPresentation.soundFileText 规则） */
+function soundEntryText(pk, eventID) {
+  var source = pk.files[eventID];
+  if (!source) return tr("未配置声音", "No sound assigned");
+  if (isSystemBinding(source)) {
+    var name = sysName(source);
+    return SYSTEM_SOUNDS.indexOf(name) >= 0
+      ? tr("macOS：", "macOS: ") + name
+      : tr("macOS 提示音不可用：", "macOS sound unavailable: ") + name;
+  }
+  var display = pk.names && pk.names[source];
+  var base = pk.audio.indexOf(source) < 0 ? tr("文件缺失：", "Missing: ") + source : source;
+  return display ? base + " · " + display : base;
 }
 function usePackForScope(packID, scopeID) {
   var g = groupById(scopeID), pk = packById(packID);
@@ -2567,6 +2597,10 @@ function panelHTML() {
     var description = detailReason ? "preview-reason-" + e.id : "";
     h += '<div class="ev-row" id="evrow-' + e.id + '">' + glyph(e.color, e.glyph) +
       '<span class="rt"><span class="t">' + evName(e) + '</span>' +
+      (pk ? '<button class="sound-jump" data-sound-jump="' + e.id + '" title="' +
+        esc(pk.builtin ? tr("查看声音…", "View Sound…") : tr("更换声音…", "Change Sound…")) +
+        '" aria-label="' + esc((pk.builtin ? tr("查看声音，", "View sound, ") : tr("更换声音，", "Change sound, ")) + evName(e)) + '">' +
+        esc(soundEntryText(pk, e.id)) + '</button>' : '') +
       (detailReason ? '<span class="ev-reason" id="preview-reason-' + e.id + '">' + esc(detailReason) + '</span>' : '') +
       (recovery ? '<button class="link-btn" data-recover="' + recovery + '">' + recoveryLabel + '</button>' : '') + '</span>' +
       '<span class="acts"><button class="mini-btn motion-preview" data-listen="' + e.id + '"' + (reason ? ' disabled' : '') +
@@ -4395,6 +4429,23 @@ function bind() {
       S.returnToPanel = true; navigatePane("sounds"); setView("window"); /* demo：跳到「声音」页修复映射 */
     };
   });
+  document.querySelectorAll("[data-sound-jump]").forEach(function (b) {
+    b.onclick = function () {
+      var cur = curGroup();
+      if (!cur || !packById(cur.pack)) return;
+      S.returnToPanel = true;
+      S.soundEntryReturn = b.getAttribute("data-sound-jump");
+      S.soundPack = cur.pack;
+      navigatePane("sounds"); setView("window"); /* demo：深链到该包详情，焦点落在该行「设置…/更换…」入口 */
+      var eventToken = eventById(S.soundEntryReturn) ? eventById(S.soundEntryReturn).token : S.soundEntryReturn;
+      if (MacSettings) MacSettings.openSoundEvent(cur.pack, eventToken);
+      var shadow = document.getElementById("window").shadowRoot;
+      /* 内置包的事件行「设置…」是禁用的（copyAndApply 路由），焦点落到「复制并编辑…」。 */
+      var target = shadow && shadow.querySelector('[data-act="sources"][data-event="' + eventToken + '"]:not(:disabled)')
+        || shadow && shadow.querySelector('[data-act="copy-pack"]');
+      if (target) { target.focus({ preventScroll: true }); if (target.scrollIntoView) target.scrollIntoView({ block: "nearest" }); }
+    };
+  });
   document.querySelectorAll("[data-scope-integration]").forEach(function (b) {
     b.onclick = function () { S.returnToPanel = true; navigatePane("integrations"); setView("window"); }; /* demo：异常作用域只跳集成页 */
   });
@@ -4734,7 +4785,7 @@ document.addEventListener("click", function (e) {
   if (el.nodeType === 1 && el.isConnected === false) return;
   if (el.closest && (
     el.closest("#popover") || el.closest(".mb-wrap") ||
-    el.closest("#demoBar") || el.closest("#prototypeNav") || el.closest(".window"))) return;
+    el.closest("#demoBar") || el.closest("#prototypeNav") || el.closest(".window") || el.closest("#window"))) return;
   collapsePanel();
 });
 /* 状态供面板与横幅消费；图标不再承载状态（装饰点已退役） */
@@ -4994,9 +5045,42 @@ function freshState(){return {
  operation:null,epoch:0,serial:0
 };}
 const favoriteLimit=4;
-const FAV_VARIANT=(()=>{const loc=realWindow.location;let v=null;try{v=new URLSearchParams(loc.search).get('fav');}catch(e){}if(!v){const m=(loc.hash||'').match(/fav=([a-z]+)/);if(m)v=m[1];}return['base','a','b','c','d'].includes(v)?v:'base';})();
-function favNav(v){const loc=realWindow.location;if(loc.protocol==='file:'){loc.hash='fav='+v;loc.reload();}else{const u=new URL(loc.href);u.searchParams.set('fav',v);loc.href=u.href;}}
-if(!realWindow.__favKeysBound){realWindow.__favKeysBound=1;realWindow.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey||!['ArrowLeft','ArrowRight'].includes(e.key))return;const t=e.target;if(t&&t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;const order=['base','a','b','c','d'];const i=order.indexOf(FAV_VARIANT);favNav(order[(i+(e.key==='ArrowRight'?1:order.length-1))%order.length]);});}
+const favVariantNames={base:'现行 · 文字 pill',a:'A · 行尾纯图标星标',b:'B · hover 才出现',c:'C · 行首星标',d:'D · 已收藏状态 chip'};
+let FAV_VARIANT=(()=>{
+  const loc=realWindow.location;
+  const query=new URLSearchParams(loc.search).get('fav'),hash=new URLSearchParams(loc.hash.slice(1)).get('fav');
+  // Local files write the fragment; keep query-only entry links as a fallback.
+  const v=loc.protocol==='file:'?(hash||query):(query||hash);
+  return Object.hasOwn(favVariantNames,v)?v:'base';
+})();
+function favNav(direction){
+  const order=Object.keys(favVariantNames),v=order[(order.indexOf(FAV_VARIANT)+direction+order.length)%order.length];
+  const loc=realWindow.location,u=new URL(loc.href);
+  if(loc.protocol==='file:'){
+    const hash=new URLSearchParams(u.hash.slice(1));hash.set('fav',v);u.hash=hash.toString();
+  }else u.searchParams.set('fav',v);
+  realWindow.history.replaceState(realWindow.history.state,'',u.href);
+  FAV_VARIANT=v;
+  applyFavVariant();
+}
+function applyFavVariant(){
+  const element=$('claudio-sounds-overview');if(!element)return;
+  element.dataset.favVariant=FAV_VARIANT;element.toggleAttribute('data-fav-alt',FAV_VARIANT!=='base');
+  element.querySelectorAll('[data-act="favorite"]').forEach(button=>renderFavIcon(button,S.stars.includes(button.dataset.id)));
+  const bar=$('fav-switcher');if(!bar)return;
+  bar.querySelector('strong').textContent=favVariantNames[FAV_VARIANT];
+  bar.querySelector('code').textContent='?fav='+FAV_VARIANT;
+}
+function renderFavIcon(button,starred){
+  button.querySelector('[data-star]').innerHTML=FAV_VARIANT==='base'?(starred?'★':'☆'):icon('star-fill')+icon('star');
+  button.classList.toggle('is-starred',starred);
+}
+function handleFavKey(e){
+  if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.altKey||e.shiftKey||!['ArrowLeft','ArrowRight'].includes(e.key))return;
+  if(container.hidden||S.page!=='sounds'||$('sheet').open||approvedSoundsView?.modal())return;
+  if(e.target.closest('input,textarea,select,[contenteditable]'))return;
+  e.preventDefault();favNav(e.key==='ArrowRight'?1:-1);
+}
 let S=freshState();
 const hostTimers=new Map();
 let audioContext=null,audioNodes=[],audioTimer=null,audioEpoch=0,workTimer=null,generationTimer=null,modalReturn=null,sheetModel=null,modalEpoch=0,scrollByRoute={};
@@ -5108,7 +5192,7 @@ function renderWorkspaces(){return section(T('工作区','Workspaces'),S.scopes.
 function renderScopeDetails(){const g=scope();if(!g)return reason(T('工作区不可用，请显式重新选择。','Workspace unavailable. Select explicitly.'),'error','target-unavailable');
  return section('',row(esc(scopeName(g)),T('名称由目录派生。','The name is derived from the directory.'), '',{icon:'folder'}))+
  section(T('目录范围','Directory scope'),row(T('目录','Directory'),esc(g.path))+row(T('匹配范围','Matching scope'),g.kind==='git'?T('Git 仓库及关联 worktree','Git repository and linked worktrees'):T('实际目录及子目录','Resolved directory and descendants')))+
- section(T('适用来源','Eligible surfaces'),['claude-code','codex','workbuddy'].map(id=>row(S.hosts.find(h=>h.id===id).name,id==='workbuddy'?T('目录证据尚不完整，当前不可选。','Directory evidence is incomplete; currently unavailable.'):T('已具备验证过的目录证据。','Verified directory evidence is available.'),toggle(T('工作区适用','Workspace eligibility')+' '+id,`scope-surface:${id}`,g.surfaces.includes(id),id==='workbuddy'||!!S.operation))).join('')+(!g.surfaces.length?reason(T('没有适用来源。此规则保留完整声音配置，目前不会匹配任何来源。','No eligible surfaces. The complete sound configuration is retained, but this rule currently matches no surface.')):''))+
+ section(T('适用来源','Eligible surfaces'),['claude-code','codex','workbuddy','opencode','kimi-code'].map(id=>row(S.hosts.find(h=>h.id===id).name,T('已具备验证过的目录证据。','Verified directory evidence is available.'),toggle(T('工作区适用','Workspace eligibility')+' '+id,`scope-surface:${id}`,g.surfaces.includes(id),!!S.operation))).join('')+(!g.surfaces.length?reason(T('没有适用来源。此规则保留完整声音配置，目前不会匹配任何来源。','No eligible surfaces. The complete sound configuration is retained, but this rule currently matches no surface.')):''))+
  section(T('声音配置','Sound configuration'),disclosure(T('编辑声音配置','Edit sound configuration'),T('声音包、独立音量和五事件开关。','Pack, independent volume, and five event switches.'),'',`select-workspace:${g.id}`))+
  feedback();}
 function createApprovedSoundsView(root,bridge) {
@@ -5302,7 +5386,7 @@ function createApprovedSoundsView(root,bridge) {
       favorite.hidden=pack.kind==='draft'||!control.enabled;favorite.dataset.id=pack.id;
       const label=control.starred?T('已收藏','Favorited'):T('收藏','Favorite');
       const help=control.starred?T('取消收藏，从面板中移除','Remove from favorites and the panel'):T('收藏，在面板中显示','Favorite to show in the panel');
-      if(FAV_VARIANT==='base')q('[data-star]',row).textContent=control.starred?'★':'☆';else favorite.classList.toggle('is-starred',control.starred);q('[data-favorite-title]',row).textContent=label;
+      renderFavIcon(favorite,control.starred);q('[data-favorite-title]',row).textContent=label;
       favorite.title=help;favorite.setAttribute('aria-label',pack.name+T('，',', ')+(control.starred?T('已收藏','favorited'):T('未收藏','not favorited')));
       favorite.setAttribute('aria-description',help);list.append(row);
     });
@@ -5318,10 +5402,14 @@ function createApprovedSoundsView(root,bridge) {
     q('[data-act="files"]').hidden=pack.kind==='draft';
     const readOnly=q('[data-pack-read-only]');readOnly.hidden=pack.kind!=='builtin';
     readOnly.textContent=pack.kind==='builtin'?T('内置包为只读。复制后即可编辑。','Built-in packs are read-only. Make a copy to edit.'):'';
+    /* 导向说明行（变体 4 定稿的唯一教学位）：仅可写包（用户包/草稿）显示，紧贴事件列表上沿。 */
+    const dropHint=q('[data-drop-hint]');dropHint.hidden=pack.kind==='builtin';
+    dropHint.textContent=pack.kind==='builtin'?'':T('五个事件的声音由本包提供。把音频文件拖到事件行上即可导入。','This pack provides the sound for each of the five events. Drop an audio file onto an event row to import it.');
     const list=q('[data-event-list]');list.replaceChildren();
     events.forEach(event=>{
       const row=tpl('event-row'),el=q('.sf-event',row),item=boundAudio(pack,event.id);el.dataset.event=event.id;
       q('[data-event-name]',row).textContent=eventName(event.id);
+      q('[data-drop-badge]',row).textContent=T('松开导入到「'+eventName(event.id)+'」','Release to import into “'+eventName(event.id)+'”');
       q('[data-source-name]',row).textContent=item?(item.name||item.filename):T('尚未设置提示音','No sound set');
       q('[data-lucide]',row).dataset.lucide=event.icon;
       const play=q('[data-preview]',row);play.disabled=!item;if(item) previewButton(play,item,'event-'+event.id);
@@ -5387,7 +5475,7 @@ function createApprovedSoundsView(root,bridge) {
     const pack=state.packs.find(p=>p.id===dialog.packID);
     if(dialog.source==='pack') return pack?.files||[];
     if(dialog.source==='system') return ['Glass','Ping','Pop','Submarine'].map(name=>audio(name,name,name+' · macOS 系统提示音',1.4));
-    if(dialog.source==='import') return [audio('import-soft','soft_chime.wav','soft_chime.wav',2.1),audio('import-short','轻快提示.mp3','轻快提示.mp3',1.3)];
+    if(dialog.source==='import') return dialog.importItems??[audio('import-soft','soft_chime.wav','soft_chime.wav',2.1),audio('import-short','轻快提示.mp3','轻快提示.mp3',1.3)];
     if(dialog.source==='history') return state.history.flatMap(g=>g.items);
     if(dialog.source==='ai') return state.task?.items||[];
     return [];
@@ -5557,6 +5645,35 @@ function createApprovedSoundsView(root,bridge) {
     if(action==='import-pack') return openDialog({type:'import-pack'});
     if(action==='confirm-import') {const result=dispatch({type:'import-pack'});if(result.error) {d.error=result.error;return commit();}ui.dialogs=[];ui.route='detail';ui.packID='forest';ui.status='';bridge.browse('detail',ui.packID);return commit();}
   });
+  /* 事件行拖放（原生 SettingsSoundsLibraryView）：可写包行高亮 + 浮标；松手打开该事件的导入流程。
+     内置包行不高亮，松手走与点击相同的「复制并编辑」引导。 */
+  const eventList=q('[data-event-list]');
+  const clearDropTarget=()=>all('.sf-event.sf-drop-target',eventList).forEach(r=>r.classList.remove('sf-drop-target'));
+  eventList.addEventListener('dragover',ev=>{
+    const rowEl=ev.target.closest('.sf-event');if(!rowEl)return;
+    ev.preventDefault();
+    if(selectedPack().kind==='builtin')return; /* 出厂包行不注册高亮（Q7） */
+    if(!rowEl.classList.contains('sf-drop-target')){clearDropTarget();rowEl.classList.add('sf-drop-target');}
+  });
+  eventList.addEventListener('dragleave',ev=>{
+    const rowEl=ev.target.closest('.sf-event');
+    if(rowEl&&(!ev.relatedTarget||!rowEl.contains(ev.relatedTarget)))rowEl.classList.remove('sf-drop-target');
+  });
+  eventList.addEventListener('drop',ev=>{
+    const rowEl=ev.target.closest('.sf-event');if(!rowEl)return;
+    ev.preventDefault();clearDropTarget();
+    if(top())return;
+    const files=Array.from(ev.dataTransfer?.files||[]);if(!files.length)return;
+    const pack=selectedPack();
+    if(pack.kind==='builtin'){ui.returnPackID=ui.packID;return openDialog({type:'name',mode:'copy',packID:pack.id,value:freshName(pack.name+' 的副本')});}
+    // The prototype uses simulated audio assets; retain the actual dropped names in this
+    // preview only. The existing explicit adoption action owns the eventual model write.
+    const valid=files.every(file=>/\.(wav|aiff?|mp3|m4a|caf)$/i.test(file.name));
+    const items=valid?files.map((file,index)=>audio('import-drop-'+index,file.name,file.name)):[];
+    openDialog({type:'picker',source:'import',packID:pack.id,event:rowEl.dataset.event,
+      importItems:items,selected:items[0]?.id??null,
+      error:valid?'':T('请拖入支持的音频文件。','Drop a supported audio file.')});
+  });
   root.addEventListener('keydown',event=>{
     if(event.key==='Escape') {if(top()) {event.preventDefault();event.stopImmediatePropagation();closeDialog();}else if(ui.menu) {event.preventDefault();event.stopImmediatePropagation();ui.menu=null;commit();}return;}
     if(event.key==='Tab'&&top()) {
@@ -5630,11 +5747,9 @@ function approvedSoundsGuard(action){
   return '';
 }
 function favSwitcherBar(){
-  const names={base:'现行 · 文字 pill',a:'A · 行尾纯图标星标',b:'B · hover 才出现',c:'C · 行首星标',d:'D · 已收藏状态 chip'};
-  const order=['base','a','b','c','d'];
   const bar=document.createElement('div');bar.id='fav-switcher';bar.setAttribute('role','group');bar.setAttribute('aria-label','收藏控件方案对比（原型工具，不属于应用）');
-  bar.innerHTML=`<button type="button" data-fav-dir="-1" aria-label="上一个方案">‹</button><span>收藏控件 · <strong>${names[FAV_VARIANT]}</strong> <code>?fav=${FAV_VARIANT}</code> · ←→ 切换</span><button type="button" data-fav-dir="1" aria-label="下一个方案">›</button>`;
-  bar.addEventListener('click',e=>{const b=e.target.closest('[data-fav-dir]');if(!b)return;const i=order.indexOf(FAV_VARIANT);favNav(order[(i+Number(b.dataset.favDir)+order.length)%order.length]);});
+  bar.innerHTML=`<button type="button" data-fav-dir="-1" aria-label="上一个方案">‹</button><span>收藏控件 · <strong>${favVariantNames[FAV_VARIANT]}</strong> <code>?fav=${FAV_VARIANT}</code> · ←→ 切换</span><button type="button" data-fav-dir="1" aria-label="下一个方案">›</button>`;
+  bar.addEventListener('click',e=>{const b=e.target.closest('[data-fav-dir]');if(b)favNav(Number(b.dataset.favDir));});
   return bar;
 }
 function mountApprovedSounds(){
@@ -5643,7 +5758,6 @@ function mountApprovedSounds(){
     const fragment=$('approvedSoundsTemplate').content.cloneNode(true);
     mount.append(fragment);
     const element=$('claudio-sounds-overview');
-    element.dataset.favVariant=FAV_VARIANT;if(FAV_VARIANT!=='base')element.setAttribute('data-fav-alt','');
     // Keep the view's scoped styles attached when a favorite update remounts this element.
     mount.querySelectorAll('style').forEach(style=>element.append(style));
     approvedSoundsView=createApprovedSoundsView(element,{
@@ -5666,6 +5780,7 @@ function mountApprovedSounds(){
   } else mount.append(approvedSoundsView.element);
   mount.append(favSwitcherBar());
   approvedSoundsView.sync(S.detail,S.pack);
+  applyFavVariant();
 }
 
 function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+'<div id="approved-sounds-mount"></div>';}
@@ -5820,7 +5935,7 @@ function reminderQualification(h,i){
  return '';
 }
 function renderHostDetails(){const h=host();return section('',row(h.name+' <span class="host-kind">'+hostKind(h)+'</span>',hostIssue(h),`<span class="host-status">${hostState(h)}</span>`+toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled),{host:h.icon})+(hostIntervention(h)?row(T('需要你的操作','Your action is needed'),'',hostIntervention(h)):''))+
- section(T('支持的提醒','Supported reminders'),events.map((e,i)=>{const c=capability(h,i);return row(e.name(),reminderQualification(h,i),`<span class="value">${!c.supported||!c.implemented?T('暂不支持','Unavailable'):!c.releaseAdmitted?T('待验证','Awaiting verification'):c.partial?T('部分支持','Partially supported'):T('支持','Supported')}</span>`,{id:`reminder-${e.id}`,icon:e.icon,color:e.color});}).join(''),T('按此应用提供的事件自动提醒；各类提醒可在声音设置中单独开关。','Events provided by this app trigger reminders automatically. Turn individual reminders on or off in sound settings.'))+
+ section(T('支持的提醒','Supported reminders'),events.map((e,i)=>{const c=capability(h,i);return row(e.name(),reminderQualification(h,i),`<span class="value">${!c.supported||!c.implemented?T('暂不支持','Unavailable'):!c.releaseAdmitted?T('待验证','Awaiting verification'):c.partial?T('部分支持','Partially supported'):T('支持','Supported')}</span>`,{id:`reminder-${e.id}`,icon:e.icon,color:e.color});}).join(''),h.id==='workbuddy'?T('WorkBuddy 可按目录适用工作区声音配置。通知仅覆盖授权与空闲提醒；执行中断尚未实现。','WorkBuddy follows workspace sound rules by directory. Notifications cover permission and idle prompts only; interruption is not implemented.'):T('按此应用提供的事件自动提醒；各类提醒可在声音设置中单独开关。','Events provided by this app trigger reminders automatically. Turn individual reminders on or off in sound settings.'))+
  section('',disclosure(T('诊断详情…','Diagnostics…'),T('接入信息与排障记录。','Integration information and troubleshooting records.'),'','host-diagnostics'));}
 function renderHostDiagnostics(){const h=host();return `<p class="intro">${T('这些信息用于排查接入问题，日常使用无需调整。','These details help troubleshoot integration issues. No changes are needed for everyday use.')}</p>`+
  section(T('接入信息','Integration information'),row(T('连接状态','Connection status'),hostState(h),button(T('重新检测','Check again'),'detect-host','small-button',!!h.maintenance))+row(T('接入方式','Integration method'),h.id==='workbuddy'?'Desktop hooks':h.id==='opencode'?'Server plugin':'Native hooks')+row(T('配置来源','Configuration source'),hostPath(h),button(h.id==='workbuddy'?T('复制 /hooks','Copy /hooks'):T('复制路径','Copy path'),'copy-host-path'))+row(T('安装代次','Installation identity'),esc(h.installationID))+row(T('维护连接','Maintain connection'),T('重新配置此应用的接入。','Prepare this app’s integration again.'),button(T('重新配置','Prepare again'),'repair-host','small-button',!h.enabled||!!h.maintenance)))+
@@ -5904,12 +6019,12 @@ function bindingPicker(system=false){const p=pack(),i=editorIndex();if(!canWrite
  openSheet(system?'选择系统提示音':'选择包内音频',system?'Choose a system sound':'Choose pack audio',()=>`<p>${system?T('系统音按当前 Mac 名称引用。','System sounds are referenced by their name on the current Mac.'):T('同一个文件只能新绑定给一个事件。','A file can be newly bound to only one event.')}</p><div class="group">${names.map(n=>{const used=p.sounds.findIndex((v,j)=>v===n&&p.sources[j]===source&&j!==i);return `<button class="row disclosure-row" data-choice="${esc(n)}" ${used>=0?'disabled':''}><span class="label"><strong>${esc(n)}</strong>${used>=0?`<small>${T('已用于','Used by')} ${events[used].name()}</small>`:''}</span>${p.sounds[i]===n&&p.sources[i]===source?icon('check'):''}</button>`;}).join('')}</div>`,'',()=>{$('sheet').querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{closeSheet();bind(p,i,b.dataset.choice,source);render();});});
 }
 function addWorkspace(){let directory=null,resolving=false,resolveEpoch=0;
- openSheet('添加工作区','Add workspace',()=>`<p>${T('名称由所选目录派生。创建前明确确认音量；允许零适用来源。','The name comes from the directory. Confirm the volume before creation; zero eligible surfaces is allowed.')}</p><div class="form-stack"><label for="workspace-directory">${T('演示目录','Demo directory')}</label><select id="workspace-directory"><option value="git">~/Projects/NewProject · Git</option><option value="plain">~/Documents/NewNotes</option><option value="duplicate">~/Projects/Claudio · Git</option><option value="failure">${T('Git 解析失败','Git resolution failure')}</option></select>${button(T('选择并解析目录','Select and resolve directory'),'resolve-directory')}<small id="directory-result">${T('尚未选择目录','No directory selected')}</small><label for="workspace-pack">${T('声音包','Sound pack')}</label><select id="workspace-pack"><option value="">${T('请选择声音包','Choose a pack')}</option>${S.packs.filter(p=>p.healthy&&!p.draft).map(p=>`<option value="${p.id}">${esc(packName(p))}</option>`).join('')}</select><label for="workspace-volume">${T('音量','Volume')}</label><input id="workspace-volume" class="field" type="number" value="60" min="0" max="100"></div><label class="plain-check"><input id="workspace-volume-confirm" type="checkbox">${T('我已确认此工作区音量','I confirm this workspace volume')}</label><label class="plain-check"><input id="workspace-claude" type="checkbox" checked>Claude Code</label><label class="plain-check"><input id="workspace-codex" type="checkbox" checked>Codex</label><label class="plain-check disabled"><input type="checkbox" disabled>WorkBuddy · ${T('目录证据不完整','directory evidence incomplete')}</label>`,()=>button(T('添加','Add'),'sheet-add-workspace','small-button primary',true),()=>{
+ openSheet('添加工作区','Add workspace',()=>`<p>${T('名称由所选目录派生。创建前明确确认音量；允许零适用来源。','The name comes from the directory. Confirm the volume before creation; zero eligible surfaces is allowed.')}</p><div class="form-stack"><label for="workspace-directory">${T('演示目录','Demo directory')}</label><select id="workspace-directory"><option value="git">~/Projects/NewProject · Git</option><option value="plain">~/Documents/NewNotes</option><option value="duplicate">~/Projects/Claudio · Git</option><option value="failure">${T('Git 解析失败','Git resolution failure')}</option></select>${button(T('选择并解析目录','Select and resolve directory'),'resolve-directory')}<small id="directory-result">${T('尚未选择目录','No directory selected')}</small><label for="workspace-pack">${T('声音包','Sound pack')}</label><select id="workspace-pack"><option value="">${T('请选择声音包','Choose a pack')}</option>${S.packs.filter(p=>p.healthy&&!p.draft).map(p=>`<option value="${p.id}">${esc(packName(p))}</option>`).join('')}</select><label for="workspace-volume">${T('音量','Volume')}</label><input id="workspace-volume" class="field" type="number" value="60" min="0" max="100"></div><label class="plain-check"><input id="workspace-volume-confirm" type="checkbox">${T('我已确认此工作区音量','I confirm this workspace volume')}</label><label class="plain-check"><input id="workspace-claude" type="checkbox" checked>Claude Code</label><label class="plain-check"><input id="workspace-codex" type="checkbox" checked>Codex</label><label class="plain-check"><input id="workspace-workbuddy" type="checkbox" checked>WorkBuddy</label><label class="plain-check"><input id="workspace-opencode" type="checkbox" checked>OpenCode</label><label class="plain-check"><input id="workspace-kimi" type="checkbox" checked>Kimi Code</label>`,()=>button(T('添加','Add'),'sheet-add-workspace','small-button primary',true),()=>{
  const add=$('sheet').querySelector('[data-action="sheet-add-workspace"]'),resolve=$('sheet').querySelector('[data-action="resolve-directory"]');
  const enabled=()=>{const v=Number($('workspace-volume').value);add.disabled=!directory||resolving||!$('workspace-pack').value||!$('workspace-volume-confirm').checked||!Number.isFinite(v)||v<0||v>100;};
  $('workspace-pack').onchange=enabled;$('workspace-volume-confirm').onchange=enabled;$('workspace-volume').oninput=()=>{$('workspace-volume-confirm').checked=false;enabled();};$('workspace-directory').onchange=()=>{resolveEpoch++;resolving=false;resolve.disabled=false;directory=null;$('sheet-error').textContent='';$('directory-result').textContent=T('尚未解析新目录','New directory not resolved yet');enabled();};
  resolve.onclick=()=>{const selected=$('workspace-directory').value,token=modalEpoch,epoch=S.epoch,request=++resolveEpoch;resolving=true;directory=null;resolve.disabled=true;enabled();$('directory-result').textContent=T('正在解析目录…','Resolving directory…');setTimeout(()=>{if(token!==modalEpoch||epoch!==S.epoch||request!==resolveEpoch||!$('sheet').open||!$('directory-result')||$('workspace-directory').value!==selected)return;resolving=false;resolve.disabled=false;if(selected==='failure'){sheetError('Git 识别失败，未伪装为普通目录。请重新选择。','Git resolution failed. It was not treated as a plain directory. Choose again.');enabled();return;}directory=selected==='plain'?{name:'NewNotes',path:'~/Documents/NewNotes',kind:'plain'}:selected==='duplicate'?{name:'Claudio',path:'~/Projects/Claudio',kind:'git'}:{name:'NewProject',path:'~/Projects/NewProject',kind:'git'};$('directory-result').textContent=directory.name+' · '+directory.path+' · '+(directory.kind==='git'?T('覆盖仓库与关联 worktree','Includes repository and linked worktrees'):T('覆盖实际路径及子目录','Includes resolved path and descendants'));enabled();},450);};
- add.onclick=()=>{if(add.disabled||!directory)return;const v=Number($('workspace-volume').value);if(S.scopes.some(g=>g.path===directory.path)){sheetError('这个目录身份已存在工作区规则。','A workspace rule already exists for this directory identity.');return;}if(S.faults.config){sheetError('配置写入冲突，尚未创建规则。重新读取后重试。','Configuration write conflict. No rule was created. Reload and retry.');return;}const surfaces=[];if($('workspace-claude').checked)surfaces.push('claude-code');if($('workspace-codex').checked)surfaces.push('codex');const g={...directory,id:`workspace-${++S.serial}`,pack:$('workspace-pack').value,volume:v,enabled:events.map(()=>true),surfaces};S.scopes.push(g);S.scope=g.id;closeSheet();navigate('events');setNotice('工作区已添加，五事件自动开关初始全开。','Workspace added. All five event switches start enabled.');render();};
+ add.onclick=()=>{if(add.disabled||!directory)return;const v=Number($('workspace-volume').value);if(S.scopes.some(g=>g.path===directory.path)){sheetError('这个目录身份已存在工作区规则。','A workspace rule already exists for this directory identity.');return;}if(S.faults.config){sheetError('配置写入冲突，尚未创建规则。重新读取后重试。','Configuration write conflict. No rule was created. Reload and retry.');return;}const surfaces=[];if($('workspace-claude').checked)surfaces.push('claude-code');if($('workspace-codex').checked)surfaces.push('codex');if($('workspace-workbuddy').checked)surfaces.push('workbuddy');if($('workspace-opencode').checked)surfaces.push('opencode');if($('workspace-kimi').checked)surfaces.push('kimi-code');const g={...directory,id:`workspace-${++S.serial}`,pack:$('workspace-pack').value,volume:v,enabled:events.map(()=>true),surfaces};S.scopes.push(g);S.scope=g.id;closeSheet();navigate('events');setNotice('工作区已添加，五事件自动开关初始全开。','Workspace added. All five event switches start enabled.');render();};
  });
 }
 function newPack(){if(S.operation||S.library!=='ready')return;S.lastInstalledPack=S.pack;S.draft={id:`draft-${++S.serial}`,name:T('新的声音包','New sound pack'),builtin:false,healthy:true,sounds:events.map(()=>null),sources:events.map(()=>null),audio:[]};S.pack=S.draft.id;S.returnContext=null;S.expandedEvent=null;navigate('sounds','edit:task_start');}
@@ -6205,7 +6320,7 @@ document.addEventListener('change',e=>{const c=e.target,[type,id]=(c.dataset.con
  if(type==='scope-pack'){stopAudio();groupWrite({type:'pack',value:c.value});render();return;}
  if(type==='pack'){stopAudio();clearGeneration();S.pack=c.value;S.returnContext=null;S.notice=null;render();return;}
  if(type==='event'){groupWrite({type:'event',index:Number(id),value:c.checked});render();return;}
- if(type==='scope-surface'){const g=scope();if(!g||id==='workbuddy')return;groupWrite({type:'surface',value:c.checked?[...new Set([...g.surfaces,id])]:g.surfaces.filter(v=>v!==id)});render();return;}
+ if(type==='scope-surface'){const g=scope();if(!g)return;groupWrite({type:'surface',value:c.checked?[...new Set([...g.surfaces,id])]:g.surfaces.filter(v=>v!==id)});render();return;}
  if(type==='host-enabled'){const h=S.hosts.find(h=>h.id===id);return requestConnection(h,c.checked);}
  if(type==='notifications'){S.notifications=c.checked;S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='banner');render();return;}
  if(type==='focusQuiet'||type==='calendarQuiet')return quietToggle(type,c.checked);
@@ -6308,6 +6423,7 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
   // generation cancel → focus the active sidebar row). Stop shadow keydowns from reaching the page.
   root.addEventListener('keydown',e=>{
     e.stopPropagation();
+    handleFavKey(e);
   });
   root.addEventListener('input',changed);
   root.addEventListener('change',changed);
@@ -6328,6 +6444,10 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
     openWorkspace:id=>{
       if($('sheet').open)return false;
       navigate('events',null,{scope:id});return true;
+    },
+    openSoundEvent:(pack,event)=>{
+      if($('sheet').open||approvedSoundsView?.modal())return false;
+      navigate('sounds','edit:'+event,{pack,focus:false});return true;
     },
     writeGroup:(id,intent)=>{
       const previous=S.scope;S.scope=id;
@@ -6380,7 +6500,7 @@ function projectMacSettings(state) {
   PACKS=state.packs.filter(function(p){return !p.draft;}).map(function(p){
     const files={};EVENTS.forEach(function(e,i){files[e.id]=p.sources[i]==='system'?'system:'+p.sounds[i]:p.sounds[i];});
     return {id:p.id,name:Array.isArray(p.name)?p.name[S.lang==='zh'?0:1]:p.name,builtin:p.builtin,broken:!p.healthy,
-      license:p.license,lic:p.license||'user',author:p.author,files:files,names:{},audio:p.audio.slice(),
+      license:p.license,lic:p.license||'user',author:p.author,files:files,names:p.audioNames||{},audio:p.audio.slice(),
       cov:EVENTS.filter(function(e){return !!files[e.id];}).map(function(e){return e.id;}),orphans:[],starred:state.stars.includes(p.id)};
   });
   S.library.status=state.library;S.library.referencesComplete=state.referencesComplete;
@@ -6414,11 +6534,16 @@ render();
 /* 关闭设置窗口 → 面板回到菜单栏下并把焦点还给齿轮（handback 合同可见） */
 function closeWindowWithHandback(minimized) {
   var returnToPanel = S.returnToPanel; S.returnToPanel = false;
+  var soundEntryReturn = S.soundEntryReturn; S.soundEntryReturn = null;
   S.prefs.recording = null;
   endSoundsSession(); S.confirmation = null; S.workspaceForm = null;
   S.window = false; S.popover = returnToPanel;
   if (MacSettings) MacSettings.suspend(minimized === true);
   render();
+  /* 焦点归还到触发深链的事件行入口（原生 02ec383：editTarget 决定归还目标）。 */
+  var entry = returnToPanel && soundEntryReturn &&
+    document.querySelector('#evrow-' + soundEntryReturn + ' .sound-jump');
+  if (entry) { entry.focus({ preventScroll: true }); return; }
   var gear = document.getElementById("gearBtn");
   if (returnToPanel && gear) gear.focus({ preventScroll: true });
   else document.getElementById("mbIcon").focus({ preventScroll: true });

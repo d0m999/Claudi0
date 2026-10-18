@@ -1,5 +1,8 @@
 # GUI 体积回归：将 Codex 审批解析器留在 helper
 
+> 以下是同轮切换修复前的体积与测试记录。后续 [ADR 0034 修订](../adr/0034-qualify-codex-approval-reminders.md)
+> 已撤掉无法证明请求审批人的 transcript 推断；这些历史结果不代表当前人工提醒能力或本轮构建结果。
+
 ## 问题与根因
 
 当前工作树的原签名包 `claudi0-app` 为 7,013,392 B，原门禁为 7,000,000 B，超出

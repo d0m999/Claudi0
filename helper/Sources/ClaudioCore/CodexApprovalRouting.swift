@@ -1,7 +1,8 @@
 import Foundation
 
-/// A hook says an approval is being considered, not who must handle it. Unknown routing is
-/// deliberately silent. This is transient host metadata, never a receipt or a task-state cache.
+/// The reviewer captured for a specific approval request, when the host can prove it.
+/// PermissionRequest and initial turn settings cannot establish it. Unknown routing is silent.
+/// This is transient host metadata, never a receipt or a task-state cache.
 public enum CodexApprovalRouting: Sendable, Equatable {
     case user
     case automatic

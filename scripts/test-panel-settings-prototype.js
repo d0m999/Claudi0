@@ -191,16 +191,25 @@ for (const lang of ["zh", "en"]) {
     assert.ok(markup.includes(lang === "zh" ? "今日 0 次 · 近 7 日 0 次" : "0 today · 0 last 7 days"));
     assert.ok(!/NaN|undefined/.test(markup));
   });
-  test(`${lang}: normal panel events omit technical metadata and retain actual preview sources`, () => {
+  test(`${lang}: normal panel events expose sound-entry links and omit technical event metadata`, () => {
     const runtime = loadPrototype();
     const { context, document, messages } = runtime;
     context.S.lang = lang;
     const group = context.curGroup(), pack = context.packById(group.pack), before = JSON.stringify(group);
     const markup = context.panelHTML();
-    assert.ok(!/event-source-|preview-reason-|\.aiff|data-edit-sound/.test(markup));
+    assert.ok(!/event-source-|preview-reason-|data-edit-sound/.test(markup));
+    // Assigned filenames may contain event tokens (for example stop.aiff); the remaining
+    // visible labels must still omit separate technical event metadata.
+    const visibleLabels = markup.replace(/<button\b[^>]*data-sound-jump="[^"]*"[^>]*>[^<]*<\/button>/g, "").replace(/<[^>]*>/g, "");
     for (const event of context.EVENTS) {
       assert.ok(markup.includes(context.evName(event)));
-      assert.ok(!markup.replace(/<[^>]*>/g, "").includes(event.token));
+      assert.ok(!visibleLabels.includes(event.token));
+      const link = markup.match(new RegExp('<button class="sound-jump"[^>]*data-sound-jump="' + event.id + '"[^>]*>([^<]*)</button>'));
+      assert.ok(link, "each event exposes a keyboard-focusable sound-entry button");
+      assert.equal(link[1], pack.files[event.id], "the entry names the currently assigned sound");
+      const action = pack.builtin ? (lang === "zh" ? "查看声音" : "View sound") : (lang === "zh" ? "更换声音" : "Change sound");
+      assert.ok(link[0].includes('title="' + (pack.builtin ? (lang === "zh" ? "查看声音…" : "View Sound…") : (lang === "zh" ? "更换声音…" : "Change Sound…")) + '"'));
+      assert.ok(link[0].includes('aria-label="' + action + (lang === "zh" ? "，" : ", ") + context.evName(event) + '"'));
     }
     runtime.mountControls(markup);
     document.querySelectorAll("[data-listen]").find(button => button.getAttribute("data-listen") === "stop").click();

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE · 事件行拖放导入：表面 × 语义（Q3）</title>
+<!--
+  一次性原型，回答 grill Q3：音频拖放该挂哪个面、drop 之后发生什么。
+  三个变体（底部浮条或 ←/→ 切换，?variant=A|B|C）：
+    A — 「声音」页事件行 + drop 打开导入流程（预填文件 → 试听 → 显式选用）【推荐】
+    B — 「声音」页事件行 + drop-to-bind 立即绑定（D34 否决的语义，放出来感受）
+    C — 面板事件行 drop（DESIGN.md:720/ADR 0005 封闭的表面）：翻转作用域开关，
+        亲手撞上两个歧义——出厂包只读、工作区包≠默认组包时「写进哪个包」
+  拖左侧文件芯片到事件行；notes.txt 用来演示硬化管线的拒绝文案。全是假的，不写任何状态。
+-->
+<style>
+  [hidden] { display: none !important; }
+  :root {
+    --page-font: ui-rounded, -apple-system, "SF Pro Rounded", "PingFang SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ease-enter: cubic-bezier(.2,.7,.2,1);
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --backdrop1: #121110; --backdrop2: #1C1916; --page-text: #F4EBDD;
+    --panel-a: #211D19; --panel-b: #171512;
+    --text: #F4EBDD; --text-2: #B0AEA5; --muted: #6F665B;
+    --hairline: rgba(245,235,221,.10); --hairline-strong: rgba(245,235,221,.16);
+    --clay: #D97757; --focus: #0A84FF; --hover: rgba(245,235,221,.06);
+    --window: #1A1815; --window-side: rgba(245,235,221,.05);
+    --menu-bg: rgba(38,35,31,.94);
+    --shadow-pop: 0 1px 2px rgba(0,0,0,.5), 0 18px 48px rgba(0,0,0,.55);
+    --shadow-win: 0 30px 80px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4);
+    --ev-blue: #0A84FF; --ev-green: #34C759; --ev-amber: #FF9F0A; --ev-clay: #D97757; --ev-indigo: #5E5CE6;
+    --ok: #34C759; --bad: #FF9F0A;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --backdrop1: #E9E2D6; --backdrop2: #D8CBB8; --page-text: #2B2620;
+    --panel-a: #FFFDFA; --panel-b: #FBF7F1;
+    --text: #2B2620; --text-2: #75685A; --muted: #AB9E8E;
+    --hairline: rgba(60,44,32,.08); --hairline-strong: rgba(60,44,32,.14);
+    --clay: #C4633C; --focus: #0A72D0; --hover: rgba(60,44,32,.05);
+    --window: #FAF8F4; --window-side: rgba(60,44,32,.045);
+    --menu-bg: rgba(255,253,250,.96);
+    --shadow-pop: 0 1px 2px rgba(40,30,20,.12), 0 18px 48px rgba(40,30,20,.20);
+    --shadow-win: 0 30px 80px rgba(40,30,20,.22), 0 2px 12px rgba(40,30,20,.10);
+    --ev-blue: #0A72D0; --ev-green: #288B43; --ev-amber: #AC6900; --ev-clay: #C4633C; --ev-indigo: #5B59D6;
+    --ok: #288B43; --bad: #AC6900;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--page-font); background: var(--backdrop1); color: var(--page-text); min-height: 100vh; }
+  .stage {
+    position: relative; min-height: 100vh; padding: 34px 24px 130px;
+    background: radial-gradient(120% 90% at 20% 0%, var(--backdrop2), transparent 62%), var(--backdrop1);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+
+  /* ---- 文件芯片 ---- */
+  .tray { display: flex; gap: 10px; align-items: center; }
+  .tray .cap { font-size: 11px; color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 8px;
+    background: var(--panel-a); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-pop);
+    font: 500 12px var(--mono); cursor: grab; user-select: none;
+  }
+  .chip:active { cursor: grabbing; }
+  .chip.bad { color: var(--text-2); }
+  .chip .ic { font-size: 13px; }
+
+  /* ---- 设置窗口（变体 A/B） ---- */
+  .window {
+    width: 620px; border-radius: 12px; overflow: hidden; display: flex; min-height: 380px;
+    background: var(--window); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-win);
+  }
+  .sidebar { width: 148px; background: var(--window-side); border-right: 1px solid var(--hairline); padding: 10px 8px; flex: none; }
+  .sidebar .si { padding: 5px 9px; border-radius: 6px; font-size: 12.5px; color: var(--text-2); }
+  .sidebar .si.on { background: var(--hover); color: var(--text); font-weight: 600; }
+  .content { flex: 1; padding: 14px 16px; min-width: 0; }
+  .pack-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .pack-head h2 { font-size: 15px; }
+  .badge { font: 600 9.5px var(--page-font); padding: 1.5px 6px; border-radius: 4px; background: var(--ev-green); color: #fff; }
+  .badge.factory { background: var(--muted); }
+  .pack-sub { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+
+  .ev-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid transparent; position: relative; transition: border-color 120ms, background 120ms;
+  }
+  .ev-row:hover { background: var(--hover); }
+  .ev-row.droppable { border-color: var(--hairline-strong); border-style: dashed; }
+  .ev-row.targeted { border-color: var(--focus); border-style: solid; background: color-mix(in srgb, var(--focus) 12%, transparent); }
+  .ev-row .glyph { width: 22px; height: 22px; flex: none; }
+  .ev-row .rt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .ev-row .t { font-size: 12.5px; font-weight: 600; }
+  .ev-row .s { font: 500 10.5px var(--mono); color: var(--muted); }
+  .ev-row .acts { display: flex; gap: 6px; flex: none; align-items: center; }
+  .mini-btn {
+    font: 600 10.5px var(--page-font); color: var(--text-2); background: none;
+    border: 1px solid var(--hairline-strong); border-radius: 5px; padding: 3px 8px; cursor: pointer;
+  }
+  .mini-btn:hover { color: var(--text); }
+  .drop-flash { animation: flash 700ms var(--ease-enter); }
+  @keyframes flash { 0% { background: color-mix(in srgb, var(--ok) 30%, transparent); } 100% { background: transparent; } }
+
+  /* ---- 面板（变体 C） ---- */
+  .panel {
+    width: 312px; border-radius: 13px; overflow: hidden;
+    background: linear-gradient(180deg, var(--panel-a), var(--panel-b));
+    border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-pop);
+  }
+  .p-head { display: flex; align-items: center; gap: 8px; padding: 11px 14px 9px; border-bottom: 1px solid var(--hairline); }
+  .p-head .scope { font-size: 12.5px; font-weight: 700; }
+  .p-sec { padding: 7px 8px; }
+  .scope-bar { display: flex; gap: 6px; align-items: center; font-size: 11.5px; }
+  .scope-bar select {
+    font: 600 11.5px var(--page-font); color: var(--text); background: var(--panel-a);
+    border: 1px solid var(--hairline-strong); border-radius: 6px; padding: 4px 6px;
+  }
+  .scope-bar .pk { color: var(--muted); font-size: 10.5px; }
+
+  /* ---- sheet / modal ---- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50; display: none; place-items: center;
+    background: rgba(0,0,0,.28);
+  }
+  .overlay.open { display: grid; }
+  .sheet {
+    width: 380px; border-radius: 12px; padding: 18px; background: var(--window);
+    border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-win);
+  }
+  .sheet h3 { font-size: 13.5px; margin-bottom: 10px; }
+  .sheet .filebox {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
+    background: var(--window-side); border: 1px solid var(--hairline); margin-bottom: 10px;
+  }
+  .sheet .filebox .fn { font: 600 12px var(--mono); }
+  .sheet .filebox .meta { font-size: 10.5px; color: var(--muted); }
+  .sheet .cap { font-size: 11px; color: var(--text-2); line-height: 1.6; margin-bottom: 12px; }
+  .sheet .row-btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn { font: 600 12px var(--page-font); border-radius: 6px; padding: 5px 14px; cursor: pointer; border: 1px solid var(--hairline-strong); background: none; color: var(--text); }
+  .btn.primary { background: var(--focus); border-color: transparent; color: #fff; }
+  .btn.warn { background: var(--clay); border-color: transparent; color: #fff; }
+  .wave { display: flex; align-items: flex-end; gap: 2px; height: 26px; flex: 1; }
+  .wave i { flex: 1; background: var(--text-2); border-radius: 1px; opacity: .6; }
+  .previewing .wave i { animation: wv .6s infinite alternate var(--ease-enter); }
+  @keyframes wv { from { transform: scaleY(.4); } to { transform: scaleY(1); } }
+
+  /* ---- 直绑横幅（变体 B） ---- */
+  .bind-banner {
+    display: none; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 12px;
+    border-radius: 8px; background: color-mix(in srgb, var(--ok) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent); font-size: 11.5px;
+  }
+  .bind-banner.show { display: flex; }
+
+  .note { width: 620px; max-width: 92vw; font-size: 11.5px; line-height: 1.65; color: var(--text-2); }
+  .note b { color: var(--text); }
+  .note .tag { display: inline-block; font: 600 10px var(--page-font); padding: 1px 6px; border-radius: 4px; background: var(--clay); color: #FFFDFA; margin-right: 5px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(8px);
+    background: var(--menu-bg); backdrop-filter: blur(20px); color: var(--text);
+    border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 8px 14px;
+    font-size: 11.5px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none;
+    transition: opacity 160ms var(--ease-enter), transform 160ms var(--ease-enter);
+    max-width: 460px; text-align: center; z-index: 80;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .switcher {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 70;
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 999px;
+    background: #D8F447; color: #172B25; box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    font-size: 12.5px; font-weight: 600; user-select: none;
+  }
+  .switcher button { border: none; background: rgba(23,43,37,.12); color: #172B25; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .switcher button:hover { background: rgba(23,43,37,.24); }
+  .switcher .vlabel { min-width: 250px; text-align: center; }
+  .switcher .theme-btn { width: auto; border-radius: 13px; padding: 0 10px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tray">
+    <span class="cap">从访达拖文件的感觉 →</span>
+    <span class="chip" draggable="true" data-file="my-cue.aiff" data-ok="1"><span class="ic">🎵</span>my-cue.aiff</span>
+    <span class="chip bad" draggable="true" data-file="notes.txt" data-ok="0"><span class="ic">📄</span>notes.txt</span>
+  </div>
+
+  <!-- 变体 A/B：设置窗口 · 声音页 · 包详情 -->
+  <div class="window" id="win">
+    <div class="sidebar">
+      <div class="si">默认组／工作区</div>
+      <div class="si on">声音</div>
+      <div class="si">集成</div>
+      <div class="si">通知</div>
+      <div class="si">通用</div>
+    </div>
+    <div class="content">
+      <div class="pack-head"><h2>软木槌</h2><span class="badge" id="packBadge">用户包</span></div>
+      <div class="pack-sub">5 个事件 · 导入的音频复制进包目录（~/.claudio/packs/soft-mallet/）</div>
+      <div id="rows"></div>
+      <div class="bind-banner" id="bindBanner">
+        <span id="bindText"></span>
+        <button class="mini-btn" id="undoBtn">撤销</button>
+        <span style="color:var(--muted)">← 没有预览、没有确认，这就是 B</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 变体 C：菜单栏面板 -->
+  <div class="panel" id="panelBox" hidden>
+    <div class="p-head"><span class="scope" id="scopeLabel">默认组</span></div>
+    <div class="p-sec">
+      <div class="scope-bar">
+        <select id="scopeSel">
+          <option value="default">默认组（软木槌 · 用户包）</option>
+          <option value="ws-other">工作区 ~/Code/shop（夜间控制台 · 出厂包）</option>
+          <option value="ws-same">工作区 ~/Code/blog（同用软木槌）</option>
+        </select>
+      </div>
+    </div>
+    <div class="p-sec" id="panelRows"></div>
+  </div>
+
+  <div class="note" id="note"></div>
+</div>
+
+<!-- 导入 sheet（变体 A） -->
+<div class="overlay" id="sheetOv">
+  <div class="sheet" id="sheetBox">
+    <h3 id="sheetTitle">导入音频 · 本轮结束</h3>
+    <div class="filebox">
+      <button class="mini-btn" id="pvBtn">▶ 试听</button>
+      <span class="wave" id="wave"><i style="height:30%"></i><i style="height:65%"></i><i style="height:45%"></i><i style="height:90%"></i><i style="height:55%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:60%"></i><i style="height:80%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:50%"></i></span>
+      <span><span class="fn" id="sheetFile">my-cue.aiff</span><br><span class="meta">1.2 秒 · 44.1kHz · 通过校验（魔数/大小/时长）</span></span>
+    </div>
+    <div class="cap">导入将复制进「软木槌」包目录并绑定到该事件。取消或关闭保留旧绑定与源文件（D34）。</div>
+    <div class="row-btns">
+      <button class="btn" id="cancelBtn">取消</button>
+      <button class="btn primary" id="adoptBtn">选用</button>
+    </div>
+  </div>
+</div>
+
+<!-- 歧义 modal（变体 C） -->
+<div class="overlay" id="ambOv">
+  <div class="sheet">
+    <h3 id="ambTitle"></h3>
+    <div class="cap" id="ambBody"></div>
+    <div class="row-btns" id="ambBtns"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="switcher">
+  <button id="prev" title="上一个（←）">‹</button>
+  <span class="vlabel" id="vlabel"></span>
+  <button id="next" title="下一个（→）">›</button>
+  <button class="theme-btn" id="themeBtn">◐ 明暗</button>
+</div>
+
+<script>
+const EVENTS = [
+  { id: 'task_start',    name: '任务开始',   color: 'var(--ev-blue)',   glyph: 'plane',       sound: 'launch-chime.aiff' },
+  { id: 'stop',          name: '本轮结束',   color: 'var(--ev-green)',  glyph: 'checkFill',   sound: 'soft-mallet.caf' },
+  { id: 'stop_failure',  name: '执行中断',   color: 'var(--ev-amber)',  glyph: 'pauseFill',   sound: 'Basso（系统）' },
+  { id: 'notification',  name: '待响应',     color: 'var(--ev-clay)',   glyph: 'bell',        sound: 'ping-warm.aiff' },
+  { id: 'subagent_stop', name: '子任务结束', color: 'var(--ev-indigo)', glyph: 'checkHollow', sound: 'tick-soft.caf' },
+];
+const GLYPHS = {
+  plane: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M21.6 2.4 2.8 10.6c-.5.2-.4.9.1 1l6.9 1.7 1.7 6.9c.2.5.9.5 1.1.1l8.2-16.8c.2-.5-.3-1-.8-.9z"/></svg>`,
+  checkFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 12.4l3.1 3.1L16.9 9" fill="none" stroke="var(--panel-a)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  pauseFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><rect x="8.4" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--panel-a)"/><rect x="13.1" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--panel-a)"/></svg>`,
+  bell: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M11 4.2a4.6 4.6 0 0 1 4.6 4.6v3l1.6 2.7c.2.4-.1.9-.6.9H6.4c-.5 0-.8-.5-.6-.9L7.4 11.8v-3A4.6 4.6 0 0 1 11 4.2z"/><circle cx="11.5" cy="18.3" r="1.7" fill="currentColor"/><circle cx="17.6" cy="5.6" r="3" fill="currentColor" stroke="var(--panel-a)" stroke-width="1.6"/></svg>`,
+  checkHollow: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.6 12.4l2.8 2.8 5.8-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+const VARIANTS = {
+  A: { label: 'A · 声音页 + 预览后选用（推荐）',
+    note: `<span class="tag">A</span><b>drop = 打开导入 sheet，文件已预填</b>：省去 NSOpenPanel 一跳，但保留 D34 的试听与显式「选用」；取消/关闭保留旧绑定。包上下文显式（你就在包详情里），出厂包行可直接显示「复制并编辑」引导。拖 my-cue.aiff 到任意事件行试试，再试试 notes.txt 的拒绝文案。` },
+  B: { label: 'B · 声音页 + drop-to-bind',
+    note: `<span class="tag">B</span><b>drop 立即导入并绑定</b>，事后给「撤销」。手感确实快——但这就是旧管线 consumeDrop 的语义，也是 D34 否决它的原因：音频是听的东西，没听过就绑定是把确认环节从流程里删了。` },
+  C: { label: 'C · 面板事件行 drop',
+    note: `<span class="tag">C</span><b>往面板行上拖</b>。用上面的作用域开关翻三种情况，分别拖一次：① 工作区包是<b>出厂包（只读）</b>；② 工作区包 ≠ 默认组包，<b>写进哪个包？</b>；③ 同包时「能写」——但 ADR 0021 说映射归包所有，你会同时改掉所有用该包的组。这三个 modal 就是面板行没有包上下文的代价。` },
+};
+const ORDER = ['A', 'B', 'C'];
+
+const rowsEl = document.getElementById('rows');
+const panelRowsEl = document.getElementById('panelRows');
+const noteEl = document.getElementById('note');
+const toastEl = document.getElementById('toast');
+const sheetOv = document.getElementById('sheetOv');
+const ambOv = document.getElementById('ambOv');
+let toastTimer = null, pendingEvent = null, pendingFile = null;
+
+function variant() { return new URLSearchParams(location.search).get('variant') || 'A'; }
+function toast(msg, ms = 2800) {
+  toastEl.innerHTML = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+function rowHTML(e) {
+  return `<div class="ev-row" data-ev="${e.id}">
+    ${GLYPHS[e.glyph](e.color)}
+    <span class="rt"><span class="t">${e.name}</span><span class="s" data-sound>${e.sound}</span></span>
+    <span class="acts"><button class="mini-btn">试听</button><button class="mini-btn">更换…▾</button></span>
+  </div>`;
+}
+function panelRowHTML(e) {
+  return `<div class="ev-row" data-ev="${e.id}">
+    ${GLYPHS[e.glyph](e.color)}
+    <span class="rt"><span class="t">${e.name}</span></span>
+    <span class="acts"><button class="mini-btn">▶</button><button class="mini-btn">🔊</button></span>
+  </div>`;
+}
+
+function render() {
+  const v = variant();
+  document.getElementById('vlabel').textContent = VARIANTS[v].label;
+  noteEl.innerHTML = VARIANTS[v].note;
+  document.getElementById('win').hidden = v === 'C';
+  document.getElementById('panelBox').hidden = v !== 'C';
+  document.getElementById('bindBanner').classList.remove('show');
+  rowsEl.innerHTML = EVENTS.map(rowHTML).join('');
+  panelRowsEl.innerHTML = EVENTS.map(panelRowHTML).join('');
+  wireRows(rowsEl); wireRows(panelRowsEl);
+}
+
+function wireRows(root) {
+  root.querySelectorAll('.ev-row').forEach(row => {
+    row.addEventListener('dragover', ev => { ev.preventDefault(); row.classList.add('targeted'); });
+    row.addEventListener('dragleave', () => row.classList.remove('targeted'));
+    row.addEventListener('drop', ev => {
+      ev.preventDefault(); row.classList.remove('targeted');
+      const file = ev.dataTransfer.getData('text/file') || 'my-cue.aiff';
+      const ok = ev.dataTransfer.getData('text/ok') !== '0';
+      const e = EVENTS.find(x => x.id === row.dataset.ev);
+      handleDrop(file, ok, e, row, root === panelRowsEl);
+    });
+  });
+}
+
+function handleDrop(file, ok, e, row, inPanel) {
+  if (!ok) {
+    toast(`✗ 已拒绝：${file} 不是受支持的音频<br>（wav / mp3 / aiff / m4a；路径、大小、魔数、时长四道校验）`);
+    return;
+  }
+  const v = variant();
+  if (inPanel) { panelDrop(file, e); return; }
+  if (v === 'B') {
+    const s = row.querySelector('[data-sound]');
+    const old = s.textContent; s.textContent = file;
+    row.classList.add('drop-flash'); setTimeout(() => row.classList.remove('drop-flash'), 700);
+    const bb = document.getElementById('bindBanner');
+    document.getElementById('bindText').innerHTML = `✓ 已绑定 <b>${file}</b> → 「${e.name}」（原 ${old}）`;
+    bb.classList.add('show');
+    document.getElementById('undoBtn').onclick = () => { s.textContent = old; bb.classList.remove('show'); toast('已撤销，恢复 ' + old); };
+    return;
+  }
+  /* A：打开预览 sheet */
+  pendingEvent = e; pendingFile = file; pendingRow = row;
+  document.getElementById('sheetTitle').textContent = `导入音频 · ${e.name}`;
+  document.getElementById('sheetFile').textContent = file;
+  sheetOv.classList.add('open');
+}
+
+/* 变体 C 的三种歧义 */
+function panelDrop(file, e) {
+  const scope = document.getElementById('scopeSel').value;
+  const t = document.getElementById('ambTitle'), b = document.getElementById('ambBody'), btns = document.getElementById('ambBtns');
+  if (scope === 'ws-other') {
+    t.textContent = '歧义 ①：出厂包只读';
+    b.innerHTML = `工作区 ~/Code/shop 用「夜间控制台」，是<b>出厂包</b>。${file} 写不进去——只能先「复制为我的包」。<br>而且即便能写，你确定要改的是工作区的包、而不是默认组的「软木槌」吗？面板行上看不到这个区别。`;
+    btns.innerHTML = `<button class="btn" data-x>取消</button><button class="btn warn" data-x>复制并编辑…</button>`;
+  } else if (scope === 'ws-same') {
+    t.textContent = '歧义 ③：改了所有人';
+    b.innerHTML = `工作区和默认组同用「软木槌」。映射归包所有（ADR 0021）——把 ${file} 绑到「${e.name}」，<b>默认组和这个工作区一起变</b>。你以为在改当前作用域，其实在改共享的包。`;
+    btns.innerHTML = `<button class="btn" data-x>取消</button><button class="btn primary" data-x>仍然绑定</button>`;
+  } else {
+    t.textContent = '歧义 ②：写进哪个包？';
+    b.innerHTML = `面板行没有包上下文。当前作用域是默认组（软木槌），但如果你的工作区用别的包，${file} 该进哪个？面板需要你<b>先回答一个它界面里不存在的问题</b>。`;
+    btns.innerHTML = `<button class="btn" data-x>取消</button><button class="btn primary" data-x>进软木槌</button>`;
+  }
+  ambOv.classList.add('open');
+  btns.querySelectorAll('[data-x]').forEach(b2 => b2.onclick = () => ambOv.classList.remove('open'));
+}
+
+/* sheet 交互 */
+document.getElementById('pvBtn').onclick = () => {
+  const sb = document.getElementById('sheetBox');
+  sb.classList.add('previewing');
+  document.getElementById('pvBtn').textContent = '■ 停止';
+  setTimeout(() => { sb.classList.remove('previewing'); document.getElementById('pvBtn').textContent = '▶ 试听'; }, 1400);
+};
+document.getElementById('cancelBtn').onclick = () => {
+  sheetOv.classList.remove('open');
+  toast(`已取消，保留旧绑定 ${pendingEvent.sound}<br>（源文件不动，manifest 不写）`);
+};
+document.getElementById('adoptBtn').onclick = () => {
+  sheetOv.classList.remove('open');
+  pendingRow.querySelector('[data-sound]').textContent = pendingFile;
+  pendingRow.classList.add('drop-flash'); setTimeout(() => pendingRow.classList.remove('drop-flash'), 700);
+  toast(`✓ 已导入并绑定：${pendingFile} → 「${pendingEvent.name}」<br>（复制进包目录 → packs.lock → manifest 原子发布）`);
+};
+sheetOv.addEventListener('click', ev => { if (ev.target === sheetOv) sheetOv.classList.remove('open'); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { sheetOv.classList.remove('open'); ambOv.classList.remove('open'); } });
+
+/* 芯片拖拽 */
+document.querySelectorAll('.chip').forEach(ch => {
+  ch.addEventListener('dragstart', ev => {
+    ev.dataTransfer.setData('text/file', ch.dataset.file);
+    ev.dataTransfer.setData('text/ok', ch.dataset.ok);
+    document.querySelectorAll('.ev-row').forEach(r => r.classList.add('droppable'));
+  });
+  ch.addEventListener('dragend', () => document.querySelectorAll('.ev-row').forEach(r => r.classList.remove('droppable', 'targeted')));
+});
+
+/* 切换条 */
+document.getElementById('scopeSel').addEventListener('change', ev => {
+  document.getElementById('scopeLabel').textContent = ev.target.value === 'default' ? '默认组' : '工作区';
+});
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.getElementById('themeBtn').onclick = () => {
+  const h = document.documentElement; h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+function cycle(d) {
+  const v = variant();
+  const u = new URL(location.href);
+  u.searchParams.set('variant', ORDER[(ORDER.indexOf(v) + d + ORDER.length) % ORDER.length]);
+  history.replaceState(null, '', u); render();
+}
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('input, textarea, select, [contenteditable]')) return;
+  if (ev.key === 'ArrowLeft') cycle(-1);
+  if (ev.key === 'ArrowRight') cycle(1);
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE · 工作区页事件行入口（Q5）</title>
+<!--
+  一次性原型，回答 grill Q5：「默认组／工作区」页的事件行入口动不动。
+  三个变体（底部浮条或 ←/→ 切换，?variant=1|2|3）：
+    1 — 不动（现状）：行尾 chevron › 深链，文件名是纯文字【推荐】
+    2 — 并存：文件名升格为链接（和面板同手势）+ chevron 保留
+    3 — 替换：删 chevron，只剩文件名链接（可见性退化，用来感受）
+  所有交互是假的：点击只弹 toast 展示深链去向。
+-->
+<style>
+  :root {
+    --page-font: ui-rounded, -apple-system, "SF Pro Rounded", "PingFang SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ease-enter: cubic-bezier(.2,.7,.2,1);
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --backdrop1: #121110; --backdrop2: #1C1916; --page-text: #F4EBDD;
+    --text: #F4EBDD; --text-2: #B0AEA5; --muted: #6F665B;
+    --hairline: rgba(245,235,221,.10); --hairline-strong: rgba(245,235,221,.16);
+    --clay: #D97757; --focus: #0A84FF; --hover: rgba(245,235,221,.06);
+    --window: #1A1815; --window-side: rgba(245,235,221,.05);
+    --menu-bg: rgba(38,35,31,.94);
+    --shadow-pop: 0 1px 2px rgba(0,0,0,.5), 0 18px 48px rgba(0,0,0,.55);
+    --shadow-win: 0 30px 80px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4);
+    --ev-blue: #0A84FF; --ev-green: #34C759; --ev-amber: #FF9F0A; --ev-clay: #D97757; --ev-indigo: #5E5CE6;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --backdrop1: #E9E2D6; --backdrop2: #D8CBB8; --page-text: #2B2620;
+    --text: #2B2620; --text-2: #75685A; --muted: #AB9E8E;
+    --hairline: rgba(60,44,32,.08); --hairline-strong: rgba(60,44,32,.14);
+    --clay: #C4633C; --focus: #0A72D0; --hover: rgba(60,44,32,.05);
+    --window: #FAF8F4; --window-side: rgba(60,44,32,.045);
+    --menu-bg: rgba(255,253,250,.96);
+    --shadow-pop: 0 1px 2px rgba(40,30,20,.12), 0 18px 48px rgba(40,30,20,.20);
+    --shadow-win: 0 30px 80px rgba(40,30,20,.22), 0 2px 12px rgba(40,30,20,.10);
+    --ev-blue: #0A72D0; --ev-green: #288B43; --ev-amber: #AC6900; --ev-clay: #C4633C; --ev-indigo: #5B59D6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--page-font); background: var(--backdrop1); color: var(--page-text); min-height: 100vh; }
+  .stage {
+    min-height: 100vh; padding: 34px 24px 130px;
+    background: radial-gradient(120% 90% at 20% 0%, var(--backdrop2), transparent 62%), var(--backdrop1);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+
+  .window {
+    width: 620px; border-radius: 12px; overflow: hidden; display: flex; min-height: 400px;
+    background: var(--window); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-win);
+  }
+  .sidebar { width: 148px; background: var(--window-side); border-right: 1px solid var(--hairline); padding: 10px 8px; flex: none; }
+  .sidebar .si { padding: 5px 9px; border-radius: 6px; font-size: 12.5px; color: var(--text-2); }
+  .sidebar .si.on { background: var(--hover); color: var(--text); font-weight: 600; }
+  .content { flex: 1; padding: 16px 18px; min-width: 0; }
+  .page-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+
+  .card { border: 1px solid var(--hairline); border-radius: 10px; background: var(--window-side); padding: 10px 12px; margin-bottom: 12px; }
+  .card .card-t { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); margin-bottom: 8px; }
+  .kv { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+  .kv + .kv { margin-top: 8px; }
+  .kv .k { flex: 1; color: var(--text); }
+  .popup {
+    font: 500 12px var(--page-font); color: var(--text); background: var(--window);
+    border: 1px solid var(--hairline-strong); border-radius: 6px; padding: 3px 8px;
+  }
+  .vol-track { width: 140px; height: 4px; border-radius: 2px; background: var(--hairline-strong); position: relative; }
+  .vol-track i { position: absolute; left: 0; top: 0; bottom: 0; width: 65%; border-radius: 2px; background: var(--text-2); }
+
+  .ev-row {
+    display: flex; align-items: center; gap: 9px; padding: 7px 4px; border-radius: 8px;
+  }
+  .ev-row:hover { background: var(--hover); }
+  .ev-row .glyph { width: 22px; height: 22px; flex: none; }
+  .ev-row .rt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .ev-row .t { font-size: 12.5px; font-weight: 600; }
+  .ev-row .s { font: 500 10.5px var(--mono); color: var(--muted); }
+  .ev-row .acts { display: flex; gap: 8px; flex: none; align-items: center; }
+  .ev-row.muted .t, .ev-row.muted .s { opacity: .45; }
+
+  .mini-btn {
+    font: 600 10.5px var(--page-font); color: var(--text-2); background: none;
+    border: 1px solid var(--hairline-strong); border-radius: 5px; padding: 3px 8px; cursor: pointer;
+  }
+  .mini-btn:hover { color: var(--text); }
+  .chev {
+    border: none; background: none; color: var(--muted); font-size: 14px; cursor: pointer;
+    padding: 2px 4px; border-radius: 5px; line-height: 1;
+  }
+  .chev:hover { color: var(--text); background: var(--hover); }
+  .chev:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  /* macOS 开关 */
+  .sw {
+    width: 28px; height: 17px; border-radius: 999px; border: none; cursor: pointer; padding: 0;
+    background: var(--ev-green); position: relative; transition: background 160ms var(--ease-enter);
+  }
+  .sw::after {
+    content: ""; position: absolute; top: 1.5px; left: 12.5px; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; transition: left 160ms var(--ease-enter);
+    box-shadow: 0 1px 2px rgba(0,0,0,.3);
+  }
+  .sw.off { background: var(--hairline-strong); }
+  .sw.off::after { left: 1.5px; }
+
+  /* 文件名链接（变体 2/3） */
+  .sound-jump {
+    font: 500 10.5px var(--mono); color: var(--muted); background: none; border: none; padding: 0 2px;
+    margin-left: -2px; cursor: pointer; border-radius: 4px; text-align: left;
+  }
+  .sound-jump:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 2px; }
+  .sound-jump:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; color: var(--clay); }
+  .tip {
+    position: fixed; z-index: 90; padding: 4px 9px; border-radius: 6px; background: var(--menu-bg);
+    border: 1px solid var(--hairline-strong); color: var(--text); font-size: 11px;
+    box-shadow: var(--shadow-pop); display: none; pointer-events: none;
+  }
+  .tip.show { display: block; }
+
+  .note { width: 620px; max-width: 92vw; font-size: 11.5px; line-height: 1.65; color: var(--text-2); }
+  .note b { color: var(--text); }
+  .note .tag { display: inline-block; font: 600 10px var(--page-font); padding: 1px 6px; border-radius: 4px; background: var(--clay); color: #FFFDFA; margin-right: 5px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(8px);
+    background: var(--menu-bg); backdrop-filter: blur(20px); color: var(--text);
+    border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 8px 14px;
+    font-size: 11.5px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none;
+    transition: opacity 160ms var(--ease-enter), transform 160ms var(--ease-enter);
+    max-width: 460px; text-align: center; z-index: 80;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .switcher {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 70;
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 999px;
+    background: #D8F447; color: #172B25; box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    font-size: 12.5px; font-weight: 600; user-select: none;
+  }
+  .switcher button { border: none; background: rgba(23,43,37,.12); color: #172B25; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .switcher .vlabel { min-width: 240px; text-align: center; }
+  .switcher .theme-btn { width: auto; border-radius: 13px; padding: 0 10px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window">
+    <div class="sidebar">
+      <div class="si on">默认组／工作区</div>
+      <div class="si">声音</div>
+      <div class="si">集成</div>
+      <div class="si">通知</div>
+      <div class="si">通用</div>
+    </div>
+    <div class="content">
+      <div class="page-title">默认组／工作区</div>
+      <div class="card">
+        <div class="kv"><span class="k">作用域</span><span class="popup">默认组 ▾</span></div>
+      </div>
+      <div class="card">
+        <div class="card-t">声音</div>
+        <div class="kv"><span class="k">声音包</span><span class="popup">软木槌 ▾</span></div>
+        <div class="kv"><span class="k">音量</span><span class="vol-track"><i></i></span><span style="font-size:11px;color:var(--muted)">65%</span></div>
+      </div>
+      <div class="card">
+        <div class="card-t">事件</div>
+        <div id="rows"></div>
+      </div>
+    </div>
+  </div>
+  <div class="note" id="note"></div>
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+<div class="switcher">
+  <button id="prev">‹</button>
+  <span class="vlabel" id="vlabel"></span>
+  <button id="next">›</button>
+  <button class="theme-btn" id="themeBtn">◐ 明暗</button>
+</div>
+
+<script>
+const EVENTS = [
+  { id: 'task_start',    name: '任务开始',   color: 'var(--ev-blue)',   glyph: 'plane',       sound: 'launch-chime.aiff' },
+  { id: 'stop',          name: '本轮结束',   color: 'var(--ev-green)',  glyph: 'checkFill',   sound: 'soft-mallet.caf' },
+  { id: 'stop_failure',  name: '执行中断',   color: 'var(--ev-amber)',  glyph: 'pauseFill',   sound: 'Basso（系统）' },
+  { id: 'notification',  name: '待响应',     color: 'var(--ev-clay)',   glyph: 'bell',        sound: 'ping-warm.aiff' },
+  { id: 'subagent_stop', name: '子任务结束', color: 'var(--ev-indigo)', glyph: 'checkHollow', sound: 'tick-soft.caf' },
+];
+const GLYPHS = {
+  plane: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M21.6 2.4 2.8 10.6c-.5.2-.4.9.1 1l6.9 1.7 1.7 6.9c.2.5.9.5 1.1.1l8.2-16.8c.2-.5-.3-1-.8-.9z"/></svg>`,
+  checkFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 12.4l3.1 3.1L16.9 9" fill="none" stroke="var(--panel-a, var(--window))" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  pauseFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><rect x="8.4" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--window)"/><rect x="13.1" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--window)"/></svg>`,
+  bell: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M11 4.2a4.6 4.6 0 0 1 4.6 4.6v3l1.6 2.7c.2.4-.1.9-.6.9H6.4c-.5 0-.8-.5-.6-.9L7.4 11.8v-3A4.6 4.6 0 0 1 11 4.2z"/><circle cx="11.5" cy="18.3" r="1.7" fill="currentColor"/><circle cx="17.6" cy="5.6" r="3" fill="currentColor" stroke="var(--window)" stroke-width="1.6"/></svg>`,
+  checkHollow: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.6 12.4l2.8 2.8 5.8-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+const VARIANTS = {
+  '1': { label: '1 · 不动：现状 chevron（推荐）',
+    note: `<span class="tag">1</span><b>行尾 › 就是今天的样子</b>：恒可见、Tab 可达、带 return context。文件名是纯文字（点了没反应）。这页的职责边界写得很清——只选包/音量/开关/试听，具体声音借道「声音」页。点任意行的 › 看深链去向。` },
+  '2': { label: '2 · 并存：文件名链接 + chevron',
+    note: `<span class="tag">2</span><b>文件名也变成链接</b>（hover 下划线 + tooltip「更换声音…」），chevron 保留。好处：面板学到的「点声音名」手势到这页不失效。代价自己看：行上现在有 试听 + 链接 + › + 开关 四个可操作元素，两个干同一件事。` },
+  '3': { label: '3 · 替换：只剩文件名链接',
+    note: `<span class="tag">3</span><b>删掉 chevron</b>，文件名链接是唯一入口。行最干净、手势跨面统一；但 affordance 从恒可见退化成 hover 才发现——在一个<b>本来更可见</b>的页面上变弱了。盯着行看三秒：不看注释你能发现文件名能点吗？` },
+};
+const ORDER = ['1', '2', '3'];
+
+const rowsEl = document.getElementById('rows');
+const noteEl = document.getElementById('note');
+const toastEl = document.getElementById('toast');
+const tip = document.getElementById('tip');
+let toastTimer = null;
+const muted = new Set();
+
+function variant() { return new URLSearchParams(location.search).get('variant') || '1'; }
+function toast(msg, ms = 2800) {
+  toastEl.innerHTML = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+function deepLinkToast(e) {
+  toast(`→ 深链：设置 · 声音 · 软木槌 · 「${e.name}」<br>（return context：返回时恢复作用域/音量/开关/事件焦点）`);
+}
+
+function rowHTML(e, v) {
+  const isMuted = muted.has(e.id);
+  const sub = (v === '2' || v === '3')
+    ? `<button class="sound-jump" data-ev="${e.id}">${e.sound}</button>`
+    : `<span class="s">${e.sound}</span>`;
+  const chev = (v === '1' || v === '2')
+    ? `<button class="chev" data-chev="${e.id}" title="查看或编辑提示音">›</button>` : '';
+  return `<div class="ev-row ${isMuted ? 'muted' : ''}" data-ev="${e.id}">
+    ${GLYPHS[e.glyph](e.color)}
+    <span class="rt"><span class="t">${e.name}</span>${sub}</span>
+    <span class="acts">
+      <button class="mini-btn" data-pv="${e.id}">试听</button>
+      ${chev}
+      <button class="sw ${isMuted ? 'off' : ''}" data-sw="${e.id}" title="事件开关"></button>
+    </span>
+  </div>`;
+}
+
+function render() {
+  const v = variant();
+  document.getElementById('vlabel').textContent = VARIANTS[v].label;
+  noteEl.innerHTML = VARIANTS[v].note;
+  rowsEl.innerHTML = EVENTS.map(e => rowHTML(e, v)).join('');
+}
+
+rowsEl.addEventListener('click', ev => {
+  const row = ev.target.closest('.ev-row');
+  if (!row) return;
+  const e = EVENTS.find(x => x.id === row.dataset.ev);
+  if (!e) return;
+  if (ev.target.closest('[data-pv]')) { toast(`♪ 试听「${e.name}」`); return; }
+  if (ev.target.closest('[data-sw]')) { muted.has(e.id) ? muted.delete(e.id) : muted.add(e.id); render(); return; }
+  if (ev.target.closest('[data-chev]') || ev.target.closest('.sound-jump')) deepLinkToast(e);
+});
+
+rowsEl.addEventListener('mouseover', ev => {
+  const j = ev.target.closest('.sound-jump');
+  if (!j) return;
+  tip.textContent = '更换声音…';
+  const r = j.getBoundingClientRect();
+  tip.style.left = r.left + 'px';
+  tip.style.top = (r.top - 27) + 'px';
+  tip.classList.add('show');
+});
+rowsEl.addEventListener('mouseout', ev => {
+  if (ev.target.closest('.sound-jump')) tip.classList.remove('show');
+});
+
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.getElementById('themeBtn').onclick = () => {
+  const h = document.documentElement; h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+function cycle(d) {
+  const v = variant();
+  const u = new URL(location.href);
+  u.searchParams.set('variant', ORDER[(ORDER.indexOf(v) + d + ORDER.length) % ORDER.length]);
+  history.replaceState(null, '', u); render();
+}
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('input, textarea, select, [contenteditable]')) return;
+  if (ev.key === 'ArrowLeft') cycle(-1);
+  if (ev.key === 'ArrowRight') cycle(1);
+});
+
+render();
+</script>
+</body>
+</html>

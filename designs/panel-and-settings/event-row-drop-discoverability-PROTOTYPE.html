@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE · 拖放快捷操作的可发现性（Q3a）</title>
+<!--
+  一次性原型，回答 grill Q3a：「声音页事件行拖放」这个捷径怎么让用户知道。
+  三个变体（底部浮条或 ←/→ 切换，?variant=1|2|3）：
+    1 — 双触点即时教学【推荐】：拖起文件时事件行浮现虚线框 + 「松开以导入」行内提示；
+        且「导入音频」sheet 里有一行 caption 在慢路径里教快路径（点任意行的 更换…▾ 可见）
+    2 — 常驻 hint：包详情顶部永久挂一行提示文案
+    3 — 一次性教练气泡：首次进入声音页时气泡指向事件行（真 build 需要 has-seen 持久状态）
+    4 — 定稿：常驻导向 caption（唯一教学位）+ 拖拽目标高亮；sheet 回归纯事务，无「下次可以更快」行
+  拖顶部芯片到事件行体验；全是假的，不写状态。
+-->
+<style>
+  :root {
+    --page-font: ui-rounded, -apple-system, "SF Pro Rounded", "PingFang SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ease-enter: cubic-bezier(.2,.7,.2,1);
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --backdrop1: #121110; --backdrop2: #1C1916; --page-text: #F4EBDD;
+    --text: #F4EBDD; --text-2: #B0AEA5; --muted: #6F665B;
+    --hairline: rgba(245,235,221,.10); --hairline-strong: rgba(245,235,221,.16);
+    --clay: #D97757; --focus: #0A84FF; --hover: rgba(245,235,221,.06);
+    --window: #1A1815; --window-side: rgba(245,235,221,.05);
+    --menu-bg: rgba(38,35,31,.94);
+    --shadow-pop: 0 1px 2px rgba(0,0,0,.5), 0 18px 48px rgba(0,0,0,.55);
+    --shadow-win: 0 30px 80px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4);
+    --ev-blue: #0A84FF; --ev-green: #34C759; --ev-amber: #FF9F0A; --ev-clay: #D97757; --ev-indigo: #5E5CE6;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --backdrop1: #E9E2D6; --backdrop2: #D8CBB8; --page-text: #2B2620;
+    --text: #2B2620; --text-2: #75685A; --muted: #AB9E8E;
+    --hairline: rgba(60,44,32,.08); --hairline-strong: rgba(60,44,32,.14);
+    --clay: #C4633C; --focus: #0A72D0; --hover: rgba(60,44,32,.05);
+    --window: #FAF8F4; --window-side: rgba(60,44,32,.045);
+    --menu-bg: rgba(255,253,250,.96);
+    --shadow-pop: 0 1px 2px rgba(40,30,20,.12), 0 18px 48px rgba(40,30,20,.20);
+    --shadow-win: 0 30px 80px rgba(40,30,20,.22), 0 2px 12px rgba(40,30,20,.10);
+    --ev-blue: #0A72D0; --ev-green: #288B43; --ev-amber: #AC6900; --ev-clay: #C4633C; --ev-indigo: #5B59D6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--page-font); background: var(--backdrop1); color: var(--page-text); min-height: 100vh; }
+  .stage {
+    position: relative; min-height: 100vh; padding: 34px 24px 130px;
+    background: radial-gradient(120% 90% at 20% 0%, var(--backdrop2), transparent 62%), var(--backdrop1);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .tray { display: flex; gap: 10px; align-items: center; }
+  .tray .cap { font-size: 11px; color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 8px;
+    background: var(--window); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-pop);
+    font: 500 12px var(--mono); cursor: grab; user-select: none;
+  }
+  .chip:active { cursor: grabbing; }
+
+  .window {
+    width: 620px; border-radius: 12px; overflow: hidden; display: flex; min-height: 360px;
+    background: var(--window); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-win);
+    position: relative;
+  }
+  .sidebar { width: 148px; background: var(--window-side); border-right: 1px solid var(--hairline); padding: 10px 8px; flex: none; }
+  .sidebar .si { padding: 5px 9px; border-radius: 6px; font-size: 12.5px; color: var(--text-2); }
+  .sidebar .si.on { background: var(--hover); color: var(--text); font-weight: 600; }
+  .content { flex: 1; padding: 14px 16px; min-width: 0; }
+  .pack-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .pack-head h2 { font-size: 15px; }
+  .badge { font: 600 9.5px var(--page-font); padding: 1.5px 6px; border-radius: 4px; background: var(--ev-green); color: #fff; }
+  .pack-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+
+  /* 变体 2：常驻 hint */
+  .perm-hint {
+    display: none; align-items: center; gap: 6px; margin: 0 0 10px; padding: 6px 10px;
+    border-radius: 7px; background: var(--window-side); border: 1px solid var(--hairline);
+    font-size: 11px; color: var(--text-2);
+  }
+  .perm-hint.show { display: flex; }
+
+  /* 变体 4：导向式常驻 caption（照 macOS 设置面板横幅的写法，裸文案、无卡片、无 emoji） */
+  .orient-hint { display: none; font-size: 11px; color: var(--text-2); line-height: 1.6; margin: 0 0 10px; }
+  .orient-hint.show { display: block; }
+
+  .ev-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid transparent; position: relative; transition: border-color 120ms, background 120ms;
+  }
+  .ev-row:hover { background: var(--hover); }
+  .ev-row.droppable { border-color: var(--hairline-strong); border-style: dashed; }
+  .ev-row.targeted { border-color: var(--focus); border-style: solid; background: color-mix(in srgb, var(--focus) 12%, transparent); }
+  .ev-row .glyph { width: 22px; height: 22px; flex: none; }
+  .ev-row .rt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .ev-row .t { font-size: 12.5px; font-weight: 600; }
+  .ev-row .s { font: 500 10.5px var(--mono); color: var(--muted); }
+  .ev-row .acts { display: flex; gap: 6px; flex: none; }
+  .mini-btn {
+    font: 600 10.5px var(--page-font); color: var(--text-2); background: none;
+    border: 1px solid var(--hairline-strong); border-radius: 5px; padding: 3px 8px; cursor: pointer;
+  }
+  .mini-btn:hover { color: var(--text); }
+
+  /* 变体 1：行内 drop 提示 */
+  .drop-hint {
+    position: absolute; right: 10px; top: -9px; z-index: 5;
+    font: 600 9.5px var(--page-font); padding: 1.5px 8px; border-radius: 999px;
+    background: var(--focus); color: #fff; box-shadow: var(--shadow-pop);
+    opacity: 0; pointer-events: none; transition: opacity 120ms var(--ease-enter);
+  }
+  .ev-row.targeted .drop-hint { opacity: 1; }
+
+  /* 变体 3：教练气泡 */
+  .coach {
+    position: absolute; z-index: 40; width: 220px; padding: 10px 12px; border-radius: 10px;
+    background: var(--menu-bg); backdrop-filter: blur(20px);
+    border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-pop);
+    font-size: 11.5px; line-height: 1.55; color: var(--text); display: none;
+  }
+  .coach.show { display: block; }
+  .coach::before {
+    content: ""; position: absolute; left: 34px; top: -6px; width: 10px; height: 10px;
+    background: inherit; border-left: 1px solid var(--hairline-strong); border-top: 1px solid var(--hairline-strong);
+    transform: rotate(45deg);
+  }
+  .coach .row-btns { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .btn { font: 600 12px var(--page-font); border-radius: 6px; padding: 5px 14px; cursor: pointer; border: 1px solid var(--hairline-strong); background: none; color: var(--text); }
+  .btn.primary { background: var(--focus); border-color: transparent; color: #fff; }
+
+  /* 导入 sheet */
+  .overlay { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; background: rgba(0,0,0,.28); }
+  .overlay.open { display: grid; }
+  .sheet { width: 380px; border-radius: 12px; padding: 18px; background: var(--window); border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-win); }
+  .sheet h3 { font-size: 13.5px; margin-bottom: 10px; }
+  .sheet .filebox { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--window-side); border: 1px solid var(--hairline); margin-bottom: 10px; }
+  .sheet .filebox .fn { font: 600 12px var(--mono); }
+  .sheet .cap { font-size: 11px; color: var(--text-2); line-height: 1.6; margin-bottom: 12px; }
+  .sheet .teach { font-size: 11px; color: var(--clay); line-height: 1.6; margin-bottom: 12px; display: none; }
+  .sheet .teach.show { display: block; }
+  .sheet .row-btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .wave { display: flex; align-items: flex-end; gap: 2px; height: 26px; flex: 1; }
+  .wave i { flex: 1; background: var(--text-2); border-radius: 1px; opacity: .6; }
+  .previewing .wave i { animation: wv .6s infinite alternate var(--ease-enter); }
+  @keyframes wv { from { transform: scaleY(.4); } to { transform: scaleY(1); } }
+
+  .note { width: 620px; max-width: 92vw; font-size: 11.5px; line-height: 1.65; color: var(--text-2); }
+  .note b { color: var(--text); }
+  .note .tag { display: inline-block; font: 600 10px var(--page-font); padding: 1px 6px; border-radius: 4px; background: var(--clay); color: #FFFDFA; margin-right: 5px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(8px);
+    background: var(--menu-bg); backdrop-filter: blur(20px); color: var(--text);
+    border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 8px 14px;
+    font-size: 11.5px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none;
+    transition: opacity 160ms var(--ease-enter), transform 160ms var(--ease-enter);
+    max-width: 460px; text-align: center; z-index: 80;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .switcher {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 70;
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 999px;
+    background: #D8F447; color: #172B25; box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    font-size: 12.5px; font-weight: 600; user-select: none;
+  }
+  .switcher button { border: none; background: rgba(23,43,37,.12); color: #172B25; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .switcher .vlabel { min-width: 270px; text-align: center; }
+  .switcher .theme-btn { width: auto; border-radius: 13px; padding: 0 10px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tray">
+    <span class="cap">拖我 →</span>
+    <span class="chip" draggable="true" data-file="my-cue.aiff"><span>🎵</span>my-cue.aiff</span>
+  </div>
+
+  <div class="window" id="win">
+    <div class="sidebar">
+      <div class="si">默认组／工作区</div>
+      <div class="si on">声音</div>
+      <div class="si">集成</div>
+      <div class="si">通知</div>
+      <div class="si">通用</div>
+    </div>
+    <div class="content">
+      <div class="pack-head"><h2>软木槌</h2><span class="badge">用户包</span></div>
+      <div class="pack-sub">5 个事件 · 导入的音频复制进包目录</div>
+      <div class="perm-hint" id="permHint">💡 提示：可以把音频文件直接拖到下面的事件行上导入</div>
+      <div class="orient-hint" id="orientHint">五个事件的声音由本包提供。把音频文件拖到事件行上即可导入。</div>
+      <div id="rows"></div>
+    </div>
+    <div class="coach" id="coach">
+      <b>新捷径</b>：现在可以把音频文件直接拖到事件行上导入，省掉「更换…→ 导入音频」的菜单绕行。
+      <div class="row-btns"><button class="btn primary" id="coachOk">知道了</button></div>
+    </div>
+  </div>
+
+  <div class="note" id="note"></div>
+</div>
+
+<div class="overlay" id="sheetOv">
+  <div class="sheet" id="sheetBox">
+    <h3 id="sheetTitle">导入音频 · 本轮结束</h3>
+    <div class="filebox">
+      <button class="mini-btn" id="pvBtn">▶ 试听</button>
+      <span class="wave"><i style="height:30%"></i><i style="height:65%"></i><i style="height:45%"></i><i style="height:90%"></i><i style="height:55%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:60%"></i><i style="height:80%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:50%"></i></span>
+      <span><span class="fn" id="sheetFile">my-cue.aiff</span><br><span style="font-size:10.5px;color:var(--muted)">1.2 秒 · 通过校验</span></span>
+    </div>
+    <div class="teach" id="teachLine">💡 下次可以更快：把音频文件直接拖到事件行上，会直达这个预览。</div>
+    <div class="cap">导入将复制进「软木槌」包目录并绑定到该事件。取消或关闭保留旧绑定与源文件。</div>
+    <div class="row-btns">
+      <button class="btn" id="cancelBtn">取消</button>
+      <button class="btn primary" id="adoptBtn">选用</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="switcher">
+  <button id="prev">‹</button>
+  <span class="vlabel" id="vlabel"></span>
+  <button id="next">›</button>
+  <button class="theme-btn" id="themeBtn">◐ 明暗</button>
+</div>
+
+<script>
+const EVENTS = [
+  { id: 'task_start',    name: '任务开始',   color: 'var(--ev-blue)',   glyph: 'plane',       sound: 'launch-chime.aiff' },
+  { id: 'stop',          name: '本轮结束',   color: 'var(--ev-green)',  glyph: 'checkFill',   sound: 'soft-mallet.caf' },
+  { id: 'stop_failure',  name: '执行中断',   color: 'var(--ev-amber)',  glyph: 'pauseFill',   sound: 'Basso（系统）' },
+  { id: 'notification',  name: '待响应',     color: 'var(--ev-clay)',   glyph: 'bell',        sound: 'ping-warm.aiff' },
+  { id: 'subagent_stop', name: '子任务结束', color: 'var(--ev-indigo)', glyph: 'checkHollow', sound: 'tick-soft.caf' },
+];
+const GLYPHS = {
+  plane: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M21.6 2.4 2.8 10.6c-.5.2-.4.9.1 1l6.9 1.7 1.7 6.9c.2.5.9.5 1.1.1l8.2-16.8c.2-.5-.3-1-.8-.9z"/></svg>`,
+  checkFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 12.4l3.1 3.1L16.9 9" fill="none" stroke="var(--panel-a)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  pauseFill: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="10" fill="currentColor"/><rect x="8.4" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--panel-a)"/><rect x="13.1" y="7.4" width="2.5" height="9.2" rx="1.1" fill="var(--panel-a)"/></svg>`,
+  bell: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><path fill="currentColor" d="M11 4.2a4.6 4.6 0 0 1 4.6 4.6v3l1.6 2.7c.2.4-.1.9-.6.9H6.4c-.5 0-.8-.5-.6-.9L7.4 11.8v-3A4.6 4.6 0 0 1 11 4.2z"/><circle cx="11.5" cy="18.3" r="1.7" fill="currentColor"/><circle cx="17.6" cy="5.6" r="3" fill="currentColor" stroke="var(--panel-a)" stroke-width="1.6"/></svg>`,
+  checkHollow: c => `<svg class="glyph" viewBox="0 0 24 24" style="color:${c}"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.6 12.4l2.8 2.8 5.8-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+const VARIANTS = {
+  '1': { label: '1 · 双触点即时教学（推荐）',
+    note: `<span class="tag">1</span><b>两个触点</b>：① 拖起文件 → 所有事件行浮现虚线框，目标行头顶浮出「松开导入到『本轮结束』」——意图时刻教学；② 点任意行的 <b>更换…▾</b> 打开 sheet，里面多一行 clay 色 caption「下次可以更快：直接拖到事件行」——在慢路径里教快路径。零持久状态。` },
+  '2': { label: '2 · 常驻 hint',
+    note: `<span class="tag">2</span><b>包详情顶部永久一行提示</b>。人人可见、实现最笨；代价是永久占一行 chrome，对从不拖文件的用户是终身噪音。拖芯片试试：除了行高亮（macOS 本分）没有任何额外引导，教学全靠上面那行字自己被发现。` },
+  '3': { label: '3 · 一次性教练气泡',
+    note: `<span class="tag">3</span><b>首次进入声音页时气泡指向第一行</b>，点「知道了」消失（切走再切回来可重演）。最主动，但真 build 需要 has-seen 持久状态，且「首次打开 ≠ 有导入意图」——它在用户最不想被打断的时刻讲话。` },
+  '4': { label: '4 · 定稿：常驻导向 caption + 拖拽反馈',
+    note: `<span class="tag">4</span><b>定稿</b>：常驻行按苹果横幅写法——前半句导向「五个事件的声音由本包提供」，后半句顺带教拖拽，<b>教学职责全归这一行</b>（同一事实一个归属）。sheet 收回纯事务（试听→选用），不再有「下次可以更快」——每条通往 sheet 的路都先经过本页，那行是冗余。触点①（拖起行高亮 + 「松开导入」浮标）保留，但它是拖放目标反馈，不是文字教学。` },
+};
+const ORDER = ['1', '2', '3', '4'];
+
+const rowsEl = document.getElementById('rows');
+const noteEl = document.getElementById('note');
+const toastEl = document.getElementById('toast');
+const sheetOv = document.getElementById('sheetOv');
+const coach = document.getElementById('coach');
+const permHint = document.getElementById('permHint');
+const orientHint = document.getElementById('orientHint');
+const teachLine = document.getElementById('teachLine');
+let toastTimer = null, pendingEvent = null, pendingRow = null;
+
+function variant() { return new URLSearchParams(location.search).get('variant') || '1'; }
+function toast(msg, ms = 2600) {
+  toastEl.innerHTML = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+function rowHTML(e) {
+  return `<div class="ev-row" data-ev="${e.id}" data-name="${e.name}">
+    <span class="drop-hint">松开导入到「${e.name}」</span>
+    ${GLYPHS[e.glyph](e.color)}
+    <span class="rt"><span class="t">${e.name}</span><span class="s" data-sound>${e.sound}</span></span>
+    <span class="acts"><button class="mini-btn">试听</button><button class="mini-btn" data-change="${e.id}">更换…▾</button></span>
+  </div>`;
+}
+
+function render() {
+  const v = variant();
+  document.getElementById('vlabel').textContent = VARIANTS[v].label;
+  noteEl.innerHTML = VARIANTS[v].note;
+  permHint.classList.toggle('show', v === '2');
+  orientHint.classList.toggle('show', v === '4');
+  teachLine.classList.toggle('show', v === '1');
+  coach.classList.remove('show');
+  rowsEl.innerHTML = EVENTS.map(rowHTML).join('');
+  rowsEl.querySelectorAll('.ev-row').forEach(row => {
+    row.addEventListener('dragover', ev => { ev.preventDefault(); row.classList.add('targeted'); });
+    row.addEventListener('dragleave', () => row.classList.remove('targeted'));
+    row.addEventListener('drop', ev => {
+      ev.preventDefault(); row.classList.remove('targeted');
+      openSheet(EVENTS.find(x => x.id === row.dataset.ev), row, true);
+    });
+  });
+  rowsEl.querySelectorAll('[data-change]').forEach(btn => btn.addEventListener('click', () => {
+    openSheet(EVENTS.find(x => x.id === btn.dataset.change), btn.closest('.ev-row'), false);
+  }));
+  if (v === '3') {
+    requestAnimationFrame(() => {
+      const first = rowsEl.querySelector('.ev-row');
+      const wr = document.getElementById('win').getBoundingClientRect();
+      const r = first.getBoundingClientRect();
+      coach.style.left = (r.left - wr.left + 20) + 'px';
+      coach.style.top = (r.bottom - wr.top + 8) + 'px';
+      coach.classList.add('show');
+    });
+  }
+}
+
+function openSheet(e, row, fromDrop) {
+  pendingEvent = e; pendingRow = row;
+  document.getElementById('sheetTitle').textContent = `导入音频 · ${e.name}`;
+  sheetOv.classList.add('open');
+  if (fromDrop) toast('drop → sheet 直接开在预览态（省了 NSOpenPanel 一跳）');
+}
+document.getElementById('pvBtn').onclick = () => {
+  const sb = document.getElementById('sheetBox');
+  sb.classList.add('previewing');
+  document.getElementById('pvBtn').textContent = '■ 停止';
+  setTimeout(() => { sb.classList.remove('previewing'); document.getElementById('pvBtn').textContent = '▶ 试听'; }, 1400);
+};
+document.getElementById('cancelBtn').onclick = () => { sheetOv.classList.remove('open'); toast('已取消，保留旧绑定'); };
+document.getElementById('adoptBtn').onclick = () => {
+  sheetOv.classList.remove('open');
+  pendingRow.querySelector('[data-sound]').textContent = 'my-cue.aiff';
+  toast(`✓ 已导入并绑定到「${pendingEvent.name}」`);
+};
+sheetOv.addEventListener('click', ev => { if (ev.target === sheetOv) sheetOv.classList.remove('open'); });
+document.getElementById('coachOk').onclick = () => { coach.classList.remove('show'); toast('真 build 里这里会写 has-seen 标记，永不再现'); };
+
+document.querySelectorAll('.chip').forEach(ch => {
+  ch.addEventListener('dragstart', () => rowsEl.querySelectorAll('.ev-row').forEach(r => r.classList.add('droppable')));
+  ch.addEventListener('dragend', () => rowsEl.querySelectorAll('.ev-row').forEach(r => r.classList.remove('droppable', 'targeted')));
+});
+
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.getElementById('themeBtn').onclick = () => {
+  const h = document.documentElement; h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+function cycle(d) {
+  const v = variant();
+  const u = new URL(location.href);
+  u.searchParams.set('variant', ORDER[(ORDER.indexOf(v) + d + ORDER.length) % ORDER.length]);
+  history.replaceState(null, '', u); render();
+}
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('input, textarea, select, [contenteditable]')) return;
+  if (ev.key === 'ArrowLeft') cycle(-1);
+  if (ev.key === 'ArrowRight') cycle(1);
+  if (ev.key === 'Escape') { sheetOv.classList.remove('open'); coach.classList.remove('show'); }
+});
+
+render();
+</script>
+</body>
+</html>
