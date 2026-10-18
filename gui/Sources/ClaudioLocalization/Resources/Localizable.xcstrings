@@ -1604,13 +1604,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "WorkBuddy uses the Default Group. Notifications cover permission and idle prompts only; interruption is not implemented."
+            "value": "WorkBuddy follows workspace sound rules by directory. Notifications cover permission and idle prompts only; interruption is not implemented."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "WorkBuddy 使用默认组。通知仅覆盖授权与空闲提醒；执行中断尚未实现。"
+            "value": "WorkBuddy 可按目录适用工作区声音配置。通知仅覆盖授权与空闲提醒；执行中断尚未实现。"
           }
         }
       }

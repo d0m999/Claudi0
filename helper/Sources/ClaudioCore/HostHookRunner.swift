@@ -290,7 +290,9 @@ public func handleHostHook(
     let isTaskStart = event == .taskStart
     let observedPlayEnvironment = PlayEnvironment(
         surfaceID: host.surfaceID,
-        workingDirectory: isQuestion || isAdditionalHost
+        // Question events keep the Default Group; every other host event with a validated
+        // payload cwd may resolve a workspace (ADR 0005, 2026-10-18 amendment).
+        workingDirectory: isQuestion
             ? nil : WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
         playbackAuthorized: {
             base.playbackAuthorized()

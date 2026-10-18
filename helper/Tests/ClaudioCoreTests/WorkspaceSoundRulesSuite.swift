@@ -240,13 +240,22 @@ func runWorkspaceSoundRulesSuites() {
                     try! config.resolveSoundProfile(for: .codex, cwd: cwd).get().volume == 0.13,
                     "no trusted cwd uses complete defaults")
             }
-            var unverified = parent
-            unverified.surfaces = [.workBuddy]
-            config.workspaceRules = [unverified]
+            for surface in [HostSurfaceID.workBuddy, .opencode, .kimiCode] {
+                var opened = parent
+                opened.surfaces = [surface]
+                config.workspaceRules = [opened]
+                expect(
+                    try! config.resolveSoundProfile(for: surface, cwd: base.path).get()
+                        .selectedPack == "parent",
+                    "\(surface.rawValue) resolves its workspace after the 2026-10-18 opening")
+            }
+            var axOnly = parent
+            axOnly.surfaces = [.chatGPTDesktopAX]
+            config.workspaceRules = [axOnly]
             expect(
-                try! config.resolveSoundProfile(for: .workBuddy, cwd: base.path).get().workspaceID
-                    == nil,
-                "unverified WorkBuddy uses Default Group even with externally supplied rule")
+                try! config.resolveSoundProfile(for: .chatGPTDesktopAX, cwd: base.path).get()
+                    .workspaceID == nil,
+                "AX beta identity without a hook pipeline stays on the Default Group")
             child.profile = nil; config.workspaceRules = [parent, child]
             expect(
                 config.resolveSoundProfile(for: .codex, cwd: nested.path) == .failure(.invalidRule),
@@ -304,9 +313,28 @@ func runWorkspaceSoundRulesSuites() {
                 "stale UUID never writes defaults")
             expect(
                 mutate(
-                    .surfaces(WorkspaceSoundWriteTarget(rule: rule), [.workBuddy])
+                    .surfaces(WorkspaceSoundWriteTarget(rule: rule), [.chatGPTDesktopAX])
                 ).isWorkspaceFailure(.unsupportedSurface),
-                "unverified WorkBuddy rejected")
+                "surface outside the caller's verified set rejected")
+            let openedRule = WorkspaceSoundRule(
+                directory: WorkspaceDirectory(
+                    kind: .directory,
+                    path: root.appendingPathComponent("opened").resolvingSymlinksInPath().path),
+                surfaces: [.workBuddy, .opencode, .kimiCode],
+                profile: WorkspaceSoundProfile(selectedPack: "selected", volume: 0.5))
+            try! FileManager.default.createDirectory(
+                at: root.appendingPathComponent("opened"), withIntermediateDirectories: true)
+            expect(
+                (try? mutateWorkspaceSound(
+                    .add(openedRule), configFile: file, lockFile: lock, userPacksDirectory: packs
+                ).get()) != nil,
+                "default verified set accepts the surfaces opened on 2026-10-18")
+            expect(
+                (try? mutateWorkspaceSound(
+                    .surfaces(WorkspaceSoundWriteTarget(rule: openedRule), [.kimiCode]),
+                    configFile: file, lockFile: lock, userPacksDirectory: packs
+                ).get()) != nil,
+                "default verified set accepts narrowing to an opened surface")
             for event in Event.allCases {
                 expect(
                     (try? mutate(

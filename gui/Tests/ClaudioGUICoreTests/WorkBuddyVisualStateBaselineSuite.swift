@@ -27,8 +27,11 @@ func runWorkBuddyVisualStateBaselineSuites() {
                 let caption = ClaudioL10n(language: language).text(
                     .integrationsWorkBuddySoundsCaption)
                 expect(
-                    caption.contains(language == .english ? "Default Group" : "默认组"),
-                    "声音入口必须说明 WorkBuddy 使用默认组")
+                    caption.contains(
+                        language == .english ? "workspace sound rules" : "工作区声音配置")
+                        && caption.contains(
+                            language == .english ? "not implemented" : "尚未实现"),
+                    "声音入口必须说明 WorkBuddy 可按目录适用工作区且执行中断仍未实现")
             }
             expect(
                 matrix.summary(for: .workBuddy) == .ready(supported: 4, total: 5),

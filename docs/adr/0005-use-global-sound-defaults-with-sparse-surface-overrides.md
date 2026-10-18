@@ -15,11 +15,11 @@ Git 目录使用 `rev-parse --show-toplevel` 定位所选 worktree 根，使用�
 
 升级立即忽略 `surface_overrides`（包括旧损坏覆盖），原始 JSON 与未知字段保留。首次新配置写入在既有 `config.lock`/CAS 边界中先制作私有可恢复备份，再记录模型版本；备份失败则拒写。旧来源声音写 API 明确拒绝，陈旧路由不得改写默认组。GUI 显示一次非阻塞迁移说明。
 
-第一版的目录适用来源限 Codex CLI 与 Claude Code，并须以目标事件的实际版本目录回调证据开放；WorkBuddy 暂不开放。新规则只勾选创建时已具备证据的来源，新增来源不自动加入。目录证据、接入、能力与当前激活分别呈现。
+第一版的目录适用来源限 Codex CLI 与 Claude Code，并须以目标事件的实际版本目录回调证据开放；WorkBuddy 暂不开放（2026-10-18 修订放宽，见文末）。新规则只勾选创建时已具备证据的来源，新增来源不自动加入。目录证据、接入、能力与当前激活分别呈现。
 
-WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据，其中 `Notification` 分别核对 `permission_prompt` 与 `idle_prompt`，`StopFailure` 须对应受控 API／基础设施异常结束。沿用协议兼容策略与完整安装代次 scope，不采用精确版本白名单。2026-09-25 的 Desktop 5.6.2 补测已在两个目录取得 `Notification` 两个目标 subtype 的真实回调；Security Center 审批界面本身不能代替该证据。有、无 matcher 的独立固定 401 测试均未捕获 `StopFailure`，因此本次仍不开放 WorkBuddy 工作区规则。详见 `docs/validation/workspace-sound-rules-2026-09-24.md`。
+WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据（此门槛 2026-10-18 起由文末修订取代），其中 `Notification` 分别核对 `permission_prompt` 与 `idle_prompt`，`StopFailure` 须对应受控 API／基础设施异常结束。沿用协议兼容策略与完整安装代次 scope，不采用精确版本白名单。2026-09-25 的 Desktop 5.6.2 补测已在两个目录取得 `Notification` 两个目标 subtype 的真实回调；Security Center 审批界面本身不能代替该证据。有、无 matcher 的独立固定 401 测试均未捕获 `StopFailure`，因此本次仍不开放 WorkBuddy 工作区规则。详见 `docs/validation/workspace-sound-rules-2026-09-24.md`。
 
-`Notification → notification` 可在工作区资格开放前独立实施：仅 `permission_prompt` 和 `idle_prompt`，两个 matcher 共用一个 binding 与 installation ID，使用默认组声音包、音量和事件开关。该阶段为四个已实现绑定、五条自有 hook、4/5 能力；`StopFailure` 仍未实现。入口、播放器启动前和安装锁内的回执写入均校验 installation ID 与完整 scope，三绑定旧 scope 在升级后失效。通知的当前回执不代表所有 subtype 已完成人工听音；subtype 证据单列脱敏验收矩阵。独立通知阶段不降低上述五类目录证据门槛。
+`Notification → notification` 可在工作区资格开放前独立实施：仅 `permission_prompt` 和 `idle_prompt`，两个 matcher 共用一个 binding 与 installation ID，使用默认组声音包、音量和事件开关。该阶段为四个已实现绑定、五条自有 hook、4/5 能力；`StopFailure` 仍未实现。入口、播放器启动前和安装锁内的回执写入均校验 installation ID 与完整 scope，三绑定旧 scope 在升级后失效。通知的当前回执不代表所有 subtype 已完成人工听音；subtype 证据单列脱敏验收矩阵。独立通知阶段不降低上述五类目录证据门槛（2026-10-18 修订后该门槛本身放宽，见文末）。
 
 设置详情与菜单栏共用写入 owner 和声音包库。设置提供默认组/工作区列表及同窗口详情；菜单栏只手动选组、换包、调该组音量、试听与逐事件静音，通过“工作区设置…”定向进入详情查看和管理适用 Surface。活动概览始终标为“所有来源”，不推算工作区统计。
 
@@ -28,5 +28,12 @@ WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据，其中 
 2026-10-07 原型入口修订：移除面板“工作区设置…”快捷按钮，改由既有齿轮入口进入统一设置，再在“默认组／工作区”中管理。这一入口约定取代上文的快捷按钮呈现，不改变共享作用域选择、目录匹配、配置写入或窗口 owner；原生呈现已于同日同步。
 
 2026-10-16 创建音量确认修订：移除添加工作区表单中「确认使用此音量」开关。该确认步骤与编辑表单行为不一致（编辑音量从来不需要确认），且创建路径无试听，确认不提供任何证据，属冗余门槛；移除后创建与编辑统一为“滑杆当前值即所得”，创建按钮仅由目录已解析、已选包与非解析中门控。不触碰选包门槛、五事件初始全开、目录匹配、配置写入或来源证据门。
+
+2026-10-18 来源证据门放开修订：用户批准将目录适用来源的开放标准从「五个目标事件逐一取得实际版本目录回调证据」放宽为「目录通道本身经真机观察证实逐目录正确；宿主随包代码无派发路径、用户态不可达的事件豁免」。据此开放三个来源：
+
+- WorkBuddy：Desktop 5.8.3 已为 `UserPromptSubmit`、`Stop`、`SubagentStop`、`Notification` 两个 subtype 取齐 A/B 目录证据（`docs/validation/workbuddy-workspace-sounds-5.8.3-2026-10-16.md`）；`StopFailure` 经三种受控触发法零回调且随包代码静态核对仅从 `executeStopHooks` 异常捕获路径派发，属用户态不可达事件，按豁免处理——该事件仍未实现、不播放，工作区的 `stop_failure` 开关对 WorkBuddy 为惰性。
+- OpenCode 与 Kimi Code：2026-10-16 spike 证实目录通道逐目录正确（OpenCode 事件信封 `location.directory` 加 `ctx.session.get` 回查 108/108；Kimi stdin `cwd` 恒等于 hook 进程工作目录，见 `docs/spike-opencode-kimi-workspace-cwd-2026-10-16.md`）。OpenCode 的 `permission.asked`、失败终态与子会话、Kimi 的 `PermissionRequest`/`SubagentStop` 未逐事件补采；目录缺失、非法或不匹配时一律回落默认组（失败关闭），不阻断开放。Kimi 桌面会话 `cwd:"/"` 的上游缺陷与 OpenCode GUI 未观察路径同样失败关闭到默认组。
+
+question 事件维持不传目录、恒用默认组。`chatgpt-desktop-ax`/`claude-desktop-ax` 无 hook 管道，仍不进入来源名单。本修订取代上文「第一版的目录适用来源限 Codex CLI 与 Claude Code」「WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据」与「独立通知阶段不降低上述五类目录证据门槛」三处约束；新规则创建时默认勾选全部已开放来源。宿主能力、当前接入代次与回执激活门槛不变：事件未接入或无当前回执时本就不播放，工作区资格只决定播放时按目录选择哪组声音配置。
 
 参考：[Git rev-parse](https://git-scm.com/docs/git-rev-parse)、[Git worktree](https://git-scm.com/docs/git-worktree)、[Codex Hooks](https://developers.openai.com/de-DE/docs/hooks)、[Claude Code Hooks](https://code.claude.com/docs/en/hooks)。公开文档不代替发布前逐事件真实验证。

@@ -256,10 +256,16 @@ public enum WorkspaceSoundError: Error, Sendable, Equatable, CustomStringConvert
 }
 
 /// The release evidence gate is deliberately separate from hook protocol support and activation.
-/// Populate only after version-specific real callbacks for every implemented target event pass.
+/// Per the 2026-10-18 ADR 0005 amendment a surface opens once its directory channel is observed
+/// per-directory correct; events the host cannot dispatch from user space are exempt. The AX beta
+/// identities have no hook pipeline and stay out.
 public enum WorkspaceSurfaceEligibility {
-    public static let candidates: [HostSurfaceID] = [.codex, .claudeCode]
-    public static let verified: Set<HostSurfaceID> = [.codex, .claudeCode]
+    public static let candidates: [HostSurfaceID] = [
+        .codex, .claudeCode, .workBuddy, .opencode, .kimiCode,
+    ]
+    public static let verified: Set<HostSurfaceID> = [
+        .codex, .claudeCode, .workBuddy, .opencode, .kimiCode,
+    ]
 }
 
 public enum WorkspaceHookDirectory {

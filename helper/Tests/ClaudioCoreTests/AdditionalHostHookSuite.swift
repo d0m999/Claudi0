@@ -85,7 +85,9 @@ func runAdditionalHostHookSuites() {
                     }
                 }
                 expect(f.spawner.calls.count == bindings.count, "不同语义事件不被同宿主时间戳吞掉")
-                expect(f.spawner.calls.allSatisfy { $0.contains("0.17") }, "新增来源先使用默认组音量")
+                expect(
+                    f.spawner.calls.allSatisfy { $0.contains("0.17") },
+                    "无匹配工作区规则时回落默认组音量")
                 if let files = FileManager.default.enumerator(
                     at: root, includingPropertiesForKeys: nil)
                 {
@@ -110,6 +112,57 @@ func runAdditionalHostHookSuites() {
                         source?.isParentSession == true && source?.mainSessionIsKnown != true,
                         "Kimi 子任务成功不声称具体子任务导航或主会话身份")
                 }
+            }
+        }
+
+        suite("\(host.displayName)：payload cwd 命中工作区规则使用工作区声音，不匹配回落默认组") {
+            withTempDirectory { root in
+                let f = AdditionalHookFixture(root: root, host: host)
+                let packs = root.appendingPathComponent("packs")
+                let pack = packs.appendingPathComponent("workspace")
+                try! FileManager.default.createDirectory(at: pack, withIntermediateDirectories: true)
+                let events = Dictionary(
+                    uniqueKeysWithValues: Event.allCases.map { ($0.cliName, "tone.aiff") })
+                let manifest = try! JSONSerialization.data(withJSONObject: [
+                    "id": "workspace", "name": "Workspace", "events": events,
+                ])
+                writeFixture(
+                    String(decoding: manifest, as: UTF8.self),
+                    to: pack.appendingPathComponent("manifest.json"))
+                writeFixture("sound", to: pack.appendingPathComponent("tone.aiff"))
+                let workspaceDir = root.appendingPathComponent("repo")
+                try! FileManager.default.createDirectory(
+                    at: workspaceDir, withIntermediateDirectories: true)
+                var config = ClaudioConfig(selectedPack: "default", masterVolume: 0.17)
+                config.workspaceRules = [
+                    WorkspaceSoundRule(
+                        directory: WorkspaceDirectory(
+                            kind: .directory,
+                            path: workspaceDir.resolvingSymlinksInPath().path),
+                        surfaces: [host.surfaceID],
+                        profile: WorkspaceSoundProfile(selectedPack: "workspace", volume: 0.83)),
+                ]
+                try! JSONEncoder().encode(config).write(to: f.play.configFile)
+                let native = host == .opencode ? "ResponseCompleted" : "SubagentStop"
+                let matched = f.handle(
+                    native,
+                    data: additionalHookData(host, native, overrides: ["cwd": workspaceDir.path]))
+                expect(matched?.playbackResult == .played, "命中工作区的 callback 播放")
+                expect(
+                    f.spawner.calls.count == 1
+                        && f.spawner.calls[0].contains(
+                            AfplayVolume.afplayArgument(forMasterVolume: 0.83))
+                        && f.spawner.calls[0].contains(where: { $0.contains("/workspace/") }),
+                    "工作区回调使用工作区包与独立音量")
+                _ = f.handle(
+                    native,
+                    data: additionalHookData(
+                        host, native, request: "request-2", overrides: ["cwd": root.path]))
+                expect(
+                    f.spawner.calls.count == 2
+                        && f.spawner.calls[1].contains(
+                            AfplayVolume.afplayArgument(forMasterVolume: 0.17)),
+                    "目录不匹配回落默认组")
             }
         }
 

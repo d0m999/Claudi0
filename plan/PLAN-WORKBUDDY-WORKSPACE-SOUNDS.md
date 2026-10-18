@@ -1,6 +1,6 @@
 # WorkBuddy Notification 独立接入与后续工作区声音
 
-状态：**阶段 A 的 Notification 独立实现、自动回归与本地候选已落地；本机最终连接为 configured / awaiting_receipt，真实四格、听音和原生 UI 尚未完成。2026-10-16 在 Desktop 5.8.3 上重采目录证据：UserPromptSubmit/Stop/SubagentStop/Notification 两 subtype 的 A/B 证据已取齐，StopFailure 经三种受控触发法均为零回调（与随包代码静态分析一致），按 ADR 0005 证据门不开放 WorkBuddy 工作区资格，阶段 B 保持阻塞。证据见 `docs/validation/workbuddy-workspace-sounds-5.8.3-2026-10-16.md`。** 目录前提见 `docs/validation/workspace-sound-rules-2026-09-24.md`；2026-09-25 记录见 `docs/validation/workbuddy-notification-2026-09-25.md`。
+状态：**阶段 A 的 Notification 独立实现、自动回归与本地候选已落地；本机最终连接为 configured / awaiting_receipt，真实四格、听音和原生 UI 尚未完成。2026-10-16 在 Desktop 5.8.3 上重采目录证据：UserPromptSubmit/Stop/SubagentStop/Notification 两 subtype 的 A/B 证据已取齐，StopFailure 经三种受控触发法均为零回调（与随包代码静态分析一致），按 ADR 0005 证据门不开放 WorkBuddy 工作区资格，阶段 B 保持阻塞。证据见 `docs/validation/workbuddy-workspace-sounds-5.8.3-2026-10-16.md`。2026-10-18 更新：ADR 0005 同日修订将开放标准放宽为「目录通道逐目录正确 + 宿主不可达事件豁免」，WorkBuddy 工作区资格已随该修订开放（`WorkspaceSurfaceEligibility` 纳入 `workbuddy`）；`StopFailure` 仍未实现、不播放，阶段 B 中与其相关的绑定／hook 实施项保持取消，其余以 ADR 修订为准。** 目录前提见 `docs/validation/workspace-sound-rules-2026-09-24.md`；2026-09-25 记录见 `docs/validation/workbuddy-notification-2026-09-25.md`。
 
 ## 阶段 A：Notification 独立接入（本轮）
 

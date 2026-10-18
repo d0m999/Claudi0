@@ -764,8 +764,6 @@ struct EventSettingsWindowView: View {
                 }.disabled(!WorkspaceSurfaceEligibility.verified.contains(surface))
             }
             if rule.surfaces.isEmpty { Text(l10n.text(.workspaceNoSurfaces)).font(.caption) }
-            Text("WorkBuddy · " + l10n.text(.workspaceEvidencePending)).font(.caption)
-                .foregroundColor(.secondary)
         }
     }
 
