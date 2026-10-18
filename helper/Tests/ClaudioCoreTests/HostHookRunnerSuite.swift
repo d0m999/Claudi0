@@ -1,9 +1,10 @@
 import ClaudioCore
+import ClaudioHookInput
 import Foundation
 
 private let hostHookRunnerTestScope = "test-scope-v1"
 
-private final class HostHookRunnerSpawner: ProcessSpawning, @unchecked Sendable {
+final class HostHookRunnerSpawner: ProcessSpawning, @unchecked Sendable {
     private let succeeds: Bool
     private let onSpawn: @Sendable () -> Void
     private(set) var callCount = 0
@@ -169,7 +170,7 @@ func runHostHookRunnerSuites() {
             let failedSpawner = HostHookRunnerSpawner(succeeds: false)
             let ready = makeHostHookRunnerEnvironment(
                 root: root, host: .codex, spawner: failedSpawner, fixtureIsReady: true,
-                activeInstallationID: id)
+                activeInstallationID: id, codexApprovalRouting: { _ in .user })
             let failed = handleHostHook(
                 host: .codex, nativeEvent: "PermissionRequest", installationID: id,
                 environment: ready)
@@ -208,7 +209,7 @@ func runHostHookRunnerSuites() {
                 spawner: spawner,
                 fixtureIsReady: true,
                 now: now,
-                activeInstallationID: id)
+                activeInstallationID: id, codexApprovalRouting: { _ in .user })
             let publisher = DynamicQuietSnapshotPublisher(
                 snapshotFile: environment.playEnvironment.dynamicQuietEnvironment.snapshotFile,
                 revisionStateFile:
@@ -240,7 +241,7 @@ func runHostHookRunnerSuites() {
                 spawner: spawner,
                 fixtureIsReady: true,
                 now: now,
-                activeInstallationID: id)
+                activeInstallationID: id, codexApprovalRouting: { _ in .user })
             let snapshot = environment.playEnvironment.dynamicQuietEnvironment.snapshotFile
             let publisher = DynamicQuietSnapshotPublisher(
                 snapshotFile: snapshot,
@@ -422,6 +423,7 @@ func runHostHookRunnerSuites() {
                     sourcePayload: Data(#"{"cwd":"/tmp/same-name"}"#.utf8),
                     receiverEpoch: epoch,
                     sender: { _ in .dropped(.endpointClosed) }),
+                codexApprovalRouting: { _ in .user },
                 now: base.now)
             let dropped = handleHostHook(
                 host: .codex,
@@ -612,7 +614,7 @@ private final class HostHookUptimeClock: @unchecked Sendable {
 }
 
 @MainActor
-private func makeHostHookRunnerEnvironment(
+func makeHostHookRunnerEnvironment(
     root: URL,
     host: HostID,
     spawner: any ProcessSpawning,
@@ -620,6 +622,12 @@ private func makeHostHookRunnerEnvironment(
     taskStartMuted: Bool = false,
     now: Date = Date(timeIntervalSince1970: 3_000),
     activeInstallationID: UUID? = nil,
+    sourcePayload: Data? = nil,
+    eventNoticeChannel: HostEventNoticeChannel? = nil,
+    activityStore: LocalActivitySummaryStore? = nil,
+    codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = {
+        CodexApprovalRoutingResolver.resolve($0)
+    },
     scopeFingerprint: @escaping @Sendable () -> String? = { hostHookRunnerTestScope }
 ) -> HostHookEnvironment {
     let config = root.appendingPathComponent("config.json")
@@ -667,6 +675,10 @@ private func makeHostHookRunnerEnvironment(
         taskStartDebounceStateFile: root.appendingPathComponent(
             "\(host.rawValue)-task-start.state"),
         receiptStore: receiptStore,
+        activityStore: activityStore,
+        eventNoticeChannel: eventNoticeChannel,
+        sourcePayload: sourcePayload,
+        codexApprovalRouting: codexApprovalRouting,
         scopeFingerprint: scopeFingerprint,
         now: { now })
 }

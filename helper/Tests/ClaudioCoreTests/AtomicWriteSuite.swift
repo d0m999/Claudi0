@@ -557,6 +557,9 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // 有界只读：`open(O_RDONLY | O_NOFOLLOW | O_NONBLOCK)`。它是**读者**，不是写者 ——
     // `O_RDONLY` 刻意不在 ④ 的写意图 flag 里。
     "helper/Sources/ClaudioCore/SafeFileRead.swift": ["open("],
+    // Approval routing pins the named transcript with O_RDONLY / O_NOFOLLOW descriptors.
+    // open/openat never create or write files; pread only inspects bounded host metadata.
+    "helper/Sources/ClaudioHookInput/CodexApprovalRoutingResolver.swift": ["open(", "openat("],
     // Explicit development target only: O_RDONLY | O_NOFOLLOW | O_NONBLOCK binds a single
     // rollout descriptor at EOF. The incremental observer has no write path or discovery scan.
     "gui/Sources/ClaudioGUICore/CodexRolloutObservationReader.swift": ["open("],

@@ -335,6 +335,12 @@ public enum ClaudioPaths {
             .appendingPathComponent("config.toml")
     }
 
+    /// Read-only metadata for the exact transcript named by a Codex approval hook.
+    public static var codexSessionsDirectory: URL {
+        codexHooksFile.deletingLastPathComponent().appendingPathComponent(
+            "sessions", isDirectory: true)
+    }
+
     /// WorkBuddy Desktop 的用户级配置。项目级 `.workbuddy` / `.codebuddy` 永不由 Claudio 写入。
     public static var workBuddySettingsFile: URL {
         home

@@ -54,7 +54,8 @@ extension Claudio {
             let environment = systemHostHookEnvironment(
                 for: parsedHost,
                 eventNoticeChannel: channel,
-                sourcePayload: hookInput?.data, authorizationToken: token)
+                sourcePayload: hookInput?.data, authorizationToken: token,
+                codexApprovalRouting: { CodexApprovalRoutingResolver.resolve($0) })
             _ = handleHostHook(
                 host: parsedHost,
                 nativeEvent: nativeEvent,

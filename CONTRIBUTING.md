@@ -53,6 +53,7 @@ swift build -c release --package-path gui --product ClaudioGUI
 jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 bash scripts/dev-bundle.sh
 bash scripts/check-release-size.sh dist/claudi0.app
+python3 scripts/check-hook-input-boundary.py dist/claudi0.app
 git diff --check
 ```
 

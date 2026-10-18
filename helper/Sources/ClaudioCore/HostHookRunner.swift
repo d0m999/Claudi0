@@ -41,6 +41,7 @@ public struct HostHookEnvironment: Sendable {
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
     public let scopeFingerprint: @Sendable () -> String?
+    public let codexApprovalRouting: @Sendable (Data?) -> CodexApprovalRouting
     public let questionScopeFingerprint: @Sendable () -> String?
     public let questionDeduplicationStore: HostQuestionDeduplicationStore
 
@@ -56,6 +57,9 @@ public struct HostHookEnvironment: Sendable {
         activityStore: LocalActivitySummaryStore? = nil,
         eventNoticeChannel: HostEventNoticeChannel? = nil,
         sourcePayload: Data? = nil,
+        codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in
+            .unavailable
+        },
         scopeFingerprint: @escaping @Sendable () -> String? = HostActivationScope.workBuddy,
         questionScopeFingerprint: @escaping @Sendable () -> String? = {
             HostActivationScope.claudeCode()
@@ -78,6 +82,7 @@ public struct HostHookEnvironment: Sendable {
         self.activityStore = activityStore
         self.eventNoticeChannel = eventNoticeChannel
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
+        self.codexApprovalRouting = codexApprovalRouting
         self.scopeFingerprint = scopeFingerprint
         self.questionScopeFingerprint = questionScopeFingerprint
         self.questionDeduplicationStore =
@@ -98,7 +103,9 @@ public func systemHostHookEnvironment(
     eventNoticeChannel: HostEventNoticeChannel? = nil,
     sourcePayload: Data? = nil,
     authorizationToken: HostEventAuthorizationToken? = nil,
-    versionResolver: HostVersionResolver? = nil
+    versionResolver: HostVersionResolver? = nil,
+    codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in .unavailable
+    }
 ) -> HostHookEnvironment {
     let questionScope = HookQuestionScopeSnapshot(host: host, versionResolver: versionResolver)
     return HostHookEnvironment(
@@ -118,6 +125,7 @@ public func systemHostHookEnvironment(
         activityStore: .production,
         eventNoticeChannel: eventNoticeChannel,
         sourcePayload: sourcePayload,
+        codexApprovalRouting: codexApprovalRouting,
         scopeFingerprint: { questionScope.value },
         questionScopeFingerprint: { questionScope.value },
         questionDeduplicationStore: HostQuestionDeduplicationStore(
@@ -322,7 +330,12 @@ public func handleHostHook(
         spawnResultObserver: { succeeded in capture.record(succeeded) })
     let playbackResult: HostHookPlaybackResult
     let shouldSendNotice: Bool
-    if let questionPayload = additionalPayload?.identity ?? questionPayload {
+    if host == .codex, nativeEvent == "PermissionRequest",
+        environment.codexApprovalRouting(environment.sourcePayload) != .user
+    {
+        playbackResult = .muted
+        shouldSendNotice = false
+    } else if let questionPayload = additionalPayload?.identity ?? questionPayload {
         let scopeIsCurrent = installationIsCurrent()
         let consume = { () -> HostQuestionConsumption in
             guard scopeIsCurrent else { return .unavailable }

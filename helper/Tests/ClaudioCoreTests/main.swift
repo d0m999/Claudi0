@@ -95,6 +95,12 @@ if CommandLine.arguments.contains("--receipt-history-pruning") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--codex-approval") {
+    runCodexApprovalRoutingSuites()
+    print("Codex approval: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--hook-baseline-observer") {
     runHookMeasurementSuites()
     runHookMeasurementRunnerSuites()
@@ -213,6 +219,7 @@ runCodexVersionFallbackSuites()
 runHostVersionResolverSuites()
 runHostVersionRefreshSuites()
 runHostHookRunnerSuites()
+runCodexApprovalRoutingSuites()
 runHostEventSourceSuites()
 runHostProcessAncestrySuites()
 runHostNavigationEvidenceSuites()

@@ -47,6 +47,7 @@ def run_case(phase, *, bundle_source=None):
         for path in ["LICENSE", "PRIVACY.md", "integrations/opencode/claudio.js", "assets/branding/claudi0.icns"]:
             write(root / path, "fixture\n")
         write(root / "scripts/embed-opencode-plugin.py", "pass\n")
+        write(root / "scripts/check-hook-input-boundary.py", "pass\n")
         write(root / "scripts/sparkle-bundle.py", "pass\n")
         write(root / "scripts/copy-bundled-packs.sh", "#!/bin/bash\nexit 0\n")
         write(root / "scripts/assemble-login-item.sh",

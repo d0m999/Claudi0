@@ -31,6 +31,11 @@ private struct LocalPreRCScriptFixture {
             }
         }
         if names.contains("dev-bundle.sh") {
+            // These path-retention fixtures use synthetic executables and signing tools.
+            // The binary-boundary gate is verified separately against the actual bundle.
+            writeFixture(
+                "# fixture: synthetic binaries have no Swift metadata\n",
+                to: scripts.appendingPathComponent("check-hook-input-boundary.py"))
             for relative in [
                 "scripts/embed-opencode-plugin.py", "integrations/opencode/claudio.js",
                 "helper/Sources/ClaudioCore/OpenCodePluginSource.swift",

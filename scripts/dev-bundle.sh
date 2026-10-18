@@ -253,6 +253,7 @@ PLIST
     strip -x \
         "$APP/Contents/Resources/bin/claudi0" \
         "$LOGIN_ITEM_APP/Contents/MacOS/claudi0-login-item"
+    python3 "$repo_root/scripts/check-hook-input-boundary.py" "$APP"
     bash "$repo_root/scripts/check-release-size.sh" "$APP"
 
     verify_bailian_source_identity
