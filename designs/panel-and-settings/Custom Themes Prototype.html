@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claudi0 · 自定义主题原型</title>
+<!-- Independent exploration. Product scope: ../../plan/PLAN-CUSTOM-THEMES.md.
+     macOS shell geometry and branding derived from Panel and Settings Prototype.html.
+     Source SHA-256: 9a11b9e73fe079f1d82a3489387619961d05ed35b1d352b1d552209c79db4ccc.
+     Browser-only fixtures and storage; no Claudio configuration or host integration.
+     One design, as requested. Open this file directly in a browser. -->
+<style>
+:root{color-scheme:light;--desktop:#e4e5e9;--page:#fff;--sidebar:#e9e9ec;--group:#f5f5f7;--text:#202023;--secondary:#6e6e73;--tertiary:#929298;--line:rgba(0,0,0,.075);--edge:rgba(0,0,0,.12);--selected:rgba(0,0,0,.085);--accent:#007aff;--button:#e7e7ea;--field:#fff;--toggle-off:#d6d6da;--error:#c63333;--focus:rgba(0,122,255,.4);--brand-word:#172b25;--side:252px}
+[data-theme="dark"]{color-scheme:dark;--desktop:#25262a;--page:#202022;--sidebar:#2b2b2e;--group:#2d2d30;--text:#f0f0f2;--secondary:#aaaab0;--tertiary:#8b8b92;--line:rgba(255,255,255,.085);--edge:rgba(255,255,255,.16);--selected:rgba(255,255,255,.12);--accent:#0a84ff;--button:#454548;--field:#353538;--toggle-off:#55555b;--error:#ff817b;--focus:rgba(10,132,255,.45);--brand-word:#d8f447}
+*{box-sizing:border-box}body{margin:0;background:var(--desktop);color:var(--text);font:13px -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}button{border:0;background:none;color:inherit;cursor:pointer}button:disabled{opacity:.4;cursor:default}a{color:var(--accent)}button,input,select{outline-offset:3px} :focus-visible{outline:3px solid var(--focus)}[hidden]{display:none!important}
+svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.symbols{display:none}
+.review{max-width:1240px;margin:19px auto 14px;display:flex;align-items:center;gap:15px;font-size:11px;color:var(--secondary);padding:0 2px}.review strong{font-size:12px;color:var(--text);font-weight:600}.review .spacer{flex:1}.review label{display:flex;gap:6px;align-items:center}.review select{font-size:11px;border:0;background:var(--button);border-radius:5px;color:var(--text);padding:4px 6px}.review button{font-size:11px;color:var(--secondary)}
+.stage{padding:0 24px;display:flex;justify-content:center}.window{width:min(1240px,100%);height:min(820px,calc(100dvh - 113px));min-height:550px;display:grid;grid-template-columns:var(--side) minmax(0,1fr);border:1px solid var(--edge);border-radius:16px;background:var(--page);box-shadow:0 28px 75px #00000024,0 5px 18px #00000012;overflow:hidden;position:relative;container-type:inline-size}
+.window.minimum{width:960px;height:640px;--side:210px}.sidebar{background:var(--sidebar);padding:0 12px 12px;display:flex;flex-direction:column;min-height:0}.traffic{height:58px;display:flex;align-items:center;gap:8px;padding:0 8px;flex:none}.traffic button{width:12px;height:12px;border:1px solid #00000019;border-radius:50%;padding:0;display:grid;place-items:center}.traffic svg{width:8px;height:8px;opacity:0;color:#0009}.traffic:hover svg{opacity:1}.traffic .close{background:#ff5f57}.traffic .minimize{background:#febc2e}.traffic .maximize{background:#28c840}
+.brand{padding:16px 14px}.brand svg{height:38px;width:auto;display:block;color:var(--brand-word);margin-left:-19.5px;stroke:none}.nav{display:flex;flex-direction:column;gap:0;overflow-y:auto}.nav-item{display:flex;align-items:center;gap:8px;min-height:32px;padding:6px 4px;border-radius:6px;text-align:left;font-size:13px;width:100%}.nav-item:hover{background:#80808017}.nav-item.active{background:var(--selected);font-weight:600}.nav-item.group-start{margin-top:16px}.nav-icon{width:20px;height:20px;border-radius:4.5px;display:grid;place-items:center;color:white;box-shadow:inset 0 0 0 1px #0000000d,0 1px 2px #00000018;flex:none}.nav-icon svg{width:15px;height:15px}.sidebar-foot{margin-top:auto;padding:20px 4px 3px;color:var(--secondary);font-size:11px;display:flex;align-items:center;gap:7px}.sidebar-foot svg{width:13px;height:13px}
+.detail{display:flex;flex-direction:column;min-width:0;min-height:0}.toolbar{height:58px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:15px;padding:0 26px}.toolbar h1{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.navigation{display:flex;border-radius:7px;overflow:hidden;background:var(--button);flex:none}.navigation button{display:grid;place-items:center;width:32px;height:28px}.navigation button+button{border-left:1px solid var(--line)}.navigation svg{width:16px;height:16px}.toolbar-end{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}.save-state{font-size:11px;color:var(--secondary)}.scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable}.content{max-width:780px;margin:auto;padding:24px 32px 40px}
+.section{margin-top:20px}.section:first-child{margin-top:0}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 14px 9px}.section-heading h2{font-size:13px;font-weight:600;margin:0}.group{background:var(--group);border-radius:10px;overflow:hidden}.group+.group{margin-top:12px}.row{position:relative;min-height:38px;padding:7px 14px;display:flex;align-items:center;gap:12px}.row.multi{min-height:51px}.row+.row:before{content:"";position:absolute;top:0;left:14px;right:14px;height:1px;background:var(--line)}.label{flex:1;min-width:0;line-height:1.4}.label strong{font-size:13px;font-weight:400;display:block}.label small{font-size:11px;color:var(--secondary);display:block;margin-top:3px}.controls{display:flex;align-items:center;gap:9px;min-width:0}.value{color:var(--secondary);font-size:12px}.muted{color:var(--secondary)}.caption{font-size:11px;line-height:1.5;color:var(--secondary);margin:7px 14px 0}.caption.error{color:var(--error)}
+.btn{min-height:26px;padding:5px 12px;background:var(--button);border-radius:6px;font-size:12px;white-space:nowrap}.btn:hover{filter:brightness(.96)}.btn.primary{background:var(--accent);color:white;font-weight:500}.btn.danger,.link.danger{color:var(--error)}.link{padding:0;color:var(--accent);font-size:12px}.icon-button{display:grid;place-items:center;width:28px;height:28px;border-radius:6px;flex:none}.icon-button:hover{background:var(--button)}.icon-button svg{width:17px;height:17px}.round{border:1px solid var(--edge);border-radius:50%;background:var(--field);width:24px;height:24px;padding:0;display:grid;place-items:center;flex:none}.round svg{width:11px;height:11px}.chevron{width:13px;height:13px;color:var(--tertiary)}.badge{font-size:10px;border-radius:4px;background:var(--button);padding:2px 5px;color:var(--secondary);white-space:nowrap}
+select{color:var(--text);border:0;background:transparent;border-radius:5px;padding:4px 5px;max-width:280px;font-size:12px;cursor:pointer}select:hover{background:var(--button)}.field{border:1px solid var(--edge);border-radius:6px;background:var(--field);color:var(--text);padding:7px 9px;width:100%;min-width:0}.toggle{appearance:none;width:32px;height:19px;flex:none;position:relative;background:var(--toggle-off);border-radius:12px;cursor:pointer;margin:0}.toggle:after{content:"";width:15px;height:15px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;box-shadow:0 1px 2px #0003;transition:transform .13s}.toggle:checked{background:var(--accent)}.toggle:checked:after{transform:translateX(13px)}
+.usage{display:flex;align-items:center;gap:8px;color:var(--secondary);font-size:11px;margin:0 2px 15px;min-height:16px}.usage .link{font-size:11px;margin-left:auto}.preview-stage{padding:17px 18px;min-height:112px;display:flex;justify-content:center;align-items:center}.banner{width:440px;max-width:100%;min-height:75px;position:relative;padding:13px 13px 15px 17px;display:flex;align-items:center;gap:10px;border:1px solid var(--banner-edge,#0000000e);border-radius:18px;background:linear-gradient(180deg,var(--banner-a),var(--banner-b));color:var(--banner-text);box-shadow:0 2px 6px #00000007;overflow:hidden}.banner:before{content:"";position:absolute;left:0;top:15px;bottom:15px;width:3px;background:var(--event-color);border-radius:0 3px 3px 0}.banner-art{width:32px;height:32px;flex:none;display:grid;place-items:center;color:var(--event-color)}.banner-art svg{width:21px;height:21px}.banner-art canvas{width:32px;height:32px}.banner-text{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}.banner-text strong{font-size:13px;font-weight:600}.banner-text small{font-size:11px;color:var(--banner-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banner-close{width:24px;height:24px;display:grid;place-items:center;color:var(--banner-secondary);padding:0}.banner-close svg{width:14px;height:14px}.track{height:2px;position:absolute;left:17px;right:13px;bottom:2px;background:var(--banner-track,#00000012);border-radius:2px;overflow:hidden}.track i{height:100%;width:100%;display:block;background:var(--event-color);transform-origin:left}
+.preview-controls{display:flex;align-items:center;gap:9px;padding:8px 12px;border-top:1px solid var(--line)}.segments{display:flex;flex:1;min-width:0;padding:2px;gap:1px;background:var(--button);border-radius:7px}.segments button{padding:4px 6px;flex:1;border-radius:5px;font-size:11px;white-space:nowrap}.segments button[aria-checked="true"]{background:var(--page);box-shadow:0 1px 2px #0002;font-weight:500}.preview-controls select{font-size:11px;max-width:74px}.preview-controls .icon-button{width:25px;height:25px}.preview-controls .icon-button svg{width:14px;height:14px}
+.event-head{display:grid;grid-template-columns:136px minmax(0,1fr) minmax(0,1fr);gap:10px;padding:0 14px 8px;color:var(--secondary);font-size:11px}.event-head span:first-child{font-size:13px;font-weight:600;color:var(--text)}.event-row{display:grid;grid-template-columns:136px minmax(0,1fr) minmax(0,1fr);gap:10px;min-height:51px;padding:8px 14px;position:relative;align-items:center}.event-row+.event-row:before{content:"";position:absolute;top:0;left:14px;right:14px;height:1px;background:var(--line)}.event-label{display:flex;gap:9px;align-items:center;min-width:0}.event-symbol{width:27px;height:27px;border-radius:7px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--event-color) 10%,transparent);color:var(--event-color)}.event-symbol svg{width:17px;height:17px}.event-label span:last-child{font-size:12px}.sound-control{display:flex;gap:6px;align-items:center;min-width:0}.sound-select{display:flex;gap:3px;align-items:center;min-width:0;padding:5px 0;flex:1;color:var(--secondary);font-size:12px;text-align:left}.truncate{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}.sound-select svg{width:11px;height:11px;flex:none}.gif-select{padding:2px 0;display:flex;align-items:center;gap:9px;min-width:0;width:100%;text-align:left}.gif-select .thumb{width:30px;height:30px;flex:none;background:var(--field);border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;overflow:hidden}.thumb canvas{width:26px;height:26px}.thumb svg{width:16px;height:16px;color:var(--tertiary)}.gif-select .truncate{flex:1;font-size:11px;color:var(--secondary)}.gif-select:hover .truncate,.sound-select:hover{color:var(--accent)}
+.palette-options{display:flex;gap:8px;padding:12px 14px}.palette-option{display:flex;align-items:center;gap:7px;justify-content:center;flex:1;min-width:0;border:1px solid var(--edge);padding:7px 5px;border-radius:6px;font-size:11px;background:var(--field)}.palette-option[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.swatch{width:18px;height:18px;border-radius:50%;border:1px solid #0002;flex:none}.menu-icon{width:18px;height:18px;border-radius:4.5px;display:grid;place-items:center;overflow:hidden;background:#d8f447;color:#172b25}.menu-icon svg{width:11.5px;height:11.5px;stroke:none;fill:currentColor}.menu-icon img{width:18px;height:18px;object-fit:contain;background:var(--group)}
+.theme-list-row{display:flex;align-items:center;gap:14px;padding:15px 14px;width:100%;text-align:left}.theme-list-row+.theme-list-row{border-top:1px solid var(--line)}.theme-list-row:hover{background:var(--selected)}.theme-avatar{width:46px;height:46px;background:var(--field);border-radius:10px;display:grid;place-items:center;border:1px solid var(--line);flex:none}.theme-avatar canvas{width:36px;height:36px}.theme-avatar svg{width:23px;height:23px;color:var(--accent)}.theme-list-row strong{font-weight:500}.theme-list-row small{display:block;color:var(--secondary);font-size:11px;margin-top:5px}.mini-colors{display:flex;gap:4px}.mini-colors i{width:8px;height:8px;border-radius:50%}.list-actions{display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px}
+.scope-tabs{display:flex;gap:6px;margin-bottom:20px}.scope-tabs button{padding:7px 12px;border-radius:6px;font-size:12px;background:var(--group)}.scope-tabs button.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--page));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}.volume{display:flex;align-items:center;gap:10px;width:210px}.volume output{width:35px;text-align:right;color:var(--secondary);font-size:11px}input[type="range"]{accent-color:var(--accent);min-width:0;max-width:100%;cursor:pointer}.volume input{flex:1;width:120px}.workspace-preview{padding:17px;display:flex;align-items:center;justify-content:center}.source-icon{width:30px;height:30px;background:var(--button);border-radius:7px;display:grid;place-items:center;color:var(--secondary)}
+.dialog{border:1px solid var(--edge);border-radius:13px;background:var(--page);color:var(--text);padding:22px;width:430px;max-width:calc(100vw - 36px);max-height:calc(100dvh - 70px);overflow:auto;box-shadow:0 18px 60px #0004}.dialog::backdrop{background:#0003}.dialog h2{font-size:17px;font-weight:600;letter-spacing:-.3px;margin:0 0 8px}.dialog p{font-size:12px;color:var(--secondary);line-height:1.6;margin:7px 0 15px}.dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.dialog .actions .btn{min-width:75px}.dialog .form-label{display:block;font-size:12px;margin:14px 0 7px}.dialog .error{color:var(--error);font-size:11px;margin:8px 0}.dialog.gif-dialog{width:660px;padding:0}.sheet-header{padding:20px 22px 14px;border-bottom:1px solid var(--line)}.sheet-header h2{margin:0 0 5px}.sheet-header p{margin:0;font-size:11px}.sheet-body{padding:16px 22px}.sheet-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-top:1px solid var(--line);background:var(--group);gap:12px}.sheet-footer .actions{margin:0}.gif-workarea{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:20px;align-items:center}.crop-stage{height:205px;background-color:var(--group);background-image:linear-gradient(45deg,var(--line) 25%,transparent 25%),linear-gradient(-45deg,var(--line) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--line) 75%),linear-gradient(-45deg,transparent 75%,var(--line) 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;border:1px solid var(--edge);border-radius:8px;display:grid;place-items:center;overflow:hidden;position:relative;touch-action:none}.crop-stage canvas{width:100%;height:100%;object-fit:contain}.crop-stage:after{content:"";pointer-events:none;position:absolute;width:160px;height:160px;left:50%;top:50%;transform:translate(-50%,-50%);border:1px solid #fff;box-shadow:0 0 0 1px #0005,0 0 0 300px #0002;display:none}.crop-stage.cropping:after{display:block}.gif-side{text-align:center}.gif-side strong{display:block;font-size:12px;font-weight:500;margin-bottom:13px}.actual-size{width:64px;height:64px;display:grid;place-items:center;background:var(--group);border-radius:9px;margin:0 auto 9px}.actual-size canvas{width:32px;height:32px}.gif-side small{display:block;font-size:11px;color:var(--secondary);line-height:1.5}.file-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;color:var(--secondary);font-size:11px}.file-actions{display:flex;gap:12px;align-items:center}.sheet-fields{margin-top:16px}.sheet-fields .row{padding-left:0;padding-right:0;gap:10px}.sheet-fields .row+.row:before{left:0;right:0}.sheet-fields .row .label{flex:0 0 87px;font-size:12px}.sheet-fields .controls{flex:1;justify-content:flex-end}.number{width:62px;padding:4px 6px;border:1px solid var(--edge);border-radius:5px;background:var(--field);color:var(--text);font-size:12px;font-variant-numeric:tabular-nums}.timeline{display:flex;gap:3px;height:35px;margin:10px 0 2px;overflow:hidden}.timeline button{flex:1;min-width:0;padding:0;border-radius:4px;background:var(--group);border:1px solid var(--line);overflow:hidden}.timeline button.selected{border:2px solid var(--accent)}.timeline canvas{width:100%;height:100%;object-fit:contain}.poster-controls{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11px;color:var(--secondary)}.poster-controls input{flex:1}.empty-import{padding:30px 20px;text-align:center;background:var(--group);border:1px dashed var(--edge);border-radius:8px}.empty-import svg{color:var(--tertiary);width:32px;height:32px;margin-bottom:9px}.empty-import strong{display:block;font-size:13px;font-weight:500}.empty-import p{font-size:11px;margin:8px 0 16px}.empty-import .actions{justify-content:center;margin:0}
+.sound-option{display:flex;align-items:center;gap:9px;min-height:40px;width:100%;text-align:left;border-radius:6px;padding:8px}.sound-option:hover{background:var(--group)}.sound-option[aria-checked="true"]{background:var(--selected)}.sound-option .check{width:16px;margin-left:auto;color:var(--accent)}.sound-option .round{margin-left:auto}.replacement-list{padding:0 0 0 20px;font-size:12px;line-height:1.8}.context-menu{position:absolute;right:20px;top:49px;z-index:20;width:190px;border:1px solid var(--edge);border-radius:9px;padding:5px;background:var(--page);box-shadow:0 7px 24px #0003}.context-menu button{display:flex;gap:9px;align-items:center;width:100%;text-align:left;padding:8px;border-radius:5px;font-size:12px}.context-menu button:hover{background:var(--selected)}.context-menu svg{width:15px;height:15px}.context-menu .danger{color:var(--error)}
+.footer{max-width:1240px;margin:13px auto 18px;font-size:11px;color:var(--secondary);display:flex;justify-content:space-between;gap:12px}.footer a{color:var(--secondary);text-decoration:none}.footer a:hover{text-decoration:underline}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--page);border:1px solid var(--edge);box-shadow:0 3px 18px #0002;border-radius:8px;padding:10px 16px;font-size:12px;z-index:100;max-width:90vw}.closed{position:absolute;inset:0;z-index:30;background:var(--page);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--secondary)}.closed .brand{padding:0}.closed .brand svg{height:48px;margin:0}.closed strong{font-size:15px;color:var(--text);font-weight:500}.live-stack{position:fixed;right:26px;top:72px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 30px)}.live-stack .banner{box-shadow:0 12px 35px #0003}
+.empty-page{padding:32px 14px;color:var(--secondary);font-size:12px;line-height:1.7;text-align:center}.empty-page svg{display:block;width:30px;height:30px;margin:0 auto 12px}.storage-warning{background:#ffcf4b30;border-radius:6px;font-size:11px;color:var(--text);padding:8px;margin:0 0 12px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:1300px){.review,.footer{margin-left:24px;margin-right:24px}}@media(max-width:1150px){.window{--side:210px}.content{padding-left:26px;padding-right:26px}.event-head,.event-row{grid-template-columns:116px minmax(0,1fr) minmax(0,1fr)}}@media(max-width:850px){.stage{padding:0 10px}.review,.footer{margin-left:12px;margin-right:12px}.review{flex-wrap:wrap;gap:9px}.window{--side:176px}.brand svg{height:34px}.content{padding:20px 16px}.event-head,.event-row{grid-template-columns:100px minmax(0,1fr) minmax(0,1fr);gap:6px}.event-symbol{width:22px;height:22px}.event-label{gap:6px}.preview-controls{flex-wrap:wrap}.segments{flex-basis:100%}.palette-options{gap:5px}.palette-option{flex-direction:column}.toolbar{padding:0 16px;gap:10px}.save-state{display:none}.footer{flex-wrap:wrap}.scope-tabs{flex-wrap:wrap}}@media(max-width:600px){.window{--side:52px}.sidebar{padding:0 5px 8px}.traffic{gap:3px;padding:0 1px}.traffic button{width:10px;height:10px}.brand{display:none}.nav-item{justify-content:center}.nav-title,.sidebar-foot{display:none}.toolbar h1{font-size:15px}.toolbar-end{gap:5px}.content{padding:18px 12px}.event-head{display:none}.event-row{grid-template-columns:1fr 1fr;gap:8px}.event-label{grid-column:1/-1}.gif-workarea{grid-template-columns:1fr}.gif-side{display:flex;align-items:center;gap:12px;justify-content:center}.gif-side strong,.actual-size{margin:0}.crop-stage{height:180px}.preview-controls .segments button{font-size:10px;padding:4px 2px}.sheet-header,.sheet-body{padding-left:16px;padding-right:16px}.sheet-fields .row .label{flex-basis:70px}}
+.dialog.gif-dialog[open]{display:flex;flex-direction:column}.sheet-header,.sheet-footer{flex:none}.sheet-body{overflow-y:auto;min-height:0}.btn>svg{width:12px;height:12px;vertical-align:-2px}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-t2" viewBox="11.2 11.2 41.6 41.6"><g transform="rotate(-45 32 32)" fill="currentColor"><path d="M21 19H29V31H35V45H21C13.8203 45 8 39.1797 8 32C8 24.8203 13.8203 19 21 19Z"/><path d="M33 19H43C50.1797 19 56 24.8203 56 32C56 39.1797 50.1797 45 43 45H39V27H33Z"/></g></symbol>
+<symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4m4-7v10m4-14v18m4-14v10m4-7v4"/></symbol>
+<symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-plug" viewBox="0 0 24 24"><path d="M7 8h10v4a5 5 0 0 1-10 0zM9 8V4m6 4V4m-3 13v4M5 8h14"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M5 17h14c-2-2-2-4-2-7a5 5 0 0 0-10 0c0 3 0 5-2 7zm5 3h4M12 3V2"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><path d="m10 3-.5 2.2-2 .9-2-.8-2 3.4 1.6 1.5-.2 2.2-1.6 1.5 2 3.4 2-.8 2 .9.5 2.2h4l.5-2.2 2-.9 2 .8 2-3.4-1.6-1.5.2-2.2 1.6-1.5-2-3.4-2 .8-2-.9L14 3z"/><circle cx="12" cy="11" r="3"/></symbol>
+<symbol id="i-command" viewBox="0 0 24 24"><path d="M8 8h8v8H8zM8 8H5a3 3 0 1 1 3-3zm8 0V5a3 3 0 1 1 3 3zm0 8h3a3 3 0 1 1-3 3zm-8 0v3a3 3 0 1 1-3-3z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M11 11h1v6h2M12 7h.01"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.8"/><path d="m16 16 5 5"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m15 4-8 8 8 8"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></symbol>
+<symbol id="i-updown" viewBox="0 0 24 24"><path d="m7 8 5-5 5 5M7 16l5 5 5-5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5h7l2 2h9v13H3z"/></symbol>
+<symbol id="i-start" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></symbol>
+<symbol id="i-finish" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="i-interrupt" viewBox="0 0 24 24"><path d="M6 4v7a6 6 0 0 0 12 0V4M3 7l3-3 3 3m6 0 3-3 3 3M8 21h8"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M7 13V7a1.5 1.5 0 0 1 3 0m0 6V4.5a1.5 1.5 0 0 1 3 0V13m0-7a1.5 1.5 0 0 1 3 0v7m0-4a1.5 1.5 0 0 1 3 0v6c0 4-2 6-6 6-3 0-4-2-6-4l-3-4a1.5 1.5 0 0 1 2-2z"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="18" cy="7" r="2.5"/><circle cx="6" cy="19" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-5 5-12 5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5zM20 2v4m-2-2h4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A9 9 0 0 1 10 3a9 9 0 1 0 10 11z"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M7 14h3m4 0h3m-10 3h3"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="7" width="12" height="14" rx="2"/><path d="M15 7V3H4v14h4"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 14 6M4 12a8 8 0 0 0 14 6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5zM14 3v5h5M8 12h8m-8 4h6"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H13a1.6 1.6 0 0 1 0-3h3.5A4.5 4.5 0 0 0 21 8.5C21 5.5 16.6 3 12 3Z"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="7" r=".8"/><circle cx="15" cy="7.5" r=".8"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="4"/></symbol></defs></svg>
+<div class="review" aria-label="原型演示工具">
+<strong>claudi0 · 自定义主题</strong><span>独立原型</span><span class="spacer"></span>
+<label>外观 <select id="app-appearance"><option value="light">浅色</option><option value="dark">深色</option></select></label>
+<label>窗口 <select id="window-size"><option value="default">1240 × 820</option><option value="minimum">960 × 640</option></select></label>
+<label>演示用户 <select id="demo-account"><option value="pro">Pro 用户</option><option value="free">免费用户</option></select></label>
+<button id="reset-demo">重置演示</button>
+</div>
+<div class="stage">
+<section class="window" id="settings-window" aria-label="claudi0 设置">
+<aside class="sidebar">
+<div class="traffic"><button class="close" id="window-close" aria-label="关闭设置窗口"><svg><use href="#i-close"/></svg></button><button class="minimize" id="window-minimize" aria-label="最小化设置窗口"><svg><path d="M3 12h18"/></svg></button><button class="maximize" id="window-maximize" aria-label="切换窗口尺寸"><svg><path d="M5 10V5h5m4 14h5v-5"/></svg></button></div>
+<div class="brand" role="img" aria-label="claudi0"><svg viewBox="0 0 504 144" aria-hidden="true"><g transform="translate(76,72) scale(1.9250970100987266) translate(-32,-32)"><g transform="rotate(-45 32 32)"><path d="M21 19H29V31H35V45H21C13.8203 45 8 39.1797 8 32C8 24.8203 13.8203 19 21 19Z" fill="currentColor"/><path d="M33 19H43C50.1797 19 56 24.8203 56 32C56 39.1797 50.1797 45 43 45H39V27H33Z" fill="currentColor"/></g></g><g transform="translate(153,38)" fill="none" stroke="currentColor" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"><path d="M39 23 C34 20 28 18 22 18 C9 18 0 28 0 41 C0 54 9 64 22 64 C29 64 34 61 39 57"/><path d="M8 6 V53 C8 61 11 64 17 64" transform="translate(43,0)"/><path d="M46 41 C46 54 36 64 23 64 C10 64 0 54 0 41 C0 28 10 18 23 18 C36 18 46 28 46 41 M46 18 V64" transform="translate(75,0)"/><path d="M0 18 V42 C0 56 8 64 21 64 C34 64 42 56 42 42 V18" transform="translate(135,0)"/><path d="M44 6 V41 C44 54 35 64 22 64 C9 64 0 54 0 41 C0 28 9 18 22 18 C27 18 32 20 36 22" transform="translate(192,0)"/><path d="M4 18 V64" transform="translate(247,0)"/><path d="M22 8 C8 8 0 20 0 36 V38 C0 54 8 65 22 65 C36 65 44 54 44 38 V35 C44 19 36 8 22 8 Z" transform="translate(267,0)"/><circle cx="251" cy="5" r="3.2" fill="currentColor" stroke="none"/></g></svg></div>
+<nav class="nav" id="settings-nav" aria-label="设置"></nav>
+<div class="sidebar-foot"><svg><use href="#i-lock"/></svg><span>个人素材保存在本机</span></div>
+</aside>
+<main class="detail">
+<header class="toolbar"><div class="navigation" aria-label="页面导航"><button id="back" aria-label="返回"><svg><use href="#i-back"/></svg></button><button id="forward" aria-label="前进"><svg style="transform:rotate(180deg)"><use href="#i-back"/></svg></button></div><h1 id="page-title">我的幽灵</h1><div class="toolbar-end" id="toolbar-end"></div></header>
+<div class="scroll" id="page-scroll"><div class="content" id="page-content"></div></div>
+</main>
+<div id="context-menu" class="context-menu" hidden></div>
+<div class="closed" id="closed" hidden><div class="brand" aria-hidden="true"><svg viewBox="0 0 504 144" aria-hidden="true"><g transform="translate(76,72) scale(1.9250970100987266) translate(-32,-32)"><g transform="rotate(-45 32 32)"><path d="M21 19H29V31H35V45H21C13.8203 45 8 39.1797 8 32C8 24.8203 13.8203 19 21 19Z" fill="currentColor"/><path d="M33 19H43C50.1797 19 56 24.8203 56 32C56 39.1797 50.1797 45 43 45H39V27H33Z" fill="currentColor"/></g></g><g transform="translate(153,38)" fill="none" stroke="currentColor" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"><path d="M39 23 C34 20 28 18 22 18 C9 18 0 28 0 41 C0 54 9 64 22 64 C29 64 34 61 39 57"/><path d="M8 6 V53 C8 61 11 64 17 64" transform="translate(43,0)"/><path d="M46 41 C46 54 36 64 23 64 C10 64 0 54 0 41 C0 28 10 18 23 18 C36 18 46 28 46 41 M46 18 V64" transform="translate(75,0)"/><path d="M0 18 V42 C0 56 8 64 21 64 C34 64 42 56 42 42 V18" transform="translate(135,0)"/><path d="M44 6 V41 C44 54 35 64 22 64 C9 64 0 54 0 41 C0 28 9 18 22 18 C27 18 32 20 36 22" transform="translate(192,0)"/><path d="M4 18 V64" transform="translate(247,0)"/><path d="M22 8 C8 8 0 20 0 36 V38 C0 54 8 65 22 65 C36 65 44 54 44 38 V35 C44 19 36 8 22 8 Z" transform="translate(267,0)"/><circle cx="251" cy="5" r="3.2" fill="currentColor" stroke="none"/></g></svg></div><strong>草稿已保留</strong><span>可以稍后继续编辑。</span><button class="btn primary" id="reopen">重新打开设置</button></div>
+</section>
+</div>
+<footer class="footer"><span>本地交互演示 · 原主原型保持独立</span><span><a href="../../plan/PLAN-CUSTOM-THEMES.md">方案文档</a>　·　<a href="Panel%20and%20Settings%20Prototype.html">原主原型</a></span></footer>
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="live-stack" class="live-stack" aria-label="模拟工作区提醒"></div>
+<dialog class="dialog" id="sheet" aria-labelledby="sheet-title"></dialog>
+<input type="file" id="gif-file" accept="image/gif,.gif" hidden>
+<input type="file" id="icon-file" accept="image/png,image/jpeg,image/webp" hidden>
+<input type="file" id="sound-file" accept="audio/*" hidden>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=v=>structuredClone(v);
+const icon=(name,cls='')=>'<svg class="'+cls+'" aria-hidden="true"><use href="#i-'+name+'"/></svg>';
+const btn=(text,action,cls='btn',extra='')=>'<button class="'+cls+'" data-action="'+action+'" '+extra+'>'+text+'</button>';
+const events=[
+ {id:'task_start',name:'用户发起',icon:'start',color:'#0a72d0',title:'Codex 开始响应'},
+ {id:'stop',name:'响应结束',icon:'finish',color:'#288b43',title:'Codex 本轮响应结束'},
+ {id:'stop_failure',name:'执行中断',icon:'interrupt',color:'#ac6900',title:'Codex 执行中断'},
+ {id:'notification',name:'等待介入',icon:'hand',color:'#c4633c',title:'Codex 等待你的介入'},
+ {id:'subagent_stop',name:'子任务结束',icon:'branch',color:'#5b59d6',title:'Codex 子任务结束'}
+];
+const paletteData={
+ original:{name:'原版',light:['#fffdfa','#fbf7f1'],dark:['#262320','#1a1815']},
+ mist:{name:'雾蓝',light:['#f6faff','#eaf1fa'],dark:['#243347','#1d2836']},
+ sage:{name:'鼠尾草',light:['#f4f8f2','#e9f0e6'],dark:['#2b372c','#222c24']},
+ dusk:{name:'暮紫',light:['#faf7ff','#f0eaf8'],dark:['#332c41','#282331']}
+};
+const navItems=[
+ ['workspace','工作区','wave','#f39b16'],['themes','主题','palette','#b16be6'],['sounds','声音','speaker','#a44be5'],['integrations','集成','plug','#168cf5'],['notifications','通知','bell','#f34258'],
+ ['general','通用','gear','#92949b'],['shortcuts','快捷键','command','#82858e'],['usage','活动与诊断','chart','#32bf57'],['about','关于','info','#2299f3']
+];
+const BASE='../../gui/Sources/ClaudioGUI/Resources/EventAnimations/';
+const FACTORY='../../packs/minimal-chime/';
+const sampleAssets={ghost:{kind:'atlas',name:'幽灵示例',src:BASE+'G/sprites.png',width:64,height:64,duration:2240},duck:{kind:'atlas',name:'小鸭示例',src:BASE+'E/sprites.png',dark:BASE+'E/sprites-dark.png',width:64,height:64,duration:1920}};
+function clipSample(asset,event,custom=true){const a=sampleAssets[asset];return {asset,row:[0,2,4,1,3][event],name:custom?'示例 · '+events[event].name:'机械小鸭',custom,start:0,end:a.duration,poster:a.duration*.7,crop:{mode:'fit',zoom:1,x:0,y:0}}}
+function factorySounds(){return events.map(e=>({type:'factory',name:e.name+'.mp3',file:FACTORY+e.id+'.mp3'}))}
+function fresh(){
+ const original={id:'original',name:'原版',builtin:true,palette:'original',icon:null,gifs:events.map(()=>null),sounds:factorySounds()};
+ const duck={...clone(original),id:'duck',name:'机械小鸭',gifs:events.map((e,i)=>clipSample('duck',i,false))};
+ const ghost={...clone(original),id:'ghost',name:'我的幽灵',builtin:false,palette:'mist',gifs:events.map((e,i)=>[0,1,3].includes(i)?clipSample('ghost',i):null)};
+ const scopes=()=>[{id:'default',name:'默认组',theme:'ghost',volume:65,enabled:[true,true,true,true,true]},{id:'claudio',name:'Claudio',theme:'duck',volume:55,enabled:[true,true,true,true,false],path:'~/Projects/Claudio'},{id:'notes',name:'Notes',theme:null,volume:40,enabled:[false,true,true,true,false],path:'~/Documents/Notes'}];
+ const free=scopes();free[0].theme='original';
+ return {version:1,themes:[original,duck,ghost],drafts:{},assets:{},scopes:{pro:scopes(),free},account:'pro',appearance:'light',size:'default',notification:{enabled:true,static:false,character:true,quiet:false},lastRoute:{page:'themes',id:'ghost'},activity:0};
+}
+let S=fresh(),route={page:'themes',id:'ghost'},history=[],historyIndex=-1,eventIndex=1,previewAppearance='light',previewAge=0,previewRunning=true;
+let sheetContext=null,returnFocus=null,saving=false,storageError='',dbPromise=null,toastTimer,audioPlayer=null,audioContext=null,audioNodes=[],lastTick=performance.now(),live=[],liveQueue=[];
+const mediaMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const decoded=new Map(),atlasImages=new Map();
+function database(){return dbPromise??=(new Promise((resolve,reject)=>{const r=indexedDB.open('claudio-custom-themes-prototype-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('state');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}))}
+async function persist(){saving=true;updateSaveStatus();try{const db=await database();const value=clone(S);await new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(value,'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});storageError=''}catch(e){storageError='浏览器未能保留本次草稿，请保持此页面打开。'}saving=false;updateSaveStatus()}
+async function restore(){try{const db=await database();const value=await new Promise((resolve,reject)=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});if(value?.version===1)S=value}catch(e){storageError='此浏览器无法保留草稿，当前修改仅在本次页面中有效。'}
+ const q=new URLSearchParams(location.search);if(q.has('appearance'))S.appearance=q.get('appearance')==='dark'?'dark':'light';if(q.has('account'))S.account=q.get('account')==='free'?'free':'pro';if(q.has('size'))S.size=q.get('size')==='minimum'?'minimum':'default';
+ route=S.lastRoute||route;if(q.has('page'))route={page:q.get('page'),id:q.get('theme')||undefined};if(route.id&&!S.themes.some(t=>t.id===route.id))route={page:'themes'};
+ previewAppearance=S.appearance;history=[clone(route)];historyIndex=0;render();requestAnimationFrame(tick);
+}
+const groups=()=>S.scopes[S.account];
+const saved=id=>S.themes.find(t=>t.id===id);
+const theme=id=>S.drafts[id]||saved(id);
+const current=()=>theme(route.id);
+const effective=g=>saved(g.theme||groups()[0].theme)||saved('original');
+const users=id=>groups().filter(g=>effective(g).id===id);
+const paid=t=>!!t.icon||t.gifs.some(g=>g?.custom);
+function markDirty(fn){const base=current();if(!base||base.builtin)return;S.drafts[base.id]??=clone(base);fn(S.drafts[base.id]);persist();render(true)}
+function setRoute(next,push=true){stopAudio();$('context-menu').hidden=true;if($('sheet').open)closeSheet();route=next;if(push){history=history.slice(0,historyIndex+1);history.push(clone(next));historyIndex=history.length-1}S.lastRoute=clone(next);persist();render();$('page-scroll').scrollTop=0}
+function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,3200)}
+function updateSaveStatus(){const el=$('save-state');if(el)el.textContent=storageError?'草稿未保留':saving?'正在保留草稿…':S.drafts[route.id]?'草稿已保留':'已保存';const warning=$('storage-warning');if(warning){warning.hidden=!storageError;warning.textContent=storageError}}
+function paletteStyle(t,appearance=previewAppearance){const c=paletteData[t.palette]||paletteData.original;const dark=appearance==='dark';return '--banner-a:'+c[appearance][0]+';--banner-b:'+c[appearance][1]+';--banner-text:'+(dark?'#f0f0f2':'#202023')+';--banner-secondary:'+(dark?'#b8bac2':'#6e6e73')+';--banner-edge:'+(dark?'#ffffff12':'#0000000e')+';--banner-track:'+(dark?'#ffffff18':'#00000012')}
+function character(t,i,cls='',liveId=''){const g=t.gifs[i];return '<span class="banner-art '+cls+'">'+(g&&S.notification.character?'<canvas width="128" height="128" data-clip="'+i+'" '+(liveId?'data-live="'+liveId+'"':'')+' aria-hidden="true"></canvas>':icon(events[i].icon))+'</span>'}
+function banner(t,i,id='',subtitle='Codex · Claudio',liveId=''){return '<div '+(id?'id="'+id+'"':'')+' class="banner" tabindex="0" style="'+paletteStyle(t,liveId?S.appearance:previewAppearance)+';--event-color:'+events[i].color+'" '+(liveId?'data-live-banner="'+liveId+'"':'')+'>'+character(t,i,'',liveId)+'<div class="banner-text"><strong>'+events[i].title+'</strong><small>'+esc(subtitle)+'</small></div><button class="banner-close" data-action="'+(liveId?'close-live':'stop-preview')+'" '+(liveId?'data-id="'+liveId+'"':'')+' aria-label="收起预览">'+icon('close')+'</button><span class="track"><i></i></span></div>'}
+function segmentControls(){return '<div class="preview-controls"><div class="segments" role="radiogroup" aria-label="预览事件">'+events.map((e,i)=>'<button role="radio" aria-checked="'+(i===eventIndex)+'" data-action="preview-event" data-index="'+i+'">'+e.name+'</button>').join('')+'</div><select id="preview-appearance" aria-label="预览外观"><option value="light" '+(previewAppearance==='light'?'selected':'')+'>浅色</option><option value="dark" '+(previewAppearance==='dark'?'selected':'')+'>深色</option></select>'+btn(icon('refresh'),'replay','icon-button','aria-label="重播预览" title="重播预览"')+'</div>'}
+function row(label,control,sub=''){return '<div class="row '+(sub?'multi':'')+'"><div class="label"><strong>'+label+'</strong>'+(sub?'<small>'+sub+'</small>':'')+'</div><div class="controls">'+control+'</div></div>'}
+function section(title,content,caption=''){return '<section class="section">'+(title?'<div class="section-heading"><h2>'+title+'</h2></div>':'')+'<div class="group">'+content+'</div>'+(caption?'<p class="caption">'+caption+'</p>':'')+'</section>'}
+function toggle(label,key,value){return '<input class="toggle" type="checkbox" role="switch" aria-label="'+label+'" data-toggle="'+key+'" '+(value?'checked':'')+'>'}
+function menuIcon(t){return '<span class="menu-icon">'+(t.icon?'<img src="'+esc(t.icon)+'" alt="个人图标">':icon('t2'))+'</span>'}
+function eventRows(t){return '<section class="section"><div class="event-head"><span>事件</span><span>提示音</span><span>横幅动画</span></div><div class="group">'+events.map((e,i)=>'<div class="event-row"><div class="event-label" style="--event-color:'+e.color+'"><span class="event-symbol">'+icon(e.icon)+'</span><span>'+e.name+'</span></div><div class="sound-control">'+btn(icon('play'),'play-sound','round','data-index="'+i+'" aria-label="试听'+e.name+'" '+(t.sounds[i]?.type==='none'?'disabled':''))+'<button class="sound-select" data-action="edit-sound" data-index="'+i+'" '+(t.builtin?'disabled':'')+' aria-label="修改'+e.name+'提示音"><span class="truncate">'+esc(t.sounds[i]?.name||'未设置')+'</span>'+icon('updown')+'</button></div><button class="gif-select" data-action="edit-gif" data-index="'+i+'" '+(t.builtin?'disabled':'')+' aria-label="编辑'+e.name+'动画"><span class="thumb">'+(t.gifs[i]?'<canvas width="104" height="104" data-thumb="'+i+'"></canvas>':icon(e.icon))+'</span><span class="truncate">'+esc(t.gifs[i]?.name||'使用原版图标')+'</span>'+icon('next','chevron')+'</button></div>').join('')+'</div>'+(!t.builtin?'<p class="caption">自定义 GIF 可免费制作和预览，应用到提醒需要 Pro。</p>':'')+'</section>'}
+function renderEditor(t){const refs=users(t.id);return '<div class="usage">'+(refs.length?'使用于 '+refs.map(g=>esc(g.name)).join('、'):'尚未用于工作区')+btn(refs.length?'查看工作区':'应用到工作区…',refs.length?'view-users':'apply-theme','link','data-id="'+t.id+'"')+'</div>'+
+ '<section class="section"><div class="group"><div class="preview-stage">'+banner(t,eventIndex,'main-banner')+'</div>'+segmentControls()+'</div></section>'+eventRows(t)+
+ '<section class="section"><div class="section-heading"><h2>横幅外观</h2></div><div class="group"><div class="palette-options" role="radiogroup" aria-label="横幅配色预设">'+Object.entries(paletteData).map(([id,p])=>'<button class="palette-option" role="radio" aria-checked="'+(t.palette===id)+'" data-action="palette" data-id="'+id+'" '+(t.builtin?'disabled':'')+'><span class="swatch" style="background:linear-gradient(135deg,'+p.light[1]+' 50%,'+p.dark[0]+' 50%)"></span>'+p.name+'</button>').join('')+'</div>'+
+ row('菜单栏图标',menuIcon(t)+'<span class="value">'+(t.icon?'个人图标':'原版')+'</span>'+btn('选择…','choose-icon','btn',t.builtin?'disabled':'')+(t.icon?btn('恢复','clear-icon','link'):''))
+ +'</div><p class="caption">菜单栏使用默认主题的图标。</p></section>'}
+function renderLibrary(){const item=t=>'<button class="theme-list-row" data-action="open-theme" data-id="'+t.id+'"><span class="theme-avatar">'+(t.gifs[0]?'<canvas width="144" height="144" data-library="'+t.id+'"></canvas>':icon('palette'))+'</span><span class="label"><strong>'+esc(t.name)+'</strong><small>'+(S.drafts[t.id]?'有未保存的草稿':users(t.id).length?'使用于 '+users(t.id).map(g=>esc(g.name)).join('、'):t.builtin?'内置主题':'尚未应用')+'</small></span>'+(!t.builtin&&paid(t)?'<span class="badge">Pro</span>':'')+'<span class="swatch" style="background:'+paletteData[t.palette].light[1]+'"></span>'+icon('next','chevron')+'</button>';
+ return section('我的主题',S.themes.filter(t=>!t.builtin).map(item).join('')||'<div class="empty-page">创建主题，把喜欢的声音与动画放在一起。</div>')+section('内置主题',S.themes.filter(t=>t.builtin).map(item).join(''));
+}
+function renderWorkspace(){const id=route.scope||'default',g=groups().find(g=>g.id===id)||groups()[0],t=effective(g);let opts=(g.id!=='default'?'<option value="follow" '+(!g.theme?'selected':'')+'>跟随默认主题</option>':'')+S.themes.map(x=>'<option value="'+x.id+'" '+(g.theme===x.id?'selected':'')+'>'+esc(x.name)+(paid(x)?' · Pro':'')+'</option>').join('');
+ return '<div class="scope-tabs" role="tablist" aria-label="工作区">'+groups().map(x=>'<button role="tab" aria-selected="'+(x.id===g.id)+'" class="'+(x.id===g.id?'active':'')+'" data-action="scope" data-id="'+x.id+'">'+esc(x.name)+'</button>').join('')+'</div>'+section('提醒主题',row('主题','<select id="scope-theme" data-scope="'+g.id+'" aria-label="工作区主题">'+opts+'</select>')+row('编辑主题',btn('编辑…','open-theme','btn','data-id="'+t.id+'"')+(!t.builtin?btn('复制并单独使用…','copy-for-scope','link','data-id="'+t.id+'" data-scope="'+g.id+'"'):''),esc(t.name)+(users(t.id).length>1?' · 与其他组共用':''))+'<div class="workspace-preview">'+banner(t,1,'workspace-banner','Codex · '+g.name)+'</div>')+
+ section('声音',row('音量','<div class="volume">'+icon('speaker')+'<input type="range" min="0" max="100" value="'+g.volume+'" data-volume="'+g.id+'" aria-label="工作区音量"><output>'+g.volume+'%</output></div>')+events.map((e,i)=>row(e.name,btn(icon('play'),'scope-play','round','data-index="'+i+'" data-scope="'+g.id+'" aria-label="试听'+e.name+'"')+'<input type="checkbox" role="switch" class="toggle" data-event-toggle="'+i+'" data-scope="'+g.id+'" aria-label="'+e.name+'声音" '+(g.enabled[i]?'checked':'')+'>')).join(''))+
+ (g.id!=='default'?section('适用范围',row('目录','<span class="value">'+esc(g.path)+'</span>')+row('来源','<span class="value">Claude Code、Codex</span>')):'')+
+ '<div class="section-actions" style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px">'+btn('模拟此工作区提醒','simulate-scope','btn','data-scope="'+g.id+'"')+btn('模拟两个工作区并发','simulate-both','btn')+'</div>';
+}
+function renderSounds(){return section('声音包',row('极简铃音',btn('用来制作主题…','theme-from-pack','btn','data-pack="minimal"'),'5 个提示音')+row('柔和双音',btn('用来制作主题…','theme-from-pack','btn','data-pack="soft"'),'5 个提示音'))+section('声音创作',row('声音包管理','<a href="Panel%20and%20Settings%20Prototype.html?win=1&amp;pane=sounds" target="_blank" rel="noopener">打开已有原型</a>')+row('AI 声音创作','<a href="Panel%20and%20Settings%20Prototype.html?win=1&amp;pane=sounds" target="_blank" rel="noopener">查看已有流程</a>'))+'<p class="caption">导入主题后会保存独立声音内容，后续修改源包不改变该主题。</p>'}
+function renderNotifications(){return section('',row('主题与事件动画',btn(esc(effective(groups()[0]).name)+' '+icon('next','chevron'),'default-theme','link')))+section('事件横幅',row('显示事件横幅',toggle('显示事件横幅','enabled',S.notification.enabled))+row('显示角色',toggle('显示角色','character',S.notification.character))+row('仅显示静态表情',toggle('仅显示静态表情','static',S.notification.static)))+section('自动静默',row('静默声音',toggle('静默声音','quiet',S.notification.quiet),'原型中用于验证声音静默时仍保留横幅'))}
+function renderOther(page){
+ if(page==='general')return section('外观',row('界面外观','<select id="general-appearance" aria-label="界面外观"><option value="light" '+(S.appearance==='light'?'selected':'')+'>浅色</option><option value="dark" '+(S.appearance==='dark'?'selected':'')+'>深色</option></select>'))+section('素材',row('个人素材','<span class="value">本机保存</span>'));
+ if(page==='about')return '<div style="text-align:center;padding:35px 0 26px"><span class="menu-icon" style="width:80px;height:80px;border-radius:20px;margin:auto">'+icon('t2')+'</span><h2 style="font-size:17px;font-weight:600">claudi0</h2><p class="muted" style="font-size:12px">让工作中的每个回应，都有自己的声音。</p></div>'+section('',row('自定义主题','<span class="value">设计原型</span>')+row('方案','<a href="../../plan/PLAN-CUSTOM-THEMES.md">查看产品方案</a>'));
+ if(page==='usage')return section('本次演示',row('模拟提醒','<span class="value">'+S.activity+' 次</span>')+row('主题','<span class="value">'+S.themes.length+' 个</span>')+row('未保存草稿','<span class="value">'+Object.keys(S.drafts).length+' 个</span>'));
+ const dest=page==='integrations'?'集成':'快捷键';return section(dest,'<div class="empty-page">'+icon(page==='integrations'?'plug':'command')+'<p>'+dest+'沿用现有设计。</p><a href="Panel%20and%20Settings%20Prototype.html?win=1&amp;pane='+page+'" target="_blank" rel="noopener">打开原主原型中的'+dest+'页</a></div>');
+}
+function render(keepScroll=false){
+ const scroll=$('page-scroll').scrollTop;document.documentElement.dataset.theme=S.appearance;$('settings-window').classList.toggle('minimum',S.size==='minimum');
+ $('app-appearance').value=S.appearance;$('window-size').value=S.size;$('demo-account').value=S.account;
+ $('settings-nav').innerHTML=navItems.map(([id,name,ic,color],i)=>'<button class="nav-item '+(route.page===id?'active ':'')+([5,7].includes(i)?'group-start':'')+'" data-action="nav" data-page="'+id+'" '+(route.page===id?'aria-current="page"':'')+'><span class="nav-icon" style="background:'+color+'">'+icon(ic)+'</span><span class="nav-title">'+name+'</span></button>').join('');
+ let html='',tools='',title=navItems.find(n=>n[0]===route.page)?.[1]||'主题';
+ if(route.page==='themes'&&route.id){const t=current();if(!t){route={page:'themes'};return render()}title=t.name;html=renderEditor(t);tools=t.builtin?btn('复制并编辑','copy-theme','btn primary','data-id="'+t.id+'"'):'<span class="save-state" id="save-state"></span>'+btn('保存','save-theme','btn primary',S.drafts[t.id]?'':'disabled')+btn(icon('more'),'theme-menu','icon-button','aria-label="主题操作"');}
+ else if(route.page==='themes'){html=renderLibrary();tools=btn(icon('plus')+' 新建主题','new-theme','btn primary')}
+ else if(route.page==='workspace')html=renderWorkspace();
+ else if(route.page==='sounds')html=renderSounds();
+ else if(route.page==='notifications')html=renderNotifications();
+ else html=renderOther(route.page);
+ $('page-title').textContent=title;$('toolbar-end').innerHTML=tools;$('page-content').innerHTML='<div id="storage-warning" class="storage-warning" '+(!storageError?'hidden':'')+'>'+esc(storageError)+'</div>'+html;
+ $('back').disabled=historyIndex<=0;$('forward').disabled=historyIndex>=history.length-1;previewAge=0;previewRunning=true;updateSaveStatus();if(keepScroll)$('page-scroll').scrollTop=scroll;else $('page-scroll').scrollTop=0;
+ paintStatic();
+}
+function openSheet(html,cls=''){if(!$('sheet').open)returnFocus=document.activeElement;$('sheet').className='dialog '+cls;$('sheet').innerHTML=html;const bounds=$('settings-window').getBoundingClientRect();Object.assign($('sheet').style,{top:(bounds.top+58)+'px',bottom:'auto',margin:'0 auto',maxHeight:Math.max(180,Math.min(bounds.bottom-12,innerHeight-20)-bounds.top-58)+'px'});if(!$('sheet').open)$('sheet').showModal()}
+function closeSheet(){$('sheet').close();sheetContext=null;stopAudio();returnFocus?.focus?.()}
+function actions(primary,action,extra=''){return '<div class="actions">'+btn('取消','cancel-sheet')+btn(primary,action,'btn primary',extra)+'</div>'}
+function openName(mode,id,scope,pack){
+ sheetContext={kind:'name',mode,id,scope,pack};const source=mode==='rename'?theme(id):(id?saved(id):saved('original'));
+ openSheet('<h2 id="sheet-title">'+(mode==='rename'?'重命名主题':mode==='copy'?'复制主题':'新建主题')+'</h2><label class="form-label" for="theme-name">名称</label><input class="field" id="theme-name" maxlength="60" value="'+esc(mode==='rename'?source.name:mode==='copy'?source.name+' 副本':'我的主题')+'">'+(scope?'<p>副本将用于 '+esc(groups().find(g=>g.id===scope).name)+'，原主题继续供其他组使用。</p>':'')+'<p class="error" id="name-error" hidden></p>'+actions(mode==='rename'?'完成':'创建','commit-name'));
+ $('theme-name').focus();$('theme-name').select();
+}
+function commitName(){
+ const c=sheetContext,name=$('theme-name').value.trim();if(!name){$('name-error').textContent='请为主题输入名称。';$('name-error').hidden=false;return}
+ if(c.mode==='rename'){closeSheet();markDirty(t=>t.name=name);return}
+ const original=c.id?saved(c.id):saved('original');if(c.scope&&S.account==='free'&&paid(original)){closeSheet();return showPro()}
+ const t=clone(original);t.id='theme-'+crypto.randomUUID();t.name=name;t.builtin=false;
+ if(c.pack==='soft')t.sounds=events.map((e,i)=>({type:'tone',name:'柔和双音 '+(i+1),frequency:400+i*95}));
+ S.themes.push(t);if(c.scope)groups().find(g=>g.id===c.scope).theme=t.id;
+ closeSheet();setRoute({page:'themes',id:t.id});toast('已创建 '+name);
+}
+function showPro(){sheetContext={kind:'pro'};openSheet('<h2 id="sheet-title">应用此主题需要 Pro</h2><p>自定义 GIF 和个人菜单栏图标属于 Pro 能力。你可以继续免费编辑、预览并保留草稿。</p><div class="group">'+row('自定义 GIF','<span class="value">五个事件完整开放</span>')+row('更换素材','<span class="value">不限替换次数</span>')+'</div><div class="actions">'+btn('继续编辑','cancel-sheet','btn primary')+'</div>')}
+async function saveTheme(){const t=S.drafts[route.id];if(!t)return;if(S.account==='free'&&paid(t)&&users(t.id).length)return showPro();const index=S.themes.findIndex(x=>x.id===t.id);S.themes[index]=clone(t);delete S.drafts[t.id];await persist();render(true);toast('主题已保存，后续提醒使用新版本')}
+function openApply(id){if(S.drafts[id])return toast('请先保存主题，再应用到工作区');const t=saved(id);sheetContext={kind:'apply',id};openSheet('<h2 id="sheet-title">应用 '+esc(t.name)+'</h2><p>选择使用此主题的位置。该组的音量与事件开关会保留。</p><label class="form-label" for="apply-target">应用到</label><select class="field" id="apply-target">'+groups().map(g=>'<option value="'+g.id+'">'+esc(g.name)+'</option>').join('')+'</select>'+actions('应用主题','commit-apply'))}
+function commitApply(){const c=sheetContext,t=saved(c.id);if(S.account==='free'&&paid(t)){closeSheet();return showPro()}const target=$('apply-target').value;groups().find(g=>g.id===target).theme=t.id;closeSheet();persist();render(true);toast('已应用到 '+groups().find(g=>g.id===target).name)}
+function openDelete(id){const t=saved(id);if(t.builtin)return;const refs=users(id);sheetContext={kind:'delete',id};openSheet('<h2 id="sheet-title">删除 '+esc(t.name)+'？</h2>'+(refs.length?'<p>以下位置正在使用此主题。请选择替代主题，然后统一切换。</p><ul class="replacement-list">'+refs.map(g=>'<li>'+esc(g.name)+'</li>').join('')+'</ul><label class="form-label" for="replacement">替代主题</label><select class="field" id="replacement">'+S.themes.filter(x=>x.id!==id&&(S.account==='pro'||!paid(x))).map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')+'</select>':'<p>此主题未用于任何工作区。删除后，其未保存的草稿也会移除。</p>')+'<div class="actions">'+btn('取消','cancel-sheet')+btn(refs.length?'替换并删除':'删除主题','commit-delete','btn danger')+'</div>')}
+function commitDelete(){const id=sheetContext.id,replacement=$('replacement')?.value||'original';Object.values(S.scopes).forEach(gs=>gs.forEach(g=>{if(g.theme===id)g.theme=replacement}));S.themes=S.themes.filter(t=>t.id!==id);delete S.drafts[id];closeSheet();setRoute({page:'themes'});toast('主题已删除')}
+function stopAudio(){if(audioPlayer){audioPlayer.pause();audioPlayer=null}audioNodes.forEach(n=>{try{n.stop()}catch{}});audioNodes=[]}
+async function playSound(sound,volume=65,automatic=false){if(!automatic)stopAudio();if(!sound||sound.type==='none'||volume===0)return;
+ if(sound.type==='factory'||sound.type==='import'){const player=new Audio(sound.file||sound.data);if(!automatic)audioPlayer=player;player.volume=volume/100;try{await player.play()}catch{toast('此声音无法播放，请重新选择。')}return}
+ audioContext??=new (window.AudioContext||window.webkitAudioContext)();await audioContext.resume();[0,.13].forEach((d,i)=>{const o=audioContext.createOscillator(),g=audioContext.createGain();o.type='sine';o.frequency.value=(sound.frequency||520)*(i?1.25:1);const at=audioContext.currentTime+d;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.15*volume/100,at+.012);g.gain.exponentialRampToValueAtTime(.0001,at+.22);o.connect(g);g.connect(audioContext.destination);o.start(at);o.stop(at+.25);if(!automatic)audioNodes.push(o)})
+}
+function openSound(i){sheetContext={kind:'sound',event:i};const sound=current().sounds[i];const options=[{type:'factory',name:events[i].name+'.mp3',file:FACTORY+events[i].id+'.mp3'},{type:'tone',name:'柔和双音',frequency:440+i*80},{type:'tone',name:'清脆轻敲',frequency:800+i*90},{type:'none',name:'未设置'}];sheetContext.options=options;
+ openSheet('<h2 id="sheet-title">'+events[i].name+'提示音</h2><p>为当前主题选择声音。</p><div role="radiogroup" aria-label="提示音">'+options.map((o,n)=>'<button class="sound-option" role="radio" aria-checked="'+(o.type===sound.type&&o.name===sound.name)+'" data-action="choose-sound" data-index="'+n+'">'+icon(o.type==='none'?'close':'speaker')+'<span>'+o.name+'</span>'+(o.type===sound.type&&o.name===sound.name?icon('check','check'):'')+'</button>').join('')+'</div><div class="actions">'+btn('导入音频…','import-sound')+btn('取消','cancel-sheet')+'</div>');
+}
+function readDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(file)})}
+function imageFrom(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('无法读取图片素材'));im.src=src})}
+async function decodeGIF(data){
+ const bytes=new Uint8Array(await (await fetch(data)).arrayBuffer());if(String.fromCharCode(...bytes.slice(0,3))!=='GIF')throw new Error('请选择有效的 GIF 文件。');
+ if('ImageDecoder' in window&&await ImageDecoder.isTypeSupported('image/gif')){
+  const decoder=new ImageDecoder({data:bytes,type:'image/gif'});const frames=[];let duration=0;try{await decoder.tracks.ready;const count=decoder.tracks.selectedTrack.frameCount;if(count>300)throw new Error('这个 GIF 超过原型的 300 帧演示上限，请选用较短素材。');let pixels=0,width=0,height=0;
+   for(let i=0;i<count;i++){const r=await decoder.decode({frameIndex:i});width=r.image.displayWidth;height=r.image.displayHeight;pixels+=width*height;if(pixels>60000000){r.image.close();throw new Error('这个 GIF 的解码尺寸超出原型演示上限，请先缩小素材。')}const delay=Math.max(10,(r.image.duration||100000)/1000);const image=await createImageBitmap(r.image);r.image.close();frames.push({image,start:duration,duration:delay});duration+=delay}
+   return {frames,duration,width,height};
+  }finally{decoder.close()}
+ }
+ return decodeGIFFallback(bytes);
+}
+/* Small offline fallback for browsers without ImageDecoder. Prototype-only limits. */
+async function decodeGIFFallback(b){
+ let p=6;const u16=()=>b[p++]|(b[p++]<<8),width=u16(),height=u16(),flags=b[p++];p+=2;
+ if(width*height>16000000)throw new Error('素材尺寸超出原型演示上限。');
+ const table=n=>{const a=b.slice(p,p+n*3);p+=n*3;return a};
+ const global=flags&128?table(1<<((flags&7)+1)):null;
+ const blocks=()=>{const parts=[];let length=0;while(p<b.length){const n=b[p++];if(!n)break;parts.push(b.slice(p,p+n));p+=n;length+=n}const out=new Uint8Array(length);let at=0;parts.forEach(x=>{out.set(x,at);at+=x.length});return out};
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');const frames=[];let duration=0,gce={delay:100,dispose:0,transparent:-1},previous=null;
+ function lzw(min,data,length){let bits=0,codeSize=min+1,next=0,dict=[],prev=null;const clear=1<<min,end=clear+1,out=new Uint8Array(length);let pos=0;
+  const reset=()=>{dict=Array.from({length:clear},(_,i)=>[i]);dict[clear]=[];dict[end]=[];next=end+1;codeSize=min+1;prev=null};reset();
+  const code=()=>{let v=0;for(let k=0;k<codeSize;k++){const bit=bits++;v|=((data[bit>>3]>>(bit&7))&1)<<k}return v};
+  while(bits+codeSize<=data.length*8&&pos<length){const c=code();if(c===clear){reset();continue}if(c===end)break;let entry=dict[c];if(!entry&&c===next&&prev)entry=prev.concat(prev[0]);if(!entry)throw new Error('GIF 帧数据不完整。');for(const v of entry){if(pos<length)out[pos++]=v}if(prev&&next<4096){dict[next++]=prev.concat(entry[0]);if(next===(1<<codeSize)&&codeSize<12)codeSize++}prev=entry}
+  if(pos<length)throw new Error('GIF 帧数据不完整。');return out;
+ }
+ while(p<b.length){const marker=b[p++];if(marker===59)break;
+  if(marker===33){const ext=b[p++];if(ext===249){const n=b[p++],f=b[p++],delay=u16(),trans=b[p++];p+=Math.max(0,n-4);p++;gce={delay:Math.max(10,delay*10||100),dispose:(f>>2)&7,transparent:f&1?trans:-1}}else blocks();continue}
+  if(marker!==44)throw new Error('无法解析此 GIF。');const left=u16(),top=u16(),w=u16(),h=u16(),f=b[p++];if(left+w>width||top+h>height)throw new Error('GIF 帧尺寸无效。');
+  const colors=f&128?table(1<<((f&7)+1)):global;if(!colors)throw new Error('GIF 缺少颜色信息。');const min=b[p++],raw=lzw(min,blocks(),w*h);let pixels=raw;
+  if(f&64){pixels=new Uint8Array(w*h);let row=0;for(const [start,step]of [[0,8],[4,8],[2,4],[1,2]])for(let y=start;y<h;y+=step)pixels.set(raw.slice(row++*w,row*w),y*w)}
+  if(previous){if(previous.dispose===2)ctx.clearRect(previous.left,previous.top,previous.w,previous.h);else if(previous.dispose===3&&previous.restore)ctx.putImageData(previous.restore,0,0)}
+  const restore=gce.dispose===3?ctx.getImageData(0,0,width,height):null,img=ctx.getImageData(left,top,w,h);
+  for(let i=0;i<pixels.length;i++){const c=pixels[i];if(c===gce.transparent)continue;img.data[i*4]=colors[c*3];img.data[i*4+1]=colors[c*3+1];img.data[i*4+2]=colors[c*3+2];img.data[i*4+3]=255}ctx.putImageData(img,left,top);
+  frames.push({image:await createImageBitmap(canvas),start:duration,duration:gce.delay});duration+=gce.delay;previous={...gce,left,top,w,h,restore};gce={delay:100,dispose:0,transparent:-1};
+  if(frames.length>300||frames.length*width*height>60000000)throw new Error('素材超出原型解码演示上限。');
+ }
+ if(!frames.length)throw new Error('GIF 中没有可显示的画面。');return {width,height,duration,frames};
+}
+function assetEntry(clip,appearance=previewAppearance){
+ if(!clip)return null;const source=sampleAssets[clip.asset]||S.assets[clip.asset];if(!source)return null;
+ const key=clip.asset+(source.kind==='atlas'?':'+appearance:'');if(!decoded.has(key)){const record={value:null,error:null,promise:null};decoded.set(key,record);
+  record.promise=(async()=>{if(source.kind==='atlas'){const im=await imageFrom(appearance==='dark'&&source.dark?source.dark:source.src);return {...source,image:im}}return decodeGIF(source.data)})().then(value=>{record.value=value;return value}).catch(e=>{record.error=e;return null});
+ }
+ return decoded.get(key);
+}
+function absoluteTime(clip,elapsed){const end=Math.max(clip.start+1,clip.end);return clip.start+((elapsed%Math.max(1,end-clip.start))+Math.max(1,end-clip.start))%Math.max(1,end-clip.start)}
+function drawImageFrame(ctx,a,clip,time,x,y,w,h){ctx.imageSmoothingEnabled=a.kind!=='atlas';if(a.kind==='atlas'){const frame=Math.min(15,Math.floor(time/a.duration*16));ctx.drawImage(a.image,frame*64,(clip.row||0)*64,64,64,x,y,w,h)}else{const f=a.frames.find(f=>time<f.start+f.duration)||a.frames.at(-1);ctx.drawImage(f.image,x,y,w,h)}}
+function paintClip(canvas,clip,time,appearance=previewAppearance,editor=false){
+ if(!canvas||!clip)return;const a=assetEntry(clip,appearance)?.value;if(!a)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
+ const crop=clip.crop||{mode:'fit',zoom:1,x:0,y:0};let scale;
+ if(editor&&crop.mode==='crop')scale=320/Math.min(a.width,a.height)*crop.zoom;
+ else scale=(crop.mode==='crop'?Math.max(w/a.width,h/a.height)*crop.zoom:Math.min(w/a.width,h/a.height));
+ const dw=a.width*scale,dh=a.height*scale,viewport=editor&&crop.mode==='crop'?320:Math.min(w,h);
+ const x=(w-dw)/2+(crop.mode==='crop'?crop.x*Math.max(0,dw-viewport)/2:0),y=(h-dh)/2+(crop.mode==='crop'?crop.y*Math.max(0,dh-viewport)/2:0);
+ drawImageFrame(ctx,a,clip,Math.min(Math.max(time,0),a.duration-.01),x,y,dw,dh);
+}
+async function paintStatic(){
+ const t=route.page==='themes'&&route.id?current():route.page==='workspace'?effective(groups().find(g=>g.id===(route.scope||'default'))||groups()[0]):null;
+ if(t){for(const c of document.querySelectorAll('[data-thumb]')){const g=t.gifs[Number(c.dataset.thumb)];if(g){await assetEntry(g)?.promise;if(c.isConnected)paintClip(c,g,g.poster)}}}
+ for(const c of document.querySelectorAll('[data-library]')){const g=theme(c.dataset.library)?.gifs[0];if(g){await assetEntry(g)?.promise;if(c.isConnected)paintClip(c,g,g.poster)}}
+}
+function openGIF(i){const t=current();if(t.builtin)return;eventIndex=i;sheetContext={kind:'gif',event:i,clip:clone(t.gifs[i]),elapsed:0,playing:true,error:'',loading:false};renderGifSheet()}
+function renderGifSheet(){
+  const c=sheetContext;if(c?.kind!=='gif')return;const g=c.clip,entry=g?assetEntry(g):null,a=entry?.value;
+  if(g&&(!entry||entry.error))c.error='无法读取这个动画素材，请重新选择 GIF。';
+  if(entry&&!a&&!entry.error&&!c.loading){const thisContext=c;entry.promise.then(()=>{if(sheetContext===thisContext)renderGifSheet()})}
+ let body='';
+ if(!g)body='<div class="empty-import" id="gif-drop">'+icon('image')+'<strong>选择 '+events[c.event].name+' 的 GIF</strong><p>拖入 GIF，或从本机选择一个文件。</p><div class="actions">'+btn('使用示例','sample-gif')+btn('选择 GIF…','choose-gif','btn primary')+'</div></div>';
+ else body='<div class="gif-workarea"><div class="crop-stage '+(g.crop.mode==='crop'?'cropping':'')+'" id="gif-drop"><canvas id="crop-canvas" width="728" height="410" aria-label="GIF 裁切预览"></canvas></div><div class="gif-side"><strong>横幅中的实际大小</strong><div class="actual-size"><canvas id="actual-canvas" width="128" height="128"></canvas></div><small>32 × 32 pt</small>'+btn(icon(c.playing?'pause':'play'),'editor-play','icon-button','style="margin:10px auto 0" aria-label="播放或暂停 GIF"')+'</div></div>'+
+ '<div class="file-meta"><span class="truncate">'+esc(g.name)+(a?' · '+a.width+' × '+a.height+' · '+(a.duration/1000).toFixed(2)+' 秒':'')+'</span><div class="file-actions">'+btn('更换 GIF…','choose-gif','link')+'</div></div>'+
+ '<div class="sheet-fields">'+row('片段','<input class="number" id="clip-start" type="number" min="0" step=".01" value="'+(g.start/1000).toFixed(2)+'" aria-label="片段开始秒数"><span class="value">至</span><input class="number" id="clip-end" type="number" min=".01" step=".01" value="'+(g.end/1000).toFixed(2)+'" aria-label="片段结束秒数"><span class="value">秒</span>')+
+ row('显示方式','<select id="crop-mode" aria-label="GIF 显示方式"><option value="fit" '+(g.crop.mode==='fit'?'selected':'')+'>完整显示</option><option value="crop" '+(g.crop.mode==='crop'?'selected':'')+'>裁切填充</option></select>')+
+ (g.crop.mode==='crop'?row('缩放','<input type="range" id="crop-zoom" min="1" max="3" step=".01" value="'+g.crop.zoom+'" aria-label="裁切缩放"><span class="value" id="zoom-value">'+g.crop.zoom.toFixed(2)+'×</span>')+row('水平位置','<input type="range" id="crop-x" min="-1" max="1" step=".01" value="'+g.crop.x+'" aria-label="裁切水平位置">')+row('垂直位置','<input type="range" id="crop-y" min="-1" max="1" step=".01" value="'+g.crop.y+'" aria-label="裁切垂直位置">'):'')+'</div>'+
+ '<p class="caption" style="margin-left:0">片段最长 4 秒，保持原速。短片段在横幅展示期间循环。</p>'+
+ '<div style="margin-top:14px;font-size:12px;font-weight:500">静态代表帧</div><div class="timeline">'+Array.from({length:8},(_,i)=>'<button data-action="poster-thumb" data-index="'+i+'" aria-label="选择第 '+(i+1)+' 个静态帧"><canvas width="128" height="80" data-timeline="'+i+'"></canvas></button>').join('')+'</div>'+
+ '<div class="poster-controls"><span>减少动态效果时显示</span><input type="range" id="poster-range" min="'+g.start+'" max="'+Math.max(g.start,g.end-1)+'" value="'+g.poster+'" step="10" aria-label="静态代表帧时间"><span id="poster-value">'+(g.poster/1000).toFixed(2)+' 秒</span></div>';
+ openSheet('<div class="sheet-header"><h2 id="sheet-title">'+events[c.event].name+'动画</h2><p>制作和预览免费，应用到提醒需要 Pro。</p></div><div class="sheet-body">'+body+(c.loading?'<p role="status">正在读取 GIF…</p>':'')+'<p class="error" id="gif-error" '+(!c.error?'hidden':'')+'>'+esc(c.error)+'</p></div><div class="sheet-footer">'+btn('使用原版图标','clear-gif','link')+'<div class="actions">'+btn('取消','cancel-sheet')+btn('完成','commit-gif','btn primary',!g||c.loading||!a?'disabled':'')+'</div></div>','gif-dialog');
+  const cropCanvas=$('crop-canvas');if(cropCanvas){cropCanvas.width=cropCanvas.clientWidth*2;cropCanvas.height=cropCanvas.clientHeight*2}
+  if(a){document.querySelectorAll('[data-timeline]').forEach(el=>{const time=g.start+(g.end-g.start-1)*Number(el.dataset.timeline)/7;paintClip(el,g,time)});markPosterSelection()}
+}
+function markPosterSelection(){const c=sheetContext;if(!c?.clip)return;const g=c.clip;const index=Math.round((g.poster-g.start)/Math.max(1,g.end-g.start-1)*7);document.querySelectorAll('[data-timeline]').forEach(el=>el.parentElement.classList.toggle('selected',Number(el.dataset.timeline)===index));if($('poster-value'))$('poster-value').textContent=(g.poster/1000).toFixed(2)+' 秒';const play=document.querySelector('[data-action="editor-play"]');if(play)play.innerHTML=icon(c.playing?'pause':'play')}
+async function importGIF(file){
+ const c=sheetContext;if(c?.kind!=='gif'||!file)return;if(file.size>16*1024*1024){c.error='这个文件超过原型的 16 MB 演示上限，请选用较小素材。';renderGifSheet();return}
+ c.loading=true;c.error='';renderGifSheet();
+ try{const data=await readDataURL(file),a=await decodeGIF(data);if(sheetContext!==c)return;const id='asset-'+crypto.randomUUID();S.assets[id]={kind:'gif',name:file.name,data,width:a.width,height:a.height,duration:a.duration};decoded.set(id,{value:a,promise:Promise.resolve(a)});c.clip={asset:id,name:file.name,custom:true,start:0,end:Math.min(4000,a.duration),poster:0,crop:{mode:'fit',zoom:1,x:0,y:0}};c.elapsed=0;await persist()}catch(e){if(sheetContext===c)c.error=e.message||'GIF 无法读取，请更换文件。'}finally{if(sheetContext===c){c.loading=false;renderGifSheet()}}
+}
+function sampleGIF(){const c=sheetContext;c.clip=clipSample('ghost',c.event);c.elapsed=0;c.error='';renderGifSheet()}
+function commitGIF(clear=false){const c=sheetContext,clip=clear?null:clone(c.clip);closeSheet();markDirty(t=>t.gifs[c.event]=clip)}
+function openDiscard(){sheetContext={kind:'discard'};openSheet('<h2 id="sheet-title">放弃未保存的修改？</h2><p>当前草稿将被清除，正在使用的已保存主题保持原样。</p><div class="actions">'+btn('继续编辑','cancel-sheet')+btn('放弃修改','commit-discard','btn danger')+'</div>')}
+function emitScope(id){
+ const g=groups().find(x=>x.id===id);if(!g)return;const t=clone(effective(g)),i=1;S.activity++;persist();if(!S.notification.quiet&&g.enabled[i])playSound(t.sounds[i],g.volume,true);
+ if(!S.notification.enabled){toast('事件横幅已关闭，演示仅按声音设置播放');return}
+ const item={id:crypto.randomUUID(),theme:t,event:i,scope:g.name,age:0};if(live.length<3){live.push(item);renderLive()}else liveQueue.push(item);
+}
+function renderLive(){$('live-stack').innerHTML=live.map(x=>banner(x.theme,x.event,'','Codex · '+x.scope,x.id)).join('')}
+function tick(now){const dt=Math.min(80,Math.max(0,now-lastTick));lastTick=now;const reduced=mediaMotion.matches||S.notification.static;
+ const main=$('main-banner')||$('workspace-banner');if(main&&previewRunning&&!main.matches(':hover,:focus-within')&&!$('sheet').open&&$('closed').hidden){previewAge=Math.min(4000,previewAge+dt);if(previewAge>=4000)previewRunning=false}
+ if(main){const t=route.page==='themes'?current():effective(groups().find(g=>g.id===(route.scope||'default'))||groups()[0]),i=route.page==='themes'?eventIndex:1,g=t?.gifs[i];const canvas=main.querySelector('canvas');if(g&&canvas)paintClip(canvas,g,reduced||!previewRunning?g.poster:absoluteTime(g,previewAge));const track=main.querySelector('.track i');track.style.transform='scaleX('+(reduced?1:Math.max(0,1-previewAge/4000))+')';track.style.opacity=reduced?'.3':'1'}
+ const c=sheetContext;if(c?.kind==='gif'&&c.clip){if(c.playing&&!reduced)c.elapsed+=dt;const time=c.playing&&!reduced?absoluteTime(c.clip,c.elapsed):c.clip.poster;paintClip($('crop-canvas'),c.clip,time,previewAppearance,true);paintClip($('actual-canvas'),c.clip,time)}
+ let removed=false;for(const l of live){const el=document.querySelector('[data-live-banner="'+l.id+'"]');if(!el)continue;if(!el.matches(':hover,:focus-within'))l.age+=dt;const g=l.theme.gifs[l.event];if(g)paintClip(el.querySelector('canvas'),g,reduced?g.poster:absoluteTime(g,l.age),S.appearance);const track=el.querySelector('.track i');track.style.transform='scaleX('+(reduced?1:Math.max(0,1-l.age/4000))+')';track.style.opacity=reduced?'.3':'1';if(l.age>=4000)removed=true}
+ if(removed){live=live.filter(l=>l.age<4000);while(live.length<3&&liveQueue.length)live.push(liveQueue.shift());renderLive()}
+ requestAnimationFrame(tick);
+}
+function openMenu(){const el=$('context-menu');el.innerHTML=btn(icon('file')+' 重命名…','rename-theme')+btn(icon('copy')+' 复制为新主题…','copy-theme','', 'data-id="'+route.id+'"')+btn(icon('wave')+' 应用到工作区…','apply-theme','', 'data-id="'+route.id+'"')+(S.drafts[route.id]?btn(icon('refresh')+' 放弃修改…','discard-theme'):'')+btn(icon('trash')+' 删除主题…','delete-theme','danger','data-id="'+route.id+'"');el.hidden=!el.hidden}
+document.addEventListener('click',async e=>{
+ const target=e.target.closest('[data-action]');if(!target){if(!e.target.closest('#context-menu'))$('context-menu').hidden=true;return}
+ const a=target.dataset.action,i=Number(target.dataset.index),id=target.dataset.id,scope=target.dataset.scope;
+ if(a!=='theme-menu')$('context-menu').hidden=true;
+ switch(a){
+ case 'nav':setRoute({page:target.dataset.page});break;
+ case 'open-theme':setRoute({page:'themes',id});break;
+ case 'default-theme':setRoute({page:'themes',id:effective(groups()[0]).id});break;
+ case 'preview-event':eventIndex=i;render(true);break;
+ case 'replay':previewAge=0;previewRunning=true;break;
+ case 'stop-preview':previewRunning=false;previewAge=4000;break;
+ case 'palette':markDirty(t=>t.palette=id);break;
+ case 'edit-gif':openGIF(i);break;
+ case 'choose-gif':$('gif-file').value='';$('gif-file').click();break;
+ case 'sample-gif':sampleGIF();break;
+ case 'editor-play':sheetContext.playing=!sheetContext.playing;if(sheetContext.playing)sheetContext.elapsed=0;target.innerHTML=icon(sheetContext.playing?'pause':'play');break;
+ case 'poster-thumb':{const c=sheetContext,g=c.clip;g.poster=g.start+(g.end-g.start-1)*i/7;c.playing=false;$('poster-range').value=g.poster;markPosterSelection();break}
+ case 'commit-gif':commitGIF();break;
+ case 'clear-gif':commitGIF(true);break;
+ case 'cancel-sheet':closeSheet();break;
+ case 'save-theme':await saveTheme();break;
+ case 'theme-menu':openMenu();break;
+ case 'new-theme':openName('new');break;
+ case 'copy-theme':openName('copy',id||route.id);break;
+ case 'copy-for-scope':openName('copy',id,scope);break;
+ case 'rename-theme':openName('rename',route.id);break;
+ case 'commit-name':commitName();break;
+ case 'theme-from-pack':openName('new',null,null,target.dataset.pack);break;
+ case 'apply-theme':openApply(id||route.id);break;
+ case 'commit-apply':commitApply();break;
+ case 'view-users':setRoute({page:'workspace',scope:users(route.id)[0]?.id||'default'});break;
+ case 'delete-theme':openDelete(id||route.id);break;
+ case 'commit-delete':commitDelete();break;
+ case 'discard-theme':openDiscard();break;
+ case 'commit-discard':closeSheet();delete S.drafts[route.id];persist();render(true);toast('已放弃修改');break;
+ case 'choose-icon':$('icon-file').value='';$('icon-file').click();break;
+ case 'clear-icon':markDirty(t=>t.icon=null);break;
+ case 'play-sound':playSound(current().sounds[i]);break;
+ case 'edit-sound':openSound(i);break;
+ case 'choose-sound':{const c=sheetContext,sound=clone(c.options[i]),event=c.event;closeSheet();markDirty(t=>t.sounds[event]=sound);break}
+ case 'import-sound':$('sound-file').value='';$('sound-file').click();break;
+ case 'scope':setRoute({page:'workspace',scope:id});break;
+ case 'scope-play':{const g=groups().find(g=>g.id===scope);playSound(effective(g).sounds[i],g.volume);break}
+ case 'simulate-scope':emitScope(scope);break;
+ case 'simulate-both':emitScope('claudio');emitScope('notes');break;
+ case 'close-live':live=live.filter(l=>l.id!==id);if(liveQueue.length)live.push(liveQueue.shift());renderLive();break;
+ case 'confirm-reset':closeSheet();S=fresh();route={page:'themes',id:'ghost'};history=[clone(route)];historyIndex=0;previewAppearance='light';live=[];liveQueue=[];renderLive();await persist();render();toast('演示已重置');break;
+ }
+});
+document.addEventListener('change',async e=>{
+ const el=e.target;
+ if(el.id==='app-appearance'||el.id==='general-appearance'){S.appearance=el.value;previewAppearance=el.value;persist();render(true)}
+ else if(el.id==='window-size'){S.size=el.value;persist();render(true)}
+ else if(el.id==='demo-account'){S.account=el.value;live=[];liveQueue=[];renderLive();persist();render(true);toast(el.value==='free'?'已进入免费用户演示场景':'已进入 Pro 用户演示场景')}
+ else if(el.id==='preview-appearance'){previewAppearance=el.value;render(true)}
+ else if(el.id==='gif-file'){await importGIF(el.files[0])}
+ else if(el.id==='icon-file'&&el.files[0]){const file=el.files[0],target=route.id;if(file.size>4*1024*1024)return toast('原型图标演示上限为 4 MB');try{const data=await readDataURL(file);await imageFrom(data);if(route.id===target)markDirty(t=>t.icon=data)}catch{toast('无法读取图片，请选择 PNG 或 JPEG 文件')}}
+ else if(el.id==='sound-file'&&el.files[0]){const file=el.files[0],c=sheetContext;if(c?.kind!=='sound')return;if(file.size>16*1024*1024)return toast('原型声音演示上限为 16 MB');const data=await readDataURL(file);if(sheetContext!==c)return;const i=c.event;closeSheet();markDirty(t=>t.sounds[i]={type:'import',name:file.name,data})}
+ else if(el.id==='scope-theme'){const g=groups().find(g=>g.id===el.dataset.scope),t=el.value==='follow'?effective(groups()[0]):saved(el.value);if(S.account==='free'&&paid(t)){render(true);return showPro()}g.theme=el.value==='follow'?null:el.value;persist();render(true);toast('工作区主题已更新')}
+ else if(el.dataset.eventToggle!==undefined){groups().find(g=>g.id===el.dataset.scope).enabled[Number(el.dataset.eventToggle)]=el.checked;persist()}
+ else if(el.dataset.toggle){S.notification[el.dataset.toggle]=el.checked;persist();render(true)}
+ else if(el.id==='crop-mode'){sheetContext.clip.crop.mode=el.value;renderGifSheet()}
+ else if(el.id==='clip-start'||el.id==='clip-end'){const c=sheetContext,g=c.clip,a=assetEntry(g).value;const oldLength=g.end-g.start;
+  if(el.id==='clip-start'){g.start=Math.min(Math.max(0,Number(el.value)*1000||0),Math.max(0,a.duration-10));g.end=Math.min(a.duration,g.start+Math.min(4000,oldLength))}
+  else g.end=Math.min(a.duration,g.start+4000,Math.max(g.start+10,Number(el.value)*1000||g.start+10));
+  g.poster=Math.min(Math.max(g.poster,g.start),g.end-1);c.elapsed=0;renderGifSheet();
+ }
+});
+document.addEventListener('input',e=>{
+ const el=e.target;if(el.dataset.volume){const g=groups().find(g=>g.id===el.dataset.volume);g.volume=Number(el.value);el.nextElementSibling.textContent=g.volume+'%';persist()}
+ if(sheetContext?.kind==='gif'){
+  const g=sheetContext.clip;if(!g)return;
+  if(el.id==='crop-zoom'){g.crop.zoom=Number(el.value);$('zoom-value').textContent=g.crop.zoom.toFixed(2)+'×'}
+  if(el.id==='crop-x')g.crop.x=Number(el.value);
+  if(el.id==='crop-y')g.crop.y=Number(el.value);
+  if(el.id==='poster-range'){g.poster=Number(el.value);sheetContext.playing=false;markPosterSelection()}
+ }
+});
+document.addEventListener('dragover',e=>{if(e.target.closest('#gif-drop')){e.preventDefault();e.dataTransfer.dropEffect='copy'}});
+document.addEventListener('drop',e=>{if(e.target.closest('#gif-drop')){e.preventDefault();importGIF(e.dataTransfer.files[0])}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('context-menu').hidden=true;if(e.key==='Enter'&&e.target.id==='theme-name'){e.preventDefault();commitName()}});
+$('sheet').addEventListener('cancel',e=>{e.preventDefault();closeSheet()});
+$('back').onclick=()=>{if(historyIndex>0){historyIndex--;setRoute(clone(history[historyIndex]),false)}};
+$('forward').onclick=()=>{if(historyIndex<history.length-1){historyIndex++;setRoute(clone(history[historyIndex]),false)}};
+$('window-close').onclick=$('window-minimize').onclick=async()=>{stopAudio();await persist();$('closed').hidden=false;$('reopen').focus()};
+$('reopen').onclick=()=>{$('closed').hidden=true;render(true)};
+$('window-maximize').onclick=()=>{S.size=S.size==='minimum'?'default':'minimum';persist();render(true)};
+$('reset-demo').onclick=()=>{sheetContext={kind:'reset'};openSheet('<h2 id="sheet-title">重置这份原型？</h2><p>此原型中导入的素材、自建主题和草稿将清除，恢复示例数据。</p><div class="actions">'+btn('取消','cancel-sheet')+btn('重置演示','confirm-reset','btn danger')+'</div>')};
+window.addEventListener('pagehide',()=>{persist();stopAudio()});
+/* Read-only inspection seam for local browser validation; no app or host access. */
+window.themePrototype={snapshot:()=>clone(S),route:()=>clone(route),decodeGIF,mediaMotion:()=>mediaMotion.matches};
+restore();
+</script>
+</body>
+</html>
