@@ -51,7 +51,6 @@ private final class ObservationOverlapRunner: CommandRunning, @unchecked Sendabl
     private let lock = NSLock()
     private let firstCanReturn = DispatchSemaphore(value: 0)
     private var entered = 0
-    private var firstWaiting = false
     private var overlapped = false
     private var invocationCount = 0
 
@@ -73,18 +72,14 @@ private final class ObservationOverlapRunner: CommandRunning, @unchecked Sendabl
         invocationCount += 1
         entered += 1
         let arrival = entered
-        if arrival == 1 { firstWaiting = true }
         lock.unlock()
 
         if arrival == 1 {
-            _ = firstCanReturn.wait(timeout: .now() + 2)
+            let signaled = firstCanReturn.wait(timeout: .now() + 5) == .success
             lock.lock()
-            firstWaiting = false
+            if signaled { overlapped = true }
             lock.unlock()
         } else if arrival == 2 {
-            lock.lock()
-            if firstWaiting { overlapped = true }
-            lock.unlock()
             firstCanReturn.signal()
         }
         return observationSuccess

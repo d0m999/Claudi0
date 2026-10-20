@@ -128,8 +128,8 @@ public struct HostExecutableLocator: Sendable {
 
 /// Current Activation 的版本身份。调用方只能比较完整 fingerprint，不得拆开后自行放宽。
 public enum HostActivationScope {
-    /// `hostVersion` must already include the host prefix (`cli=` for Codex, `app=` for WorkBuddy).
-    /// Pass raw CLI probe results to `fingerprint(for:discoveredVersion:)` instead.
+    /// `hostVersion` must already include the host prefix (`cli=` for Codex, `app=` for WorkBuddy);
+    /// raw CLI probe results are prefixed by `HostDiscovery.observeCLI`.
     public static func fingerprint(host: HostID, hostVersion: String) -> String? {
         let normalizedVersion = hostVersion.split(whereSeparator: \.isWhitespace)
             .joined(separator: " ")
