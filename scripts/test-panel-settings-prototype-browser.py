@@ -1148,20 +1148,6 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                         self.assertEqual(panel.is_visible(), variant == "C")
                         self.page.locator("#next").click()
 
-    def test_panel_entry_prototype_only_shows_pack_toggle_in_variant_d(self):
-        path = PROTOTYPE.with_name("panel-event-row-entry-PROTOTYPE.html")
-        for variant in ["A", "B", "C", "D"]:
-            with self.subTest(variant=variant):
-                self.page.goto(path.as_uri() + "?variant=" + variant)
-                toggle = self.page.locator("#packToggle")
-                if variant == "D":
-                    expect(toggle).to_be_visible()
-                    toggle.locator('[data-pt="factory"]').click()
-                    self.page.locator(".sound-jump").first.hover()
-                    expect(self.page.locator("#tip")).to_contain_text("查看声音…")
-                else:
-                    self.assertFalse(toggle.is_visible())
-
     def test_panel_sound_entry_consumes_each_request_in_visible_settings(self):
         for language in ["zh", "en"]:
             with self.subTest(language=language):
@@ -1338,89 +1324,6 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                             self.assertEqual(buttons.nth(index - 1).get_attribute("aria-label"), labels[index - 1])
                     expect(buttons.nth(2)).to_have_attribute("aria-pressed", "false")
                     self.assertEqual(buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))"), labels)
-
-    def test_favorite_variant_switch_from_panel_keeps_sounds_open(self):
-        self.open()
-        self.page.locator("#gearBtn").click()
-        self.page.locator('[data-action="nav:sounds"]').click()
-        self.page.locator('[data-act="favorite"][data-id="soft"]').click()
-        before = self.settings_state()
-        self.page.locator('#fav-switcher [data-fav-dir="1"]').click()
-        expect(self.page.locator("#window")).to_be_visible(timeout=1000)
-        expect(self.page.locator("#fav-switcher")).to_be_visible(timeout=1000)
-        expect(self.page.locator("#claudio-sounds-overview")).to_have_attribute(
-            "data-fav-variant", "a", timeout=1000
-        )
-        self.assertEqual(self.settings_state()["page"], "sounds")
-        for field in ["stars", "packs", "scopes"]:
-            self.assertEqual(self.settings_state()[field], before[field])
-
-    def test_favorite_variant_file_query_switch_survives_reload(self):
-        self.open(win="1", pane="sounds", fav="a")
-        overview = self.page.locator("#claudio-sounds-overview")
-        expect(overview).to_have_attribute("data-fav-variant", "a")
-        for direction, variant in [(1, "b"), (1, "c"), (1, "d"), (1, "base"), (-1, "d"), (1, "base")]:
-            self.page.locator(f'#fav-switcher [data-fav-dir="{direction}"]').click()
-            expect(overview).to_have_attribute("data-fav-variant", variant, timeout=1000)
-            self.page.reload()
-            expect(overview).to_have_attribute("data-fav-variant", variant, timeout=1000)
-            expect(self.page.locator("#fav-switcher code")).to_have_text("?fav=" + variant)
-
-    def test_favorite_variant_arrows_work_inside_settings(self):
-        self.open(win="1", pane="sounds", fav="a")
-        overview = self.page.locator("#claudio-sounds-overview")
-        for selector in ['#fav-switcher [data-fav-dir="1"]', '[data-act="pack"][data-id="soft"]']:
-            self.page.locator(selector).focus()
-            self.page.keyboard.press("ArrowRight")
-            expect(overview).to_have_attribute("data-fav-variant", "b", timeout=1000)
-            expect(self.page.locator(selector)).to_be_focused()
-            self.page.keyboard.press("ArrowLeft")
-            expect(overview).to_have_attribute("data-fav-variant", "a", timeout=1000)
-            expect(self.page.locator(selector)).to_be_focused()
-        expect(self.page.locator("#window")).to_be_visible()
-        self.assertEqual(self.settings_state()["page"], "sounds")
-
-    def test_favorite_variant_keys_preserve_editing_and_page_navigation(self):
-        self.open(win="1", pane="sounds", fav="a")
-        overview = self.page.locator("#claudio-sounds-overview")
-        self.page.locator('#fav-switcher [data-fav-dir="1"]').focus()
-        for key in ["Meta+ArrowRight", "Control+ArrowRight", "Alt+ArrowRight", "Shift+ArrowRight"]:
-            self.page.keyboard.press(key)
-            expect(overview).to_have_attribute("data-fav-variant", "a")
-
-        self.page.locator('[data-act="new-pack"]').click()
-        name = self.page.locator("#sf-name-input")
-        name.fill("abc")
-        self.page.keyboard.press("End")
-        self.page.keyboard.press("ArrowLeft")
-        self.page.keyboard.type("X")
-        expect(name).to_have_value("abXc")
-        self.page.locator('.sf-sheet [data-act="close"]').focus()
-        self.page.keyboard.press("ArrowRight")
-        expect(overview).to_have_attribute("data-fav-variant", "a")
-        self.page.keyboard.press("Escape")
-
-        self.page.locator('[data-action="nav:general"]').click()
-        self.page.keyboard.press("ArrowRight")
-        self.assertEqual(self.settings_state()["page"], "general")
-        self.page.locator('[data-action="nav:sounds"]').click()
-        expect(overview).to_have_attribute("data-fav-variant", "a")
-
-    def test_favorite_variant_http_switch_keeps_query_and_current_state(self):
-        url = "https://claudio.invalid/prototype.html"
-        self.page.route(url + "*", lambda route: route.fulfill(path=str(PROTOTYPE), content_type="text/html"))
-        self.page.goto(url + "?clean=1&win=1&pane=sounds&fav=a&lang=en#review")
-        overview = self.page.locator("#claudio-sounds-overview")
-        self.page.locator('[data-act="favorite"][data-id="soft"]').click()
-        before = self.settings_state()
-        self.page.locator('#fav-switcher [data-fav-dir="1"]').click()
-        expect(overview).to_have_attribute("data-fav-variant", "b")
-        self.assertEqual(self.settings_state(), before)
-        self.assertEqual(self.page.url, url + "?clean=1&win=1&pane=sounds&fav=b&lang=en#review")
-        self.page.reload()
-        expect(overview).to_have_attribute("data-fav-variant", "b")
-        self.page.locator('#fav-switcher [data-fav-dir="-1"]').click()
-        expect(overview).to_have_attribute("data-fav-variant", "a")
 
     def test_favorite_write_failure_is_visible_and_retains_state(self):
         for lang in ["zh", "en"]:

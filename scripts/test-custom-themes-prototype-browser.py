@@ -7,6 +7,7 @@ The prototype stores its own drafts in browser IndexedDB; every test drives a
 fresh browser context so no draft leaks between cases.
 """
 
+import base64
 import unittest
 from pathlib import Path
 from urllib.parse import urlencode
@@ -17,6 +18,12 @@ from playwright.sync_api import expect, sync_playwright
 PROTOTYPE = (
     Path(__file__).resolve().parent.parent
     / "designs/panel-and-settings/Custom Themes Prototype.html"
+)
+
+# Two 2x2 frames (red, blue), 100 ms each; generated locally, no external asset.
+GIF_BYTES = base64.b64decode(
+    "R0lGODlhAgACAIEAAP8AAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAA"
+    "AgACAAAIBgABCAQQEAAh+QQBCgABACwAAAAAAgACAIEAAP8AAAAAAAAAAAAIBgABCAQQEAA7"
 )
 
 
@@ -102,6 +109,263 @@ class CustomThemesPrototypeBrowserTests(unittest.TestCase):
 
     def library_row(self, theme_id):
         return self.page.locator(f'[data-action="open-theme"][data-id="{theme_id}"]')
+
+    def observe_gif_frames(self):
+        # Observe the browser resource boundary without replacing the decoder.
+        self.page.add_init_script("""(() => {
+            const create = window.createImageBitmap.bind(window);
+            window.gifFrames = [];
+            window.createImageBitmap = async (...args) => {
+                const image = await create(...args);
+                window.gifFrames.push(image);
+                if (window.gifFrameGate) await window.gifFrameGate;
+                return image;
+            };
+        })();""")
+
+    def import_gif(self, name="personal.gif"):
+        self.page.locator("#gif-file").set_input_files(
+            {"name": name, "mimeType": "image/gif", "buffer": GIF_BYTES}
+        )
+        expect(self.page.locator(".file-meta")).to_contain_text(name)
+        expect(self.page.locator('[data-action="commit-gif"]')).to_be_enabled()
+
+    def wait_for_assets(self, ids):
+        self.page.wait_for_function(
+            "ids => JSON.stringify(Object.keys(window.themePrototype.snapshot().assets).sort())"
+            " === JSON.stringify(ids.sort())", arg=ids
+        )
+
+    def test_cancelled_gif_imports_release_sources_and_decoded_frames(self):
+        self.observe_gif_frames()
+        self.open()
+        for index in range(2):
+            self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+            self.import_gif(f"cancel-{index}.gif")
+            self.assertEqual(len(self.snapshot()["assets"]), 1)
+            if index:
+                self.page.keyboard.press("Escape")
+            else:
+                self.page.locator('[data-action="cancel-sheet"]').click()
+            self.wait_for_assets([])
+            self.assertIsNone(self.draft("ghost"))
+            self.assertTrue(self.page.evaluate(
+                "() => gifFrames.length > 0 && gifFrames.every(image => image.width === 0)"
+            ), "cancel must close all decoded ImageBitmaps")
+
+        self.page.reload()
+        expect(self.page.locator("#main-banner")).to_be_visible()
+        self.wait_for_assets([])
+        self.assertIsNone(self.draft("ghost"))
+
+    def test_gif_replacement_keeps_saved_and_draft_sources_until_discarded(self):
+        self.observe_gif_frames()
+        self.open()
+        editor = self.page.locator('[data-action="edit-gif"][data-index="0"]')
+        editor.click()
+        self.import_gif("saved.gif")
+        saved_asset = next(iter(self.snapshot()["assets"]))
+        self.page.locator('[data-action="commit-gif"]').click()
+        self.page.locator('[data-action="save-theme"]').click()
+
+        editor.click()
+        self.import_gif("replacement.gif")
+        self.import_gif("draft.gif")
+        assets = self.snapshot()["assets"]
+        self.assertEqual(sorted(a["name"] for a in assets.values()), ["draft.gif", "saved.gif"])
+        draft_asset = next(key for key, asset in assets.items() if asset["name"] == "draft.gif")
+        self.page.locator('[data-action="commit-gif"]').click()
+        self.wait_for_assets([saved_asset, draft_asset])
+        expect(self.page.locator("#save-state")).to_have_text("草稿已保留")
+        self.page.reload()
+        self.page.wait_for_function("() => !!window.themePrototype")
+        self.wait_for_assets([saved_asset, draft_asset])
+        editor.click()
+        expect(self.page.locator(".file-meta")).to_contain_text("draft.gif")
+        expect(self.page.locator('[data-action="commit-gif"]')).to_be_enabled()
+        self.import_gif("cancelled.gif")
+        self.page.locator('[data-action="cancel-sheet"]').click()
+        self.wait_for_assets([saved_asset, draft_asset])
+        self.assertEqual(self.draft("ghost")["gifs"][0]["asset"], draft_asset)
+
+        self.open_menu()
+        self.page.locator('#context-menu [data-action="discard-theme"]').click()
+        self.page.locator('[data-action="commit-discard"]').click()
+        self.wait_for_assets([saved_asset])
+        self.assertEqual(self.saved_theme("ghost")["gifs"][0]["asset"], saved_asset)
+
+    def test_deleting_a_theme_keeps_shared_gif_until_last_copy_is_deleted(self):
+        self.observe_gif_frames()
+        self.open()
+        self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+        self.import_gif()
+        asset = next(iter(self.snapshot()["assets"]))
+        self.page.locator('[data-action="commit-gif"]').click()
+        self.page.locator('[data-action="save-theme"]').click()
+        self.open_menu()
+        self.page.locator('#context-menu [data-action="copy-theme"]').click()
+        self.commit_name("共享素材副本")
+        copy_id = self.route()["id"]
+
+        self.open_theme("ghost")
+        self.open_menu()
+        self.page.locator('#context-menu [data-action="delete-theme"]').click()
+        self.page.locator("#replacement").select_option("original")
+        self.page.locator('[data-action="commit-delete"]').click()
+        self.wait_for_assets([asset])
+
+        self.open_theme(copy_id)
+        self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+        expect(self.page.locator('[data-action="commit-gif"]')).to_be_enabled()
+        self.page.locator('[data-action="cancel-sheet"]').click()
+        self.open_menu()
+        self.page.locator('#context-menu [data-action="delete-theme"]').click()
+        self.page.locator('[data-action="commit-delete"]').click()
+        self.wait_for_assets([])
+        self.assertTrue(self.page.evaluate("() => gifFrames.every(image => image.width === 0)"))
+
+    def test_cancel_during_decode_releases_late_frames(self):
+        self.observe_gif_frames()
+        self.open()
+        self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+        self.page.evaluate("() => { window.gifFrameGate = new Promise(resolve => window.resumeGifFrames = resolve); }")
+        self.page.locator("#gif-file").set_input_files(
+            {"name": "pending.gif", "mimeType": "image/gif", "buffer": GIF_BYTES}
+        )
+        self.page.wait_for_function("() => gifFrames.length === 1")
+        self.page.locator('[data-action="cancel-sheet"]').click()
+        self.page.evaluate("() => resumeGifFrames()")
+        self.page.wait_for_function(
+            "() => gifFrames.length === 2 && gifFrames.every(image => image.width === 0)"
+        )
+        self.wait_for_assets([])
+        self.assertIsNone(self.draft("ghost"))
+
+    def test_reload_cleans_an_import_that_was_never_committed_to_a_draft(self):
+        self.open()
+        self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+        self.import_gif()
+        self.assertEqual(len(self.snapshot()["assets"]), 1)
+        self.page.reload()
+        expect(self.page.locator("#main-banner")).to_be_visible()
+        self.wait_for_assets([])
+        self.assertIsNone(self.draft("ghost"))
+
+    def test_clearing_a_gif_reclaims_the_source_only_after_saving(self):
+        self.observe_gif_frames()
+        self.open()
+        editor = self.page.locator('[data-action="edit-gif"][data-index="0"]')
+        editor.click()
+        self.import_gif()
+        asset = next(iter(self.snapshot()["assets"]))
+        self.page.locator('[data-action="commit-gif"]').click()
+        self.page.locator('[data-action="save-theme"]').click()
+        editor.click()
+        self.page.locator('[data-action="clear-gif"]').click()
+        self.wait_for_assets([asset])
+        self.page.locator('[data-action="save-theme"]').click()
+        self.wait_for_assets([])
+        self.assertTrue(self.page.evaluate("() => gifFrames.every(image => image.width === 0)"))
+
+    def test_live_and_queued_notices_keep_deleted_theme_gifs_until_dismissed(self):
+        self.observe_gif_frames()
+        self.page.clock.install(time=0)
+        self.page.clock.pause_at(1)
+        self.open()
+        self.page.locator('[data-action="edit-gif"][data-index="1"]').click()
+        self.import_gif()
+        asset = next(iter(self.snapshot()["assets"]))
+        self.page.locator('[data-action="commit-gif"]').click()
+        self.page.locator('[data-action="save-theme"]').click()
+        self.go_workspace()
+        for _ in range(4):
+            self.page.locator('[data-action="simulate-scope"]').click()
+        banners = self.page.locator("[data-live-banner]")
+        expect(banners).to_have_count(3)
+
+        self.open_theme("ghost")
+        # The stack overlaps the toolbar; use the supported keyboard path.
+        self.page.locator('[data-action="theme-menu"]').focus()
+        self.page.keyboard.press("Enter")
+        self.page.locator('#context-menu [data-action="delete-theme"]').focus()
+        self.page.keyboard.press("Enter")
+        self.page.locator("#replacement").select_option("original")
+        self.page.locator('[data-action="commit-delete"]').click()
+        self.wait_for_assets([asset])
+        for count in [3, 2, 1, 0]:
+            self.page.locator('[data-action="close-live"]').first.click()
+            expect(banners).to_have_count(count)
+            self.wait_for_assets([asset] if count else [])
+        self.assertTrue(self.page.evaluate("() => gifFrames.every(image => image.width === 0)"))
+
+    def test_cancelling_another_event_editor_preserves_preview_selection_and_frame(self):
+        self.open()
+        canvas = self.page.locator("#main-banner canvas")
+        before = canvas.screenshot()
+        selected = self.page.locator('[data-action="preview-event"][aria-checked="true"]')
+        for cancel in ["button", "escape"]:
+            with self.subTest(cancel=cancel):
+                self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+                expect(self.page.locator("#sheet-title")).to_have_text("用户发起动画")
+                if cancel == "button":
+                    self.page.locator('[data-action="cancel-sheet"]').click()
+                else:
+                    self.page.keyboard.press("Escape")
+                self.page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+                expect(selected).to_have_text("响应结束")
+                expect(self.page.locator("#main-banner strong")).to_have_text("Codex 本轮响应结束")
+                self.assertTrue(canvas.screenshot() == before, "the preview frame must still match 响应结束")
+
+        self.page.locator('[data-action="edit-gif"][data-index="0"]').click()
+        self.page.locator('[data-action="clear-gif"]').click()
+        expect(selected).to_have_text("用户发起")
+        expect(self.page.locator("#main-banner strong")).to_have_text("Codex 开始响应")
+        expect(self.page.locator("#main-banner canvas")).to_have_count(0)
+
+    def assert_live_stack_pauses(self, interaction):
+        self.page.emulate_media(reduced_motion="no-preference")
+        # Freeze before navigation so initialization and RAF share the same clock.
+        self.page.clock.install(time=0)
+        self.page.clock.pause_at(1)
+        self.open()
+        self.go_workspace()
+        self.page.locator('[data-action="simulate-both"]').click()
+        banners = self.page.locator("[data-live-banner]")
+        expect(banners).to_have_count(2)
+        self.page.mouse.move(0, 0)
+        self.page.clock.run_for(160)
+        if interaction == "hover":
+            banners.first.hover()
+        elif interaction == "gap":
+            first, second = banners.first.bounding_box(), banners.last.bounding_box()
+            self.page.mouse.move(first["x"] + 10, (first["y"] + first["height"] + second["y"]) / 2)
+        else:
+            banners.last.focus()
+        tracks = banners.locator(".track i")
+        before = tracks.evaluate_all("els => els.map(el => el.style.transform)")
+        self.assertTrue(all(value.startswith("scaleX(") for value in before))
+        frames = [canvas.screenshot() for canvas in banners.locator("canvas").all()]
+        self.page.clock.run_for(800)
+        self.assertEqual(tracks.evaluate_all("els => els.map(el => el.style.transform)"), before)
+        self.assertEqual([canvas.screenshot() for canvas in banners.locator("canvas").all()], frames)
+        self.page.clock.run_for(4000)
+        expect(banners).to_have_count(2)
+
+        self.page.mouse.move(0, 0)
+        self.page.locator('[data-action="simulate-both"]').focus()
+        self.page.clock.run_for(160)
+        self.assertNotEqual(tracks.evaluate_all("els => els.map(el => el.style.transform)"), before)
+        self.page.clock.run_for(4000)
+        expect(banners).to_have_count(0)
+
+    def test_hovering_one_banner_pauses_the_entire_stack_and_its_gifs(self):
+        self.assert_live_stack_pauses("hover")
+
+    def test_hovering_the_gap_between_banners_pauses_the_entire_stack(self):
+        self.assert_live_stack_pauses("gap")
+
+    def test_focusing_one_banner_pauses_the_entire_stack_and_its_gifs(self):
+        self.assert_live_stack_pauses("focus")
 
     def test_copy_uses_the_last_saved_theme_instead_of_the_unsaved_draft(self):
         self.open()

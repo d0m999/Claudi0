@@ -145,12 +145,22 @@ let S=fresh(),route={page:'themes',id:'ghost'},history=[],historyIndex=-1,eventI
 let sheetContext=null,returnFocus=null,saving=false,storageError='',dbPromise=null,toastTimer,audioPlayer=null,audioContext=null,audioNodes=[],lastTick=performance.now(),live=[],liveQueue=[];
 const mediaMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const decoded=new Map(),atlasImages=new Map();
+function releaseFrames(value){value?.frames?.forEach(frame=>frame.image.close())}
+function collectAssets(){
+ const used=new Set();const retain=t=>t?.gifs.forEach(g=>{if(g)used.add(g.asset)});
+ S.themes.forEach(retain);Object.values(S.drafts).forEach(retain);
+ if(sheetContext?.kind==='gif'&&sheetContext.clip)used.add(sheetContext.clip.asset);
+ live.forEach(item=>retain(item.theme));liveQueue.forEach(item=>retain(item.theme));
+ let changed=false;for(const id of Object.keys(S.assets))if(!used.has(id)){delete S.assets[id];changed=true}
+ for(const [id,entry]of decoded)if(entry.kind==='gif'&&!used.has(id)){decoded.delete(id);releaseFrames(entry.value)}
+ return changed;
+}
 function database(){return dbPromise??=(new Promise((resolve,reject)=>{const r=indexedDB.open('claudio-custom-themes-prototype-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('state');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}))}
-async function persist(){saving=true;updateSaveStatus();try{const db=await database();const value=clone(S);await new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(value,'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});storageError=''}catch(e){storageError='浏览器未能保留本次草稿，请保持此页面打开。'}saving=false;updateSaveStatus()}
+async function persist(){collectAssets();saving=true;updateSaveStatus();try{const db=await database();const value=clone(S);await new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(value,'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});storageError=''}catch(e){storageError='浏览器未能保留本次草稿，请保持此页面打开。'}saving=false;updateSaveStatus()}
 async function restore(){try{const db=await database();const value=await new Promise((resolve,reject)=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});if(value?.version===1)S=value}catch(e){storageError='此浏览器无法保留草稿，当前修改仅在本次页面中有效。'}
  const q=new URLSearchParams(location.search);if(q.has('appearance'))S.appearance=q.get('appearance')==='dark'?'dark':'light';if(q.has('account'))S.account=q.get('account')==='free'?'free':'pro';if(q.has('size'))S.size=q.get('size')==='minimum'?'minimum':'default';
  route=S.lastRoute||route;if(q.has('page'))route={page:q.get('page'),id:q.get('theme')||undefined};if(route.id&&!S.themes.some(t=>t.id===route.id))route={page:'themes'};
- previewAppearance=S.appearance;history=[clone(route)];historyIndex=0;render();requestAnimationFrame(tick);
+ if(collectAssets())await persist();previewAppearance=S.appearance;history=[clone(route)];historyIndex=0;render();requestAnimationFrame(tick);
 }
 const groups=()=>S.scopes[S.account];
 const saved=id=>S.themes.find(t=>t.id===id);
@@ -210,7 +220,7 @@ function render(keepScroll=false){
  paintStatic();
 }
 function openSheet(html,cls=''){if(!$('sheet').open)returnFocus=document.activeElement;$('sheet').className='dialog '+cls;$('sheet').innerHTML=html;const bounds=$('settings-window').getBoundingClientRect();Object.assign($('sheet').style,{top:(bounds.top+58)+'px',bottom:'auto',margin:'0 auto',maxHeight:Math.max(180,Math.min(bounds.bottom-12,innerHeight-20)-bounds.top-58)+'px'});if(!$('sheet').open)$('sheet').showModal()}
-function closeSheet(){$('sheet').close();sheetContext=null;stopAudio();returnFocus?.focus?.()}
+function closeSheet(){$('sheet').close();sheetContext=null;if(collectAssets())persist();stopAudio();returnFocus?.focus?.()}
 function actions(primary,action,extra=''){return '<div class="actions">'+btn('取消','cancel-sheet')+btn(primary,action,'btn primary',extra)+'</div>'}
 function openName(mode,id,scope,pack){
  sheetContext={kind:'name',mode,id,scope,pack};const source=mode==='rename'?theme(id):(id?saved(id):saved('original'));
@@ -281,8 +291,8 @@ async function decodeGIFFallback(b){
 }
 function assetEntry(clip,appearance=previewAppearance){
  if(!clip)return null;const source=sampleAssets[clip.asset]||S.assets[clip.asset];if(!source)return null;
- const key=clip.asset+(source.kind==='atlas'?':'+appearance:'');if(!decoded.has(key)){const record={value:null,error:null,promise:null};decoded.set(key,record);
-  record.promise=(async()=>{if(source.kind==='atlas'){const im=await imageFrom(appearance==='dark'&&source.dark?source.dark:source.src);return {...source,image:im}}return decodeGIF(source.data)})().then(value=>{record.value=value;return value}).catch(e=>{record.error=e;return null});
+ const key=clip.asset+(source.kind==='atlas'?':'+appearance:'');if(!decoded.has(key)){const record={kind:source.kind,value:null,error:null,promise:null};decoded.set(key,record);
+  record.promise=(async()=>{if(source.kind==='atlas'){const im=await imageFrom(appearance==='dark'&&source.dark?source.dark:source.src);return {...source,image:im}}return decodeGIF(source.data)})().then(value=>{if(decoded.get(key)!==record){releaseFrames(value);return null}record.value=value;return value}).catch(e=>{record.error=e;return null});
  }
  return decoded.get(key);
 }
@@ -302,7 +312,7 @@ async function paintStatic(){
  if(t){for(const c of document.querySelectorAll('[data-thumb]')){const g=t.gifs[Number(c.dataset.thumb)];if(g){await assetEntry(g)?.promise;if(c.isConnected)paintClip(c,g,g.poster)}}}
  for(const c of document.querySelectorAll('[data-library]')){const g=theme(c.dataset.library)?.gifs[0];if(g){await assetEntry(g)?.promise;if(c.isConnected)paintClip(c,g,g.poster)}}
 }
-function openGIF(i){const t=current();if(t.builtin)return;eventIndex=i;sheetContext={kind:'gif',event:i,clip:clone(t.gifs[i]),elapsed:0,playing:true,error:'',loading:false};renderGifSheet()}
+function openGIF(i){const t=current();if(t.builtin)return;sheetContext={kind:'gif',event:i,clip:clone(t.gifs[i]),elapsed:0,playing:true,error:'',loading:false};renderGifSheet()}
 function renderGifSheet(){
   const c=sheetContext;if(c?.kind!=='gif')return;const g=c.clip,entry=g?assetEntry(g):null,a=entry?.value;
   if(g&&(!entry||entry.error))c.error='无法读取这个动画素材，请重新选择 GIF。';
@@ -325,10 +335,10 @@ function markPosterSelection(){const c=sheetContext;if(!c?.clip)return;const g=c
 async function importGIF(file){
  const c=sheetContext;if(c?.kind!=='gif'||!file)return;if(file.size>16*1024*1024){c.error='这个文件超过原型的 16 MB 演示上限，请选用较小素材。';renderGifSheet();return}
  c.loading=true;c.error='';renderGifSheet();
- try{const data=await readDataURL(file),a=await decodeGIF(data);if(sheetContext!==c)return;const id='asset-'+crypto.randomUUID();S.assets[id]={kind:'gif',name:file.name,data,width:a.width,height:a.height,duration:a.duration};decoded.set(id,{value:a,promise:Promise.resolve(a)});c.clip={asset:id,name:file.name,custom:true,start:0,end:Math.min(4000,a.duration),poster:0,crop:{mode:'fit',zoom:1,x:0,y:0}};c.elapsed=0;await persist()}catch(e){if(sheetContext===c)c.error=e.message||'GIF 无法读取，请更换文件。'}finally{if(sheetContext===c){c.loading=false;renderGifSheet()}}
+ try{const data=await readDataURL(file),a=await decodeGIF(data);if(sheetContext!==c){releaseFrames(a);return}const id='asset-'+crypto.randomUUID();S.assets[id]={kind:'gif',name:file.name,data,width:a.width,height:a.height,duration:a.duration};decoded.set(id,{kind:'gif',value:a,promise:Promise.resolve(a)});c.clip={asset:id,name:file.name,custom:true,start:0,end:Math.min(4000,a.duration),poster:0,crop:{mode:'fit',zoom:1,x:0,y:0}};c.elapsed=0;await persist()}catch(e){if(sheetContext===c)c.error=e.message||'GIF 无法读取，请更换文件。'}finally{if(sheetContext===c){c.loading=false;renderGifSheet()}}
 }
-function sampleGIF(){const c=sheetContext;c.clip=clipSample('ghost',c.event);c.elapsed=0;c.error='';renderGifSheet()}
-function commitGIF(clear=false){const c=sheetContext,clip=clear?null:clone(c.clip);closeSheet();markDirty(t=>t.gifs[c.event]=clip)}
+function sampleGIF(){const c=sheetContext;c.clip=clipSample('ghost',c.event);c.elapsed=0;c.error='';if(collectAssets())persist();renderGifSheet()}
+function commitGIF(clear=false){const c=sheetContext,clip=clear?null:clone(c.clip);eventIndex=c.event;markDirty(t=>t.gifs[c.event]=clip);closeSheet()}
 function openDiscard(){sheetContext={kind:'discard'};openSheet('<h2 id="sheet-title">放弃未保存的修改？</h2><p>当前草稿将被清除，正在使用的已保存主题保持原样。</p><div class="actions">'+btn('继续编辑','cancel-sheet')+btn('放弃修改','commit-discard','btn danger')+'</div>')}
 function emitScope(id){
  const g=groups().find(x=>x.id===id);if(!g)return;const t=clone(effective(g)),i=1;S.activity++;persist();if(!S.notification.quiet&&g.enabled[i])playSound(t.sounds[i],g.volume,true);
@@ -340,8 +350,9 @@ function tick(now){const dt=Math.min(80,Math.max(0,now-lastTick));lastTick=now;c
  const main=$('main-banner')||$('workspace-banner');if(main&&previewRunning&&!main.matches(':hover,:focus-within')&&!$('sheet').open&&$('closed').hidden){previewAge=Math.min(4000,previewAge+dt);if(previewAge>=4000)previewRunning=false}
  if(main){const t=route.page==='themes'?current():effective(groups().find(g=>g.id===(route.scope||'default'))||groups()[0]),i=route.page==='themes'?eventIndex:1,g=t?.gifs[i];const canvas=main.querySelector('canvas');if(g&&canvas)paintClip(canvas,g,reduced||!previewRunning?g.poster:absoluteTime(g,previewAge));const track=main.querySelector('.track i');track.style.transform='scaleX('+(reduced?1:Math.max(0,1-previewAge/4000))+')';track.style.opacity=reduced?'.3':'1'}
  const c=sheetContext;if(c?.kind==='gif'&&c.clip){if(c.playing&&!reduced)c.elapsed+=dt;const time=c.playing&&!reduced?absoluteTime(c.clip,c.elapsed):c.clip.poster;paintClip($('crop-canvas'),c.clip,time,previewAppearance,true);paintClip($('actual-canvas'),c.clip,time)}
- let removed=false;for(const l of live){const el=document.querySelector('[data-live-banner="'+l.id+'"]');if(!el)continue;if(!el.matches(':hover,:focus-within'))l.age+=dt;const g=l.theme.gifs[l.event];if(g)paintClip(el.querySelector('canvas'),g,reduced?g.poster:absoluteTime(g,l.age),S.appearance);const track=el.querySelector('.track i');track.style.transform='scaleX('+(reduced?1:Math.max(0,1-l.age/4000))+')';track.style.opacity=reduced?'.3':'1';if(l.age>=4000)removed=true}
- if(removed){live=live.filter(l=>l.age<4000);while(live.length<3&&liveQueue.length)live.push(liveQueue.shift());renderLive()}
+ const stackPaused=$('live-stack').matches(':hover,:focus-within');
+ let removed=false;for(const l of live){const el=document.querySelector('[data-live-banner="'+l.id+'"]');if(!el)continue;if(!stackPaused)l.age+=dt;const g=l.theme.gifs[l.event];if(g)paintClip(el.querySelector('canvas'),g,reduced?g.poster:absoluteTime(g,l.age),S.appearance);const track=el.querySelector('.track i');track.style.transform='scaleX('+(reduced?1:Math.max(0,1-l.age/4000))+')';track.style.opacity=reduced?'.3':'1';if(l.age>=4000)removed=true}
+ if(removed){live=live.filter(l=>l.age<4000);while(live.length<3&&liveQueue.length)live.push(liveQueue.shift());if(collectAssets())persist();renderLive()}
  requestAnimationFrame(tick);
 }
 function openMenu(){const el=$('context-menu');el.innerHTML=btn(icon('file')+' 重命名…','rename-theme')+btn(icon('copy')+' 复制为新主题…','copy-theme','', 'data-id="'+route.id+'"')+btn(icon('wave')+' 应用到工作区…','apply-theme','', 'data-id="'+route.id+'"')+(S.drafts[route.id]?btn(icon('refresh')+' 放弃修改…','discard-theme'):'')+btn(icon('trash')+' 删除主题…','delete-theme','danger','data-id="'+route.id+'"');el.hidden=!el.hidden}
@@ -390,7 +401,7 @@ document.addEventListener('click',async e=>{
  case 'scope-play':{const g=groups().find(g=>g.id===scope);playSound(effective(g).sounds[i],g.volume);break}
  case 'simulate-scope':emitScope(scope);break;
  case 'simulate-both':emitScope('claudio');emitScope('notes');break;
- case 'close-live':live=live.filter(l=>l.id!==id);if(liveQueue.length)live.push(liveQueue.shift());renderLive();break;
+ case 'close-live':live=live.filter(l=>l.id!==id);if(liveQueue.length)live.push(liveQueue.shift());if(collectAssets())persist();renderLive();break;
  case 'confirm-reset':closeSheet();S=fresh();route={page:'themes',id:'ghost'};history=[clone(route)];historyIndex=0;previewAppearance='light';live=[];liveQueue=[];renderLive();await persist();render();toast('演示已重置');break;
  }
 });

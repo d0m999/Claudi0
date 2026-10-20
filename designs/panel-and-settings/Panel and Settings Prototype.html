@@ -1384,8 +1384,6 @@ dialog p { overflow-wrap:anywhere; }
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 14 6M4 12a8 8 0 0 0 14 6"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5zM14 3v5h5M8 12h8m-8 4h6"/></symbol>
-<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2.6 14.9 8.5 21.4 9.4 16.7 14 17.8 20.5 12 17.5 6.2 20.5 7.3 14 2.6 9.4 9.1 8.5"/></symbol>
-<symbol id="i-star-fill" viewBox="0 0 24 24"><polygon points="12 2.6 14.9 8.5 21.4 9.4 16.7 14 17.8 20.5 12 17.5 6.2 20.5 7.3 14 2.6 9.4 9.1 8.5" fill="currentColor" stroke="none"/></symbol>
 </defs></svg>
 <div class="review-tools" aria-label="原型预览工具，不属于应用">
   <span class="review-title" id="review-title">claudi0 · macOS 设置提案</span>
@@ -1486,7 +1484,7 @@ dialog p { overflow-wrap:anywhere; }
     </div>
   </div>
 
-  <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><i data-lucide="chevron-right" aria-hidden="true"></i></button><button type="button" class="sf-button sf-favorite cursor-interaction" data-act="favorite"><span class="sf-star" data-star aria-hidden="true"><i data-lucide="star-fill"></i><i data-lucide="star"></i></span><span data-favorite-title></span></button></div></template>
+  <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><i data-lucide="chevron-right" aria-hidden="true"></i></button><button type="button" class="sf-button sf-favorite cursor-interaction" data-act="favorite"><span data-star aria-hidden="true"></span><span data-favorite-title></span></button></div></template>
   <template data-tpl="event-row"><div class="sf-event"><span class="sf-drop-badge" data-drop-badge aria-hidden="true"></span><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入本地文件…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>选择系统提示音…</button></div></div></template>
   <template data-tpl="choice-row"><div class="sf-audio-row"><label class="sf-audio-select cursor-interaction"><input type="radio" name="sf-audio-selection"><span class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></span></label><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><div class="sf-actions" data-extra></div></div></template>
   <template data-tpl="managed-audio"><div class="sf-audio-row"><div class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></div><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-icon cursor-interaction" data-rename aria-label="重命名音频"><i data-lucide="pencil" aria-hidden="true"></i></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash aria-label="移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div></template>
@@ -1550,24 +1548,6 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-pack-detail>svg { width:15px; color:var(--sf-muted); flex-shrink:0; }
   #claudio-sounds-overview .sf-favorite { flex-shrink:0; white-space:nowrap; }
   #claudio-sounds-overview .sf-favorites-hint { margin:0 0 13px; }
-  /* ———— 收藏控件方案对比（原型工具：?fav=a/b/c/d；file:// 打开时自动改用 #fav=；缺省 base=现行设计） ———— */
-  #claudio-sounds-overview[data-fav-variant="a"] .sf-favorite [data-favorite-title],#claudio-sounds-overview[data-fav-variant="b"] .sf-favorite [data-favorite-title],#claudio-sounds-overview[data-fav-variant="c"] .sf-favorite [data-favorite-title] { display:none; }
-  #claudio-sounds-overview[data-fav-alt] .sf-star { display:inline-flex; }
-  #claudio-sounds-overview[data-fav-alt] .sf-star svg { display:none; width:16px; height:16px; }
-  #claudio-sounds-overview[data-fav-alt] .sf-favorite.is-starred .sf-star svg:first-of-type { display:block; }
-  #claudio-sounds-overview[data-fav-alt] .sf-favorite:not(.is-starred) .sf-star svg:last-of-type { display:block; }
-  #claudio-sounds-overview[data-fav-variant="a"] .sf-favorite,#claudio-sounds-overview[data-fav-variant="b"] .sf-favorite,#claudio-sounds-overview[data-fav-variant="c"] .sf-favorite { width:30px; padding:4px 0; min-height:29px; background:transparent; border-color:transparent; box-shadow:none; color:var(--sf-muted); }
-  #claudio-sounds-overview[data-fav-variant="a"] .sf-favorite:hover,#claudio-sounds-overview[data-fav-variant="b"] .sf-favorite:hover,#claudio-sounds-overview[data-fav-variant="c"] .sf-favorite:hover { color:var(--sf-blue); }
-  #claudio-sounds-overview[data-fav-variant="a"] .sf-favorite.is-starred,#claudio-sounds-overview[data-fav-variant="b"] .sf-favorite.is-starred,#claudio-sounds-overview[data-fav-variant="c"] .sf-favorite.is-starred { color:var(--sf-blue); }
-  #claudio-sounds-overview[data-fav-variant="b"] .sf-pack-row:not(:hover):not(:focus-within) .sf-favorite:not(.is-starred) { visibility:hidden; }
-  #claudio-sounds-overview[data-fav-variant="c"] .sf-favorite { order:-1; }
-  #claudio-sounds-overview[data-fav-variant="d"] .sf-favorite { background:transparent; border-color:transparent; box-shadow:none; color:var(--sf-muted); }
-  #claudio-sounds-overview[data-fav-variant="d"] .sf-favorite.is-starred { background:var(--sf-select); color:var(--sf-blue); }
-  #claudio-sounds-overview[data-fav-variant="d"] .sf-favorite:hover { color:var(--sf-blue); }
-  #fav-switcher { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:99; display:flex; align-items:center; gap:9px; padding:6px 12px; border-radius:999px; background:light-dark(#202024,#f4f4f6); color:light-dark(#fff,#242426); font:500 12px/1.4 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; box-shadow:0 8px 26px rgba(0,0,0,.3); }
-  #fav-switcher button { font:inherit; color:inherit; width:22px; height:22px; border-radius:50%; border:1px solid light-dark(#ffffff4d,#00000040); background:transparent; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
-  #fav-switcher button:hover { background:light-dark(#ffffff26,#00000022); }
-  #fav-switcher code { opacity:.55; font-size:11px; }
   #claudio-sounds-overview .sf-pack-row:hover { background:var(--sf-soft); }
   #claudio-sounds-overview .sf-tag { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
   #claudio-sounds-overview .sf-service { display:flex; align-items:center; gap:12px; padding:16px; margin-top:24px; }
@@ -5045,42 +5025,6 @@ function freshState(){return {
  operation:null,epoch:0,serial:0
 };}
 const favoriteLimit=4;
-const favVariantNames={base:'现行 · 文字 pill',a:'A · 行尾纯图标星标',b:'B · hover 才出现',c:'C · 行首星标',d:'D · 已收藏状态 chip'};
-let FAV_VARIANT=(()=>{
-  const loc=realWindow.location;
-  const query=new URLSearchParams(loc.search).get('fav'),hash=new URLSearchParams(loc.hash.slice(1)).get('fav');
-  // Local files write the fragment; keep query-only entry links as a fallback.
-  const v=loc.protocol==='file:'?(hash||query):(query||hash);
-  return Object.hasOwn(favVariantNames,v)?v:'base';
-})();
-function favNav(direction){
-  const order=Object.keys(favVariantNames),v=order[(order.indexOf(FAV_VARIANT)+direction+order.length)%order.length];
-  const loc=realWindow.location,u=new URL(loc.href);
-  if(loc.protocol==='file:'){
-    const hash=new URLSearchParams(u.hash.slice(1));hash.set('fav',v);u.hash=hash.toString();
-  }else u.searchParams.set('fav',v);
-  realWindow.history.replaceState(realWindow.history.state,'',u.href);
-  FAV_VARIANT=v;
-  applyFavVariant();
-}
-function applyFavVariant(){
-  const element=$('claudio-sounds-overview');if(!element)return;
-  element.dataset.favVariant=FAV_VARIANT;element.toggleAttribute('data-fav-alt',FAV_VARIANT!=='base');
-  element.querySelectorAll('[data-act="favorite"]').forEach(button=>renderFavIcon(button,S.stars.includes(button.dataset.id)));
-  const bar=$('fav-switcher');if(!bar)return;
-  bar.querySelector('strong').textContent=favVariantNames[FAV_VARIANT];
-  bar.querySelector('code').textContent='?fav='+FAV_VARIANT;
-}
-function renderFavIcon(button,starred){
-  button.querySelector('[data-star]').innerHTML=FAV_VARIANT==='base'?(starred?'★':'☆'):icon('star-fill')+icon('star');
-  button.classList.toggle('is-starred',starred);
-}
-function handleFavKey(e){
-  if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.altKey||e.shiftKey||!['ArrowLeft','ArrowRight'].includes(e.key))return;
-  if(container.hidden||S.page!=='sounds'||$('sheet').open||approvedSoundsView?.modal())return;
-  if(e.target.closest('input,textarea,select,[contenteditable]'))return;
-  e.preventDefault();favNav(e.key==='ArrowRight'?1:-1);
-}
 let S=freshState();
 const hostTimers=new Map();
 let audioContext=null,audioNodes=[],audioTimer=null,audioEpoch=0,workTimer=null,generationTimer=null,modalReturn=null,sheetModel=null,modalEpoch=0,scrollByRoute={};
@@ -5386,7 +5330,7 @@ function createApprovedSoundsView(root,bridge) {
       favorite.hidden=pack.kind==='draft'||!control.enabled;favorite.dataset.id=pack.id;
       const label=control.starred?T('已收藏','Favorited'):T('收藏','Favorite');
       const help=control.starred?T('取消收藏，从面板中移除','Remove from favorites and the panel'):T('收藏，在面板中显示','Favorite to show in the panel');
-      renderFavIcon(favorite,control.starred);q('[data-favorite-title]',row).textContent=label;
+      q('[data-star]',row).textContent=control.starred?'★':'☆';q('[data-favorite-title]',row).textContent=label;
       favorite.title=help;favorite.setAttribute('aria-label',pack.name+T('，',', ')+(control.starred?T('已收藏','favorited'):T('未收藏','not favorited')));
       favorite.setAttribute('aria-description',help);list.append(row);
     });
@@ -5746,12 +5690,6 @@ function approvedSoundsGuard(action){
   if(action.type==='start'&&!hasCredential())return T('请先为当前生成服务配置 API Key，再生成候选。','Configure an API Key for the selected Provider before generating.');
   return '';
 }
-function favSwitcherBar(){
-  const bar=document.createElement('div');bar.id='fav-switcher';bar.setAttribute('role','group');bar.setAttribute('aria-label','收藏控件方案对比（原型工具，不属于应用）');
-  bar.innerHTML=`<button type="button" data-fav-dir="-1" aria-label="上一个方案">‹</button><span>收藏控件 · <strong>${favVariantNames[FAV_VARIANT]}</strong> <code>?fav=${FAV_VARIANT}</code> · ←→ 切换</span><button type="button" data-fav-dir="1" aria-label="下一个方案">›</button>`;
-  bar.addEventListener('click',e=>{const b=e.target.closest('[data-fav-dir]');if(b)favNav(Number(b.dataset.favDir));});
-  return bar;
-}
 function mountApprovedSounds(){
   const mount=$('approved-sounds-mount');if(!mount)return;
   if(!approvedSoundsView){
@@ -5772,15 +5710,13 @@ function mountApprovedSounds(){
       count:()=>S.faults.partial&&profile().partial&&cueRoute().id!=='speech'?2:3,
       browse:(route,id)=>{const before=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=before;S.pack=id;S.detail=route==='detail'?'pack':route==='history'?'history':null;S.returnContext=null;const next=position();if(!same(before,next))recordPosition(next);$('page-title').textContent=title();drawNavigation();},
       modal:open=>{$('settings-nav').inert=open;drawNavigation();},
-      icons:node=>{const names={'audio-lines':'wave','volume-2':'speaker',plug:'plug',bell:'bell',settings:'gear',command:'command',activity:'chart',info:'info','chevron-left':'back',plus:'plus','square-arrow-down':'file',sparkles:'ai','clock-3':'chart','chevron-right':'next',pencil:'edit',send:'start','circle-check':'finish','circle-pause':'interrupt','check-check':'branch','music-2':'wave','folder-open':'folder','file-audio':'file','trash-2':'trash',package:'file',star:'star','star-fill':'star-fill'};node.querySelectorAll('[data-lucide]').forEach(el=>{el.outerHTML=icon(names[el.dataset.lucide]||'wave');});},
+      icons:node=>{const names={'audio-lines':'wave','volume-2':'speaker',plug:'plug',bell:'bell',settings:'gear',command:'command',activity:'chart',info:'info','chevron-left':'back',plus:'plus','square-arrow-down':'file',sparkles:'ai','clock-3':'chart','chevron-right':'next',pencil:'edit',send:'start','circle-check':'finish','circle-pause':'interrupt','check-check':'branch','music-2':'wave','folder-open':'folder','file-audio':'file','trash-2':'trash',package:'file'};node.querySelectorAll('[data-lucide]').forEach(el=>{el.outerHTML=icon(names[el.dataset.lucide]||'wave');});},
       serviceStatus:()=>credentialText(credential()),
       hasCredential:()=>hasCredential(),
       serviceManagement:renderService
     });
   } else mount.append(approvedSoundsView.element);
-  mount.append(favSwitcherBar());
   approvedSoundsView.sync(S.detail,S.pack);
-  applyFavVariant();
 }
 
 function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+'<div id="approved-sounds-mount"></div>';}
@@ -6423,7 +6359,6 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
   // generation cancel → focus the active sidebar row). Stop shadow keydowns from reaching the page.
   root.addEventListener('keydown',e=>{
     e.stopPropagation();
-    handleFavKey(e);
   });
   root.addEventListener('input',changed);
   root.addEventListener('change',changed);
