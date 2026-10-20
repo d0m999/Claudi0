@@ -9,8 +9,7 @@ public struct ClaudeCodeIntegrationEnvironment: Sendable {
     public let claudioBinaryPath: String
     public let claudioRoot: String
     public let receiptStore: HostHookReceiptStore
-    public let availability: @Sendable () -> HostAvailability
-    public let scopeFingerprint: @Sendable () -> String?
+    public let observeHost: @Sendable () -> HostDiscoveryObservation
 
     public init(
         settingsFile: URL = ClaudioPaths.claudeSettingsFile,
@@ -24,9 +23,8 @@ public struct ClaudeCodeIntegrationEnvironment: Sendable {
             locksRoot: ClaudioPaths.receiptLocksDirectory,
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
-        scopeFingerprint: (@Sendable () -> String?)? = nil,
-        availability: @escaping @Sendable () -> HostAvailability = {
-            HostDiscovery.detect(.claudeCode).availability
+        observeHost: @escaping @Sendable () -> HostDiscoveryObservation = {
+            HostDiscovery.observeCLI(.claudeCode)
         }
     ) {
         self.settingsFile = settingsFile
@@ -42,8 +40,7 @@ public struct ClaudeCodeIntegrationEnvironment: Sendable {
         self.claudioBinaryPath = claudioBinaryPath
         self.claudioRoot = claudioRoot
         self.receiptStore = receiptStore
-        self.scopeFingerprint = scopeFingerprint ?? { HostActivationScope.claudeCode() }
-        self.availability = availability
+        self.observeHost = observeHost
     }
 }
 
@@ -57,8 +54,7 @@ public struct CodexIntegrationEnvironment: Sendable {
     public let claudioBinaryPath: String
     public let claudioRoot: String
     public let receiptStore: HostHookReceiptStore
-    public let availability: @Sendable () -> HostAvailability
-    public let scopeFingerprint: @Sendable () -> String?
+    public let observeHost: @Sendable () -> HostDiscoveryObservation
     /// Testable publication-boundary seam. Production uses the default no-op; regression tests
     /// inject a non-cooperating writer after staging is complete and before the final expected-byte
     /// check. Keeping it in the environment mirrors the existing injected host/filesystem facts.
@@ -78,9 +74,8 @@ public struct CodexIntegrationEnvironment: Sendable {
             locksRoot: ClaudioPaths.receiptLocksDirectory,
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
-        scopeFingerprint: (@Sendable () -> String?)? = nil,
-        availability: @escaping @Sendable () -> HostAvailability = {
-            HostDiscovery.detect(.codex).availability
+        observeHost: @escaping @Sendable () -> HostDiscoveryObservation = {
+            HostDiscovery.observeCLI(.codex)
         },
         beforeLegacyWrapperFinalPublish: @escaping @Sendable () -> Void = {}
     ) {
@@ -99,8 +94,7 @@ public struct CodexIntegrationEnvironment: Sendable {
         self.claudioBinaryPath = claudioBinaryPath
         self.claudioRoot = claudioRoot
         self.receiptStore = receiptStore
-        self.scopeFingerprint = scopeFingerprint ?? { HostActivationScope.codex() }
-        self.availability = availability
+        self.observeHost = observeHost
         self.beforeLegacyWrapperFinalPublish = beforeLegacyWrapperFinalPublish
     }
 }
@@ -134,10 +128,11 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
         guard runtime == .ready else {
             return .failure(.runtimeUnavailable(reason: integrationRuntimeReason(runtime)))
         }
-        if let reason = environment.availability().unavailabilityReason {
+        if let reason = environment.observeHost().availability.unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
-        guard let scopeFingerprint = environment.scopeFingerprint() else {
+        // Keep connection preflight independent of discovery and of the post-write inspection.
+        guard let scopeFingerprint = environment.observeHost().scopeFingerprint else {
             return .failure(
                 .configuration(reason: "无法读取 Claude Code/Claudio 版本身份；已拒绝写入连接"))
         }
@@ -286,10 +281,11 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
         guard runtime == .ready else {
             return .failure(.runtimeUnavailable(reason: integrationRuntimeReason(runtime)))
         }
-        if let reason = environment.availability().unavailabilityReason {
+        if let reason = environment.observeHost().availability.unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
-        guard let scopeFingerprint = environment.scopeFingerprint() else {
+        // Keep connection preflight independent of discovery and of the post-write inspection.
+        guard let scopeFingerprint = environment.observeHost().scopeFingerprint else {
             return .failure(
                 .configuration(reason: "无法读取 Codex/Claudio 版本身份；已拒绝写入连接"))
         }
@@ -541,7 +537,7 @@ public func inspectClaudeSnapshot(
     environment: ClaudeCodeIntegrationEnvironment,
     runtime: SharedRuntimeHealth
 ) -> HostIntegrationSnapshot {
-    let availability = environment.availability()
+    let observation = environment.observeHost()
     let rootResult = loadIntegrationJSONObject(at: environment.settingsFile)
     var configuration: HostConfigurationState
     var installationID: UUID?
@@ -578,7 +574,7 @@ public func inspectClaudeSnapshot(
             configuration = .conflict(reason: reason)
         }
     }
-    let currentScope = configuration == .configured ? environment.scopeFingerprint() : nil
+    let currentScope = configuration == .configured ? observation.scopeFingerprint : nil
     configuration = validatedActivationConfiguration(
         host: .claudeCode,
         configuration: configuration,
@@ -588,7 +584,7 @@ public func inspectClaudeSnapshot(
     return makeIntegrationSnapshot(
         host: .claudeCode,
         runtime: runtime,
-        availability: availability,
+        availability: observation.availability,
         configuration: configuration,
         installationID: installationID,
         file: environment.settingsFile,
@@ -602,7 +598,7 @@ public func inspectCodexSnapshot(
     environment: CodexIntegrationEnvironment,
     runtime: SharedRuntimeHealth
 ) -> HostIntegrationSnapshot {
-    let availability = environment.availability()
+    let observation = environment.observeHost()
     let dataResult = loadIntegrationData(at: environment.hooksFile)
     let wrapperContext = inspectLegacyWrapperContext(environment: environment)
     let status = codexConfigurationStatus(
@@ -632,7 +628,7 @@ public func inspectCodexSnapshot(
         configuration = .unreadable(reason: reason)
         installationID = nil
     }
-    let currentScope = configuration == .configured ? environment.scopeFingerprint() : nil
+    let currentScope = configuration == .configured ? observation.scopeFingerprint : nil
     configuration = validatedActivationConfiguration(
         host: .codex,
         configuration: configuration,
@@ -642,7 +638,7 @@ public func inspectCodexSnapshot(
     return makeIntegrationSnapshot(
         host: .codex,
         runtime: runtime,
-        availability: availability,
+        availability: observation.availability,
         configuration: configuration,
         installationID: installationID,
         file: environment.hooksFile,

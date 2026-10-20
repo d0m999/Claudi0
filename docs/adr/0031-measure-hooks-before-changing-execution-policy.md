@@ -31,6 +31,13 @@ Codex 的两种解析模式均按原调用路径进行原有有界真实探测�
 不放行核心合入或生产启用；性能失败、预算闸门及 E2 暂停保持不变。详见
 [ADR 0033 的资格与兼容核验边界](0033-refresh-host-version-cache-outside-hooks.md#本地候选资格与兼容核验)。
 
+2026-10-20 只读集成检查优化：Claude Code、Codex 的单次 adapter inspection 以一份不可变
+`HostDiscoveryObservation` 共享一次真实版本探测，分别投影宿主可用性与完整 activation scope。
+GUI、自动维护及 `doctor` 集成检查共用该入口；两种投影保留各自的资格规则。观察仅活到本次检查，
+后续及并发检查分别重新探测；失败不在本轮补探测、不回退旧值。连接前的可用性与 scope 仍独立
+观察，事务完成后重新检查；完整 `doctor` 的旧 Claude 兼容检查继续独立执行。此优化不创建或启用
+持久缓存，不改变 hook 执行策略、超时、维护调度或 ADR 0033 的 proposed 状态。
+
 沿用 `handleHostHook` 和已有环境注入，通过一个默认关闭的类型化测量上下文记录单调时钟跨度
 和有限结果。上下文只存内存，驱动器输出；不增加 hook 输出、普通日志或持久遥测。跨度可嵌套，
 不可相加推导总耗时。Core 隔离、Debug CLI、确切 Release helper、真实宿主及人耳听音分别列证据。

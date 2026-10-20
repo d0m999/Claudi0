@@ -150,6 +150,7 @@ if CommandLine.arguments.contains("--host-review-regressions") {
 }
 
 if CommandLine.arguments.contains("--host-integration-checks") {
+    await runHostDiscoveryObservationSuites()
     await runHostIntegrationReviewRegressionSuites()
     await runHostIntegrationAutomationSuites()
     await runConcreteHostIntegrationAdapterSuites()
@@ -240,6 +241,7 @@ runWorkBuddyHooksTransformSuites()
 runWorkBuddyHookPayloadPolicySuites()
 runWorkBuddyNotificationSuites()
 runLegacyCodexNotifyMigrationSuites()
+await runHostDiscoveryObservationSuites()
 await runConcreteHostIntegrationAdapterSuites()
 await runWorkBuddyIntegrationAdapterSuites()
 await runWorkBuddyAcceptancePreflightSuites()

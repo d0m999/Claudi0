@@ -282,9 +282,9 @@ private struct ReviewIntegrationFixture {
             codexHooksFile: configurationFile(.codex),
             workBuddySettingsFile: configurationFile(.workBuddy),
             claudioRoot: claudioRoot.path, claudioBinaryPath: binary, receiptStore: receipts,
-            claudeAvailability: { .available }, codexAvailability: { .available },
-            workBuddyAvailability: { .available }, claudeScopeFingerprint: { "review-scope" },
-            codexScopeFingerprint: { "review-scope" }, workBuddyScopeFingerprint: { "review-scope" }
+            observeClaude: { .init(discovery: .installed, scopeFingerprint: "review-scope") },
+            observeCodex: { .init(discovery: .installed, scopeFingerprint: "review-scope") },
+            workBuddyAvailability: { .available }, workBuddyScopeFingerprint: { "review-scope" }
         )
     }
     func configurationFile(_ host: HostID) -> URL {
@@ -300,7 +300,8 @@ private struct ReviewIntegrationFixture {
                 environment: .init(
                     settingsFile: file, lockFile: lock, claudioBinaryPath: binary,
                     claudioRoot: claudioRoot.path, receiptStore: receipts,
-                    scopeFingerprint: { "review-scope" }, availability: { .available }))
+                    observeHost: { .init(discovery: .installed, scopeFingerprint: "review-scope") })
+            )
         case .codex:
             return CodexIntegrationAdapter(
                 environment: .init(
@@ -310,7 +311,8 @@ private struct ReviewIntegrationFixture {
                     legacyNotifyWrapper: claudioRoot.appendingPathComponent("bin/codex-notify"),
                     claudioBinaryPath: binary, claudioRoot: claudioRoot.path,
                     receiptStore: receipts,
-                    scopeFingerprint: { "review-scope" }, availability: { .available }))
+                    observeHost: { .init(discovery: .installed, scopeFingerprint: "review-scope") })
+            )
         case .workBuddy:
             return WorkBuddyIntegrationAdapter(
                 environment: .init(

@@ -154,6 +154,16 @@ public enum HostActivationScope {
             .resolve(host, mode: .forceProbe)
     }
 
+    /// Pure projection shared by standalone scope checks and combined CLI observations.
+    /// Codex's prefix participates in the existing full version length limit.
+    static func fingerprint(for host: HostID, discoveredVersion: String) -> String? {
+        switch host {
+        case .claudeCode: return fingerprint(host: host, hostVersion: discoveredVersion)
+        case .codex: return fingerprint(host: host, hostVersion: "cli=\(discoveredVersion)")
+        default: return nil
+        }
+    }
+
     public static func claudeCode(
         executableLocator: HostExecutableLocator = .standard(),
         commandRunner: (any CommandRunning)? = nil,
@@ -167,7 +177,7 @@ public enum HostActivationScope {
                     executableLocator: executableLocator, commandRunner: commandRunner))
                 .resolve(.claudeCode, mode: mode)
         else { return nil }
-        return fingerprint(host: .claudeCode, hostVersion: version)
+        return fingerprint(for: .claudeCode, discoveredVersion: version)
     }
 
     public static func codex(
@@ -183,7 +193,7 @@ public enum HostActivationScope {
                     executableLocator: executableLocator, commandRunner: commandRunner))
                 .resolve(.codex, mode: mode)
         else { return nil }
-        return fingerprint(host: .codex, hostVersion: "cli=\(version)")
+        return fingerprint(for: .codex, discoveredVersion: version)
     }
 
     public static func workBuddy() -> String? {

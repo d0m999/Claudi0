@@ -325,11 +325,9 @@ public struct DoctorIntegrationsEnvironment: Sendable {
     public let claudioRoot: String
     public let claudioBinaryPath: String
     public let receiptStore: HostHookReceiptStore
-    public let claudeAvailability: @Sendable () -> HostAvailability
-    public let codexAvailability: @Sendable () -> HostAvailability
+    public let observeClaude: @Sendable () -> HostDiscoveryObservation
+    public let observeCodex: @Sendable () -> HostDiscoveryObservation
     public let workBuddyAvailability: @Sendable () -> HostAvailability
-    public let claudeScopeFingerprint: @Sendable () -> String?
-    public let codexScopeFingerprint: @Sendable () -> String?
     public let workBuddyScopeFingerprint: @Sendable () -> String?
     public let additionalHosts: [AdditionalHostIntegrationEnvironment]
 
@@ -346,20 +344,14 @@ public struct DoctorIntegrationsEnvironment: Sendable {
             locksRoot: ClaudioPaths.receiptLocksDirectory,
             installationsRoot: ClaudioPaths.activeInstallationsDirectory,
             installationLocksRoot: ClaudioPaths.activeInstallationLocksDirectory),
-        claudeAvailability: @escaping @Sendable () -> HostAvailability = {
-            HostDiscovery.detect(.claudeCode).availability
+        observeClaude: @escaping @Sendable () -> HostDiscoveryObservation = {
+            HostDiscovery.observeCLI(.claudeCode)
         },
-        codexAvailability: @escaping @Sendable () -> HostAvailability = {
-            HostDiscovery.detect(.codex).availability
+        observeCodex: @escaping @Sendable () -> HostDiscoveryObservation = {
+            HostDiscovery.observeCLI(.codex)
         },
         workBuddyAvailability: @escaping @Sendable () -> HostAvailability = {
             HostDiscovery.detect(.workBuddy).availability
-        },
-        claudeScopeFingerprint: @escaping @Sendable () -> String? = {
-            HostActivationScope.claudeCode()
-        },
-        codexScopeFingerprint: @escaping @Sendable () -> String? = {
-            HostActivationScope.codex()
         },
         workBuddyScopeFingerprint: @escaping @Sendable () -> String? = HostActivationScope
             .workBuddy,
@@ -381,11 +373,9 @@ public struct DoctorIntegrationsEnvironment: Sendable {
             ?? URL(fileURLWithPath: claudioRoot, isDirectory: true)
             .appendingPathComponent("bin/claudio").path
         self.receiptStore = receiptStore
-        self.claudeAvailability = claudeAvailability
-        self.codexAvailability = codexAvailability
+        self.observeClaude = observeClaude
+        self.observeCodex = observeCodex
         self.workBuddyAvailability = workBuddyAvailability
-        self.claudeScopeFingerprint = claudeScopeFingerprint
-        self.codexScopeFingerprint = codexScopeFingerprint
         self.workBuddyScopeFingerprint = workBuddyScopeFingerprint
         let additionalBinary = self.claudioBinaryPath
         self.additionalHosts =
@@ -521,8 +511,7 @@ public func hostIntegrationDoctorResults(
             claudioBinaryPath: environment.claudioBinaryPath,
             claudioRoot: environment.claudioRoot,
             receiptStore: environment.receiptStore,
-            scopeFingerprint: environment.claudeScopeFingerprint,
-            availability: environment.claudeAvailability),
+            observeHost: environment.observeClaude),
         runtime: runtime)
     let codex = inspectCodexSnapshot(
         environment: CodexIntegrationEnvironment(
@@ -532,8 +521,7 @@ public func hostIntegrationDoctorResults(
             claudioBinaryPath: environment.claudioBinaryPath,
             claudioRoot: environment.claudioRoot,
             receiptStore: environment.receiptStore,
-            scopeFingerprint: environment.codexScopeFingerprint,
-            availability: environment.codexAvailability),
+            observeHost: environment.observeCodex),
         runtime: runtime)
     let workBuddy = inspectWorkBuddySnapshot(
         environment: WorkBuddyIntegrationEnvironment(
