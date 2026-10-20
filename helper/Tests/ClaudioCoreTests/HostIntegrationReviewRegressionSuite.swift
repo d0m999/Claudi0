@@ -282,8 +282,8 @@ private struct ReviewIntegrationFixture {
             codexHooksFile: configurationFile(.codex),
             workBuddySettingsFile: configurationFile(.workBuddy),
             claudioRoot: claudioRoot.path, claudioBinaryPath: binary, receiptStore: receipts,
-            observeClaude: { .init(discovery: .installed, scopeFingerprint: "review-scope") },
-            observeCodex: { .init(discovery: .installed, scopeFingerprint: "review-scope") },
+            observeClaude: { .init(availability: .available, scopeFingerprint: "review-scope") },
+            observeCodex: { .init(availability: .available, scopeFingerprint: "review-scope") },
             workBuddyAvailability: { .available }, workBuddyScopeFingerprint: { "review-scope" }
         )
     }
@@ -300,7 +300,9 @@ private struct ReviewIntegrationFixture {
                 environment: .init(
                     settingsFile: file, lockFile: lock, claudioBinaryPath: binary,
                     claudioRoot: claudioRoot.path, receiptStore: receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "review-scope") })
+                    observeHost: {
+                        .init(availability: .available, scopeFingerprint: "review-scope")
+                    })
             )
         case .codex:
             return CodexIntegrationAdapter(
@@ -311,7 +313,9 @@ private struct ReviewIntegrationFixture {
                     legacyNotifyWrapper: claudioRoot.appendingPathComponent("bin/codex-notify"),
                     claudioBinaryPath: binary, claudioRoot: claudioRoot.path,
                     receiptStore: receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "review-scope") })
+                    observeHost: {
+                        .init(availability: .available, scopeFingerprint: "review-scope")
+                    })
             )
         case .workBuddy:
             return WorkBuddyIntegrationAdapter(

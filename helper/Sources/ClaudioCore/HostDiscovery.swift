@@ -18,13 +18,11 @@ public enum HostDiscoveryState: Codable, Sendable, Equatable {
 /// One live CLI observation, shared only within the inspection that requested it.
 /// Discovery and activation scope have different validation rules: neither implies the other.
 public struct HostDiscoveryObservation: Sendable, Equatable {
-    public let discovery: HostDiscoveryState
+    public let availability: HostAvailability
     public let scopeFingerprint: String?
 
-    public var availability: HostAvailability { discovery.availability }
-
-    public init(discovery: HostDiscoveryState, scopeFingerprint: String?) {
-        self.discovery = discovery
+    public init(availability: HostAvailability, scopeFingerprint: String?) {
+        self.availability = availability
         self.scopeFingerprint = scopeFingerprint
     }
 }
@@ -68,7 +66,11 @@ public enum HostDiscovery {
             else { return .blocked(reason: "无法验证 WorkBuddy 应用身份") }
             return .installed
         }
-        return observeCLI(host, locator: locator, runner: runner).discovery
+        switch observeCLI(host, locator: locator, runner: runner).availability {
+        case .available: return .installed
+        case .notInstalled: return .notInstalled
+        case .unavailable(let reason): return .blocked(reason: reason)
+        }
     }
 
     /// Captures one forced, uncached version probe. Call again for each new inspection;
@@ -82,24 +84,27 @@ public enum HostDiscovery {
         switch host {
         case .claudeCode: command = "claude"
         case .codex: command = "codex"
-        default: return .init(discovery: .notInstalled, scopeFingerprint: nil)
+        default: return .init(availability: .notInstalled, scopeFingerprint: nil)
         }
         guard locator.executablePath(command: command) != nil else {
-            return .init(discovery: .notInstalled, scopeFingerprint: nil)
+            return .init(availability: .notInstalled, scopeFingerprint: nil)
         }
-        let blocked = HostDiscoveryState.blocked(reason: "无法验证来源版本；请检查安装")
+        let blockedReason = "无法验证来源版本；请检查安装"
         guard
             let version = HostActivationScope.discoveredVersion(
                 for: host,
                 executableLocator: locator, commandRunner: runner)
-        else { return .init(discovery: blocked, scopeFingerprint: nil) }
+        else {
+            return .init(
+                availability: .unavailable(reason: blockedReason), scopeFingerprint: nil)
+        }
         // Preserve the existing protocol compatibility policy; the historical verified Claude
         // lower bound is diagnostic evidence, not a newly invented hard version requirement.
         let hasVersion = version.split(whereSeparator: \.isWhitespace).contains {
             SemanticVersion(parsing: String($0)) != nil && $0.contains(".")
         }
         return .init(
-            discovery: hasVersion ? .installed : blocked,
+            availability: hasVersion ? .available : .unavailable(reason: blockedReason),
             scopeFingerprint: HostActivationScope.fingerprint(for: host, discoveredVersion: version)
         )
     }

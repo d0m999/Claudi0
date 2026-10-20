@@ -22,8 +22,12 @@ private struct DualHostDoctorFixture {
             workBuddySettingsFile: workBuddySettings,
             claudioRoot: claudioRoot.path,
             receiptStore: receiptStore,
-            observeClaude: { .init(discovery: .installed, scopeFingerprint: dualHostDoctorScope) },
-            observeCodex: { .init(discovery: .installed, scopeFingerprint: dualHostDoctorScope) },
+            observeClaude: {
+                .init(availability: .available, scopeFingerprint: dualHostDoctorScope)
+            },
+            observeCodex: {
+                .init(availability: .available, scopeFingerprint: dualHostDoctorScope)
+            },
             workBuddyAvailability: { .available },
             workBuddyScopeFingerprint: { dualHostDoctorScope })
     }
@@ -229,10 +233,13 @@ func runDualHostDoctorSuites() {
                     locksRoot: root.appendingPathComponent("receipt-locks")),
                 observeClaude: {
                     .init(
-                        discovery: .blocked(reason: "未检测到 Claude Code 配置目录"), scopeFingerprint: nil)
+                        availability: .unavailable(reason: "未检测到 Claude Code 配置目录"),
+                        scopeFingerprint: nil)
                 },
                 observeCodex: {
-                    .init(discovery: .blocked(reason: "未检测到 Codex 配置目录"), scopeFingerprint: nil)
+                    .init(
+                        availability: .unavailable(reason: "未检测到 Codex 配置目录"),
+                        scopeFingerprint: nil)
                 },
                 workBuddyAvailability: { .unavailable(reason: "未检测到 WorkBuddy Desktop") })
             let report = runDoctorChecks(
@@ -301,11 +308,11 @@ func runDualHostDoctorSuites() {
                 claudioRoot: fixture.claudioRoot.path,
                 receiptStore: fixture.receiptStore,
                 observeClaude: {
-                    .init(discovery: .installed, scopeFingerprint: dualHostDoctorScope)
+                    .init(availability: .available, scopeFingerprint: dualHostDoctorScope)
                 },
                 observeCodex: {
                     .init(
-                        discovery: .blocked(reason: "Codex 配置目录已断开"),
+                        availability: .unavailable(reason: "Codex 配置目录已断开"),
                         scopeFingerprint: dualHostDoctorScope)
                 },
                 workBuddyAvailability: { .available })
@@ -677,7 +684,7 @@ func runDualHostDoctorSuites() {
                     claudioRoot: fixture.claudioRoot.path,
                     receiptStore: fixture.receiptStore,
                     observeHost: {
-                        .init(discovery: .installed, scopeFingerprint: dualHostDoctorScope)
+                        .init(availability: .available, scopeFingerprint: dualHostDoctorScope)
                     }),
                 runtime: .ready)
             expect(

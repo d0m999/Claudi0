@@ -131,7 +131,8 @@ public struct ClaudeCodeIntegrationAdapter: HostIntegrationAdapter {
         if let reason = environment.observeHost().availability.unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
-        // Keep connection preflight independent of discovery and of the post-write inspection.
+        // ADR 0031 keeps availability and scope as independent preflight observations.
+        // This second probe is intentional; the post-write inspection probes again.
         guard let scopeFingerprint = environment.observeHost().scopeFingerprint else {
             return .failure(
                 .configuration(reason: "无法读取 Claude Code/Claudio 版本身份；已拒绝写入连接"))
@@ -284,7 +285,8 @@ public struct CodexIntegrationAdapter: HostIntegrationAdapter {
         if let reason = environment.observeHost().availability.unavailabilityReason {
             return .failure(.hostUnavailable(reason: reason))
         }
-        // Keep connection preflight independent of discovery and of the post-write inspection.
+        // ADR 0031 keeps availability and scope as independent preflight observations.
+        // This second probe is intentional; the post-write inspection probes again.
         guard let scopeFingerprint = environment.observeHost().scopeFingerprint else {
             return .failure(
                 .configuration(reason: "无法读取 Codex/Claudio 版本身份；已拒绝写入连接"))

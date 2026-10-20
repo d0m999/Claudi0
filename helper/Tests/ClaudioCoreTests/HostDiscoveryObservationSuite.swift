@@ -46,6 +46,51 @@ private final class ObservationRunner: CommandRunning, @unchecked Sendable {
     }
 }
 
+/// Holds the first probe until a second probe enters, proving genuine overlap.
+private final class ObservationOverlapRunner: CommandRunning, @unchecked Sendable {
+    private let lock = NSLock()
+    private let firstCanReturn = DispatchSemaphore(value: 0)
+    private var entered = 0
+    private var firstWaiting = false
+    private var overlapped = false
+    private var invocationCount = 0
+
+    var didOverlap: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return overlapped
+    }
+
+    var calls: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return invocationCount
+    }
+
+    func run(executablePath: String, arguments: [String], timeout: TimeInterval) -> CommandRunResult
+    {
+        lock.lock()
+        invocationCount += 1
+        entered += 1
+        let arrival = entered
+        if arrival == 1 { firstWaiting = true }
+        lock.unlock()
+
+        if arrival == 1 {
+            _ = firstCanReturn.wait(timeout: .now() + 2)
+            lock.lock()
+            firstWaiting = false
+            lock.unlock()
+        } else if arrival == 2 {
+            lock.lock()
+            if firstWaiting { overlapped = true }
+            lock.unlock()
+            firstCanReturn.signal()
+        }
+        return observationSuccess
+    }
+}
+
 private struct ObservationFixture: Sendable {
     let root: URL
 
@@ -201,14 +246,16 @@ func runHostDiscoveryObservationSuites() async {
                     observationDiskState(fixture.root) == before,
                     "\(host) inspection preserves disk bytes/modes")
 
-                runner.respond(with: [observationSuccess])
-                async let left = adapter.inspect(runtime: .ready)
-                async let right = adapter.inspect(runtime: .ready)
-                let snapshots = await [left, right]
+                let overlap = ObservationOverlapRunner()
+                let concurrentAdapter = fixture.adapter(host, runner: overlap)
+                let left = Task.detached { await concurrentAdapter.inspect(runtime: .ready) }
+                let right = Task.detached { await concurrentAdapter.inspect(runtime: .ready) }
+                let snapshots = await [left.value, right.value]
                 expect(
                     snapshots.allSatisfy { $0 == first }, "\(host) concurrent inspection results")
+                expect(overlap.didOverlap, "\(host) concurrent inspections actually overlap")
                 expect(
-                    runner.calls.count == 2,
+                    overlap.calls == 2,
                     "\(host) concurrent inspections never share observations")
 
                 writeFixture("{broken", to: fixture.file(host))
@@ -354,7 +401,7 @@ func runHostDiscoveryObservationSuites() async {
             let unsupported = HostDiscovery.observeCLI(
                 .workBuddy, locator: fixture.locator, runner: runner)
             expect(
-                unsupported.discovery == .notInstalled && unsupported.scopeFingerprint == nil
+                unsupported.availability == .notInstalled && unsupported.scopeFingerprint == nil
                     && runner.calls.isEmpty, "non-CLI observation never probes")
         }
     }

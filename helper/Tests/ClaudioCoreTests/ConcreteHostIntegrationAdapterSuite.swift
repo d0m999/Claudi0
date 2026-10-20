@@ -1,6 +1,9 @@
 import ClaudioCore
 import Foundation
 
+private let availableHostObservation = HostDiscoveryObservation(
+    availability: .available, scopeFingerprint: "test-scope-v1")
+
 @MainActor
 func runConcreteHostIntegrationAdapterSuites() async {
     await asyncSuite("双 adapter：现代 hook 只有精确指向当前 helper 才计入连接") {
@@ -39,7 +42,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -50,7 +53,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let claudeSnapshot = await claude.inspect(runtime: .ready)
@@ -92,7 +95,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let snapshot = await adapter.inspect(runtime: .ready)
@@ -135,7 +138,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let before = await adapter.inspect(runtime: .ready)
@@ -177,7 +180,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             guard case .success(let connected) = await adapter.connect(runtime: .ready),
                 let installationID = connected.installationID
@@ -263,7 +266,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let snapshot = await adapter.inspect(runtime: .ready)
@@ -321,7 +324,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let legacy = await adapter.inspect(runtime: .ready)
@@ -405,7 +408,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             guard case .success(let connected) = await adapter.connect(runtime: .ready),
                 let installationID = connected.installationID
@@ -482,7 +485,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let before = await adapter.inspect(runtime: .ready)
@@ -617,7 +620,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let inspected = await adapter.inspect(runtime: .ready)
@@ -677,9 +680,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: {
-                        .init(discovery: .installed, scopeFingerprint: "test-scope-v1")
-                    },
+                    observeHost: { availableHostObservation },
                     beforeLegacyWrapperFinalPublish: {
                         try! externalWrapper.write(to: wrapper)
                     }))
@@ -732,7 +733,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             guard
@@ -774,7 +775,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -785,7 +786,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             guard case .success = await claude.disconnect(runtime: .ready),
@@ -820,7 +821,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -831,7 +832,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             for snapshot in [
@@ -922,7 +923,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -933,7 +934,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             for snapshot in [
@@ -1000,7 +1001,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -1011,7 +1012,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             guard case .success = await claude.disconnect(runtime: .ready),
@@ -1064,7 +1065,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
                     observeHost: {
-                        .init(discovery: .installed, scopeFingerprint: claudeScope.value)
+                        .init(availability: .available, scopeFingerprint: claudeScope.value)
                     }))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -1076,7 +1077,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
                     observeHost: {
-                        .init(discovery: .installed, scopeFingerprint: codexScope.value)
+                        .init(availability: .available, scopeFingerprint: codexScope.value)
                     }))
             guard
                 case .success(let initialClaude) = await claude.connect(runtime: .ready),
@@ -1137,7 +1138,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: failingStore,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             guard
@@ -1168,7 +1169,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -1180,7 +1181,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let claudeBefore = try! Data(contentsOf: paths.claudeSettings)
             let codexBefore = try! Data(contentsOf: paths.codexHooks)
@@ -1222,7 +1223,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             guard case .success(let connected) = await adapter.connect(runtime: .ready),
                 let installationID = connected.installationID
@@ -1272,7 +1273,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
 
             let result = await adapter.connect(runtime: .ready)
@@ -1309,7 +1310,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             guard case .success(let connected) = await adapter.connect(runtime: .ready),
                 let installationID = connected.installationID
@@ -1356,7 +1357,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let codex = CodexIntegrationAdapter(
                 environment: CodexIntegrationEnvironment(
@@ -1367,7 +1368,7 @@ func runConcreteHostIntegrationAdapterSuites() async {
                     claudioBinaryPath: paths.binary.path,
                     claudioRoot: paths.claudioRoot.path,
                     receiptStore: paths.receipts,
-                    observeHost: { .init(discovery: .installed, scopeFingerprint: "test-scope-v1") }
+                    observeHost: { availableHostObservation }
                 ))
             let manager = HostIntegrationManager(
                 adapters: [claude, codex], bootstrapper: ReadyRuntimeBootstrapper())
