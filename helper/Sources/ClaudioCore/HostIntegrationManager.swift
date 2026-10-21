@@ -243,18 +243,20 @@ public actor HostIntegrationManager {
     }
 
     public func snapshots() -> [HostIntegrationSnapshot] {
-        HostID.productVisibleCases.map { host in
-            projected(
-                cachedSnapshots[host]
-                    ?? HostIntegrationSnapshot(
-                        host: host,
-                        runtime: runtime,
-                        availability: .unavailable(reason: "尚未检测"),
-                        configuration: .notConfigured,
-                        writability: .unknown,
-                        activation: .none,
-                        operation: inFlightOperations[host]?.state ?? .idle))
-        }
+        HostID.productVisibleCases.map { snapshot(for: $0) }
+    }
+
+    private func snapshot(for host: HostID) -> HostIntegrationSnapshot {
+        projected(
+            cachedSnapshots[host]
+                ?? HostIntegrationSnapshot(
+                    host: host,
+                    runtime: runtime,
+                    availability: .unavailable(reason: "尚未检测"),
+                    configuration: .notConfigured,
+                    writability: .unknown,
+                    activation: .none,
+                    operation: inFlightOperations[host]?.state ?? .idle))
     }
 
     public func connect(
@@ -345,7 +347,7 @@ public actor HostIntegrationManager {
     public func disconnect(
         _ host: HostID
     ) async -> Result<HostIntegrationSnapshot, HostIntegrationActionError> {
-        if let error = productActionError(for: host) { return .failure(error) }
+        if let error = disconnectActionError(for: host) { return .failure(error) }
         if authorization != nil {
             guard
                 case .success = await setEnabled(
@@ -482,7 +484,8 @@ public actor HostIntegrationManager {
         async -> Result<HostIntegrationSnapshot, HostIntegrationActionError>
     {
         guard let host = HostID(rawValue: surface.rawValue),
-            productActionError(for: host) == nil, let authorization, let adapter = adapters[host]
+            (enabled ? productActionError(for: host) : disconnectActionError(for: host)) == nil,
+            let authorization, let adapter = adapters[host]
         else { return .failure(.hostUnavailable(reason: "来源不可用")) }
         if enabled {
             let fact = await adapter.inspect(runtime: runtime)
@@ -497,7 +500,9 @@ public actor HostIntegrationManager {
             failures[host] = nil
             publish()
             if schedule { requestMaintenance(trigger: .intentChanged, surface: surface) }
-            return .success(snapshots().first { $0.host == host }!)
+            // A direct cleanup result may describe a release-hidden source. The product
+            // registry and its snapshot stream still contain only visible sources.
+            return .success(snapshot(for: host))
         }
     }
 
@@ -629,6 +634,13 @@ public actor HostIntegrationManager {
         guard !HostID.productVisibleCases.contains(host) else { return nil }
         return .hostUnavailable(
             reason: "\(host.displayName) 仅供兼容解码和隔离诊断，不能执行产品集成动作")
+    }
+
+    private func disconnectActionError(for host: HostID) -> HostIntegrationActionError? {
+        // Release admission controls new connections, not ownership of previously installed
+        // candidate hooks. Their adapter must still verify exact ownership before removal.
+        guard !AdditionalHostReleasePolicy.candidateHosts.contains(host) else { return nil }
+        return productActionError(for: host)
     }
 
     private func refresh(usingCurrentRuntime: Bool) async -> [HostIntegrationSnapshot] {

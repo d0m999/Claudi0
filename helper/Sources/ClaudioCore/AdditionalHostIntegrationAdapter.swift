@@ -105,6 +105,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                 backupFile: file.appendingPathExtension("claudio.bak"),
                 symlinkPolicy: host == .kimiCode ? .preserveTarget : .reject)
             let requested = UUID()
+            var scopeBeforePublication: String?
             let result = transaction.updateBytes(
                 { bytes in
                     try AdditionalHostConfiguration.connect(
@@ -112,11 +113,21 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                         helperPath: environment.claudioBinaryPath,
                         claudioRoot: environment.claudioRoot,
                         requestedID: requested, reusableID: reusable)
-                }, beforeFinalPublish: environment.beforeFinalPublish)
+                },
+                beforeFinalPublish: {
+                    environment.beforeFinalPublish()
+                    // The transaction acquires the publication lease after this callback.
+                    // Keep version probes outside it, then retain it through marker activation.
+                    scopeBeforePublication = environment.scopeFingerprint()
+                })
             switch result {
             case .failure(let error): return .failure(.transaction(error))
             case .success(let report):
-                guard environment.scopeFingerprint() == scope else {
+                // An unchanged transaction neither calls beforeFinalPublish nor takes the lease.
+                let currentScope =
+                    report.outcome == .unchanged
+                    ? environment.scopeFingerprint() : scopeBeforePublication
+                guard currentScope == scope else {
                     return .failure(.configuration(reason: "写入期间版本／配置作用域变化，请重新检测并修复"))
                 }
                 if case .failure(let error) = environment.receiptStore.activate(
@@ -125,6 +136,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                 {
                     return .failure(.configuration(reason: "当前安装代次发布失败：\(error.description)"))
                 }
+                HostPublicationContext.current?.release()
                 return .success(
                     inspectAdditionalHostSnapshot(environment: environment, runtime: runtime))
             }
@@ -152,6 +164,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                 FileManager.default.fileExists(atPath: file.path)
                     || leafNodeIsSymbolicLink(at: file)
             else {
+                HostPublicationContext.current?.release()
                 return .success(
                     inspectAdditionalHostSnapshot(environment: environment, runtime: runtime))
             }
@@ -166,6 +179,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                         claudioRoot: environment.claudioRoot)
                 }, beforeFinalPublish: environment.beforeFinalPublish)
             if case .failure(let error) = result { return .failure(.transaction(error)) }
+            HostPublicationContext.current?.release()
             return .success(
                 inspectAdditionalHostSnapshot(environment: environment, runtime: runtime))
         }

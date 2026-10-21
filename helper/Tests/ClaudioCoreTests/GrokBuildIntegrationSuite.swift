@@ -73,25 +73,175 @@ func runGrokBuildIntegrationSuites() async {
     }
 
     await asyncSuite("Grok Build：普通 Release 仍能精准卸载旧候选模板") {
-        let f = GrokBuildIntegrationFixture()
-        defer { f.cleanup() }
-        let id = UUID()
-        f.write(f.acceptanceConfiguration(id: id))
-        _ = f.receipts.activate(
-            host: .grokBuild, installationID: id, scopeFingerprint: f.scope.value)
-        let other = f.configurationRoot.appendingPathComponent("hooks/third-party.json")
-        f.write(Data("{\"hooks\":{}}\n".utf8), to: other)
-        expect((await f.adapter.disconnect(runtime: .ready)).grokSucceeded, "所有权独立于发布准入")
-        expect(!FileManager.default.fileExists(atPath: f.file.path), "只删除 exact 自有文件")
-        expect(try! Data(contentsOf: other) == Data("{\"hooks\":{}}\n".utf8), "第三方文件原字节保留")
-        expect(f.receipts.currentInstallationID(host: .grokBuild) == nil, "先撤销安装代次")
-        if !AdditionalHostReleasePolicy.isAcceptanceBuild {
-            expect(!(await f.adapter.connect(runtime: .ready)).grokSucceeded, "Release 不安装未准入绑定")
-            expect(!FileManager.default.fileExists(atPath: f.file.path), "拒收不制造空配置文件")
+        for authorized in [true, false] {
+            let f = GrokBuildIntegrationFixture()
+            defer { f.cleanup() }
+            let id = UUID()
+            f.write(f.acceptanceConfiguration(id: id))
+            _ = f.receipts.activate(
+                host: .grokBuild, installationID: id, scopeFingerprint: f.scope.value)
+            let other = f.configurationRoot.appendingPathComponent("hooks/third-party.json")
+            f.write(Data("{\"hooks\":{}}\n".utf8), to: other)
+            let backup = f.file.appendingPathExtension("claudio.bak")
+            f.write(Data("retained backup".utf8), to: backup)
+            let intents = HostIntegrationIntentStore(
+                configFile: f.runtime.appendingPathComponent("config.json"),
+                lockFile: f.runtime.appendingPathComponent("config.lock"))
+            f.write(Data("{}".utf8), to: intents.configFile)
+            _ = try! intents.setEnabled(surface: .grokBuild, enabled: true).get()
+            let authorization = HostEventAuthorization(
+                intents: intents,
+                runs: HostGUIRunRegistry(
+                    file: f.runtime.appendingPathComponent("gui-run.json"),
+                    authorizationLockFile: intents.authorizationLockFile))
+            let manager = HostIntegrationManager(
+                adapters: [f.adapter], bootstrapper: GrokBuildReadyRuntime(),
+                authorization: authorized ? authorization : nil)
+            let result = await manager.disconnect(.grokBuild)
+            expect(result.grokSucceeded, "公开 manager 卸载不受发布准入限制，authorization=\(authorized)")
+            if authorized {
+                expect(intents.intent(for: .grokBuild)?.enabled == false, "manager 先保存 OFF")
+                expect((try? result.get())?.intent?.enabled == false, "直接返回关闭快照")
+            }
+            expect(!FileManager.default.fileExists(atPath: f.file.path), "只删除 exact 自有文件")
+            expect(try! Data(contentsOf: other) == Data("{\"hooks\":{}}\n".utf8), "第三方文件原字节保留")
+            expect(try! Data(contentsOf: backup) == Data("retained backup".utf8), "一次性备份保留")
+            expect(f.receipts.currentInstallationID(host: .grokBuild) == nil, "先撤销安装代次")
+            expect((await manager.disconnect(.grokBuild)).grokSucceeded, "公开卸载幂等")
+            if !AdditionalHostReleasePolicy.isAcceptanceBuild {
+                expect(!(await manager.connect(.grokBuild)).grokSucceeded, "Release 不安装未准入绑定")
+                expect(!FileManager.default.fileExists(atPath: f.file.path), "拒收不制造空配置文件")
+                expect(!(await manager.snapshots()).contains { $0.host == .grokBuild }, "卸载不暴露产品入口")
+                if authorized {
+                    expect(intents.intent(for: .grokBuild)?.enabled == false, "拒绝连接仍保持 OFF")
+                }
+            }
+        }
+    }
+
+    await asyncSuite("Grok Build：宿主不可用时仍关闭，清理冲突保留原字节并撤销资格") {
+        for missingConfiguration in [false, true] {
+            let f = GrokBuildIntegrationFixture()
+            defer { f.cleanup() }
+            let id = UUID()
+            let edited = f.acceptanceConfiguration(id: id) + Data(" ".utf8)
+            if !missingConfiguration { f.write(edited) }
+            _ = try! f.receipts.activate(
+                host: .grokBuild, installationID: id, scopeFingerprint: f.scope.value
+            ).get()
+            let intents = HostIntegrationIntentStore(
+                configFile: f.runtime.appendingPathComponent("config.json"),
+                lockFile: f.runtime.appendingPathComponent("config.lock"))
+            f.write(Data("{}".utf8), to: intents.configFile)
+            _ = try! intents.setEnabled(surface: .grokBuild, enabled: true).get()
+            let adapter = GrokBuildIntegrationAdapter(
+                environment: .init(
+                    host: .grokBuild, configurationRoot: f.configurationRoot,
+                    claudioBinaryPath: f.helper, claudioRoot: f.runtime.path,
+                    receiptStore: f.receipts, scopeFingerprint: { nil },
+                    availability: { .notInstalled }))
+            let manager = HostIntegrationManager(
+                adapters: [adapter], bootstrapper: GrokBuildReadyRuntime(),
+                authorization: .init(
+                    intents: intents,
+                    runs: .init(
+                        file: f.runtime.appendingPathComponent("gui-run.json"),
+                        authorizationLockFile: intents.authorizationLockFile)))
+            let result = await manager.disconnect(.grokBuild)
+            expect(intents.intent(for: .grokBuild)?.enabled == false, "宿主不可用及清理冲突不阻止 OFF")
+            expect(f.receipts.currentInstallationID(host: .grokBuild) == nil, "先撤销旧代次")
+            if missingConfiguration {
+                expect(result.grokSucceeded, "缺失配置仍清理残留 marker")
+                expect(!FileManager.default.fileExists(atPath: f.file.path), "不重建已删除配置")
+            } else {
+                expect(!result.grokSucceeded, "修改过的配置报告清理失败")
+                expect(try! Data(contentsOf: f.file) == edited, "不删除外部修改")
+            }
         }
     }
 
     guard AdditionalHostReleasePolicy.isAcceptanceBuild else { return }
+    await asyncSuite("Grok Build：维护期间版本探测不阻塞其他来源发布或保存 OFF") {
+        let f = GrokBuildIntegrationFixture()
+        defer { f.cleanup() }
+        let intents = HostIntegrationIntentStore(
+            configFile: f.runtime.appendingPathComponent("config.json"),
+            lockFile: f.runtime.appendingPathComponent("config.lock"))
+        f.write(Data("{}".utf8), to: intents.configFile)
+        _ = try! intents.migrate(installedSurfaces: [.codex, .opencode]).get()
+        let authorization = HostEventAuthorization(
+            intents: intents,
+            runs: HostGUIRunRegistry(
+                file: f.runtime.appendingPathComponent("gui-run.json"),
+                authorizationLockFile: intents.authorizationLockFile))
+        let probe = GrokBuildProbeIsolation(authorization: authorization)
+        let adapter = GrokBuildIntegrationAdapter(
+            environment: .init(
+                host: .grokBuild, configurationRoot: f.configurationRoot,
+                claudioBinaryPath: f.helper, claudioRoot: f.runtime.path,
+                receiptStore: f.receipts,
+                scopeFingerprint: {
+                    probe.observe(); return f.scope.value
+                },
+                availability: {
+                    probe.observe(); return .available
+                }))
+        let manager = HostIntegrationManager(
+            adapters: [adapter], bootstrapper: GrokBuildReadyRuntime(),
+            authorization: authorization, maintenanceDelay: { _ in })
+        _ = await manager.startAutomaticMaintenance()
+        await manager.waitForMaintenance()
+        let first = f.receipts.currentInstallationID(host: .grokBuild)
+        expect(first != nil, "自动准备发布安装代次")
+        f.scope.value = "grok-build-upgraded-v2"
+        expect((await manager.repair(.grokBuild)).grokSucceeded, "升级修复成功")
+        let repaired = f.receipts.currentInstallationID(host: .grokBuild)
+        expect(repaired != nil && repaired != first, "升级轮换代次")
+        expect((await manager.repair(.grokBuild)).grokSucceeded, "配置未变时重复修复成功")
+        expect(f.receipts.currentInstallationID(host: .grokBuild) == repaired, "重复修复保留代次")
+        expect((await manager.disconnect(.grokBuild)).grokSucceeded, "关闭并清理配置")
+        expect((await manager.disconnect(.grokBuild)).grokSucceeded, "缺失配置时重复关闭")
+        await manager.stopAutomaticMaintenance()
+        let observations = probe.observations
+        expect(!observations.isEmpty, "通过实际维护路径执行版本／可用性探测")
+        expect(
+            observations.allSatisfy { $0.publication == .allowed },
+            "每次探测期间其他来源都能发布，实际：\(observations.map(\.publication))")
+        expect(observations.allSatisfy(\.savedOff), "每次探测期间其他来源都能保存 OFF")
+    }
+
+    await asyncSuite("Grok Build：最终发布前 scope 变化或保存 OFF 不激活旧安装") {
+        for disable in [false, true] {
+            let f = GrokBuildIntegrationFixture()
+            defer { f.cleanup() }
+            let intents = HostIntegrationIntentStore(
+                configFile: f.runtime.appendingPathComponent("config.json"),
+                lockFile: f.runtime.appendingPathComponent("config.lock"))
+            f.write(Data("{}".utf8), to: intents.configFile)
+            let adapter = GrokBuildIntegrationAdapter(
+                environment: f.environment(beforeFinalPublish: {
+                    if disable {
+                        _ = intents.setEnabled(surface: .grokBuild, enabled: false)
+                    } else {
+                        f.scope.value = "grok-build-changed-during-publication"
+                    }
+                }))
+            let manager = HostIntegrationManager(
+                adapters: [adapter], bootstrapper: GrokBuildReadyRuntime(),
+                authorization: .init(
+                    intents: intents,
+                    runs: .init(
+                        file: f.runtime.appendingPathComponent("gui-run.json"),
+                        authorizationLockFile: intents.authorizationLockFile)))
+            expect(!(await manager.connect(.grokBuild)).grokSucceeded, "旧观察不能完成安装")
+            expect(f.receipts.currentInstallationID(host: .grokBuild) == nil, "旧观察不发布 marker")
+            if disable {
+                expect(intents.intent(for: .grokBuild)?.enabled == false, "保存 OFF 优先")
+                expect(!FileManager.default.fileExists(atPath: f.file.path), "旧操作不能覆盖 OFF")
+            }
+        }
+    }
+
     await asyncSuite("Grok Build：当前真实回执提升来源摘要，未观察绑定仍待验证") {
         let f = GrokBuildIntegrationFixture()
         defer { f.cleanup() }
@@ -259,5 +409,33 @@ private struct GrokBuildReadyRuntime: SharedRuntimeBootstrapping {
     func bootstrap() -> Result<SharedRuntimeBootstrapOutcome, SetupError> {
         .success(
             .init(copiedBinary: false, copiedPacks: [], salvaged: [], packSelection: .untouched))
+    }
+}
+
+private final class GrokBuildProbeIsolation: @unchecked Sendable {
+    struct Observation {
+        let publication: HostPublicationDecision
+        let savedOff: Bool
+    }
+    let authorization: HostEventAuthorization
+    private let lock = NSLock()
+    private var recorded: [Observation] = []
+
+    init(authorization: HostEventAuthorization) { self.authorization = authorization }
+
+    var observations: [Observation] {
+        lock.lock(); defer { lock.unlock() }
+        return recorded
+    }
+
+    func observe() {
+        let token = authorization.capture(surface: .codex, requiresGUI: false)!
+        let publication = HostPublicationContext(authorization: authorization, token: token)
+        let decision = publication.acquire()
+        publication.release()
+        let on = try? authorization.intents.setEnabled(surface: .opencode, enabled: true).get()
+        let off = try? authorization.intents.setEnabled(surface: .opencode, enabled: false).get()
+        lock.lock(); defer { lock.unlock() }
+        recorded.append(.init(publication: decision, savedOff: on != nil && off?.enabled == false))
     }
 }
