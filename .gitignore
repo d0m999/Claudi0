@@ -7,6 +7,9 @@
 # Local-only environment file; never commit credentials
 /.env
 
+# Qoder machine-local command permissions — never commit
+/.qoder/settings.local.json
+
 # Xcode / Swift (for when helper/ and gui/ land)
 .build/
 DerivedData/
