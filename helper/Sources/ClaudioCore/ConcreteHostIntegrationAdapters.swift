@@ -773,8 +773,11 @@ func makeIntegrationSnapshot(
                 installationID: installationID,
                 scopeFingerprint: scopeFingerprint)
         }
+        // Grok deliberately has no implemented task_start. Its source summary may report
+        // any current admitted callback; the dictionary above still verifies each binding alone.
+        let summaryEvidence = host == .grokBuild ? latestReceipt : taskStartEvidence
         activation =
-            taskStartEvidence.map(HostActivationEvidence.observed)
+            summaryEvidence.map(HostActivationEvidence.observed)
             ?? .awaitingReceipt(installationID: installationID)
     } else {
         activation = .none

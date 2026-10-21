@@ -10,6 +10,7 @@ import tempfile
 import uuid
 
 from hook_cli_fixture import register_fixture_lifetime
+from grok_build_cli_contract import run_grok_build_cli_contract
 
 REPO = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
@@ -204,6 +205,7 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
         # Release deliberately ignores the test-home override. Never connect a now-visible
         # host here: that would install a fixture helper into the real user runtime.
             check(bytes_on_disk(root) == before_release, "Release hook remains silent for an old fixture installation")
+    run_grok_build_cli_contract(debug, base, tools, check)
     if release is not None:
         status = invoke(release, ["integrations", "status", "--json"], env)
         check(status.returncode == 0 and [item["host"] for item in json.loads(status.stdout)] ==

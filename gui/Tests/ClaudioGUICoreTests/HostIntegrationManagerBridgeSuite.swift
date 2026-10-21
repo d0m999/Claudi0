@@ -26,11 +26,12 @@ private func storeBridgeHistoryReceipt(
     {
         expect(false, "测试前提：\(host) installation 必须发布：\(error.description)")
     }
+    let binding = HostCapabilityCatalog.bindings(for: host).first(where: \.isAudibleCapability)!
     let receipt = HostHookReceipt(
         installationID: installationID,
         host: host,
-        nativeEvent: HostCapabilityCatalog.binding(host: host, event: .taskStart)!.nativeEvent!,
-        semanticEvent: .taskStart,
+        nativeEvent: binding.nativeEvent!,
+        semanticEvent: binding.event,
         timestamp: Date(timeIntervalSince1970: timestamp.timeIntervalSince1970.rounded(.down)),
         playbackResult: .played)
     expect(
@@ -448,7 +449,7 @@ func runHostIntegrationManagerBridgeSuites() async {
         }
     }
 
-    await suite("HostIntegrationManagerBridge 历史：bootstrap 与 refresh 读取三来源真实旧／当前回执") {
+    await suite("HostIntegrationManagerBridge 历史：bootstrap 与 refresh 读取各来源真实旧／当前回执") {
         await withTempDirectory { root in
             let fixture = bridgeFixture(
                 root: root, initiallyConnected: true, codexObservesReceipt: false)
@@ -560,8 +561,8 @@ func runHostIntegrationManagerBridgeSuites() async {
                 let before = await fixture.bridge.refresh()
                 let receiptFile = fixture.receiptStore.receiptFile(
                     host: target,
-                    nativeEvent: HostCapabilityCatalog.binding(host: target, event: .taskStart)!
-                        .nativeEvent!)!
+                    nativeEvent: HostCapabilityCatalog.bindings(for: target)
+                        .first(where: \.isAudibleCapability)!.nativeEvent!)!
                 let stableReceipt = try? Data(contentsOf: receiptFile)
 
                 let outcome = try? await fixture.bridge.perform(.clearReceiptHistory(target))

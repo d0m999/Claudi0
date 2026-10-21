@@ -1,6 +1,91 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "host.grok-build.awaiting-detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Grok Build to load the hooks. A supported native event will confirm the current installation receipt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新启动 Grok Build 以加载 hooks；收到已支持的真实事件后才会确认当前安装回执。"
+          }
+        }
+      }
+    },
+    "host.grok-build.ready-detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only main-session API interruptions, permission waits and question intent are enabled. Start and completion events are not implemented."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅接入主会话 API 中断、授权等待与提问意图；开始和完成事件尚未实现。"
+          }
+        }
+      }
+    },
+    "qualification.prompt-origin-unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot reliably distinguish human input from automatic wake-ups; not implemented."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法可靠区分人工输入与自动唤醒，尚未实现"
+          }
+        }
+      }
+    },
+    "qualification.completion-gate-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A completion attempt that can still be blocked; not implemented."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可被阻止的结束尝试，尚未实现"
+          }
+        }
+      }
+    },
+    "qualification.main-session-api-error-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only main-session interruptions caused by API errors."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅主会话因 API 错误导致的中断"
+          }
+        }
+      }
+    },
     "event-notice.capacity-hint": {
       "extractionState": "manual",
       "localizations": {

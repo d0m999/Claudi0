@@ -20,7 +20,8 @@ with tempfile.TemporaryDirectory(prefix="claudio-migration-package-") as tempora
     sources = package / "helper/Tests/ClaudioCoreTests"
     sources.mkdir(parents=True)
     original = repo / "helper/Tests/ClaudioCoreTests"
-    for name in ("AdditionalHostMigrationSuite.swift", "Fixtures"):
+    for name in ("AdditionalHostMigrationSuite.swift", "GrokBuildIntegrationSuite.swift",
+                 "GrokBuildTestSupport.swift", "Fixtures"):
         (sources / name).symlink_to(original / name)
     (package / "integrations").symlink_to(repo / "integrations")
     (package / "Package.swift").write_text('''// swift-tools-version: 6.0
@@ -43,7 +44,12 @@ var failures = 0
     print("• " + name)
     await body()
 }
+@MainActor func suite(_ name: String, _ body: @MainActor () -> Void) {
+    print("• " + name)
+    body()
+}
 await runAdditionalHostMigrationSuites()
+await runGrokBuildIntegrationSuites()
 print("Migration: \\(checks) checks, \\(failures) failures")
 exit(failures == 0 ? 0 : 1)
 ''')

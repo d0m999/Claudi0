@@ -10,6 +10,7 @@ public enum HostID: String, CaseIterable, Codable, Sendable, Hashable {
     case workBuddy = "workbuddy"
     case opencode = "opencode"
     case kimiCode = "kimi-code"
+    case grokBuild = "grok-build"
     case chatGPTDesktopAX = "chatgpt-desktop-ax"
     case claudeDesktopAX = "claude-desktop-ax"
 
@@ -25,6 +26,7 @@ public enum HostID: String, CaseIterable, Codable, Sendable, Hashable {
         case .workBuddy: "WorkBuddy"
         case .opencode: "OpenCode"
         case .kimiCode: "Kimi Code"
+        case .grokBuild: "Grok Build"
         case .chatGPTDesktopAX: "ChatGPT Desktop (AX Beta)"
         case .claudeDesktopAX: "Claude Desktop (AX Beta)"
         }
@@ -56,6 +58,10 @@ public enum HostID: String, CaseIterable, Codable, Sendable, Hashable {
             HostIntegrationDescriptor(
                 host: self, product: .kimiCode, surface: .kimiCode,
                 mechanism: .nativeHooks, maturity: .beta, controlSurface: .shared)
+        case .grokBuild:
+            HostIntegrationDescriptor(
+                host: self, product: .grokBuild, surface: .grokBuild,
+                mechanism: .nativeHooks, maturity: .beta, controlSurface: .shared)
         case .chatGPTDesktopAX:
             HostIntegrationDescriptor(
                 host: self, product: .chatGPT, surface: .chatGPTDesktopAX,
@@ -75,6 +81,7 @@ public enum HostProductID: String, CaseIterable, Codable, Sendable, Hashable {
     case workBuddy = "workbuddy"
     case opencode = "opencode"
     case kimiCode = "kimi-code"
+    case grokBuild = "grok-build"
 
     public var displayName: String {
         switch self {
@@ -83,6 +90,7 @@ public enum HostProductID: String, CaseIterable, Codable, Sendable, Hashable {
         case .workBuddy: "WorkBuddy"
         case .opencode: "OpenCode"
         case .kimiCode: "Kimi Code"
+        case .grokBuild: "Grok Build"
         }
     }
 }
@@ -94,6 +102,7 @@ public enum HostSurfaceID: String, CaseIterable, Codable, Sendable, Hashable {
     case workBuddy = "workbuddy"
     case opencode = "opencode"
     case kimiCode = "kimi-code"
+    case grokBuild = "grok-build"
     case chatGPTDesktopAX = "chatgpt-desktop-ax"
     case claudeDesktopAX = "claude-desktop-ax"
 }
@@ -168,6 +177,9 @@ public enum HostCapabilityQualificationID: String, Codable, Sendable, Equatable,
     case userOriginOnly = "user_origin_only"
     case mainAgentIdentityUnavailable = "main_agent_identity_unavailable"
     case subagentIdentityUnavailable = "subagent_identity_unavailable"
+    case promptOriginUnavailable = "prompt_origin_unavailable"
+    case completionGateOnly = "completion_gate_only"
+    case mainSessionAPIErrorOnly = "main_session_api_error_only"
 }
 
 /// receipt 的稳定主键。schema revision 进入 raw value，binding 语义变化后旧证据自然失效。
@@ -333,6 +345,28 @@ public enum HostCapabilityCatalog {
                     host: host, event: .subagentStop,
                     nativeEvent: "SubagentStop", support: .partial,
                     qualification: .subagentIdentityUnavailable),
+            ]
+        case .grokBuild:
+            return [
+                HostCapabilityBinding(
+                    host: host, event: .taskStart, nativeEvent: "UserPromptSubmit",
+                    support: .partial, implementation: .notImplemented,
+                    qualification: .promptOriginUnavailable),
+                HostCapabilityBinding(
+                    host: host, event: .stop, nativeEvent: "Stop",
+                    support: .partial, implementation: .notImplemented,
+                    qualification: .completionGateOnly),
+                HostCapabilityBinding(
+                    host: host, event: .stopFailure, nativeEvent: "StopFailure",
+                    support: .partial, qualification: .mainSessionAPIErrorOnly),
+                HostCapabilityBinding(
+                    host: host, event: .notification, nativeEvent: "Notification",
+                    support: .partial, qualification: .permissionRequestOnly),
+                HostQuestionTrigger.grokBuild.capability,
+                HostCapabilityBinding(
+                    host: host, event: .subagentStop, nativeEvent: "SubagentStop",
+                    support: .partial, implementation: .notImplemented,
+                    qualification: .completionGateOnly),
             ]
         case .chatGPTDesktopAX, .claudeDesktopAX:
             return Event.allCases.map { event in
@@ -551,10 +585,10 @@ public struct HostIntegrationSnapshot: Codable, Sendable, Equatable {
     #if DEBUG
     public static func connectedForTesting(host: HostID) -> HostIntegrationSnapshot {
         let id = UUID(uuidString: "00000000-0000-4000-8000-000000000001")!
-        let firstNativeEvent =
-            HostCapabilityCatalog.binding(host: host, event: .taskStart)?
-            .nativeEvent ?? "UserPromptSubmit"
-        let event = Event.taskStart
+        let firstBinding = HostCapabilityCatalog.bindings(for: host).first(
+            where: \.isAudibleCapability)
+        let firstNativeEvent = firstBinding?.nativeEvent ?? "UserPromptSubmit"
+        let event = firstBinding?.event ?? .taskStart
         let evidence = HostReceiptEvidence(
             bindingID: HostCapabilityCatalog.binding(host: host, nativeEvent: firstNativeEvent)?.id
                 ?? HostEventBindingID(rawValue: "unavailable"),

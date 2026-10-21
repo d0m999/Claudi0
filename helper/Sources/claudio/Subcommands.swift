@@ -10,8 +10,8 @@ extension Claudio {
         static let configuration = CommandConfiguration(
             abstract: "宿主 hook 回调：严格映射、宿主级去抖、写最小真实回执并立即退出。")
 
-        @Argument(help: "宿主：claude-code / codex / workbuddy / opencode / kimi-code") var host:
-            String
+        @Argument(help: "宿主：claude-code / codex / workbuddy / opencode / kimi-code / grok-build")
+        var host: String
         @Argument(help: "宿主原生或 Claudio 桥接事件名") var nativeEvent: String
         @Option(name: .long, help: "当前连接 installation UUID") var installationID: String
 
@@ -20,6 +20,11 @@ extension Claudio {
             guard let parsedHost = HostID(rawValue: host),
                 let parsedID = UUID(uuidString: installationID)
             else { return }
+            if parsedHost == .claudeCode,
+                GrokBuildHookOrigin.suppressesClaudeCallback(data: nil)
+            {
+                return
+            }
             let authorization = HostEventAuthorization()
             guard
                 let token = HookMeasurementContext.measure(
@@ -36,9 +41,14 @@ extension Claudio {
             ) { HookInputReader.read() }
             guard
                 HostQuestionTrigger.binding(host: parsedHost, nativeEvent: nativeEvent) == nil
-                    && parsedHost != .opencode && parsedHost != .kimiCode
+                    && !AdditionalHostReleasePolicy.candidateHosts.contains(parsedHost)
                     || hookInput?.status == .data
             else { return }
+            if parsedHost == .claudeCode,
+                GrokBuildHookOrigin.suppressesClaudeCallback(data: hookInput?.data)
+            {
+                return
+            }
             guard
                 !needsInput
                     || WorkBuddyHookPayloadPolicy.accepts(
@@ -106,8 +116,8 @@ extension Claudio {
             static let configuration = CommandConfiguration(
                 abstract: "连接指定宿主；先幂等自举共享 runtime。")
 
-            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code") var host:
-                String
+            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code / grok-build")
+            var host: String
 
             mutating func run() async throws {
                 guard let hostID = HostID(rawValue: host) else {
@@ -148,8 +158,8 @@ extension Claudio {
             static let configuration = CommandConfiguration(
                 abstract: "只摘除指定宿主的 claudi0 条目，保留共享 runtime 与第三方配置。")
 
-            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code") var host:
-                String
+            @Argument(help: "claude-code / codex / workbuddy / opencode / kimi-code / grok-build")
+            var host: String
 
             mutating func run() async throws {
                 guard let hostID = HostID(rawValue: host) else {
@@ -243,6 +253,9 @@ extension Claudio {
         var event: String
 
         func run() throws {
+            guard !GrokBuildHookOrigin.suppressesClaudeCallback(data: nil) else { return }
+            let input = HookInputReader.read()
+            guard !GrokBuildHookOrigin.suppressesClaudeCallback(data: input.data) else { return }
             _ = playSoundEvent(event)
         }
     }
@@ -381,6 +394,7 @@ private func makeSystemIntegrationManager(
             ClaudeCodeIntegrationAdapter(), CodexIntegrationAdapter(),
             WorkBuddyIntegrationAdapter(),
             OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
+            GrokBuildIntegrationAdapter(),
         ],
         bootstrapper: SystemSharedRuntimeBootstrapper(
             environment: SetupEnvironment(executablePath: executablePath)),

@@ -13,6 +13,9 @@ public struct HostQuestionHookPayload: Sendable, Equatable {
     }
 
     public static func parse(host: HostID, nativeEvent: String, data: Data?) -> Self? {
+        if host == .grokBuild, nativeEvent == "PreToolUse" {
+            return GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: data)?.identity
+        }
         guard let trigger = HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent),
             let data, !data.isEmpty, data.count <= HookInputReader.defaultMaximumBytes,
             HostEventSourceParser.duplicateTopLevelKeys(data).isDisjoint(with: [

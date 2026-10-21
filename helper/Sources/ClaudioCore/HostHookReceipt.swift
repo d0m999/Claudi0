@@ -319,7 +319,7 @@ public struct HostHookReceiptStore: Sendable {
             }
             // WorkBuddy 的版本身份在安装锁内重读；迟到回执不得激活同 UUID 的旧 scope。
             if expectedScopeFingerprint != nil || receipt.host == .workBuddy
-                || receipt.host == .opencode || receipt.host == .kimiCode
+                || AdditionalHostReleasePolicy.candidateHosts.contains(receipt.host)
                 || HostQuestionTrigger.binding(host: receipt.host, nativeEvent: receipt.nativeEvent)
                     != nil
             {
@@ -529,8 +529,8 @@ public struct HostHookReceiptStore: Sendable {
     }
 
     /// 只有当前 installation、请求的宿主/原生事件、catalog 语义和 schema 全部匹配时，
-    /// 才把磁盘回执提升为结构化 evidence。是否可用作 activation 由 adapter 另行限制为
-    /// `UserPromptSubmit`；其它受支持事件只进入 latest diagnosis。损坏、旧代次或错位文件全部
+    /// 才把磁盘回执提升为结构化 evidence。来源摘要的准入由 adapter 独立决定，逐 binding
+    /// 激活不能借用其他事件的证据。损坏、旧代次或错位文件全部
     /// 返回 `nil`。
     public func receiptEvidence(
         host: HostID,

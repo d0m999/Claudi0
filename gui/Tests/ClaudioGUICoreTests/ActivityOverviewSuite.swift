@@ -43,7 +43,7 @@ func runActivityOverviewSuites() {
             projection.surfaces[.codex]?.event(.subagentStop)?.availability == .unsupported,
             "unsupported Surface events must remain unsupported rather than zero")
         expect(
-            projection.global.event(.subagentStop)?.coverage.fractionText == "4/5",
+            projection.global.event(.subagentStop)?.coverage.fractionText == "4/6",
             "Global coverage must show the real supporting Surface count")
         expect(
             projection.global.todaySubtasks == 5,

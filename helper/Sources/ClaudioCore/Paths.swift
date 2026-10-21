@@ -356,6 +356,10 @@ public enum ClaudioPaths {
         AdditionalHostPaths.configurationRoot(host: .kimiCode, homeDirectory: home)
     }
 
+    public static var grokBuildConfigRoot: URL? {
+        AdditionalHostPaths.configurationRoot(host: .grokBuild, homeDirectory: home)
+    }
+
     public static var legacyCodexNotifyWrapper: URL {
         binDirectory.appendingPathComponent("codex-notify")
     }

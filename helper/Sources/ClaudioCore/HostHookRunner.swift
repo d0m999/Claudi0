@@ -40,6 +40,7 @@ public struct HostHookEnvironment: Sendable {
     public let uptime: @Sendable () -> TimeInterval
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
+    public let sourceEnvironment: [String: String]
     public let scopeFingerprint: @Sendable () -> String?
     public let codexApprovalRouting: @Sendable (Data?) -> CodexApprovalRouting
     public let questionScopeFingerprint: @Sendable () -> String?
@@ -57,6 +58,7 @@ public struct HostHookEnvironment: Sendable {
         activityStore: LocalActivitySummaryStore? = nil,
         eventNoticeChannel: HostEventNoticeChannel? = nil,
         sourcePayload: Data? = nil,
+        sourceEnvironment: [String: String] = ProcessInfo.processInfo.environment,
         codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in
             .unavailable
         },
@@ -82,6 +84,7 @@ public struct HostHookEnvironment: Sendable {
         self.activityStore = activityStore
         self.eventNoticeChannel = eventNoticeChannel
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
+        self.sourceEnvironment = sourceEnvironment
         self.codexApprovalRouting = codexApprovalRouting
         self.scopeFingerprint = scopeFingerprint
         self.questionScopeFingerprint = questionScopeFingerprint
@@ -195,6 +198,12 @@ public func handleHostHook(
     environment: HostHookEnvironment,
     eventID: UUID = UUID()
 ) -> HostHookHandlingOutcome? {
+    if host == .claudeCode,
+        GrokBuildHookOrigin.suppressesClaudeCallback(
+            data: environment.sourcePayload, environment: environment.sourceEnvironment)
+    {
+        return nil
+    }
     if let authorization = environment.authorization, HostPublicationContext.current == nil {
         guard
             let token = environment.authorizationToken
@@ -226,6 +235,16 @@ public func handleHostHook(
     let additionalPayload = AdditionalHostHookPayload.parse(
         host: host, nativeEvent: nativeEvent,
         data: environment.sourcePayload)
+    let grokPayload =
+        host == .grokBuild
+        ? GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: environment.sourcePayload)
+        : nil
+    if host == .grokBuild {
+        guard let grokPayload,
+            grokPayload.matchesRunner(
+                nativeEvent: nativeEvent, environment: environment.sourceEnvironment)
+        else { return nil }
+    }
     guard !isAdditionalHost || additionalPayload != nil else {
         HookMeasurementContext.record(.handling, .rejectedPayload)
         return nil
@@ -244,7 +263,8 @@ public func handleHostHook(
     let currentScope =
         isQuestion ? environment.questionScopeFingerprint : environment.scopeFingerprint
     let requiresScope =
-        environment.authorization != nil || host == .workBuddy || isQuestion || isAdditionalHost
+        environment.authorization != nil || host == .workBuddy || host == .grokBuild || isQuestion
+        || isAdditionalHost
     let scope = requiresScope ? currentScope() : nil
     let installationMarkerIsCurrent: @Sendable () -> Bool = {
         if requiresScope, scope == nil { return false }
@@ -298,9 +318,9 @@ public func handleHostHook(
     let isTaskStart = event == .taskStart
     let observedPlayEnvironment = PlayEnvironment(
         surfaceID: host.surfaceID,
-        // Question events keep the Default Group; every other host event with a validated
-        // payload cwd may resolve a workspace (ADR 0005, 2026-10-18 amendment).
-        workingDirectory: isQuestion
+        // Question intent and Grok's unverified directory channel keep the Default Group.
+        // Other admitted surfaces may resolve a workspace under ADR 0005.
+        workingDirectory: isQuestion || host == .grokBuild
             ? nil : WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
         playbackAuthorized: {
             base.playbackAuthorized()
@@ -335,7 +355,9 @@ public func handleHostHook(
     {
         playbackResult = .muted
         shouldSendNotice = false
-    } else if let questionPayload = additionalPayload?.identity ?? questionPayload {
+    } else if let questionPayload = grokPayload?.identity
+        ?? additionalPayload?.identity ?? questionPayload
+    {
         let scopeIsCurrent = installationIsCurrent()
         let consume = { () -> HostQuestionConsumption in
             guard scopeIsCurrent else { return .unavailable }

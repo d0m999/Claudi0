@@ -21,6 +21,12 @@ public enum AdditionalHostPaths {
             path =
                 environment["KIMI_CODE_HOME"]
                 ?? homeDirectory.appendingPathComponent(".kimi-code").path
+        case .grokBuild:
+            let explicit = environment["GROK_HOME"] ?? ""
+            path =
+                explicit.hasPrefix("/") && explicit.utf8.count <= 4096
+                    && !HostEventSource.containsUnsafeScalar(explicit)
+                ? explicit : homeDirectory.appendingPathComponent(".grok").path
         default: return nil
         }
         guard path.hasPrefix("/"), path.utf8.count <= 4096,
@@ -30,13 +36,20 @@ public enum AdditionalHostPaths {
     }
 
     public static func file(host: HostID, root: URL) -> URL {
-        root.appendingPathComponent(host == .opencode ? "plugins/claudio.js" : "config.toml")
+        let relativePath: String
+        switch host {
+        case .opencode: relativePath = "plugins/claudio.js"
+        case .grokBuild: relativePath = "hooks/claudio.json"
+        default: relativePath = "config.toml"
+        }
+        return root.appendingPathComponent(relativePath)
     }
 
     public static func currentRoot(host: HostID) -> URL? {
         switch host {
         case .opencode: ClaudioPaths.opencodeConfigRoot
         case .kimiCode: ClaudioPaths.kimiCodeConfigRoot
+        case .grokBuild: ClaudioPaths.grokBuildConfigRoot
         default: nil
         }
     }

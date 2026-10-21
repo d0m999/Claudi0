@@ -244,6 +244,13 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let hostNeedsAttention: Self = "host.needs-attention"
     public static let hostOpenCodeReadyDetail: Self = "host.opencode.ready-detail"
     public static let hostKimiCodeReadyDetail: Self = "host.kimi-code.ready-detail"
+    public static let hostGrokBuildReadyDetail: Self = "host.grok-build.ready-detail"
+    public static let hostGrokBuildAwaitingDetail: Self = "host.grok-build.awaiting-detail"
+    public static let qualificationPromptOriginUnavailable: Self =
+        "qualification.prompt-origin-unavailable"
+    public static let qualificationCompletionGateOnly: Self = "qualification.completion-gate-only"
+    public static let qualificationMainSessionAPIErrorOnly: Self =
+        "qualification.main-session-api-error-only"
     public static let hostAdditionalAwaitingDetail: Self = "host.additional.awaiting-detail"
     public static let qualificationBridgeTerminalEvidence: Self =
         "qualification.bridge-terminal-evidence"
@@ -2039,6 +2046,10 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .hostCodexReadyDetail, .hostCodexAwaitingDetail,
         .hostOpenCodeReadyDetail,
         .hostKimiCodeReadyDetail,
+        .hostGrokBuildReadyDetail,
+        .hostGrokBuildAwaitingDetail,
+        .qualificationPromptOriginUnavailable, .qualificationCompletionGateOnly,
+        .qualificationMainSessionAPIErrorOnly,
         .hostAdditionalAwaitingDetail,
         .qualificationBridgeTerminalEvidence,
         .qualificationBridgeExecutionEvidence,

@@ -3,8 +3,11 @@ import Foundation
 
 @MainActor
 func runHostIntegrationReviewRegressionSuites() async {
+    // These fixtures exercise the three shared settings/hooks JSON transforms. Grok owns a
+    // dedicated exact-template file and tests its automatic OFF/conflict contract separately.
+    let sharedJSONHosts: [HostID] = [.claudeCode, .codex, .workBuddy]
     await asyncSuite("宿主目录：首次创建为私有目录，既有权限与只读配置保持原样") {
-        for host in HostIntegrationManager.automaticHosts {
+        for host in sharedJSONHosts {
             await withReviewTempDirectory { root in
                 let fixture = ReviewIntegrationFixture(root: root)
                 let adapter = fixture.adapter(host)
@@ -38,7 +41,7 @@ func runHostIntegrationReviewRegressionSuites() async {
         }
     }
     await asyncSuite("关闭来源：配置或 hooks 消失仍撤销 marker，恢复旧配置不复用旧激活") {
-        for host in HostIntegrationManager.automaticHosts {
+        for host in sharedJSONHosts {
             for removeFile in [true, false] {
                 await withReviewTempDirectory { root in
                     let fixture = ReviewIntegrationFixture(root: root)
@@ -155,7 +158,7 @@ func runHostIntegrationReviewRegressionSuites() async {
         }
     }
     await asyncSuite("doctor：当前回执不覆盖已保存 OFF、损坏意愿、待迁移或退出门禁") {
-        for host in HostIntegrationManager.automaticHosts {
+        for host in sharedJSONHosts {
             await withReviewTempDirectory { root in
                 let fixture = ReviewIntegrationFixture(root: root)
                 writeFixture("{}", to: fixture.intents.configFile)

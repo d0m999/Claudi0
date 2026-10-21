@@ -72,6 +72,12 @@ final class HostIntegrationMaintenanceRuntime {
                 FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
                     "Applications", isDirectory: true),
             ]
+            + AdditionalHostReleasePolicy.visibleHosts.filter { $0 == .grokBuild }.compactMap {
+                host in
+                AdditionalHostPaths.currentRoot(host: host).map {
+                    AdditionalHostPaths.file(host: host, root: $0)
+                }
+            }
             + HostExecutableLocator.standard().searchDirectories
         var paths = Set<String>()
         for candidate in candidates {

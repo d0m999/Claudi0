@@ -43,6 +43,7 @@ public struct HostExecutableLocator: Sendable {
             ".codex/bin",
             ".opencode/bin",
             ".kimi-code/bin",
+            ".grok/bin",
             ".volta/bin",
             ".asdf/shims",
         ].map { homeDirectory.appendingPathComponent($0, isDirectory: true) }
@@ -211,7 +212,7 @@ public enum HostActivationScope {
         executableLocator: HostExecutableLocator = .standard(),
         commandRunner: (any CommandRunning)? = nil
     ) -> String? {
-        guard host == .opencode || host == .kimiCode, let configurationRoot,
+        guard AdditionalHostReleasePolicy.candidateHosts.contains(host), let configurationRoot,
             let version = additionalHostVersion(
                 host, executableLocator: executableLocator,
                 commandRunner: commandRunner),
@@ -219,7 +220,8 @@ public enum HostActivationScope {
             // branded line ("opencode v2.0.27"). Compare the numeric token only.
             let parsed = additionalHostParsedVersion(version),
             (host == .opencode && parsed >= SemanticVersion(major: 1, minor: 18, patch: 34))
-                || (host == .kimiCode && parsed >= SemanticVersion(major: 2, minor: 1, patch: 1)),
+                || (host == .kimiCode && parsed >= SemanticVersion(major: 2, minor: 1, patch: 1))
+                || (host == .grokBuild && parsed >= SemanticVersion(major: 1, minor: 0, patch: 62)),
             let base = fingerprint(host: host, hostVersion: version)
         else { return nil }
         let rootDigest = SHA256.hash(
@@ -237,7 +239,8 @@ public enum HostActivationScope {
     ) -> String? {
         guard host == .kimiCode else {
             return commandVersion(
-                command: "opencode", executableLocator: executableLocator,
+                command: host == .grokBuild ? "grok" : "opencode",
+                executableLocator: executableLocator,
                 commandRunner: commandRunner)
         }
         // Both CLI generations use `kimi`. A Python 1.x shim must not hide a separately
@@ -274,7 +277,7 @@ public enum HostActivationScope {
         case .claudeCode: claudeCode(versionResolver: versionResolver, mode: mode)
         case .codex: codex(versionResolver: versionResolver, mode: mode)
         case .workBuddy: workBuddy()
-        case .opencode, .kimiCode:
+        case .opencode, .kimiCode, .grokBuild:
             additionalHost(host, configurationRoot: AdditionalHostPaths.currentRoot(host: host))
         case .chatGPTDesktopAX, .claudeDesktopAX: nil
         }

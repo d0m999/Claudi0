@@ -199,6 +199,17 @@ public enum HostEventSourceParser {
         guard data.count <= HookInputReader.defaultMaximumBytes else {
             return unavailable(.oversized)
         }
+        if host == .grokBuild {
+            guard let nativeEvent,
+                HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent) != nil,
+                let payload = GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: data)
+            else { return unavailable(.invalidFieldType) }
+            let info = project(from: payload.workingDirectory)
+            let source = HostEventSource(
+                projectLabel: info?.label, projectKey: info?.key, sessionID: payload.sessionID,
+                mainSessionIsKnown: payload.isSubagent ? nil : true)
+            return HostEventInput(source: .available(source), reason: payload.reason)
+        }
         if let nativeEvent,
             HostQuestionTrigger.binding(host: host, nativeEvent: nativeEvent) != nil,
             HostQuestionHookPayload.parse(host: host, nativeEvent: nativeEvent, data: data) == nil

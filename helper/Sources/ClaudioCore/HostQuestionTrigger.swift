@@ -30,9 +30,13 @@ public struct HostQuestionTrigger: Sendable, Equatable {
         host: .kimiCode, nativeEvent: "PreToolUse", toolNames: ["AskUserQuestion"],
         schemaRevision: 1, sessionIDField: "session_id", requestIDField: "tool_call_id")
 
+    public static let grokBuild = HostQuestionTrigger(
+        host: .grokBuild, nativeEvent: "PreToolUse", toolNames: ["ask_user_question"],
+        schemaRevision: 1, sessionIDField: "sessionId", requestIDField: "toolUseId")
+
     /// Codex and WorkBuddy remain evidence-gated. A protocol or tool-name guess does
     /// not install a production binding on either surface.
     public static func binding(host: HostID, nativeEvent: String) -> HostQuestionTrigger? {
-        [claudeCode, kimiCode].first { $0.host == host && $0.nativeEvent == nativeEvent }
+        [claudeCode, kimiCode, grokBuild].first { $0.host == host && $0.nativeEvent == nativeEvent }
     }
 }

@@ -81,6 +81,10 @@ enum AdditionalHostConfiguration {
         host: HostID, data: Data?, helperPath: String,
         claudioRoot: String
     ) throws -> Inspection {
+        if host == .grokBuild {
+            return try GrokBuildHooksConfiguration.inspect(
+                data: data, helperPath: helperPath, claudioRoot: claudioRoot)
+        }
         guard let data, !data.isEmpty else {
             return .init(
                 state: .notConfigured, installationID: nil, helperPath: nil, ownedRange: nil)
@@ -207,6 +211,11 @@ enum AdditionalHostConfiguration {
         else {
             throw rejected("helper 路径无效，未写入来源配置")
         }
+        if host == .grokBuild {
+            return try GrokBuildHooksConfiguration.connect(
+                data: data, helperPath: helperPath, claudioRoot: claudioRoot,
+                requestedID: requestedID, reusableID: reusableID)
+        }
         let existing = try inspect(
             host: host, data: data, helperPath: helperPath,
             claudioRoot: claudioRoot)
@@ -229,6 +238,10 @@ enum AdditionalHostConfiguration {
         host: HostID, data: Data?, helperPath: String,
         claudioRoot: String
     ) throws -> ConfigFileByteMutation<Bool> {
+        if host == .grokBuild {
+            return try GrokBuildHooksConfiguration.disconnect(
+                data: data, helperPath: helperPath, claudioRoot: claudioRoot)
+        }
         let existing = try inspect(
             host: host, data: data, helperPath: helperPath,
             claudioRoot: claudioRoot)

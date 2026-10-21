@@ -76,6 +76,10 @@ public func localizedHostSourceRowDetail(
         return l10n.text(.hostOpenCodeReadyDetail)
     case .kimiCodeReliableEventsOnly:
         return l10n.text(.hostKimiCodeReadyDetail)
+    case .grokBuildReliableEventsOnly:
+        return l10n.text(.hostGrokBuildReadyDetail)
+    case .grokBuildAwaitingSupportedEvent:
+        return l10n.text(.hostGrokBuildAwaitingDetail)
     case .additionalHostAwaitingFirstTurn:
         return l10n.text(.hostAdditionalAwaitingDetail)
     case .claudeCodeAwaitingFirstPrompt:
@@ -193,6 +197,9 @@ func localizedQualification(
         "仅用户发起的 TurnStarted": .qualificationUserOriginOnly,
         "缺少主／子 agent 身份，首版暂未启用": .qualificationMainAgentUnavailable,
         "仅成功结束；无法定位具体子任务": .qualificationSubagentUnavailable,
+        "无法可靠区分人工输入与自动唤醒，尚未实现": .qualificationPromptOriginUnavailable,
+        "可被阻止的结束尝试，尚未实现": .qualificationCompletionGateOnly,
+        "仅主会话因 API 错误导致的中断": .qualificationMainSessionAPIErrorOnly,
     ]
     if let key = additionalKeys[value] { return ClaudioL10n(language: language).text(key) }
     let english: [String: String] = [

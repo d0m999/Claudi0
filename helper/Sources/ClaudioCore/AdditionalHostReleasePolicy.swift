@@ -4,6 +4,8 @@ import Foundation
 /// Each entry requires reviewed real-host, native notice and listening evidence.
 /// Evidence: docs/validation/opencode-kimi-code-2026-10-06.md.
 public enum AdditionalHostReleasePolicy {
+    public static let candidateHosts: [HostID] = [.opencode, .kimiCode, .grokBuild]
+
     public static let verifiedBindings: Set<HostEventBindingID> = [
         HostEventBindingID(
             rawValue: "opencode:UserTurnStarted:task_start:bridge_execution_evidence_only:v1"),
@@ -21,7 +23,7 @@ public enum AdditionalHostReleasePolicy {
     }
 
     public static var visibleHosts: [HostID] {
-        [.opencode, .kimiCode].filter { host in
+        candidateHosts.filter { host in
             isAcceptanceBuild
                 || HostCapabilityCatalog.bindings(for: host).contains {
                     verifiedBindings.contains($0.id)
@@ -30,7 +32,7 @@ public enum AdditionalHostReleasePolicy {
     }
 
     public static func permits(_ binding: HostCapabilityBinding) -> Bool {
-        guard binding.host == .opencode || binding.host == .kimiCode else { return true }
+        guard candidateHosts.contains(binding.host) else { return true }
         return isAcceptanceBuild || verifiedBindings.contains(binding.id)
     }
 }

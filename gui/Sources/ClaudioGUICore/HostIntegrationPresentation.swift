@@ -24,6 +24,8 @@ public enum HostSourceRowDetail: Sendable, Equatable, Hashable {
     case workBuddyNotificationScopeOnly
     case opencodeReliableEventsOnly
     case kimiCodeReliableEventsOnly
+    case grokBuildReliableEventsOnly
+    case grokBuildAwaitingSupportedEvent
     case additionalHostAwaitingFirstTurn
     /// Claude Code 待激活：请向 Claude Code 提交一次提示词以确认连接。
     case claudeCodeAwaitingFirstPrompt
@@ -157,6 +159,7 @@ private func hostSourceRowPresentation(
         case .workBuddy: detail = .workBuddyNotificationScopeOnly
         case .opencode: detail = .opencodeReliableEventsOnly
         case .kimiCode: detail = .kimiCodeReliableEventsOnly
+        case .grokBuild: detail = .grokBuildReliableEventsOnly
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .ready
@@ -169,6 +172,7 @@ private func hostSourceRowPresentation(
         case .codex: detail = .codexAwaitingHooksConfirmation
         case .workBuddy: detail = .workBuddyAwaitingFirstPrompt
         case .opencode, .kimiCode: detail = .additionalHostAwaitingFirstTurn
+        case .grokBuild: detail = .grokBuildAwaitingSupportedEvent
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .awaitingActivation
@@ -178,7 +182,8 @@ private func hostSourceRowPresentation(
         totalCount = total
         switch host {
         case .claudeCode: detail = .claudeCodeLegacyPartialHooks
-        case .codex, .workBuddy, .opencode, .kimiCode: detail = .legacyAudibleWithoutReceipt
+        case .codex, .workBuddy, .opencode, .kimiCode, .grokBuild:
+            detail = .legacyAudibleWithoutReceipt
         case .chatGPTDesktopAX, .claudeDesktopAX: detail = nil
         }
         status = .legacy
@@ -450,7 +455,7 @@ public enum IntegrationToolKind: String, Sendable, Equatable, CaseIterable {
 public func integrationToolKind(for host: HostID) -> IntegrationToolKind {
     switch host {
     case .workBuddy, .chatGPTDesktopAX, .claudeDesktopAX: .desktop
-    case .claudeCode, .codex, .opencode, .kimiCode: .cli
+    case .claudeCode, .codex, .opencode, .kimiCode, .grokBuild: .cli
     }
 }
 
@@ -472,6 +477,7 @@ public func eventHostIndicatorCompactDisplayName(for host: HostID) -> String {
     case .workBuddy: "Buddy"
     case .opencode: "OpenCode"
     case .kimiCode: "Kimi"
+    case .grokBuild: "Grok"
     case .chatGPTDesktopAX: "ChatGPT"
     case .claudeDesktopAX: "Claude AX"
     }
@@ -485,6 +491,7 @@ public func eventHostIndicatorAssetName(for host: HostID) -> String {
     case .workBuddy: "workbuddy"
     case .opencode: "opencode"
     case .kimiCode: "kimi-code"
+    case .grokBuild: "grok-build"
     case .chatGPTDesktopAX: "codex"
     case .claudeDesktopAX: "claude"
     }
@@ -515,7 +522,7 @@ public func eventHostIndicatorPalette(for host: HostID) -> EventHostIndicatorPal
         EventHostIndicatorPalette(
             lightHex: ClaudioColorHex.workBuddyIndicatorLight,
             darkHex: ClaudioColorHex.workBuddyIndicatorDark)
-    case .opencode, .kimiCode:
+    case .opencode, .kimiCode, .grokBuild:
         EventHostIndicatorPalette(
             lightHex: ClaudioColorHex.codexIndicatorLight,
             darkHex: ClaudioColorHex.codexIndicatorDark)
@@ -545,6 +552,9 @@ func defaultQualificationText(_ qualification: HostCapabilityQualificationID) ->
     case .userOriginOnly: "仅用户发起的 TurnStarted"
     case .mainAgentIdentityUnavailable: "缺少主／子 agent 身份，首版暂未启用"
     case .subagentIdentityUnavailable: "仅成功结束；无法定位具体子任务"
+    case .promptOriginUnavailable: "无法可靠区分人工输入与自动唤醒，尚未实现"
+    case .completionGateOnly: "可被阻止的结束尝试，尚未实现"
+    case .mainSessionAPIErrorOnly: "仅主会话因 API 错误导致的中断"
     }
 }
 

@@ -33,6 +33,11 @@ public enum HostMaintenanceFileFacts {
                     ClaudioPaths.root.appendingPathComponent("bin/codex-notify"),
                 ]
             case .workBuddy: files = [ClaudioPaths.workBuddySettingsFile]
+            case .grokBuild:
+                files =
+                    AdditionalHostPaths.currentRoot(host: host).map {
+                        [AdditionalHostPaths.file(host: host, root: $0)]
+                    } ?? []
             default: continue
             }
             files = configurationFiles?[host] ?? files
@@ -43,7 +48,7 @@ public enum HostMaintenanceFileFacts {
                 if let executable = Bundle(url: app)?.executableURL { files.append(executable) }
             } else if host != .workBuddy,
                 let path = locator.executablePath(
-                    command: host == .codex ? "codex" : "claude")
+                    command: host == .grokBuild ? "grok" : host == .codex ? "codex" : "claude")
             {
                 files.append(URL(fileURLWithPath: path))
             }

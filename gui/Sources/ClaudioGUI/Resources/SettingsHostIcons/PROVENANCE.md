@@ -19,3 +19,8 @@ workbuddy-light.png: 286954 bytes, SHA-256 3c2bc7d338c9eacc027af2b27693056b7cbea
 
 图标只标识当前已支持的集成表面：Claude Code、Codex、OpenCode、Kimi Code 为 CLI，WorkBuddy 为 Desktop；不表示该品牌其他客户端已经接入。
 六张资源共享透明留白归一化，五个产品的可见方形图标统一 27×27 pt、6 pt 圆角。
+
+2026-10-21：新增 `grok-build-light.png`，原字节来自 Grok 官方主页声明的
+192×192 PWA 图标：https://grok.com/images/android-chrome-192x192.png 。
+SHA-256：`768cbbf7a7528d6e7b3af8112d7cde43eb6c9c8989ad9b06be8047dae1227463`。
+只标识 Grok Build 集成来源；不代表 Grok Chat／Bot 已接入或任何 binding 已取得发布资格。

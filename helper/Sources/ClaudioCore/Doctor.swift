@@ -380,7 +380,7 @@ public struct DoctorIntegrationsEnvironment: Sendable {
         let additionalBinary = self.claudioBinaryPath
         self.additionalHosts =
             additionalHosts
-            ?? [HostID.opencode, .kimiCode].map { host in
+            ?? AdditionalHostReleasePolicy.candidateHosts.map { host in
                 if claudioRoot == ClaudioPaths.root.path {
                     return AdditionalHostIntegrationEnvironment(host: host)
                 }
@@ -687,6 +687,7 @@ private func doctorHostResult(
             case .workBuddy: ""
             case .opencode: "；按会话身份与执行／终态证据桥接"
             case .kimiCode: "；仅用户开始、授权、提问意图及成功子任务；主响应终态未启用"
+            case .grokBuild: "；仅主会话 API 错误、授权等待与提问意图；开始和完成未启用"
             case .claudeCode: ""
             case .chatGPTDesktopAX, .claudeDesktopAX: "；Beta 候选尚未实现"
             }

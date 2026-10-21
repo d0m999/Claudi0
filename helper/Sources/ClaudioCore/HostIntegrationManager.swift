@@ -173,7 +173,9 @@ public actor HostIntegrationManager {
     private var maintenanceDirty: Set<HostID> = []
     private var failures: [HostID: HostIntegrationActionError] = [:]
     private var observers: [UUID: AsyncStream<[HostIntegrationSnapshot]>.Continuation] = [:]
-    public static let automaticHosts: [HostID] = [.claudeCode, .codex, .workBuddy]
+    public static let automaticHosts: [HostID] =
+        [.claudeCode, .codex, .workBuddy]
+        + AdditionalHostReleasePolicy.visibleHosts.filter { $0 == .grokBuild }
 
     private var runtime: SharedRuntimeHealth
     private var cachedSnapshots: [HostID: HostIntegrationSnapshot]

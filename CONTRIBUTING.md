@@ -79,10 +79,13 @@ Source drift fails the build and removes that run's app. Run
 This build does not establish distribution eligibility. See
 [the current evidence](plan/PLAN-BAILIAN-AUDIO-31-EVIDENCE.md) before making real requests.
 
-OpenCode and Kimi Code qualify per binding under ADR 0024. Ordinary Release builds expose a
+OpenCode, Kimi Code and Grok Build qualify per binding under ADR 0024/0035. Ordinary Release builds expose a
 source when it has reviewed bindings and keep its unverified bindings closed. The current evidence
 is recorded in `docs/validation/opencode-kimi-code-2026-10-06.md`. Debug builds expose all candidates. Use `bash scripts/dev-bundle.sh --additional-host-acceptance` for an explicit local
 acceptance bundle. It compiles the same flag into GUI and helper and marks the app plist.
+Grok Build has three acceptance candidates and remains hidden in ordinary Release until reviewed
+native banner and listening evidence qualifies individual bindings. See
+`docs/validation/grok-build-2026-10-21.md`. Its workspace eligibility remains closed.
 The plugin source is embedded in the helper and copied to `Resources/integrations/opencode/`;
 after editing `integrations/opencode/claudio.js`, regenerate with
 `python3 scripts/embed-opencode-plugin.py` and run the check above.

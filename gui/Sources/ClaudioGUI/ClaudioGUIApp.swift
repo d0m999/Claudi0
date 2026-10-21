@@ -188,6 +188,7 @@ final class ClaudioGUIAppDelegate: NSObject, NSApplicationDelegate {
                 ClaudeCodeIntegrationAdapter(), CodexIntegrationAdapter(),
                 WorkBuddyIntegrationAdapter(),
                 OpenCodeIntegrationAdapter(), KimiCodeIntegrationAdapter(),
+                GrokBuildIntegrationAdapter(),
             ],
             bootstrapper: SystemSharedRuntimeBootstrapper(environment: setupEnvironment),
             authorization: HostEventAuthorization())

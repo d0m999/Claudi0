@@ -42,6 +42,11 @@ public struct AdditionalHostIntegrationEnvironment: Sendable {
         self.availability =
             availability ?? {
                 guard root != nil else { return .unavailable(reason: "配置根必须是有效绝对路径") }
+                if host == .grokBuild,
+                    HostExecutableLocator.standard().executablePath(command: "grok") == nil
+                {
+                    return .notInstalled
+                }
                 return scope() == nil
                     ? .unavailable(reason: "未检测到兼容的 \(host.displayName) CLI")
                     : .available
@@ -82,9 +87,13 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                 return .failure(.configuration(reason: additionalHostErrorReason(error)))
             }
             do {
-                try FileManager.default.createDirectory(
-                    at: file.deletingLastPathComponent(),
-                    withIntermediateDirectories: true)
+                if host == .grokBuild {
+                    try ensurePrivateDirectoryExists(at: file.deletingLastPathComponent())
+                } else {
+                    try FileManager.default.createDirectory(
+                        at: file.deletingLastPathComponent(),
+                        withIntermediateDirectories: true)
+                }
             } catch {
                 return .failure(.configuration(reason: "无法创建来源配置目录，未修改配置"))
             }
@@ -94,7 +103,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
             let transaction = ConfigFileTransaction(
                 file: file, lockFile: environment.lockFile,
                 backupFile: file.appendingPathExtension("claudio.bak"),
-                symlinkPolicy: host == .opencode ? .reject : .preserveTarget)
+                symlinkPolicy: host == .kimiCode ? .preserveTarget : .reject)
             let requested = UUID()
             let result = transaction.updateBytes(
                 { bytes in
@@ -134,6 +143,11 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
             {
                 return .failure(.configuration(reason: "安装代次撤销失败：\(error.description)"))
             }
+            if host == .grokBuild {
+                do { try additionalHostPreflight(environment: environment) } catch {
+                    return .failure(.configuration(reason: additionalHostErrorReason(error)))
+                }
+            }
             guard let file = environment.file,
                 FileManager.default.fileExists(atPath: file.path)
                     || leafNodeIsSymbolicLink(at: file)
@@ -143,7 +157,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
             }
             let transaction = ConfigFileTransaction(
                 file: file, lockFile: environment.lockFile,
-                symlinkPolicy: host == .opencode ? .reject : .preserveTarget)
+                symlinkPolicy: host == .kimiCode ? .preserveTarget : .reject)
             let result = transaction.updateBytes(
                 { bytes in
                     try AdditionalHostConfiguration.disconnect(
@@ -175,7 +189,7 @@ public func inspectAdditionalHostSnapshot(
     do {
         try additionalHostPreflight(environment: environment)
         let data: Data?
-        if leafNodeIsSymbolicLink(at: file) && host == .opencode {
+        if leafNodeIsSymbolicLink(at: file) && host != .kimiCode {
             throw ConfigFileTransactionError.symlinkRejected(path: file.path)
         }
         if FileManager.default.fileExists(atPath: file.path) || leafNodeIsSymbolicLink(at: file) {
@@ -226,6 +240,9 @@ private func additionalHostErrorReason(_ error: any Error) -> String {
 }
 
 private func additionalHostPreflight(environment: AdditionalHostIntegrationEnvironment) throws {
+    if environment.host == .grokBuild, let root = environment.configurationRoot {
+        try validateExistingDirectoryComponents(of: root.appendingPathComponent("hooks"))
+    }
     guard environment.host == .opencode, let root = environment.configurationRoot else { return }
     try OpenCodePluginRegistrationPolicy.validate(
         configurationRoot: root,

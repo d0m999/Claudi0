@@ -177,10 +177,19 @@ if CommandLine.arguments.contains("--hook-command-matching") {
 }
 
 if CommandLine.arguments.contains("--additional-hosts") {
+    await runGrokBuildIntegrationSuites()
+    runGrokBuildHookSuites()
     await runAdditionalHostIntegrationSuites()
     await runAdditionalHostMigrationSuites()
     runAdditionalHostHookSuites()
     print("\(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--grok-build") {
+    await runGrokBuildIntegrationSuites()
+    runGrokBuildHookSuites()
+    print("Grok Build: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -214,6 +223,8 @@ runHostQuestionHookSuites()
 await runAdditionalHostIntegrationSuites()
 await runAdditionalHostMigrationSuites()
 runAdditionalHostHookSuites()
+await runGrokBuildIntegrationSuites()
+runGrokBuildHookSuites()
 runHostIntegrationModelSuites()
 runHostHookReceiptSuites()
 runHostHookReceiptPruningSuites()

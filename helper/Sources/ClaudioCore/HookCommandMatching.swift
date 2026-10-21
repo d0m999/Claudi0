@@ -343,7 +343,8 @@ private func matchHostHookCommand(
     for host in HostID.allCases {
         for binding in HostCapabilityCatalog.bindings(for: host)
         where binding.isAudibleCapability
-            || (includeInactiveAdditionalHostBindings && (host == .opencode || host == .kimiCode)
+            || (includeInactiveAdditionalHostBindings
+                && AdditionalHostReleasePolicy.candidateHosts.contains(host)
                 && binding.isImplementedCapability)
         {
             guard let nativeEvent = binding.nativeEvent else { continue }

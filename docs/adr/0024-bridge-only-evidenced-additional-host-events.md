@@ -55,3 +55,6 @@ V1 返回 hooks 对象的 `server()` 写法会被 schema 拒绝；事件经 `ctx
 2026-10-18：随 ADR 0005 同日修订放开目录适用来源证据门，OpenCode／Kimi Code 已接入事件的
 payload 目录命中工作区规则时使用工作区声音配置，不再一律使用默认组；目录缺失、非法或不匹配
 仍回落默认组。上文「新增来源按 ADR 0005／0018 使用默认声音组」按本修订理解。
+
+2026-10-21：Grok Build 的独立原生 hooks、Claude compatibility 来源防护与三条候选绑定见
+[ADR 0035](0035-integrate-grok-build-native-attention-hooks.md)。它继续采用本决定的逐绑定发布证据门槛。
