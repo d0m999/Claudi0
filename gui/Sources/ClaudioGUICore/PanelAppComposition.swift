@@ -48,8 +48,6 @@ package final class PanelAppComposition {
 
     package struct Adapters {
         package let previewPlayer: (any AudioPreviewPlaying)?
-        package let globalHotKeys: GlobalHotKeyAdapter
-        package let shortcutPersistence: GlobalShortcutPersistenceAdapter
         package let clipboardWriter: IntegrationDestinationClipboardWriter
         package let makeAICueViewModel:
             @MainActor (URL, any AudioDurationProbing) throws -> AICueGenerationViewModel
@@ -58,8 +56,6 @@ package final class PanelAppComposition {
 
         package init(
             previewPlayer: (any AudioPreviewPlaying)? = nil,
-            globalHotKeys: GlobalHotKeyAdapter,
-            shortcutPersistence: GlobalShortcutPersistenceAdapter,
             clipboardWriter: IntegrationDestinationClipboardWriter,
             makeAICueViewModel:
                 @escaping @MainActor (URL, any AudioDurationProbing) throws ->
@@ -68,8 +64,6 @@ package final class PanelAppComposition {
             makeAboutSettings: @escaping @MainActor ([AboutSurfaceFact]) -> AboutSettingsModel
         ) {
             self.previewPlayer = previewPlayer
-            self.globalHotKeys = globalHotKeys
-            self.shortcutPersistence = shortcutPersistence
             self.clipboardWriter = clipboardWriter
             self.makeAICueViewModel = makeAICueViewModel
             self.makeActivityDiagnostics = makeActivityDiagnostics
@@ -79,7 +73,6 @@ package final class PanelAppComposition {
 
     package struct Actions {
         package let audibilityInputsChanged: @MainActor @Sendable () -> Void
-        package let performGlobalShortcut: @MainActor @Sendable (GlobalShortcutAction) -> Void
         /// A nil result means the native router is not bound yet. Publish through the same
         /// retained store in that case, just as the pre-super.init composition did.
         package let publishHostIntegrationState:
@@ -88,13 +81,11 @@ package final class PanelAppComposition {
 
         package init(
             audibilityInputsChanged: @escaping @MainActor @Sendable () -> Void,
-            performGlobalShortcut: @escaping @MainActor @Sendable (GlobalShortcutAction) -> Void,
             publishHostIntegrationState:
                 @escaping @MainActor @Sendable (HostIntegrationPresentationState) ->
                 IntegrationDestinationContent?
         ) {
             self.audibilityInputsChanged = audibilityInputsChanged
-            self.performGlobalShortcut = performGlobalShortcut
             self.publishHostIntegrationState = publishHostIntegrationState
         }
     }
@@ -110,7 +101,6 @@ package final class PanelAppComposition {
     package let hostIntegrations: HostIntegrationPresentationStore
     package let integrationMatrixProvider: HostIntegrationMatrixProvider
     package let integrationsModel: IntegrationDestinationModel
-    package let globalShortcutSettings: GlobalShortcutSettingsModel
     package let aiCueViewModel: AICueGenerationViewModel
     package let generationHistory: GenerationHistoryStore
     package var generationCoordinator: AICueGenerationCoordinator { aiCueViewModel.coordinator }
@@ -184,10 +174,6 @@ package final class PanelAppComposition {
             onContentChanged: { [weak hostIntegrations] content in
                 hostIntegrations?.replace(content: content)
             })
-        globalShortcutSettings = GlobalShortcutSettingsModel(
-            adapter: adapters.globalHotKeys,
-            persistence: adapters.shortcutPersistence,
-            actionHandler: actions.performGlobalShortcut)
         generationHistory = GenerationHistoryStore(
             directory: environment.aiCueTemporaryRoot
                 .deletingLastPathComponent().appendingPathComponent("generation-history"))

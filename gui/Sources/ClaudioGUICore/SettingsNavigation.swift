@@ -3,7 +3,7 @@ import ClaudioLocalization
 import Combine
 import Foundation
 
-/// The fixed top-level identity and order of Claudio's unified Settings navigation.
+/// Stable routable identities; `sidebarCases` defines the visible five-page navigation.
 /// Raw values are stable route tokens; user-visible and accessibility names stay localized.
 public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashable, Identifiable {
     case eventsAndSounds = "events-and-sounds"
@@ -14,6 +14,33 @@ public enum SettingsDestination: String, CaseIterable, Codable, Sendable, Hashab
     case shortcuts
     case usage
     case about
+
+    /// Compatibility routes and the visible navigation deliberately have different lifetimes.
+    public static let sidebarCases: [Self] = [
+        .eventsAndSounds, .sounds, .integrations, .notifications, .general,
+    ]
+
+    public var canonicalDestination: Self {
+        switch self {
+        case .about, .shortcuts: .general
+        default: self
+        }
+    }
+
+    public var sidebarDestination: Self {
+        self == .usage ? .integrations : canonicalDestination
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        if raw == "display" { self = .general; return }
+        guard let destination = Self(rawValue: raw) else {
+            throw DecodingError.dataCorruptedError(
+                in: container, debugDescription: "Unknown Settings destination")
+        }
+        self = destination
+    }
 
     public var id: String { rawValue }
 
@@ -43,6 +70,13 @@ public enum SettingsRoute: Sendable, Equatable, Hashable {
     case events(scope: PanelSoundScopeID, event: Event?)
     case sounds(SoundPacksWindowRoute)
     case notifications(NotificationsSettingsRoute)
+
+    public var canonicalRoute: Self {
+        if case .destination(let destination) = self {
+            return .destination(destination.canonicalDestination)
+        }
+        return self
+    }
 
     public var destination: SettingsDestination {
         switch self {
@@ -215,7 +249,7 @@ public func resolveSettingsRoute(
     availability: SettingsRouteAvailability
 ) -> SettingsRouteResolution {
     let failure: SettingsRouteFailure?
-    var resolvedRoute = route
+    var resolvedRoute = route.canonicalRoute
     switch route {
     case .destination, .notifications:
         failure = nil
@@ -352,9 +386,7 @@ public func settingsSidebarSections(
             destinations: [.eventsAndSounds, .sounds, .integrations, .notifications]
                 .filter(available.contains)),
         SettingsSidebarSection(
-            id: .advanced, destinations: [.general, .shortcuts].filter(available.contains)),
-        SettingsSidebarSection(
-            id: .product, destinations: [.usage, .about].filter(available.contains)),
+            id: .advanced, destinations: [.general].filter(available.contains)),
     ].filter { !$0.destinations.isEmpty }
 }
 
@@ -368,8 +400,8 @@ public func settingsSidebarDestination(
     from current: SettingsDestination,
     availableDestinations: [SettingsDestination]
 ) -> SettingsDestination {
-    let ordered = SettingsDestination.allCases.filter(Set(availableDestinations).contains)
-    guard let index = ordered.firstIndex(of: current), !ordered.isEmpty else {
+    let ordered = SettingsDestination.sidebarCases.filter(Set(availableDestinations).contains)
+    guard let index = ordered.firstIndex(of: current.sidebarDestination), !ordered.isEmpty else {
         return ordered.first ?? current
     }
     switch direction {
@@ -410,7 +442,7 @@ public enum SettingsWindowFocusTarget: Sendable, Equatable, Hashable {
     case title(SettingsDestination)
     case routeFailure(SettingsDestination)
     case firstAction(SettingsDestination)
-    case shortcutAction(GlobalShortcutAction)
+    case aboutEntry
     case eventAnimationEntry
 }
 
@@ -436,7 +468,7 @@ public func settingsWindowRequestedFocusTarget(
 public func settingsWindowFocusOrder(
     selectedDestination: SettingsDestination
 ) -> [SettingsWindowFocusTarget] {
-    var order = SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
+    var order = SettingsDestination.sidebarCases.map(SettingsWindowFocusTarget.sidebar)
     // Embedded destinations own route-aware focus identity spaces. Inventing a Settings-shell
     // first action for them would point at no rendered control and compete with their
     // initial-focus requests.

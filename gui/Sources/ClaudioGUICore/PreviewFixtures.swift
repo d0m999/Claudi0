@@ -216,12 +216,6 @@ public enum PreviewFixtures {
         case writeFailed
     }
 
-    public enum SettingsShortcutsGalleryState: Sendable, Equatable {
-        case ready
-        case empty
-        case writeFailed
-    }
-
     public enum SettingsAboutGalleryState: Sendable, Equatable {
         case ready
         case empty
@@ -235,7 +229,6 @@ public enum PreviewFixtures {
         public let general: SettingsGeneralGalleryState
         public let notifications: SettingsNotificationsGalleryState
         public let usage: SettingsUsageGalleryState
-        public let shortcuts: SettingsShortcutsGalleryState
         public let about: SettingsAboutGalleryState
 
         fileprivate init(
@@ -243,14 +236,12 @@ public enum PreviewFixtures {
             general: SettingsGeneralGalleryState = .ready,
             notifications: SettingsNotificationsGalleryState = .ready,
             usage: SettingsUsageGalleryState = .empty,
-            shortcuts: SettingsShortcutsGalleryState = .empty,
             about: SettingsAboutGalleryState = .ready
         ) {
             self.destination = destination
             self.general = general
             self.notifications = notifications
             self.usage = usage
-            self.shortcuts = shortcuts
             self.about = about
         }
     }
@@ -269,9 +260,6 @@ public enum PreviewFixtures {
         case usageStale = "usage.stale"
         case usageUnreadable = "usage.unreadable"
         case usageWriteFailed = "usage.write-failed"
-        case shortcutsReady = "shortcuts.ready"
-        case shortcutsEmpty = "shortcuts.empty"
-        case shortcutsWriteFailed = "shortcuts.write-failed"
         case aboutReady = "about.ready"
         case aboutEmpty = "about.empty"
         case aboutWriteFailed = "about.write-failed"
@@ -314,12 +302,6 @@ public enum PreviewFixtures {
                 SettingsExperienceProfile(destination: .usage, usage: .unreadable)
             case .usageWriteFailed:
                 SettingsExperienceProfile(destination: .usage, usage: .writeFailed)
-            case .shortcutsReady:
-                SettingsExperienceProfile(destination: .shortcuts, shortcuts: .ready)
-            case .shortcutsEmpty:
-                SettingsExperienceProfile(destination: .shortcuts)
-            case .shortcutsWriteFailed:
-                SettingsExperienceProfile(destination: .shortcuts, shortcuts: .writeFailed)
             case .aboutReady:
                 SettingsExperienceProfile(destination: .about)
             case .aboutEmpty:

@@ -54,42 +54,6 @@ public func resolvedPanelSoundScopeSelection(
     return .global
 }
 
-/// ID 版全局快捷键路由：已知的 Surface / 工作区身份即使当前不可用也原样保留（Events 页据此
-/// 显示可见的恢复原因）；无法表示成 typed scope 的未知持久值只保留原始字符串，挂在一个
-/// 不可写的 Global 呈现旁边。
-public func globalShortcutEventSettingsRoute(
-    storedValue: String?,
-    availableScopes: [PanelSoundScopeID]
-) -> EventSettingsWindowRoute {
-    if storedValue == PanelSoundScopeID.global.storedValue {
-        return EventSettingsWindowRoute(scope: .global)
-    }
-    if let storedValue, storedValue.hasPrefix("workspace:"),
-        let id = UUID(uuidString: String(storedValue.dropFirst(10)))
-    {
-        let scope = PanelSoundScopeID.workspace(id)
-        return EventSettingsWindowRoute(
-            scope: scope,
-            unavailableRequestedScopeStoredValue: availableScopes.contains(scope)
-                ? nil : storedValue)
-    }
-    if let storedValue, let surface = HostSurfaceID(rawValue: storedValue) {
-        let requestedScope = PanelSoundScopeID.surface(surface)
-        if availableScopes.contains(requestedScope) {
-            return EventSettingsWindowRoute(scope: requestedScope)
-        }
-        return EventSettingsWindowRoute(
-            scope: requestedScope,
-            unavailableRequestedScopeStoredValue: storedValue)
-    }
-    let resolved = resolvedPanelSoundScopeSelection(
-        storedValue: storedValue, availableScopes: availableScopes)
-    let unavailableValue = storedValue == nil || storedValue == "unselected" ? nil : storedValue
-    return EventSettingsWindowRoute(
-        scope: resolved,
-        unavailableRequestedScopeStoredValue: unavailableValue)
-}
-
 /// C1：声音作用域选择的**单一 app 生命周期事实**。此前同一份选择有五个所有者（面板的
 /// `@AppStorage`、`PanelConfigController` 的三个存储属性、快捷键直读 UserDefaults、设置侧的
 /// `applyRoute` 与 `EventSettingsWindowSelection.route`），并且存在两个 `PanelConfigController`
@@ -178,14 +142,6 @@ public final class SoundScopeSelection: ObservableObject {
             scope: scope,
             writeTarget: Self.pinWriteTarget(for: scope, config: config),
             persistedStoredValue: defaults.string(forKey: panelSoundScopeDefaultsKey))
-    }
-
-    /// 全局快捷键的 Events 路由：从持久化字节与当前可用集合即时解析，stale 的已知 scope
-    /// 原样保留（设置窗口显示恢复原因，而不是静默猜另一个目标）。
-    public func shortcutRoute() -> EventSettingsWindowRoute {
-        globalShortcutEventSettingsRoute(
-            storedValue: defaults.string(forKey: panelSoundScopeDefaultsKey),
-            availableScopes: soundScopeAvailableScopeIDs(config: config))
     }
 
     private static func pinWriteTarget(

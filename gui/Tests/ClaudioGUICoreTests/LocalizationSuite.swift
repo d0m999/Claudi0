@@ -64,7 +64,7 @@ func runLocalizationSuites() {
                     && english.text(key).contains("Settings")
                     && english.text(key).contains(english.text(.settingsDestinationSounds))
                     && !chinese.text(key).contains("声音包窗口")
-                    && !english.text(key).contains("Sound Packs"),
+                    && !english.text(key).contains("Sound Packs window"),
                 "试听禁用与恢复文案须在双语中指向统一设置的声音页：\(key.rawValue)")
         }
         expect(

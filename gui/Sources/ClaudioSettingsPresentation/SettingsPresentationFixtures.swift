@@ -85,10 +85,6 @@ package final class SettingsPresentationFixture: ObservableObject {
 
     package var preferences: ClaudioPreferences { session.dependencies.preferences }
 
-    package var globalShortcutSettings: GlobalShortcutSettingsModel {
-        session.dependencies.globalShortcutSettings
-    }
-
     package var aboutSettings: AboutSettingsModel { session.dependencies.aboutSettings }
 
     package var eventSettingsSelection: EventSettingsWindowSelection {
@@ -152,7 +148,6 @@ package enum SettingsPresentationFixtures {
         eventNoticeModel: EventNoticeModel? = nil,
         noticeNavigation: SessionNavigationCoordinator? = nil,
         activityDiagnostics injectedActivityDiagnostics: ActivityDiagnosticsModel? = nil,
-        globalShortcutSettings injectedGlobalShortcutSettings: GlobalShortcutSettingsModel? = nil,
         aboutSettings injectedAboutSettings: AboutSettingsModel? = nil,
         productImages: SettingsProductImages = .empty,
         eventAnimations: EventAnimationResources? = nil,
@@ -283,9 +278,6 @@ package enum SettingsPresentationFixtures {
         let activityDiagnostics =
             injectedActivityDiagnostics
             ?? makeSettingsFixtureActivityDiagnostics(for: experienceProfile)
-        let globalShortcutSettings =
-            injectedGlobalShortcutSettings
-            ?? makeSettingsFixtureShortcutSettings(for: experienceProfile)
         let aboutSettings =
             injectedAboutSettings ?? makeSettingsFixtureAboutSettings(for: experienceProfile)
         let integrationOutcome = IntegrationDestinationActionOutcome(
@@ -338,7 +330,6 @@ package enum SettingsPresentationFixtures {
                 loginItemSettings: loginItemSettings,
                 dynamicQuietPolicy: dynamicQuietPolicy,
                 activityDiagnostics: activityDiagnostics,
-                globalShortcutSettings: globalShortcutSettings,
                 aboutSettings: aboutSettings,
                 soundPacksEditorOwner: soundPacksEditor,
                 soundPacksEditorNativeEffects: nativeEffects,
@@ -431,7 +422,6 @@ extension SettingsPresentationDependencies {
             dynamicQuietPolicy: makeSettingsFixtureDynamicQuietPolicy(
                 for: nil, temporaryRoot: temporaryRoot),
             activityDiagnostics: makeSettingsFixtureActivityDiagnostics(for: nil),
-            globalShortcutSettings: makeSettingsFixtureShortcutSettings(for: nil),
             aboutSettings: makeSettingsFixtureAboutSettings(for: nil),
             soundPacksEditorOwner: soundPacksEditorOwner,
             soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher(
@@ -570,35 +560,6 @@ private func makeSettingsFixtureActivityDiagnostics(
             : .success(loadResult),
         previewIsRefreshing: state == .loading,
         previewFeedback: feedback)
-}
-
-@MainActor
-private func makeSettingsFixtureShortcutSettings(
-    for profile: PreviewFixtures.SettingsExperienceProfile?
-) -> GlobalShortcutSettingsModel {
-    let state = profile?.shortcuts ?? .empty
-    let shortcut = GlobalShortcut(
-        shortcutID: .togglePanel,
-        keyCode: 0,
-        modifiers: [.command, .control])
-    let persisted = try? JSONEncoder().encode(shortcut)
-    let model = GlobalShortcutSettingsModel(
-        adapter: GlobalHotKeyAdapter(
-            register: { _ in
-                if state == .writeFailed { throw GlobalShortcutAdapterError.conflict }
-            },
-            unregister: { _ in },
-            setActionHandler: { _ in }),
-        persistence: GlobalShortcutPersistenceAdapter(
-            read: { action in
-                state == .ready && action == .togglePanel ? persisted : nil
-            },
-            persist: { _, _ in }),
-        actionHandler: { _ in })
-    if state == .writeFailed {
-        model.replace(.togglePanel, keyCode: 0, modifiers: [.command, .control])
-    }
-    return model
 }
 
 @MainActor

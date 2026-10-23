@@ -108,7 +108,7 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
         view.layoutSubtreeIfNeeded()
         #if DEBUG
         SoundPacksLayoutRecorder.recordNative("settings.sidebar", view: sidebarController.view)
-        for destination in SettingsDestination.allCases {
+        for destination in SettingsDestination.sidebarCases {
             if let frame = sidebarController.frame(for: destination) {
                 SoundPacksLayoutRecorder.recordNative(
                     "settings.sidebar.item.\(destination.rawValue)",
@@ -352,7 +352,8 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
 
     private func captureReadingPosition() -> SettingsReadingBookmark {
         rememberContentFocus()
-        let sidebarFocus = "settings.sidebar.\(session.state.chrome.destination.rawValue)"
+        let sidebarFocus =
+            "settings.sidebar.\(session.state.chrome.destination.sidebarDestination.rawValue)"
         let focus =
             view.window?.firstResponder === sidebarController.table
             ? sidebarFocus : (lastContentFocusIdentifier ?? sidebarFocus)

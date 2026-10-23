@@ -32,7 +32,6 @@ func runNativeRegressionCompositionSuites() async {
                 integrationsModel: composition.integrationsModel,
                 preferences: composition.preferences,
                 activityDiagnostics: composition.activityDiagnostics,
-                globalShortcutSettings: composition.globalShortcutSettings,
                 aboutSettings: composition.aboutSettings)
             defer { fixture.session.send(.windowWillClose) }
             let dependencies = fixture.session.dependencies
@@ -51,9 +50,6 @@ func runNativeRegressionCompositionSuites() async {
             expect(
                 dependencies.activityDiagnostics === composition.activityDiagnostics,
                 "活动 owner 只借用工厂实例")
-            expect(
-                dependencies.globalShortcutSettings === composition.globalShortcutSettings,
-                "快捷键不得被 gallery 默认模型替代")
             expect(
                 dependencies.aboutSettings === composition.aboutSettings, "About 不得被 gallery 默认模型替代"
             )
@@ -127,16 +123,15 @@ func runNativeRegressionCompositionSuites() async {
             let composition = try! builder.build()
             composition.preferences.setLanguage(.zhHans)
             composition.soundScopeSelection.select(.workspace(workspace))
-            composition.globalShortcutSettings.replace(
-                .togglePanel, keyCode: 40, modifiers: [.command, .option])
-            let persisted = defaults.data(forKey: globalShortcutDefaultsKey(.togglePanel))
-            expect(persisted != nil, "快捷键 Data 读取必须使用注入文件，不能读空的命名 domain")
+            let legacyKey = "Claudio.GlobalShortcut.toggle-panel"
+            let persisted = Data([0, 1, 255])
+            defaults.set(persisted, forKey: legacyKey)
             // 先持久化一个有效工作区，再让它在重开前失效；未知工作区的临时选择按合同不落盘。
             config.workspaceRules = []
             try! JSONEncoder().encode(config).write(to: configFile)
             let reopenedDefaults = SettingsFixtureDefaults(file: file)
             expect(
-                reopenedDefaults.data(forKey: globalShortcutDefaultsKey(.togglePanel)) == persisted,
+                reopenedDefaults.data(forKey: legacyKey) == persisted,
                 "重开文件 defaults 保留快捷键 Data")
             let reopenedBuilder = CompositionFixture(root: root, defaults: reopenedDefaults)
             let reopened = try! reopenedBuilder.build()
@@ -145,18 +140,14 @@ func runNativeRegressionCompositionSuites() async {
                 reopened.soundScopeSelection.projection.scope == .workspace(workspace),
                 "重开保留失效作用域身份，不回落默认组")
             expect(
-                reopened.globalShortcutSettings.state(for: .togglePanel).shortcut?.keyCode == 40,
-                "快捷键恢复从同一隔离文件读取")
+                reopenedDefaults.data(forKey: legacyKey) == persisted,
+                "组合根不读取、注册或改写旧快捷键偏好")
         }
     }
 
     suite("Native regression composition：未注入的画廊保持既有快捷键与 About 默认行为") {
         let fixture = SettingsPresentationFixtures.generalLogin()
         defer { fixture.session.send(.windowWillClose) }
-        expect(
-            fixture.session.dependencies.globalShortcutSettings.state(for: .togglePanel).shortcut
-                == nil,
-            "默认画廊快捷键仍为空")
         let expected = makeSettingsFixtureAboutSettings(for: nil)
         expect(
             fixture.session.dependencies.aboutSettings.bundleFacts == expected.bundleFacts,

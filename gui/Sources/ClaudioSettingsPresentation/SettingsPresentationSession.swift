@@ -13,6 +13,8 @@ package final class SettingsPresentationSession: ObservableObject {
     @Published
     package private(set) var state: SettingsPresentationState
 
+    @Published package private(set) var aboutPresentation: SettingsNavigationStamp?
+
     @Published package private(set) var soundReturnContext: SettingsSoundReturnContext?
 
     let dependencies: SettingsPresentationDependencies
@@ -275,6 +277,23 @@ package final class SettingsPresentationSession: ObservableObject {
             return routeTransaction(.route(.destination(destination)), focus: .sidebar)
         case .navigateWorkspace(let route):
             return routeTransaction(.eventShortcut(route))
+        case .dismissAbout(let stamp):
+            guard aboutPresentation == stamp, navigationHistory.stamp == stamp else {
+                return .unchanged
+            }
+            aboutPresentation = nil
+            if let current = navigationHistory.current {
+                var bookmark = current.bookmark
+                bookmark.focusIdentifier = "settings.general.about"
+                bookmark.scrollAnchorIdentifier = "settings.general.about"
+                bookmark.anchorOffset = 0
+                navigationRestoration = SettingsNavigationRestoration(
+                    stamp: stamp, location: current.location, bookmark: bookmark, focus: .restore)
+            }
+            let revision = destinationFocusRequests.requestFocus(.aboutEntry)
+            focusDebt = SettingsFocusDebt(revision: revision, destination: .general)
+            publishProjection()
+            return .routed
         case .goBack, .goBackFromEventAnimation:
             return traverseHistory(by: -1)
         case .goForward, .goForwardToEventAnimation:
@@ -285,7 +304,10 @@ package final class SettingsPresentationSession: ObservableObject {
                 modalNavigationBlockers.insert(id)
             } else {
                 modalNavigationBlockers.remove(id)
-                if let current = navigationHistory.current, let stamp = navigationHistory.stamp {
+                if let current = navigationHistory.current, let stamp = navigationHistory.stamp,
+                    navigationRestoration?.stamp != stamp
+                        || navigationRestoration?.focus != .restore
+                {
                     navigationRestoration = SettingsNavigationRestoration(
                         stamp: stamp,
                         location: current.location, bookmark: current.bookmark, focus: .restore)
@@ -539,11 +561,13 @@ package final class SettingsPresentationSession: ObservableObject {
     ) -> SettingsPresentationResult {
         guard navigationEnabled else { return .unchanged }
         let requestedRoute: SettingsRoute
+        var requestsAbout = false
         let eventShortcut: EventSettingsWindowRoute?
         switch request {
         case .route(let route):
             guard let route else { return .unchanged }
-            requestedRoute = route
+            requestsAbout = route == .destination(.about) && entry == nil
+            requestedRoute = route.canonicalRoute
             eventShortcut = nil
         case .eventShortcut(let requested):
             if requested.workspaceTarget != nil {
@@ -661,6 +685,9 @@ package final class SettingsPresentationSession: ObservableObject {
         if resolved.failure == nil {
             dependencies.preferences.setLastSettingsDestination(resolved.destination)
         }
+        if requestsAbout, resolved.failure == nil {
+            aboutPresentation = navigationHistory.stamp
+        }
         synchronizePendingSoundPackAnnouncement()
         if let failure = resolved.failure {
             return .rejected(failure)
@@ -741,8 +768,8 @@ package final class SettingsPresentationSession: ObservableObject {
             let eventRoute =
                 eventShortcut
                 ?? EventSettingsWindowRoute(
-                    scope: dependencies.eventSettingsModel.selectedSoundScope)
-            if eventShortcut != nil || eventSettingsSelection.route.scope != eventRoute.scope {
+                    scope: dependencies.eventSettingsModel.selectedSoundScope, detail: .workspaces)
+            if eventShortcut != nil || eventSettingsSelection.route != eventRoute {
                 let routeChanged = eventSettingsSelection.route != eventRoute
                 eventSettingsSelection.select(eventRoute)
                 if routeChanged {
@@ -830,6 +857,8 @@ package final class SettingsPresentationSession: ObservableObject {
         let selectionChanged =
             previous.scope != projection.scope || previous.writeTarget != projection.writeTarget
         let retainedRoute = eventSettingsSelection.route
+        // The overview is a browsing list, not an open editor for the panel's selection.
+        guard retainedRoute.detail != .workspaces else { return }
         if !selectionChanged {
             // A health update belongs to the shared selection, not an explicit request for a
             // different captured directory. Keep the request's event and detail when it matches.
@@ -1026,6 +1055,7 @@ package final class SettingsPresentationSession: ObservableObject {
         soundPackDeletionNavigation = nil
         navigationRestoration = nil
         renderedNavigationStamp = nil
+        aboutPresentation = nil
         modalNavigationBlockers.removeAll()
         if let lifecycleDestination {
             deactivate(lifecycleDestination, windowIsClosing: true)
@@ -1392,7 +1422,7 @@ package final class SettingsPresentationSession: ObservableObject {
 // Browsing remains in this session; native chrome only captures and consumes reading requests.
 extension SettingsPresentationSession {
     private var navigationEnabled: Bool {
-        modalNavigationBlockers.isEmpty
+        aboutPresentation == nil && modalNavigationBlockers.isEmpty
             && !eventPresentation.credentialSheetIsPresented
             && eventSettingsSelection.deletionPresentation.pending == nil
             && dependencies.integrationsModel.pendingConfirmation == nil
@@ -1430,9 +1460,7 @@ extension SettingsPresentationSession {
             }
         case .destination(.eventsAndSounds):
             workspaceRoute = EventSettingsWindowRoute(
-                scope: dependencies.eventSettingsModel.selectedSoundScope,
-                event: eventSettingsSelection.route.event,
-                workspaceTarget: dependencies.eventSettingsModel.selectedWorkspaceTarget)
+                scope: .global, detail: .workspaces)
         default: workspaceRoute = nil
         }
         let viewedPackID: String?
@@ -1546,8 +1574,12 @@ extension SettingsPresentationSession {
             }
         case .eventsAndSounds:
             switch eventPresentation.route.detail {
-            case .configuration: break
-            case .workspaces: title = l10n.text(.settingsNativeWorkspaces)
+            case .configuration:
+                title =
+                    dependencies.eventSettingsModel.workspaceRules.first(where: {
+                        $0.id == eventPresentation.route.scope.workspaceID
+                    })?.name ?? l10n.text(.panelGlobalDefaults)
+            case .workspaces: title = l10n.text(.settingsDestinationEventsAndSounds)
             case .scope(let target):
                 title =
                     dependencies.eventSettingsModel.workspaceRules.first(where: {

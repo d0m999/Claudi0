@@ -82,7 +82,7 @@ func runSettingsPreferencesSuites() async {
         expect(
             restored.languageMode == .english && restored.language == .english,
             "显式 English 必须跨 owner 恢复且不跟随系统")
-        expect(restored.lastSettingsDestination == .about, "顶层 destination 必须跨 owner 恢复")
+        expect(restored.lastSettingsDestination == .general, "顶层 destination 必须跨 owner 恢复")
 
         let isolated = ClaudioPreferences(
             defaults: secondDefaults,

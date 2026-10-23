@@ -12,7 +12,6 @@ package struct SettingsPresentationDependencies {
     package let loginItemSettings: LoginItemSettingsModel
     package let dynamicQuietPolicy: DynamicQuietPolicyController
     package let activityDiagnostics: ActivityDiagnosticsModel
-    package let globalShortcutSettings: GlobalShortcutSettingsModel
     package let aboutSettings: AboutSettingsModel
     package let soundPacksEditorOwner: SoundPacksEditorOwner
     package let soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher
@@ -34,7 +33,6 @@ package struct SettingsPresentationDependencies {
         loginItemSettings: LoginItemSettingsModel,
         dynamicQuietPolicy: DynamicQuietPolicyController,
         activityDiagnostics: ActivityDiagnosticsModel,
-        globalShortcutSettings: GlobalShortcutSettingsModel,
         aboutSettings: AboutSettingsModel,
         soundPacksEditorOwner: SoundPacksEditorOwner,
         soundPacksEditorNativeEffects: SoundPacksEditorNativeEffectsDispatcher,
@@ -54,7 +52,6 @@ package struct SettingsPresentationDependencies {
         self.loginItemSettings = loginItemSettings
         self.dynamicQuietPolicy = dynamicQuietPolicy
         self.activityDiagnostics = activityDiagnostics
-        self.globalShortcutSettings = globalShortcutSettings
         self.aboutSettings = aboutSettings
         self.soundPacksEditorOwner = soundPacksEditorOwner
         self.soundPacksEditorNativeEffects = soundPacksEditorNativeEffects

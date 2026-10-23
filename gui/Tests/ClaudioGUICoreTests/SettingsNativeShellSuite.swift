@@ -88,15 +88,16 @@ func runSettingsNativeShellSuites() async {
 
     await runSettingsNativeReadingSuites()
 
-    await suite("Native settings shell: 64 basic layout combinations") {
-        for destination in SettingsDestination.allCases {
+    await suite("Native settings shell: five pages and diagnostics layout combinations") {
+        for destination in SettingsDestination.sidebarCases + [.usage] {
             for language in ClaudioAppLanguage.allCases {
                 for dark in [false, true] {
                     for width: CGFloat in [960, 1240] {
                         let fixture = SettingsPresentationFixtures.generalLogin(
                             language: language, route: .destination(destination))
                         let probe = NativeSettingsShellProbe(
-                            session: fixture.session, width: width, dark: dark)
+                            session: fixture.session, width: width, dark: dark,
+                            reduceMotion: width == 960)
                         await probe.settle()
                         expect(
                             probe.window.contentView?.bounds.size
@@ -266,9 +267,11 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
     let window: RetainedSettingsWindow
     let shell: SettingsNativeShellController
     let session: SettingsPresentationSession
-    init(session: SettingsPresentationSession, width: CGFloat, dark: Bool) {
+    init(
+        session: SettingsPresentationSession, width: CGFloat, dark: Bool, reduceMotion: Bool? = nil
+    ) {
         self.session = session
-        shell = SettingsNativeShellController(session: session)
+        shell = SettingsNativeShellController(session: session, reduceMotionOverride: reduceMotion)
         window = RetainedSettingsWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: width == 960 ? 640 : 820),
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered,

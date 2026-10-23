@@ -84,9 +84,6 @@ func runPreviewFixturesSuites() {
             "settingsExperience.usage.stale",
             "settingsExperience.usage.unreadable",
             "settingsExperience.usage.write-failed",
-            "settingsExperience.shortcuts.ready",
-            "settingsExperience.shortcuts.empty",
-            "settingsExperience.shortcuts.write-failed",
             "settingsExperience.about.ready",
             "settingsExperience.about.empty",
             "settingsExperience.about.write-failed",
@@ -324,7 +321,7 @@ func runPreviewFixturesSuites() {
             "基础设置 gallery 必须由 enum roster 完整驱动")
         expect(
             Set(scenarios.map(\.destination))
-                == [.general, .notifications, .usage, .shortcuts, .about],
+                == [.general, .notifications, .usage, .about],
             "基础设置 gallery 必须覆盖通用、通知、用量、快捷键、关于五页")
         expect(
             scenarios.map(\.rawValue).contains("usage.loading")

@@ -79,7 +79,9 @@ for suite in \
     runDynamicQuietPolicySuites \
     runActivityDiagnosticsSuites \
     runActivityOverviewSuites \
-    runGlobalShortcutsSuites \
+    runSettingsHandbackSuites \
+    runFivePageSettingsSuites \
+    runFivePageSettingsNativeSuites \
     runSettingsNavigationSuites \
     runEventSettingsWindowSelectionSuites \
     runSettingsPresentationLifecycleSuites \

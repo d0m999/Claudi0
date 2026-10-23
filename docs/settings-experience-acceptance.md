@@ -1,8 +1,22 @@
 # 统一设置集成验收与证据交接
 
-本清单是八个设置目的页的维护门禁与人工交接入口（2026-09-28 起，原「显示」页退役）。它不替代
+本清单是五个可见设置页与兼容路由的维护门禁及人工交接入口。它不替代
 `plan/PLAN-SETTINGS-EXPERIENCE.md`、`CONTEXT.md`、ADR 0005–0009 或 release 流程，也不把
 fixture、源代码扫描、构建或 ad-hoc bundle 升格为原生 UI、真实系统、真实 Provider 或发布证据。
+
+## 当前五页合同（2026-10-23）
+
+侧栏顺序为工作区、声音包、连接、提醒与静音、通用，前四页与通用用间距分组。侧栏、方向键与焦点
+统一消费五页投影；八个旧 raw values 只作为兼容路由集合。`usage` 保留独立正文、阅读位置与历史，
+侧栏归属连接；显式 `about` 在通用展示附属表单，关闭／Esc 归还关于入口。恢复旧
+`about`／`shortcuts`／`display` 时只进入通用，不自动弹表单或改写旧值。
+
+工作区为列表→详情，包级修改定位声音包事件并可返回工作区。AI 生成、保存、待处理、已保存、请求失败
+保持现有 coordinator 的真实区别；关闭表单只结束选用上下文。全局快捷键专用链退役，旧偏好不读、
+不注册、不删除；共享窗口 handback、原生键盘导航与 Zed 键码依赖保留。
+
+本轮结果、截图、工具链与未验证项见[五页设置验收记录](validation/five-page-settings-2026-10-23.md)。
+下表人工项仍须单独验证，原生挂载和 synthetic key-view loop 检查不代表人工键盘或 VoiceOver 验收。
 
 ## 当前集成合同（2026-10-06）
 
@@ -47,7 +61,8 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 
 | 合同 | 主要 executable suite |
 |---|---|
-| 八个 destination 恰好一次、production root 可挂载、nonoptional dependencies 与 target DAG | `SettingsPresentationTargetSuite`、`SettingsNavigationSuite` |
+| 五页导航投影、八个兼容 raw values、隐藏诊断历史、旧值只读恢复与 production root 挂载 | `FivePageSettingsSuite`、`SettingsPresentationTargetSuite`、`SettingsNavigationSuite` |
+| 关于附属表单、Tab／Shift+Tab key-view loop、Esc 归焦与工作区详情几何 | `FivePageSettingsNativeSuite`、`SettingsNativeShellSuite` |
 | production root 的 sidebar 整行/行外 mouse route、真实 sidebar `Button`、Login `Toggle`、mounted child identity 与 AI credential sheet | `SettingsRootInteractionSuite`、`SettingsPresentationTargetSuite` |
 | typed route/failure、focus debt、window phase、destination lifecycle、announcement post/ack 与 gallery 共用 production root | `SettingsPresentationLifecycleSuite`、`EventSettingsWindowSelectionSuite` |
 | 唯一 retained window、controller→`SettingsRootView(session:)` composition、系统 adapter 与声音写入 owner 唯一 | `SettingsPresentationLifecycleSuite`、`SoundPacksEditorOwnerSuite`、`IntegrationDestinationPresentationSuite`、`IntegrationDestinationModelSuite`、`IntegrationDestinationWiringSuite` |
@@ -58,7 +73,7 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 | Qwen 保存零请求、60 秒 deadline、3 候选、late-result cleanup 与 adoption rollback | `AICueCredentialSuite`、`AICueGenerationEngineSuite`、`AICueGenerationViewModelSuite`、`AICueAdoptionSuite` |
 | Dynamic Quiet State、receipt retention 与手工试听正交 | `DynamicQuietStateSuite`、`DynamicQuietPolicySuite`、`HostHookRunnerSuite` |
 | 七日本地活动摘要、事件覆盖、诊断脱敏、独立清理与失败保留旧事实 | `ActivityOverviewSuite`、`LocalActivitySummarySuite`、`ActivityDiagnosticsSuite` |
-| Carbon shortcut 注册、替换事务、冲突回滚与损坏持久化 fail closed | `GlobalShortcutsSuite` |
+| 全局快捷键注册与偏好消费者退役、共享 handback 保留 | `FivePageSettingsSuite`、`MenuBarCompositionSuite`、`SettingsHandbackSuite` |
 | 登录项状态、退役 Display 值的平稳回退、关于页脱敏摘要与双语 catalog | `LoginItemManagementSuite`、`SettingsPreferencesSuite`、`AboutInformationSuite`、`LocalizationSuite` |
 | 品牌图形固定不带装饰点（T2 容器），菜单栏 VoiceOver 标签保留 | `ViewWiringSuite`、品牌资产检查 |
 
@@ -72,7 +87,7 @@ Events coordinator suites 已删除。长期 source audit 只保留 compiled sea
 形状当作行为证据。
 
 其中，真实 `NSWindow` + `NSHostingView` fixture 会用 AppKit mouse event 命中 sidebar 行、sidebar
-`Button` 与 Login `Toggle`，并观察 session/model 结果；八页实际 child 自身挂载的同一 SwiftUI
+`Button` 与 Login `Toggle`，并观察 session/model 结果；可见页与隐藏正文 child 自身挂载的同一 SwiftUI
 modifier 同时设置稳定 accessibility identifier，并在 DEBUG compiled harness 报告 mounted subtree。
 AI credential 场景还观察真实 attached sheet。方向键与 Escape 会先尝试 raw `NSEvent`，在无 Full
 Keyboard Access 的 harness 环境中则调用该 mounted production modifier 注册的同一 handler。这些是
@@ -109,9 +124,9 @@ swift run --package-path gui claudio-gui-tests --workspace-deletion-native-focus
 
 | 项目 | 状态 | 必须记录 |
 |---|---|---|
-| 单一窗口与八页导航 | NOT VERIFIED | panel/deep link/页间路由、重复打开、关闭后 handback；旧 `display` 回到通用 |
+| 单一窗口与五页导航 | NOT VERIFIED | panel/deep link/页间路由、重复打开、关闭后 handback；诊断返回/前后历史；旧路由恢复；关于附属表单 |
 | 键盘与焦点 | NOT VERIFIED | Tab/Shift-Tab、方向键、Return/Space、Escape、焦点顺序 |
-| VoiceOver | NOT VERIFIED | 八页标题、状态、错误、帮助、菜单栏既有本地化标签 |
+| VoiceOver | NOT VERIFIED | 五页与诊断正文标题、关于表单、状态、错误、帮助、菜单栏既有本地化标签 |
 | 品牌图形 | NOT VERIFIED | 菜单栏亮暗外观、App/Dock 图标与应用内字标均无装饰点；真实宿主状态指示仍可见 |
 | 固定紧凑布局与窗口尺寸 | NOT VERIFIED | 中文/英文 × 固定紧凑布局，1240×820、960×640、系统辅助功能缩放，无水平裁切 |
 | 外观与动画 | NOT VERIFIED | light/dark、Increase Contrast、Reduce Transparency、Reduce Motion |
@@ -119,6 +134,7 @@ swift run --package-path gui claudio-gui-tests --workspace-deletion-native-focus
 | credential 状态 | NOT VERIFIED | missing/verified/deferred/rejected/pending/unavailable 与替换/取消/删除 |
 | 能力阻止 | NOT VERIFIED | MiniMax/Qwen 非 speech、unsupported locale 在读 key/联网前可见失败 |
 | 生成到采用 | NOT VERIFIED | 显式生成、3 候选、试听、命名、采用、target drift 与失败回滚 |
+| AI 生命周期与待处理 | NOT VERIFIED | 关闭／Esc／离页任务继续；取消保留描述；保存失败重开限制；重试不重生成；按实际数量放弃与部分废纸篓失败 |
 
 ### #201 菜单栏与默认组／工作区专项复验
 
@@ -144,7 +160,7 @@ commit、干净工作树、bundle 路径、构建时间、macOS/CPU、语言、�
 | 签名 app 登录项 | NOT RUN / NOT VERIFIED | 注册、批准、注销、重新登录、移动 app 后状态 |
 | Focus | NOT RUN / NOT VERIFIED | 首次授权、拒绝/撤销、开关、observer failure，且不记录名称 |
 | Calendar | NOT RUN / NOT VERIFIED | 授权、busy/all-day/free/变更，且无标题/位置/参与人泄露 |
-| Carbon hot key | NOT RUN / NOT VERIFIED | 冲突、布局变化、前后台、睡眠唤醒、注销 |
+| 旧全局快捷键退役 | NOT RUN / NOT VERIFIED | 有旧偏好的真实安装不再响应旧绑定；不读写或删除旧值；共享键盘导航和 handback 仍可用 |
 | 真实音频 | NOT RUN / NOT VERIFIED | `NSSound` 试听、主音量、Dynamic Quiet 只抑制 automatic |
 | ElevenLabs | NOT RUN / NOT VERIFIED | 独立限额 key、read-only probe、生成/试听/采用与费用记录 |
 | MiniMax global | NOT RUN / NOT VERIFIED | 独立限额 key、get-voice probe、hex MP3 生成/试听/采用 |

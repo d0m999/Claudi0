@@ -40,8 +40,11 @@ struct SettingsSoundsLibraryView: View {
     let route: SoundPacksWindowRoute
     let requestRevision: UInt64
     let navigate: @MainActor (SoundPacksWindowRoute.Destination) -> Void
+    var scopeOriginDescription: String? = nil
+    var returnToScope: (@MainActor () -> Void)? = nil
     @Binding var modalIsPresented: Bool
 
+    @State private var serviceManagementIsExpanded = false
     @State private var sheet: SoundsSheet?
     @State private var returnFromService: SoundsSheet?
     @State private var selectedItem: String?
@@ -59,6 +62,7 @@ struct SettingsSoundsLibraryView: View {
     @State private var afterSheetDestination: SoundPacksWindowRoute.Destination?
     @State private var dropTargetEvent: Event?
     @FocusState private var focusedEvent: Event?
+    @FocusState private var focusedReadOnlyEvent: Event?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
@@ -91,35 +95,52 @@ struct SettingsSoundsLibraryView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if isHistory {
-                    heading(l10n.text(.soundsHistory))
-                    generationStatus
-                    historyContent(selecting: false)
-                } else if isList {
-                    heading(l10n.text(.settingsDestinationSounds))
-                    libraryContent
-                } else {
-                    libraryStatus
-                    packContent
-                }
-                if let errorText { errorLabel(errorText) }
-                if let selectionRecoveryURL {
-                    recoveryButton(.recoveryRequired(selectionRecoveryURL))
-                }
-                if effects.previewSession.failedOrigin == previewOrigin {
-                    errorLabel(l10n.text(.soundsUnavailable))
-                }
-                if let sounds {
-                    ForEach(sounds.windowStatuses, id: \.revision) { status in
-                        Text(status.message(language: preferences.language))
-                            .font(.callout).fixedSize(horizontal: false, vertical: true)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if let returnToScope {
+                        Button(l10n.text(.settingsReturnToSoundScope), action: returnToScope)
+                            .accessibilityIdentifier("settings.sounds.return-to-workspace")
+                        if let scopeOriginDescription {
+                            Text(scopeOriginDescription).font(.callout).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("settings.sounds.workspace-origin")
+                        }
+                    }
+                    if isHistory {
+                        heading(l10n.text(.soundsHistory))
+                        generationStatus
+                        historyContent(selecting: false)
+                    } else if isList {
+                        heading(l10n.text(.settingsDestinationSounds))
+                        libraryContent
+                    } else {
+                        libraryStatus
+                        packContent
+                    }
+                    if let errorText { errorLabel(errorText) }
+                    if let selectionRecoveryURL {
+                        recoveryButton(.recoveryRequired(selectionRecoveryURL))
+                    }
+                    if effects.previewSession.failedOrigin == previewOrigin {
+                        errorLabel(l10n.text(.soundsUnavailable))
+                    }
+                    if let sounds {
+                        ForEach(sounds.windowStatuses, id: \.revision) { status in
+                            Text(status.message(language: preferences.language))
+                                .font(.callout).fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
+                .soundPacksLayoutProbe("settings.reading.sounds")
+                .settingsReadingColumn()
             }
-            .soundPacksLayoutProbe("settings.reading.sounds")
-            .settingsReadingColumn()
+            .task(id: requestRevision) {
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                focusRequestedEvent(proxy)
+            }
+            .onChange(of: packID) { _ in focusRequestedEvent(proxy) }
         }
         .background(SoundsWindowProbe { parentWindow = $0 }.frame(width: 0, height: 0))
         .settingsMountIdentity("settings.sounds.library")
@@ -130,7 +151,6 @@ struct SettingsSoundsLibraryView: View {
             await drafts.refresh()
             await model.refreshCredentialStatus()
             if isHistory { coordinator.markHistoryRead(); await history.refresh() }
-            if sheet == nil, let event = route.editTarget?.event { focusedEvent = event }
             if modalIsPresented, sheet == nil { present(.service) }
             openLegacySheetIfNeeded()
         }
@@ -140,7 +160,6 @@ struct SettingsSoundsLibraryView: View {
             }
             errorText = nil
             if isHistory { coordinator.markHistoryRead(); Task { await history.refresh() } }
-            if let event = route.editTarget?.event { focusedEvent = event }
             openLegacySheetIfNeeded()
         }
         .onChange(of: model.providerProfileID) { _ in
@@ -323,9 +342,11 @@ struct SettingsSoundsLibraryView: View {
             Button(l10n.text(.soundsBack)) { navigate(.overview) }
         } else {
             heading(packName)
-            Text(l10n.text(sounds?.draft != nil ? .soundsDraftHint : .soundsSharedWarning))
-                .font(.callout).foregroundColor(.secondary).fixedSize(
-                    horizontal: false, vertical: true)
+            if sounds?.draft != nil || pack?.isBuiltinReadOnly != true {
+                Text(l10n.text(sounds?.draft != nil ? .soundsDraftHint : .soundsSharedWarning))
+                    .font(.callout).foregroundColor(.secondary).fixedSize(
+                        horizontal: false, vertical: true)
+            }
             HStack {
                 if let pack {
                     Button(l10n.text(.soundsCopy)) {
@@ -410,49 +431,55 @@ struct SettingsSoundsLibraryView: View {
                             }
                         }
                     }.padding(14)
-                    .background {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                dropTargetEvent == row.event
-                                    ? Color.accentColor.opacity(0.12) : Color.clear)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(
-                                dropTargetEvent == row.event
-                                    ? Color.accentColor : Color.clear,
-                                lineWidth: 1)
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        if dropTargetEvent == row.event {
-                            // 「松开导入到『事件名』」浮标（变体 4）：9.5 semibold 胶囊，
-                            // 右上跨骑行框上缘（right 10 / top -9）。
-                            Text(
-                                l10n.format(
-                                    .soundsEventDropBadge,
-                                    localizedEventName(
-                                        row.event, language: preferences.language))
-                            )
-                            .font(.system(size: 9.5, weight: .semibold, design: .rounded))
-                            .padding(.horizontal, 8).padding(.vertical, 1.5)
-                            .background(Capsule().fill(Color.accentColor))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
-                            .padding(.trailing, 10)
-                            .offset(y: -9)
-                            .transition(.opacity)
-                            .accessibilityIdentifier(
-                                "settings.sounds.event.\(row.event.rawValue).drop-badge")
+                        .id("settings.sounds.target.\(row.event.rawValue)")
+                        .focusable(!canEdit)
+                        .focused($focusedReadOnlyEvent, equals: row.event)
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(
+                                    dropTargetEvent == row.event
+                                        ? Color.accentColor.opacity(0.12) : Color.clear)
                         }
-                    }
-                    .animation(
-                        reduceMotion ? nil : .easeOut(duration: 0.12), value: dropTargetEvent)
-                    .onDrop(
-                        of: [UTType.fileURL.identifier],
-                        isTargeted: eventDropTargetBinding(for: row.event),
-                        perform: { providers in handleEventSoundDrop(providers, event: row.event) }
-                    )
-                    .soundPacksLayoutProbe("sound-packs.event-row.\(row.event.rawValue)")
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    dropTargetEvent == row.event
+                                        ? Color.accentColor : Color.clear,
+                                    lineWidth: 1)
+                        }
+                        .overlay(alignment: .topTrailing) {
+                            if dropTargetEvent == row.event {
+                                // 「松开导入到『事件名』」浮标（变体 4）：9.5 semibold 胶囊，
+                                // 右上跨骑行框上缘（right 10 / top -9）。
+                                Text(
+                                    l10n.format(
+                                        .soundsEventDropBadge,
+                                        localizedEventName(
+                                            row.event, language: preferences.language))
+                                )
+                                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                                .padding(.horizontal, 8).padding(.vertical, 1.5)
+                                .background(Capsule().fill(Color.accentColor))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
+                                .padding(.trailing, 10)
+                                .offset(y: -9)
+                                .transition(.opacity)
+                                .accessibilityIdentifier(
+                                    "settings.sounds.event.\(row.event.rawValue).drop-badge")
+                            }
+                        }
+                        .animation(
+                            reduceMotion ? nil : .easeOut(duration: 0.12), value: dropTargetEvent
+                        )
+                        .onDrop(
+                            of: [UTType.fileURL.identifier],
+                            isTargeted: eventDropTargetBinding(for: row.event),
+                            perform: { providers in
+                                handleEventSoundDrop(providers, event: row.event)
+                            }
+                        )
+                        .soundPacksLayoutProbe("sound-packs.event-row.\(row.event.rawValue)")
                     if row.event != Event.allCases.last { Divider() }
                 }
             }.settingsSectionSurface().soundPacksLayoutProbe("sound-packs.events.group")
@@ -502,11 +529,28 @@ struct SettingsSoundsLibraryView: View {
         }
     }
 
+    private func focusRequestedEvent(_ proxy: ScrollViewProxy) {
+        guard sheet == nil, let event = route.editTarget?.event,
+            route.destinationPackID == packID
+        else { return }
+        proxy.scrollTo("settings.sounds.target.\(event.rawValue)", anchor: .center)
+        if canEdit { focusedEvent = event } else { focusedReadOnlyEvent = event }
+    }
+
     private var serviceCard: some View {
-        EventSettingsAICueServiceCard(viewModel: model, languageStore: preferences) {
-            returnFromService = sheet
-            present(.service)
-        }
+        DisclosureGroup(isExpanded: $serviceManagementIsExpanded) {
+            EventSettingsAICueServiceCard(viewModel: model, languageStore: preferences) {
+                returnFromService = sheet
+                present(.service)
+            }
+        } label: {
+            HStack {
+                Text(l10n.text(.settingsNativeAIServices))
+                Spacer()
+                Text(l10n.text(model.providerProfile.displayNameKey)).foregroundStyle(.secondary)
+            }
+        }.padding(14).settingsSectionSurface(padding: 0)
+            .accessibilityIdentifier("settings.sounds.manage-service")
     }
 
     private var historyEntryTitle: String {

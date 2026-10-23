@@ -14,7 +14,6 @@ package struct SettingsDestinationContentView: View {
     @ObservedObject var settingsPresentationSession: SettingsPresentationSession
     @ObservedObject var activityDiagnostics: ActivityDiagnosticsModel
     @ObservedObject var eventNoticeHealth: EventNoticeHealthStore
-    @ObservedObject var globalShortcutSettings: GlobalShortcutSettingsModel
     @ObservedObject var aboutSettings: AboutSettingsModel
     @ObservedObject private var eventAnimations: EventAnimationResources
     let soundPacksEditorOwner: SoundPacksEditorOwner
@@ -44,8 +43,6 @@ package struct SettingsDestinationContentView: View {
         _settingsPresentationSession = ObservedObject(wrappedValue: session)
         _activityDiagnostics = ObservedObject(wrappedValue: dependencies.activityDiagnostics)
         _eventNoticeHealth = ObservedObject(wrappedValue: dependencies.eventNoticeHealth)
-        _globalShortcutSettings = ObservedObject(
-            wrappedValue: dependencies.globalShortcutSettings)
         _aboutSettings = ObservedObject(wrappedValue: dependencies.aboutSettings)
         _eventAnimations = ObservedObject(wrappedValue: dependencies.eventAnimations)
         soundPacksEditorOwner = dependencies.soundPacksEditorOwner
@@ -78,6 +75,15 @@ package struct SettingsDestinationContentView: View {
             .foregroundStyle(SettingsAppearance.text(colorScheme))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("settings.presentation.content")
+            .sheet(
+                item: Binding(
+                    get: { settingsPresentationSession.aboutPresentation },
+                    // Dismissal belongs to the mounted item, never to a newer binding value.
+                    set: { _ in })
+            ) { stamp in
+                AboutSettingsSheet(session: settingsPresentationSession, stamp: stamp)
+                    .onDisappear { settingsPresentationSession.send(.dismissAbout(stamp)) }
+            }
             .task(id: settingsPresentationSession.state.navigationRestoration?.stamp) {
                 guard let request = settingsPresentationSession.state.navigationRestoration else {
                     return
@@ -125,6 +131,9 @@ package struct SettingsDestinationContentView: View {
                     route: integrationsRoute,
                     onIntegrationsRoute: {
                         settingsPresentationSession.send(.route(.integrations($0)))
+                    },
+                    onActivityDiagnostics: {
+                        settingsPresentationSession.send(.route(.destination(.usage)))
                     },
                     onManageSoundScopes: {
                         settingsPresentationSession.send(
@@ -177,6 +186,8 @@ package struct SettingsDestinationContentView: View {
                     navigate: {
                         settingsPresentationSession.send(.requestSoundsDetail($0))
                     },
+                    scopeOriginDescription: soundScopeOriginDescription,
+                    returnToScope: returnToScopeAction,
                     modalIsPresented: Binding(
                         get: {
                             settingsPresentationSession.state.eventPresentation
@@ -196,6 +207,9 @@ package struct SettingsDestinationContentView: View {
                 .soundPacksLayoutProbe("settings.sounds.editor-slot")
             case .usage:
                 standardDestination {
+                    Button(l10n.text(.settingsDestinationIntegrations)) {
+                        settingsPresentationSession.send(.route(.destination(.integrations)))
+                    }.accessibilityIdentifier("settings.usage.back-to-connections")
                     ActivityDiagnosticsView(
                         model: activityDiagnostics,
                         preferences: preferences,
@@ -207,22 +221,8 @@ package struct SettingsDestinationContentView: View {
                         eventNoticeModel: settingsPresentationSession.dependencies.eventNoticeModel,
                         noticeNavigation: settingsPresentationSession.dependencies.noticeNavigation)
                 }
-            case .shortcuts:
-                standardDestination {
-                    ShortcutSettingsView(
-                        model: globalShortcutSettings,
-                        preferences: preferences,
-                        focusedTarget: $focusedTarget,
-                        onAnnouncement: onAnnouncement)
-                }
-            case .about:
-                standardDestination {
-                    AboutSettingsView(
-                        model: aboutSettings,
-                        preferences: preferences,
-                        focusedTarget: $focusedTarget,
-                        onAnnouncement: onAnnouncement)
-                }
+            case .shortcuts, .about:
+                standardDestination { generalSettings }
             }
         }
     }
@@ -247,11 +247,32 @@ package struct SettingsDestinationContentView: View {
         return route
     }
 
+    private var returnToScopeAction: (@MainActor () -> Void)? {
+        guard settingsPresentationSession.soundReturnContext != nil else { return nil }
+        return { _ = settingsPresentationSession.returnToSoundScope() }
+    }
+
+    private var soundScopeOriginDescription: String? {
+        guard let context = settingsPresentationSession.soundReturnContext else { return nil }
+        let name: String
+        if context.route.scope == .global {
+            name = l10n.text(.panelGlobalDefaults)
+        } else {
+            name =
+                eventSettingsModel.workspaceRules.first {
+                    $0.id == context.route.scope.workspaceID
+                }?.name
+                ?? l10n.text(.workspaceUnavailable)
+        }
+        let origin = l10n.format(.workspaceSoundOrigin, name)
+        return context.route.event.map {
+            origin + " › " + localizedEventName($0, language: preferences.language)
+        }
+            ?? origin
+    }
+
     private var generalSettings: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
-            SettingsSectionCard(padding: 0) {
-                LoginItemSettingsSection(session: settingsPresentationSession)
-            }
             SettingsSectionCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsControlRow(title: l10n.text(.settingsGeneralLanguageTitle)) {
@@ -297,6 +318,27 @@ package struct SettingsDestinationContentView: View {
                 }
             }
 
+            SettingsSectionCard(padding: 0) {
+                LoginItemSettingsSection(session: settingsPresentationSession)
+            }
+            AppUpdateSettingsView(model: aboutSettings.appUpdates, language: preferences.language)
+            SettingsSectionCard(padding: 0) {
+                EventAnimationActionButton(
+                    title: l10n.text(.settingsDestinationAbout),
+                    identifier: "settings.general.about",
+                    requestsFocus: focusedTarget == .aboutEntry,
+                    action: { settingsPresentationSession.send(.route(.destination(.about))) }
+                ) {
+                    HStack {
+                        Text(l10n.text(.settingsDestinationAbout))
+                        Spacer()
+                        Image(systemName: "chevron.right").accessibilityHidden(true)
+                    }.padding(SettingsAppearance.controlRowHorizontalPadding)
+                        .contentShape(Rectangle())
+                }
+                .focused($focusedTarget, equals: .aboutEntry)
+                .accessibilityIdentifier("settings.general.about")
+            }
             if !preferences.recoveryIssues.isEmpty {
                 Label {
                     Text(l10n.text(.settingsGeneralPreferenceRecovery))
@@ -317,93 +359,6 @@ package struct SettingsDestinationContentView: View {
 
     private var notificationsSettings: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
-            SettingsSectionCard(padding: 0) {
-                EventAnimationActionButton(
-                    title: l10n.text(.eventAnimationTitle),
-                    identifier: "settings.notifications.event-animation",
-                    value: l10n.text(effectiveAnimationStyle.localizationKey),
-                    requestsFocus: focusedTarget == .eventAnimationEntry,
-                    action: {
-                        settingsPresentationSession.send(.route(.notifications(.eventAnimation)))
-                    }
-                ) {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(l10n.text(.eventAnimationTitle))
-                            Text(l10n.text(.eventAnimationDescription))
-                                .font(SettingsAppearance.font(.caption))
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer()
-                        Text(l10n.text(effectiveAnimationStyle.localizationKey))
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("settings.animation.effective-style")
-                        Image(systemName: "chevron.right").accessibilityHidden(true)
-                    }
-                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
-                .focused($focusedTarget, equals: .eventAnimationEntry)
-            }
-            SettingsSectionCard(title: l10n.text(.settingsNotificationsBannerSection), padding: 0) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Toggle(isOn: eventSourcePromptBinding) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(l10n.text(.settingsNotificationsEventSourcePromptsTitle))
-                                .font(SettingsAppearance.font(.body))
-                            Text(l10n.text(.settingsNotificationsEventSourcePromptsDescription))
-                                .font(SettingsAppearance.font(.caption))
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .toggleStyle(.switch).controlSize(.mini)
-                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
-                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
-                    .accessibilityValue(
-                        l10n.text(
-                            preferences.showsEventSourcePrompts
-                                ? .settingsNotificationsEventSourcePromptsEnabled
-                                : .settingsNotificationsEventSourcePromptsDisabled
-                        )
-                    )
-                    .accessibilityIdentifier("settings.notifications.event-source-prompts")
-
-                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                    settingsStatusRow(
-                        title: l10n.text(.settingsNativeReceiverStatus),
-                        value: l10n.text(
-                            eventNoticeHealth.status == .ready
-                                ? .settingsNativeReceiverReady
-                                : eventNoticeHealth.status == .disabled
-                                    ? .settingsNativeReceiverDisabled : .aiCueServiceUnavailable)
-                    )
-                    .accessibilityIdentifier("settings.notifications.receiver-health")
-
-                    if eventNoticeHealth.status == .unavailable,
-                        let failureCode = eventNoticeHealth.failureCode
-                    {
-                        Text(
-                            l10n.format(
-                                .settingsNotificationsEventSourceReceiverUnavailable,
-                                failureCode)
-                        )
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                        .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
-                        .accessibilityIdentifier(
-                            "settings.notifications.event-source-receiver-unavailable")
-                    }
-
-                }
-            }
             SettingsSectionCard(title: l10n.text(.settingsNotificationsQuietSection), padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     Toggle(isOn: focusQuietBinding) {
@@ -475,19 +430,114 @@ package struct SettingsDestinationContentView: View {
                 }
             }
 
-            SettingsSectionCard(title: l10n.text(.settingsNotificationsCurrentSection), padding: 0)
-            {
+            SettingsSectionCard(title: l10n.text(.settingsNotificationsBannerSection), padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    settingsStatusRow(
-                        title: l10n.text(.settingsNotificationsCurrentReasonTitle),
-                        value: dynamicQuietCurrentReasonText)
-                    Divider().padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-                    settingsStatusRow(
-                        title: l10n.text(.settingsNotificationsSnapshotHealthTitle),
-                        value: snapshotHealthText)
+                    Toggle(isOn: eventSourcePromptBinding) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(l10n.text(.settingsNotificationsEventSourcePromptsTitle))
+                                .font(SettingsAppearance.font(.body))
+                            Text(l10n.text(.settingsNotificationsEventSourcePromptsDescription))
+                                .font(SettingsAppearance.font(.caption))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .toggleStyle(.switch).controlSize(.mini)
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                    .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
+                    .accessibilityValue(
+                        l10n.text(
+                            preferences.showsEventSourcePrompts
+                                ? .settingsNotificationsEventSourcePromptsEnabled
+                                : .settingsNotificationsEventSourcePromptsDisabled
+                        )
+                    )
+                    .accessibilityIdentifier("settings.notifications.event-source-prompts")
+
+                    DisclosureGroup(l10n.text(.settingsNativeReceiverStatus)) {
+                        Divider().padding(
+                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        settingsStatusRow(
+                            title: l10n.text(.settingsNativeReceiverStatus),
+                            value: l10n.text(
+                                eventNoticeHealth.status == .ready
+                                    ? .settingsNativeReceiverReady
+                                    : eventNoticeHealth.status == .disabled
+                                        ? .settingsNativeReceiverDisabled : .aiCueServiceUnavailable
+                            )
+                        )
+                        .accessibilityIdentifier("settings.notifications.receiver-health")
+
+                        if eventNoticeHealth.status == .unavailable,
+                            let failureCode = eventNoticeHealth.failureCode
+                        {
+                            Text(
+                                l10n.format(
+                                    .settingsNotificationsEventSourceReceiverUnavailable,
+                                    failureCode)
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                            .padding(.bottom, SettingsAppearance.controlRowVerticalPadding)
+                            .accessibilityIdentifier(
+                                "settings.notifications.event-source-receiver-unavailable")
+                        }
+
+                    }.padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
                 }
             }
+            SettingsSectionCard(padding: 0) {
+                EventAnimationActionButton(
+                    title: l10n.text(.eventAnimationTitle),
+                    identifier: "settings.notifications.event-animation",
+                    value: l10n.text(effectiveAnimationStyle.localizationKey),
+                    requestsFocus: focusedTarget == .eventAnimationEntry,
+                    action: {
+                        settingsPresentationSession.send(.route(.notifications(.eventAnimation)))
+                    }
+                ) {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(l10n.text(.eventAnimationTitle))
+                            Text(l10n.text(.eventAnimationDescription))
+                                .font(SettingsAppearance.font(.caption))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Text(l10n.text(effectiveAnimationStyle.localizationKey))
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("settings.animation.effective-style")
+                        Image(systemName: "chevron.right").accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                    .padding(.vertical, SettingsAppearance.controlRowVerticalPadding)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: SettingsAppearance.multilineControlRowHeight)
+                .focused($focusedTarget, equals: .eventAnimationEntry)
+            }
+            DisclosureGroup(l10n.text(.settingsNotificationsCurrentSection)) {
+                SettingsSectionCard(
+                    title: l10n.text(.settingsNotificationsCurrentSection), padding: 0
+                ) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        settingsStatusRow(
+                            title: l10n.text(.settingsNotificationsCurrentReasonTitle),
+                            value: dynamicQuietCurrentReasonText)
+                        Divider().padding(
+                            .horizontal, SettingsAppearance.controlRowHorizontalPadding)
+                        settingsStatusRow(
+                            title: l10n.text(.settingsNotificationsSnapshotHealthTitle),
+                            value: snapshotHealthText)
+                    }
+                }
 
+            }.accessibilityIdentifier("settings.notifications.health-details")
             if settingsPresentationSession.state.platformActionFailure == .openFocusSettings
                 || settingsPresentationSession.state.platformActionFailure
                     == .openCalendarPrivacySettings

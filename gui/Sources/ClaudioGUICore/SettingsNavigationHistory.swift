@@ -20,7 +20,8 @@ package struct SettingsReadingBookmark: Equatable, Sendable {
     }
 }
 
-package struct SettingsNavigationStamp: Equatable, Sendable {
+package struct SettingsNavigationStamp: Hashable, Sendable, Identifiable {
+    package var id: Self { self }
     package let entryID: UUID
     package let version: UInt64
     package init(entryID: UUID, version: UInt64) { self.entryID = entryID; self.version = version }

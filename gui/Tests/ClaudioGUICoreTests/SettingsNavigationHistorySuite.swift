@@ -27,7 +27,7 @@ func runSettingsNavigationHistorySuites() async {
         expect(
             session.state.routeResolution.route == .notifications(.eventAnimation),
             "Forward restores detail")
-        session.send(.selectSidebar(.about))
+        session.send(.selectSidebar(.sounds))
         expect(
             !session.state.chrome.canGoForward && session.navigationHistory.entries.count == 3,
             "A new position truncates the forward branch")
@@ -135,7 +135,7 @@ func runSettingsNavigationHistorySuites() async {
         expect(
             bad == .rejected(.invalidSoundPackID) && session.navigationHistory == before,
             "Unparseable navigation is rejected without becoming a position")
-        session.send(.selectSidebar(.about))
+        session.send(.selectSidebar(.sounds))
         let cursor = session.navigationHistory.cursor
         session.send(.setNavigationBlocked(id: "sheet", blocked: true))
         expect(
@@ -150,7 +150,7 @@ func runSettingsNavigationHistorySuites() async {
             session.navigationHistory.cursor == cursor && session.state.chrome.canGoBack,
             "Cancel does not move the history cursor")
         let old = session.state.navigationRestoration!.stamp
-        session.send(.selectSidebar(.shortcuts))
+        session.send(.selectSidebar(.notifications))
         expect(
             session.send(.acknowledgeRestoration(old)) == .unchanged,
             "Shell and destination cannot consume a newer navigation's restoration with an old version"

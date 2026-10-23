@@ -167,12 +167,12 @@ func runNativePrototypeMigrationSuites() {
     }
     suite("Native migration: sidebar, traversal and Escape have one order") {
         let order: [SettingsDestination] = [
-            .eventsAndSounds, .sounds, .integrations, .notifications, .general, .shortcuts, .usage,
-            .about,
+            .eventsAndSounds, .sounds, .integrations, .notifications, .general,
         ]
         expect(
-            SettingsDestination.allCases == order && SettingsDestination.availableCases == order,
-            "显示与可用列表一致")
+            SettingsDestination.sidebarCases == order
+                && SettingsDestination.availableCases.contains(.usage),
+            "可见列表独立于可路由诊断")
         expect(
             settingsSidebarSections(availableDestinations: order).flatMap(\.destinations) == order,
             "侧栏一致")

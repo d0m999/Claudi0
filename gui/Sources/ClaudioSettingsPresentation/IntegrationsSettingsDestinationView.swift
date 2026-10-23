@@ -15,6 +15,7 @@ struct IntegrationsSettingsDestinationView: View {
     var productImages: SettingsProductImages = .empty
     let route: IntegrationsSettingsRoute?
     let onIntegrationsRoute: @MainActor (IntegrationsSettingsRoute) -> Void
+    let onActivityDiagnostics: @MainActor () -> Void
     let onManageSoundScopes: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
 
@@ -40,6 +41,7 @@ struct IntegrationsSettingsDestinationView: View {
         productImages: SettingsProductImages = .empty,
         route: IntegrationsSettingsRoute?,
         onIntegrationsRoute: @escaping @MainActor (IntegrationsSettingsRoute) -> Void,
+        onActivityDiagnostics: @escaping @MainActor () -> Void = {},
         onManageSoundScopes: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
     ) {
@@ -49,6 +51,7 @@ struct IntegrationsSettingsDestinationView: View {
         self.productImages = productImages
         self.route = route
         self.onIntegrationsRoute = onIntegrationsRoute
+        self.onActivityDiagnostics = onActivityDiagnostics
         self.onManageSoundScopes = onManageSoundScopes
         self.onAnnouncement = onAnnouncement
     }
@@ -92,6 +95,11 @@ struct IntegrationsSettingsDestinationView: View {
                                 )
                                 .fixedSize(horizontal: false, vertical: true)
                             agentSections
+                            Button(
+                                l10n.text(.settingsDestinationUsage), action: onActivityDiagnostics
+                            )
+                            .accessibilityIdentifier(
+                                "integrations.destination.activity-diagnostics")
                             Text(l10n.text(.integrationsAgentHint))
                                 .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -193,7 +201,7 @@ struct IntegrationsSettingsDestinationView: View {
                         .frame(
                             maxWidth: .infinity,
                             minHeight: SettingsAppearance.controlRowHeight
-                            - 2 * SettingsAppearance.controlRowVerticalPadding,
+                                - 2 * SettingsAppearance.controlRowVerticalPadding,
                             alignment: .leading
                         )
                         .contentShape(Rectangle())

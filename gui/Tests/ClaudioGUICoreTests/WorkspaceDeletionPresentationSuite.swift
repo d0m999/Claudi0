@@ -295,8 +295,8 @@ func runWorkspaceDeletionPresentationSuites() {
         hostingView.layoutSubtreeIfNeeded()
         expect(
             SettingsMountRecorder.identifiers.contains("settings.destination.events-and-sounds")
-                && SettingsMountRecorder.identifiers.contains("workspace.open-management"),
-            "production Events destination and Workspace scope detail entry must be mounted")
+                && SettingsMountRecorder.identifiers.contains("workspace.remove"),
+            "production Workspace detail and captured removal action must be mounted")
 
         expect(selection.requestDeletion(of: rule), "mounted view receives captured request")
         let confirmationDeadline = Date().addingTimeInterval(1)

@@ -738,7 +738,8 @@ if CommandLine.arguments.contains("--shared-write-contracts") {
     await runSharedWriteContractSuites()
     await runMenuBarCompositionSuites()
     await runNativeRegressionCompositionSuites()
-    runGlobalShortcutsSuites()
+    runSettingsHandbackSuites()
+    runFivePageSettingsSuites()
     print("Shared write contracts: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
@@ -788,6 +789,33 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     runPanelErrorCopySuites()
     runPanelFocusOrderSuites()
     print("Panel error copy: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
+if CommandLine.arguments.contains("--five-page-settings-native")
+    || CommandLine.arguments.contains("--five-page-forms-native")
+{
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        if CommandLine.arguments.contains("--five-page-settings-native") {
+            await runSettingsNativeShellSuites()
+        }
+        await runFivePageSettingsNativeSuites()
+        print("Five-page native: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--five-page-settings") {
+    runFivePageSettingsSuites()
+    runSettingsHandbackSuites()
+    await runSettingsPreferencesSuites()
+    runSettingsNavigationSuites()
+    await runSettingsNavigationHistorySuites()
+    print("Five-page settings: \(totalChecks) checks, \(failures) failures")
     exit(failures == 0 ? 0 : 1)
 }
 
@@ -1025,7 +1053,8 @@ Task { @MainActor in
     await runSettingsPreferencesSuites()
     runDynamicQuietPolicySuites()
     await runActivityDiagnosticsSuites()
-    runGlobalShortcutsSuites()
+    runSettingsHandbackSuites()
+    runFivePageSettingsSuites()
     runSettingsNavigationSuites()
     await runSettingsPresentationLifecycleSuites()
     runSettingsPresentationTargetSuites()
@@ -1058,6 +1087,7 @@ Task { @MainActor in
 
     await runSettingsNavigationHistorySuites()
     await runSettingsNativeShellSuites()
+    await runFivePageSettingsNativeSuites()
     await runSettingsSidebarBackingSuites()
     await runSettingsNativeControlsSuites()
     await runSettingsScopePickerSuites()

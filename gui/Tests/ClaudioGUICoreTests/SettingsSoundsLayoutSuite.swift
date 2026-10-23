@@ -12,13 +12,15 @@ import Vision
 
 @MainActor
 func runSettingsSoundsLayoutSuites() async {
-    await suite("设置原生呈现：八页、两语言、两外观、两尺寸的 64 个组合") {
+    await suite("设置原生呈现：五页与诊断、两语言、两外观、两尺寸") {
         for language in [ClaudioAppLanguage.zhHans, .english] {
             for size in [NSSize(width: 1_240, height: 820), NSSize(width: 960, height: 640)] {
                 for dark in [false, true] {
-                    for destination in SettingsDestination.allCases {
+                    for destination in SettingsDestination.sidebarCases + [.usage] {
                         let fixture = SettingsPresentationFixtures.generalLogin(
-                            language: language, route: .destination(destination),
+                            language: language,
+                            route: destination == .eventsAndSounds
+                                ? .events(scope: .global, event: nil) : .destination(destination),
                             availability: PreviewFixtures.settingsRouteAvailability)
                         let probe = SettingsSoundsNativeLayoutProbe(
                             session: fixture.session, size: size,
@@ -51,15 +53,15 @@ func runSettingsSoundsLayoutSuites() async {
                                     probe.semanticRGB(.windowBackgroundColor)),
                                 "\(name) 页首、滚动区、页尾必须保持设置底色")
                         }
-                        let rows = SettingsDestination.allCases.compactMap {
+                        let rows = SettingsDestination.sidebarCases.compactMap {
                             frames["settings.sidebar.item.\($0.rawValue)"]
                         }
-                        expect(rows.count == 8, "\(name) 八页侧栏必须实际挂载")
+                        expect(rows.count == 5, "\(name) 五页侧栏必须实际挂载")
                         for index in 1..<rows.count {
                             let gap = rows[index].minY - rows[index - 1].maxY
                             expect(
-                                ([4, 6].contains(index) ? gap >= 16 : abs(gap) < 1),
-                                "\(name) 三组侧栏间距：\(gap)")
+                                (index == 4 ? gap >= 16 : abs(gap) < 1),
+                                "\(name) 两组侧栏间距：\(gap)")
                         }
                         let menuRows: [(identifier: String, minimumHeight: CGFloat)]
                         switch destination {
@@ -67,8 +69,7 @@ func runSettingsSoundsLayoutSuites() async {
                             menuRows = [("settings.general.language", 38)]
                         case .eventsAndSounds:
                             menuRows = [
-                                ("workspace.scope-selector", 38),
-                                ("event-settings.sound-pack-picker", 38),
+                                ("event-settings.sound-pack-picker", 38)
                             ]
                         case .sounds:
                             menuRows = []
@@ -102,7 +103,7 @@ func runSettingsSoundsLayoutSuites() async {
                                 expect(false, "\(name) 必须挂载事件功能组")
                             }
                             if let selector = frames[
-                                "\(prefix).\(prefix == "workspace" ? "scope-selector" : "selector").card"
+                                "workspace.events.group"
                             ] {
                                 expect(
                                     colorsMatch(
@@ -112,7 +113,7 @@ func runSettingsSoundsLayoutSuites() async {
                                     "\(name) 功能组使用系统语义色：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.semanticRGB(.underPageBackgroundColor) as Any)"
                                 )
                             } else {
-                                expect(false, "\(name) 必须挂载选择器")
+                                expect(false, "\(name) 必须挂载声音配置功能组")
                             }
                         }
                         if destination == .sounds {
@@ -290,8 +291,8 @@ func runSettingsSoundsLayoutSuites() async {
                     ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
             defer { probe.close() }
             await probe.settle()
-            guard let selector = SoundPacksLayoutRecorder.frames["workspace.scope-selector.card"]
-            else { expect(false, "高对比度检查须挂载实际选择器"); continue }
+            guard let selector = SoundPacksLayoutRecorder.frames["workspace.events.group"]
+            else { expect(false, "高对比度检查须挂载实际声音配置组"); continue }
             expect(
                 colorsMatch(
                     probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)),

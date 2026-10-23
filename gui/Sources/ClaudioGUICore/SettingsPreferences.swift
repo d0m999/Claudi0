@@ -6,8 +6,8 @@ import Foundation
 extension SettingsDestination {
     public static let defaultsKey = "Claudio.Settings.LastDestination"
 
-    /// Top-level destinations with production content today. Later destination migrations extend
-    /// this list when their real views ship; DEBUG galleries inject `allCases` explicitly.
+    /// Routable identities, including historical requests canonicalized before presentation.
+    /// Visible navigation consumes `sidebarCases` instead.
     public static let availableCases: [SettingsDestination] = allCases
 
 }
@@ -106,7 +106,7 @@ public final class ClaudioPreferences: ObservableObject {
         let parsedDestination = destinationRawValue.flatMap(SettingsDestination.init(rawValue:))
         let destination =
             parsedDestination.flatMap {
-                legalDestinations.contains($0) ? $0 : nil
+                legalDestinations.contains($0.canonicalDestination) ? $0.canonicalDestination : nil
             } ?? .general
         let integrationSurfaceObject = defaults.object(
             forKey: Self.integrationSurfaceDefaultsKey)
@@ -144,8 +144,9 @@ public final class ClaudioPreferences: ObservableObject {
                 // The retired Display route is a valid historical value. Keep it on disk while
                 // projecting General; only unknown or damaged values need a recovery notice.
                 if destinationRawValue != "display",
-                    SettingsDestination(rawValue: destinationRawValue).map(
-                        legalDestinations.contains) != true
+                    SettingsDestination(rawValue: destinationRawValue).map({
+                        legalDestinations.contains($0.canonicalDestination)
+                    }) != true
                 {
                     recoveryIssues.insert(.invalidSettingsDestination)
                 }
@@ -220,6 +221,7 @@ public final class ClaudioPreferences: ObservableObject {
     }
 
     public func setLastSettingsDestination(_ destination: SettingsDestination) {
+        let destination = destination.canonicalDestination
         guard availableSettingsDestinations.contains(destination) else { return }
         var next = snapshot
         next.lastSettingsDestination = destination

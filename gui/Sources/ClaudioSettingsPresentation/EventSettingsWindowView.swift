@@ -81,8 +81,12 @@ struct EventSettingsWindowView: View {
     private var rule: WorkspaceSoundRule? {
         model.workspaceRules.first { $0.id == selection.route.scope.workspaceID }
     }
+    private var configWritesAllowed: Bool {
+        if case .operational = model.configState { return true }
+        return false
+    }
     private var writable: Bool {
-        guard case .operational = model.configState else { return false }
+        guard configWritesAllowed else { return false }
         if model.workspaceError == .invalidRule || model.workspaceError == .staleRule {
             return false
         }
@@ -233,9 +237,10 @@ struct EventSettingsWindowView: View {
 
     private var configurationDetail: some View {
         Group {
-            scopeSelector
             scopeContent
-            workspaceNavigation
+            if let rule, writable {
+                workspaceDetails(rule).settingsSectionSurface()
+            }
             if let rule, writable {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(l10n.text(.settingsNativeWorkspaceRemovalSummary))
@@ -252,7 +257,9 @@ struct EventSettingsWindowView: View {
     @ViewBuilder
     private func workspaceDetail(_ target: WorkspaceSoundWriteTarget) -> some View {
         if let rule, WorkspaceSoundWriteTarget(rule: rule) == target, writable {
+            scopeContent
             workspaceDetails(rule).settingsSectionSurface()
+            workspaceRemoveButton(rule)
             if let feedback = selection.deletionPresentation.feedback {
                 deletionFeedback(feedback)
             }
@@ -307,13 +314,17 @@ struct EventSettingsWindowView: View {
         }
         guard !suppressesContentFocus else { return }
         if let target = selection.presentationState.focusTarget {
-            focusedTarget = target
+            if case .scope = target, detail != .workspaces {
+                focusedTarget = .packPicker
+            } else {
+                focusedTarget = target
+            }
         } else if selection.unavailableRequestedScopeStoredValue != nil {
             focusedTarget = .unavailableScope
         } else {
             focusedTarget =
                 selection.route.event.map(EventSettingsFocusTarget.event)
-                ?? .scope(selection.route.scope)
+                ?? (detail == .workspaces ? .scope(selection.route.scope) : .packPicker)
         }
     }
 
@@ -341,45 +352,6 @@ struct EventSettingsWindowView: View {
             .accessibilityIdentifier("workspace.library.retry")
         }
         .settingsMountIdentity("workspace.library.failure")
-    }
-
-    private var scopeSelector: some View {
-        // An explicit function type avoids Swift 6.1–6.2's isolation-erasure IRGen crash.
-        let scopeSetter: @isolated(any) @Sendable (PanelSoundScopeID) -> Void = selectScope
-        return SettingsControlRow(title: l10n.text(.settingsDestinationEventsAndSounds)) {
-            SettingsNativePopUp(
-                l10n.text(.settingsDestinationEventsAndSounds),
-                selection: Binding(
-                    get: { selection.route.scope },
-                    set: scopeSetter
-                ),
-                options: (current == nil
-                    ? [
-                        SettingsMenuOption(
-                            selection.route.scope, l10n.text(.workspaceUnavailable),
-                            isEnabled: false)
-                    ] : []) + scopes.map { SettingsMenuOption($0.scope, $0.name) },
-                identifier: "workspace.scope-selector"
-            )
-            .fixedSize(horizontal: true, vertical: false)
-            .accessibilityIdentifier("workspace.scope-selector")
-            .focused($focusedTarget, equals: .scope(selection.route.scope))
-            .soundPacksLayoutProbe("workspace.scope-selector.control")
-        }
-        .soundPacksLayoutProbe("workspace.scope-selector.row")
-        .padding(.horizontal, SettingsAppearance.controlRowHorizontalPadding)
-        .settingsSectionSurface(padding: 0)
-        .soundPacksLayoutProbe("workspace.scope-selector.card")
-    }
-
-    private func navigateDetail(_ detail: WorkspaceSettingsDetail) {
-        let current = selection.route
-        let route = EventSettingsWindowRoute(
-            scope: current.scope, event: current.event,
-            workspaceTarget: current.workspaceTarget,
-            unavailableRequestedScopeStoredValue: current.unavailableRequestedScopeStoredValue,
-            detail: detail)
-        if let onNavigateWorkspace { onNavigateWorkspace(route) } else { selection.select(route) }
     }
 
     private func selectScope(_ scope: PanelSoundScopeID) {
@@ -518,54 +490,34 @@ struct EventSettingsWindowView: View {
 
     private var detailTitle: String {
         switch detail {
-        case .configuration: l10n.text(.settingsDestinationEventsAndSounds)
+        case .configuration: current?.name ?? l10n.text(.workspaceUnavailable)
         case .workspaces: l10n.text(.settingsNativeWorkspaces)
         case .scope: current?.name ?? l10n.text(.workspaceUnavailable)
         }
     }
 
-    private var workspaceNavigation: some View {
-        Button {
-            if let rule {
-                navigateDetail(.scope(WorkspaceSoundWriteTarget(rule: rule)))
-            } else {
-                navigateDetail(.workspaces)
-            }
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(
-                        l10n.text(
-                            rule == nil
-                                ? .settingsNativeManageWorkspaces
-                                : .settingsNativeDirectoryAndSurfaces))
-                    Text(rule?.directory.path ?? l10n.text(.workspaceDefaultApplicability))
-                        .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 12)
-                Image(systemName: "chevron.right").foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, minHeight: 33).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .settingsSectionSurface(padding: 14)
-        .settingsMountIdentity("workspace.open-management")
-    }
-
     private var workspaceList: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if let category = model.configState.errorCopyCategory {
+                FailureRow(message: l10n.text(category.key))
+                    .settingsMountIdentity("workspace.configuration.failure")
+                configRevealButton
+            }
+            if model.workspaceRulesMalformed {
+                FailureRow(message: l10n.text(.workspaceInvalidRule))
+            }
+            libraryNotice
             if model.workspaceRules.isEmpty {
                 Text(l10n.text(.settingsNativeNoWorkspaces)).foregroundStyle(.secondary)
             }
-            ForEach(model.workspaceRules, id: \.id) { rule in
+            ForEach(scopes) { scope in
                 Button {
-                    selectScope(.workspace(rule.id))
+                    selectScope(scope.scope)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(rule.name)
-                            Text(rule.directory.path).font(SettingsAppearance.font(.caption))
+                            Text(scope.name)
+                            Text(scopeSummary(scope.scope)).font(SettingsAppearance.font(.caption))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -573,16 +525,36 @@ struct EventSettingsWindowView: View {
                         Image(systemName: "chevron.right").foregroundStyle(.secondary)
                     }.contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .settingsSectionSurface(padding: 14)
-                .accessibilityIdentifier("workspace.rule.\(rule.id.uuidString)")
+                .buttonStyle(.plain).settingsSectionSurface(padding: 14)
+                .focused($focusedTarget, equals: .scope(scope.scope))
+                .accessibilityIdentifier("workspace.rule.\(scope.scope.storedValue)")
             }
             Text(l10n.text(.workspaceGitScope) + "\n" + l10n.text(.workspacePlainScope))
                 .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button(l10n.text(.workspaceAdd)) { isAddingWorkspace = true }
+                .disabled(!configWritesAllowed)
                 .accessibilityIdentifier("workspace.add")
         }
+    }
+
+    private func scopeSummary(_ scope: PanelSoundScopeID) -> String {
+        guard
+            let summary = WorkspaceSettingsSummary(
+                scope: scope, config: model.configState.resolvedConfig)
+        else {
+            return l10n.text(.workspaceUnavailable)
+        }
+        let pack = model.allSoundPacks.first { $0.id == summary.packID }
+        let name = SelectedPackMetadata(id: summary.packID, name: pack?.name).displayName
+        let profile = l10n.format(
+            .workspaceProfileSummary, name,
+            Int64((summary.volume * 100).rounded()), Int64(summary.enabledEventCount),
+            Int64(Event.allCases.count))
+        let sources =
+            summary.applicableSurfaceCount.map { l10n.format(.workspaceSourcesSummary, Int64($0)) }
+            ?? l10n.text(.workspaceDefaultSourcesSummary)
+        return profile + " · " + sources
     }
 
     private var soundControls: some View {
@@ -1095,11 +1067,18 @@ struct EventSettingsWindowView: View {
                 Button {
                     configureSound(event.event, scope: scope)
                 } label: {
-                    Label(l10n.text(.settingsNativeEditCue), systemImage: "chevron.right")
+                    Label(
+                        l10n.text(
+                            model.selectedPackIsBuiltinReadOnly
+                                ? .workspaceViewPackSound : .workspaceEditPackSound),
+                        systemImage: "chevron.right")
                 }
-                .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
-                .accessibilityLabel(l10n.text(.settingsNativeEditCue) + " " + event.title)
+                .accessibilityLabel(
+                    l10n.text(
+                        model.selectedPackIsBuiltinReadOnly
+                            ? .workspaceViewPackSound : .workspaceEditPackSound) + " " + event.title
+                )
                 .accessibilityIdentifier("workspace.event.\(event.event.rawValue).edit")
                 .disabled(!writable)
                 .focused($focusedTarget, equals: .configure(event.event))
@@ -1191,13 +1170,9 @@ struct EventSettingsWindowView: View {
             return
         }
         onConfigureSound(
-            readOnly
-                ? .copyAndApply(
-                    scope: scope, packID: packID, event: event,
-                    workspaceTarget: workspaceTarget)
-                : .editEvent(
-                    scope: scope, packID: packID, event: event,
-                    workspaceTarget: workspaceTarget))
+            .editEvent(
+                scope: scope, packID: packID, event: event,
+                workspaceTarget: workspaceTarget))
     }
 
     private func reportPreviewFailure(

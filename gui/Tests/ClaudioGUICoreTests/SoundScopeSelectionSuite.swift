@@ -157,52 +157,6 @@ func runSoundScopeSelectionSuites() {
                 && defaults.string(forKey: panelSoundScopeDefaultsKey) == nil,
             "Surface 选择只移投影，绝不写持久字节")
 
-        let fresh = SoundScopeSelection(defaults: defaults)
-        fresh.applyConfig(makeConfig(rules: [makeRule(id: workspaceID, path: "/tmp/c1-route")]))
-        expect(
-            fresh.shortcutRoute() == EventSettingsWindowRoute(scope: .global),
-            "未选择时快捷键必须路由到默认组，且不挂恢复原因")
-
-        defaults.set("workspace:\(workspaceID.uuidString)", forKey: panelSoundScopeDefaultsKey)
-        expect(
-            fresh.shortcutRoute() == EventSettingsWindowRoute(scope: .workspace(workspaceID)),
-            "可用工作区的持久字节必须路由 typed scope，不挂恢复原因")
-
-        let staleDefaults = SoundScopeSelectionFixtureDefaults()
-        staleDefaults.set("workspace:\(workspaceID.uuidString)", forKey: panelSoundScopeDefaultsKey)
-        let stale = SoundScopeSelection(defaults: staleDefaults)
-        stale.applyConfig(makeConfig(rules: []))
-        expect(
-            stale.shortcutRoute()
-                == EventSettingsWindowRoute(
-                    scope: .workspace(workspaceID),
-                    unavailableRequestedScopeStoredValue: "workspace:\(workspaceID.uuidString)"),
-            "stale 的已知工作区必须原样保留 typed route 与恢复原因，不得静默猜另一个目标")
-
-        let unknownDefaults = SoundScopeSelectionFixtureDefaults()
-        unknownDefaults.set("sounds", forKey: panelSoundScopeDefaultsKey)
-        let unknown = SoundScopeSelection(defaults: unknownDefaults)
-        expect(
-            unknown.shortcutRoute()
-                == EventSettingsWindowRoute(
-                    scope: .global, unavailableRequestedScopeStoredValue: "sounds"),
-            "无法 typed 化的未知持久值必须把原始字节挂在一个不可写的 Global 路由旁")
-        unknown.applyConfig(makeConfig(rules: []))
-        expect(
-            unknownDefaults.string(forKey: panelSoundScopeDefaultsKey) == "global"
-                && unknown.shortcutRoute() == EventSettingsWindowRoute(scope: .global),
-            "applyConfig 把垃圾字节规范化回 global 之后，快捷键路由不再携带已消灭的恢复原因")
-
-        let surfaceDefaults = SoundScopeSelectionFixtureDefaults()
-        surfaceDefaults.set(
-            HostSurfaceID.workBuddy.rawValue, forKey: panelSoundScopeDefaultsKey)
-        let surface = SoundScopeSelection(defaults: surfaceDefaults)
-        expect(
-            surface.shortcutRoute()
-                == EventSettingsWindowRoute(
-                    scope: .surface(.workBuddy),
-                    unavailableRequestedScopeStoredValue: HostSurfaceID.workBuddy.rawValue),
-            "已知 Surface 身份即使不可用也必须保留 typed route 与恢复原因")
     }
 
     suite("C1 选择 owner：fixture defaults 结构隔离，默认 owner 绝不碰 .standard") {
@@ -228,9 +182,11 @@ func runSoundScopeSelectionSuites() {
             let configFile = root.appendingPathComponent("config.json")
             let configLock = root.appendingPathComponent("config.lock")
             let workspaceID = UUID()
-            try! JSONEncoder().encode(makeConfig(rules: [
-                makeRule(id: workspaceID, path: "/tmp/c1-injected")
-            ])).write(to: configFile)
+            try! JSONEncoder().encode(
+                makeConfig(rules: [
+                    makeRule(id: workspaceID, path: "/tmp/c1-injected")
+                ])
+            ).write(to: configFile)
             let defaults = SoundScopeSelectionFixtureDefaults()
             let owner = SoundScopeSelection(defaults: defaults)
             let environment = makeAudioImportEnvironment(
@@ -255,9 +211,11 @@ func runSoundScopeSelectionSuites() {
                 "经 controller 的显式选择必须委托 owner 持久化并钉定写目标")
 
             // 目录换绑：重读不得自动重钉，工作区写入失败关闭。
-            try! JSONEncoder().encode(makeConfig(rules: [
-                makeRule(id: workspaceID, path: "/tmp/c1-injected-elsewhere")
-            ])).write(to: configFile)
+            try! JSONEncoder().encode(
+                makeConfig(rules: [
+                    makeRule(id: workspaceID, path: "/tmp/c1-injected-elsewhere")
+                ])
+            ).write(to: configFile)
             controller.reloadConfigOnly()
             expect(
                 controller.workspaceError == .staleRule

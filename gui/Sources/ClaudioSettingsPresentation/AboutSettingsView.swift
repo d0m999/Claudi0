@@ -19,7 +19,6 @@ struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             identity
-            AppUpdateSettingsView(model: model.appUpdates, language: preferences.language)
             SettingsSectionCard(
                 title: l10n.text(.settingsAboutResourcesTitle),
                 description: l10n.text(.settingsAboutResourcesDescription),
@@ -79,7 +78,10 @@ struct AboutSettingsView: View {
                 factRow(.settingsAboutCurrentMacOS, value: model.bundleFacts.operatingSystemVersion)
             }.settingsSectionSurface(padding: 0)
 
-            Button(l10n.text(.settingsAboutCopyVersion)) {
+            SettingsFocusableButton(
+                l10n.text(.settingsAboutCopyVersion),
+                requestsFocus: focusedTarget.wrappedValue == .firstAction(.about)
+            ) {
                 model.copyVersionInformation(language: preferences.language)
             }
             .focused(focusedTarget, equals: .firstAction(.about))
@@ -95,9 +97,11 @@ struct AboutSettingsView: View {
                 if index > 0 { Divider() }
                 let presentation = resourcePresentation(resource.kind)
                 if resource.url != nil {
-                    Button {
-                        model.openResource(resource)
-                    } label: {
+                    EventAnimationActionButton(
+                        title: presentation.name,
+                        identifier: "settings.about.resource.\(resource.kind.rawValue)",
+                        action: { model.openResource(resource) }
+                    ) {
                         HStack {
                             Label(presentation.name, systemImage: presentation.icon)
                             Spacer(minLength: 12)
@@ -148,7 +152,8 @@ struct AboutSettingsView: View {
                 .accessibilityLabel(l10n.text(.settingsAboutDiagnosticsTitle))
                 .accessibilityValue(preview)
                 .accessibilityIdentifier("settings.about.diagnostics.summary")
-            Button(l10n.text(.settingsAboutCopyDiagnostics)) {
+            SettingsFocusableButton(l10n.text(.settingsAboutCopyDiagnostics), requestsFocus: false)
+            {
                 model.copyPresentedDiagnostics(preview)
             }
             .accessibilityHint(l10n.text(.settingsAboutCopyDiagnosticsHint))

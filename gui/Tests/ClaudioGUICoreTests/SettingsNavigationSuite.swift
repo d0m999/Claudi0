@@ -13,17 +13,17 @@ func runSettingsNavigationSuites() {
         ]
         expect(
             SettingsDestination.allCases == expected,
-            "设置侧栏必须固定为八项目顺序")
+            "兼容路由保持八个稳定 raw case")
         expect(
             Set(expected.map(\.rawValue)).count == 8,
-            "八个设置目的页必须有唯一稳定身份")
+            "兼容路由必须有唯一稳定身份")
 
         let expectedNames: [(SettingsDestination, String, String)] = [
             (.general, "通用", "General"),
-            (.integrations, "集成", "Integrations"),
+            (.integrations, "连接", "Connections"),
             (.eventsAndSounds, "工作区", "Workspace"),
-            (.notifications, "通知", "Notifications"),
-            (.sounds, "声音", "Sounds"),
+            (.notifications, "提醒与静音", "Alerts & Quiet"),
+            (.sounds, "声音包", "Sound Packs"),
             (.usage, "活动与诊断", "Activity & Diagnostics"),
             (.shortcuts, "快捷键", "Shortcuts"),
             (.about, "关于", "About"),
@@ -674,19 +674,18 @@ func runSettingsNavigationSuites() {
         let sidebarSections = settingsSidebarSections(
             availableDestinations: SettingsDestination.allCases)
         expect(
-            sidebarSections.map(\.id) == [.primary, .advanced, .product]
-                && sidebarSections.flatMap(\.destinations) == SettingsDestination.allCases,
-            "侧栏必须恢复三组并保持批准的八页顺序")
+            sidebarSections.map(\.id) == [.primary, .advanced]
+                && sidebarSections.flatMap(\.destinations) == SettingsDestination.sidebarCases,
+            "侧栏必须为两组五页，独立于兼容路由")
         expect(
             sidebarSections.map(\.destinations) == [
                 [.eventsAndSounds, .sounds, .integrations, .notifications],
-                [.general, .shortcuts], [.usage, .about],
+                [.general],
             ],
-            "侧栏三组必须分别承载声音与连接、偏好、活动与产品信息")
+            "侧栏以间距分开前四页与通用")
         expect(
             settingsSidebarSections(availableDestinations: [.about, .general]) == [
-                SettingsSidebarSection(id: .advanced, destinations: [.general]),
-                SettingsSidebarSection(id: .product, destinations: [.about]),
+                SettingsSidebarSection(id: .advanced, destinations: [.general])
             ] && settingsSidebarSections(availableDestinations: []).isEmpty,
             "过滤不可用页不得产生空组，剩余页仍按固定顺序")
         expect(
@@ -695,13 +694,13 @@ func runSettingsNavigationSuites() {
                 availableDestinations: SettingsDestination.allCases) == .general
                 && settingsSidebarDestination(
                     moving: .previous, from: .usage,
-                    availableDestinations: SettingsDestination.allCases) == .shortcuts,
+                    availableDestinations: SettingsDestination.allCases) == .sounds,
             "方向键必须跨过视觉分组留白而不改变顺序")
         expect(
             settingsSidebarDestination(
                 moving: .next,
                 from: .usage,
-                availableDestinations: SettingsDestination.allCases) == .about
+                availableDestinations: SettingsDestination.allCases) == .notifications
                 && settingsSidebarDestination(
                     moving: .previous,
                     from: .eventsAndSounds,
@@ -709,22 +708,22 @@ func runSettingsNavigationSuites() {
             "方向键导航必须跨分组连续，并在首尾停住")
         expect(
             settingsWindowFocusOrder(selectedDestination: .sounds)
-                == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
+                == SettingsDestination.sidebarCases.map(SettingsWindowFocusTarget.sidebar)
                 + [],
             "Sounds 先走 sidebar，再把编辑器内焦点交给同版本的内容请求")
         expect(
             settingsWindowFocusOrder(selectedDestination: .eventsAndSounds)
-                == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
+                == SettingsDestination.sidebarCases.map(SettingsWindowFocusTarget.sidebar)
                 + [],
             "Events 先走 sidebar，再把精确 scope/Event 焦点交给嵌入页")
         expect(
             settingsWindowFocusOrder(selectedDestination: .general)
-                == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
+                == SettingsDestination.sidebarCases.map(SettingsWindowFocusTarget.sidebar)
                 + [.firstAction(.general)],
             "非嵌入目的页保留 sidebar、首个动作焦点序，标题不占 Tab")
         expect(
             settingsWindowFocusOrder(selectedDestination: .integrations)
-                == SettingsDestination.allCases.map(SettingsWindowFocusTarget.sidebar)
+                == SettingsDestination.sidebarCases.map(SettingsWindowFocusTarget.sidebar)
                 + [],
             "Integrations 的 destination focus coordinator 接管 sidebar 之后的内容焦点序")
 

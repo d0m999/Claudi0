@@ -68,9 +68,6 @@ final class CompositionFixture {
     let providers: [CompositionProvider]
     let initial = PreviewFixtures.hostIntegrationScenarios.first!.state
     let hosts: CompositionHosts
-    var registrations: [GlobalShortcut] = []
-    var delivered: [GlobalShortcutAction] = []
-    var hotKeyHandler: (@MainActor (GlobalShortcutAction) -> Void)?
     var copied: [String] = []
     var audibilityChanges = 0
     var publishes = 0
@@ -126,11 +123,6 @@ final class CompositionFixture {
                 },
                 integrationRefreshFeedback: integrationRefreshFeedback),
             adapters: PanelAppComposition.Adapters(
-                globalHotKeys: GlobalHotKeyAdapter(
-                    register: { [weak self] in self?.registrations.append($0) },
-                    unregister: { _ in },
-                    setActionHandler: { [weak self] in self?.hotKeyHandler = $0 }),
-                shortcutPersistence: .userDefaults(defaults),
                 clipboardWriter: IntegrationDestinationClipboardWriter { [weak self] in
                     self?.copied.append($0); return true
                 },
@@ -166,7 +158,6 @@ final class CompositionFixture {
                 }),
             actions: PanelAppComposition.Actions(
                 audibilityInputsChanged: { [weak self] in self?.audibilityChanges += 1 },
-                performGlobalShortcut: { [weak self] in self?.delivered.append($0) },
                 publishHostIntegrationState: { [weak self] state in
                     guard let self, routerBound else { return nil }
                     publishes += 1
@@ -322,15 +313,7 @@ func runMenuBarCompositionSuites() async {
             expect(fixture.audibilityChanges == 0, "轻量 config 刷新保持既有无回调合同")
             composition.eventSettingsModel.reload()
             expect(fixture.audibilityChanges == 1, "全量刷新调用注入的可听性回调")
-            composition.globalShortcutSettings.replace(
-                .togglePanel, keyCode: 40, modifiers: [.command, .option])
-            fixture.hotKeyHandler?(.togglePanel)
-            expect(
-                fixture.registrations.count == 1 && fixture.delivered == [.togglePanel],
-                "注册与触发使用注入 adapter/actions")
-            expect(
-                fixture.defaults.data(forKey: globalShortcutDefaultsKey(.togglePanel)) != nil,
-                "快捷键持久化使用隔离 defaults")
+
         }
     }
 

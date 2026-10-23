@@ -110,9 +110,9 @@ func runSettingsPresentationTargetSuites() {
         let code = scanned.codeWithoutStringLiterals
         // SettingsScopePickerSuite covers selection dispatch through the production native control.
         expect(
-            code.contains("scopes.map") && code.contains("SettingsNativePopUp(")
+            code.contains("ForEach(scopes)") && code.contains("selectScope(scope.scope)")
                 && code.contains("model.selectSoundScope(scope, rebindSelectedWorkspace: true)")
-                && !code.contains("hostSourceProductGroups"), "声音选择器必须由默认组与工作区组成，不再按 Product 分类")
+                && !code.contains("hostSourceProductGroups"), "工作区列表必须由默认组与工作区投影组成，不再按 Product 分类")
     }
 
     suite("Settings presentation target：Release view tree 不携带 DEBUG recorder modifier") {
@@ -628,7 +628,7 @@ func runSettingsPresentationSliceSuites() async {
     }
 
     #if DEBUG
-    suite("Settings presentation root：八个 destination 都经同一 compiled production root 挂载") {
+    suite("Settings presentation root：兼容路由经同一正文与附属表单挂载") {
         let destinationSubtreeIdentifiers: [SettingsDestination: String] = [
             .general: SettingsPresentationAccessibilityID.general,
             .integrations: SettingsPresentationAccessibilityID.destination(.integrations),
@@ -636,8 +636,8 @@ func runSettingsPresentationSliceSuites() async {
             .notifications: SettingsPresentationAccessibilityID.destination(.notifications),
             .sounds: SettingsPresentationAccessibilityID.destination(.sounds),
             .usage: SettingsPresentationAccessibilityID.destination(.usage),
-            .shortcuts: SettingsPresentationAccessibilityID.destination(.shortcuts),
-            .about: SettingsPresentationAccessibilityID.destination(.about),
+            .shortcuts: SettingsPresentationAccessibilityID.destination(.general),
+            .about: SettingsPresentationAccessibilityID.destination(.general),
         ]
         let expectedIdentifiers = SettingsDestination.allCases.compactMap {
             destinationSubtreeIdentifiers[$0]
@@ -646,7 +646,9 @@ func runSettingsPresentationSliceSuites() async {
             destination, identifier in
             SettingsDestinationMountObservation(
                 destination: destination,
-                mountedIdentifiers: [identifier])
+                mountedIdentifiers: [identifier]
+                    + (destination == .about
+                        ? [SettingsPresentationAccessibilityID.destination(.about)] : []))
         }
         var wrongChildMounts = canonicalMounts
         wrongChildMounts[0] = SettingsDestinationMountObservation(
@@ -673,7 +675,7 @@ func runSettingsPresentationSliceSuites() async {
 
         expect(
             settingsDestinationMountsAreComplete(productionMounts),
-            "固定八个 destination 必须按 sidebar 顺序挂载唯一 compiled production subtree，实得 \(productionMounts.map { ($0.destination.rawValue, $0.mountedIdentifiers) })"
+            "兼容请求必须挂载其规范正文，about 另挂附属表单，实得 \(productionMounts.map { ($0.destination.rawValue, $0.mountedIdentifiers) })"
         )
     }
 
@@ -855,11 +857,14 @@ private func settingsDestinationMountsAreComplete(
 ) -> Bool {
     guard observations.map(\.destination) == SettingsDestination.allCases else { return false }
     return observations.allSatisfy { observation in
-        let expected = SettingsPresentationAccessibilityID.destination(observation.destination)
+        let expected = SettingsPresentationAccessibilityID.destination(
+            observation.destination.canonicalDestination)
         return observation.mountedIdentifiers.filter { identifier in
             identifier == SettingsPresentationAccessibilityID.general
                 || identifier.hasPrefix("settings.destination.")
         } == [expected]
+            + (observation.destination == .about
+                ? [SettingsPresentationAccessibilityID.destination(.about)] : [])
     }
 }
 

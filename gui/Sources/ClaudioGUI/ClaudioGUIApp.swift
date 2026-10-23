@@ -7,7 +7,7 @@ import SwiftUI
 /// The menu-bar app starts AppKit directly. A SwiftUI `App` needs a `Scene`, but the former
 /// `Settings { EmptyView() }` placeholder could open an empty settings window on cold launch
 /// when the app was linked against an older macOS SDK. The real settings window is owned by
-/// `SettingsWindowController` and opens only through explicit panel and Carbon routes.
+/// `SettingsWindowController` and opens only through explicit panel and typed settings routes.
 ///
 /// ⚠️ COMPILE-ONLY here (see ``MenuBarController``'s doc comment): the actual menu-bar
 /// icon, popover open/close, and focus behavior are manual-verify on a real Mac.

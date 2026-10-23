@@ -49,6 +49,7 @@ package enum SettingsPresentationCommand: Equatable, Sendable {
     case route(SettingsRoute)
     case selectSidebar(SettingsDestination)
     case navigateWorkspace(EventSettingsWindowRoute)
+    case dismissAbout(SettingsNavigationStamp)
     case goBack
     case goForward
     case setNavigationBlocked(id: String, blocked: Bool)

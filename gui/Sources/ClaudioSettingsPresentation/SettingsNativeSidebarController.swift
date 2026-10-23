@@ -128,7 +128,9 @@ package final class SettingsNativeSidebarController: NSViewController, NSTableVi
     }
 
     package func select(_ destination: SettingsDestination) {
-        guard let index = rows.firstIndex(of: destination), table.selectedRow != index else {
+        guard let index = rows.firstIndex(of: destination.sidebarDestination),
+            table.selectedRow != index
+        else {
             return
         }
         let previousSynchronization = synchronizingSelection

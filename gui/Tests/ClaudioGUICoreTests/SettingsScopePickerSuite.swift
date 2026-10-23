@@ -6,93 +6,67 @@ import Foundation
 
 @MainActor
 func runSettingsScopePickerSuites() async {
-    await suite(
-        "Settings scope pickers: native actions retain typed routes and selection ownership"
-    ) {
-        for destination in [SettingsDestination.eventsAndSounds, .sounds] {
-            let rule = WorkspaceSoundRule(
-                directory: WorkspaceDirectory(kind: .directory, path: "/fixture/scope-picker"),
-                surfaces: [.codex],
-                profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
-            let fixture = SettingsPresentationFixtures.generalLogin(
-                route: .destination(destination), workspaceRules: [rule])
-            let session = fixture.session
-            let probe = NativeSettingsShellProbe(session: session, width: 960, dark: false)
-            defer { probe.close() }
+    await suite("Workspace list：native actions retain typed routes and the captured write target") {
+        let rule = WorkspaceSoundRule(
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/scope-picker"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .destination(.eventsAndSounds), workspaceRules: [rule])
+        let session = fixture.session
+        let probe = SettingsSoundsNativeLayoutProbe(
+            session: session, size: NSSize(width: 960, height: 640))
+        defer { probe.close() }
+        await probe.settle()
+        let configuration = fixture.eventSettingsModel.configState
+        for scope in [PanelSoundScopeID.workspace(rule.id), .global, .workspace(rule.id)] {
+            session.send(.selectSidebar(.eventsAndSounds))
             await probe.settle()
-            let identifier =
-                destination == .sounds
-                ? "settings.sounds.management-scope" : "workspace.scope-selector"
-            func controls(in view: NSView) -> [NSView] {
-                [view] + view.subviews.flatMap { controls(in: $0) }
-            }
-            if destination == .sounds {
-                expect(
-                    !controls(in: probe.shell.view).contains {
-                        $0.accessibilityIdentifier() == identifier
-                    },
-                    "声音页完全移除工作区选择器")
-                expect(
-                    fixture.eventSettingsModel.selectedSoundScope == .global,
-                    "声音页浏览不修改组选项")
-                continue
-            }
-            guard
-                let picker = controls(in: probe.shell.view).compactMap({ $0 as? NSPopUpButton })
-                    .first(where: { $0.accessibilityIdentifier() == identifier })
-            else {
-                expect(false, "\(destination) mounts its production scope picker")
-                continue
-            }
+            let version = session.navigationHistory.version
+            expect(probe.pressControl("workspace.rule.\(scope.storedValue)"), "列表原生按钮可进入详情")
+            await probe.settle()
             expect(
-                picker.numberOfItems == 2 && picker.indexOfSelectedItem == 0,
-                "\(destination) initially presents Default Group and the real workspace")
-            let configuration = fixture.eventSettingsModel.configState
-            for (index, scope) in [
-                (1, PanelSoundScopeID.workspace(rule.id)), (0, .global),
-                (1, .workspace(rule.id)),
-            ] {
-                let version = session.navigationHistory.version
-                picker.selectItem(at: index)
-                _ = picker.sendAction(picker.action, to: picker.target)
-                await probe.settle()
-                let presentedScope: PanelSoundScopeID
-                let capturedTarget: WorkspaceSoundWriteTarget?
-                if destination == .sounds {
-                    guard case .sounds(let route) = session.state.routeResolution.route else {
-                        expect(false, "The Sounds picker submits a typed Sounds route")
-                        continue
-                    }
-                    presentedScope = route.scope
-                    capturedTarget = route.workspaceTarget
-                    expect(
-                        fixture.eventSettingsModel.selectedSoundScope == .global,
-                        "Browsing a Sounds management scope does not apply that scope")
-                } else {
-                    presentedScope = session.state.eventPresentation.route.scope
-                    capturedTarget = session.state.eventPresentation.route.workspaceTarget
-                    expect(
-                        fixture.eventSettingsModel.selectedSoundScope == scope,
-                        "The Events picker updates the shared selection owner")
-                }
+                session.state.eventPresentation.route.scope == scope
+                    && fixture.eventSettingsModel.selectedSoundScope == scope,
+                "列表进入详情使用同一个共享选择 owner")
+            expect(session.navigationHistory.version == version + 1, "列表点击只提交一次路由")
+            if scope.workspaceID != nil {
                 expect(
-                    presentedScope == scope,
-                    "\(destination) native action retains the typed browsing scope")
-                expect(
-                    session.navigationHistory.version == version + 1
-                        && picker.indexOfSelectedItem == index,
-                    "\(destination) publishes one route transaction and keeps selection after updates"
-                )
-                if scope.workspaceID != nil {
-                    expect(
-                        capturedTarget == WorkspaceSoundWriteTarget(rule: rule),
-                        "\(destination) retains the selected workspace write target")
-                }
+                    session.state.eventPresentation.route.workspaceTarget
+                        == WorkspaceSoundWriteTarget(rule: rule),
+                    "详情捕获已浏览规则的写目标")
             }
-            expect(
-                fixture.eventSettingsModel.configState == configuration
-                    && fixture.actionRecorder.actions.isEmpty,
-                "Scope browsing does not rewrite sound configuration or invoke platform effects")
         }
+        expect(
+            fixture.eventSettingsModel.configState == configuration
+                && fixture.actionRecorder.actions.isEmpty,
+            "列表浏览不改声音配置，不执行平台副作用")
+        session.send(.selectSidebar(.sounds))
+        await probe.settle()
+        expect(
+            probe.menuAccessibilityElement(identifier: "settings.sounds.management-scope") == nil,
+            "声音包页面不显示工作区选择器")
+        expect(
+            fixture.eventSettingsModel.selectedSoundScope == .workspace(rule.id),
+            "浏览声音包不应用其他组或声音包")
+        session.send(
+            .navigateWorkspace(
+                EventSettingsWindowRoute(
+                    scope: .workspace(rule.id),
+                    workspaceTarget: WorkspaceSoundWriteTarget(rule: rule))))
+        session.editScopeSound(
+            .editEvent(
+                scope: .workspace(rule.id), packID: "settings-fixture-pack", event: .stop,
+                workspaceTarget: WorkspaceSoundWriteTarget(rule: rule)))
+        await probe.settle()
+        expect(
+            probe.menuAccessibilityElement(identifier: "settings.sounds.workspace-origin") != nil,
+            "包详情显示当前工作区与事件来源")
+        expect(probe.pressControl("settings.sounds.return-to-workspace"), "声音包详情提供可操作返回工作区按钮")
+        await probe.settle()
+        expect(
+            session.state.eventPresentation.route.scope == .workspace(rule.id)
+                && session.state.eventPresentation.route.event == .stop,
+            "返回同一捕获目标并定位原事件，不应用声音包")
     }
 }

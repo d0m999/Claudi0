@@ -1323,7 +1323,7 @@ func runViewWiringSuites() {
                 + "每一项都换来一条比本普查更严的锚定绊线，不是一个洞")
     }
 
-    suite("C1：MenuBarController 注入共享选择 owner，面板与快捷键消费同一事实") {
+    suite("C1：MenuBarController 注入共享选择 owner，面板与设置消费同一事实") {
         guard
             let menu = codeOnly("gui/Sources/ClaudioGUI/MenuBarController.swift"),
             let composition = codeOnly("gui/Sources/ClaudioGUICore/PanelAppComposition.swift"),
@@ -1344,8 +1344,8 @@ func runViewWiringSuites() {
             menu.components(separatedBy: "soundScopeSelection: soundScopeSelection").count - 1 == 1,
             "executable 必须将同一个选择 owner 注入生产 PanelView；核心注入由组合行为检查保护")
         expect(
-            menu.contains("soundScopeSelection.shortcutRoute()"),
-            "全局快捷键必须消费 owner 的即时路由，不再直读 UserDefaults")
+            !menu.contains("GlobalShortcut"),
+            "退役快捷键不得恢复注册或动作派发")
         expect(
             !menu.contains("panelSoundScopeDefaultsKey") && !panel.contains("@AppStorage"),
             "C1 之后持久字节只属于 owner：组合层不读 key，面板不持 AppStorage 副本")

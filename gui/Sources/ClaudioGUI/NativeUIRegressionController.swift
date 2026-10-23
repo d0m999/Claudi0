@@ -252,9 +252,6 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                     key: .feedbackHostStateUpdated, arguments: [])),
             adapters: PanelAppComposition.Adapters(
                 previewPlayer: NSSoundAudioPreviewPlayer(),
-                globalHotKeys: GlobalHotKeyAdapter(
-                    register: { _ in }, unregister: { _ in }, setActionHandler: { _ in }),
-                shortcutPersistence: .userDefaults(defaults),
                 clipboardWriter: IntegrationDestinationClipboardWriter { _ in true },
                 makeAICueViewModel: { _, _ in
                     AICueGenerationViewModel(
@@ -264,7 +261,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 makeActivityDiagnostics: { diagnostics },
                 makeAboutSettings: { _ in makeSettingsFixtureAboutSettings(for: nil) }),
             actions: PanelAppComposition.Actions(
-                audibilityInputsChanged: {}, performGlobalShortcut: { _ in },
+                audibilityInputsChanged: {},
                 publishHostIntegrationState: { _ in nil }))
         self.composition = composition
         fixture = SettingsPresentationFixtures.generalLogin(
@@ -278,7 +275,6 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             preferences: preferences,
             eventNoticeModel: notices, noticeNavigation: navigation,
             activityDiagnostics: composition.activityDiagnostics,
-            globalShortcutSettings: composition.globalShortcutSettings,
             aboutSettings: composition.aboutSettings, productImages: makeSettingsProductImages(),
             eventAnimations: eventAnimations,
             nativeEffects: SoundPacksEditorNativeEffectsDispatcher(
@@ -646,8 +642,6 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 "hostIntegrations": fixture.hostIntegrations === composition.hostIntegrations,
                 "integrations": fixture.integrationsModel === composition.integrationsModel,
                 "activity": fixture.activityDiagnostics === composition.activityDiagnostics,
-                "shortcuts": fixture.globalShortcutSettings
-                    === composition.globalShortcutSettings,
                 "about": fixture.aboutSettings === composition.aboutSettings,
             ],
             "destination": fixture.session.state.routeResolution.destination.rawValue,

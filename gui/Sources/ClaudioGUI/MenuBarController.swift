@@ -46,10 +46,6 @@ private final class MenuBarActionRouter {
         owner?.publishHostIntegrationState(state)
     }
 
-    func performGlobalShortcut(_ action: GlobalShortcutAction) {
-        owner?.performGlobalShortcut(action)
-    }
-
     /// Settings and the top notice list are mutually exclusive (SPEC: 设置打开和顶部列表互斥显示).
     func closeSettingsForEventNoticeInteraction() -> (@MainActor () -> Void)? {
         owner?.dismissSettingsForEventNoticeInteraction()
@@ -84,10 +80,6 @@ final class MenuBarController: NSObject {
     /// owner（注入 `eventSettingsModel`，并直接传给 `PanelView`）。持久化字节仍在
     /// `panelSoundScopeDefaultsKey`，但读写只经这个 owner。
     private var soundScopeSelection: SoundScopeSelection { composition.soundScopeSelection }
-    private let globalShortcutRegistrar: CarbonGlobalShortcutRegistrar
-    private var globalShortcutSettings: GlobalShortcutSettingsModel {
-        composition.globalShortcutSettings
-    }
     private var languageStore: ClaudioPreferences { composition.preferences }
     private var integrationsModel: IntegrationDestinationModel { composition.integrationsModel }
     private let actionRouter: MenuBarActionRouter
@@ -136,7 +128,6 @@ final class MenuBarController: NSObject {
             installedHelperMatchesBundledRuntime(bundledHelper: bundledHelper)
         }
         let actionRouter = MenuBarActionRouter()
-        let globalShortcutRegistrar = CarbonGlobalShortcutRegistrar()
         let composition = try! PanelAppComposition(
             environment: PanelAppComposition.Environment(
                 configFile: ClaudioPaths.configFile,
@@ -163,8 +154,6 @@ final class MenuBarController: NSObject {
                 integrationActionProvider: integrationActionProvider),
             adapters: PanelAppComposition.Adapters(
                 previewPlayer: NSSoundAudioPreviewPlayer(),
-                globalHotKeys: globalShortcutRegistrar.makeAdapter(),
-                shortcutPersistence: .userDefaults(),
                 clipboardWriter: IntegrationDestinationClipboardAdapter.system,
                 makeAICueViewModel: { temporaryRoot, durationProbe in
                     let runtime = try AICueRuntime(
@@ -185,9 +174,6 @@ final class MenuBarController: NSObject {
                 audibilityInputsChanged: { [weak actionRouter] in
                     actionRouter?.audibilityInputsChanged()
                 },
-                performGlobalShortcut: { [weak actionRouter] in
-                    actionRouter?.performGlobalShortcut($0)
-                },
                 publishHostIntegrationState: { [weak actionRouter] in
                     actionRouter?.publishHostIntegrationState($0)
                 }))
@@ -195,7 +181,6 @@ final class MenuBarController: NSObject {
         let soundPacksEditorOwner = composition.soundPacksEditorOwner
         let soundScopeSelection = composition.soundScopeSelection
         let eventSettingsModel = composition.eventSettingsModel
-        let globalShortcutSettings = composition.globalShortcutSettings
         let hostIntegrations = composition.hostIntegrations
         let integrationsModel = composition.integrationsModel
         let aiCueViewModel = composition.aiCueViewModel
@@ -233,7 +218,6 @@ final class MenuBarController: NSObject {
                 loginItemSettings: loginItemSettings,
                 dynamicQuietPolicy: dynamicQuietObserver.policy,
                 activityDiagnostics: activityDiagnostics,
-                globalShortcutSettings: globalShortcutSettings,
                 aboutSettings: composition.aboutSettings,
                 soundPacksEditorOwner: soundPacksEditorOwner,
                 soundPacksEditorNativeEffects: soundPacksEditorNativeEffects,
@@ -317,7 +301,6 @@ final class MenuBarController: NSObject {
         self.panelWindow = panelWindow
         self.composition = composition
         self.settingsWindowController = settingsWindowController
-        self.globalShortcutRegistrar = globalShortcutRegistrar
         self.actionRouter = actionRouter
         self.dynamicQuietObserver = dynamicQuietObserver
         self.eventNoticeRuntime = eventNoticeRuntime
@@ -366,17 +349,15 @@ final class MenuBarController: NSObject {
 
         let workspaceNotifications = NSWorkspace.shared.notificationCenter
         workspaceNotifications.publisher(for: NSWorkspace.willSleepNotification)
-            .sink { [weak globalShortcutSettings, weak eventNoticeRuntime] _ in
+            .sink { [weak eventNoticeRuntime] _ in
                 MainActor.assumeIsolated {
-                    globalShortcutSettings?.suspend()
                     eventNoticeRuntime?.suspendForSystemPrivacy(.sleeping)
                 }
             }
             .store(in: &systemPowerCancellables)
         workspaceNotifications.publisher(for: NSWorkspace.didWakeNotification)
-            .sink { [weak globalShortcutSettings, weak eventNoticeRuntime] _ in
+            .sink { [weak eventNoticeRuntime] _ in
                 MainActor.assumeIsolated {
-                    globalShortcutSettings?.resume()
                     eventNoticeRuntime?.resumeAfterSystemPrivacy(.sleeping)
                 }
             }
@@ -469,8 +450,6 @@ final class MenuBarController: NSObject {
         composition.generationCoordinator.terminate()
         panelWindow.onClose = nil
         panelWindow.close()
-        globalShortcutSettings.suspend()
-        globalShortcutRegistrar.invalidate()
         eventNoticeWindowController.close()
         eventNoticeRuntime.stopForTermination()
     }
@@ -603,41 +582,15 @@ final class MenuBarController: NSObject {
             returnFocusTo: target)
     }
 
-    /// Global-shortcut actions are owned by MenuBarController, not the Settings view that edits
-    /// them. The route reads the panel's stable persisted scope, validates it against the current
-    /// production projection, and deliberately preserves a stale known scope so Events can show
-    /// the visible recovery reason instead of silently guessing another target.
-    fileprivate func performGlobalShortcut(_ action: GlobalShortcutAction) {
-        switch action {
-        case .togglePanel:
-            togglePanel()
-        case .openSettings:
-            requestSettingsWindowPresentation()
-        case .openCurrentScopeEvents:
-            requestCurrentScopeEventsFromShortcut()
-        }
-    }
-
-    private func globalShortcutHandbackApplication() -> PanelHandbackApplication? {
+    private func settingsHandbackApplication() -> PanelHandbackApplication? {
         let selfProcessIdentifier = ProcessInfo.processInfo.processIdentifier
-        return resolveGlobalShortcutHandbackApplication(
+        return resolveSettingsHandbackApplication(
             frontmostApplication: NSWorkspace.shared.frontmostApplication
                 .map { PanelHandbackApplication($0) },
             previousApplication: panelSettingsChoreography.previousApplication,
             isCurrentApplication: {
                 $0.processIdentifier == selfProcessIdentifier
             })
-    }
-
-    private func requestCurrentScopeEventsFromShortcut() {
-        // C1：路由由共享 owner 从同一份持久化字节与当前可用集合即时解析；stale 的已知 scope
-        // 原样保留，Events 页显示可见的恢复原因，而不是静默猜另一个目标。
-        let route = soundScopeSelection.shortcutRoute()
-
-        requestSettingsPresentation(
-            request: .eventShortcut(route),
-            returnFocusTo: nil,
-            handbackApplication: globalShortcutHandbackApplication())
     }
 
     /// The Integrations destination follows the same close-before-show rule as other management
@@ -659,7 +612,7 @@ final class MenuBarController: NSObject {
         requestSettingsPresentation(
             request: .route(nil),
             returnFocusTo: nil,
-            handbackApplication: globalShortcutHandbackApplication())
+            handbackApplication: settingsHandbackApplication())
     }
 
     private func requestSettingsPresentation(

@@ -171,11 +171,12 @@ func runSettingsPresentationLifecycleSuites() async {
         _ = session.send(.route(.destination(.integrations)))
         expect(
             session.send(.route(.destination(.eventsAndSounds))) == .routed
-                && session.state.eventPresentation.route.event == .stop
-                && session.state.eventPresentation.focusTarget == .scope(selected)
+                && session.state.eventPresentation.route.detail == .workspaces
+                && session.state.eventPresentation.route.event == nil
+                && session.state.eventPresentation.focusTarget == .scope(.global)
                 && settingsWindowRequestedFocusTarget(resolution: session.state.routeResolution)
                     == nil,
-            "旧事件深链后从集成通用入口返回必须聚焦当前作用域")
+            "通用入口返回工作区列表，显式事件深链仍留在历史中")
         expect(
             session.send(.route(.events(scope: selected, event: nil))) == .routed
                 && session.state.eventPresentation.focusTarget == .scope(selected),
@@ -191,10 +192,10 @@ func runSettingsPresentationLifecycleSuites() async {
             expect(
                 session.send(.route(.destination(.eventsAndSounds))) == .routed
                     && session.state.routeResolution.route == .destination(.eventsAndSounds)
-                    && session.state.eventPresentation.route.scope == selected
+                    && session.state.eventPresentation.route.detail == .workspaces
                     && fixture.integrationsModel.selectedHost == host
                     && fixture.eventSettingsModel.selectedSoundScope == selected
-                    && session.state.eventPresentation.focusTarget == .scope(selected)
+                    && session.state.eventPresentation.focusTarget == .scope(.global)
                     && fixture.eventSettingsModel.configState == configBefore,
                 "集成所选 Host 不得重选或写入手动声音作用域")
         }
@@ -206,16 +207,11 @@ func runSettingsPresentationLifecycleSuites() async {
                 events: Set(Event.allCases)))
         _ = session.send(.route(.integrations(IntegrationsSettingsRoute(surface: .codex))))
         expect(
-            session.send(.route(.destination(.eventsAndSounds)))
-                == .rejected(.staleSoundScope(selected))
-                && session.state.eventPresentation.route.scope == selected
-                && session.state.eventPresentation.route
-                    .unavailableRequestedScopeStoredValue == selected.storedValue
-                && settingsWindowRequestedFocusTarget(resolution: session.state.routeResolution)
-                    == .routeFailure(.eventsAndSounds)
+            session.send(.route(.destination(.eventsAndSounds))) == .routed
+                && session.state.eventPresentation.route.detail == .workspaces
                 && fixture.eventSettingsModel.selectedSoundScope == selected
                 && fixture.eventSettingsModel.configState == configBefore,
-            "失效工作区由普通入口保留为不可用目标，不静默切到可写默认组")
+            "失效选择不阻止浏览工作区列表，列表不重选或写入默认组")
         expect(
             session.send(.route(.events(scope: selected, event: .stop)))
                 == .rejected(.staleSoundScope(selected))
@@ -231,7 +227,7 @@ func runSettingsPresentationLifecycleSuites() async {
             surfaces: [.codex],
             profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
         let fixture = SettingsPresentationFixtures.generalLogin(
-            route: .destination(.eventsAndSounds), workspaceRules: [rule])
+            route: .events(scope: .global, event: nil), workspaceRules: [rule])
         let session = fixture.session
         let selection = fixture.eventSettingsSelection
         let model = fixture.eventSettingsModel
@@ -391,7 +387,7 @@ func runSettingsPresentationLifecycleSuites() async {
                 environment: makeAudioImportEnvironment(
                     userPacksDirectory: root.appendingPathComponent("packs", isDirectory: true)))
             let fixture = SettingsPresentationFixtures.generalLogin(
-                temporaryParent: root, route: .destination(.eventsAndSounds),
+                temporaryParent: root, route: .events(scope: .global, event: nil),
                 workspaceRules: [rule], eventSettingsModel: model)
             let session = fixture.session
             let selection = fixture.eventSettingsSelection
@@ -638,7 +634,7 @@ func runSettingsPresentationLifecycleSuites() async {
         hostingView.frame = NSRect(x: 0, y: 0, width: 1_240, height: 820)
         hostingView.layoutSubtreeIfNeeded()
         SettingsMountRecorder.reset()
-        _ = fixture.session.send(.route(.destination(.eventsAndSounds)))
+        _ = fixture.session.send(.route(.events(scope: selected, event: nil)))
         for _ in 0..<3 {
             await Task.yield()
             hostingView.layoutSubtreeIfNeeded()

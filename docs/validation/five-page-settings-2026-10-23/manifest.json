@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "sourceBaseline": "ed66169e7df2b30140a9be361ca574082368f946",
+  "sourceBranch": "codex/five-page-settings",
+  "sourceState": "uncommitted implementation; no clean-HEAD acceptance claim",
+  "captureMethod": "AppKit cacheDisplay of native window or sheet frame",
+  "hostMacOS": "27.0.1",
+  "sdk": "MacOSX26.5.sdk",
+  "toolchain": "Apple Swift 6.4",
+  "matrixCombinationsChecked": 48,
+  "representativeCaptures": [
+    {
+      "file": "events-and-sounds-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "dbfa46ead5bdf2dce104afe7594a3eb04451d88d33d8a3ce12ffc3adae52295c",
+      "bytes": 174834,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "events-and-sounds",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "events-and-sounds-en-dark-960.png",
+      "type": "regular",
+      "sha256": "2a20ad1f7c500e9a4a6ff97daa6b355ff134738af5de3d13a6ba6ba1b9af3b4f",
+      "bytes": 151991,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "events-and-sounds",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "sounds-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "1ed9ebc58314c06f4944bf7e298f1978b39ad63e36d4ddb68600894b8ffc1715",
+      "bytes": 214467,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "sounds",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "sounds-en-dark-960.png",
+      "type": "regular",
+      "sha256": "0a167ecb35813a8ae63103da57e229c0bfb7710a5ff9bfcb4d1e556b314546ce",
+      "bytes": 190153,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "sounds",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "integrations-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "814284f760017b3ba774b1e6e0c127b7a30230d10e31212cb9b0485d9c38b484",
+      "bytes": 218440,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "integrations",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "integrations-en-dark-960.png",
+      "type": "regular",
+      "sha256": "f9fa8a4691418c11825b3a8f7a6a5959e63e134b775a31233964c3f306d5ca6e",
+      "bytes": 191283,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "integrations",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "notifications-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "efebea2b29eda312747e10b00b928ce9da650ea2b90be98ffef283d118c576be",
+      "bytes": 263606,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "notifications",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "notifications-en-dark-960.png",
+      "type": "regular",
+      "sha256": "26837bfabc24cc139a761fb893167e68b8ce2c9863d5b2b8bab4549b54c931b1",
+      "bytes": 235778,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "notifications",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "general-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "4b55b67c52cf1fa67a0780d0fcb7cc913558b7527d0cf9e2a45c84a4f94d5047",
+      "bytes": 194205,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "general",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "general-en-dark-960.png",
+      "type": "regular",
+      "sha256": "920d433902325aefb9b223ebe3e7928add8e1c17924736b0875f0b34ae60c8b2",
+      "bytes": 165434,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "general",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "usage-zh-Hans-light-1240.png",
+      "type": "regular",
+      "sha256": "dc2bef5d32acd96a5abf32ec4005a85262405ee2dc1c7aa5fabfbb43f0d2a7e2",
+      "bytes": 292815,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "usage",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "usage-en-dark-960.png",
+      "type": "regular",
+      "sha256": "68c9595b630baa4ed15064402aedd87eb87215dcec9b65e97a52dd1665bae254",
+      "bytes": 231690,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "usage",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "about-sheet-1240.png",
+      "type": "regular",
+      "sha256": "e11c333b144fa95521943d25e2fcdcc1c0621c3157e5539565547357d54b7a93",
+      "bytes": 72441,
+      "pixels": [
+        1240,
+        1040
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": null,
+      "role": "about-sheet",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "about-sheet-960.png",
+      "type": "regular",
+      "sha256": "451150c580a9b1f39e3bdc3eb5f7f1828687739b4a30b9d474ac4f3631ee0d5f",
+      "bytes": 74633,
+      "pixels": [
+        1240,
+        1040
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": null,
+      "role": "about-sheet",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "workspace-detail-1240.png",
+      "type": "regular",
+      "sha256": "3dbcca8df2fd24b2b88d46d90d742f30b5f7f3af68b32a1902f6636978c54bc3",
+      "bytes": 337544,
+      "pixels": [
+        2480,
+        1640
+      ],
+      "containerWindowPoints": [
+        1240,
+        820
+      ],
+      "language": "zh-Hans",
+      "appearance": "light",
+      "reduceMotionOverride": false,
+      "role": "workspace-detail",
+      "facts": "controlled fixture"
+    },
+    {
+      "file": "workspace-detail-960.png",
+      "type": "regular",
+      "sha256": "e842605dbdfa1e044a5c954a5e1fc2fd470ae59522c686aa935bac773ae53dfb",
+      "bytes": 275242,
+      "pixels": [
+        1920,
+        1280
+      ],
+      "containerWindowPoints": [
+        960,
+        640
+      ],
+      "language": "en",
+      "appearance": "dark",
+      "reduceMotionOverride": true,
+      "role": "workspace-detail",
+      "facts": "controlled fixture"
+    }
+  ],
+  "skippedEntries": [],
+  "limitations": [
+    "Fixture facts are not real host, version, OS, audio, or Provider facts",
+    "Native view-cache captures are not desktop compositor recordings or manual accessibility acceptance",
+    "About is a 620x520 pt attached sheet; containerWindowPoints describes its parent window",
+    "About cases use the host Reduce Motion setting; only shell and workspace-detail narrow cases inject the override"
+  ]
+}

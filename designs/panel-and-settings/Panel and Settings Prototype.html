@@ -1454,7 +1454,7 @@ dialog p { overflow-wrap:anywhere; }
             <div class="sf-section-heading"><div class="sf-actions"><button type="button" class="sf-button cursor-interaction" data-act="new-pack"><i data-lucide="plus" aria-hidden="true"></i>新建声音包…</button><button type="button" class="sf-button cursor-interaction" data-act="import-pack"><i data-lucide="square-arrow-down" aria-hidden="true"></i>导入声音包…</button></div></div>
             <p class="sf-secondary sf-favorites-hint" data-favorites-hint></p>
             <div class="sf-box" data-pack-list></div>
-            <div class="sf-service sf-box"><i data-lucide="sparkles" aria-hidden="true"></i><div class="sf-grow"><div data-service-title>AI 声音生成服务</div><div class="sf-secondary" data-service-provider>生成服务与地区 · SenseAudio · 中国 API</div><div class="sf-secondary" data-service-status>已保存 · 已验证</div></div><button type="button" class="sf-button cursor-interaction" data-act="service" data-service-manage>管理…</button></div>
+            <details class="sf-service-details sf-box"><summary><span data-service-title>AI 声音生成服务</span><span class="sf-secondary" data-service-provider>SenseAudio · 中国 API</span></summary><div class="sf-service"><div class="sf-grow sf-secondary" data-service-status>已保存 · 已验证</div><button type="button" class="sf-button cursor-interaction" data-act="service" data-service-manage>管理…</button></div></details>
           </section>
           <section data-route="detail" aria-label="声音包详情" hidden>
             <div class="sf-pack-heading"><div class="sf-cover" aria-hidden="true"><i data-lucide="audio-lines"></i></div><div class="sf-grow"><h2 data-pack-name></h2></div></div>
@@ -1474,13 +1474,13 @@ dialog p { overflow-wrap:anywhere; }
           <div class="sf-status sf-secondary" aria-live="polite" data-status></div>
         </div>
       </main>
-      <div class="sf-overlay" hidden>
-        <section class="sf-sheet" role="dialog" aria-modal="true" aria-labelledby="sf-dialog-title">
+      <dialog class="sf-overlay" aria-labelledby="sf-dialog-title" hidden>
+        <section class="sf-sheet">
           <header class="sf-sheet-header"><h2 id="sf-dialog-title"></h2><p class="sf-secondary" data-dialog-subtitle></p></header>
           <div class="sf-sheet-body" data-dialog-body></div>
           <footer class="sf-sheet-footer" data-dialog-footer></footer>
         </section>
-      </div>
+      </dialog>
     </div>
   </div>
 
@@ -1550,6 +1550,9 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-favorites-hint { margin:0 0 13px; }
   #claudio-sounds-overview .sf-pack-row:hover { background:var(--sf-soft); }
   #claudio-sounds-overview .sf-tag { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
+  #claudio-sounds-overview .sf-service-details { padding:14px; margin-top:24px; }
+  #claudio-sounds-overview .sf-service-details summary { cursor:pointer; display:flex; justify-content:space-between; gap:12px; }
+  #claudio-sounds-overview .sf-service-details .sf-service { padding:0; margin-top:12px; }
   #claudio-sounds-overview .sf-service { display:flex; align-items:center; gap:12px; padding:16px; margin-top:24px; }
   #claudio-sounds-overview .sf-service>svg { width:20px; color:var(--sf-blue); }
   #claudio-sounds-overview .sf-history-entry { display:flex; align-items:center; gap:12px; padding:16px; margin-top:18px; width:100%; text-align:left; color:var(--sf-text); }
@@ -1573,7 +1576,7 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-pack-files { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:15px; }
   #claudio-sounds-overview .sf-delete-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding-top:25px; }
   #claudio-sounds-overview .sf-status { min-height:18px; margin-top:12px; }
-  #claudio-sounds-overview .sf-overlay { z-index:5; display:flex; align-items:flex-start; justify-content:center; padding:46px 20px 30px; background:var(--sf-veil); border-radius:0 12px 12px 0; }
+  #claudio-sounds-overview .sf-overlay { width:100%;height:100%;max-width:none;max-height:none;border:0;margin:0; z-index:5; display:flex; align-items:flex-start; justify-content:center; padding:46px 20px 30px; background:var(--sf-veil); border-radius:0 12px 12px 0; }
   #claudio-sounds-overview .sf-sheet { width:100%; max-width:550px; background:var(--sf-surface); border:1px solid var(--sf-line); border-radius:11px; box-shadow:0 12px 38px var(--sf-shadow); }
   #claudio-sounds-overview .sf-sheet-header { padding:21px 22px 0; }
   #claudio-sounds-overview .sf-sheet-header h2 { font-size:17px; }
@@ -1620,8 +1623,8 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-empty-library { display:grid; gap:12px; justify-items:center; padding:26px 16px; text-align:center; }
   #claudio-sounds-overview .sf-empty-library .sf-actions { justify-content:center; }
   #claudio-sounds-overview .sf-confirm-message { font-size:14px; overflow-wrap:anywhere; }
-  @media (max-width:760px) { #claudio-sounds-overview .sf-window { grid-template-columns:154px minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { padding-inline:8px; } #claudio-sounds-overview .sf-nav { gap:7px; padding-inline:7px; font-size:12px; } #claudio-sounds-overview .sf-body { padding-inline:17px; } #claudio-sounds-overview .sf-event-main { flex-wrap:wrap; } #claudio-sounds-overview .sf-event-main>.sf-actions { margin-left:auto; } #claudio-sounds-overview .sf-overlay { padding:28px 12px; } #claudio-sounds-overview .sf-sheet-body,#claudio-sounds-overview .sf-sheet-header { padding-inline:16px; } }
-  @media (max-width:550px) { #claudio-sounds-overview .sf-window { grid-template-columns:minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { display:none; } #claudio-sounds-overview .sf-toolbar { padding-left:17px; } #claudio-sounds-overview .sf-overlay { border-radius:12px; } #claudio-sounds-overview .sf-section-heading>.sf-actions { width:100%; } #claudio-sounds-overview .sf-pack-heading>.sf-grow { flex-basis:calc(100% - 64px); } #claudio-sounds-overview .sf-history-header { align-items:flex-start; } #claudio-sounds-overview .sf-audio-row { flex-wrap:wrap; } #claudio-sounds-overview .sf-audio-select { min-width:160px; } #claudio-sounds-overview .sf-sheet-footer { padding-inline:16px; } #claudio-sounds-overview .sf-event-main>.sf-grow { flex-basis:calc(100% - 36px); } #claudio-sounds-overview .sf-source-menu { top:100%; } }
+  @media (max-width:760px) { #claudio-sounds-overview .sf-window { grid-template-columns:154px minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { padding-inline:8px; } #claudio-sounds-overview .sf-nav { gap:7px; padding-inline:7px; font-size:12px; } #claudio-sounds-overview .sf-body { padding-inline:17px; } #claudio-sounds-overview .sf-event-main { flex-wrap:wrap; } #claudio-sounds-overview .sf-event-main>.sf-actions { margin-left:auto; } #claudio-sounds-overview .sf-overlay { width:100%;height:100%;max-width:none;max-height:none;border:0;margin:0; padding:28px 12px; } #claudio-sounds-overview .sf-sheet-body,#claudio-sounds-overview .sf-sheet-header { padding-inline:16px; } }
+  @media (max-width:550px) { #claudio-sounds-overview .sf-window { grid-template-columns:minmax(0,1fr); } #claudio-sounds-overview .sf-sidebar { display:none; } #claudio-sounds-overview .sf-toolbar { padding-left:17px; } #claudio-sounds-overview .sf-overlay { width:100%;height:100%;max-width:none;max-height:none;border:0;margin:0; border-radius:12px; } #claudio-sounds-overview .sf-section-heading>.sf-actions { width:100%; } #claudio-sounds-overview .sf-pack-heading>.sf-grow { flex-basis:calc(100% - 64px); } #claudio-sounds-overview .sf-history-header { align-items:flex-start; } #claudio-sounds-overview .sf-audio-row { flex-wrap:wrap; } #claudio-sounds-overview .sf-audio-select { min-width:160px; } #claudio-sounds-overview .sf-sheet-footer { padding-inline:16px; } #claudio-sounds-overview .sf-event-main>.sf-grow { flex-basis:calc(100% - 36px); } #claudio-sounds-overview .sf-source-menu { top:100%; } }
   @media (pointer:coarse) { #claudio-sounds-overview button,#claudio-sounds-overview .sf-audio-select { min-height:44px; } #claudio-sounds-overview .sf-icon { min-width:44px; } #claudio-sounds-overview .sf-input { font-size:16px; } #claudio-sounds-overview .sf-source-menu { top:100%; } }
 </style>
 
@@ -4984,8 +4987,8 @@ function startAnimationClock(){
 }
 const pages = [
  ['events','工作区','Workspace','wave','linear-gradient(#FFAC24,#F18B08)'],
- ['sounds','声音','Sounds','speaker','linear-gradient(#B368F3,#963EE3)'],['integrations','集成','Integrations','plug','linear-gradient(#2699FF,#087EE9)'],
- ['notifications','通知','Notifications','bell','linear-gradient(#FF5E6B,#EC354B)'],['general','通用','General','gear','linear-gradient(#ACADB4,#83848C)'],
+ ['sounds','声音包','Sound Packs','speaker','linear-gradient(#B368F3,#963EE3)'],['integrations','连接','Connections','plug','linear-gradient(#2699FF,#087EE9)'],
+ ['notifications','提醒与静音','Alerts & Quiet','bell','linear-gradient(#FF5E6B,#EC354B)'],['general','通用','General','gear','linear-gradient(#ACADB4,#83848C)'],
  ['shortcuts','快捷键','Shortcuts','command','linear-gradient(#9699A3,#6E727E)'],['usage','活动与诊断','Activity & Diagnostics','chart','linear-gradient(#3CD968,#23B84E)'],['about','关于','About','info','linear-gradient(#2FA9FF,#0B85EE)']
 ].map(([id,zh,en,icon,color])=>({id,title:()=>T(zh,en),icon,color}));
 const profiles = [
@@ -5059,11 +5062,11 @@ function navigateOriginal(page,detail=null,options={}){
 }
 function focusReason(){($('target-unavailable')||$('operation-feedback')||$('page-title')).focus({preventScroll:true});}
 function renderNav(){
- $('settings-nav').innerHTML=pages.map(p=>`<button class="nav-item ${S.page===p.id?'active':''} ${['general','usage'].includes(p.id)?'group-start':''}" data-action="nav:${p.id}" ${S.page===p.id?'aria-current="page"':''}><span class="nav-icon" style="--icon-color:${p.color}">${icon(p.icon)}</span><span>${p.title()}</span></button>`).join('');
+ $('settings-nav').innerHTML=pages.filter(p=>!['usage','shortcuts','about'].includes(p.id)).map(p=>`<button class="nav-item ${(S.page==='usage'?'integrations':S.page)===p.id?'active':''} ${p.id==='general'?'group-start':''}" data-action="nav:${p.id}" ${(S.page==='usage'?'integrations':S.page)===p.id?'aria-current="page"':''}><span class="nav-icon" style="--icon-color:${p.color}">${icon(p.icon)}</span><span>${p.title()}</span></button>`).join('');
 }
 function title(){
  if(S.page==='sounds'&&S.detail==='pack')return T('声音包','Sound pack');if(S.page==='sounds'&&S.detail==='history')return T('生成记录','Generation history');
- if(S.detail==='workspaces')return T('工作区','Workspaces');if(S.detail==='scope-details')return scopeName(scope());
+ if(S.page==='events'&&S.detail==='profile')return scopeName(scope());if(S.detail==='workspaces')return T('工作区','Workspaces');if(S.detail==='scope-details')return scopeName(scope());
  if(S.detail==='service')return T('AI 提示音服务','AI cue services');if(S.detail==='audio')return T('音频文件','Audio files');
  if(S.detail==='panel')return T('面板显示集','Panel display set');if(S.detail==='host')return host().name;
  if(S.detail==='host-diagnostics')return host().name+' · '+T('诊断详情','Diagnostics');
@@ -5122,22 +5125,22 @@ function renderEvents(){
  if(S.detail==='workspaces')return renderWorkspaces();if(S.detail==='scope-details')return renderScopeDetails();
  const g=scope(),p=S.packs.find(p=>p.id===g?.pack),valid=!!g;
  const opts=S.scopes.map(g=>[g.id,scopeName(g)]);if(!valid)opts.unshift(['__invalid__',T('目标不可用，请重新选择','Target unavailable; select again')]);
- let html=section('',row(T('声音作用域','Sound scope'),T('选择手动编辑目标；近期回调不改变此选择。','Choose the edit target. Recent callbacks do not change it.'),picker(T('声音作用域','Sound scope'),'scope',opts,valid?S.scope:'__invalid__')))+configStatus()+libraryStatus();
+ let html=configStatus()+libraryStatus();
  if(!g)return html+section('',reason(T('原工作区目录身份已变化或规则已移除。请显式重新选择；未对默认组执行写入。','The workspace directory identity changed or the rule was removed. Select explicitly; no write was made to the default group.'),'error',S.ruleBroken?'':'target-unavailable'));
  const paused=S.library!=='ready'||!!S.operation;
  html+=section(T('声音配置','Sound configuration'),row(T('声音包','Sound pack'),T('该组独立选包，不逐项继承默认组。','This group selects a pack independently.'),picker(T('此组的声音包','Pack for this group'),'scope-pack',S.packs.map(p=>[p.id,packName(p)]),g.pack,paused))+row(T('音量','Volume'),T('仅调整所选默认组或工作区','Applies to the selected group only'),volumeControl(g))+(g.volume===0?reason(T('音量为 0，无法听到试听。调高音量后继续。','Volume is 0. Raise the volume to hear previews.')):''));
- html+=section(T('事件提示音','Event cues'),events.map((e,i)=>row(e.name(),scopeMappedNote(p,i),previewButton(i,!p?.sounds[i]||g.volume===0||!p.healthy)+toggle(e.name(),`event:${i}`,g.enabled[i],paused)+`<button class="small-button" data-action="edit-from-scope:${i}" aria-label="${esc(T('编辑','Edit')+' '+e.name())}" aria-description="${esc(T('查看或编辑提示音','View or edit cue'))}">${T('编辑…','Edit…')}</button>`,{id:`event-${e.id}`,icon:e.icon,color:e.color})).join('')+feedback()+(S.faults.preview?reason(T('试听文件不可读。可重新读取声音包，或进入对应事件修复来源。','The preview file is unreadable. Reload the pack or repair the event source.'),'error')+row(T('试听恢复','Preview recovery'),'',button(T('重新读取声音包','Reload pack'),'refresh-library')+button(T('修复提示音…','Repair cue…'),'edit-from-scope:3')):''),T('开关只控制自动播放。关闭后仍可手工试听。','Switches control automatic playback. Manual previews remain available.'),button(T('试听可用事件','Preview available events'),'preview-all','link',!p?.sounds.some(Boolean)||g.volume===0||!p.healthy));
- html+=section(T('工作区规则','Workspace rules'),g.id==='default'?disclosure(T('管理工作区','Manage workspaces'),T('未命中适用规则时使用默认组。','The default group is used when no applicable rule matches.'),`${S.scopes.length-1}`,'workspaces',{icon:'folder'}):disclosure(T('目录与适用来源','Directory and eligible surfaces'),esc(g.path),`${g.surfaces.length}`,'scope-details',{icon:'folder'}));
+ html+=section(T('事件提示音','Event cues'),events.map((e,i)=>row(e.name(),scopeMappedNote(p,i),previewButton(i,!p?.sounds[i]||g.volume===0||!p.healthy)+toggle(e.name(),`event:${i}`,g.enabled[i],paused)+`<button class="small-button" data-action="edit-from-scope:${i}" aria-label="${esc(T(p?.builtin?'查看包内声音':'编辑包内声音',p?.builtin?'View sound in pack':'Edit sound in pack')+' '+e.name())}" aria-description="${esc(T('查看或编辑提示音','View or edit cue'))}">${T(p?.builtin?'查看包内声音…':'编辑包内声音…',p?.builtin?'View sound in pack…':'Edit sound in pack…')}</button>`,{id:`event-${e.id}`,icon:e.icon,color:e.color})).join('')+feedback()+(S.faults.preview?reason(T('试听文件不可读。可重新读取声音包，或进入对应事件修复来源。','The preview file is unreadable. Reload the pack or repair the event source.'),'error')+row(T('试听恢复','Preview recovery'),'',button(T('重新读取声音包','Reload pack'),'refresh-library')+button(T('修复提示音…','Repair cue…'),'edit-from-scope:3')):''),T('开关只控制自动播放。关闭后仍可手工试听。','Switches control automatic playback. Manual previews remain available.'),button(T('试听可用事件','Preview available events'),'preview-all','link',!p?.sounds.some(Boolean)||g.volume===0||!p.healthy));
+ if(g.id!=='default')html+=renderScopeDetails();
  if(g.id!=='default')html+=section('',row(T('移除工作区','Remove workspace'),esc(scopeName(g))+' · '+T('仅移除声音规则，保留项目文件和声音包。','Remove the sound rule only. Project files and sound packs remain.'),button(T('移除工作区…','Remove workspace…'),'delete-workspace','small-button destructive',!!S.operation)));
  html+=`<div class="section-actions">${button(T('添加工作区…','Add workspace…'),'add-workspace','small-button',!!S.operation)}</div>`;
  return html;
 }
-function renderWorkspaces(){return section(T('工作区','Workspaces'),S.scopes.filter(g=>g.id!=='default').map(g=>disclosure(esc(scopeName(g)),esc(g.path),g.surfaces.length?packName(S.packs.find(p=>p.id===g.pack)):T('当前不适用','Currently inapplicable'),`select-workspace:${g.id}`,{icon:'folder'})).join('')||`<div class="empty">${T('尚无工作区','No workspaces')}</div>`,T('Git 范围覆盖仓库及关联 worktree；普通目录覆盖实际路径和子目录。','Git scope includes the repository and linked worktrees. Directory scope includes the resolved path and its descendants.'))+`<div class="section-actions">${button(T('添加工作区…','Add workspace…'),'add-workspace')}</div>`+feedback();}
+function renderWorkspaces(){return section(T('工作区','Workspaces'),S.scopes.map(g=>disclosure(esc(scopeName(g)),esc(packName(S.packs.find(p=>p.id===g.pack)))+' · '+Math.round(g.volume)+'% · '+g.enabled.filter(Boolean).length+'/5 · '+(g.id==='default'?T('所有来源','All surfaces'):g.surfaces.length+T(' 个来源',' surfaces')),g.path||'',`select-workspace:${g.id}`,{icon:'folder'})).join('')||`<div class="empty">${T('尚无工作区','No workspaces')}</div>`,T('Git 范围覆盖仓库及关联 worktree；普通目录覆盖实际路径和子目录。','Git scope includes the repository and linked worktrees. Directory scope includes the resolved path and its descendants.'))+`<div class="section-actions">${button(T('添加工作区…','Add workspace…'),'add-workspace')}</div>`+feedback();}
 function renderScopeDetails(){const g=scope();if(!g)return reason(T('工作区不可用，请显式重新选择。','Workspace unavailable. Select explicitly.'),'error','target-unavailable');
  return section('',row(esc(scopeName(g)),T('名称由目录派生。','The name is derived from the directory.'), '',{icon:'folder'}))+
  section(T('目录范围','Directory scope'),row(T('目录','Directory'),esc(g.path))+row(T('匹配范围','Matching scope'),g.kind==='git'?T('Git 仓库及关联 worktree','Git repository and linked worktrees'):T('实际目录及子目录','Resolved directory and descendants')))+
  section(T('适用来源','Eligible surfaces'),['claude-code','codex','workbuddy','opencode','kimi-code'].map(id=>row(S.hosts.find(h=>h.id===id).name,T('已具备验证过的目录证据。','Verified directory evidence is available.'),toggle(T('工作区适用','Workspace eligibility')+' '+id,`scope-surface:${id}`,g.surfaces.includes(id),!!S.operation))).join('')+(!g.surfaces.length?reason(T('没有适用来源。此规则保留完整声音配置，目前不会匹配任何来源。','No eligible surfaces. The complete sound configuration is retained, but this rule currently matches no surface.')):''))+
- section(T('声音配置','Sound configuration'),disclosure(T('编辑声音配置','Edit sound configuration'),T('声音包、独立音量和五事件开关。','Pack, independent volume, and five event switches.'),'',`select-workspace:${g.id}`))+
+
  feedback();}
 function createApprovedSoundsView(root,bridge) {
   const events = [
@@ -5153,6 +5156,7 @@ function createApprovedSoundsView(root,bridge) {
   // Factory content is independent of the library being repaired, including an empty library.
   const factorySnapshot = copy(bridge.factoryPacks());
 
+  let lastRequestedEvent=null;
   // Throwaway model: only sample data, no audio, credentials, network or file I/O.
   const Model = {
     key: value => value.trim().normalize('NFKC').toLocaleLowerCase(),
@@ -5287,7 +5291,7 @@ function createApprovedSoundsView(root,bridge) {
   function openDialog(dialog) {stopPreview();ui.menu=null;ui.dialogs.push(dialog);render();q('input,textarea,button',q('.sf-sheet'))?.focus();persist();}
   function closeDialog() {
     stopPreview();const d=ui.dialogs.pop();if(d?.type==='ai') dispatch({type:'invalidate',context:d.context});
-    render();const focus=top()?q('input,textarea,button',q('.sf-sheet')):q('[data-act="back"]:not([hidden])')||q('[data-act="new-pack"]');focus?.focus();persist();
+    render();const focus=top()?q('input,textarea,button',q('.sf-sheet')):(d?.event?q('.sf-event[data-event="'+d.event+'"] [data-act="sources"]'):null)||q('[data-act="back"]:not([hidden])')||q('[data-act="new-pack"]');focus?.focus();persist();
   }
   function navigate(route,packID) {
     stopPreview();ui.dialogs.forEach(d=>{if(d.type==='ai') dispatch({type:'invalidate',context:d.context});});ui.dialogs=[];ui.menu=null;ui.status='';
@@ -5425,7 +5429,7 @@ function createApprovedSoundsView(root,bridge) {
     return [];
   }
   function renderDialog() {
-    const d=top(),overlay=q('.sf-overlay');overlay.hidden=!d;q('.sf-screen').inert=!!d;q('.sf-sidebar').inert=!!d;bridge.modal(!!d);if(!d) return;
+    const d=top(),overlay=q('.sf-overlay');overlay.hidden=!d;if(overlay instanceof HTMLDialogElement){if(d&&!overlay.open)overlay.showModal();else if(!d&&overlay.open)overlay.close();}q('.sf-screen').inert=!!d;q('.sf-sidebar').inert=!!d;bridge.modal(!!d);if(!d) return;
     const pack=state.packs.find(p=>p.id===d.packID),target=pack?pack.name+(d.event?' · '+eventName(d.event):''):'';
     const body=q('[data-dialog-body]');
     if(d.type==='name'||d.type==='audio-name') {
@@ -5625,6 +5629,7 @@ function createApprovedSoundsView(root,bridge) {
       const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first) {event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last) {event.preventDefault();first?.focus();}
     }
   });
+  q('.sf-overlay').addEventListener('cancel',event=>{event.preventDefault();closeDialog();});
   render();
   return {
     element:root,modal:()=>!!top(),
@@ -5632,8 +5637,8 @@ function createApprovedSoundsView(root,bridge) {
     sync(detail,packID){
       state=bridge.read();root.style.colorScheme=container.dataset.theme==='dark'?'dark':'light';
       ui.packID=packID||state.packs[0]?.id;ui.route=detail==='history'?'history':detail==='pack'||detail?.startsWith('edit:')?'detail':'library';
-      if(!state.packs.some(p=>p.id===ui.packID)&&ui.route==='detail')ui.route='library';
-      render();
+      if(!state.packs.some(p=>p.id===ui.packID)&&ui.route==='detail')ui.route='library';if(!detail?.startsWith('edit:'))lastRequestedEvent=null;
+      render();if(detail?.startsWith('edit:')&&lastRequestedEvent!==packID+':'+detail){lastRequestedEvent=packID+':'+detail;requestAnimationFrame(()=>{const row=root.querySelector('[data-event="'+detail.slice(5)+'"]');if(!row)return;row.tabIndex=-1;row.scrollIntoView({block:'center'});row.focus();});}
     },
     suspend(){stopPreview();ui.dialogs.forEach(d=>{if(d.type==='ai')dispatch({type:'invalidate',context:d.context});});ui.dialogs=[];ui.menu=null;bridge.modal(false);persist();},
     dispose(){this.suspend();clearTimeout(taskTimer);scheduledID=null;},
@@ -5719,7 +5724,7 @@ function mountApprovedSounds(){
   approvedSoundsView.sync(S.detail,S.pack);
 }
 
-function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+'<div id="approved-sounds-mount"></div>';}
+function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+(S.returnContext?section('',button(T('返回工作区 · ','Back to Workspace · ')+S.returnContext.name,'return-scope')+`<p>${esc(S.returnContext.name)} › ${events[S.returnContext.event].name()}</p>`):'')+'<div id="approved-sounds-mount"></div>';}
 function packActions(p){return row(T('包操作','Pack actions'),'',button(T('在 Finder 中显示…','Reveal in Finder…'),'reveal-pack','small-button',!installed(p)));}
 function renderSoundsLegacy(){
  if(S.detail==='service')return renderService();if(S.detail==='audio')return renderAudioFiles();if(S.detail==='panel')return renderPanelPacks();if(editorIndex()>=0)return renderSoundEditor();
@@ -5833,7 +5838,7 @@ function renderIntegrations(){
  const desktop=S.hosts.filter(h=>hostKind(h)==='Desktop'),cli=S.hosts.filter(h=>hostKind(h)==='CLI');
  return `<p class="intro">${T('自动接收已启用应用的事件，并按声音设置播放提示音。','Automatically receive events from enabled apps and play cues using your sound settings.')}</p>`+
  (desktop.length?section(T('桌面应用','Desktop apps'),desktop.map(integrationHostRow).join('')):'')+
- (cli.length?section(T('命令行工具','CLI tools'),cli.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.')):'');
+ (cli.length?section(T('命令行工具','CLI tools'),cli.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.')):'')+section('',button(T('活动与诊断','Activity & Diagnostics'),'nav:usage'));
 }
 function hostBindings(h,i){
  const native=['UserPromptSubmit','Stop','StopFailure','Notification','SubagentStop'][i];
@@ -5880,28 +5885,32 @@ function renderHostDiagnostics(){const h=host();return `<p class="intro">${T('�
 const authText=(state)=>({notRequested:T('未请求','Not requested'),authorized:T('已授权','Authorized'),denied:T('已拒绝','Denied'),restricted:T('受限制','Restricted')})[state];
 const quietNames={policiesDisabled:['策略已关闭','Policy off'],permissionRequired:['需要权限；自动提示音继续播放','Permission required; automatic sounds continue'],noDynamicQuiet:['当前无动态静默原因','No dynamic quiet reason'],focusActive:['Focus 正在抑制自动提示音','Focus is suppressing automatic sounds'],calendarBusy:['日历忙碌正在抑制自动提示音','Calendar busy is suppressing automatic sounds'],focusAndCalendarBusy:['Focus 与日历忙碌正在共同抑制自动提示音','Focus and Calendar busy are suppressing automatic sounds'],observerFailure:['Dynamic Quiet State observer 不可用；自动提示音继续播放','A Dynamic Quiet State observer is unavailable; automatic sounds continue']};
 const healthNames={current:['当前有效','Current'],publicationFailed:['刷新失败；之前的快照仍会按短有效期过期','Refresh failed; the previous snapshot remains short-lived'],expired:['已过期；自动提示音继续播放','Expired; automatic sounds continue']};
-function renderNotifications(){const f=S.focusAuth,c=S.calendarAuth;const animKey=animationEffectiveStyle();return section('',`<button class="row disclosure-row multi" data-action="animation-detail" data-focus-key="animation-detail"><span class="label"><strong>${T('事件动画','Event animation')}</strong><small>${T('选择横幅中显示的图标或角色，切换后立即生效。','Choose the icon or character shown in event banners. Changes apply immediately.')}</small></span><span class="controls"><span class="value">${T(...animationStyleNames[animKey])}</span>${icon('next','chevron')}</span></button>`)+
+function renderNotifications(){const f=S.focusAuth,c=S.calendarAuth;const animKey=animationEffectiveStyle();return  section(T('自动静默','Automatic quiet'),row(T('Focus 生效时静默自动提示音','Quiet automatic sounds during Focus'),T('开启并授权后，Focus 会临时抑制自动播放；手工试听始终可用。','When enabled and authorized, Focus temporarily suppresses automatic playback. Manual preview always remains available.'),toggle(T('Focus 生效时静默自动提示音','Quiet automatic sounds during Focus'),'focusQuiet',S.focusQuiet))+row(T('Focus 权限','Focus permission'),authText(f))+(['denied','restricted'].includes(f)?row('','',button(T('打开系统设置…','Open System Settings…'),'open-focus-settings')):'')+
+ row(T('日历忙碌时静默自动提示音','Quiet automatic sounds while Calendar is busy'),T('开启并授权后，只有当前非全天 busy 事件会临时抑制自动播放；事件详情不会被保留。','When enabled and authorized, only a current non-all-day busy event temporarily suppresses automatic playback. Event details are never retained.'),toggle(T('日历忙碌时静默自动提示音','Quiet automatic sounds while Calendar is busy'),'calendarQuiet',S.calendarQuiet))+row(T('日历权限','Calendar permission'),authText(c))+(['denied','restricted'].includes(c)?row('','',button(T('打开日历隐私设置','Open Calendar Privacy Settings'),'open-calendar-settings')):''))+
  section(T('事件横幅','Event banners'),row(T('显示事件来源提示','Show event source prompts'),T('显示简短事件横幅。「需要你」提醒最多保留 30 分钟，可在面板内查看。','Show short event banners. Needs You reminders remain available in the panel for up to 30 minutes.'),toggle(S.notifications?T('事件来源提示已开启','Event source prompts enabled'):T('事件来源提示已关闭','Event source prompts disabled'),'notifications',S.notifications))+
  row(T('提示来源接收器','Event-notice receiver'),S.receiver==='ready'?T('接收器已就绪','Receiver ready'):S.receiver==='disabled'?T('当前停用','Currently disabled'):'')+
  (S.receiver==='unavailable'?`<p class="caption">${T('实时来源提示暂不可用（RECEIVER_BIND_FAILED）','Live source prompts unavailable (RECEIVER_BIND_FAILED)')}</p>`:''))+
- section(T('自动静默','Automatic quiet'),row(T('Focus 生效时静默自动提示音','Quiet automatic sounds during Focus'),T('开启并授权后，Focus 会临时抑制自动播放；手工试听始终可用。','When enabled and authorized, Focus temporarily suppresses automatic playback. Manual preview always remains available.'),toggle(T('Focus 生效时静默自动提示音','Quiet automatic sounds during Focus'),'focusQuiet',S.focusQuiet))+row(T('Focus 权限','Focus permission'),authText(f))+(['denied','restricted'].includes(f)?row('','',button(T('打开系统设置…','Open System Settings…'),'open-focus-settings')):'')+
- row(T('日历忙碌时静默自动提示音','Quiet automatic sounds while Calendar is busy'),T('开启并授权后，只有当前非全天 busy 事件会临时抑制自动播放；事件详情不会被保留。','When enabled and authorized, only a current non-all-day busy event temporarily suppresses automatic playback. Event details are never retained.'),toggle(T('日历忙碌时静默自动提示音','Quiet automatic sounds while Calendar is busy'),'calendarQuiet',S.calendarQuiet))+row(T('日历权限','Calendar permission'),authText(c))+(['denied','restricted'].includes(c)?row('','',button(T('打开日历隐私设置','Open Calendar Privacy Settings'),'open-calendar-settings')):''))+
- section(T('当前状态','Current state'),row(T('当前原因','Current reason'),T(...quietNames[S.quietReason]),'',{id:'quiet-status'})+row(T('快照状态','Snapshot status'),T(...healthNames[S.quietHealth]),'',{id:'quiet-health'})+(S.quietHealth!=='current'?reason(T('无法发布 Dynamic Quiet State；之前的快照过期后，自动提示音会继续播放。','Dynamic Quiet State could not be published. Automatic sounds continue after any previous snapshot expires.'),'warning'):'')+((S.focusObservedActive===null&&S.quietReason!=='observerFailure')?reason(T('Dynamic Quiet State observer 不可用；自动提示音继续播放','A Dynamic Quiet State observer is unavailable; automatic sounds continue'),'warning'):''))+
+section('',`<button class="row disclosure-row multi" data-action="animation-detail" data-focus-key="animation-detail"><span class="label"><strong>${T('事件动画','Event animation')}</strong><small>${T('选择横幅中显示的图标或角色，切换后立即生效。','Choose the icon or character shown in event banners. Changes apply immediately.')}</small></span><span class="controls"><span class="value">${T(...animationStyleNames[animKey])}</span>${icon('next','chevron')}</span></button>`)+
+`<details class="section"><summary>${T('健康信息','Health details')}</summary>`+ section(T('当前状态','Current state'),row(T('当前原因','Current reason'),T(...quietNames[S.quietReason]),'',{id:'quiet-status'})+row(T('快照状态','Snapshot status'),T(...healthNames[S.quietHealth]),'',{id:'quiet-health'})+(S.quietHealth!=='current'?reason(T('无法发布 Dynamic Quiet State；之前的快照过期后，自动提示音会继续播放。','Dynamic Quiet State could not be published. Automatic sounds continue after any previous snapshot expires.'),'warning'):'')+((S.focusObservedActive===null&&S.quietReason!=='observerFailure')?reason(T('Dynamic Quiet State observer 不可用；自动提示音继续播放','A Dynamic Quiet State observer is unavailable; automatic sounds continue'),'warning'):''))+`</details>`+
  section('',button(T('前往事件与提示音','Open Events & Sounds'),'to-events'))+feedback();}
 const loginNames={enabled:['已由 macOS 启用','Enabled by macOS'],disabled:['未向 macOS 注册','Not registered with macOS'],requiresApproval:['已注册，但 macOS 正等待你在登录项设置中批准','Registered, but macOS is waiting for your approval in Login Items settings'],unavailable:['此安装中的登录项服务不可用。请重新安装 claudi0。','Login item service is unavailable in this installation. Reinstall claudi0.']};
-function renderGeneral(){return section('',row(T('登录时打开 claudi0','Open claudi0 at login'),T(...loginNames[S.login]),toggle(T('登录时打开 claudi0','Open claudi0 at login'),'login',['enabled','requiresApproval'].includes(S.login),S.login==='unavailable'||!!S.operation))+
+function renderGeneral(){return  section('',row(T('语言','Language'),S.language==='system'?T(`当前系统语言显示为${S.systemLanguage==='zh'?'简体中文':'English'}。`,`System language currently displays as ${S.systemLanguage==='zh'?'简体中文':'English'}.`):'',picker(T('语言','Language'),'language',[['system',T('跟随系统','Follow System')],['zh',T('简体中文','Simplified Chinese')],['en',T('English','English')]],S.language)))+
+ section('',row(T('登录时打开 claudi0','Open claudi0 at login'),T(...loginNames[S.login]),toggle(T('登录时打开 claudi0','Open claudi0 at login'),'login',['enabled','requiresApproval'].includes(S.login),S.login==='unavailable'||!!S.operation))+
  row('',T('让 macOS 在你登录时启动 claudi0。此控件始终反映当前系统服务状态。','Let macOS start claudi0 when you sign in. This control always reflects the current system service status.'),button(T('重新检测','Recheck'),'refresh-login','small-button',!!S.operation))+
  (S.login==='requiresApproval'?row('','',button(T('打开登录项设置','Open Login Items Settings'),'open-login-settings')):'')+
  (S.loginFailure?reason(S.loginFailure.desired?T('macOS 无法将 claudi0 添加到登录项。当前仍显示原状态；请重试或在系统设置中检查登录项。','macOS could not add claudi0 to login items. The previous status is still shown; retry or review Login Items in System Settings.'):T('macOS 无法从登录项中移除 claudi0。当前仍显示原状态；请重试。','macOS could not remove claudi0 from login items. The previous status is still shown; retry the operation.'),'error')+row('','',button(T('重试','Retry'),'retry-login')):''))+
- section('',row(T('语言','Language'),S.language==='system'?T(`当前系统语言显示为${S.systemLanguage==='zh'?'简体中文':'English'}。`,`System language currently displays as ${S.systemLanguage==='zh'?'简体中文':'English'}.`):'',picker(T('语言','Language'),'language',[['system',T('跟随系统','Follow System')],['zh',T('简体中文','Simplified Chinese')],['en',T('English','English')]],S.language)))+
- (S.preferenceIssues.length?section('',reason(T('部分设置无法读取，已使用安全默认值；重新选择后会保存有效值。','Some settings could not be read, so safe defaults are in use. Choose again to save a valid value.'),'warning','preference-recovery')):'')+feedback()+operationStatus();}
+ (S.preferenceIssues.length?section('',reason(T('部分设置无法读取，已使用安全默认值；重新选择后会保存有效值。','Some settings could not be read, so safe defaults are in use. Choose again to save a valid value.'),'warning','preference-recovery')):'')+renderSoftwareUpdate()+section('',button(T('关于 claudi0…','About claudi0…'),'open-about'))+feedback()+operationStatus();}
+function renderSoftwareUpdate(){const updateStatus={current:T('当前已是最新版本。','You are up to date.'),checking:T('正在检查更新…','Checking for updates…'),available:T('有新版本。','An update is available.'),failed:T('更新未能完成。','The update could not be completed.')}[S.updateState]||'';return  section(T('软件更新','Software Update'),row(T('公开预览','Public Preview'),T('此预览版为 ad-hoc 签名、未公证。依赖 Data Protection Keychain 的生成服务不可用；已保存凭据和音频保留。','This preview is ad-hoc signed and not notarized. Providers that require Data Protection Keychain are unavailable; saved credentials and audio are preserved.'))+
+ row(updateStatus,'',button(T('检查更新…','Check for Updates…'),'check-update','small-button'))+
+ row(T('每天自动检查更新','Automatically check daily'),'',toggle(T('每天自动检查更新','Automatically check daily'),'auto-update',S.autoUpdate!==false))+
+ (S.updateState==='failed'?row('','',button(T('官方下载与恢复','Official downloads and recovery'),'open-update-page')):''));}
 const shortcutNames=[['显示或隐藏面板','Show or Hide Panel'],['打开设置','Open Settings'],['打开当前声音作用域的事件页','Open Current Sound Scope Events']];
 const shortcutFailures={invalidStoredValue:['这项已保存快捷键已损坏或使用未知 schema，现已禁用。请先清除，再录制替代组合。','This saved shortcut is damaged or uses an unknown schema and has been disabled. Clear it before recording a replacement.'],primaryModifier:['组合必须包含 Command 或 Control；不允许裸键或仅 Shift/Option。','Include Command or Control. Bare keys and Shift/Option-only combinations are not allowed.'],unsupportedKey:['该硬件按键不支持用于全局快捷键。请录制其他组合。','That hardware key is not supported for global shortcuts. Record another combination.'],systemReserved:['这个组合由 macOS 保留。请录制其他组合。','That combination is reserved by macOS. Record another combination.'],duplicate:['这个组合已分配给%@。','That combination is already assigned to %@.'],conflict:['macOS 或其他应用已占用这个组合；原快捷键保持不变。','macOS or another app is already using that combination. Any previous shortcut remains unchanged.'],registrationFailed:['macOS 无法注册该快捷键；原快捷键保持不变。请重试。','macOS could not register that shortcut. Any previous shortcut remains unchanged; try again.'],unregisterFailed:['无法取消原快捷键注册，因此未尝试替换。','The previous shortcut could not be unregistered, so no replacement was attempted.'],persistenceFailed:['无法保存快捷键；原快捷键保持不变。','The shortcut could not be saved. Any previous shortcut remains unchanged.'],persistenceCleanupFailed:['新快捷键在本次应用会话中仍有效，但无法保存或撤销。请先清除或替换。','The new shortcut is active for this app session but could not be saved or removed. Clear or replace it before continuing.'],rollbackFailed:['新快捷键失败，且 macOS 无法恢复原注册。请录制其他组合。','The new shortcut failed and macOS could not restore the previous registration. Record another combination.']};
 function renderShortcuts(){const descriptions=[T('切换菜单栏面板，不打开设置。','Toggle the menu-bar panel without opening Settings.'),T('打开保留的统一设置窗口。','Open the retained unified Settings window.'),T('为面板当前合法的声音作用域打开「工作区」。','Open Workspace for the panel\'s current valid Sound Scope.')];return `<p class="intro">${T('注册三项全局快捷键；关闭此窗口后仍保持有效。','Register three global shortcuts that remain active after this window closes.')}</p><p class="intro">${icon('command')} ${T('每项快捷键必须包含 Command 或 Control；无需辅助功能或输入监控权限。','Each shortcut must include Command or Control. Accessibility and Input Monitoring are not required.')}</p>`+
  section('',shortcutNames.map((n,i)=>{const err=S.keyErrors[i];let sub=descriptions[i];if(err){const pair=shortcutFailures[err]||[err,err];const arg=((S.keyErrorArgs||{})[i])||'';sub=T(pair[0].replace('%@',arg),pair[1].replace('%@',arg));}return row(T(...n),sub,button(S.keys[i]||T('未分配','Not assigned'),`record-key:${i}`,'keycap')+button(T('清除','Clear'),`clear-key:${i}`,'link',!S.keys[i]&&!S.keyErrors[i]),{id:`shortcut-error-${i}`,icon:'command'});}).join(''))+feedback();}
 const activityNames={ready:['统计可用','Statistics ready'],empty:['当前没有计数','No counts yet'],unobserved:['尚未观察到已确认回调','No confirmed callbacks observed'],unavailable:['统计不可用，无最近成功数据','Statistics unavailable; no successful data'],stale:['刷新失败，保留最近成功统计','Refresh failed; retaining last successful statistics'],partial:['清理后仅统计当前边界之后的数据','Partial statistics since the clear boundary']};
 function renderUsage(){const unavailable=['unavailable','unobserved'].includes(S.activity),count=n=>unavailable?'—':String(n),read=S.reading||[];
- return section(T('所有来源','All surfaces'),row(T('统计状态','Statistics status'),T(...activityNames[S.activity]),button(T('刷新','Refresh'),'refresh-activity','small-button',!!S.operation))+
+ return section('',button(T('返回连接','Back to Connections'),'nav:integrations'))+section(T('所有来源','All surfaces'),row(T('统计状态','Statistics status'),T(...activityNames[S.activity]),button(T('刷新','Refresh'),'refresh-activity','small-button',!!S.operation))+
  `<div class="summary-row" id="activity-summary">${[[T('今日消息','Messages today'),S.counts[0]+S.counts[1]],[T('近七日消息','Messages in seven days'),S.weekCounts[0]+S.weekCounts[1]],[T('近七日子任务','Subtasks in seven days'),S.weekCounts[4]]].map(([n,v])=>`<div class="summary-block"><small>${n}</small><strong>${count(v)}</strong></div>`).join('')}</div>`,T('统计只来自当前安装已接受且映射的回调。七日为今天及前六个本地日期，不从日志、播放或回执历史推算。','Counts come only from accepted, mapped callbacks for the current installation. Seven days means today and the previous six local dates. Logs, playback, and receipt history are not counting sources.'))+
  section(T('来源明细','Surface details'),S.sources.map(h=>row(S.hosts.find(v=>v.id===h.id).name,hostState(S.hosts.find(v=>v.id===h.id)),`<span class="metric">${T('今日','Today')} ${count(h.today)}<br>${T('七日消息','Seven-day messages')} ${count(h.week)}<br>${T('七日子任务','Seven-day subtasks')} ${count(h.subtasks)}</span>`)).join(''),'', '', 'source-counts')+
  section(T('五事件统计','Five event counts'),`<div id="event-counts">${events.map((e,i)=>row(e.name(),`${T('支持覆盖','Supported coverage')} ${i===2?'1/3':'3/3'}`,`<span class="metric">${T('今日','Today')} ${count(S.counts[i])} / ${T('七日','Seven days')} ${count(S.weekCounts[i])}</span>`,{icon:e.icon,color:e.color})).join('')}</div>`)+
@@ -5911,10 +5920,6 @@ function logText(){return S.log.state==='available'?T(`存在 · ${S.log.bytes} 
 const resourceNames={license:['开源许可','Open-Source License'],attribution:['声音归属','Sound Attribution'],privacy:['隐私说明','Privacy Statement']};
 function diagnosticSummary(){return [`claudi0-version: ${S.about.version||'unknown'}`,`claudi0-build: ${S.about.build||'unknown'}`,`architecture: ${S.about.architecture||'unknown'}`,`macos: ${S.about.macos||'unknown'}`,`minimum-macos: ${S.about.minimum||'unknown'}`,...S.hosts.map(h=>`surface.${h.id}: ${h.state==='ready'?'ready':h.state==='awaitingActivation'?'awaiting-activation':h.state==='notConnected'?'not-connected':h.state==='needsAttention'?'needs-attention':'legacy'}`),...['application-bundle','bundled-helper','bundled-sounds'].map(k=>`path.${k}: present`),...Object.entries(S.resources).map(([k,v])=>`path.${k==='license'?'open-source-license':k==='attribution'?'sound-attribution':'privacy-statement'}: ${v?'present':'missing'}`)].join('\n');}
 function renderAbout(){const a=S.about;S.diagnosticText=diagnosticSummary();const u=T('未知','Unknown');const updateStatus={current:T('当前已是最新版本。','You are up to date.'),checking:T('正在检查更新…','Checking for updates…'),available:T('有新版本 1.2.0…','Version 1.2.0 is available…'),failed:T('更新未能完成。请重试或从官方页面下载。','The update could not be completed. Try again or download from the official page.')}[S.updateState]||T('当前已是最新版本。','You are up to date.');return `<div class="about-identity"><div class="brand-mark" aria-hidden="true">${icon('t2')}</div><p>claudi0</p><div class="group" id="version-facts" style="width:100%;margin-top:16px">${[['版本','Version','version'],['构建','Build','build'],['架构','Architecture','architecture'],['最低 macOS','Minimum macOS','minimum'],['当前 macOS','Current macOS','macos']].map(([zh,en,k])=>row(T(zh,en),'',`<span class="value">${esc(a[k]||u)}</span>`)).join('')}</div><div class="section-actions" style="margin-top:10px">${button(T('复制版本信息','Copy Version Information'),'copy-version')}</div></div>`+
- section(T('软件更新','Software Update'),row(T('公开预览','Public Preview'),T('此预览版为 ad-hoc 签名、未公证。依赖 Data Protection Keychain 的生成服务不可用；已保存凭据和音频保留。','This preview is ad-hoc signed and not notarized. Providers that require Data Protection Keychain are unavailable; saved credentials and audio are preserved.'))+
- row(updateStatus,'',button(T('检查更新…','Check for Updates…'),'check-update','small-button'))+
- row(T('每天自动检查更新','Automatically check daily'),'',toggle(T('每天自动检查更新','Automatically check daily'),'auto-update',S.autoUpdate!==false))+
- (S.updateState==='failed'?row('','',button(T('官方下载与恢复','Official downloads and recovery'),'open-update-page')):''))+
  section(T('资源','Resources'),Object.entries(resourceNames).map(([id,n])=>{const nm=T(...n);return row(nm,S.resources[id]?'':T('当前应用缺少“'+nm+'”。',nm+' is missing from this app.'),button(T('打开…','Open…'),`open-resource:${id}`,'small-button',!S.resources[id]));}).join(''),T('打开这份 claudi0 实际随包附带的文档。','Open the documents included with this copy of claudi0.'))+
  section(T('安全诊断','Safe Diagnostics'),`<div class="diagnostic-body"><textarea id="diagnostic-preview" class="field mono" aria-label="${T('安全诊断内容','Safe diagnostic content')}" readonly>${esc(S.diagnosticText)}</textarea><div class="section-actions">${button(T('复制安全诊断','Copy Safe Diagnostics'),'copy-diagnostics')}</div></div>`,T('只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。','Contains only version, architecture, macOS, published Surface states, and whether fixed app resources exist. It never includes path values or user content.'))+
  feedback();}
@@ -6116,17 +6121,18 @@ function reminderSheet(id,capture=true){const n=(S.reading||S.pending).find(v=>v
 function refreshLibrary(){if(S.operation)return;S.library=S.packs.length?'refreshing':'loading';perform('refresh-library','正在刷新声音包库','Refreshing sound pack library',()=>{S.faults.library=false;S.faults.preview=false;S.faults.binding=false;S.library='ready';if(!S.faults.manifest)S.packs.forEach(p=>p.healthy=true);setNotice(S.faults.manifest?'库已重新读取，但该包 manifest 仍损坏。请定位文件修复后重试。':'共享声音包库已重新读取；操作目标仍需按身份校验。',S.faults.manifest?'Library reloaded, but this manifest is still damaged. Reveal the file, repair it, and retry.':'The shared library was reloaded. Operation targets still require identity validation.',S.faults.manifest?'error':'success');});}
 function platformAction(key,systemSettings=false){if(S.faults.platform){const msg=systemSettings?T('无法打开系统设置。请从 Apple 菜单打开系统设置并检查授权。','System Settings could not be opened. Open it from the Apple menu and check authorization.'):T('系统设置或 Finder 打开失败，可重试原入口。','System Settings or Finder could not be opened. Retry the same action.');setNotice(msg,msg,'error');}else setNotice(`演示目标：${key}。浏览器不执行系统动作。`,`Demo target: ${key}. No system action is performed by the browser.`);render();}
 function action(value,control){const [a,id]=value.split(':');
+ if(a==='open-about')return navigate('about');
  if(a==='nav'){S.preferenceIssues=S.preferenceIssues.filter(v=>v!=='route');if($('sheet').open)closeSheet();S.returnContext=null;return navigate(id);}
  if(a==='sheet-cancel')return closeSheet();
  if(a==='detail-back')return detailBack();
  if(a==='workspaces')return navigate('events','workspaces');if(a==='scope-details')return navigate('events','scope-details');
- if(a==='select-workspace')return navigate('events',null,{scope:id});if(a==='add-workspace')return addWorkspace();if(a==='to-events')return navigate('events');
+ if(a==='select-workspace')return navigate('events','profile',{scope:id});if(a==='add-workspace')return addWorkspace();if(a==='to-events')return navigate('events');
  if(a==='back-sounds')return navigate('sounds');if(a==='service')return navigate('sounds','service');if(a==='audio-files')return navigate('sounds','audio');if(a==='panel-packs')return navigate('sounds','panel');
  if(a==='preview'){if(control.classList.contains('playing'))return stopAudio();return playTone(Number(id),control);}if(a==='preview-all')return playAll();if(a==='candidate-preview'){if(control.classList.contains('playing'))return stopAudio();return playTone(editorIndex(),control);}
  if(a==='edit-from-scope'){const g=scope();if(!g)return;S.returnContext={...scopeIdentity(g),name:scopeName(g),event:Number(id)};S.expandedEvent=null;return navigate('sounds',`edit:${events[Number(id)].id}`,{pack:g.pack});}
  if(a==='edit-pack'){S.expandedEvent=null;return navigate('sounds',`edit:${events[Number(id)].id}`);}
  if(a==='generate-pack'){const i=Number(id);S.expandedEvent=i;navigate('sounds',`edit:${events[i].id}`);$('cue-description')?.focus();return;}
- if(a==='return-scope'){const r=S.returnContext;if(!r)return navigate('events');const valid=validScope(r);S.scope=r.id;S.invalidScope=valid?null:r;navigate('events',null,{scope:r.id});S.returnContext=null;if(valid)requestAnimationFrame(()=>$('page-content').querySelector(`[data-action="edit-from-scope:${r.event}"]`)?.focus());else focusReason();return;}
+ if(a==='return-scope'){const r=S.returnContext;if(!r)return navigate('events');const valid=validScope(r);S.scope=r.id;S.invalidScope=valid?null:r;navigate('events','profile',{scope:r.id});S.returnContext=null;if(valid)requestAnimationFrame(()=>$('page-content').querySelector(`[data-action="edit-from-scope:${r.event}"]`)?.focus());else focusReason();return;}
  if(a==='delete-pack'){closeSheet();return deletePack();}
  if(a==='restore-library'){closeSheet();return restoreFactory(true);}if(a==='restore-pack'){closeSheet();return restoreFactory(false);}
  if(a==='retry-last'){const retry=S.retry;if(!retry)return;S.retry=null;S.faults[retry.fault]=false;return retry.run();}
@@ -6294,7 +6300,7 @@ function clearBrowsingHistory(){browsing.entries=[];browsing.cursor=-1;browsing.
 const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action});
 const same=(a,b)=>a&&b&&['page','detail','scope','pack','host','directory'].every(k=>a[k]===b[k]);
 function recordPosition(p,replace=false){if(replace&&browsing.cursor>=0)browsing.entries[browsing.cursor]=p;else{browsing.entries.splice(browsing.cursor+1);browsing.entries.push(p);if(browsing.entries.length>64)browsing.entries.shift();browsing.cursor=browsing.entries.length-1;}browsing.version++;}
-function navigate(page,detail=null,options={}){if($('sheet').open||approvedSoundsView?.modal())return;const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page}"]`)?.focus();}}
+function navigate(page,detail=null,options={}){if($('sheet').open||approvedSoundsView?.modal())return;const about=page==='about';if(about||page==='shortcuts'||page==='display')page='general';if(page==='events'&&!detail)detail='workspaces';const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page==='usage'?'integrations':page}"]`)?.focus();}if(about){modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));openSheet('关于 claudi0','About claudi0',renderAbout);modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));}}
 function traverse(delta){if($('sheet').open||approvedSoundsView?.modal())return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();document.querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
 const renderOriginal=render;
 render=function(){renderOriginal();if(S.page==='notifications'&&S.detail==='animation')renderAnimationAlignment();drawNavigation();};
@@ -6378,7 +6384,7 @@ window.prototypeReview.navigation={getState:()=>structuredClone(browsing),naviga
     setSize:value=>{if(['default','minimum'].includes(value)){$('preview-size').value=value;applySize();}},
     openWorkspace:id=>{
       if($('sheet').open)return false;
-      navigate('events',null,{scope:id});return true;
+      navigate('events','profile',{scope:id});return true;
     },
     openSoundEvent:(pack,event)=>{
       if($('sheet').open||approvedSoundsView?.modal())return false;
