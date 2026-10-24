@@ -605,6 +605,15 @@ final class SettingsSoundsNativeLayoutProbe {
         for _ in 0..<4 { await Task.yield(); refresh() }
     }
 
+    func settle(until isReady: @MainActor () -> Bool) async -> Bool {
+        let deadline = Date().addingTimeInterval(2)
+        while !isReady() {
+            guard Date() < deadline else { return false }
+            await settle()
+        }
+        return true
+    }
+
     func refresh() {
         for _ in 0..<4 {
             RunLoop.current.run(until: Date().addingTimeInterval(0.025))

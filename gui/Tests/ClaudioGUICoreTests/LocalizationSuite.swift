@@ -20,6 +20,37 @@ func runLocalizationSuites() {
 
         let chinese = ClaudioL10n(language: .zhHans)
         let english = ClaudioL10n(language: .english)
+        let workspaceSourceCopy: [(ClaudioL10nKey, String, String)] = [
+            (
+                .workspaceSoundSourcesTitle, "使用此工作区声音设置的来源",
+                "Sources that use this workspace’s sound settings"
+            ),
+            (
+                .workspaceSoundSourcesDescription,
+                "勾选后，该来源在此目录范围内使用本工作区的声音包、音量和事件开关。取消勾选不会关闭提示音；未匹配工作区设置时使用默认组。",
+                "Selected sources use this workspace’s sound pack, volume, and event switches within this directory scope. Deselecting a source does not turn off its sounds. The Default Group is used when no workspace settings match."
+            ),
+            (
+                .workspaceSoundSourcesHint,
+                "控制此来源是否在此目录范围内使用本工作区的声音设置，不会更改来源连接。",
+                "Controls whether this source uses this workspace’s sound settings within this directory scope. Does not change the source connection."
+            ),
+            (
+                .workspaceSoundSourcesEmpty, "未选择来源；此工作区的声音设置暂不使用。",
+                "No sources selected; this workspace’s sound settings are not in use."
+            ),
+            (.workspaceManageConnections, "管理来源连接…", "Manage Source Connections…"),
+        ]
+        for (key, zh, en) in workspaceSourceCopy {
+            expect(ClaudioL10nKey.allKnown.contains(key), "工作区来源专用文案须注册：\(key.rawValue)")
+            expect(
+                chinese.text(key) == zh && english.text(key) == en,
+                "工作区来源勾选须准确区分声音设置适用性与连接：\(key.rawValue)")
+        }
+        expect(
+            chinese.text(.workspaceSurfaces) == "适用来源"
+                && english.text(.workspaceSurfaces) == "Applies to surfaces",
+            "摘要使用的短标题不应随表单专用长标题变化")
         expect(
             chinese.format(.panelActivitySummary, "148" as NSString, "873" as NSString)
                 == "今日 148 次 · 近 7 日 873 次"

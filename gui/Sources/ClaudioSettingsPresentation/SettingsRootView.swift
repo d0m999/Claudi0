@@ -144,7 +144,6 @@ package struct SettingsDestinationContentView: View {
                 EventSettingsWindowView(
                     model: eventSettingsModel,
                     selection: eventSettingsSelection,
-                    hostIntegrations: hostIntegrations,
                     languageStore: preferences,
                     aiCueViewModel: aiCueViewModel,
                     soundPacksEditorOwner: soundPacksEditorOwner,
@@ -157,6 +156,9 @@ package struct SettingsDestinationContentView: View {
                     },
                     onConfigureSound: {
                         settingsPresentationSession.editScopeSound($0)
+                    },
+                    onManageConnections: {
+                        settingsPresentationSession.send(.route(.destination(.integrations)))
                     },
                     onAudibilityInputsChanged: onEventAudibilityInputsChanged,
                     onAnnouncement: onAnnouncement)

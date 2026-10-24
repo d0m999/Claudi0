@@ -330,7 +330,11 @@ func runSoundEditorAILifecycleSuites() async {
                 session: fixture.session, size: NSSize(width: 960, height: 640))
             defer { viewModel.endSession(); probe.close() }
             await probe.settle()
-            expect(probe.pressControl("settings.sounds.pack.settings-fixture-pack"), "进入目标包")
+            let packEntry = "settings.sounds.pack.settings-fixture-pack"
+            let mounted = await probe.settle(until: {
+                probe.menuAccessibilityElement(identifier: packEntry) != nil
+            })
+            expect(mounted && probe.pressControl(packEntry), "进入目标包")
             await probe.settle()
             expect(probe.chooseSource(event: .stop, index: 0), "打开生成表单")
             await probe.settle()

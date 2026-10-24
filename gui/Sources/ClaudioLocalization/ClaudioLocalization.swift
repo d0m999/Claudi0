@@ -1327,6 +1327,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let workspaceGitScope: Self = "workspace.git-scope"
     public static let workspacePlainScope: Self = "workspace.plain-scope"
     public static let workspaceSurfaces: Self = "workspace.surfaces"
+    public static let workspaceSoundSourcesTitle: Self = "workspace.sound-sources.title"
+    public static let workspaceSoundSourcesDescription: Self = "workspace.sound-sources.description"
+    public static let workspaceSoundSourcesHint: Self = "workspace.sound-sources.hint"
+    public static let workspaceSoundSourcesEmpty: Self = "workspace.sound-sources.empty"
+    public static let workspaceManageConnections: Self = "workspace.manage-connections"
     public static let workspaceEvidencePending: Self = "workspace.evidence-pending"
     public static let workspaceEdit: Self = "workspace.edit"
     public static let workspacePreviewNote: Self = "workspace.preview-note"
@@ -1686,6 +1691,11 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .workspaceGitScope,
         .workspacePlainScope,
         .workspaceSurfaces,
+        .workspaceSoundSourcesTitle,
+        .workspaceSoundSourcesDescription,
+        .workspaceSoundSourcesHint,
+        .workspaceSoundSourcesEmpty,
+        .workspaceManageConnections,
         .workspaceEvidencePending,
         .workspaceEdit,
         .workspacePreviewNote,

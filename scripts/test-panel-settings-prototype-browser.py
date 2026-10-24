@@ -510,6 +510,86 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
     def settings_state(self):
         return self.page.evaluate("MacSettings.getState()")
 
+    def test_workspace_sound_sources_detail_and_connections_history(self):
+        for language in ["zh", "en"]:
+            for theme in ["light", "dark"]:
+                for width in [960, 1240]:
+                    with self.subTest(language=language, theme=theme, width=width):
+                        self.open(win="1", pane="groups", lang=language, th=theme)
+                        if width == 960:
+                            self.page.locator("#window-maximize").click()
+                        self.page.locator('[data-action="select-workspace:claudio"]').click()
+                        description = self.page.locator("#workspace-sound-sources-description")
+                        expect(description).to_be_visible()
+                        self.assertIn("取消勾选不会关闭提示音" if language == "zh" else
+                                      "Deselecting a source does not turn off its sounds.", description.inner_text())
+                        self.assertTrue(description.evaluate("el => el.scrollWidth <= el.clientWidth"))
+                        if width == 960:
+                            self.assertGreater(description.bounding_box()["height"], 24)
+                        before = self.settings_state()
+                        sources = self.page.locator('[data-control^="scope-surface:"]')
+                        self.assertEqual(sources.count(), 5)
+                        for i in range(sources.count()):
+                            source = sources.nth(i)
+                            self.assertEqual(source.get_attribute("type"), "checkbox")
+                            self.assertEqual(source.get_attribute("aria-describedby"), description.get_attribute("id"))
+                            self.assertTrue(source.get_attribute("aria-description"))
+                            source.uncheck()
+                        expect(self.page.locator("#workspace-sound-sources-empty")).to_be_visible()
+                        after = self.settings_state()
+                        self.assertEqual(before["hosts"], after["hosts"])
+                        self.assertEqual(before["scopes"][0], after["scopes"][0])
+                        original = next(g for g in before["scopes"] if g["id"] == "claudio")
+                        changed = next(g for g in after["scopes"] if g["id"] == "claudio")
+                        self.assertEqual({**original, "surfaces": []}, changed)
+                        source = sources.first
+                        source.focus()
+                        self.page.keyboard.press("Space")
+                        expect(source).to_be_checked()
+                        self.assertTrue(source.evaluate("el => el === el.getRootNode().activeElement"))
+                        self.page.keyboard.press("Tab")
+                        self.assertTrue(sources.nth(1).evaluate("el => el === el.getRootNode().activeElement"))
+                        link = self.page.locator('#page-content [data-action="nav:integrations"]')
+                        link.scroll_into_view_if_needed()
+                        offset = self.page.locator("#page-scroll").evaluate("el => el.scrollTop")
+                        link.click()
+                        self.assertEqual(self.settings_state()["page"], "integrations")
+                        self.assertIsNone(self.settings_state()["detail"])
+                        self.page.locator("#detail-back").click()
+                        self.assertEqual(self.settings_state()["scope"], "claudio")
+                        self.assertEqual(self.settings_state()["page"], "events")
+                        self.assertEqual(self.page.locator("#page-scroll").evaluate("el => el.scrollTop"), offset)
+
+    def test_workspace_sound_sources_creation_zero_selection_and_modal_navigation(self):
+        for language in ["zh", "en"]:
+            with self.subTest(language=language):
+                self.open(win="1", pane="groups", lang=language)
+                self.page.locator('[data-action="add-workspace"]').click()
+                sheet = self.page.locator("#sheet")
+                expect(sheet.locator("#workspace-new-sound-sources-description")).to_be_visible()
+                self.assertEqual(sheet.locator('[data-action="nav:integrations"]').count(), 0)
+                checks = sheet.locator('input[aria-describedby="workspace-new-sound-sources-description"]')
+                self.assertEqual(checks.count(), 5)
+                self.assertTrue(all(checks.nth(i).is_checked() for i in range(5)))
+                for i in range(5):
+                    checks.nth(i).uncheck()
+                expect(sheet.locator("#workspace-new-sound-sources-empty")).to_be_visible()
+                route = self.settings_state()["page"], self.settings_state()["detail"]
+                self.page.evaluate("MacSettings.review.navigation.navigate('integrations')")
+                self.assertEqual((self.settings_state()["page"], self.settings_state()["detail"]), route)
+                sheet.locator('[data-action="resolve-directory"]').click()
+                sheet.locator("#workspace-pack").select_option("minimal")
+                # Preserve this historical prototype form's existing volume gate.
+                sheet.locator("#workspace-volume-confirm").check()
+                add = sheet.locator('[data-action="sheet-add-workspace"]')
+                expect(add).to_be_enabled()
+                before = self.settings_state()
+                add.click()
+                after = self.settings_state()
+                self.assertEqual(after["hosts"], before["hosts"])
+                self.assertEqual(after["scopes"][:-1], before["scopes"])
+                self.assertEqual(after["scopes"][-1]["surfaces"], [])
+
     def open_scope_settings_from_panel(self):
         self.assertEqual(self.page.locator("#editWorkspaceBtn").count(), 0)
         self.page.locator("#gearBtn").click()

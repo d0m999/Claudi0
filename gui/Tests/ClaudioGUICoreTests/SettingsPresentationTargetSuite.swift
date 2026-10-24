@@ -822,7 +822,8 @@ func runSettingsAICueGallerySuites(
                     fixture.aiCueViewModel.providerIsAdmitted
                     && fixture.aiCueViewModel.providerCredentialAccessAllowed
                 if mayManageCredentials {
-                    expect(probe.hasAttachedSheet, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
+                    let mounted = await probe.settle(until: { probe.hasAttachedSheet })
+                    expect(mounted, "\(scenario.rawValue) 服务管理必须使用真实附属表单")
                     expect(
                         fixture.eventSettingsSelection.presentationState.credentialSheetIsPresented,
                         "已准入表单必须保留同一 session 的模态事实")

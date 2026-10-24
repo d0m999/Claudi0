@@ -14,7 +14,6 @@ import SwiftUI
 struct EventSettingsWindowView: View {
     @ObservedObject var model: PanelConfigController
     @ObservedObject var selection: EventSettingsWindowSelection
-    @ObservedObject var hostIntegrations: HostIntegrationPresentationStore
     @ObservedObject var languageStore: ClaudioPreferences
     @ObservedObject var aiCueViewModel: AICueGenerationViewModel
     @ObservedObject var soundPacksEditorOwner: SoundPacksEditorOwner
@@ -23,6 +22,7 @@ struct EventSettingsWindowView: View {
     let performPlatformAction: @MainActor (SettingsPlatformAction) -> Void
     let onNavigateWorkspace: (@MainActor (EventSettingsWindowRoute) -> Void)?
     let onConfigureSound: @MainActor (SoundPacksWindowRoute) -> Void
+    let onManageConnections: @MainActor () -> Void
     let onAudibilityInputsChanged: @MainActor () -> Void
     let onAnnouncement: @MainActor (String) -> Void
     #if DEBUG
@@ -42,7 +42,6 @@ struct EventSettingsWindowView: View {
     init(
         model: PanelConfigController,
         selection: EventSettingsWindowSelection,
-        hostIntegrations: HostIntegrationPresentationStore,
         languageStore: ClaudioPreferences,
         aiCueViewModel: AICueGenerationViewModel,
         soundPacksEditorOwner: SoundPacksEditorOwner,
@@ -50,12 +49,12 @@ struct EventSettingsWindowView: View {
         performPlatformAction: @escaping @MainActor (SettingsPlatformAction) -> Void,
         onNavigateWorkspace: (@MainActor (EventSettingsWindowRoute) -> Void)? = nil,
         onConfigureSound: @escaping @MainActor (SoundPacksWindowRoute) -> Void,
+        onManageConnections: @escaping @MainActor () -> Void,
         onAudibilityInputsChanged: @escaping @MainActor () -> Void,
         onAnnouncement: @escaping @MainActor (String) -> Void
     ) {
         self.model = model
         self.selection = selection
-        self.hostIntegrations = hostIntegrations
         self.languageStore = languageStore
         self.aiCueViewModel = aiCueViewModel
         self.soundPacksEditorOwner = soundPacksEditorOwner
@@ -64,6 +63,7 @@ struct EventSettingsWindowView: View {
         self.performPlatformAction = performPlatformAction
         self.onNavigateWorkspace = onNavigateWorkspace
         self.onConfigureSound = onConfigureSound
+        self.onManageConnections = onManageConnections
         self.onAudibilityInputsChanged = onAudibilityInputsChanged
         self.onAnnouncement = onAnnouncement
     }
@@ -250,6 +250,7 @@ struct EventSettingsWindowView: View {
                         .settingsMountIdentity("workspace.remove")
                 }
                 .settingsSectionSurface()
+                manageConnectionsButton
             }
         }
     }
@@ -265,6 +266,7 @@ struct EventSettingsWindowView: View {
             }
             if let error = model.workspaceError { workspaceFailure(error) }
             writeFailures
+            manageConnectionsButton
         } else {
             scopeContent
         }
@@ -698,15 +700,16 @@ struct EventSettingsWindowView: View {
                 .system(.body, design: .monospaced))
             Text(l10n.text(rule.directory.kind == .git ? .workspaceGitScope : .workspacePlainScope))
                 .font(.caption)
-            Text(l10n.text(.workspaceSurfaces)).font(.headline)
+            Text(l10n.text(.workspaceSoundSourcesTitle)).font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("workspace.sound-sources.title")
+            Text(l10n.text(.workspaceSoundSourcesDescription))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("workspace.sound-sources.description")
             ForEach(WorkspaceSurfaceEligibility.candidates, id: \.rawValue) { surface in
                 let host = HostID.productVisibleCases.first { $0.surfaceID == surface }
-                let sourceRow = hostIntegrations.content.sourceRows.first {
-                    $0.host.surfaceID == surface
-                }
-                let localizedSourceRow = sourceRow.map {
-                    localizedHostSourceRow($0, language: languageStore.language)
-                }
                 Toggle(
                     isOn: Binding(
                         get: { rule.surfaces.contains(surface) },
@@ -722,21 +725,22 @@ struct EventSettingsWindowView: View {
                             selection.noteWriteResult(retry, using: model)
                         })
                 ) {
-                    VStack(alignment: .leading) {
-                        Text(host?.displayName ?? surface.rawValue)
-                        Text(
-                            !WorkspaceSurfaceEligibility.verified.contains(surface)
-                                ? l10n.text(.workspaceEvidencePending)
-                                : localizedSourceRow.map {
-                                    "\($0.readinessText) · \($0.coverageText)"
-                                } ?? l10n.text(.workspaceDisconnected)
-                        )
-                        .font(.caption).foregroundColor(.secondary)
-                    }
+                    Text(host?.displayName ?? surface.rawValue)
                 }.disabled(!WorkspaceSurfaceEligibility.verified.contains(surface))
+                    .accessibilityHint(l10n.text(.workspaceSoundSourcesHint))
+                    .accessibilityIdentifier("workspace.sound-source.\(surface.rawValue)")
             }
-            if rule.surfaces.isEmpty { Text(l10n.text(.workspaceNoSurfaces)).font(.caption) }
+            if rule.surfaces.isEmpty {
+                Text(l10n.text(.workspaceSoundSourcesEmpty)).font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("workspace.sound-sources.empty")
+            }
         }
+    }
+
+    private var manageConnectionsButton: some View {
+        Button(l10n.text(.workspaceManageConnections), action: onManageConnections)
+            .accessibilityIdentifier("workspace.manage-connections")
     }
 
     @ViewBuilder
@@ -1245,7 +1249,15 @@ private struct AddWorkspaceSoundRuleView: View {
                 Slider(value: $volume, in: 0...1).accessibilityLabel(l10n.text(.panelMasterVolume))
                 Text("\(Int(volume * 100))%").monospacedDigit()
             }
-            Text(l10n.text(.workspaceSurfaces)).font(SettingsAppearance.font(.sectionTitle))
+            Text(l10n.text(.workspaceSoundSourcesTitle))
+                .font(SettingsAppearance.font(.sectionTitle))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("workspace.new.sound-sources.title")
+            Text(l10n.text(.workspaceSoundSourcesDescription))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("workspace.new.sound-sources.description")
             ForEach(WorkspaceSurfaceEligibility.candidates, id: \.rawValue) { surface in
                 Toggle(
                     HostID.productVisibleCases.first { $0.surfaceID == surface }?.displayName
@@ -1256,9 +1268,13 @@ private struct AddWorkspaceSoundRuleView: View {
                             if $0 { surfaces.insert(surface) } else { surfaces.remove(surface) }
                         })
                 ).disabled(!WorkspaceSurfaceEligibility.verified.contains(surface))
+                    .accessibilityHint(l10n.text(.workspaceSoundSourcesHint))
+                    .accessibilityIdentifier("workspace.new.sound-source.\(surface.rawValue)")
             }
-            if WorkspaceSurfaceEligibility.verified.isEmpty {
-                Text(l10n.text(.workspaceEvidencePending)).font(.caption)
+            if surfaces.isEmpty {
+                Text(l10n.text(.workspaceSoundSourcesEmpty)).font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("workspace.new.sound-sources.empty")
             }
             if let error = failure ?? model.workspaceError {
                 FailureRow(message: localizedWorkspaceError(error, language: language))

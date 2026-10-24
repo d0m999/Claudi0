@@ -14007,6 +14007,86 @@
         }
       }
     },
+    "workspace.sound-sources.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources that use this workspace’s sound settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用此工作区声音设置的来源"
+          }
+        }
+      }
+    },
+    "workspace.sound-sources.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected sources use this workspace’s sound pack, volume, and event switches within this directory scope. Deselecting a source does not turn off its sounds. The Default Group is used when no workspace settings match."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "勾选后，该来源在此目录范围内使用本工作区的声音包、音量和事件开关。取消勾选不会关闭提示音；未匹配工作区设置时使用默认组。"
+          }
+        }
+      }
+    },
+    "workspace.sound-sources.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controls whether this source uses this workspace’s sound settings within this directory scope. Does not change the source connection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制此来源是否在此目录范围内使用本工作区的声音设置，不会更改来源连接。"
+          }
+        }
+      }
+    },
+    "workspace.sound-sources.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No sources selected; this workspace’s sound settings are not in use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未选择来源；此工作区的声音设置暂不使用。"
+          }
+        }
+      }
+    },
+    "workspace.manage-connections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Source Connections…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理来源连接…"
+          }
+        }
+      }
+    },
     "workspace.evidence-pending": {
       "localizations": {
         "en": {

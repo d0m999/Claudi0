@@ -1,5 +1,13 @@
 # Design System — claudi0
 
+## 工作区来源勾选呈现修订（现行 · 2026-10-24）
+
+工作区详情与添加工作区表单统一使用「使用此工作区声音设置的来源」（English: “Sources that use this workspace’s sound settings”）。标题下常驻可换行说明：「勾选后，该来源在此目录范围内使用本工作区的声音包、音量和事件开关。取消勾选不会关闭提示音；未匹配工作区设置时使用默认组。」英文为 “Selected sources use this workspace’s sound pack, volume, and event switches within this directory scope. Deselecting a source does not turn off its sounds. The Default Group is used when no workspace settings match.”。
+
+勾选行只显示来源名称，保留原有资格门控和系统勾选状态、键盘操作，并通过无障碍提示说明其控制工作区声音设置的适用性。接入状态、覆盖比例及目录证据不放在此处。全部取消时显示「未选择来源；此工作区的声音设置暂不使用。」（“No sources selected; this workspace’s sound settings are not in use.”），零来源仍可保存。
+
+仅工作区详情底部提供「管理来源连接…」（“Manage Source Connections…”），经既有设置会话进入同窗口「连接」首页，保留浏览历史、原工作区详情和阅读位置恢复。添加表单不提供跨页入口，沿用模态导航约束。本修订不改变配置结构、来源默认选择、目录匹配、接入资格、自动播放或配置写入 owner；摘要等位置继续使用简短的「适用来源」。画面同步至[主原型](<designs/panel-and-settings/Panel and Settings Prototype.html>)，自动与原生人工验证分别记录。
+
 ## 五页设置修订（现行 · 2026-10-23）
 
 本节取代历史八页／六页设置清单与快捷键交付合同。可见侧栏固定为：**工作区、声音包、连接、提醒与静音、通用**；前四项与通用以间距分组，无分组标题。画面唯一 SoT 是 [主原型](<designs/panel-and-settings/Panel and Settings Prototype.html>)；讨论原型保留未决首启对照及历史设置评审／离线回归证据，显式标明历史边界并链接现行主原型；它不拥有第二份现行设置画面合同。

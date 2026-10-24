@@ -5,6 +5,76 @@ import Foundation
 
 @MainActor
 func runWorkspaceSoundPresentationSuites() {
+    suite("工作区来源勾选：零来源合法且只改工作区来源集合") {
+        withTempDirectory { root in
+            let file = root.appendingPathComponent("config.json")
+            let packs = root.appendingPathComponent("packs")
+            writeFixture(
+                #"{"id":"workspace-pack","name":"Workspace","events":{}}"#,
+                to: packs.appendingPathComponent("workspace-pack/manifest.json"))
+            var config = ClaudioConfig(selectedPack: "default-pack", masterVolume: 0.21)
+            config.eventsEnabled[Event.notification.cliName] = false
+            let rule = WorkspaceSoundRule(
+                directory: WorkspaceDirectory(kind: .directory, path: root.path),
+                surfaces: [.codex, .claudeCode],
+                profile: WorkspaceSoundProfile(selectedPack: "workspace-pack", volume: 0.74))
+            config.workspaceRules = [rule]
+            var original =
+                try! JSONSerialization.jsonObject(
+                    with: JSONEncoder().encode(config)) as! [String: Any]
+            original["future"] = ["keep": true]
+            original["surface_overrides"] = ["future-surface": ["keep": "opaque"]]
+            try! JSONSerialization.data(withJSONObject: original).write(to: file)
+            let connectionFile = root.appendingPathComponent("host/settings.json")
+            let connectionBytes = Data(
+                #"{"hooks":{"UserPromptSubmit":[{"command":"fixture-hook"}]},"future":true}"#.utf8)
+            writeFixture(connectionBytes, to: connectionFile)
+            let model = PanelConfigController(
+                configFile: file, lockFile: root.appendingPathComponent("config.lock"),
+                environment: AudioImportEnvironment(
+                    userPacksDirectory: packs, durationProbe: StubDurationProbe(fixedDuration: 1),
+                    packsLockFile: root.appendingPathComponent("packs.lock")))
+            model.selectSoundScope(.workspace(rule.id))
+            for selected: [HostSurfaceID] in [[], [.claudeCode]] {
+                expect(
+                    model.changeWorkspace(
+                        .surfaces(WorkspaceSoundWriteTarget(rule: rule), selected)),
+                    "取消全部来源与重新勾选须沿用原有写入入口")
+                let readback = loadClaudioConfig(from: file)!
+                expect(
+                    readback.workspaceRules.first?.surfaces == selected
+                        && readback.workspaceRules.first?.profile == rule.profile
+                        && readback.workspaceRules.first?.directory == rule.directory
+                        && readback.selectedPack == config.selectedPack
+                        && readback.masterVolume == config.masterVolume
+                        && readback.eventsEnabled == config.eventsEnabled,
+                    "来源勾选不改默认组或工作区的声音配置")
+                var raw =
+                    try! JSONSerialization.jsonObject(with: Data(contentsOf: file))
+                    as! [String: Any]
+                var rules = raw["workspace_rules"] as! [String: [String: Any]]
+                var expectedRules = original["workspace_rules"] as! [String: [String: Any]]
+                rules[rule.id.uuidString]?.removeValue(forKey: "surfaces")
+                expectedRules[rule.id.uuidString]?.removeValue(forKey: "surfaces")
+                raw["workspace_rules"] = rules
+                var expected = original
+                expected["workspace_rules"] = expectedRules
+                raw.removeValue(forKey: "sound_model_version")
+                expected.removeValue(forKey: "sound_model_version")
+                expect(
+                    NSDictionary(dictionary: raw).isEqual(to: expected),
+                    "来源集合之外保留未知字段与退役来源字段，只允许既有模型版本标记")
+                expect(
+                    (try! Data(contentsOf: connectionFile)) == connectionBytes,
+                    "勾选不写宿主连接配置")
+                let resolved = try! readback.resolveSoundProfile(for: .codex, cwd: root.path).get()
+                expect(
+                    resolved.selectedPack == config.selectedPack
+                        && resolved.volume == config.masterVolume,
+                    "取消来源后按原解析规则使用默认组，默认声音没有被关闭")
+            }
+        }
+    }
     suite("声音包编辑：工作区使用与复制应用复用现有写入口") {
         withTempDirectory { root in
             let file = root.appendingPathComponent("config.json")
