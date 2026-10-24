@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>首启方案 C · 实际 SwiftUI 渲染</title>
+<style>
+  :root {
+    --bg: #e9e3d9;
+    --surface: #fffdf8;
+    --text: #2b2620;
+    --text-2: #75685a;
+    --muted: #ab9e8e;
+    --hairline: rgba(43, 38, 32, .12);
+    --clay: #c4633c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 18% 8%, rgba(255,255,255,.7), transparent 28%),
+      radial-gradient(circle at 85% 0%, rgba(217,119,87,.10), transparent 30%),
+      var(--bg);
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+  }
+  main { width: min(1380px, calc(100% - 48px)); margin: 40px auto 64px; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; margin-bottom: 24px; }
+  h1 { margin: 0 0 6px; font: 650 26px/1.15 -apple-system, "SF Pro Rounded", "PingFang SC", sans-serif; letter-spacing: -.02em; }
+  header p { margin: 0; max-width: 760px; color: var(--text-2); font-size: 13px; }
+  .meta { flex: none; text-align: right; color: var(--muted); font: 11px/1.5 "SF Mono", ui-monospace, monospace; }
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+  figure { margin: 0; }
+  .desktop {
+    padding: 22px;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 30% 0%, rgba(255,255,255,.55), transparent 34%),
+      linear-gradient(145deg, #efe9df, #ddd4c7);
+    box-shadow: 0 18px 40px rgba(67, 51, 37, .12), inset 0 0 0 1px rgba(255,255,255,.4);
+  }
+  img { display: block; width: 100%; height: auto; border-radius: 14px; box-shadow: 0 12px 30px rgba(53, 40, 29, .18); }
+  figcaption { margin-top: 10px; }
+  figcaption strong { display: block; font-size: 12.5px; }
+  figcaption span { display: block; color: var(--text-2); font-size: 11.5px; }
+  .notes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .note {
+    padding: 16px 18px;
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    background: rgba(255, 253, 248, .72);
+  }
+  .note h2 { margin: 0 0 6px; font: 600 13px/1.3 -apple-system, "SF Pro Rounded", "PingFang SC", sans-serif; }
+  .note p, .note li { margin: 0; color: var(--text-2); font-size: 12px; }
+  .note ul { margin: 0; padding-left: 18px; }
+  .note li + li { margin-top: 3px; }
+  code { font: 11px "SF Mono", ui-monospace, monospace; color: var(--clay); }
+  @media (max-width: 1180px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 680px) { .grid, .notes { grid-template-columns: 1fr; } header { display: block; } .meta { margin-top: 10px; text-align: left; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>首启方案 C · 实际 SwiftUI 渲染</h1>
+      <p>不是 HTML 模拟。面板由真实 SwiftUI/AppKit 绘制，使用生产 token 与共享控件：<code>ClaudioT2Badge</code>、<code>ClaudioEventGlyph</code>、<code>MasterVolumeRow</code>、<code>MotionPreviewButton</code>、<code>PanelQuitFooter</code>。尺寸 312×560pt，2× 位图。首启内容区是新组合，现有面板的最近事件 / 声音作用域 / 包选择区域未包含在这组截图里。</p>
+    </div>
+    <div class="meta">2026-10-22<br>claudio-gui-tests · DEBUG prototype<br>13 states · light/dark · zh/en</div>
+  </header>
+
+  <section class="grid">
+    <figure>
+      <div class="desktop"><img src="renders/01-fresh-light-zh.png" alt="首启全新状态，浅色，中文"></div>
+      <figcaption><strong>01 · 全新首启</strong><span>示例试听 + 接上宿主；未写入任何配置。宿主与覆盖率是 fixture，正式实现从快照生成。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/02-choosing-light-zh.png" alt="选择宿主状态，浅色，中文"></div>
+      <figcaption><strong>02 · 选择已检测到的宿主</strong><span>只列检测到的宿主，并显示各自真实覆盖率；超过 4 个显示「查看全部」。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/03-waiting-light-zh.png" alt="等待真实事件状态，浅色，中文"></div>
+      <figcaption><strong>03 · 等待真实事件</strong><span>琥珀色表示“已写入、未接入”；模拟按钮明确标注为原型。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/04-completed-light-zh.png" alt="已完成状态，浅色，中文"></div>
+      <figcaption><strong>04 · 真实事件后完成</strong><span>绿色只由宿主真实事件触发；5/5 只属于 Claude Code fixture。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/05-dismissed-light-zh.png" alt="已跳过状态，浅色，中文"></div>
+      <figcaption><strong>05 · 跳过之后</strong><span>清单收起，留下安静的重入口；重启/升级不重放。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/06-fresh-dark-zh.png" alt="首启全新状态，深色，中文"></div>
+      <figcaption><strong>06 · 深色首启</strong><span>同一套 token 与组件，无手写色值。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/07-completed-dark-zh.png" alt="已完成状态，深色，中文"></div>
+      <figcaption><strong>07 · 深色完成态</strong><span>完成卡、footer 状态与空态在深色下保持一致。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/08-fresh-light-en.png" alt="首启全新状态，浅色，英文"></div>
+      <figcaption><strong>08 · English</strong><span>真实本地化路径；布局在英文长度下仍不折行。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/09-detecting-light-zh.png" alt="正在检查宿主状态，浅色，中文"></div>
+      <figcaption><strong>09 · 正在检查宿主</strong><span>初始刷新未完成时不下「没有宿主」的结论；明确不会自动连接。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/10-no-hosts-light-zh.png" alt="无宿主状态，浅色，中文"></div>
+      <figcaption><strong>10 · 一个受支持宿主都没有</strong><span>示例试听仍可用；事件声音要等接上宿主。没有伪造连接。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/11-completed-codex-light-zh.png" alt="Codex 完成状态，4/5 覆盖，浅色，中文"></div>
+      <figcaption><strong>11 · Codex 是 4/5，不是 5/5</strong><span>覆盖率来自宿主事实；不足 5/5 时明确说明其余事件见设置。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/12-choosing-many-light-en.png" alt="多宿主选择状态，浅色，英文"></div>
+      <figcaption><strong>12 · 多宿主 + English</strong><span>4 个 fixture 宿主按 2×2 排列，第 5 个通过「查看全部」下钻；真实目录留在设置「连接」页。</span></figcaption>
+    </figure>
+    <figure>
+      <div class="desktop"><img src="renders/13-no-hosts-dark-zh.png" alt="无宿主状态，深色，中文"></div>
+      <figcaption><strong>13 · 深色无宿主</strong><span>空态、footer「未连接宿主」和设置入口在深色下保持一致。</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="notes">
+    <div class="note">
+      <h2>这版证明了什么</h2>
+      <ul>
+        <li>方案 C 可以在 312×560 的真实面板里成立，不需要额外窗口。</li>
+        <li>真实事件行、音量控件、footer 与品牌头可以直接复用。</li>
+        <li>面板只列已检测到的宿主，最多 4 个；完整目录留在设置「连接」页。</li>
+        <li>检测中、无宿主、等待真实事件、完成四种状态在原生排版下都能清楚区分。</li>
+        <li>覆盖率按宿主显示，不写死 5/5；Codex 的 4/5 会明确说明。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h2>还不是生产实现</h2>
+      <ul>
+        <li>这是测试 harness 里的 DEBUG 原型，没有挂进 <code>ClaudioGUI</code> 的面板树。</li>
+        <li>宿主列表与覆盖率是 fixture；正式实现必须从 <code>HostIntegrationSnapshot</code> / <code>HostSourceRowPresentation</code> 生成。</li>
+        <li>“播放”“模拟”“打开连接设置”只改视觉状态，不播音频、不写配置、不产生真实宿主事件，也不打开设置。</li>
+        <li>菜单栏指示 / 临时 Dock 的入口兜底不在这些面板截图内。</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>

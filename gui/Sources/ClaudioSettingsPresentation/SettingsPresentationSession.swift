@@ -747,10 +747,7 @@ package final class SettingsPresentationSession: ObservableObject {
                     session: nil,
                     generation: nil)
             }
-            // List history restores browsing only; its scope is not an explicit selection.
-            if eventRoute.detail != .workspaces,
-                eventRoute.unavailableRequestedScopeStoredValue == nil
-            {
+            if eventRoute.unavailableRequestedScopeStoredValue == nil {
                 let model = dependencies.eventSettingsModel
                 let rebindsExplicitSelection =
                     eventRoute.workspaceTarget != nil
@@ -1484,10 +1481,18 @@ extension SettingsPresentationSession {
         guard navigationEnabled else { return .unchanged }
         rememberCurrentReadingPosition()
         guard let entry = navigationHistory.move(by: delta) else { return .unchanged }
-        let request: SettingsPresentationRequest =
-            entry.location.workspaceRoute.map {
-                .eventShortcut($0)
-            } ?? .route(entry.location.route)
+        // The list's stored scope is a browsing identity, not a shared selection.
+        // An event shortcut would persist that scope. The generic events destination
+        // shows the stored list and does not call selectSoundScope.
+        let request: SettingsPresentationRequest
+        if let workspaceRoute = entry.location.workspaceRoute, workspaceRoute.detail == .workspaces
+        {
+            request = .route(.destination(.eventsAndSounds))
+        } else if let workspaceRoute = entry.location.workspaceRoute {
+            request = .eventShortcut(workspaceRoute)
+        } else {
+            request = .route(entry.location.route)
+        }
         return routeTransaction(request, focus: .restore, restoring: entry)
     }
 

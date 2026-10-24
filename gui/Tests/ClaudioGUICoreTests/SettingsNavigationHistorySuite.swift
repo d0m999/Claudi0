@@ -359,6 +359,45 @@ func runSettingsNavigationHistorySuites() async {
             session.send(.destinationReady(staleReady)) == .unchanged,
             "A late destination mount cannot authorize focus for a newer navigation")
     }
+
+    suite("Settings history: restoring the workspace list keeps the shared sound scope") {
+        let rule = WorkspaceSoundRule(
+            directory: WorkspaceDirectory(kind: .directory, path: "/fixture/workspace-list-return"),
+            surfaces: [.codex],
+            profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.7))
+        let fixture = SettingsPresentationFixtures.generalLogin(
+            route: .destination(.eventsAndSounds), workspaceRules: [rule])
+        let session = fixture.session
+        let model = fixture.eventSettingsModel
+        let workspace = PanelSoundScopeID.workspace(rule.id)
+        let target = WorkspaceSoundWriteTarget(rule: rule)
+        session.send(
+            .navigateWorkspace(EventSettingsWindowRoute(scope: .global, detail: .workspaces)))
+        session.send(
+            .navigateWorkspace(EventSettingsWindowRoute(scope: workspace, workspaceTarget: target)))
+        let persisted = model.soundScopeSelection.projection.persistedStoredValue
+        expect(
+            model.selectedSoundScope == workspace && persisted == workspace.storedValue
+                && session.state.eventPresentation.route.scope == workspace,
+            "Opening a workspace from the list selects and persists that scope")
+        expect(
+            session.send(.goBack) == .routed
+                && session.navigationHistory.current?.location.workspaceRoute?.scope == .global
+                && session.navigationHistory.current?.location.workspaceRoute?.detail == .workspaces
+                && session.state.eventPresentation.route.scope == .global
+                && session.state.eventPresentation.route.detail == .workspaces
+                && session.state.routeResolution.failure == nil
+                && model.selectedSoundScope == workspace
+                && model.soundScopeSelection.projection.persistedStoredValue == persisted,
+            "Back to the workspace list restores browsing without rewriting the shared scope")
+        session.send(.goForward)
+        expect(
+            session.state.eventPresentation.route.scope == workspace
+                && session.state.eventPresentation.route.detail == .configuration
+                && model.selectedSoundScope == workspace
+                && model.soundScopeSelection.projection.persistedStoredValue == persisted,
+            "Forward returns to the workspace detail and keeps the same persisted scope")
+    }
 }
 
 /// Holds the real library's terminal publication so a newer navigation can supersede recovery.

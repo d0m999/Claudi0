@@ -2,7 +2,7 @@
 
 ## 五页设置修订（现行 · 2026-10-23）
 
-本节取代历史八页／六页设置清单与快捷键交付合同。可见侧栏固定为：**工作区、声音包、连接、提醒与静音、通用**；前四项与通用以间距分组，无分组标题。画面唯一 SoT 是 [主原型](<../designs/panel-and-settings/Panel and Settings Prototype.html>)；首启讨论原型只保留未决首启对照和主原型链接。
+本节取代历史八页／六页设置清单与快捷键交付合同。可见侧栏固定为：**工作区、声音包、连接、提醒与静音、通用**；前四项与通用以间距分组，无分组标题。画面唯一 SoT 是 [主原型](<../designs/panel-and-settings/Panel and Settings Prototype.html>)；讨论原型保留未决首启对照及历史设置评审／离线回归证据，显式标明历史边界并链接现行主原型；它不拥有第二份现行设置画面合同。
 
 - `SettingsDestination` raw values 保持兼容；侧栏、方向键与焦点顺序统一使用五页投影。`usage` 是实际活动与诊断正文，从连接页常驻入口进入，侧栏高亮连接；正文提供返回连接，工具栏保留真实历史和阅读位置。
 - 显式 `about` 请求规范化为通用，由 `SettingsPresentationSession` 展示原生附属表单，不形成独立历史目的页。关闭／Esc 回到通用的关于入口；模态期间阻断外层导航，导航 stamp 拒绝迟到关闭。恢复旧 `about`／`shortcuts`／`display` 值时只投影通用，不自动弹关于、不报损坏、不改写旧字节；`usage` 可恢复。
@@ -14,15 +14,15 @@
 
 本轮不包含首启实现、设置搜索、Dock 入口、最近事件／为什么没响、真实 Provider 请求或发布。源码通过 Git 回退，不以删除用户配置、生成记录或音频回退；不保留源码备份。迭代运行受影响 suite，最终门禁不削弱；干净 HEAD 门禁须待精确范围本地提交获授权后执行。原生、自动、外部与发布证据分别记录于 [五页设置验收单](../docs/validation/five-page-settings-2026-10-23.md)。
 
-
-> 状态：**五页设置已按批准计划实施，验收见顶部链接；首启仍为讨论稿**。历史六页对照与评审记录保留用于追溯，当前设置合同以顶部“五页设置修订”为准。首启 A/B/C 仍需对照拍板，其余条目为候选 backlog。
-> 日期：2026-10-23
-> 基线：`main@ed66169`（分析时工作树 clean；本讨论稿与原型为新增未跟踪文件）
+> 状态：**2026-10-22～23 的讨论与评审记录，非现行实施规格**。当时为首启追加第三版原型 C 与同类产品研究；设置 IA 讨论收敛到 6 页、5 页暂缓，并按两轮评审重做工作区 / 声音包 / 连接主流程与 AI 表单状态。首启方案在该轮结束时仍待拍板，其余条目为候选 backlog。
+> 记录日期：2026-10-23；归档整理：2026-10-24。
+> 分析基线：`main@ed66169`。讨论原型与渲染 harness 已另行纳入 Git；本次收录讨论稿、渲染对照页与截图证据。
+> 阅读边界：文中“现状”“已定”“未完成”“下一步”均对应上述讨论轮次，不随后续实现自动更新。当前领域与实施要求以目标分支的 [CONTEXT.md](../CONTEXT.md)、[ADRs](../docs/adr/)、[统一设置实施计划](PLAN-SETTINGS-EXPERIENCE.md) 及相应变更的验证记录为准。
 > 讨论原型：[First Run and Settings IA Prototype](<../designs/ux-optimization/First Run and Settings IA Prototype.html>)（讨论用，不是生产画面 SoT）
 > 范围：用户可见的产品体验、信息架构与交互。
 > 非范围：领域事实、写入 owner、激活判定、持久化 schema、host adapter、回执与隐私边界。
 >
-> 首启与其余 backlog 不因本轮五页设置实施获得授权。进入后续实现前仍须明确 owner、验收边界及 ADR。
+> 本文不是实施授权。任何条目进入实现前，必须先明确 owner、验收边界，以及是否需要 ADR 修订。
 
 ## 0. 判断与原则
 
@@ -228,7 +228,7 @@ Claudio 的视觉规范、对比度、焦点、错误语义和证据体系已经
 - 对照页：[`designs/ux-optimization/native-first-run-renders.html`](<../designs/ux-optimization/native-first-run-renders.html>)
 - 位图目录：[`designs/ux-optimization/renders/`](<../designs/ux-optimization/renders/>)
 - 覆盖：全新 / 选择宿主 / 等待回执 / 已接上 / 已跳过 × 浅色；深色全新 / 深色已接上；英文全新；检测中 / 无宿主 / 无宿主深色；Codex 4/5 完成态；英文多宿主选择。
-- 复现：`SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --build-system native --sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk --package-path gui claudio-gui-tests --first-run-native-render`；交互窗口用 `--first-run-native`。
+- 复现：`SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift run --build-system native --sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk --package-path gui claudio-gui-tests --first-run-native-render`；交互窗口用 `--first-run-native`。渲染默认写入临时目录 `claudio-first-run-prototype`。只有设置 `CLAUDIO_FIRST_RUN_PROTOTYPE_DIR` 才写入指定目录。目标文件已存在且内容不同时，原文件保留，新 PNG 写到同名 `.new.png`。若 `.new.png` 已存在，内容相同则复用，内容不同则报错并保留两份已有文件。成功条件是非空且尺寸为 624×1120 的 PNG。
 
 **原生渲染确认**：
 
@@ -516,7 +516,7 @@ Claudio 的视觉规范、对比度、焦点、错误语义和证据体系已经
 
 **本轮 AI 修复验证（2026-10-23）**：先在 Chrome 复现“保存失败 → 关闭 → 重开”回到未生成，以及 Tab 从生成按钮进入“评审备注”；修复后沿同一交互路径回归，并补查后台生成继续、待处理区域、取消保留描述、数量确认的取消 / 确认、原结果重试保存、跨包 / 事件保留任务与限制、原描述按批次保留、旧选用上下文失效及从当前事件历史入口重新选用、四态焦点循环和关闭后归还。HTML 中的生成、音频、保存和废纸篓操作仍是内存演示，不证明原生控件、VoiceOver、真实音频、磁盘保存、远端取消 / 计费、真实宿主回调或生产就绪。
 
-此前已检查待处理区域的浏览器截图；旧讨论设置画面已合入主原型，不再维护截图副本。1240×820 与 960×640 表单几何抽查通过，原型脚本通过 `node --check`。浏览器记录中的警告来自 MetaMask 扩展，未观察到原型脚本错误。本次未改 Swift 实现，未执行 Swift harness 或原生人工验收。
+本轮保留一张[待处理区域的浏览器截图](../designs/ux-optimization/renders/14-ai-pending-light-zh.jpg)作为评审证据；1240×820 与 960×640 表单几何抽查通过，原型脚本通过 `node --check`。浏览器记录中的警告来自 MetaMask 扩展，未观察到原型脚本错误。本次未改 Swift 实现，未执行 Swift harness 或原生人工验收。
 
 **仍未决定 / 未完成**
 
@@ -526,7 +526,7 @@ Claudio 的视觉规范、对比度、焦点、错误语义和证据体系已经
 - 设置搜索是否进入后续轮次，以及搜索项的定位 / 高亮交互。
 - AI 附属表单在原生窗口中的尺寸、焦点圈定、Esc / 关闭后的焦点回退，以及保存失败的退避与重试策略。
 - 完整英文长文案、原生键盘 / VoiceOver、960×640 下真实字体与动态字体走查。
-- 生产实现尚未开始；建议实现顺序记录在 §10。
+- 该轮工作仅修订讨论原型，未实施所讨论的生产改动；当时建议的实现顺序记录在 §10。
 
 ## 4. §2 最近事件 / 为什么没响（Backlog）
 
@@ -595,8 +595,11 @@ Claudio 的视觉规范、对比度、焦点、错误语义和证据体系已经
 - 不新增网络服务、遥测或云端依赖。
 - 不以「减少页数」为由删除真实功能或制造不可达的深链目标。
 
-## 10. 当前交付与后续
+## 10. 当时建议的下一步（2026-10-23 记录）
 
-五页设置已进入本轮独立实现；精确结果、截图和未验证项见[五页设置验收单](../docs/validation/five-page-settings-2026-10-23.md)。关于附属表单、旧路由与全局快捷键退役范围均已由顶部合同确定，不再是待决定项。
-
-首启 A/B/C、搜索、Dock 入口和“最近事件／为什么没响”继续保留讨论，不在本轮实现。工作区、声音包、连接、提醒与静音和通用的唯一画面 SoT 为主原型；讨论原型不再保存第二套设置画面。干净 HEAD 门禁待精确范围本地提交授权后执行；手工 VoiceOver、真实宿主与发布验收分别记录。
+1. 首启 A/B 仍待拍板；设置 IA 已收敛到 6 页，5 页暂缓。
+2. 实现前先决定：关于弹层与旧 `about` 深链、`shortcuts` raw route 策略、活动与诊断的次要分组位置。
+3. 确认快捷键删除范围：只移除设置页，还是连同 Carbon 注册链、模型、测试与本地化一并删除。
+4. 确认菜单栏入口兜底：可选 Dock 图标、设置窗口内「打开面板」动作，或其他方案。
+5. 生产实现按“可见导航投影 → 路由 canonicalization → 工作区 / 声音包主从视图与单一数据投影 → 连接摘要 / 详情 → AI 窗口附属表单状态机 → about sheet / 诊断入口 → 快捷键模块清理”拆分；页面隐藏或合并需要 ADR 修订与旧路由迁移策略。
+6. 首启与设置导航的原生键盘、VoiceOver、动态字体与真实宿主路径继续分别验收。

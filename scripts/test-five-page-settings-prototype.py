@@ -47,10 +47,14 @@ class FivePageSettingsPrototypeTests(unittest.TestCase):
             self.page.locator(f'[data-target="{target}"]').click()
             expect(self.page.locator('#view-' + target)).to_be_visible()
             expect(self.page.locator('#note-shape')).not_to_be_empty()
-        expect(self.page.locator('#view-settings a')).to_have_count(1)
+        notice = self.page.locator('#settings-history-notice')
+        expect(notice).to_be_visible()
+        expect(notice).to_contain_text('历史评审与离线回归证据')
+        expect(notice.locator('a')).to_have_count(1)
         self.assertIn('Panel%20and%20Settings%20Prototype.html',
-                      self.page.locator('#view-settings a').get_attribute('href'))
-        expect(self.page.locator('#ai-cue-form, #about-dialog, .settings-window')).to_have_count(0)
+                      notice.locator('a').get_attribute('href'))
+        notice.locator('a').click()
+        expect(self.page.locator('#settings-nav button')).to_have_count(5)
 
     def test_about_modal_is_general_without_duplicate_update_section(self):
         self.page.locator('[data-action="nav:general"]').click()
