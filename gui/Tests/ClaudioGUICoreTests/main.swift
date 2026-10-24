@@ -89,6 +89,29 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--first-run-native-render") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        runFirstRunNativePrototypeSuites()
+        runFirstRunNativePrototypeRenderSuites()
+        print("First-run native prototype: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--first-run-native") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.regular)
+    Task { @MainActor in
+        presentFirstRunNativePrototypeWindow()
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--ai-cue-gallery") {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
@@ -991,6 +1014,7 @@ Task { @MainActor in
     runContrastHexParsingSuites()
     runPanelTypeSizeSuites()
     runProductUIModelsSuites()
+    runFirstRunNativePrototypeSuites()
     runPanelAccessibilitySuites()
     runHostIntegrationPresentationSuites()
     runHostSourceRowLocalizationSuites()
