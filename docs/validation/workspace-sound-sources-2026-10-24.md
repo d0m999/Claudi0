@@ -78,5 +78,34 @@ GUI executable SHA-256：`ab18645c1b6d0f60370c16f76fc8dbf0c9f97e4bb932ee759fc349
 - 人工原生 Tab/Space 与 VoiceOver 实际朗读：未验证。
 - 真实宿主回调、真实音频、Provider、其他 macOS/设备、CI Xcode、Developer ID 签名及公证、发布和正式验收：未验证。
 - 完整 `scripts/verify-settings-experience.sh 1224485c3e0d058c30ba0dd5b1e65f5ab6cc2538`
-  要求干净 HEAD。提交前未运行该门禁；获得本轮提交授权后，在包含本记录的干净提交上执行并另行报告。
+  要求干净 HEAD。提交前未运行该门禁；提交授权后的执行结果见下节。
   上表分项检查不构成该门禁通过。
+
+## 提交后完整门禁（2026-10-24）
+
+用户授权本地提交后，实现提交为 `332e4eb8b3548aa1a9c81ea37539f77b0fcc8227`，工作树干净。
+在该提交上执行：
+
+```bash
+bash scripts/verify-settings-experience.sh 1224485c3e0d058c30ba0dd5b1e65f5ab6cc2538
+```
+
+沿用上文 SDK 26.5 的本地兼容方案，为未指定 SDK 的 `swift run/build` 补充 native build system
+与 SDK 参数；启动真实 Swift 子进程前移除导出的 `BASH_FUNC_swift%%`，避免影响 harness 的 PATH fixture。
+门禁脚本和断言保持原样。
+
+**完整门禁未通过，退出码 1。** Helper 的 6,187 项全部通过；GUI 的 25,302 项中有两项失败，
+均位于 `AICueGenerationEngineSuite.swift:777–778` 的「429 sleep 消耗同一预算，不能在 retry 时重置」：
+
+- 「允许的唯一 429 只进入一次 sleep」。
+- 「预算耗尽后不得发起 retry 请求」。
+
+该 case 使用 20ms 的真实时钟 deadline；本次提交未改动引擎或该测试文件。其具体失败根因尚未确定。
+GUI harness 返回失败后，脚本未执行后续 Debug／Release 构建、重新封包和 strict format 基线差分；
+上文提交前分项结果继续按原有范围保留。
+
+随后在同一实现提交上隔离运行 `claudio-gui-tests --bailian-regression`，**828 项通过、退出码 0**，
+覆盖同一引擎 suite。该隔离结果不替代完整门禁通过，不据此修改本轮范围以外的引擎代码。
+收尾核对的 13 个实际工具可执行文件，其 SHA-256 和 POSIX mode 均与门禁开始前一致。
+
+本节为该实现提交的结果补记；人工原生键盘、VoiceOver 与外部验收状态仍按上节记录。
