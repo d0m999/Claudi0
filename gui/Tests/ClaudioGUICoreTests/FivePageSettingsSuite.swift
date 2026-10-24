@@ -63,6 +63,60 @@ func runFivePageSettingsSuites() {
         session.send(.goForward)
         expect(session.state.routeResolution.destination == .usage, "前进仍是诊断")
     }
+    suite("Five-page settings：list history preserves the shared sound scope") {
+        for restoringForward in [false, true] {
+            let rule = WorkspaceSoundRule(
+                directory: WorkspaceDirectory(kind: .directory, path: "/fixture/example"),
+                surfaces: [.codex],
+                profile: WorkspaceSoundProfile(selectedPack: "settings-fixture-pack", volume: 0.4))
+            let scope = PanelSoundScopeID.workspace(rule.id)
+            let target = WorkspaceSoundWriteTarget(rule: rule)
+            let fixture = SettingsPresentationFixtures.generalLogin(
+                route: .destination(.eventsAndSounds), workspaceRules: [rule])
+            let session = fixture.session
+            defer { session.send(.windowWillClose) }
+            let bookmark = SettingsReadingBookmark(
+                focusIdentifier: "workspace.row.\(rule.id)", relativeScrollPosition: 0.6)
+            session.send(.rememberReading(bookmark, stamp: session.navigationHistory.stamp!))
+            session.send(.navigateWorkspace(.init(scope: scope, workspaceTarget: target)))
+            expect(
+                fixture.eventSettingsModel.selectedSoundScope == scope
+                    && fixture.eventSettingsModel.selectedWorkspaceTarget == target,
+                "显式工作区详情选中共享作用域并捕获写目标")
+            if restoringForward {
+                session.send(.selectSidebar(.eventsAndSounds))
+                expect(
+                    fixture.eventSettingsModel.selectedSoundScope == scope,
+                    "侧栏返回列表保留共享选择")
+                session.send(.rememberReading(bookmark, stamp: session.navigationHistory.stamp!))
+                session.send(.goBack)
+            }
+            session.send(restoringForward ? .goForward : .goBack)
+            expect(
+                session.state.routeResolution.route == .destination(.eventsAndSounds)
+                    && session.state.eventPresentation.route.detail == .workspaces,
+                "历史恢复工作区列表而非打开默认组详情")
+            expect(
+                fixture.eventSettingsModel.selectedSoundScope == scope
+                    && fixture.eventSettingsModel.selectedWorkspaceTarget == target,
+                "\(restoringForward ? "前进" : "后退")恢复列表不得将共享写目标切回默认组")
+            expect(
+                session.state.navigationRestoration?.bookmark == bookmark,
+                "恢复列表保留阅读书签")
+            fixture.eventSettingsModel.selectSoundScope(.global)
+            session.send(restoringForward ? .goBack : .goForward)
+            expect(
+                fixture.eventSettingsModel.selectedSoundScope == scope
+                    && fixture.eventSettingsModel.selectedWorkspaceTarget == target
+                    && session.state.eventPresentation.route.detail == .configuration,
+                "历史恢复工作区详情仍显式选择捕获目标")
+            session.send(.navigateWorkspace(.init(scope: .global)))
+            expect(
+                fixture.eventSettingsModel.selectedSoundScope == .global
+                    && session.state.eventPresentation.route.detail == .configuration,
+                "显式默认组详情仍能切换共享选择")
+        }
+    }
     suite("Five-page settings：About is a stamped modal attached to General") {
         let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.general))
         let session = fixture.session

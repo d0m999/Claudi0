@@ -747,7 +747,10 @@ package final class SettingsPresentationSession: ObservableObject {
                     session: nil,
                     generation: nil)
             }
-            if eventRoute.unavailableRequestedScopeStoredValue == nil {
+            // List history restores browsing only; its scope is not an explicit selection.
+            if eventRoute.detail != .workspaces,
+                eventRoute.unavailableRequestedScopeStoredValue == nil
+            {
                 let model = dependencies.eventSettingsModel
                 let rebindsExplicitSelection =
                     eventRoute.workspaceTarget != nil
