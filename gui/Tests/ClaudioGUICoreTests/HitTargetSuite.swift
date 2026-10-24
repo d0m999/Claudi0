@@ -182,44 +182,54 @@ func runHitTargetSuites() {
         expect(disabledRecorder.actions.isEmpty, "禁用 icon action 不得执行动作")
     }
 
-    suite("Sound Scope 共享控件：真实挂载验证行级 pressed owner 与条件动作清理") {
-        let model = SoundScopeControlsNativeModel()
-        let recorder = SoundScopeControlsNativeRecorder()
-        let probe = NativeHitTargetProbe(
-            rootView: SoundScopeControlsNativeFixture(model: model, recorder: recorder),
-            size: CGSize(width: 240, height: 110))
-        defer { probe.close() }
+    for cursorOverAction in [false, true] {
+        suite("Sound Scope 共享控件：行级 pressed 与条件动作清理（cursor=\(cursorOverAction)）") {
+            let model = SoundScopeControlsNativeModel()
+            let recorder = SoundScopeControlsNativeRecorder()
+            // Recreated controls can receive a fresh entry under a stationary cursor.
+            // Exercise both placements without moving the user's cursor.
+            let mouse = NSEvent.mouseLocation
+            let probe = NativeHitTargetProbe(
+                rootView: SoundScopeControlsNativeFixture(model: model, recorder: recorder),
+                size: CGSize(width: 240, height: 110),
+                origin: NSPoint(x: mouse.x - 120, y: mouse.y + (cursorOverAction ? -84 : 20)))
+            defer { probe.close() }
 
-        model.integrationActionHovered = true
-        probe.settle()
-        expect(
-            recorder.state(for: "integration")?.actionHovered == true,
-            "共享行 owner 必须接受当前条件动作的 hover Binding")
-        expect(
-            recorder.state(for: "scope")?.scopeHovered == false
-                && recorder.state(for: "scope")?.actionHovered == false,
-            "第一行动作 hover 不得污染相邻行的瞬时状态")
+            model.integrationActionHovered = true
+            probe.settle()
+            expect(
+                recorder.state(for: "integration")?.actionHovered == true,
+                "共享行 owner 必须接受当前条件动作的 hover Binding")
+            expect(
+                recorder.state(for: "scope")?.scopeHovered == false
+                    && recorder.state(for: "scope")?.actionHovered == false,
+                "第一行动作 hover 不得污染相邻行的瞬时状态")
 
-        expect(probe.mouseDown(x: 120, yFromTop: 26), "应能在第一行保持 mouse-down")
-        probe.settle()
-        expect(
-            recorder.state(for: "integration")?.isPressed == true,
-            "共享 ButtonStyle 必须把 native pressed 上报到所在行 owner")
-        expect(
-            recorder.state(for: "scope")?.isPressed == false,
-            "第一行 pressed 不得触发整个 picker 或相邻行状态")
-        expect(probe.mouseUp(x: 120, yFromTop: 26), "应能完成第一行 mouse-up")
-        probe.settle(for: 0.13)
+            expect(probe.mouseDown(x: 120, yFromTop: 26), "应能在第一行保持 mouse-down")
+            probe.settle()
+            expect(
+                recorder.state(for: "integration")?.isPressed == true,
+                "共享 ButtonStyle 必须把 native pressed 上报到所在行 owner")
+            expect(
+                recorder.state(for: "scope")?.isPressed == false,
+                "第一行 pressed 不得触发整个 picker 或相邻行状态")
+            expect(probe.mouseUp(x: 120, yFromTop: 26), "应能完成第一行 mouse-up")
+            probe.settle(for: 0.13)
 
-        model.hasIntegrationAction = false
-        probe.settle()
-        model.integrationActionHovered = false
-        probe.settle()
-        model.hasIntegrationAction = true
-        probe.settle()
-        expect(
-            recorder.state(for: "integration")?.actionHovered == false,
-            "条件胶囊卸载再恢复时不得复活陈旧 action hover：\(recorder.transitions)")
+            model.hasIntegrationAction = false
+            probe.settle()
+            expect(
+                recorder.state(for: "integration")?.actionHovered == false,
+                "卸载条件动作后不得继续呈现 action hover")
+            model.integrationActionHovered = false
+            probe.settle()
+            recorder.beginActionRestoration()
+            model.hasIntegrationAction = true
+            probe.settle()
+            expect(
+                !recorder.restoredStaleActionHover,
+                "新原生 hover 到达前不得复活陈旧 action hover：\(recorder.transitions)")
+        }
     }
 
     suite("生产接线：声音包使用显式命中合同") {
@@ -256,7 +266,7 @@ private final class NativeHitTargetProbe<Content: View> {
     private let size: CGSize
     private var eventNumber = 1
 
-    init(rootView: Content, size: CGSize) {
+    init(rootView: Content, size: CGSize, origin: NSPoint? = nil) {
         self.size = size
         _ = NSApplication.shared
 
@@ -273,6 +283,7 @@ private final class NativeHitTargetProbe<Content: View> {
         window.hasShadow = false
         window.isReleasedWhenClosed = false
         window.ignoresMouseEvents = false
+        if let origin { window.setFrameOrigin(origin) }
         window.orderFrontRegardless()
 
         self.window = window
@@ -351,14 +362,31 @@ private final class SoundScopeControlsNativeModel: ObservableObject {
 private final class SoundScopeControlsNativeRecorder {
     private var states: [String: PanelSoundScopeRowTransientState] = [:]
     private(set) var transitions: [String] = []
+    private var isRestoringAction = false
+    private var nativeActionHovered = false
+    private(set) var restoredStaleActionHover = false
 
     func recordState(_ state: PanelSoundScopeRowTransientState, for row: String) {
         states[row] = state
         transitions.append("\(row): state=\(state)")
+        if isRestoringAction, row == "integration", state.actionHovered, !nativeActionHovered {
+            restoredStaleActionHover = true
+        }
     }
 
     func recordActionPresence(_ present: Bool) {
         transitions.append("integration: hasAction=\(present)")
+    }
+
+    func recordNativeActionHover(_ hovered: Bool) {
+        transitions.append("integration: nativeHover=\(hovered)")
+        nativeActionHovered = hovered
+    }
+
+    func beginActionRestoration() {
+        isRestoringAction = true
+        nativeActionHovered = false
+        restoredStaleActionHover = false
     }
 
     func state(for row: String) -> PanelSoundScopeRowTransientState? {
@@ -388,7 +416,10 @@ private struct SoundScopeControlsNativeFixture: View {
                             focusedTarget: $focusedTarget,
                             target: .integrationAction(.global),
                             policy: .integrationAction,
-                            onHover: { actionHovered.wrappedValue = $0 }
+                            onHover: {
+                                recorder.recordNativeActionHover($0)
+                                actionHovered.wrappedValue = $0
+                            }
                         ) {
                             Text("Integration")
                                 .frame(maxWidth: .infinity, minHeight: 36)
