@@ -572,7 +572,7 @@ struct FirstRunPrototypePanel: View {
                 .font(.system(size: 8.5, weight: .medium, design: .rounded))
                 .foregroundColor(ClaudioTheme.clay(colorScheme))
                 .buttonStyle(.plain)
-                .accessibilityIdentifier("first-run.prototype.simulate-receipt")
+                .accessibilityIdentifier("first-run.prototype.simulate-event")
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 5)
@@ -956,7 +956,7 @@ struct FirstRunPrototypeShowcase: View {
             .id("\(phase.rawValue)-\(language.rawValue)-\(dark)-\(noHosts)")
             .preferredColorScheme(dark ? .dark : .light)
             Text(
-                "SwiftUI · production tokens/components · samples and receipts are prototype-only"
+                "SwiftUI · production tokens/components · samples and the simulated event are prototype-only"
             )
             .font(.system(size: 10, design: .monospaced))
             .foregroundColor(.secondary)
@@ -1059,17 +1059,22 @@ private func renderFirstRunPrototypePanel(
         window.close()
         return false
     }
+    let existing = try? Data(contentsOf: url)
+    let destination: URL
     do {
-        try data.write(to: url, options: .atomic)
+        destination = try firstRunPrototypeWritePNG(data, to: url)
     } catch {
         window.orderOut(nil)
         window.close()
         return false
     }
-    let written = (try? Data(contentsOf: url)) ?? Data()
+    let stored = (try? Data(contentsOf: destination)) ?? Data()
+    let leftOriginal = existing == nil || (try? Data(contentsOf: url)) == existing
+    let keptEvidence = existing == nil || existing == data || destination != url
     window.orderOut(nil)
     window.close()
-    return written == data && firstRunPrototypePNGIsAcceptable(written)
+    return stored == data && firstRunPrototypePNGIsAcceptable(stored) && leftOriginal
+        && keptEvidence
 }
 
 @MainActor
@@ -1081,7 +1086,7 @@ func presentFirstRunNativePrototypeWindow() {
         backing: .buffered,
         defer: false)
     window.isReleasedWhenClosed = false
-    window.title = "claudio · first-run native prototype"
+    window.title = "claudi0 · first-run native prototype"
     window.contentView = hosting
     window.center()
     window.makeKeyAndOrderFront(nil)
@@ -1110,20 +1115,37 @@ func firstRunPrototypePNGIsAcceptable(_ data: Data) -> Bool {
     return rep.pixelsWide == 624 && rep.pixelsHigh == 1120
 }
 
+func firstRunPrototypeWritePNG(_ data: Data, to url: URL) throws -> URL {
+    if FileManager.default.fileExists(atPath: url.path) {
+        let existing = try Data(contentsOf: url)
+        if existing == data { return url }
+        let sidecar = url.deletingPathExtension()
+            .appendingPathExtension("new")
+            .appendingPathExtension(url.pathExtension)
+        try data.write(to: sidecar, options: .atomic)
+        return sidecar
+    }
+    try data.write(to: url, options: .atomic)
+    return url
+}
+
 @MainActor
 func runFirstRunNativePrototypeSuites() {
-    suite("first-run prototype keeps the receipt across dismiss") {
+    suite("first-run prototype restores the hidden phase") {
         var waiting = FirstRunPrototypeInteraction(phase: .waiting)
         expect(
             waiting.heardEvents == [.taskStart], "waiting starts with the task-start sample marked")
         waiting.dismissChecklist()
         expect(waiting.phase == .dismissed, "dismiss hides the waiting checklist")
         expect(
-            waiting.statusPhase == .waiting, "a hidden waiting checklist still reports the receipt")
+            waiting.statusPhase == .waiting,
+            "a hidden waiting checklist still shows the written configuration")
         waiting.dismissChecklist()
         waiting.resumeChecklist()
         expect(waiting.phase == .waiting, "resume restores waiting instead of a fresh list")
-        expect(waiting.statusPhase == .waiting, "the restored waiting checklist keeps the receipt")
+        expect(
+            waiting.statusPhase == .waiting,
+            "the restored waiting checklist still shows the written configuration")
 
         var completed = FirstRunPrototypeInteraction(phase: .completed)
         completed.dismissChecklist()
@@ -1137,7 +1159,7 @@ func runFirstRunNativePrototypeSuites() {
         expect(fresh.phase == .fresh, "resume from a fresh dismiss returns to the fresh list")
 
         var cold = FirstRunPrototypeInteraction(phase: .dismissed)
-        expect(cold.statusPhase == .dismissed, "a cold dismissed panel has no stored receipt")
+        expect(cold.statusPhase == .dismissed, "a cold dismissed panel has no hidden phase")
         cold.resumeChecklist()
         expect(cold.phase == .fresh, "resume without a stored phase opens the fresh list")
     }
@@ -1184,6 +1206,38 @@ func runFirstRunNativePrototypeSuites() {
                 == URL(fileURLWithPath: "/tmp/claudio-evidence", isDirectory: true)
                 .standardizedFileURL.path,
             "an explicit directory is used only when it is set")
+    }
+
+    suite("first-run prototype keeps an existing render and saves the new one beside it") {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-first-run-write-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let evidenceURL = root.appendingPathComponent("01-fresh-light-zh.png")
+            let evidence = Data("evidence-png".utf8)
+            let render = Data("new-render-png".utf8)
+            try evidence.write(to: evidenceURL)
+            let sidecar = try firstRunPrototypeWritePNG(render, to: evidenceURL)
+            expect(
+                try Data(contentsOf: evidenceURL) == evidence, "an existing render stays in place")
+            expect(sidecar != evidenceURL, "a different render is saved beside the existing file")
+            expect(try Data(contentsOf: sidecar) == render, "the sidecar contains the new render")
+            expect(
+                sidecar.lastPathComponent == "01-fresh-light-zh.new.png",
+                "the sidecar keeps the evidence name and adds .new")
+            let identical = try firstRunPrototypeWritePNG(evidence, to: evidenceURL)
+            expect(identical == evidenceURL, "identical bytes stay on the original file")
+            expect(
+                try Data(contentsOf: evidenceURL) == evidence,
+                "an identical write does not replace the original bytes")
+            let createdURL = root.appendingPathComponent("02-choosing-light-zh.png")
+            let created = try firstRunPrototypeWritePNG(render, to: createdURL)
+            expect(created == createdURL, "a missing file is created at the requested path")
+            expect(try Data(contentsOf: createdURL) == render, "a new file contains the render")
+        } catch {
+            expect(false, "render write check failed: \(error)")
+        }
     }
 
     suite("first-run prototype accepts only a full-size panel bitmap") {
