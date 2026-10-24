@@ -45,10 +45,12 @@ class UXOptimizationPrototypeBrowserTests(unittest.TestCase):
     def tearDown(self):
         self.assertEqual(self.page_errors, [], "the real inline script must run without errors")
 
-    def open_pack(self, pack="my-cues"):
+    def open_pack(self, pack="my-cues", *, scenario="normal"):
         self.page.goto("about:blank")
         self.page.goto(PROTOTYPE.as_uri() + "#settings-6")
         self.page.locator('.sidebar-item[data-page="sounds"]').click()
+        if scenario != "normal":
+            self.page.locator("#scenario-select").select_option(scenario)
         self.page.locator(f'[data-sound-open="{pack}"]').click()
 
     def event_row(self, key):
@@ -143,6 +145,62 @@ class UXOptimizationPrototypeBrowserTests(unittest.TestCase):
                 self.page.locator('#ai-cue-form [data-ai-state="saved"] [data-ai-use]').first.click()
                 expect(self.event_row("stop").locator(".sound-copy")).to_contain_text("wooden-tap-12.aiff")
                 expect(self.event_row("task-start").locator(".sound-copy")).to_have_text(original)
+
+    def test_open_form_completion_restores_focus_and_keyboard_action(self):
+        for scenario, state, action in [
+            ("normal", "saved", "done"),
+            ("failure", "failed", "retry-save"),
+        ]:
+            with self.subTest(scenario=scenario):
+                self.open_pack(scenario=scenario)
+                source = self.event_row("task-start").locator("[data-sound-source]")
+                source.select_option("ai")
+                form = self.page.locator("#ai-cue-form")
+                form.locator('[data-ai-action="generate"]').click()
+                expect(form.locator('[data-ai-action="cancel"]')).to_be_focused()
+                self.page.clock.run_for(1200)
+                expect(form.locator(f'[data-ai-state="{state}"]')).to_be_visible()
+                expect(form.locator(f'[data-ai-action="{action}"]')).to_be_focused()
+                self.page.keyboard.press("Enter")
+                if state == "failed":
+                    expect(form.locator('[data-ai-state="saved"]')).to_be_visible()
+                    expect(form.locator('[data-ai-action="done"]')).to_be_focused()
+                    self.page.keyboard.press("Enter")
+                expect(form).not_to_be_visible()
+                expect(source).to_be_focused()
+
+    def test_open_form_completion_keeps_visible_focused_controls(self):
+        for scenario, state in [("normal", "saved"), ("failure", "failed")]:
+            for selector in ["#ai-description", "[data-close-ai]"]:
+                with self.subTest(scenario=scenario, control=selector):
+                    self.open_pack(scenario=scenario)
+                    self.event_row("task-start").locator("[data-sound-source]").select_option("ai")
+                    form = self.page.locator("#ai-cue-form")
+                    form.locator('[data-ai-action="generate"]').click()
+                    control = form.locator(selector)
+                    control.focus()
+                    expect(control).to_be_focused()
+                    self.page.clock.run_for(1200)
+                    expect(form.locator(f'[data-ai-state="{state}"]')).to_be_visible()
+                    expect(control).to_be_focused()
+
+    def test_closed_form_completion_keeps_external_focus(self):
+        for scenario, state in [("normal", "saved"), ("failure", "failed")]:
+            with self.subTest(scenario=scenario):
+                self.open_pack(scenario=scenario)
+                self.event_row("task-start").locator("[data-sound-source]").select_option("ai")
+                form = self.page.locator("#ai-cue-form")
+                form.locator('[data-ai-action="generate"]').click()
+                form.locator("[data-close-ai]").click()
+                back = self.page.locator('[data-sounds-view="detail"] [data-sound-back]')
+                back.focus()
+                expect(back).to_be_focused()
+                self.page.clock.run_for(1200)
+                expect(form).to_have_attribute("data-state", state)
+                expect(form).not_to_be_visible()
+                expect(back).to_be_focused()
+                self.page.keyboard.press("Enter")
+                expect(self.page.locator('[data-sounds-view="list"]')).to_be_visible()
 
     def test_background_completion_keeps_the_focused_history_candidate(self):
         self.open_pack()

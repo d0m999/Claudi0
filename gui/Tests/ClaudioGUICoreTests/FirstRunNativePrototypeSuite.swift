@@ -1122,10 +1122,16 @@ func firstRunPrototypeWritePNG(_ data: Data, to url: URL) throws -> URL {
         let sidecar = url.deletingPathExtension()
             .appendingPathExtension("new")
             .appendingPathExtension(url.pathExtension)
-        try data.write(to: sidecar, options: .atomic)
+        if FileManager.default.fileExists(atPath: sidecar.path) {
+            guard try Data(contentsOf: sidecar) == data else {
+                throw CocoaError(.fileWriteFileExists)
+            }
+            return sidecar
+        }
+        try data.write(to: sidecar, options: .withoutOverwriting)
         return sidecar
     }
-    try data.write(to: url, options: .atomic)
+    try data.write(to: url, options: .withoutOverwriting)
     return url
 }
 
@@ -1237,6 +1243,41 @@ func runFirstRunNativePrototypeSuites() {
             expect(try Data(contentsOf: createdURL) == render, "a new file contains the render")
         } catch {
             expect(false, "render write check failed: \(error)")
+        }
+    }
+
+    suite("first-run prototype preserves the sidecar across repeated renders") {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "claudio-first-run-repeat-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let evidenceURL = root.appendingPathComponent("01-fresh-light-zh.png")
+            let evidence = Data("evidence-png".utf8)
+            let previousRender = Data("previous-render-png".utf8)
+            _ = try firstRunPrototypeWritePNG(evidence, to: evidenceURL)
+            let sidecar = try firstRunPrototypeWritePNG(previousRender, to: evidenceURL)
+            let identical = try firstRunPrototypeWritePNG(previousRender, to: evidenceURL)
+            expect(identical == sidecar, "identical render bytes reuse the existing sidecar")
+
+            for name in ["next-render-png", "latest-render-png"] {
+                do {
+                    _ = try firstRunPrototypeWritePNG(Data(name.utf8), to: evidenceURL)
+                    expect(false, "a different render must not replace an existing sidecar")
+                } catch let error as CocoaError {
+                    expect(
+                        error.code == .fileWriteFileExists,
+                        "a conflicting sidecar reports that the file already exists")
+                }
+                expect(
+                    try Data(contentsOf: evidenceURL) == evidence,
+                    "repeated renders preserve the original evidence")
+                expect(
+                    try Data(contentsOf: sidecar) == previousRender,
+                    "repeated renders preserve the previous sidecar bytes")
+            }
+        } catch {
+            expect(false, "repeated render write check failed: \(error)")
         }
     }
 

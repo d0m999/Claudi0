@@ -4842,6 +4842,8 @@ library: ready · 3 packs · 0 failures</pre>
   function setAiState(state, { requestsFocus = false } = {}) {
     aiState = state;
     if (!aiSheet) return;
+    const focusedControl = document.activeElement;
+    const sheetHadFocus = aiSheet.contains(focusedControl);
     if (aiEntryTarget) {
       document.getElementById("ai-target").textContent = `${aiEntryTarget.packId} › ${eventDef(aiEntryTarget.eventKey).name}`;
     }
@@ -4869,7 +4871,9 @@ library: ready · 3 packs · 0 failures</pre>
     const focusTarget = aiSelectingHistory
       ? aiSheet.querySelector("#ai-history-picker button, [data-close-ai]")
       : aiSheet.querySelector(`[data-ai-state="${state}"] [data-autofocus]`);
-    if (requestsFocus && aiSheet.open && focusTarget) focusTarget.focus({ preventScroll: true });
+    const focusInvalidated = sheetHadFocus
+      && (!focusedControl.isConnected || focusedControl.disabled || !focusedControl.getClientRects().length);
+    if ((requestsFocus || focusInvalidated) && aiSheet.open && focusTarget) focusTarget.focus({ preventScroll: true });
   }
 
   function positionAiForm() {
