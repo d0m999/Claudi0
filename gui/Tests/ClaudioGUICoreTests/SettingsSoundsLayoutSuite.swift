@@ -678,11 +678,24 @@ final class SettingsSoundsNativeLayoutProbe {
             }
             return view.subviews.lazy.compactMap { find($0) }.first
         }
-        guard let button = find(hostingView), button.isEnabled,
-            index >= 0, index + 1 < button.numberOfItems
-        else { return false }
+        guard let button = find(hostingView) else {
+            print("  source menu unavailable: \(event.rawValue), native control not mounted")
+            return false
+        }
+        guard button.isEnabled, index >= 0, index + 1 < button.numberOfItems else {
+            print(
+                "  source menu unavailable: \(event.rawValue), enabled=\(button.isEnabled), items=\(button.numberOfItems), index=\(index)"
+            )
+            return false
+        }
         button.selectItem(at: index + 1)
-        return button.sendAction(button.action, to: button.target)
+        let sent = button.sendAction(button.action, to: button.target)
+        if !sent {
+            print(
+                "  source menu action undelivered: \(event.rawValue), target=\(button.target != nil), action=\(button.action != nil)"
+            )
+        }
+        return sent
     }
 
     func setText(_ identifier: String, value: String) -> Bool {
