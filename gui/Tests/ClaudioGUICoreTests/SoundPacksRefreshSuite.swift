@@ -87,6 +87,19 @@ private func soundPacksFunctionBody(after marker: String, in source: String) -> 
     return nil
 }
 
+private func soundPacksRequestQueuesBeforeClosing(_ body: String) -> Bool {
+    let compact = body.filter { !$0.isWhitespace }
+    // The guard/else suffix alone must not hide an earlier close that consumes handback.
+    guard
+        let requestAt = compact.range(
+            of: "panelSettingsChoreography.requestSettingsPresentation(")?.lowerBound,
+        let closeAt = compact.range(of: "panelWindow.close()")?.lowerBound
+    else { return false }
+    return requestAt < closeAt
+        && compact.contains("guardletpresentation=panelSettingsChoreography.")
+        && compact.contains("else{panelWindow.close()return}presentSettings(presentation)")
+}
+
 @MainActor
 private func soundPacksEnvironment(
     _ packsDirectory: URL,
@@ -2309,10 +2322,11 @@ func runSoundPacksRefreshSuites() async {
             !sharedRequestBody.contains("panelWindow.performClose"),
             "自家窗口导航不得用可拒绝的 performClose；失败后没有 didClose 可消费 pending")
         expect(
-            compactRequest.contains("guardletpresentation=panelSettingsChoreography.")
-                && compactRequest.contains(
-                    "else{panelWindow.close()return}presentSettings(presentation)"),
+            soundPacksRequestQueuesBeforeClosing(sharedRequestBody),
             "编排返回排队结果时必须强制关闭并结束调用；只有立即呈现结果能直接展示 Settings")
+        expect(
+            !soundPacksRequestQueuesBeforeClosing("panelWindow.close()\n" + sharedRequestBody),
+            "源码接线守卫必须拒绝在记录 pending 之前提前关闭菜单")
         expect(
             compactClose.contains(
                 "switchpanelSettingsChoreography.panelDidClose(explicitDismissal:reason==.explicit){"
