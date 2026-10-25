@@ -200,6 +200,10 @@ bash scripts/check-release-size.sh dist/claudi0.app
 git diff --check
 ```
 
+The GUI harness defaults to background checks. Add `--foreground` for the collected window and
+interaction checks when the desktop is available, or `--all` to run both batches serially.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the coverage boundaries.
+
 Local CLI/app builds report `0.0.0-dev`. A release workflow accepts only a strict `vMAJOR.MINOR.PATCH` tag and injects the same unprefixed version into the CLI, app `Info.plist`, DMG filename, checksum file, Release title, and optional cask.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Native macOS, VoiceOver, keyboard/focus, Apple Silicon, and real-host receipt checks remain manual release gates even when CI passes.

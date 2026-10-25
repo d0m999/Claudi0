@@ -8,8 +8,8 @@ repo_root="$(cd -- "$script_dir/.." && pwd -P)"
 format_base="${1:-}"
 source "$script_dir/settings-format-diagnostics.sh"
 
-if [[ -z "$format_base" || $# -ne 1 ]]; then
-    echo "usage: $0 <format-baseline-commit>" >&2
+if [[ -z "$format_base" || $# -ne 2 || "${2:-}" != "--foreground" ]]; then
+    echo "usage: $0 <format-baseline-commit> --foreground (full native verification uses windows and focus)" >&2
     exit 2
 fi
 
@@ -95,7 +95,7 @@ done
 echo "✅ required integration suites are registered"
 
 swift run --package-path helper claudio-tests
-swift run --package-path gui claudio-gui-tests
+swift run --package-path gui claudio-gui-tests --all
 swift build -c debug --package-path gui --target ClaudioSettingsPresentation
 swift build -c release --package-path gui --target ClaudioSettingsPresentation
 swift build -c debug --package-path gui --product ClaudioGUI

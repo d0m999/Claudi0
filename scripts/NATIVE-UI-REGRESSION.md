@@ -1,5 +1,9 @@
 # 原生自动点击检查
 
+此入口使用真实窗口、焦点和 Computer Use，须集中在桌面可供测试时串行运行。日常后台检查用
+`swift run --package-path gui claudio-gui-tests`；原生窗口套件集中入口用同一命令加
+`--foreground`。后台通过不能代替本文件的自动点击检查，两者不得同时占用同一桌面会话。
+
 仅使用 `scripts/build-native-ui-regression.sh` 构建的 DEBUG fixture。正常 Debug 和 Release 不编译测试入口。fixture 在生产 owner 创建前校验 bundle 身份和 `ClaudioUIRegressionFixture=v1`，配置、声音包、活动、defaults 均隔离到临时根。Provider、凭据、宿主操作和来源应用打开使用替身；本地编辑、采用和窗口呈现复用真实 owner。
 
 从仓库根目录构建：

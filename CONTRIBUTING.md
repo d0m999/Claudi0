@@ -57,6 +57,28 @@ python3 scripts/check-hook-input-boundary.py dist/claudi0.app
 git diff --check
 ```
 
+The default GUI command (also `--background`) runs logic, state and offscreen checks without
+presenting windows or activating the test app. It excludes the existing mounted/window suites;
+its success is background evidence only. It still uses AppKit for offscreen controls and is not a
+headless Linux test target.
+
+Reserve the desktop for the collected foreground batch, then run:
+
+```bash
+swift run --package-path gui claudio-gui-tests --foreground
+# Both batches, serially; use on a dedicated runner or during the same reserved session:
+swift run --package-path gui claudio-gui-tests --all
+# Inspect selection without creating the test application:
+swift run --package-path gui claudio-gui-tests --foreground --dry-run
+```
+
+Run foreground harness processes and Computer Use serially. Native focused selectors require an
+explicit `--foreground`, for example `claudio-gui-tests --foreground --settings-navigation-native-focus`.
+Focus suites with special prerequisites remain opt-in; this split preserves the former full
+harness coverage without promoting those separate gates to default coverage. Do not count a
+background pass or a dry-run as native layout, keyboard/focus, VoiceOver or Computer Use acceptance.
+CI runs both batches; the full local pre-RC entry is `bash scripts/local-pre-rc.sh --foreground`.
+
 The selector state regression compares the exact six-package curated roster with the versioned
 `packs/LICENSES.md`, including duplicate/missing/extra entries, rather than requiring ignored local
 audio directories. The bundled-pack selection must be a subset of that licensed roster.
@@ -113,7 +135,7 @@ Xcode, architecture, signing or native acceptance gates.
 For changes that affect the unified settings experience, run the fixed-baseline integration gate:
 
 ```bash
-bash scripts/verify-settings-experience.sh <BASE_SHA>
+bash scripts/verify-settings-experience.sh <BASE_SHA> --foreground
 ```
 
 Use [the unified settings acceptance checklist](docs/settings-experience-acceptance.md) to keep

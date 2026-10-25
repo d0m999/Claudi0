@@ -87,10 +87,10 @@ ledger/manifest、checksum 与 DMG 的大小；这些边界为当前 release siz
 
 ## 本机 pre-RC 基线
 
-在已经提交且没有 tracked/untracked 改动的 clean checkout 上运行：
+在已经提交且没有 tracked/untracked 改动的 clean checkout 上，预留桌面供原生窗口和焦点检查后运行：
 
 ```bash
-bash scripts/local-pre-rc.sh
+bash scripts/local-pre-rc.sh --foreground
 jq . dist/local-pre-rc-report.json
 ```
 

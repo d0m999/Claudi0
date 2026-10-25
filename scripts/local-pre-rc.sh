@@ -3,10 +3,10 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: $0" >&2
+    echo "usage: $0 --foreground (full native verification uses windows and focus)" >&2
 }
 
-if [[ $# -ne 0 ]]; then
+if [[ $# -ne 1 || "${1:-}" != "--foreground" ]]; then
     usage
     exit 2
 fi
@@ -122,7 +122,7 @@ fi
 assert_checkout_identity "$expected_commit"
 run_bound_step "patch whitespace" git diff --check
 run_bound_step "helper harness" swift run --package-path helper claudio-tests
-run_bound_step "GUI harness" swift run --package-path gui claudio-gui-tests
+run_bound_step "GUI harness (background + foreground)" swift run --package-path gui claudio-gui-tests --all
 run_bound_step "ClaudioGUI Debug build" \
     swift build -c debug --package-path gui --product ClaudioGUI
 run_bound_step "localization catalog" \

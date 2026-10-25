@@ -261,7 +261,7 @@ func runLocalPreRCSuites() {
 
         let result = runTestProcess(
             executableURL: URL(fileURLWithPath: "/bin/bash"),
-            arguments: [fixtureScript.path],
+            arguments: [fixtureScript.path, "--foreground"],
             currentDirectoryURL: fixtureRepository)
         expect(
             result.status == 1
@@ -429,7 +429,9 @@ func runLocalPreRCSuites() {
 
             let result = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/bin/bash"),
-                arguments: [scripts.appendingPathComponent("local-pre-rc.sh").path],
+                arguments: [
+                    scripts.appendingPathComponent("local-pre-rc.sh").path, "--foreground",
+                ],
                 currentDirectoryURL: repository,
                 environmentOverrides: fixture.environment([
                     "EXTERNAL_OUTPUT": externalOutput.path,
@@ -472,7 +474,9 @@ func runLocalPreRCSuites() {
 
             let result = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/bin/bash"),
-                arguments: [fixture.scripts.appendingPathComponent("local-pre-rc.sh").path],
+                arguments: [
+                    fixture.scripts.appendingPathComponent("local-pre-rc.sh").path, "--foreground",
+                ],
                 currentDirectoryURL: fixture.repository,
                 environmentOverrides: fixture.environment([
                     "CLAUDIO_PINNED_OUTPUT_DIRECTORY_IDENTITY": "0:0",
@@ -543,7 +547,9 @@ func runLocalPreRCSuites() {
 
             let result = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/bin/bash"),
-                arguments: [scripts.appendingPathComponent("local-pre-rc.sh").path],
+                arguments: [
+                    scripts.appendingPathComponent("local-pre-rc.sh").path, "--foreground",
+                ],
                 currentDirectoryURL: repository,
                 environmentOverrides: fixture.environment([
                     "FIXED_COMMIT": fixedCommit,
@@ -599,7 +605,9 @@ func runLocalPreRCSuites() {
 
             let result = runTestProcess(
                 executableURL: URL(fileURLWithPath: "/bin/bash"),
-                arguments: [scripts.appendingPathComponent("local-pre-rc.sh").path],
+                arguments: [
+                    scripts.appendingPathComponent("local-pre-rc.sh").path, "--foreground",
+                ],
                 currentDirectoryURL: repository,
                 environmentOverrides: fixture.environment([
                     "FIXED_COMMIT": fixedCommit,

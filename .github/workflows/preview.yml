@@ -46,7 +46,7 @@ jobs:
         run: |
           swift scripts/prepare-ci-display.swift
           swift run --package-path helper claudio-tests
-          swift run --package-path gui claudio-gui-tests
+          swift run --package-path gui claudio-gui-tests --all
           swift build -c debug --package-path gui --product ClaudioGUI
           swift build -c release --package-path gui --product ClaudioGUI
           bash scripts/test-hook-cli-contract.sh
@@ -57,7 +57,7 @@ jobs:
           python3 scripts/test-additional-host-migration.py
           jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
           swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --public-preview
-          swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --ai-cue-gallery
+          swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --foreground --ai-cue-gallery
           python3 scripts/test-preview-artifact.py
           python3 scripts/test-preview-release.py
           bash scripts/test-sparkle-contract.sh

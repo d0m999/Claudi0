@@ -75,6 +75,11 @@ jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 git diff --check
 ```
 
+The GUI harness defaults to background checks. Run `claudio-gui-tests --foreground` only in a
+reserved desktop session; it presents windows and uses focus. `--all` runs both batches serially.
+Focused native selectors also require `--foreground`. Report foreground checks as unverified when
+only the background batch ran. See `CONTRIBUTING.md` for full verification entry points.
+
 For bundle or release-sensitive work, also run the applicable scripts and Release builds documented
 in `CONTRIBUTING.md`. `scripts/dev-bundle.sh` produces an arm64-only, ad-hoc-signed local
 app; it is inspection evidence, not a Developer ID signed or notarized release artifact.

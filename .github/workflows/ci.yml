@@ -159,7 +159,7 @@ jobs:
         run: |
           swift build --package-path gui --product claudio-gui-tests
           set -u
-          swift run --skip-build --package-path gui claudio-gui-tests --event-attention &
+          swift run --skip-build --package-path gui claudio-gui-tests --foreground --event-attention &
           HARNESS_PID=$!
           (
             sleep 240 &
@@ -186,13 +186,16 @@ jobs:
         run: swift run --skip-build --package-path gui claudio-gui-tests --settings-sidebar-backing
 
       - name: Verify native event animation layout
-        run: swift run --skip-build --package-path gui claudio-gui-tests --event-animation-layout
+        run: swift run --skip-build --package-path gui claudio-gui-tests --foreground --event-animation-layout
 
       - name: Verify native notification navigation
-        run: swift run --skip-build --package-path gui claudio-gui-tests --settings-notification-navigation
+        run: swift run --skip-build --package-path gui claudio-gui-tests --foreground --settings-notification-navigation
 
-      - name: Run GUI harness
-        run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests
+      - name: Run background GUI checks
+        run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests --background
+
+      - name: Run foreground GUI checks
+        run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests --foreground
 
       - name: Build ClaudioGUI (Debug)
         run: swift build -c debug --package-path gui --product ClaudioGUI
@@ -216,10 +219,10 @@ jobs:
           key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
 
       - name: Verify admitted AI Cue credential gallery
-        run: swift run --package-path gui -Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE claudio-gui-tests --ai-cue-gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE claudio-gui-tests --foreground --ai-cue-gallery
 
       - name: Verify public preview credential gallery
-        run: swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --ai-cue-gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --foreground --ai-cue-gallery
 
   verify:
     name: Test and build

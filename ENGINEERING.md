@@ -111,6 +111,9 @@ swift build -c release --package-path gui --product ClaudioGUI
 git diff --check
 ```
 
+GUI harness 默认仅覆盖后台逻辑、状态和离屏检查。预留桌面后用 `--foreground` 集中执行窗口与
+交互套件；完整自动化用 `--all` 串行执行两组，详见 `CONTRIBUTING.md`。
+
 这些命令通过只表示**实现并自动化验证**；它们不代表已打包、发布、部署或人工验收。以下必须另行在真机完成并逐项记录，未执行时保持 open：Claude Code 首次提示与 follow-up；Codex `/hooks` 重新确认后的当前代次 `UserPromptSubmit`、新旧会话；模型上下文没有 hook 输出注入；短任务的任务开始不会吞掉结束/授权声音；第三方 hooks/notifier 继续执行且无重复声音；VoiceOver、完整键盘路径、popover-to-window handoff、standard/large/maximum、明暗模式与 Reduce Motion；五音响度、时长与辨识度。
 
 ## Problem Statement（问题陈述）

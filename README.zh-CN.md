@@ -226,6 +226,9 @@ bash scripts/check-release-size.sh dist/claudi0.app
 git diff --check
 ```
 
+GUI harness 默认只运行后台检查。桌面可供测试时，加 `--foreground` 集中执行窗口与交互检查，
+或加 `--all` 串行执行两组；覆盖边界见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
 本地 CLI/app 版本固定显示 `0.0.0-dev`。Release workflow 只接受严格的 `vMAJOR.MINOR.PATCH` tag，并把同一个无 `v` 版本注入 CLI、app `Info.plist`、DMG 文件名、`SHA256SUMS.txt`、Release 标题和可选 cask。
 
 提交 PR 前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。CI 全绿仍不能替代原生 macOS、VoiceOver、键盘/焦点、Apple Silicon 以及 Claude Code/Codex 真实回执验收。

@@ -202,7 +202,7 @@ jobs:
         run: |
           set -euo pipefail
           swift run --package-path helper claudio-tests
-          swift run --package-path gui claudio-gui-tests
+          swift run --package-path gui claudio-gui-tests --all
           bash scripts/test-hook-cli-contract.sh
           python3 scripts/embed-opencode-plugin.py --check
           node scripts/test-opencode-plugin.mjs

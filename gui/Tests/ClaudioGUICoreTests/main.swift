@@ -54,7 +54,10 @@ func expect(
 @MainActor
 func suite(_ name: String, _ body: @MainActor () -> Void) {
     let started = ProcessInfo.processInfo.systemUptime
-    defer { reportSuiteDuration(name, started: started) }
+    defer {
+        verifyGUIHarnessDesktopIsolation()
+        reportSuiteDuration(name, started: started)
+    }
     print("• \(name)")
     body()
 }
@@ -64,7 +67,10 @@ func suite(_ name: String, _ body: @MainActor () -> Void) {
 @MainActor
 func suite(_ name: String, _ body: @MainActor () async -> Void) async {
     let started = ProcessInfo.processInfo.systemUptime
-    defer { reportSuiteDuration(name, started: started) }
+    defer {
+        verifyGUIHarnessDesktopIsolation()
+        reportSuiteDuration(name, started: started)
+    }
     print("• \(name)")
     await body()
 }
@@ -89,9 +95,62 @@ if let index = CommandLine.arguments.firstIndex(of: "--manifest-lock-holder") {
     exit(0)
 }
 
+if CommandLine.arguments.contains("--help") {
+    print(
+        """
+        Usage: claudio-gui-tests [--background | --foreground | --all] [selector] [--dry-run]
+          no arguments / --background  Run checks without presenting windows or taking focus.
+          --foreground                 Run the collected native window/interaction batch.
+          --all                        Run both batches serially; requires an available desktop.
+          --dry-run                    Print the selected mode without creating NSApplication.
+          --harness-routing            Check routing and desktop-access regression contracts.
+        Focused native selectors require --foreground. --all cannot take a focused selector.
+        Background success does not verify native focus, keyboard, layout or Computer Use.
+        """)
+    exit(0)
+}
+
+let harnessSelection: GUIHarnessSelection
+do {
+    harnessSelection = try GUIHarnessSelection(arguments: Array(CommandLine.arguments.dropFirst()))
+} catch {
+    print("✗ \(error)")
+    exit(2)
+}
+print(harnessSelection.description)
+if harnessSelection.dryRun { exit(0) }
+if harnessSelection.mode.includesForeground {
+    print("Foreground checks use visible windows and focus. Run GUI harness processes serially.")
+} else {
+    print("Foreground GUI checks: NOT RUN. Use --foreground when the desktop is available.")
+}
+// Focused routes that only construct an offscreen view still get the background policy.
+configureGUIHarnessApplication(NSApplication.shared)
+
+@MainActor
+func configureGUIHarnessApplication(_ application: NSApplication) {
+    application.setActivationPolicy(
+        harnessSelection.mode.includesForeground ? .accessory : .prohibited)
+}
+
+@MainActor
+func verifyGUIHarnessDesktopIsolation() {
+    guard !harnessSelection.mode.includesForeground, let application = NSApp else { return }
+    expect(!application.isActive, "background checks must not activate the test application")
+    expect(
+        !application.windows.contains(where: \.isVisible),
+        "background checks must not present windows")
+}
+
+if CommandLine.arguments.contains("--harness-routing") {
+    await runGUIHarnessRoutingSuites()
+    print("GUI harness routing: \(totalChecks) checks, \(failures) failures")
+    exit(failures == 0 ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--first-run-native-render") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runFirstRunNativePrototypeSuites()
         runFirstRunNativePrototypeRenderSuites()
@@ -114,7 +173,7 @@ if CommandLine.arguments.contains("--first-run-native") {
 
 if CommandLine.arguments.contains("--ai-cue-gallery") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsAICueGallerySuites()
         print("AI Cue gallery: \(totalChecks) checks, \(failures) failures")
@@ -145,7 +204,7 @@ if CommandLine.arguments.contains("--ai-cue-routing") {
 
 if CommandLine.arguments.contains("--review-findings") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runReviewFindingRepairSuites()
         print("Review findings: \(totalChecks) checks, \(failures) failures")
@@ -165,7 +224,7 @@ if CommandLine.arguments.contains("--app-motion") {
 
 if CommandLine.arguments.contains("--gui-baseline-regressions") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         _ = await runEventAnimationReferenceSuites()
         await runAICueRuntimeLateResultSuites()
@@ -181,7 +240,7 @@ if CommandLine.arguments.contains("--gui-baseline-regressions") {
 
 if CommandLine.arguments.contains("--sounds-review-recovery") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSoundsReviewRecoverySuites()
         print("Sounds review recovery: \(totalChecks) checks, \(failures) failures")
@@ -220,7 +279,7 @@ if CommandLine.arguments.contains("--event-row-sound-entry") {
 
 if CommandLine.arguments.contains("--integration-automation-native") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runIntegrationAutomationNativeSuites()
         print("\(totalChecks) checks, \(failures) failures")
@@ -239,7 +298,7 @@ if CommandLine.arguments.contains("--integration-automation") {
 
 if CommandLine.arguments.contains("--settings-notification-navigation") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNotificationNavigationSuites()
         print("Settings notification navigation: \(totalChecks) checks, \(failures) failures")
@@ -287,7 +346,7 @@ if CommandLine.arguments.contains("--ai-cue-native-focus") {
 
 if CommandLine.arguments.contains("--sound-editor-ai-lifecycle") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSoundEditorAILifecycleSuites()
         print("Sound editor AI lifecycle: \(totalChecks) checks, \(failures) failures")
@@ -299,7 +358,7 @@ if CommandLine.arguments.contains("--sound-editor-ai-lifecycle") {
 
 if CommandLine.arguments.contains("--settings-native-states") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNativeStatesSuites()
         print("Settings native states: \(totalChecks) checks, \(failures) failures")
@@ -318,7 +377,7 @@ if CommandLine.arguments.contains("--event-notice-reader") {
 // Keep a focused reproduction of the native reader contract without changing its assertions.
 if CommandLine.arguments.contains("--event-notice-presentation-live") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runEventNoticePresentationSuites()
         print("Event notice presentation: \(totalChecks) checks, \(failures) failures")
@@ -336,7 +395,7 @@ if CommandLine.arguments.contains("--event-notice-presentation") {
 
 if CommandLine.arguments.contains("--hit-targets") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runHitTargetSuites()
         print("Hit targets: \(totalChecks) checks, \(failures) failures")
@@ -349,7 +408,7 @@ if CommandLine.arguments.contains("--hit-targets") {
 // Live reading timers need AppKit's event loop rather than the synchronous layout harness.
 if CommandLine.arguments.contains("--event-modal-lifecycle") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runEventNoticeModalLifecycleSuites()
         print("Event notice modal lifecycle: \(totalChecks) checks, \(failures) failures")
@@ -361,7 +420,7 @@ if CommandLine.arguments.contains("--event-modal-lifecycle") {
 
 if CommandLine.arguments.contains("--event-reading-live") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runEventReadingLiveSuites()
         print("Event reading live: \(totalChecks) checks, \(failures) failures")
@@ -375,7 +434,7 @@ if CommandLine.arguments.contains("--event-animation")
     || CommandLine.arguments.contains("--event-animation-layout")
 {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runEventAnimationIntegrationSuites()
         print("Event animation: \(totalChecks) checks, \(failures) failures")
@@ -453,7 +512,7 @@ if CommandLine.arguments.contains("--focus-scope-review") {
 
 if CommandLine.arguments.contains("--event-reader") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runEventNoticeReaderSuites()
         print("Event reader: \(totalChecks) checks, \(failures) failures")
@@ -619,7 +678,7 @@ if CommandLine.arguments.contains("--system-sounds") {
 
 if CommandLine.arguments.contains("--settings-lifecycle") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runSettingsNavigationSuites()
         await runSettingsPresentationLifecycleSuites()
@@ -673,7 +732,7 @@ if CommandLine.arguments.contains("--settings-product-images") {
 
 if CommandLine.arguments.contains("--settings-menu-layout") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsMenuLayoutSuites()
         print("Settings menu layout: \(totalChecks) checks, \(failures) failures")
@@ -685,7 +744,7 @@ if CommandLine.arguments.contains("--settings-menu-layout") {
 
 if CommandLine.arguments.contains("--settings-sounds-layout") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runSettingsNativeMigrationSuites()
         await runSettingsSoundsLayoutSuites()
@@ -700,7 +759,7 @@ if CommandLine.arguments.contains("--settings-sounds-layout") {
 
 if CommandLine.arguments.contains("--settings-sounds-sheet-layout") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsSoundsSheetLayoutSuites()
         print("Settings sounds sheet layout: \(totalChecks) checks, \(failures) failures")
@@ -731,7 +790,7 @@ if CommandLine.arguments.contains("--senseaudio-provider") {
 
 if CommandLine.arguments.contains("--mounted-panel-contracts") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runPanelMountedContractSuites()
         runPanelPresentationMountSuites()
@@ -744,7 +803,7 @@ if CommandLine.arguments.contains("--mounted-panel-contracts") {
 
 if CommandLine.arguments.contains("--mounted-lifecycle-contracts") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runMountedVolumeLifecycleSuites()
         await runSoundEditorAILifecycleSuites()
@@ -769,7 +828,7 @@ if CommandLine.arguments.contains("--shared-write-contracts") {
 
 if CommandLine.arguments.contains("--native-regression-composition") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runNativeRegressionCompositionSuites()
         await runMenuBarCompositionSuites()
@@ -817,7 +876,7 @@ if CommandLine.arguments.contains("--panel-error-copy") {
 
 if CommandLine.arguments.contains("--settings-polish-native") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNativePolishSuites()
         print("Settings native polish: \(totalChecks) checks, \(failures) failures")
@@ -831,7 +890,7 @@ if CommandLine.arguments.contains("--five-page-settings-native")
     || CommandLine.arguments.contains("--five-page-forms-native")
 {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         if CommandLine.arguments.contains("--five-page-settings-native") {
             await runSettingsNativeShellSuites()
@@ -864,7 +923,7 @@ if CommandLine.arguments.contains("--settings-navigation-core") {
 
 if CommandLine.arguments.contains("--settings-sidebar-backing") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsSidebarBackingSuites()
         print("Settings sidebar backing: \(totalChecks) checks, \(failures) failures")
@@ -876,7 +935,7 @@ if CommandLine.arguments.contains("--settings-sidebar-backing") {
 
 if CommandLine.arguments.contains("--settings-review-repairs") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNavigationHistorySuites()
         await runSettingsNativeReadingSuites()
@@ -890,7 +949,7 @@ if CommandLine.arguments.contains("--settings-review-repairs") {
 
 if CommandLine.arguments.contains("--settings-scope-pickers") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runSettingsPresentationTargetSuites()
         await runSettingsScopePickerSuites()
@@ -903,7 +962,7 @@ if CommandLine.arguments.contains("--settings-scope-pickers") {
 
 if CommandLine.arguments.contains("--ci-native-regressions") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runPanelSettingsHandbackSuites()
         await runStatusItemWindowOrderGuardSuites()
@@ -919,7 +978,7 @@ if CommandLine.arguments.contains("--ci-native-regressions") {
 
 if CommandLine.arguments.contains("--settings-native-alignment") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNavigationHistorySuites()
         await runSettingsNativeShellSuites()
@@ -933,7 +992,7 @@ if CommandLine.arguments.contains("--settings-native-alignment") {
 
 if CommandLine.arguments.contains("--settings-native-regressions") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.accessory)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         runWorkspaceDeletionPresentationSuites()
         runEventSettingsWindowSelectionSuites()
@@ -948,17 +1007,32 @@ if CommandLine.arguments.contains("--settings-native-regressions") {
     exit(1)
 }
 
+// The default remains useful while the developer works in another app.
 let fullHarnessApplication = NSApplication.shared
-fullHarnessApplication.setActivationPolicy(.accessory)
+configureGUIHarnessApplication(fullHarnessApplication)
 Task { @MainActor in
-    await runPanelMountedContractSuites()
-    await runMountedVolumeLifecycleSuites()
+    await executeGUIHarnessBatches(
+        mode: harnessSelection.mode,
+        background: { await runBackgroundGUIHarnessSuites() },
+        foreground: { await runForegroundGUIHarnessSuites() })
+    print("")
+    if failures == 0 {
+        print("✓ \(harnessSelection.mode.rawValue): all \(totalChecks) executed checks passed")
+    } else {
+        print("✗ \(harnessSelection.mode.rawValue): \(failures) of \(totalChecks) checks FAILED")
+    }
+    exit(failures == 0 ? 0 : 1)
+}
+fullHarnessApplication.run()
+exit(1)
+
+@MainActor
+func runBackgroundGUIHarnessSuites() async {
+    await runGUIHarnessRoutingSuites()
     await runSharedWriteContractSuites()
     await runNativeRegressionCompositionSuites()
     await runMenuBarCompositionSuites()
     await runReviewRepairSuites()
-    await runSettingsNotificationNavigationSuites()
-    await runEventAnimationIntegrationSuites()
     runLocalizationSuites()
     runAboutInformationSuites()
     runLoginItemManagementSuites()
@@ -970,7 +1044,6 @@ Task { @MainActor in
     runReleaseSignatureSuites()
     runSourceScannerSuites()
     runViewWiringSuites()
-    runHitTargetSuites()
     runChatAXTracerWiringSuites()
     await runChatAXTracerSuites()
     runAudioFormatSniffSuites()
@@ -996,14 +1069,10 @@ Task { @MainActor in
     await runPreviewCredentialAccessSuites()
     await runSoundsRedesignCompositionSuites()
     await runGenerationHistorySuites()
-    await runSoundsReviewRecoverySuites()
     await runSoundEventSelectionLifecycleSuites()
-    await runReviewFindingRepairSuites()
     await runAICueGenerationViewModelSuites()
     runAICuePackScopedSuites()
     await runAICuePackScopedAsyncSuites()
-    await runSenseAudioIsolationSuites()
-    await runSoundEditorAILifecycleSuites()
     runAudioImportSuites()
     runAudioImportBatchSuites()
     runCoverageStateSuites()
@@ -1049,7 +1118,6 @@ Task { @MainActor in
     await runEventRowSoundEntrySuites()
     await runPanelPresentationSuites()
     runEventSettingsWindowSelectionSuites()
-    runWorkspaceDeletionPresentationSuites()
     runContrastSuites()
     runContrastHexParsingSuites()
     runPanelTypeSizeSuites()
@@ -1067,9 +1135,7 @@ Task { @MainActor in
     await runHostIntegrationManagerBridgeSuites()
     runIntegrationDestinationWiringSuites()
     runRetainedWindowHandbackTrackerSuites()
-    await runPanelSettingsHandbackSuites()
     runPanelSettingsChoreographySuites()
-    await runStatusItemWindowOrderGuardSuites()
     runPanelConfigSuites()
     runPanelRefreshRouteSuites()
     await runSoundPacksRefreshSuites()
@@ -1092,54 +1158,57 @@ Task { @MainActor in
     runSettingsHandbackSuites()
     runFivePageSettingsSuites()
     runSettingsNavigationSuites()
-    await runSettingsPresentationLifecycleSuites()
     runSettingsPresentationTargetSuites()
     runSettingsSoundsPublicationSuites()
-    await runSettingsPresentationSliceSuites()
-    await runSettingsRootInteractionSuites()
-    runSettingsProductImagesSuites()
-    await runSettingsSoundsLayoutSuites()
-    await runSettingsSoundsSheetLayoutSuites()
     runAICueTaskSurfaceSuites()
-    await runIntegrationAutomationNativeSuites()
     runSettingsNativeMigrationSuites()
     runPreviewFixturesSuites()
     runMultiProviderPrototypeContractSuites()
     runVolumeDragSessionSuites()
     runPanelWriteFailuresSuites()
     runPanelErrorCopySuites()
-    runPanelPresentationMountSuites()
     runActivityOverviewSuites()
+    runQuestionIntentPresentationSuites()
+    runCodexDevelopmentNoticeSuites()
+    runCodexQuestionObservationSuites()
+    await runSettingsNavigationHistorySuites()
+    await runSettingsSidebarBackingSuites()
+}
+
+/// Original mounted/window coverage, kept together so it can run in one reserved desktop session.
+/// Focus gates with special system prerequisites retain their explicit focused selectors.
+@MainActor
+func runForegroundGUIHarnessSuites() async {
+    await runPanelMountedContractSuites()
+    await runMountedVolumeLifecycleSuites()
+    await runSettingsNotificationNavigationSuites()
+    await runEventAnimationIntegrationSuites()
+    runHitTargetSuites()
+    await runSoundsReviewRecoverySuites()
+    await runReviewFindingRepairSuites()
+    await runSenseAudioIsolationSuites()
+    await runSoundEditorAILifecycleSuites()
+    runWorkspaceDeletionPresentationSuites()
+    await runPanelSettingsHandbackSuites()
+    await runStatusItemWindowOrderGuardSuites()
+    await runSettingsPresentationLifecycleSuites()
+    await runSettingsPresentationSliceSuites()
+    await runSettingsRootInteractionSuites()
+    runSettingsProductImagesSuites()
+    await runSettingsSoundsLayoutSuites()
+    await runSettingsSoundsSheetLayoutSuites()
+    await runIntegrationAutomationNativeSuites()
+    runPanelPresentationMountSuites()
     runAICueDescriptionSuites()
     await runEventNoticeModalLifecycleSuites()
-    // Keep the native AppKit suite after every async suite; see the targeted ordering above.
     runEventNoticePresentationSuites()
     runEventBannerLayoutSuites()
     runEventNoticeStackNativeSuites()
     runEventNoticeReaderSuites()
-    runQuestionIntentPresentationSuites()
-    runCodexDevelopmentNoticeSuites()
-    runCodexQuestionObservationSuites()
-
-    await runSettingsNavigationHistorySuites()
     await runSettingsNativeShellSuites()
     await runFivePageSettingsNativeSuites()
-    await runSettingsSidebarBackingSuites()
     await runSettingsNativeControlsSuites()
     await runSettingsScopePickerSuites()
     await runSettingsNativePolishSuites()
     await runSettingsNotificationNavigationSuites()
-
-    // MARK: - Summary
-
-    print("")
-    if failures == 0 {
-        print("✓ all \(totalChecks) checks passed")
-        exit(0)
-    } else {
-        print("✗ \(failures) of \(totalChecks) checks FAILED")
-        exit(1)
-    }
 }
-fullHarnessApplication.run()
-exit(1)
