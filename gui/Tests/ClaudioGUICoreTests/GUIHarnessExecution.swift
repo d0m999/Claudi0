@@ -80,7 +80,7 @@ struct GUIHarnessSelection {
         "--ai-cue-provider-contracts", "--senseaudio-provider", "--shared-write-contracts",
         "--menu-bar-composition", "--panel-announcement", "--release-layout",
         "--surface-sound-issue", "--panel-error-copy", "--five-page-settings",
-        "--settings-sidebar-backing",
+        "--settings-sidebar-backing", "--settings-sounds-entry-layout",
     ]
 
     static let foregroundSelectors: Set<String> = [

@@ -4,7 +4,7 @@ import SwiftUI
 /// A native key-view stop with a SwiftUI label. AppKit owns keyboard activation and the focus
 /// ring even when system Keyboard navigation is disabled; the supplied owner owns the action.
 @MainActor
-struct EventAnimationActionButton<Label: View>: NSViewRepresentable {
+struct EventAnimationActionButton<Label: View>: View {
     let title: String
     let identifier: String
     var value: String = ""
@@ -13,12 +13,34 @@ struct EventAnimationActionButton<Label: View>: NSViewRepresentable {
     let action: @MainActor () -> Void
     @ViewBuilder let label: () -> Label
 
-    func makeNSView(context _: Context) -> EventAnimationActionView<Label> {
-        EventAnimationActionView(label: label())
+    var body: some View {
+        // Keep the label in the parent's SwiftUI layout so text measures the available width.
+        // The native overlay supplies interaction/focus without imposing a host's fittingSize.
+        label().accessibilityHidden(true)
+            .overlay {
+                EventAnimationActionSurface(
+                    title: title, identifier: identifier, value: value, selected: selected,
+                    requestsFocus: requestsFocus, action: action
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+    }
+}
+
+@MainActor
+private struct EventAnimationActionSurface: NSViewRepresentable {
+    let title: String
+    let identifier: String
+    let value: String
+    let selected: Bool
+    let requestsFocus: Bool
+    let action: @MainActor () -> Void
+
+    func makeNSView(context _: Context) -> EventAnimationActionView<Color> {
+        EventAnimationActionView(label: Color.clear)
     }
 
-    func updateNSView(_ view: EventAnimationActionView<Label>, context: Context) {
-        view.host.rootView = EventAnimationActionLabel(content: label())
+    func updateNSView(_ view: EventAnimationActionView<Color>, context: Context) {
         view.onActivate = action
         view.isEnabled = context.environment.isEnabled
         view.setAccessibilityLabel(title)

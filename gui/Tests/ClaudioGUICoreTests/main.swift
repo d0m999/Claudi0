@@ -922,6 +922,18 @@ if CommandLine.arguments.contains("--settings-navigation-core") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-sounds-entry-layout") {
+    let application = NSApplication.shared
+    Task { @MainActor in
+        await runSettingsSoundsEntryLayoutSuites()
+        verifyGUIHarnessDesktopIsolation()
+        print("Settings sounds entry layout: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-sidebar-backing") {
     let application = NSApplication.shared
     configureGUIHarnessApplication(application)
@@ -1161,6 +1173,7 @@ func runBackgroundGUIHarnessSuites() async {
     runSettingsNavigationSuites()
     runSettingsPresentationTargetSuites()
     runSettingsSoundsPublicationSuites()
+    await runSettingsSoundsEntryLayoutSuites()
     runAICueTaskSurfaceSuites()
     runSettingsNativeMigrationSuites()
     runPreviewFixturesSuites()
