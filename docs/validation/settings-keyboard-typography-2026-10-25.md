@@ -140,7 +140,7 @@ bash scripts/verify-settings-experience.sh \
 |---|---|
 | Helper 全量 | 6,187 checks，全部通过 |
 | GUI `--all`，含后台与前台 | 25,865 checks，全部通过；原失败用例保留在工作区删除用例之后 |
-| 最终组合的 `--foreground --panel-settings-handback` | 136 checks，0 failures；运行同一候选构建出的 Debug harness |
+| 最终组合的 `--foreground --panel-settings-handback` | 136 checks，0 failures；运行同一候选构建出的 Debug harness；这是独立专项，通过不能替代上一行含相邻用例的全量上下文 |
 | `ClaudioSettingsPresentation` Debug／Release target 构建 | 均通过 |
 | `ClaudioGUI` Debug／Release product 构建 | 均通过 |
 | xcstrings `jq empty` | 通过 |
@@ -162,3 +162,11 @@ bash scripts/verify-settings-experience.sh \
 全部前台测试结束后，`AppleKeyboardUIMode` 恢复 `0`；新的后台 AppKit 进程读回 `isFullKeyboardAccessEnabled == false`。确认候选提交已包含于 `main`、tracked／untracked 工作树干净、ignored 目录只有本次 `dist/` 与两个 `.build/`，且没有相关活跃进程后，已用精确路径移除临时 worktree。构建产物中的 symlink 按链接检查，未跟随它们修改目标。随后删除本次临时日志、快照、诊断清单和构建临时目录；`git worktree list` 只剩主 checkout，`git worktree prune --dry-run` 没有遗留项。本次新增的系统临时 fixture 路径也已清零。
 
 全部清理后再次比较前置快照中 6 个真实工具的 SHA-256 与 POSIX mode，变化为零。主 checkout 的既有 `dist/` 与常规 `.build` 缓存保留。未 push、发布或修改真实宿主配置；VoiceOver 实际朗读、真实宿主、真实音频、真实 Provider 和系统授权等未验证边界保持不变。
+
+## 复核后的夹具补充修正
+
+复核发现同一 `PanelSettingsHandbackSuite` 的另一处夹具在 `settings.presentForUserRequest()`、`other.presentForUserRequest()` 后立即断言 Settings 位于后台，仍是本记录已归因的未等待假设。该处现复用同一就绪等待（原生 key、`NSApp.keyWindow`、WindowServer 顺序），并把结果折进原断言，检查条数不变。重复的轮询循环也收敛到同一 helper；helper 名称改为同时表达 key 与顺序契约。
+
+补充修正只涉及测试夹具，未修改生产源码。上表综合门禁结果仍对应 `5dd3046`。本次补充在工作区上重新运行完整 `--all`（后台与前台串行），结果为 `25,865 checks, 0 failures`，与上表条数一致；运行时 `AppleKeyboardUIMode` 为 `0`，结束后仍为 `0`。本次没有重新运行 `verify-settings-experience.sh` 管理的 target 构建、打包、体积与格式基线步骤，也未单独复跑 `--foreground --panel-settings-handback`。
+
+GUI `--all` 的增量包含 `1618eda` 新增的离屏 suite（独立运行为 `137 checks`）与 `5dd3046` 的两条就绪断言；旧失败运行的 `25,729` 是失败状态下的计数，不能把 `136` 的差值逐项分解。

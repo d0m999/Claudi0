@@ -52,7 +52,7 @@ func runPanelSettingsHandbackSuites() async {
             if !settingsIsFront { other.presentForUserRequest() }
             let front = settingsIsFront ? settings : other
             let behind = settingsIsFront ? other : settings
-            let fixtureReady = await focusTestWaitForForeground(front, behind: behind)
+            let fixtureReady = await focusTestWaitForKeyAndOrder(front, behind: behind)
             expect(
                 fixtureReady,
                 "夹具必须分别建立前台和后台设置：expected=\(front.windowNumber), "
@@ -112,23 +112,17 @@ func runPanelSettingsHandbackSuites() async {
         panel.removeChildWindow(child)
         child.close()
         other.makeKey()
-        let focusDeadline = Date().addingTimeInterval(0.5)
-        while panel.isShown && Date() < focusDeadline {
-            try? await Task.sleep(nanoseconds: 10_000_000)
-        }
+        _ = await focusTestWaitUntil(seconds: 0.5) { !panel.isShown }
         expect(!panel.isShown && closes.last == .keyResignation, "键盘真正离开菜单树时收起菜单")
         settings.presentForUserRequest()
         // The explicit foreground request must reach WindowServer before the menu's baseline.
         var beforeOutsideClick = focusTestNormalWindowOrder()
-        let orderDeadline = Date().addingTimeInterval(0.5)
-        while !focusTestIsBefore(settings, other, in: beforeOutsideClick)
-            && Date() < orderDeadline
-        {
-            try? await Task.sleep(nanoseconds: 10_000_000)
+        let orderReady = await focusTestWaitUntil(seconds: 0.5) {
             beforeOutsideClick = focusTestNormalWindowOrder()
+            return focusTestIsBefore(settings, other, in: beforeOutsideClick)
+                && settings.isKeyWindow
         }
-        guard focusTestIsBefore(settings, other, in: beforeOutsideClick), settings.isKeyWindow
-        else {
+        guard orderReady else {
             expect(false, "点外关闭夹具必须先完成显式前置：\(beforeOutsideClick)")
             return
         }
@@ -173,7 +167,13 @@ func runPanelSettingsHandbackSuites() async {
 
             settings.presentForUserRequest()
             other.presentForUserRequest()
-            expect(!settings.isKeyWindow, "夹具必须先让 Settings 位于后台")
+            let fixtureReady = await focusTestWaitForKeyAndOrder(other, behind: settings)
+            expect(
+                fixtureReady && !settings.isKeyWindow,
+                "夹具必须先让 Settings 位于后台：key=\(NSApp.keyWindow?.windowNumber ?? 0), "
+                    + "order=\(focusTestNormalWindowOrder())"
+            )
+            guard fixtureReady else { return }
             settings.defersAutomaticFocusForPanel = true
             panel.show(relativeTo: anchor.bounds, of: anchor)
             expect(panel.isKeyWindow, "显式请求前菜单必须持有键盘焦点")
@@ -351,16 +351,23 @@ private func focusTestIsBefore(_ front: NSWindow, _ behind: NSWindow, in order: 
 }
 
 @MainActor
-private func focusTestWaitForForeground(_ front: NSWindow, behind: NSWindow) async -> Bool {
-    // Key ownership and WindowServer order settle asynchronously. Only capture the menu's
-    // handback ownership once both reflect the fixture's explicit presentation request.
-    func isReady() -> Bool {
+private func focusTestWaitForKeyAndOrder(_ front: NSWindow, behind: NSWindow) async -> Bool {
+    // Key ownership and WindowServer order settle asynchronously. Only capture fixture-dependent
+    // state once both reflect the explicit presentation requests.
+    await focusTestWaitUntil {
         front.isKeyWindow && NSApp.keyWindow === front
             && focusTestIsBefore(front, behind, in: focusTestNormalWindowOrder())
     }
-    let deadline = Date(timeIntervalSinceNow: 2)
-    while !isReady(), Date() < deadline {
+}
+
+@MainActor
+private func focusTestWaitUntil(
+    seconds: TimeInterval = 2,
+    _ condition: () -> Bool
+) async -> Bool {
+    let deadline = Date(timeIntervalSinceNow: seconds)
+    while !condition(), Date() < deadline {
         try? await Task.sleep(nanoseconds: 10_000_000)
     }
-    return isReady()
+    return condition()
 }
