@@ -46,6 +46,12 @@ func runGUIHarnessRoutingSuites() async {
             expect(
                 minimal.selector == "--gui-baseline-regressions",
                 "existing gallery modifier is preserved")
+            let cancelOnly = try GUIHarnessSelection(arguments: [
+                "--foreground", "--settings-native-states", "--settings-native-cancel-only",
+            ])
+            expect(
+                cancelOnly.mode == .foreground && cancelOnly.selector == "--settings-native-states",
+                "existing native cancellation modifier preserves the focused selector")
         } catch {
             expect(false, "valid harness invocation was rejected: \(error)")
         }
@@ -77,6 +83,32 @@ func runGUIHarnessRoutingSuites() async {
             (["--dry-run"], Int32(0), "GUI checks: background batch"),
             (["--foreground", "--dry-run"], 0, "GUI checks: foreground batch"),
             (["--all", "--dry-run"], 0, "GUI checks: all batch"),
+            (
+                [
+                    "--foreground", "--settings-native-states", "--settings-native-cancel-only",
+                    "--dry-run",
+                ], 0, "GUI checks: foreground --settings-native-states"
+            ),
+            (
+                ["--foreground", "--settings-native-cancel-only", "--dry-run"], 2,
+                "--settings-native-cancel-only requires --settings-native-states."
+            ),
+            (
+                [
+                    "--foreground", "--gui-baseline-regressions", "--settings-native-cancel-only",
+                    "--dry-run",
+                ], 2, "--settings-native-cancel-only requires --settings-native-states."
+            ),
+            (
+                ["--settings-native-states", "--settings-native-cancel-only", "--dry-run"], 2,
+                "Run with --foreground"
+            ),
+            (
+                [
+                    "--background", "--settings-native-states", "--settings-native-cancel-only",
+                    "--dry-run",
+                ], 2, "Run with --foreground"
+            ),
             (["--settings-navigation-native-focus"], 2, "Run with --foreground"),
             (["--foregound"], 2, "Unknown test argument"),
         ] {

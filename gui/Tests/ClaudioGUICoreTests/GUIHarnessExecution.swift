@@ -33,6 +33,7 @@ struct GUIHarnessSelection {
         dryRun = arguments.contains("--dry-run")
         let known = Self.selectors.union([
             "--background", "--foreground", "--all", "--dry-run", "--minimal",
+            "--settings-native-cancel-only",
         ])
         if let unknown = arguments.first(where: { !known.contains($0) }) {
             throw SelectionError("Unknown test argument: \(unknown). Use --help.")
@@ -42,6 +43,11 @@ struct GUIHarnessSelection {
         }
         if arguments.contains("--minimal"), selector != "--gui-baseline-regressions" {
             throw SelectionError("--minimal requires --gui-baseline-regressions.")
+        }
+        if arguments.contains("--settings-native-cancel-only"),
+            selector != "--settings-native-states"
+        {
+            throw SelectionError("--settings-native-cancel-only requires --settings-native-states.")
         }
         if let selector, Self.foregroundSelectors.contains(selector), !mode.includesForeground {
             throw SelectionError(
