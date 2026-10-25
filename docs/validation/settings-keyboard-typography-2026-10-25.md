@@ -165,8 +165,8 @@ bash scripts/verify-settings-experience.sh \
 
 ## 复核后的夹具补充修正
 
-复核发现同一 `PanelSettingsHandbackSuite` 的另一处夹具在 `settings.presentForUserRequest()`、`other.presentForUserRequest()` 后立即断言 Settings 位于后台，仍是本记录已归因的未等待假设。该处现复用同一就绪等待（原生 key、`NSApp.keyWindow`、WindowServer 顺序），并把结果折进原断言，检查条数不变。重复的轮询循环也收敛到同一 helper；helper 名称改为同时表达 key 与顺序契约。
+复核发现同一 `PanelSettingsHandbackSuite` 的另几处夹具仍沿用“呈现后立即断言”的模式：后台夹具在两次 `presentForUserRequest()` 后立即断言 Settings 位于后台，菜单和显式请求两处也立即读取 key 所有权。它们属于本记录已描述的同类未等待模式；本次改为等待就绪后再断言，通过时检查条数不变。后台夹具就绪失败时只跳过当前变体，不再中止另一变体。重复的轮询循环收敛到同一 helper；helper 名称改为同时表达 key 与顺序契约。
 
-补充修正只涉及测试夹具，未修改生产源码。上表综合门禁结果仍对应 `5dd3046`。本次补充在工作区上重新运行完整 `--all`（后台与前台串行），结果为 `25,865 checks, 0 failures`，与上表条数一致；运行时 `AppleKeyboardUIMode` 为 `0`，结束后仍为 `0`。本次没有重新运行 `verify-settings-experience.sh` 管理的 target 构建、打包、体积与格式基线步骤，也未单独复跑 `--foreground --panel-settings-handback`。
+补充修正只涉及测试夹具，未修改生产源码。上表综合门禁结果仍对应 `5dd3046`。本补充在基于 `e0009e9` 的复核修正工作区内容上重新运行完整 `--all`（后台与前台串行），经用户授权占用当前桌面会话，结果为 `25,865 checks, 0 failures`，与上表条数一致；运行时与结束后 `AppleKeyboardUIMode` 均为 `0`，因此不覆盖需要完整键盘访问的前台路径。本次没有重新运行 `verify-settings-experience.sh` 管理的 target 构建、打包、体积与格式基线步骤，也未单独复跑 `--foreground --panel-settings-handback`。
 
-GUI `--all` 的增量包含 `1618eda` 新增的离屏 suite（独立运行为 `137 checks`）与 `5dd3046` 的两条就绪断言；旧失败运行的 `25,729` 是失败状态下的计数，不能把 `136` 的差值逐项分解。
+`--all` 相对首次失败运行的增量主要来自 `1618eda` 新增的离屏 suite；该 suite 独立运行为 `137 checks`。首次失败运行的 `25,729` 是失败状态下的计数，不是干净基线，因此不用它与后续通过运行做加法归因。

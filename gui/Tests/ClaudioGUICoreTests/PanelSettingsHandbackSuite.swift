@@ -116,13 +116,11 @@ func runPanelSettingsHandbackSuites() async {
         expect(!panel.isShown && closes.last == .keyResignation, "键盘真正离开菜单树时收起菜单")
         settings.presentForUserRequest()
         // The explicit foreground request must reach WindowServer before the menu's baseline.
-        var beforeOutsideClick = focusTestNormalWindowOrder()
         let orderReady = await focusTestWaitUntil(seconds: 0.5) {
-            beforeOutsideClick = focusTestNormalWindowOrder()
-            return focusTestIsBefore(settings, other, in: beforeOutsideClick)
-                && settings.isKeyWindow
+            focusTestIsBefore(settings, other, in: focusTestNormalWindowOrder())
         }
-        guard orderReady else {
+        let beforeOutsideClick = focusTestNormalWindowOrder()
+        guard orderReady, settings.isKeyWindow else {
             expect(false, "点外关闭夹具必须先完成显式前置：\(beforeOutsideClick)")
             return
         }
@@ -173,10 +171,11 @@ func runPanelSettingsHandbackSuites() async {
                 "夹具必须先让 Settings 位于后台：key=\(NSApp.keyWindow?.windowNumber ?? 0), "
                     + "order=\(focusTestNormalWindowOrder())"
             )
-            guard fixtureReady else { return }
+            guard fixtureReady else { continue }
             settings.defersAutomaticFocusForPanel = true
             panel.show(relativeTo: anchor.bounds, of: anchor)
-            expect(panel.isKeyWindow, "显式请求前菜单必须持有键盘焦点")
+            let panelReady = await focusTestWaitUntil { panel.isKeyWindow }
+            expect(panelReady, "显式请求前菜单必须持有键盘焦点")
             settings.makeKey()
             expect(panel.isKeyWindow && !settings.isKeyWindow, "自动 key 交接仍须受菜单焦点抑制")
             let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
@@ -187,7 +186,10 @@ func runPanelSettingsHandbackSuites() async {
                 settings.presentForUserRequest()
             }
             expect(!settings.defersAutomaticFocusForPanel, "显式请求必须自行解除抑制，不依赖控制器关闭回调")
-            expect(settings.isVisible && settings.isKeyWindow, "显式请求必须同时前置设置并取得键盘焦点")
+            let focusReady = await focusTestWaitUntil {
+                settings.isVisible && settings.isKeyWindow
+            }
+            expect(focusReady, "显式请求必须同时前置设置并取得键盘焦点")
             expect(NSApp.keyWindow === settings, "原生 key owner 必须从菜单转移到 Settings")
             try? await Task.sleep(nanoseconds: 50_000_000)
             expect(!panel.isShown, "显式 Settings 请求取得焦点后菜单按失去 key 路径收起")
