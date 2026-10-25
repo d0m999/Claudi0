@@ -109,6 +109,39 @@ func runAICueTaskSurfaceSuites() {
                 == "The generation service is temporarily unavailable. Try generating again later.",
             "English failure card explains the service outage and recovery")
     }
+    for dark in [false, true] {
+        for increased in [false, true] {
+            suite("AI task surface: system group across phases \(dark)/\(increased)") {
+                let probe = TaskSurfaceProbe()
+                let hosting = NSHostingView(
+                    rootView: TaskSurfaceFixture(probe: probe)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                let window = NSWindow(
+                    contentRect: NSRect(x: 0, y: 0, width: 572, height: 500),
+                    styleMask: [.titled], backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                window.appearance = NSAppearance(
+                    named: increased
+                        ? (dark
+                            ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
+                        : (dark ? .darkAqua : .aqua))
+                window.contentView = hosting
+                defer { window.close() }
+                for phase in ["generating", "saving", "pending", "results", "failed"] {
+                    probe.phase = phase
+                    feedbackSettle(hosting)
+                    expect(
+                        feedbackPixelCount(in: hosting, color: .underPageBackgroundColor) > 500,
+                        "Expanded \(phase) paints the composited native group surface")
+                }
+                probe.phase = "ready"
+                feedbackSettle(hosting)
+                expect(
+                    abs(probe.height - 34) < 1,
+                    "Reset retains compact geometry after all feedback phases")
+            }
+        }
+    }
     suite("AI task surface: mounted content measurement survives identity changes") {
         _ = NSApplication.shared
         let probe = TaskSurfaceProbe()

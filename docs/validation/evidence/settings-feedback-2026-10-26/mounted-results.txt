@@ -1,0 +1,164 @@
+Runtime excerpts; compile warnings and unrelated suites omitted.
+RED uses the three 66af148 component sources; GREEN restores the candidate implementation.
+
+## RED --foreground --settings-polish-native
+GUI checks: foreground --settings-polish-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings feedback: mounted system error zhHans/false/960.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error zhHans/false/1240.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error zhHans/true/960.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error zhHans/true/1240.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error english/false/960.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error english/false/1240.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error english/true/960.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: mounted system error english/true/1240.0
+  ✗ Root FailureRow resolves systemRed in its effective appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:28)
+• Settings feedback: root to naming sheet zhHans/false/960.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet zhHans/false/1240.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet zhHans/true/960.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet zhHans/true/1240.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet english/false/960.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet english/false/1240.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet english/true/960.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: root to naming sheet english/true/1240.0
+  ✗ Sheet FailureRow inherits the root settings environment  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:97)
+• Settings feedback: long selectable message false/false
+  ✗ Error icon follows effective appearance and contrast  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:141)
+  ✗ The wrapped body remains neutral  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:144)
+• Settings feedback: long selectable message false/true
+  ✗ Error icon follows effective appearance and contrast  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:141)
+  ✗ The wrapped body remains neutral  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:144)
+• Settings feedback: long selectable message true/false
+  ✗ Error icon follows effective appearance and contrast  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:141)
+• Settings feedback: long selectable message true/true
+  ✗ Error icon follows effective appearance and contrast  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:141)
+• Settings feedback: panel default isolation false
+• Settings feedback: panel default isolation true
+Settings native polish: 270 checks, 22 failures
+
+## RED --foreground --app-motion
+GUI checks: foreground --app-motion
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI task surface: real phases and detached results
+• AI task surface: system group across phases false/false
+  ✗ Expanded generating paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded saving paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded pending paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded results paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded failed paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+• AI task surface: system group across phases false/true
+  ✗ Expanded generating paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded saving paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded pending paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded results paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded failed paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+• AI task surface: system group across phases true/false
+  ✗ Expanded generating paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded saving paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded pending paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded results paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded failed paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+• AI task surface: system group across phases true/true
+  ✗ Expanded generating paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded saving paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded pending paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded results paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+  ✗ Expanded failed paints the composited native group surface  (claudio_gui_tests/AICueTaskSurfaceSuite.swift:133)
+• AI task surface: mounted content measurement survives identity changes
+App motion: 132 checks, 20 failures
+
+## RED --foreground --mounted-lifecycle-contracts
+GUI checks: foreground --mounted-lifecycle-contracts
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Mounted volume: settings percentage color false
+  ✗ Mounted percentage uses the system secondary label color  (claudio_gui_tests/MountedVolumeLifecycleSuite.swift:29)
+• Mounted volume: settings percentage color true
+  ✗ Mounted percentage uses the system secondary label color  (claudio_gui_tests/MountedVolumeLifecycleSuite.swift:29)
+Mounted lifecycle contracts: 314 checks, 2 failures
+
+## GREEN --foreground --settings-polish-native
+GUI checks: foreground --settings-polish-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings feedback: mounted system error zhHans/false/960.0
+• Settings feedback: mounted system error zhHans/false/1240.0
+• Settings feedback: mounted system error zhHans/true/960.0
+• Settings feedback: mounted system error zhHans/true/1240.0
+• Settings feedback: mounted system error english/false/960.0
+• Settings feedback: mounted system error english/false/1240.0
+• Settings feedback: mounted system error english/true/960.0
+• Settings feedback: mounted system error english/true/1240.0
+• Settings feedback: root to naming sheet zhHans/false/960.0
+• Settings feedback: root to naming sheet zhHans/false/1240.0
+• Settings feedback: root to naming sheet zhHans/true/960.0
+• Settings feedback: root to naming sheet zhHans/true/1240.0
+• Settings feedback: root to naming sheet english/false/960.0
+• Settings feedback: root to naming sheet english/false/1240.0
+• Settings feedback: root to naming sheet english/true/960.0
+• Settings feedback: root to naming sheet english/true/1240.0
+• Settings feedback: long selectable message false/false
+• Settings feedback: long selectable message false/true
+• Settings feedback: long selectable message true/false
+• Settings feedback: long selectable message true/true
+• Settings feedback: panel default isolation false
+• Settings feedback: panel default isolation true
+Settings native polish: 270 checks, 0 failures
+
+## GREEN --foreground --app-motion
+GUI checks: foreground --app-motion
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI task surface: real phases and detached results
+• AI task surface: system group across phases false/false
+• AI task surface: system group across phases false/true
+• AI task surface: system group across phases true/false
+• AI task surface: system group across phases true/true
+• AI task surface: mounted content measurement survives identity changes
+App motion: 132 checks, 0 failures
+
+## GREEN --foreground --mounted-lifecycle-contracts
+GUI checks: foreground --mounted-lifecycle-contracts
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Mounted volume: settings percentage color false
+• Mounted volume: settings percentage color true
+Mounted lifecycle contracts: 314 checks, 0 failures
+
+## Additional public AX-name checks BEFORE explicit settings label
+GUI checks: foreground --settings-polish-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings feedback: mounted system error zhHans/false/960.0
+• Settings feedback: mounted system error zhHans/false/1240.0
+• Settings feedback: mounted system error zhHans/true/960.0
+• Settings feedback: mounted system error zhHans/true/1240.0
+• Settings feedback: mounted system error english/false/960.0
+• Settings feedback: mounted system error english/false/1240.0
+• Settings feedback: mounted system error english/true/960.0
+• Settings feedback: mounted system error english/true/1240.0
+• Settings feedback: root to naming sheet zhHans/false/960.0
+• Settings feedback: root to naming sheet zhHans/false/1240.0
+• Settings feedback: root to naming sheet zhHans/true/960.0
+• Settings feedback: root to naming sheet zhHans/true/1240.0
+• Settings feedback: root to naming sheet english/false/960.0
+• Settings feedback: root to naming sheet english/false/1240.0
+• Settings feedback: root to naming sheet english/true/960.0
+• Settings feedback: root to naming sheet english/true/1240.0
+• Settings feedback: long selectable message false/false
+• Settings feedback: long selectable message false/true
+• Settings feedback: long selectable message true/false
+• Settings feedback: long selectable message true/true
+• Settings feedback: panel default isolation false
+• Settings feedback: panel default isolation true
+Settings native polish: 278 checks, 0 failures
+This 278-check pass predates the explicit-label change and the desktop lock. Final foreground / external-client verification is pending unlock.

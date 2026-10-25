@@ -1,0 +1,4 @@
+Final candidate with explicit settings label and static-text trait:
+✓ background: all 15363 executed checks passed
+Build of product 'ClaudioGUI' complete! (5.45s)
+SDK: macOS 26.5 compatibility lane. Final four foreground selectors and external-client AX checks also passed; see validation record.

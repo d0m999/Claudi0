@@ -2,7 +2,7 @@ import ClaudioGUICore
 import Foundation
 import SwiftUI
 
-/// The token subset used by the shared failure surface. Values stay derived from
+/// The panel defaults used by the shared failure surface. Values stay derived from
 /// `ClaudioColorHex`, the GUI package's single source of truth for DESIGN.md's palette.
 private enum FailureRowColor {
     static func error(_ scheme: ColorScheme) -> Color {
@@ -29,9 +29,9 @@ extension Color {
     }
 }
 
-/// DESIGN.md's one shared in-place failure component: a true-red icon and `text-2` sentence.
-/// Standard-window callers add their own window-owned VoiceOver announcement, but share this exact
-/// rendered component and token treatment with the panel.
+/// Shared in-place failure component: a semantic error icon and a neutral sentence.
+/// Standard-window callers retain their window-owned VoiceOver announcement channel.
+/// Settings select system colors through an internal environment; other callers keep panel defaults.
 public struct FailureRow: View {
     public let message: String
     public var disclosure: Disclosure?
@@ -42,6 +42,7 @@ public struct FailureRow: View {
     }
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.usesSettingsAppearance) private var usesSettingsAppearance
     @ScaledMetric(relativeTo: .body) private var typeScale: CGFloat = 1
 
     public init(message: String, disclosure: Disclosure? = nil) {
@@ -49,23 +50,42 @@ public struct FailureRow: View {
         self.disclosure = disclosure
     }
 
+    @ViewBuilder
     public var body: some View {
+        if usesSettingsAppearance {
+            row.accessibilityLabel(Text(message))
+                .accessibilityAddTraits(.isStaticText)
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 11 * typeScale))
-                .foregroundColor(FailureRowColor.error(colorScheme))
+                .foregroundColor(
+                    usesSettingsAppearance
+                        ? SettingsAppearance.error(colorScheme) : FailureRowColor.error(colorScheme)
+                )
                 .accessibilityHidden(true)
             Text(message)
                 .font(.system(size: 11 * typeScale))
-                .foregroundColor(FailureRowColor.textSecondary(colorScheme))
+                .foregroundColor(secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
             if let disclosure {
                 Spacer(minLength: 4)
                 Image(systemName: disclosure == .expanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 9 * typeScale))
-                    .foregroundColor(FailureRowColor.textSecondary(colorScheme))
+                    .foregroundColor(secondaryText)
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var secondaryText: Color {
+        usesSettingsAppearance
+            ? SettingsAppearance.secondaryText(colorScheme)
+            : FailureRowColor.textSecondary(colorScheme)
     }
 }

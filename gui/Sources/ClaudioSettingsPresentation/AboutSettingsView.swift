@@ -32,13 +32,14 @@ struct AboutSettingsView: View {
             if let feedback = model.feedback {
                 Label {
                     Text(feedbackText(feedback))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 } icon: {
                     Image(systemName: feedbackIcon(feedback))
+                        .accessibilityHidden(true)
                         .foregroundColor(
                             feedback.isFailure
-                                ? ClaudioTheme.error(colorScheme)
-                                : ClaudioTheme.success(colorScheme))
+                                ? SettingsAppearance.error(colorScheme)
+                                : SettingsAppearance.success(colorScheme))
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.about.feedback")
@@ -128,7 +129,7 @@ struct AboutSettingsView: View {
                         .foregroundColor(.secondary)
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(ClaudioTheme.error(colorScheme))
+                            .foregroundColor(SettingsAppearance.error(colorScheme))
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(

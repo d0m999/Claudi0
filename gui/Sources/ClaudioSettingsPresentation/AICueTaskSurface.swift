@@ -10,6 +10,7 @@ package struct AICueTaskSurface<Content: View>: View {
     @ViewBuilder let content: (FocusState<AICueTaskFocus?>.Binding) -> Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @FocusState private var focusedControl: AICueTaskFocus?
     @State private var availableWidth: CGFloat = 572
     @State private var contentHeight: CGFloat = 68
@@ -47,14 +48,21 @@ package struct AICueTaskSurface<Content: View>: View {
             width: expanded ? availableWidth : 124,
             height: expanded ? max(96, contentHeight + 32) : 34, alignment: .topLeading
         )
-        .background(
-            RoundedRectangle(cornerRadius: expanded ? 17 : 7)
-                .fill(expanded ? ClaudioTheme.surface(colorScheme) : Color.accentColor)
-        )
+        .background {
+            if expanded {
+                SettingsNativeSurface(.group)
+            } else {
+                Color.accentColor
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: expanded ? 17 : 7)
                 .strokeBorder(
-                    expanded ? ClaudioTheme.hairline(colorScheme) : Color.clear, lineWidth: 1)
+                    expanded
+                        ? (colorSchemeContrast == .increased
+                            ? SettingsAppearance.secondaryText(colorScheme).opacity(0.6)
+                            : SettingsAppearance.hairline(colorScheme)) : Color.clear,
+                    lineWidth: expanded && colorSchemeContrast == .increased ? 1.5 : 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: expanded ? 17 : 7))
         .animation(reduceMotion ? nil : AppMotion.spring, value: expanded)

@@ -98,6 +98,7 @@ package struct SettingsDestinationContentView: View {
                 guard !Task.isCancelled else { return }
                 synchronizeDestinationFocus(settingsPresentationSession.state)
             }
+            .environment(\.usesSettingsAppearance, true)
     }
 
     private func synchronizeDestinationFocus(_ state: SettingsPresentationState) {
@@ -344,13 +345,14 @@ package struct SettingsDestinationContentView: View {
             if !preferences.recoveryIssues.isEmpty {
                 Label {
                     Text(l10n.text(.settingsGeneralPreferenceRecovery))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
+                        .foregroundColor(SettingsAppearance.error(colorScheme))
                 }
                 .padding(12)
-                .background(Color.red.opacity(0.08))
+                .background(SettingsAppearance.error(colorScheme).opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 13))
                 .accessibilityIdentifier("settings.general.preference-recovery")
             }
@@ -553,10 +555,11 @@ package struct SettingsDestinationContentView: View {
             {
                 Label {
                     Text(l10n.text(.settingsNotificationsReasonObserverFailure))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
+                        .foregroundColor(SettingsAppearance.warning(colorScheme))
                 }
                 .accessibilityIdentifier("settings.notifications.observer-failure")
             }
@@ -564,13 +567,14 @@ package struct SettingsDestinationContentView: View {
             if dynamicQuietPolicy.presentation.snapshotHealth != .current {
                 Label {
                     Text(l10n.text(.settingsNotificationsPublicationFailed))
+                        .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
+                        .foregroundColor(SettingsAppearance.error(colorScheme))
                 }
                 .padding(12)
-                .background(Color.red.opacity(0.08))
+                .background(SettingsAppearance.error(colorScheme).opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 13))
                 .accessibilityIdentifier("settings.notifications.publication-failed")
             }
@@ -777,7 +781,7 @@ package struct SettingsDestinationContentView: View {
         switch failure {
         case .staleSoundPack, .invalidSoundPackID:
             SettingsAppearance.secondaryText(colorScheme)
-        default: Color.orange
+        default: SettingsAppearance.warning(colorScheme)
         }
     }
 

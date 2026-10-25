@@ -593,6 +593,7 @@ struct IntegrationsSettingsDestinationView: View {
                 .foregroundColor(feedbackColor(feedback.kind))
                 .accessibilityHidden(true)
             Text(feedback.message(language: languageStore.language))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
                 .font(SettingsAppearance.font(.caption).weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
             Button {
@@ -830,9 +831,9 @@ struct IntegrationsSettingsDestinationView: View {
 
     private func feedbackColor(_ kind: IntegrationsFeedbackKind) -> Color {
         switch kind {
-        case .success: return ClaudioTheme.success(colorScheme)
+        case .success: return SettingsAppearance.success(colorScheme)
         case .information: return SettingsAppearance.accent(colorScheme)
-        case .failure: return ClaudioTheme.error(colorScheme)
+        case .failure: return SettingsAppearance.error(colorScheme)
         }
     }
 }

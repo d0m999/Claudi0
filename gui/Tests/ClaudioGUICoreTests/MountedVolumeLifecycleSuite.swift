@@ -2,12 +2,35 @@ import AppKit
 import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
+import ClaudioLocalization
 import ClaudioPanelPresentation
 import Foundation
 import SwiftUI
 
 @MainActor
 func runMountedVolumeLifecycleSuites() async {
+    for dark in [false, true] {
+        suite("Mounted volume: settings percentage color \(dark)") {
+            let slider = SharedMasterVolumeSlider(
+                diskVolume: 0.7, isEnabled: true, language: .english,
+                accessibilityIdentifier: "settings.feedback.volume", usesSettingsAppearance: true,
+                onCommit: { $0 }
+            )
+            .padding(16).background(Color(nsColor: .windowBackgroundColor))
+            let host = NSHostingView(rootView: slider)
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 350, height: 70),
+                styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            window.contentView = host
+            defer { window.close() }
+            feedbackSettle(host)
+            expect(
+                feedbackPixelCount(in: host, color: .secondaryLabelColor) > 3,
+                "Mounted percentage uses the system secondary label color")
+        }
+    }
     await suite("Mounted volume：生产 Panel 的输入、磁盘重基、隐藏冲刷与失败回滚") {
         await withTempDirectory { root in
             writeFixture(

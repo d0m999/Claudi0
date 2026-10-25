@@ -507,6 +507,50 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator(".p-head .dot").count(), 0)
         self.assertEqual(self.page.locator("#gearBtn").count(), 1)
 
+    def test_settings_feedback_uses_decorative_color_and_neutral_message(self):
+        for language in ["zh", "en"]:
+            for theme in ["light", "dark"]:
+                with self.subTest(language=language, theme=theme):
+                    self.open(win="1", pane="general", lang=language, th=theme)
+                    self.page.evaluate("MacSettings.review.setScene('loginFailure')")
+                    original_login = self.settings_state()["login"]
+                    self.page.locator('[data-control="login"]').click()
+                    notice = self.page.locator("#operation-feedback")
+                    expect(notice).to_be_visible()
+                    message = notice.inner_text()
+                    self.assertIn("登录项操作失败" if language == "zh" else
+                                  "Login-item operation failed", message)
+                    colors = notice.evaluate("""el => ({
+                        body: getComputedStyle(el).color,
+                        neutral: getComputedStyle(el.getRootNode().host).getPropertyValue('--secondary').trim(),
+                        icon: getComputedStyle(el, '::before').backgroundColor,
+                        error: getComputedStyle(el.getRootNode().host).getPropertyValue('--error').trim()
+                    })""")
+                    self.assertEqual(colors["body"], self.page.locator("#page-content").evaluate(
+                        "el => { const s=document.createElement('span');s.style.color='var(--secondary)';el.append(s);const c=getComputedStyle(s).color;s.remove();return c; }"))
+                    self.assertNotEqual(colors["icon"], "rgba(0, 0, 0, 0)")
+                    self.page.locator('[data-action="retry-login"]').click()
+                    self.page.wait_for_function("MacSettings.getState().loginFailure === null")
+                    self.assertEqual(self.settings_state()["login"],
+                                     "disabled" if original_login == "enabled" else "enabled")
+
+    def test_settings_form_error_preserves_alert_and_complete_text(self):
+        for language in ["zh", "en"]:
+            self.open(win="1", pane="sounds", lang=language)
+            self.page.locator('[data-act="new-pack"]').click()
+            self.page.locator("#sf-name-input").fill(" ")
+            self.page.locator('[data-act="save-name"]').click()
+            error = self.page.locator("[data-name-error]")
+            expect(error).to_be_visible()
+            self.assertEqual(error.get_attribute("role"), "alert")
+            self.assertTrue(error.inner_text().strip())
+            self.assertEqual(error.evaluate("el => getComputedStyle(el).color"),
+                             error.evaluate("el => {const s=document.createElement('span');s.style.color='var(--sf-muted)';el.parentElement.append(s);const c=getComputedStyle(s).color;s.remove();return c;}"))
+            self.assertNotEqual(error.evaluate("el => getComputedStyle(el,'::before').backgroundColor"),
+                                "rgba(0, 0, 0, 0)")
+            self.page.locator('.sf-sheet [data-act="close"]').click()
+            expect(self.page.locator("#sf-name-input")).to_be_hidden()
+
     def settings_state(self):
         return self.page.evaluate("MacSettings.getState()")
 

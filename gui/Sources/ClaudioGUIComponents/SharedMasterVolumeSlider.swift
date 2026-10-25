@@ -77,7 +77,11 @@ package struct SharedMasterVolumeSlider: View {
                 #endif
             Text("\(Int((session.draft * 100).rounded()))%")
                 .font(.system(size: 10.5 * typeScale, design: .monospaced))
-                .foregroundColor(ClaudioTheme.secondaryText(colorScheme))
+                .foregroundColor(
+                    usesSettingsAppearance
+                        ? SettingsAppearance.secondaryText(colorScheme)
+                        : ClaudioTheme.secondaryText(colorScheme)
+                )
                 .frame(width: percentageWidth, alignment: .trailing)
                 .accessibilityHidden(true)
         }

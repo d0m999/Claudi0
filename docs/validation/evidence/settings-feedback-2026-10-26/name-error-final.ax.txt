@@ -1,0 +1,11 @@
+Window: "", App: Claudio Feedback Review.
+0 sheet Secondary Actions: Raise
+	1 container settings.sounds.sheet.newPack
+		2 text 新建声音包…
+		3 scroll area
+			4 text field (settable) Value: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, Placeholder: 声音包名称, ID: settings.sounds.name-input
+		5 text Value: 请输入有效名称；声音包最多 64 个字符，音频最多 40 个字符，不能包含控制字符或换行。, ID: settings.sounds.error, Secondary Actions: show menu
+		6 button Description: 关闭, ID: settings.sounds.sheet.close
+		7 button Description: 保存名称, ID: settings.sounds.sheet.use
+
+The focused UI element is 5 text Value: 请输入有效名称；声音包最多 64 个字符，音频最多 40 个字符，不能包含控制字符或换行。, ID: settings.sounds.error, Secondary Actions: show menu

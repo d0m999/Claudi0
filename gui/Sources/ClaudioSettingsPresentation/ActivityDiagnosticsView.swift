@@ -18,6 +18,7 @@ struct ActivityDiagnosticsView: View {
 
     var eventNoticeModel: EventNoticeModel? = nil
     var noticeNavigation: SessionNavigationCoordinator? = nil
+    @Environment(\.colorScheme) private var colorScheme
     @State private var recordsExpanded = false
     @State private var readingEpoch: UUID?
     @State private var selectedNotice: EventNoticeAction?
@@ -393,12 +394,21 @@ struct ActivityDiagnosticsView: View {
     }
 
     private func feedbackView(_ feedback: ActivityDiagnosticsFeedback) -> some View {
-        Label(
-            feedbackText(feedback),
-            systemImage: feedback.failure == nil
-                ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-        )
-        .foregroundColor(feedback.failure == nil ? .green : .red)
+        Label {
+            Text(feedbackText(feedback))
+                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+        } icon: {
+            Image(
+                systemName: feedback.failure == nil
+                    ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+            )
+            .foregroundColor(
+                feedback.failure == nil
+                    ? SettingsAppearance.success(colorScheme)
+                    : SettingsAppearance.error(colorScheme)
+            )
+            .accessibilityHidden(true)
+        }
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityIdentifier("settings.activity.feedback")
     }

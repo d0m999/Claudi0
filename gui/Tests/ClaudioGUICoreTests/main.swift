@@ -884,6 +884,7 @@ if CommandLine.arguments.contains("--settings-polish-native") {
     let application = NSApplication.shared
     configureGUIHarnessApplication(application)
     Task { @MainActor in
+        await runSettingsFeedbackNativeSuites()
         await runSettingsNativePolishSuites()
         print("Settings native polish: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
@@ -1228,6 +1229,7 @@ func runForegroundGUIHarnessSuites() async {
     await runFivePageSettingsNativeSuites()
     await runSettingsNativeControlsSuites()
     await runSettingsScopePickerSuites()
+    await runSettingsFeedbackNativeSuites()
     await runSettingsNativePolishSuites()
     await runSettingsNotificationNavigationSuites()
 }

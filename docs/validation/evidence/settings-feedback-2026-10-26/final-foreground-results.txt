@@ -1,0 +1,13 @@
+Final candidate with explicit settings label and static-text trait.
+
+--foreground --settings-polish-native
+Settings native polish: 278 checks, 0 failures
+
+--foreground --five-page-settings-native
+Five-page native: 903 checks, 0 failures
+
+--foreground --five-page-forms-native
+Five-page native: 541 checks, 0 failures
+
+--foreground --settings-navigation-native-focus
+Settings navigation native focus: 287 checks, 0 failures

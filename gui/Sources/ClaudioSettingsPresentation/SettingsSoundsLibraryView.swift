@@ -991,10 +991,9 @@ struct SettingsSoundsLibraryView: View {
                         }
                     }
                     if let failure = model.failure, aiTaskPresentation.showsLocalFailure {
-                        Text(
-                            aiCueFailureText(
-                                failure, providerProfileID: model.providerProfileID, l10n: l10n)
-                        ).foregroundColor(.red)
+                        FailureRow(
+                            message: aiCueFailureText(
+                                failure, providerProfileID: model.providerProfileID, l10n: l10n))
                     }
                 }
             }
@@ -1440,7 +1439,7 @@ struct SettingsSoundsLibraryView: View {
         .accessibilityIdentifier("settings.sounds.preview.\(id)")
     }
     private func errorLabel(_ message: String) -> some View {
-        Text(message).foregroundColor(.red).font(.callout).fixedSize(
+        FailureRow(message: message).font(.callout).fixedSize(
             horizontal: false, vertical: true
         )
         .textSelection(.enabled)

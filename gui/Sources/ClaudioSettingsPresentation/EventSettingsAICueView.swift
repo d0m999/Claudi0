@@ -154,7 +154,7 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(.aiCueServiceStoredVerified),
                 "checkmark.circle.fill",
-                ClaudioTheme.success(colorScheme)
+                SettingsAppearance.success(colorScheme)
             )
         case .stored(.deferred, false):
             return (
@@ -168,7 +168,7 @@ struct EventSettingsAICueServiceCard: View {
             return (
                 l10n.text(.aiCueServiceStoredRejected),
                 "xmark.circle.fill",
-                ClaudioTheme.error(colorScheme)
+                SettingsAppearance.error(colorScheme)
             )
         case .unavailable:
             return (
@@ -176,7 +176,7 @@ struct EventSettingsAICueServiceCard: View {
                     viewModel.providerProfileID == .bailianBeijing
                         ? .aiCueErrorLocalCredentialUnavailable : .aiCueServiceUnavailable),
                 "xmark.circle.fill",
-                ClaudioTheme.error(colorScheme)
+                SettingsAppearance.error(colorScheme)
             )
         }
     }
@@ -857,7 +857,7 @@ struct EventSettingsAICueCredentialSheet: View {
     private func credentialErrorNotice(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(ClaudioTheme.error(colorScheme))
+                .foregroundColor(SettingsAppearance.error(colorScheme))
                 .accessibilityHidden(true)
             Text(message)
                 .font(SettingsAppearance.font(.caption))

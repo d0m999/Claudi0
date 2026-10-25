@@ -40,9 +40,24 @@ package enum SettingsAppearance {
         Color(nsColor: .secondaryLabelColor)
     }
     package static func accent(_ scheme: ColorScheme) -> Color { .accentColor }
+    package static func success(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemGreen) }
+    package static func warning(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemOrange) }
+    package static func error(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemRed) }
     package static func hairline(_ scheme: ColorScheme) -> Color { Color(nsColor: .separatorColor) }
 
     package static func horizontalPadding(compact: Bool) -> CGFloat { compact ? 26 : 32 }
     package static func eventPadding(compact _: Bool) -> CGFloat { 14 }
 
+}
+
+private struct SettingsAppearanceEnvironmentKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Presentation context only; shared components keep their panel defaults elsewhere.
+    package var usesSettingsAppearance: Bool {
+        get { self[SettingsAppearanceEnvironmentKey.self] }
+        set { self[SettingsAppearanceEnvironmentKey.self] = newValue }
+    }
 }
