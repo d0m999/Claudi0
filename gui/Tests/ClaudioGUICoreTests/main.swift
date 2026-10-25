@@ -589,11 +589,16 @@ if CommandLine.arguments.contains("--event-attention") {
 }
 
 if CommandLine.arguments.contains("--panel-settings-handback") {
-    await runPanelSettingsHandbackSuites()
-    runPanelSettingsChoreographySuites()
-    await runStatusItemWindowOrderGuardSuites()
-    print("Panel settings handback: \(totalChecks) checks, \(failures) failures")
-    exit(failures == 0 ? 0 : 1)
+    let application = NSApplication.shared
+    Task { @MainActor in
+        await runPanelSettingsHandbackSuites()
+        runPanelSettingsChoreographySuites()
+        await runStatusItemWindowOrderGuardSuites()
+        print("Panel settings handback: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
 }
 
 if CommandLine.arguments.contains("--ai-cue-assets") {

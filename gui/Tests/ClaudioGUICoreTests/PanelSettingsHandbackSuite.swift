@@ -50,9 +50,17 @@ func runPanelSettingsHandbackSuites() async {
             other.presentForUserRequest()
             settings.presentForUserRequest()
             if !settingsIsFront { other.presentForUserRequest() }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            let front = settingsIsFront ? settings : other
+            let behind = settingsIsFront ? other : settings
+            let fixtureReady = await focusTestWaitForForeground(front, behind: behind)
+            expect(
+                fixtureReady,
+                "夹具必须分别建立前台和后台设置：expected=\(front.windowNumber), "
+                    + "key=\(NSApp.keyWindow?.windowNumber ?? 0), order=\(focusTestNormalWindowOrder())"
+            )
+            guard fixtureReady else { return }
             let ownedKey = settingsWindowOwnsKeyFocus(settings, keyWindow: NSApp.keyWindow)
-            expect(ownedKey == settingsIsFront, "夹具必须分别建立前台和后台设置")
+            expect(ownedKey == settingsIsFront, "焦点归属必须匹配原生前台和后台设置")
             settings.defersAutomaticFocusForPanel = !ownedKey
             var handback = PanelSettingsHandback()
             handback.begin(settingsWasForeground: ownedKey)
@@ -340,4 +348,19 @@ private func focusTestIsBefore(_ front: NSWindow, _ behind: NSWindow, in order: 
         let behindIndex = order.firstIndex(of: behind.windowNumber)
     else { return false }
     return frontIndex < behindIndex
+}
+
+@MainActor
+private func focusTestWaitForForeground(_ front: NSWindow, behind: NSWindow) async -> Bool {
+    // Key ownership and WindowServer order settle asynchronously. Only capture the menu's
+    // handback ownership once both reflect the fixture's explicit presentation request.
+    func isReady() -> Bool {
+        front.isKeyWindow && NSApp.keyWindow === front
+            && focusTestIsBefore(front, behind, in: focusTestNormalWindowOrder())
+    }
+    let deadline = Date(timeIntervalSinceNow: 2)
+    while !isReady(), Date() < deadline {
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    return isReady()
 }
