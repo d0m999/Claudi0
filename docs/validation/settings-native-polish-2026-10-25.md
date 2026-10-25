@@ -66,3 +66,37 @@ VoiceOver 实际朗读尚未验证。SDK 兼容通道不替代 CI Xcode、架构
 提交前尚未执行最终 `bash scripts/verify-settings-experience.sh 8d081fc33e4d220795789e510822225797104e86`：
 脚本要求 clean HEAD；按 `DESIGN.md` 现行章节，须待精确范围本地提交获授权后运行。
 本轮不包含 push、发布或修改 issue 状态。
+
+## 提交后的固定基线门禁
+
+实现提交：`d0a2f37103a95ef72c31294c81a4ee72b004f340`。
+在该提交的临时 detached worktree 中，从干净工作树执行：
+
+```bash
+bash scripts/verify-settings-experience.sh 8d081fc33e4d220795789e510822225797104e86
+```
+
+退出码 **0**，最终日志明确记录门禁通过于 `d0a2f37103a95ef72c31294c81a4ee72b004f340`。
+沿用 `CONTRIBUTING.md` 的 macOS 26.5 SDK 兼容方案：设置 `SDKROOT`、`CLAUDIO_BUILD_SDK`，
+临时 Bash 函数仅为缺少参数的 `swift run/build` 补齐 `--build-system native` 与 `--sdk`；
+调用真实 Swift 前移除导出的函数，保持 harness 的 PATH fixture 隔离。门禁脚本及断言未修改。
+
+| 检查 | 结果 |
+|---|---|
+| Helper 完整 harness | 6,187 checks，通过 |
+| GUI 完整 harness | 25,454 checks，通过 |
+| Settings target 与 GUI product | Debug / Release 均通过 |
+| 本地化、suite 注册、格式诊断自证、diff 检查 | 通过 |
+| 开发包、ad-hoc 签名、Sparkle 链接与架构 | 通过 |
+| GUI arm64 体积 | 6,979,344 / 7,000,000 B，通过 |
+| Helper arm64 体积 | 2,806,224 / 3,250,000 B，通过 |
+| Bundle 正规文件合计 | 14,968,818 / 16,555,105 B，通过 |
+| Strict format 基线差分 | 无新增；baseline 689、提交 687，并非全仓零诊断 |
+
+首次主目录运行期间，另一项工作修改了 `SoundPacksRefreshSuite.swift`，破坏 clean HEAD 条件。
+该次运行已中止，退出 143，不计通过；其未提交修改保留。上表只引用随后隔离 worktree 的完整成功运行。
+此前列出的完整 Tab、清除确认 Esc、VoiceOver 与外部验收边界继续有效；开发包不是发布物。
+
+收尾确认临时 worktree 无 tracked/untracked 修改，无活动进程或打开句柄；ignored 内容仅为
+两个 `.build/` 与 `dist/`。已移除该 worktree、开发包、临时包装与日志，worktree prune dry-run 无残留。
+fixture setup 前与上述清理后，46 个实际已安装可执行文件的 SHA-256 和 POSIX mode 均一致。
