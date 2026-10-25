@@ -23,13 +23,13 @@ struct EventAnimationSettingsView: View {
     private var selected: EventAnimationPreferences { preferences.eventAnimation }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
             Text(l10n.text(.eventAnimationDescription)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             styleSection
             previewSection
             if selected.style != .original {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
                     Text(l10n.text(.eventAnimationCharacterOptions))
                         .font(SettingsAppearance.font(.sectionTitle))
                         .accessibilityAddTraits(.isHeader)
@@ -88,7 +88,7 @@ struct EventAnimationSettingsView: View {
     }
 
     private var styleSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
             Text(l10n.text(.eventAnimationStyleSection))
                 .font(SettingsAppearance.font(.sectionTitle))
                 .accessibilityAddTraits(.isHeader)
@@ -151,7 +151,7 @@ struct EventAnimationSettingsView: View {
     }
 
     private var previewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
             HStack(alignment: .firstTextBaseline) {
                 Text(l10n.text(.eventAnimationPreview)).font(SettingsAppearance.font(.sectionTitle))
                     .accessibilityAddTraits(

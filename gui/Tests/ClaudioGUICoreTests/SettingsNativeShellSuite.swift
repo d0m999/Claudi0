@@ -279,6 +279,7 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
         super.init()
         window.delegate = self
         window.isReleasedWhenClosed = false
+        window.autorecalculatesKeyViewLoop = true
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.contentViewController = shell
         shell.install(in: window)

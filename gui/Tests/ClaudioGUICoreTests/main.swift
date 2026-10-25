@@ -313,6 +313,7 @@ if CommandLine.arguments.contains("--settings-navigation-native-focus") {
     application.setActivationPolicy(.regular)
     Task { @MainActor in
         await runSettingsNavigationFocusSuites()
+        await runSettingsKeyboardConfirmationSuites()
         print("Settings navigation native focus: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }

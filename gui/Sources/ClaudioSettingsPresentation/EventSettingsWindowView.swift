@@ -695,15 +695,18 @@ struct EventSettingsWindowView: View {
 
     private func workspaceDetails(_ rule: WorkspaceSoundRule) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(l10n.text(.workspaceDirectory)).font(.headline)
+            Text(l10n.text(.workspaceDirectory)).font(
+                SettingsAppearance.font(.body).weight(.semibold))
             Text(rule.directory.path).textSelection(.enabled).font(
                 .system(.body, design: .monospaced))
             Text(l10n.text(rule.directory.kind == .git ? .workspaceGitScope : .workspacePlainScope))
                 .font(.caption)
-            Text(l10n.text(.workspaceSoundSourcesTitle)).font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityIdentifier("workspace.sound-sources.title")
+            Text(l10n.text(.workspaceSoundSourcesTitle)).font(
+                SettingsAppearance.font(.body).weight(.semibold)
+            )
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("workspace.sound-sources.title")
             Text(l10n.text(.workspaceSoundSourcesDescription))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

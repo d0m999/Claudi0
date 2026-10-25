@@ -9,6 +9,14 @@ package enum SettingsWindowPhase: Equatable, Sendable {
     case visibleNonKey
     case key
     case closing
+
+    package static func native(isVisible: Bool, isKey: Bool, hasVisiblePixels: Bool) -> Self {
+        guard isVisible else { return .hidden }
+        // A nonactivating window can own native key focus while AppKit reports no visible
+        // pixels. Occlusion must not suppress that window's pending keyboard restoration.
+        if isKey { return .key }
+        return hasVisiblePixels ? .visibleNonKey : .hidden
+    }
 }
 
 package struct SettingsFocusDebt: Equatable, Sendable {

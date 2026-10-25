@@ -34,13 +34,17 @@ func runFivePageSettingsNativeSuites() async {
                         && content.bounds.height <= probe.window.frame.height,
                     "关于表单实际几何必须容纳于最小窗口")
                 sheet.makeKey()
-                sheet.selectNextKeyView(nil)
+                settingsKeyboardPress(48, "\t", in: sheet)
+                await probe.settle()
                 let first = sheet.firstResponder
-                sheet.selectPreviousKeyView(nil)
-                sheet.selectNextKeyView(nil)
+                settingsKeyboardPress(48, "\t", in: sheet, modifiers: .shift)
+                await probe.settle()
+                settingsKeyboardPress(48, "\t", in: sheet)
+                await probe.settle()
                 var visitedKeyViews = Set<ObjectIdentifier>()
                 for _ in 0..<12 {
-                    sheet.selectNextKeyView(nil)
+                    settingsKeyboardPress(48, "\t", in: sheet)
+                    await probe.settle()
                     if let responder = sheet.firstResponder {
                         visitedKeyViews.insert(ObjectIdentifier(responder))
                     }
@@ -48,7 +52,8 @@ func runFivePageSettingsNativeSuites() async {
                 }
                 expect(visitedKeyViews.count > 1, "关于表单 Tab 实际遍历多个控件")
                 for _ in 0..<12 {
-                    sheet.selectPreviousKeyView(nil)
+                    settingsKeyboardPress(48, "\t", in: sheet, modifiers: .shift)
+                    await probe.settle()
                     expect(
                         (sheet.firstResponder as? NSView)?.window === sheet, "Shift+Tab 焦点圈定在关于表单")
                 }

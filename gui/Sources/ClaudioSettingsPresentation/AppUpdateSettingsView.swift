@@ -11,9 +11,10 @@ struct AppUpdateSettingsView: View {
 
     var body: some View {
         SettingsSectionCard(title: l10n.text(.appUpdateTitle)) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
                 if model.isPublicPreview {
-                    Text(l10n.text(.appUpdatePublicPreview)).font(.headline)
+                    Text(l10n.text(.appUpdatePublicPreview)).font(
+                        SettingsAppearance.font(.body).weight(.semibold))
                     Text(l10n.text(.appUpdatePreviewLimit)).foregroundStyle(.secondary)
                 }
                 if let status = statusText {

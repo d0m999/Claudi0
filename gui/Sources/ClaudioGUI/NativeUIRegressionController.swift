@@ -303,9 +303,16 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             let previousID = UUID(
                 uuidString: String(format: "00000000-0000-4000-8000-%012d", ordinal + 401))!
             let scope = "native-fixture-\(host.rawValue)"
-            let bindings = HostCapabilityCatalog.bindings(for: host).filter {
-                $0.isAudibleCapability && ($0.event == .stop || $0.event == .subagentStop)
+            let audible = HostCapabilityCatalog.bindings(for: host).filter {
+                $0.isAudibleCapability && $0.nativeEvent != nil
             }
+            let completionBindings = audible.filter {
+                $0.event == .stop || $0.event == .subagentStop
+            }
+            // Some visible candidates have no completion binding. Seed a supported receipt rather
+            // than refusing to launch the entire isolated Settings fixture.
+            let bindings =
+                completionBindings.isEmpty ? Array(audible.prefix(1)) : completionBindings
             guard !bindings.isEmpty else {
                 throw NSError(domain: "ClaudioNativeFixture", code: 1)
             }
@@ -700,6 +707,7 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "panelVisible": panel.isVisible, "panelKey": panel.isKeyWindow,
             "keyWindow": NSApp.keyWindow?.title ?? "none",
             "isActive": NSApp.isActive,
+            "fullKeyboardAccess": NSApp.isFullKeyboardAccessEnabled,
             "keyWindowFirstResponder": NSApp.keyWindow?.firstResponder.map {
                 String(reflecting: type(of: $0))
             } ?? "none",

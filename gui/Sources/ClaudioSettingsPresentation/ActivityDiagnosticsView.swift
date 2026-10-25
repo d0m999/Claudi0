@@ -1,3 +1,4 @@
+import AppKit
 import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
@@ -21,6 +22,8 @@ struct ActivityDiagnosticsView: View {
     @State private var readingEpoch: UUID?
     @State private var selectedNotice: EventNoticeAction?
     @State private var confirmation: ActivityDiagnosticsConfirmation?
+    @State private var pendingConfirmationFocus: ActivityDiagnosticsConfirmation?
+    @FocusState private var focusedClearAction: ActivityDiagnosticsConfirmation?
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var global: ActivityOverviewPresentation { model.presentation.projection.global }
@@ -57,6 +60,7 @@ struct ActivityDiagnosticsView: View {
 
             HStack(spacing: 12) {
                 Button(role: .destructive) {
+                    pendingConfirmationFocus = .activity
                     confirmation = .activity
                 } label: {
                     actionLabel(
@@ -64,9 +68,11 @@ struct ActivityDiagnosticsView: View {
                         action: .clearActivity)
                 }
                 .disabled(model.isOperationActive)
+                .focused($focusedClearAction, equals: .activity)
                 .accessibilityIdentifier("settings.activity.clear")
 
                 Button(role: .destructive) {
+                    pendingConfirmationFocus = .log
                     confirmation = .log
                 } label: {
                     actionLabel(
@@ -74,6 +80,7 @@ struct ActivityDiagnosticsView: View {
                         action: .clearLog)
                 }
                 .disabled(model.isOperationActive)
+                .focused($focusedClearAction, equals: .log)
                 .accessibilityIdentifier("settings.activity.clear-log")
             }
 
@@ -86,28 +93,50 @@ struct ActivityDiagnosticsView: View {
         .onReceive(model.$feedback.dropFirst().compactMap { $0 }) { feedback in
             onAnnouncement?(feedbackText(feedback))
         }
-        .alert(item: $confirmation) { target in
-            switch target {
-            case .activity:
-                Alert(
-                    title: Text(l10n.text(.settingsUsageClearHistoryTitle)),
-                    message: Text(l10n.text(.settingsUsageClearHistoryMessage)),
-                    primaryButton: .destructive(Text(l10n.text(.settingsUsageClearHistory))) {
-                        model.clearActivity()
-                    },
-                    secondaryButton: .cancel(Text(l10n.text(.commonCancel))))
-            case .log:
-                Alert(
-                    title: Text(l10n.text(.settingsUsageClearLogTitle)),
-                    message: Text(l10n.text(.settingsUsageClearLogMessage)),
-                    primaryButton: .destructive(Text(l10n.text(.settingsUsageClearLog))) {
-                        model.clearLog()
-                    },
-                    secondaryButton: .cancel(Text(l10n.text(.commonCancel))))
+        .alert(
+            l10n.text(
+                confirmation == .activity
+                    ? .settingsUsageClearHistoryTitle : .settingsUsageClearLogTitle),
+            isPresented: Binding(
+                get: { confirmation != nil },
+                set: { if !$0 { confirmation = nil } }),
+            presenting: confirmation
+        ) { target in
+            Button(l10n.text(.commonCancel), role: .cancel) {}
+                .keyboardShortcut(.cancelAction)
+            Button(
+                l10n.text(
+                    target == .activity ? .settingsUsageClearHistory : .settingsUsageClearLog),
+                role: .destructive
+            ) {
+                if target == .activity { model.clearActivity() } else { model.clearLog() }
             }
+        } message: { target in
+            Text(
+                l10n.text(
+                    target == .activity
+                        ? .settingsUsageClearHistoryMessage : .settingsUsageClearLogMessage))
         }
+        .onChange(of: confirmation) { target in
+            if target == nil { restoreConfirmationFocus() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) {
+            _ in
+            restoreConfirmationFocus(clearRequest: true)
+        }
+        .onDisappear { pendingConfirmationFocus = nil }
         .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.usage))
+    }
+
+    private func restoreConfirmationFocus(clearRequest: Bool = false) {
+        guard confirmation == nil, let target = pendingConfirmationFocus else { return }
+        focusedClearAction = nil
+        DispatchQueue.main.async {
+            guard confirmation == nil, pendingConfirmationFocus == target else { return }
+            focusedClearAction = target
+            if clearRequest { pendingConfirmationFocus = nil }
+        }
     }
 
     @ViewBuilder
@@ -180,7 +209,7 @@ struct ActivityDiagnosticsView: View {
                 .font(.system(size: 25, weight: .bold, design: .default))
                 .monospacedDigit()
             Text(statusText(status))
-                .font(.caption2)
+                .font(SettingsAppearance.font(.caption))
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -209,14 +238,14 @@ struct ActivityDiagnosticsView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(localizedHostName(host, language: preferences.language))
-                    .font(.headline)
+                    .font(SettingsAppearance.font(.body).weight(.semibold))
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(integrationStatusText(overview?.integrationStatus))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Text(coverageText(overview))
-                        .font(.caption2)
+                        .font(SettingsAppearance.font(.caption))
                         .foregroundColor(.secondary)
                 }
             }
@@ -244,10 +273,10 @@ struct ActivityDiagnosticsView: View {
     private func sourceMetric(title: String, value: UInt64?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.caption2)
+                .font(SettingsAppearance.font(.caption))
                 .foregroundColor(.secondary)
             Text(countText(value))
-                .font(.headline.monospacedDigit())
+                .font(SettingsAppearance.font(.body).weight(.semibold).monospacedDigit())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -264,7 +293,7 @@ struct ActivityDiagnosticsView: View {
                 Text(l10n.text(.integrationsCoverage))
                     .frame(width: 42, alignment: .trailing)
             }
-            .font(.caption2)
+                .font(SettingsAppearance.font(.caption))
             .foregroundColor(.secondary)
             ForEach(global.eventRows) { row in
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -299,7 +328,7 @@ struct ActivityDiagnosticsView: View {
             title: l10n.text(.settingsUsageLogTitle),
             description: l10n.text(.settingsUsageLogDescription)
         ) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
             Label(logStateText(model.presentation.log.state), systemImage: logStateIcon)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.activity.log-state")

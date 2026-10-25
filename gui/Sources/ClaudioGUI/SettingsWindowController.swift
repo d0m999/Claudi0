@@ -187,10 +187,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func windowDidChangeOcclusionState(_ notification: Notification) {
         guard let window, notification.object as? NSWindow === window else { return }
-        let visible = window.isVisible && window.occlusionState.contains(.visible)
         _ = settingsPresentationSession.send(
             .windowPhaseChanged(
-                visible ? (window.isKeyWindow ? .key : .visibleNonKey) : .hidden))
+                .native(
+                    isVisible: window.isVisible, isKey: window.isKeyWindow,
+                    hasVisiblePixels: window.occlusionState.contains(.visible))))
     }
 
     private func takeFocusRestoration() -> (@MainActor () -> Void)? {

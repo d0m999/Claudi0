@@ -14,8 +14,15 @@ func runSettingsNativePolishSuites() async {
                 await suite(
                     "Settings polish: update switch and sound headings \(language)/\(dark)/\(width)"
                 ) {
-                    let fixture = SettingsPresentationFixtures.generalLogin(language: language)
-                    let updates = fixture.aboutSettings.appUpdates
+                    let facts = makeSettingsFixtureAboutSettings(for: nil)
+                    let updates = AppUpdateModel(isPublicPreview: true)
+                    let about = AboutSettingsModel(
+                        bundleFacts: facts.bundleFacts, resources: facts.resources,
+                        pathFacts: facts.pathFacts, surfaceFacts: facts.surfaceFacts,
+                        actions: .init(copy: { _ in true }, open: { _ in true }),
+                        appUpdates: updates)
+                    let fixture = SettingsPresentationFixtures.generalLogin(
+                        language: language, aboutSettings: about)
                     var writes: [Bool] = []
                     updates.connect(
                         check: {}, sessionInProgress: { false },
@@ -27,6 +34,10 @@ func runSettingsNativePolishSuites() async {
                     await probe.presentAndSettle()
                     let l10n = ClaudioL10n(language: language)
                     _ = polishAXElements(probe.shell.view)
+                    expect(
+                        polishAXElements(probe.shell.view).contains {
+                            polishText($0) == l10n.text(.appUpdatePublicPreview)
+                        }, "The public-preview heading mounts in both languages and appearances")
                     let switches = polishViews(probe.shell.view).compactMap { $0 as? NSSwitch }
                     let control = switches.first {
                         $0.accessibilityLabel() == l10n.text(.appUpdateAutomatic)

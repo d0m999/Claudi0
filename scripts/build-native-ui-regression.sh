@@ -28,6 +28,8 @@ for regression_resource in "$regression_bin"/*_ClaudioGUI.bundle "$regression_bi
     [[ -d "$regression_resource" ]] || { echo "Missing native resource bundle" >&2; exit 1; }
     cp -R "$regression_resource" "$regression_app/Contents/Resources/"
 done
+python3 "$repo_root/scripts/sparkle-bundle.py" embed "$regression_app" --source \
+    "$regression_scratch/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 regression_ocr_args=()
 if [[ -n "${CLAUDIO_UI_REGRESSION_SDK:-}" ]]; then regression_ocr_args+=( -sdk "$CLAUDIO_UI_REGRESSION_SDK" ); fi
 swiftc "${regression_ocr_args[@]}" "$repo_root/scripts/native-ui-screenshot-ocr.swift" -o "$regression_output/screenshot-ocr" >&2

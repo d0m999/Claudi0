@@ -97,7 +97,7 @@ struct SettingsSoundsLibraryView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: SettingsAppearance.sectionGap) {
                     if let returnToScope {
                         Button(l10n.text(.settingsReturnToSoundScope), action: returnToScope)
                             .accessibilityIdentifier("settings.sounds.return-to-workspace")
@@ -222,7 +222,10 @@ struct SettingsSoundsLibraryView: View {
             VStack(spacing: 0) {
                 ForEach(sounds?.packs ?? []) { item in
                     HStack {
-                        Button {
+                        EventAnimationActionButton(
+                            title: item.name ?? item.id,
+                            identifier: "settings.sounds.pack.\(item.id)"
+                        ) {
                             navigate(.pack(packID: item.id))
                         } label: {
                             HStack {
@@ -242,9 +245,8 @@ struct SettingsSoundsLibraryView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(.secondary)
                             }.contentShape(Rectangle())
-                        }.buttonStyle(.plain).accessibilityLabel(item.name ?? item.id)
-                            .accessibilityIdentifier("settings.sounds.pack.\(item.id)")
-                            .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).detail")
+                        }
+                        .soundPacksLayoutProbe("settings.sounds.pack.\(item.id).detail")
                         if let star = item.toggleStarAction {
                             let starTitle = l10n.text(
                                 item.isStarred ? .soundsFavorited : .soundsFavorite)
@@ -271,7 +273,11 @@ struct SettingsSoundsLibraryView: View {
                     Divider()
                 }
                 ForEach(drafts.snapshot.drafts, id: \.packID) { draft in
-                    Button {
+                    EventAnimationActionButton(
+                        title: draft.name.value,
+                        identifier: "settings.sounds.draft.\(draft.packID)",
+                        value: l10n.text(.soundsDraft)
+                    ) {
                         owner.inspectDraft(draft); navigate(.draft(packID: draft.packID))
                     } label: {
                         HStack {
@@ -281,8 +287,7 @@ struct SettingsSoundsLibraryView: View {
                             Spacer()
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle()).padding(12)
-                    }.buttonStyle(.plain).accessibilityIdentifier(
-                        "settings.sounds.draft.\(draft.packID)")
+                    }
                     Divider()
                 }
                 if owner.presentation.library == .ready, sounds?.packs.isEmpty == true,
@@ -395,7 +400,7 @@ struct SettingsSoundsLibraryView: View {
                         ClaudioEventGlyph(event: row.event, size: 24).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(localizedEventName(row.event, language: preferences.language))
-                                .font(.headline)
+                                .font(SettingsAppearance.font(.body).weight(.semibold))
                             Text(
                                 row.audioDisplayName ?? row.soundSource?.name
                                     ?? l10n.text(.soundsEmptyEvent)
@@ -594,8 +599,9 @@ struct SettingsSoundsLibraryView: View {
                 ProgressView().controlSize(.small); Text(l10n.text(.soundsSaving)); Spacer()
             }
         case .pending(_, let failure):
-            VStack(alignment: .leading, spacing: 12) {
-                Text(l10n.text(.soundsPending)).font(.headline)
+            VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
+                Text(l10n.text(.soundsPending)).font(
+                    SettingsAppearance.font(.body).weight(.semibold))
                 Text(
                     l10n.format(
                         .soundsGeneratedCount, Int64(coordinator.generation?.candidates.count ?? 0))
@@ -638,7 +644,7 @@ struct SettingsSoundsLibraryView: View {
     }
 
     private func historyContent(selecting: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
             if history.isLoading { ProgressView().controlSize(.small) }
             if let failure = history.failure {
                 errorLabel(storageMessage(failure))
@@ -866,7 +872,8 @@ struct SettingsSoundsLibraryView: View {
             return AnyView(
                 Group {
                     if let preparedPack {
-                        Text(preparedPack.name).font(.headline)
+                        Text(preparedPack.name).font(
+                            SettingsAppearance.font(.body).weight(.semibold))
                         Text(
                             l10n.format(
                                 .soundsImportSummary, preparedPack.eventCount,
@@ -878,14 +885,15 @@ struct SettingsSoundsLibraryView: View {
     }
 
     private var aiComposer: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
             EventSettingsAICueServiceCard(
                 viewModel: model, languageStore: preferences, compact: true
             ) {
                 returnFromService = .ai
                 present(.service)
             }
-            Text(l10n.text(.soundsDescription)).font(.headline)
+            Text(l10n.text(.soundsDescription)).font(
+                SettingsAppearance.font(.body).weight(.semibold))
             if model.phase == .generating || model.phase == .adopting {
                 Text(model.soundDescription).frame(
                     maxWidth: .infinity, minHeight: 70, alignment: .topLeading
@@ -909,7 +917,8 @@ struct SettingsSoundsLibraryView: View {
                     }
                     generationStatusContent(focus: taskFocus)
                     if case .saved = coordinator.state, let generation = model.generation {
-                        Text(l10n.text(.soundsSaved)).font(.headline)
+                        Text(l10n.text(.soundsSaved)).font(
+                            SettingsAppearance.font(.body).weight(.semibold))
                         Text(l10n.format(.soundsGeneratedCount, Int64(generation.candidates.count)))
                             .font(.caption).foregroundColor(.secondary)
                         if generation.completion == .partial {

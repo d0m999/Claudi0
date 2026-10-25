@@ -95,6 +95,7 @@ final class SettingsRootNativeProbe {
         shell.install(in: window)
         window.setContentSize(size)
         window.isReleasedWhenClosed = false
+        window.autorecalculatesKeyViewLoop = true
         window.presentForUserRequest()
         refresh()
     }
@@ -262,8 +263,9 @@ final class SettingsRootNativeProbe {
                 pressure: 1)
         else { return false }
         eventNumber += 2
+        // AppKit mouseDown may enter a synchronous tracking loop; enqueue its release first.
+        NSApp.postEvent(up, atStart: true)
         window.sendEvent(down)
-        window.sendEvent(up)
         refresh()
         return true
     }

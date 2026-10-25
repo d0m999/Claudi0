@@ -91,7 +91,7 @@ struct AboutSettingsView: View {
     }
 
     private var resources: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
 
             ForEach(Array(model.resources.enumerated()), id: \.element.id) { index, resource in
                 if index > 0 { Divider() }
@@ -140,7 +140,7 @@ struct AboutSettingsView: View {
 
     private var diagnostics: some View {
         let preview = model.diagnosticSummary
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: SettingsAppearance.informationGap) {
 
             Text(preview)
                 .font(SettingsAppearance.font(.technical))
