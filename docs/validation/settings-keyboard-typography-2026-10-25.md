@@ -86,7 +86,7 @@ swift run --package-path gui --build-system native \
 
 VoiceOver 实际朗读、真实宿主、真实音频、Provider 网络请求、登录／Focus／Calendar 的真实系统授权、签名公证、发布与正式验收未验证。
 
-`bash scripts/verify-settings-experience.sh 78f189cc303296eb86fbfcee228710c900e41c46 --foreground` 在实施验收时未运行：该门禁要求干净 HEAD。用户随后授权精确范围本地提交，提交后补跑；结果另记。
+`bash scripts/verify-settings-experience.sh 78f189cc303296eb86fbfcee228710c900e41c46 --foreground` 在实施验收时未运行：该门禁要求干净 HEAD。用户随后授权精确范围本地提交，提交后补跑；结果见下文。
 
 ## 收尾
 
@@ -95,3 +95,29 @@ VoiceOver 实际朗读、真实宿主、真实音频、Provider 网络请求、�
 停止隔离 App 后，按已核对的精确路径删除本批 7 个 App／额外构建目录、9 个 UI fixture root、6 个遗留 harness fixture root、本批截图／临时拼图／探针／日志和两份缺依赖的测试 App 崩溃报告。未清理主 checkout 的常规 `.build` 缓存、其他任务目录、用户声音包、运行时备份或宿主回执。没有保留源码副本、恢复包或独立 patch。
 
 实施验收收尾对前置快照中的 6 个真实可执行文件（`swift`、`swiftc`、`python3`、`node`、`git`、`codesign` 的解析后路径）再次比较 SHA-256 与 POSIX mode，变化为零。清理没有遗留跳过项；`git diff --check` 与本地化 JSON 检查通过，彼时 HEAD 仍为上述基线。
+
+## 本地提交后的综合门禁
+
+用户授权 `commit` 后，18 个范围内文件提交为 `19fccf962cadfa5572d66972339ffd1385ffe8fe`（`fix(gui): refine settings keyboard focus and typography`）。在该干净 HEAD 上运行：
+
+```bash
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk \
+CLAUDIO_BUILD_SDK=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk \
+bash scripts/verify-settings-experience.sh \
+  78f189cc303296eb86fbfcee228710c900e41c46 --foreground
+```
+
+门禁退出码为 `1`，未通过。格式诊断脚本自测及套件注册检查通过；Helper 为 `6,187 checks` 全部通过，GUI `--all` 为 `25,729 checks`、`3 failures`。三条实际失败均来自 `PanelSettingsHandbackSuite.swift` 的同一个原生窗口用例：
+
+```text
+✗ 夹具必须分别建立前台和后台设置  (PanelSettingsHandbackSuite.swift:55)
+✗ 菜单关闭后普通窗口顺序必须保持不变  (PanelSettingsHandbackSuite.swift:76)
+✗ 设置的键盘归还不能改变窗口顺序  (PanelSettingsHandbackSuite.swift:81)
+✗ all: 3 of 25729 checks FAILED
+```
+
+该失败用例直接构造 `RetainedSettingsWindow`，没有挂载本批修改的 `SettingsWindowController`。该测试、`RetainedSettingsWindow`、`MenuBarPanel` 和 `PanelSettingsHandback` 均与基线相同。随后同 SDK 单独运行 `--foreground --panel-settings-handback` 为 `134 checks, 0 failures`，未复现。全量上下文中的夹具前提及窗口顺序异常尚未归因；独立通过不能替代失败的综合门禁，本批未扩修窗口排序。
+
+脚本因 GUI 失败提前退出，其后管理的 Settings target 与 GUI Debug／Release 构建、打包、体积检查、diff 检查及严格格式基线比较均未执行。上文独立执行的构建与专项结果保留各自的证据范围。
+
+补跑期间键盘导航从 `0` 临时改为 `2`，两次前台进程结束后均恢复 `0`；新的后台 AppKit 进程再次确认 `isFullKeyboardAccessEnabled == false`。清理本次门禁新增的 35 个合成 fixture 目录（28 个 composer、6 个依赖夹具、1 个 Helper 夹具）；其中仅对隔离 Helper 临时文件清除遗留的不可变标志后删除。临时日志、采样和快照在记录最小结果后删除。未触及既有 `dist/` App 或主 checkout 的常规 `.build` 缓存。6 个真实工具在全部清理后的 SHA-256 与 POSIX mode 仍无变化。未 push、发布或修改宿主配置。
