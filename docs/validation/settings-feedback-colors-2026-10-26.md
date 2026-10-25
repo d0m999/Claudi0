@@ -92,14 +92,26 @@ swift run --package-path gui --build-system native --sdk "$SDKROOT" claudio-gui-
 - [最终四个前台批次摘要](evidence/settings-feedback-2026-10-26/final-foreground-results.txt)
 - [最终外部 AX 快照](evidence/settings-feedback-2026-10-26/name-error-final.ax.txt)；[最终后台／构建摘要](evidence/settings-feedback-2026-10-26/final-background-build.txt)。
 
-## 未验证与后续门禁
+## 未验证与最终综合门禁
 
 VoiceOver 实际朗读、macOS 12 真机、真实宿主回调、真实 Provider 与音频、Apple Silicon 跨版本兼容、正式签名／公证、生产就绪及正式验收未验证。AX、fixture 挂载、浏览器与构建不能代替这些证据。
 
-实施期尚未运行要求 clean HEAD 的最终综合门禁。现已获得本批精确范围本地提交授权，随后在干净候选上执行：
+获得本批精确范围本地提交授权后，在干净的实现提交 `cce0354def588fd83495b8ff75b165c8627239e3` 上执行：
 
 ```bash
 bash scripts/verify-settings-experience.sh 66af148 --foreground
 ```
 
-体积、格式与其他门禁脚本保持原样；不以未提交候选的局部检查替代最终综合门禁。
+**结果：退出码 0，综合门禁通过。** 本节为该提交的后续文档记录，不把后续文档提交当作已运行门禁的 SHA。
+
+- helper：6,187 checks，通过。
+- GUI `--all`：后台与前台串行，26,013 executed checks，通过。
+- `ClaudioSettingsPresentation` target 与 `ClaudioGUI` product：Debug、Release 均构建通过。
+- 本地化 JSON、两项 diff 检查、格式诊断脚本自身回归：通过。
+- 全仓 strict-format 相对 `66af148`：686 → 686，新增 0；与上文仅涉及文件的 68 → 68 范围不同。
+- 本地 arm64 ad-hoc bundle：签名检验通过；GUI 为 6,994,912 / 7,000,000 B，无产品导出符号；helper 为 2,806,224 / 3,250,000 B，LoginItem 为 54,208 / 500,000 B。
+- Sparkle 为 2,705,105 / 3,500,000 B；非可执行资源为 2,423,937 / 3,100,000 B；bundle 正规文件合计为 14,984,386 / 16,555,105 B。
+
+环境为本机 Apple Swift 6.4 与兼容 SDK `MacOSX26.5.sdk`。临时包装仅为 SwiftPM 的 run/build 子命令提供 SDK 与 native build 参数，并在调用真实工具时移除导出函数；仓库门禁脚本和全部阈值保持原样。首次启动因包装把参数放在 executable 名称之后，被 harness 以未知参数拒绝（退出码 2），尚未执行 GUI 测试；修正临时包装后完整重跑，以上结果均取自该完整成功运行。
+
+收尾读回确认 `AppleKeyboardUIMode` 恢复为 `0`，其他临时系统偏好仍为前述原值；15 项真实可执行文件的 SHA-256 与 POSIX mode 均与启动前一致。临时启动包装、日志与进程采样用完清理，不保留源码或构建备份。标准 `dist/claudi0.app` 为脚本生成的本地检验产物，不属于正式签名、公证或发布证据。
