@@ -96,7 +96,7 @@ VoiceOver 实际朗读、真实宿主、真实音频、Provider 网络请求、�
 
 实施验收收尾对前置快照中的 6 个真实可执行文件（`swift`、`swiftc`、`python3`、`node`、`git`、`codesign` 的解析后路径）再次比较 SHA-256 与 POSIX mode，变化为零。清理没有遗留跳过项；`git diff --check` 与本地化 JSON 检查通过，彼时 HEAD 仍为上述基线。
 
-## 本地提交后的综合门禁
+## 首次本地提交后的综合门禁（未通过）
 
 用户授权 `commit` 后，18 个范围内文件提交为 `19fccf962cadfa5572d66972339ffd1385ffe8fe`（`fix(gui): refine settings keyboard focus and typography`）。在该干净 HEAD 上运行：
 
@@ -121,3 +121,44 @@ bash scripts/verify-settings-experience.sh \
 脚本因 GUI 失败提前退出，其后管理的 Settings target 与 GUI Debug／Release 构建、打包、体积检查、diff 检查及严格格式基线比较均未执行。上文独立执行的构建与专项结果保留各自的证据范围。
 
 补跑期间键盘导航从 `0` 临时改为 `2`，两次前台进程结束后均恢复 `0`；新的后台 AppKit 进程再次确认 `isFullKeyboardAccessEnabled == false`。清理本次门禁新增的 35 个合成 fixture 目录（28 个 composer、6 个依赖夹具、1 个 Helper 夹具）；其中仅对隔离 Helper 临时文件清除遗留的不可变标志后删除。临时日志、采样和快照在记录最小结果后删除。未触及既有 `dist/` App 或主 checkout 的常规 `.build` 缓存。6 个真实工具在全部清理后的 SHA-256 与 POSIX mode 仍无变化。未 push、发布或修改宿主配置。
+
+## 窗口交接夹具修正与综合门禁复验
+
+用户授权继续定位并补齐门禁后，从干净的 `b056d5b` 开始复现。生产源码未变，完整 GUI 诊断运行再次得到 `25,729 checks, 3 failures`，仍是上面的三条失败。
+
+原夹具在请求呈现后固定等 50ms，然后直接捕获 Settings 的 key 所有权。一次实际观测在 62.9ms 时，WindowServer 已把 Settings 排在另一个窗口之前，但 `NSApp.keyWindow == nil`、Settings 尚未成为 key。测试因此把本应前台的 Settings 当作后台，禁止它参与菜单关闭后的自动 key 选择，随后两条排序断言随之失败。前置工作区删除用例结束时没有遗留 attached sheet 或 modal window。
+
+独立入口原本只用顶层 `await`，全量入口则在 `NSApplication.run()` 下执行。统一事件循环后，独立专项为 `134 checks, 0 failures`；在它前面加入全量中相邻的 `WorkspaceDeletionPresentationSuite`，旧 50ms 夹具复现为 `189 checks, 17 failures`。诊断日志会影响时序，一次增加 sheet 日志的旧夹具运行也曾通过，因此没有用反复运行取代归因。
+
+修正只涉及 `PanelSettingsHandbackSuite.swift` 与专项的启动分支：每 10ms 观察预期窗口是否同时持有原生 key、等于 `NSApp.keyWindow`，并在 WindowServer 中排在另一个窗口之前，最长等待 2 秒。超时明确失败并停止该无效夹具用例；原有焦点归属、关闭次数和排序断言保留。等待过程不重复调用呈现、激活或 `makeKey()`。一次修正后的观测在 102.0ms 达到就绪，使用原呈现请求即可继续。
+
+相邻用例组合在修正后为 `192 checks, 0 failures`，关闭诊断日志后仍为 `192 checks, 0 failures`；旧失败运行的计数较少，是后续 guard 跳过了依赖有效夹具的检查。最终补丁另外保留两条独立的就绪断言，独立专项为 `136 checks, 0 failures`。临时通知观察器、日志和前置用例环境开关均已移除，没有修改生产窗口、导航或状态 owner。
+
+期间另一个任务提交了声音标签换行修正 `1618eda`。本任务先隔离工作树，再将两处测试修正重放到该提交之上，形成 `5dd3046810a0559ebb2f2b6370859147be9492a1`（`test(gui): wait for native handback fixture readiness`）；主工作树已快进到同一提交。旧候选的一次门禁在 Helper 编译阶段主动取消，不计为通过证据。最终门禁使用上述 SDK、固定基线 `78f189cc303296eb86fbfcee228710c900e41c46` 和同一脚本，在干净的 `5dd3046` 隔离工作树中运行。
+
+| 最终组合检查 | 结果 |
+|---|---|
+| Helper 全量 | 6,187 checks，全部通过 |
+| GUI `--all`，含后台与前台 | 25,865 checks，全部通过；原失败用例保留在工作区删除用例之后 |
+| 最终组合的 `--foreground --panel-settings-handback` | 136 checks，0 failures；运行同一候选构建出的 Debug harness |
+| `ClaudioSettingsPresentation` Debug／Release target 构建 | 均通过 |
+| `ClaudioGUI` Debug／Release product 构建 | 均通过 |
+| xcstrings `jq empty` | 通过 |
+| `dev-bundle.sh`、ad-hoc 签名及 Sparkle 校验 | 通过；arm64 本地检查包，不是发布签名或公证证据 |
+| `check-release-size.sh` | 通过；App 主可执行文件 6,994,704／7,000,000 B，bundle 正规文件合计 14,984,178／16,555,105 B |
+| 工作树及基线范围 `git diff --check` | 均通过 |
+| 严格格式基线比较 | 新增诊断 0；基线 687，候选 686 |
+| 完整 `verify-settings-experience.sh` | 退出码 0，干净候选 `5dd3046810a0559ebb2f2b6370859147be9492a1` |
+
+门禁原始收尾摘要：
+
+```text
+✅ strict format baseline: no new diagnostics (baseline=687, HEAD=686)
+✅ unified settings integration gate passed at 5dd3046810a0559ebb2f2b6370859147be9492a1
+```
+
+本轮诊断阶段遗留的 34 个合成 fixture 目录已核对创建时间、归属与 `lstat` 清单后删除。最终门禁为构建工具设置了独立 `TMPDIR`；原生 harness 仍在系统临时目录创建了 35 个遗留 fixture，也已逐一核对后删除。其中一个属于本轮 Helper 的合成临时文件带 `UF_IMMUTABLE`，仅对这个 owner 属于当前用户、regular file、单 hard link 的精确路径清除此标志后删除，未修改 POSIX mode。
+
+全部前台测试结束后，`AppleKeyboardUIMode` 恢复 `0`；新的后台 AppKit 进程读回 `isFullKeyboardAccessEnabled == false`。确认候选提交已包含于 `main`、tracked／untracked 工作树干净、ignored 目录只有本次 `dist/` 与两个 `.build/`，且没有相关活跃进程后，已用精确路径移除临时 worktree。构建产物中的 symlink 按链接检查，未跟随它们修改目标。随后删除本次临时日志、快照、诊断清单和构建临时目录；`git worktree list` 只剩主 checkout，`git worktree prune --dry-run` 没有遗留项。本次新增的系统临时 fixture 路径也已清零。
+
+全部清理后再次比较前置快照中 6 个真实工具的 SHA-256 与 POSIX mode，变化为零。主 checkout 的既有 `dist/` 与常规 `.build` 缓存保留。未 push、发布或修改真实宿主配置；VoiceOver 实际朗读、真实宿主、真实音频、真实 Provider 和系统授权等未验证边界保持不变。
