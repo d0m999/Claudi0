@@ -257,7 +257,7 @@ func runPanelSettingsHandbackSuites() async {
                 "gui/Sources/ClaudioGUICore/PanelSettingsChoreography.swift"), encoding: .utf8)
         let menuCode = strippingComments(menu).codeWithoutStringLiterals
         let settingsCode = strippingComments(settings).codeWithoutStringLiterals
-        let settingsFlat = collapsingWhitespace(settingsCode)
+        let compactSettingsCode = settingsCode.filter { !$0.isWhitespace }
         let choreographyCode = strippingComments(choreography).codeWithoutStringLiterals
         expect(menuCode.contains("let panelWindow = MenuBarPanel()"), "真实菜单必须使用非激活窗口组件")
         expect(
@@ -277,12 +277,13 @@ func runPanelSettingsHandbackSuites() async {
                 .lowerBound,
             "菜单取得焦点后才提交原层级恢复")
         expect(
-            settingsFlat.contains("CGEventSource.buttonState( .combinedSessionState, button: .left)")
-                && settingsFlat.contains(
-                    "statusItemContainsScreenPoint( NSEvent.mouseLocation, button: button)")
-                && settingsCode.contains("panelSettingsShouldProtectDuringStatusActivation("),
-            "普通切换应用和其他状态项不能进入保护路径，三项事实判定下沉到可测的编排层"
-                + "（两条 AppKit 边缘调用在生产侧按 100 列折行，故对折叠空白后的文本断言）")
+            compactSettingsCode.contains(
+                "panelSettingsShouldProtectDuringStatusActivation("
+                    + "settingsOwnsKeyFocus:settingsWindowOwnsKeyFocus(window,keyWindow:NSApp.keyWindow),"
+                    + "primaryMouseButtonDown:CGEventSource.buttonState(.combinedSessionState,button:.left),"
+                    + "statusItemHit:statusItemContainsScreenPoint(NSEvent.mouseLocation,button:button))"
+            ),
+            "普通切换应用和其他状态项不能进入保护路径，三项当前事实必须传给可测的编排层")
         expect(
             settingsCode.contains("statusActivationGuard.finish(restoringOrder: false)"),
             "关闭设置必须取消保护而不重新前置")

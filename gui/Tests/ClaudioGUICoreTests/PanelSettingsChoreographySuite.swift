@@ -77,6 +77,36 @@ func runPanelSettingsChoreographySuites() {
             "交付后不得残留第二次关闭会重复呈现的排队请求")
     }
 
+    suite("Choreography：排队展示优先于旧 Settings 焦点债务且只交付一次") {
+        for explicitDismissal in [false, true] {
+            var choreography = PanelSettingsChoreography<String>()
+            choreography.notePanelWillShow(
+                settingsWasForeground: true, frontmostApplication: nil)
+            _ = choreography.requestSettingsPresentation(
+                request: "events", returnFocusTo: .soundScope,
+                handbackApplication: nil, panelIsShown: true)
+            _ = choreography.requestSettingsPresentation(
+                request: "settings", returnFocusTo: .headerSettings,
+                handbackApplication: nil, panelIsShown: true)
+            guard
+                case .presentSettings(let presentation) = choreography.panelDidClose(
+                    explicitDismissal: explicitDismissal)
+            else {
+                expect(false, "排队请求必须优先于旧焦点债务，与关闭原因无关")
+                continue
+            }
+            expect(
+                presentation.request == "settings"
+                    && presentation.panelFocusTarget == .headerSettings,
+                "单一 pending 保留最近一次请求及对应触发控件")
+            guard case .none = choreography.panelDidClose(explicitDismissal: true) else {
+                expect(false, "后续关闭不得重复展示或恢复已消费的旧焦点债务")
+                continue
+            }
+            expect(choreography.pendingPresentation == nil, "展示后必须消费全部排队事实")
+        }
+    }
+
     suite("Choreography：面板未打开时立即呈现，显式 handback 赢过捕获的应用") {
         var choreography = PanelSettingsChoreography<String>()
         let captured = PanelHandbackApplication(processIdentifier: 700)

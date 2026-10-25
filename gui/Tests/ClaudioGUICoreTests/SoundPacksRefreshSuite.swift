@@ -2271,7 +2271,7 @@ func runSoundPacksRefreshSuites() async {
             "common production interface 只能保留 coherent presentation、sync send 与 async perform")
     }
 
-    suite("Panel Settings：通过单一 pending-close 展示统一 Settings") {
+    suite("Panel Settings：AppKit 入口转发到单一窗口编排 owner") {
         guard
             let panel = soundPacksCode("gui/Sources/ClaudioPanelPresentation/PanelView.swift"),
             let menu = soundPacksCode("gui/Sources/ClaudioGUI/MenuBarController.swift"),
@@ -2295,46 +2295,34 @@ func runSoundPacksRefreshSuites() async {
                 "NSWorkspace.shared.activateFileViewerSelecting([audioEnvironment.userPacksDirectory])"
             ),
             "T7 的 Finder 中间态必须被真窗口替换")
+        let compactRequest = sharedRequestBody.filter { !$0.isWhitespace }
+        let compactClose = closeBody.filter { !$0.isWhitespace }
         expect(
-            requestBody.contains(
-                "request: .eventShortcut(route)")
+            requestBody.contains("request: .eventShortcut(route)")
                 && requestBody.contains("returnFocusTo: target")
-                && sharedRequestBody.contains("panelSettingsChoreography.requestSettingsPresentation(")
-                && sharedRequestBody.contains("panelWindow.close()"),
-            "管理入口必须提交 typed route 并先把单一 pending 交给编排层记录，再关闭菜单及其 child window")
+                && compactRequest.contains(
+                    "panelSettingsChoreography.requestSettingsPresentation("
+                        + "request:request,returnFocusTo:target,handbackApplication:explicitHandback,"
+                        + "panelIsShown:panelWindow.isShown)"),
+            "管理入口必须把 typed route、精确焦点、宿主和真实菜单状态交给同一编排 owner")
         expect(
             !sharedRequestBody.contains("panelWindow.performClose"),
             "自家窗口导航不得用可拒绝的 performClose；失败后没有 didClose 可消费 pending")
-        if let pendingAt = sharedRequestBody.range(
-            of: "panelSettingsChoreography.requestSettingsPresentation("
-        )?.lowerBound,
-            let closeAt = sharedRequestBody.range(of: "panelWindow.close()")?.lowerBound
-        {
-            expect(
-                pendingAt < closeAt,
-                "管理入口顺序必须是编排层记 pending → 强制 close")
-        } else {
-            expect(false, "管理入口必须同时包含编排层 pending 与强制 close")
-        }
         expect(
-            closeBody.contains("case .presentSettings(let presentation)")
-                && closeBody.contains("presentSettings(presentation)"),
-            "Panel 关闭后必须只展示统一 Settings；其关闭回调恢复精确触发控件")
-        if let showAt = closeBody.range(
-            of: "presentSettings(presentation)"
-        )?.lowerBound,
-            let keyRestorationAt = closeBody.range(
-                of: "case .restoreSettingsKeyFocus")?.lowerBound
-        {
-            expect(
-                showAt < keyRestorationAt,
-                "主动 Settings presentation 分支必须排在普通关闭的 key 恢复分支之前；两者的互斥与裁决"
-                    + "归 ADR 0022 编排层（PanelSettingsChoreographySuite 钉），owner 只按裁决执行")
-        } else {
-            expect(
-                false,
-                "didClose 必须同时包含窗口 presentation 与普通关闭的 key 恢复分支")
-        }
+            compactRequest.contains("guardletpresentation=panelSettingsChoreography.")
+                && compactRequest.contains(
+                    "else{panelWindow.close()return}presentSettings(presentation)"),
+            "编排返回排队结果时必须强制关闭并结束调用；只有立即呈现结果能直接展示 Settings")
+        expect(
+            compactClose.contains(
+                "switchpanelSettingsChoreography.panelDidClose(explicitDismissal:reason==.explicit){"
+                    + "case.presentSettings(letpresentation):presentSettings(presentation)"),
+            "didClose 必须消费编排返回的同一 presentation，保留关闭原因")
+        expect(
+            compactClose.contains(
+                "case.restoreSettingsKeyFocus:_=settingsWindowController."
+                    + "restoreVisibleWindowAfterPanelClose()case.none:break}"),
+            "互斥 switch 分支必须分别处理旧 Settings 焦点归还与外部交互，展示设置不得落入恢复分支")
         expect(
             !closeBody.contains("activateHandbackApplication("),
             "Panel 普通关闭和设置导航都不能激活外部应用来补偿窗口顺序")
