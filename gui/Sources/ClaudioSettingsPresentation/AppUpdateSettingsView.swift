@@ -31,6 +31,7 @@ struct AppUpdateSettingsView: View {
                             get: { model.automaticallyChecksForUpdates },
                             set: { model.setAutomaticallyChecksForUpdates($0) })
                     )
+                    .toggleStyle(.switch).controlSize(.mini)
                     .accessibilityIdentifier("settings.about.automatic-updates")
                 }
                 if model.state == .failed || model.state == .unavailable(.configuration) {

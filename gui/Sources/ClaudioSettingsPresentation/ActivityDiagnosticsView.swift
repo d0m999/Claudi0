@@ -61,8 +61,7 @@ struct ActivityDiagnosticsView: View {
                 } label: {
                     actionLabel(
                         title: l10n.text(.settingsUsageClearHistory),
-                        action: .clearActivity,
-                        systemImage: "chart.bar.xaxis")
+                        action: .clearActivity)
                 }
                 .disabled(model.isOperationActive)
                 .accessibilityIdentifier("settings.activity.clear")
@@ -72,8 +71,7 @@ struct ActivityDiagnosticsView: View {
                 } label: {
                     actionLabel(
                         title: l10n.text(.settingsUsageClearLog),
-                        action: .clearLog,
-                        systemImage: "trash")
+                        action: .clearLog)
                 }
                 .disabled(model.isOperationActive)
                 .accessibilityIdentifier("settings.activity.clear-log")
@@ -351,8 +349,7 @@ struct ActivityDiagnosticsView: View {
 
     private func actionLabel(
         title: String,
-        action: ActivityDiagnosticsAction,
-        systemImage: String
+        action: ActivityDiagnosticsAction
     ) -> some View {
         Group {
             if model.activeActions.contains(action) {
@@ -361,7 +358,7 @@ struct ActivityDiagnosticsView: View {
                     Text(l10n.text(.settingsUsageActionInProgress))
                 }
             } else {
-                Label(title, systemImage: systemImage)
+                Text(title)
             }
         }
     }

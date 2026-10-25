@@ -815,6 +815,18 @@ if CommandLine.arguments.contains("--panel-error-copy") {
     exit(failures == 0 ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--settings-polish-native") {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        await runSettingsNativePolishSuites()
+        print("Settings native polish: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--five-page-settings-native")
     || CommandLine.arguments.contains("--five-page-forms-native")
 {
@@ -1115,6 +1127,7 @@ Task { @MainActor in
     await runSettingsSidebarBackingSuites()
     await runSettingsNativeControlsSuites()
     await runSettingsScopePickerSuites()
+    await runSettingsNativePolishSuites()
     await runSettingsNotificationNavigationSuites()
 
     // MARK: - Summary

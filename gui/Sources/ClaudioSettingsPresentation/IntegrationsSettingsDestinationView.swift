@@ -73,14 +73,28 @@ struct IntegrationsSettingsDestinationView: View {
                                     Button(l10n.text(.integrationsAutoSoundScopes)) {
                                         onManageSoundScopes()
                                     }
-                                    Button(l10n.text(.integrationsAutoDiagnostics)) {
-                                        onIntegrationsRoute(
-                                            IntegrationsSettingsRoute(
-                                                surface: facts.host.surfaceID,
-                                                detailsHost: facts.host, level: .diagnostics))
+                                    SettingsSectionCard(padding: 0) {
+                                        EventAnimationActionButton(
+                                            title: l10n.text(.integrationsAutoDiagnostics),
+                                            identifier: "integrations.destination.open-diagnostics",
+                                            action: {
+                                                onIntegrationsRoute(
+                                                    IntegrationsSettingsRoute(
+                                                        surface: facts.host.surfaceID,
+                                                        detailsHost: facts.host, level: .diagnostics
+                                                    ))
+                                            }
+                                        ) {
+                                            HStack {
+                                                Text(l10n.text(.integrationsAutoDiagnostics))
+                                                Spacer()
+                                                Image(systemName: "chevron.right")
+                                                    .accessibilityHidden(true)
+                                            }
+                                            .padding(SettingsAppearance.controlRowHorizontalPadding)
+                                            .contentShape(Rectangle())
+                                        }
                                     }
-                                    .accessibilityIdentifier(
-                                        "integrations.destination.open-diagnostics")
                                 }
                             } else {
                                 FailureRow(message: l10n.text(.settingsNativeTargetUnavailable))

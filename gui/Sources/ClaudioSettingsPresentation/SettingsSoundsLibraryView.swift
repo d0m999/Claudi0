@@ -112,7 +112,6 @@ struct SettingsSoundsLibraryView: View {
                         generationStatus
                         historyContent(selecting: false)
                     } else if isList {
-                        heading(l10n.text(.settingsDestinationSounds))
                         libraryContent
                     } else {
                         libraryStatus
