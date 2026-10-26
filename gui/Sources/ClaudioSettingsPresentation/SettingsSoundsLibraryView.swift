@@ -1439,7 +1439,7 @@ struct SettingsSoundsLibraryView: View {
         .accessibilityIdentifier("settings.sounds.preview.\(id)")
     }
     private func errorLabel(_ message: String) -> some View {
-        FailureRow(message: message).font(.callout).fixedSize(
+        FailureRow(message: message).fixedSize(
             horizontal: false, vertical: true
         )
         .textSelection(.enabled)

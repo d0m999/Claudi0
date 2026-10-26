@@ -1022,7 +1022,8 @@
   --text:#202023; --secondary:#6e6e73; --tertiary:#929298;
   --line:rgba(0,0,0,.075); --edge:rgba(0,0,0,.12); --selected:rgba(0,0,0,.085);
   --accent:#007aff; --accent-hover:#0066d6; --button:#e7e7ea; --field:#fff;
-  --toggle-off:#d6d6da; --warning:#ff9500; --error:#ff3b30; --success:#34c759;
+  --toggle-off:#d6d6da; --warning:#9a6100; --error:#c63333; --success:#258340;
+  --feedback-warning:#b87000; --feedback-error:#e0453a; --feedback-success:#2fa24e;
   --focus:rgba(0,122,255,.4); --sidebar-width:252px;
   --window-width:1240px; --window-height:820px;
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
@@ -1034,7 +1035,8 @@
   --text:#f0f0f2; --secondary:#aaaab0; --tertiary:#8b8b92;
   --line:rgba(255,255,255,.085); --edge:rgba(255,255,255,.16); --selected:rgba(255,255,255,.12);
   --accent:#0a84ff; --accent-hover:#2993ff; --button:#454548; --field:#353538;
-  --toggle-off:#55555b; --warning:#ff9f0a; --error:#ff453a; --success:#32d74b;
+  --toggle-off:#55555b; --warning:#eab45e; --error:#ff817b; --success:#63c17d;
+  --feedback-warning:#ff9f0a; --feedback-error:#ff453a; --feedback-success:#34c759;
 }
 * { box-sizing:border-box; }
 :host { margin:0; color:var(--text); background:var(--desktop); -webkit-font-smoothing:antialiased; }
@@ -1162,9 +1164,9 @@ input[type="range"]::-webkit-slider-thumb { appearance:none; width:15px; height:
 .percentage { font-size:11px; width:31px; text-align:right; font-variant-numeric:tabular-nums; }
 .caption { margin:8px 14px 0; color:var(--secondary); font-size:11px; line-height:1.6; }
 .inline-notice { color:var(--secondary); font-size:11px; line-height:1.5; padding:9px 14px; border-top:1px solid var(--line); }
-.inline-notice.warning { --feedback-color:var(--warning); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 1 7 13H1Zm0 4v4m0 2v.1'/%3E%3C/svg%3E"); }
-.inline-notice.error { --feedback-color:var(--error); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5.5 5.5 5 5m0-5-5 5'/%3E%3C/svg%3E"); }
-.inline-notice.success { --feedback-color:var(--success); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m4.5 8 2.3 2.3 4.7-4.7'/%3E%3C/svg%3E"); }
+.inline-notice.warning { --feedback-color:var(--feedback-warning); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 1 7 13H1Zm0 4v4m0 2v.1'/%3E%3C/svg%3E"); }
+.inline-notice.error { --feedback-color:var(--feedback-error); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5.5 5.5 5 5m0-5-5 5'/%3E%3C/svg%3E"); }
+.inline-notice.success { --feedback-color:var(--feedback-success); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m4.5 8 2.3 2.3 4.7-4.7'/%3E%3C/svg%3E"); }
 .status-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--success); margin-right:5px; vertical-align:1px; }
 .section-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:12px; }
 .pill { background:var(--button); color:var(--secondary); font-size:10px; border-radius:4px; padding:2px 5px; font-weight:500; }
@@ -1269,11 +1271,11 @@ dialog .sheet-error { color:var(--secondary); font-size:11px; line-height:1.5; m
 .inline-notice::before, dialog .sheet-error:not(:empty)::before,
 #claudio-sounds-overview .sf-error:not(:empty)::before {
   content:""; display:inline-block; width:12px; height:12px; margin-right:6px;
-  vertical-align:-2px; background:var(--feedback-color,var(--error));
+  vertical-align:-2px; background:var(--feedback-color,var(--feedback-error));
   mask:var(--feedback-symbol,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5.5 5.5 5 5m0-5-5 5'/%3E%3C/svg%3E")) center/contain no-repeat;
 }
 .inline-notice { --feedback-color:var(--accent); --feedback-symbol:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 7v4m0-6v.1'/%3E%3C/svg%3E"); }
-#claudio-sounds-overview .sf-error::before { background:var(--sf-red); }
+#claudio-sounds-overview .sf-error::before { background:var(--sf-feedback-error); }
 
 .review-tools { flex-wrap:wrap; }
 .review-tools select { max-width:245px; }
@@ -1506,7 +1508,7 @@ dialog p { overflow-wrap:anywhere; }
   <template data-tpl="import-pack"><div class="sf-box"><div class="sf-setting-row"><span class="sf-medium" data-import-name>森林轻响.claudiopack</span><i data-lucide="package" aria-hidden="true"></i></div><div class="sf-setting-row"><span data-import-summary>5 个事件 · 5 个文件</span></div></div></template>
 </div>
 <style>
-  #claudio-sounds-overview { --sf-window:light-dark(#fafafa,#242426); --sf-sidebar:light-dark(#ededee,#303033); --sf-surface:light-dark(#fff,#323235); --sf-text:light-dark(#252528,#f1f1f3); --sf-muted:light-dark(#717178,#b5b5bd); --sf-line:light-dark(#e0e0e4,#49494e); --sf-blue:light-dark(#0074eb,#287fe0); --sf-on-blue:light-dark(#fff,#fff); --sf-select:light-dark(#edf5ff,#263e56); --sf-button:light-dark(#fff,#48484e); --sf-red:light-dark(#ff3b30,#ff453a); --sf-soft:light-dark(#f4f4f6,#3a3a3f); --sf-shadow:light-dark(#00000016,#00000055); --sf-veil:light-dark(#29293425,#05050a78); --sf-orange:light-dark(#a56004,#ffcb80); font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; color:var(--sf-text); width:100%; }
+  #claudio-sounds-overview { --sf-window:light-dark(#fafafa,#242426); --sf-sidebar:light-dark(#ededee,#303033); --sf-surface:light-dark(#fff,#323235); --sf-text:light-dark(#252528,#f1f1f3); --sf-muted:light-dark(#717178,#b5b5bd); --sf-line:light-dark(#e0e0e4,#49494e); --sf-blue:light-dark(#0074eb,#287fe0); --sf-on-blue:light-dark(#fff,#fff); --sf-select:light-dark(#edf5ff,#263e56); --sf-button:light-dark(#fff,#48484e); --sf-red:light-dark(#c32924,#ff908c); --sf-feedback-error:light-dark(#e0453a,#ff453a); --sf-soft:light-dark(#f4f4f6,#3a3a3f); --sf-shadow:light-dark(#00000016,#00000055); --sf-veil:light-dark(#29293425,#05050a78); --sf-orange:light-dark(#a56004,#ffcb80); font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; color:var(--sf-text); width:100%; }
   #claudio-sounds-overview * { box-sizing:border-box; }
   #claudio-sounds-overview [hidden] { display:none!important; }
   #claudio-sounds-overview .sf-window { display:grid; grid-template-columns:190px minmax(0,1fr); background:var(--sf-window); border:1px solid var(--sf-line); border-radius:12px; box-shadow:0 6px 22px var(--sf-shadow); min-height:720px; }
@@ -1596,7 +1598,7 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-field-label { display:block; margin-bottom:7px; font-weight:500; }
   #claudio-sounds-overview .sf-input { display:block; width:100%; padding:8px 10px; font:inherit; color:var(--sf-text); background:var(--sf-window); border:1px solid var(--sf-line); border-radius:6px; resize:vertical; }
   #claudio-sounds-overview .sf-error { color:var(--sf-muted); font-size:12px; }
-  #claudio-sounds-overview .sf-error:not(:empty)::before { content:""; display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:-2px; background:var(--sf-red); mask:var(--feedback-symbol,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5.5 5.5 5 5m0-5-5 5'/%3E%3C/svg%3E")) center/contain no-repeat; }
+  #claudio-sounds-overview .sf-error:not(:empty)::before { content:""; display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:-2px; background:var(--sf-feedback-error); mask:var(--feedback-symbol,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5.5 5.5 5 5m0-5-5 5'/%3E%3C/svg%3E")) center/contain no-repeat; }
   #claudio-sounds-overview .sf-inline-service { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:12px; }
   #claudio-sounds-overview .sf-generate-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0 18px; }
   #claudio-sounds-overview .sf-audio-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--sf-line); }

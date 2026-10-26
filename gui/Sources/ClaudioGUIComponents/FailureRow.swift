@@ -31,7 +31,8 @@ extension Color {
 
 /// Shared in-place failure component: a semantic error icon and a neutral sentence.
 /// Standard-window callers retain their window-owned VoiceOver announcement channel.
-/// Settings select system colors through an internal environment; other callers keep panel defaults.
+/// Settings select the documented semantic palette through an internal environment and expose
+/// the combined sentence as a static-text element; other callers keep panel defaults.
 public struct FailureRow: View {
     public let message: String
     public var disclosure: Disclosure?

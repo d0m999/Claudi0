@@ -1,0 +1,32 @@
+Correction after cce0354: documented semantic palette, scoped prototype feedback icons, shared AI cue failure row.
+
+GUI background: ✓ background: all 15377 executed checks passed
+GUI Debug build: Build of product 'ClaudioGUI' complete! (9.80s)
+helper: ✓ all 6187 checks passed
+
+--foreground --settings-polish-native
+Settings native polish: 280 checks, 0 failures
+
+--foreground --five-page-settings-native
+Five-page native: 903 checks, 0 failures
+
+--foreground --five-page-forms-native
+Five-page native: 541 checks, 0 failures
+
+--foreground --settings-navigation-native-focus
+AppleKeyboardUIMode temporarily set to 2, restored and read back as 0.
+run 1: Settings navigation native focus: 313 checks, 2 failures
+run 2: Settings navigation native focus: 327 checks, 4 failures
+run 3: Settings navigation native focus: 307 checks, 5 failures
+Failures were limited to SettingsNavigationFocusSuite and SettingsKeyboardConfirmationSuite,
+which this change does not modify, and their count varied between identical runs.
+Not accepted as a pass; see the validation record.
+
+Prototype feedback: Ran 2 tests, OK (icon token equality assertions)
+Five-page prototype: Ran 6 tests, OK
+Node prototype: tests 109, pass 109, fail 0
+
+jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings: ok
+git diff --check: ok
+swift format lint --strict (changed files): no new diagnostics;
+  ContrastSuite retains its pre-existing line-length diagnostics.

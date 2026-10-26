@@ -464,14 +464,12 @@ struct EventSettingsAICueComposerView: View {
                 .font(SettingsAppearance.font(.caption))
                 .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
             if (try? AICueDisplayName(viewModel.displayName)) == nil {
-                Text(
-                    l10n.text(
+                FailureRow(
+                    message: l10n.text(
                         viewModel.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                             .isEmpty
                             ? .aiCueErrorNameRequired : .aiCueErrorNameInvalid)
                 )
-                .font(SettingsAppearance.font(.caption))
-                .foregroundColor(ClaudioTheme.error(colorScheme))
                 .accessibilityIdentifier("event-settings.ai-cue.name-error")
             }
 
@@ -593,7 +591,7 @@ struct EventSettingsAICueComposerView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 7) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(ClaudioTheme.success(colorScheme))
+                    .foregroundColor(SettingsAppearance.success(colorScheme))
                     .accessibilityHidden(true)
                 Text(l10n.text(.aiCueAppliedTitle))
                     .foregroundColor(SettingsAppearance.text(colorScheme))
@@ -617,7 +615,7 @@ struct EventSettingsAICueComposerView: View {
     private func errorNotice(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(ClaudioTheme.error(colorScheme))
+                .foregroundColor(SettingsAppearance.error(colorScheme))
                 .accessibilityHidden(true)
             Text(message)
                 .font(SettingsAppearance.font(.caption))
@@ -632,7 +630,7 @@ struct EventSettingsAICueComposerView: View {
     private func partialCandidateNotice(count: Int) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(ClaudioTheme.warning(colorScheme))
+                .foregroundColor(SettingsAppearance.warning(colorScheme))
                 .accessibilityHidden(true)
             Text(l10n.format(.aiCueCandidatePartial, Int64(count)))
                 .font(SettingsAppearance.font(.caption))

@@ -1,3 +1,4 @@
+import AppKit
 import ClaudioGUIComponents
 import ClaudioGUICore
 import Foundation
@@ -126,6 +127,38 @@ func runContrastSuites() {
             documentedHoverOnSurface >= 3.0,
             "light clay-hover must remain usable as a non-text accent on surface, got"
                 + " \(documentedHoverOnSurface)")
+    }
+
+    suite("settings: feedback icons clear the 3:1 non-text floor on real settings surfaces") {
+        for scheme in [ColorScheme.light, .dark] {
+            let inks = [
+                ("success", SettingsAppearance.success(scheme)),
+                ("warning", SettingsAppearance.warning(scheme)),
+                ("error", SettingsAppearance.error(scheme)),
+            ]
+            let surfaces = [
+                ("window", SettingsAppearance.background(scheme)),
+                ("group", SettingsAppearance.cardSurface(scheme)),
+            ]
+            for (inkName, ink) in inks {
+                for (surfaceName, surface) in surfaces {
+                    guard
+                        let inkHex = resolvedHex(ink, scheme: scheme),
+                        let surfaceHex = resolvedHex(surface, scheme: scheme)
+                    else {
+                        expect(
+                            false,
+                            "settings \(inkName) icon vs \(surfaceName) must resolve to sRGB")
+                        continue
+                    }
+                    let ratio = contrastRatio(inkHex, surfaceHex)
+                    expect(
+                        ratio >= 3.0,
+                        "\(scheme) settings \(inkName) icon vs \(surfaceName) must be ≥3:1, got"
+                            + " \(ratio)")
+                }
+            }
+        }
     }
 
     suite("contrastRatio: is symmetric — argument order does not matter") {
@@ -592,4 +625,20 @@ private func runCompositedBackgroundSuites() {
             "记录当年那个具体的数字：surface-2 `#FFFDF7` 和 panel `#FFFDF8` **就是同一个颜色**"
                 + "（实测 \(lightRatio):1，远不止「对比度偏低」，是压根没有对比度）")
     }
+}
+
+/// Resolve a SwiftUI color against the given scheme, matching how the settings window draws it.
+@MainActor
+private func resolvedHex(_ color: Color, scheme: ColorScheme) -> String? {
+    let name: NSAppearance.Name = scheme == .dark ? .darkAqua : .aqua
+    var hex: String?
+    NSAppearance(named: name)?.performAsCurrentDrawingAppearance {
+        guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return }
+        hex = String(
+            format: "%02X%02X%02X",
+            Int(round(sRGB.redComponent * 255)),
+            Int(round(sRGB.greenComponent * 255)),
+            Int(round(sRGB.blueComponent * 255)))
+    }
+    return hex
 }

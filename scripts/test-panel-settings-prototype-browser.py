@@ -528,7 +528,10 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     })""")
                     self.assertEqual(colors["body"], self.page.locator("#page-content").evaluate(
                         "el => { const s=document.createElement('span');s.style.color='var(--secondary)';el.append(s);const c=getComputedStyle(s).color;s.remove();return c; }"))
-                    self.assertNotEqual(colors["icon"], "rgba(0, 0, 0, 0)")
+                    self.assertEqual(colors["icon"], notice.evaluate(
+                        "el => { const s=document.createElement('span');s.style.color='var(--feedback-error)';el.append(s);const c=getComputedStyle(s).color;s.remove();return c; }"))
+                    self.assertEqual(colors["error"],
+                                     "#c63333" if theme == "light" else "#ff817b")
                     self.page.locator('[data-action="retry-login"]').click()
                     self.page.wait_for_function("MacSettings.getState().loginFailure === null")
                     self.assertEqual(self.settings_state()["login"],
@@ -546,8 +549,8 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             self.assertTrue(error.inner_text().strip())
             self.assertEqual(error.evaluate("el => getComputedStyle(el).color"),
                              error.evaluate("el => {const s=document.createElement('span');s.style.color='var(--sf-muted)';el.parentElement.append(s);const c=getComputedStyle(s).color;s.remove();return c;}"))
-            self.assertNotEqual(error.evaluate("el => getComputedStyle(el,'::before').backgroundColor"),
-                                "rgba(0, 0, 0, 0)")
+            self.assertEqual(error.evaluate("el => getComputedStyle(el,'::before').backgroundColor"),
+                             error.evaluate("el => {const s=document.createElement('span');s.style.color='var(--sf-feedback-error)';el.parentElement.append(s);const c=getComputedStyle(s).color;s.remove();return c;}"))
             self.page.locator('.sf-sheet [data-act="close"]').click()
             expect(self.page.locator("#sf-name-input")).to_be_hidden()
 

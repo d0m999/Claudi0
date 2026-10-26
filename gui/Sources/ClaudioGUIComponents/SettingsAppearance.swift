@@ -40,9 +40,12 @@ package enum SettingsAppearance {
         Color(nsColor: .secondaryLabelColor)
     }
     package static func accent(_ scheme: ColorScheme) -> Color { .accentColor }
-    package static func success(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemGreen) }
-    package static func warning(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemOrange) }
-    package static func error(_ scheme: ColorScheme) -> Color { Color(nsColor: .systemRed) }
+
+    // Settings feedback reuses DESIGN.md's measured UI semantic palette: the light values are
+    // darkened so the icon-only categories clear the non-text ≥3:1 floor.
+    package static func success(_ scheme: ColorScheme) -> Color { ClaudioTheme.success(scheme) }
+    package static func warning(_ scheme: ColorScheme) -> Color { ClaudioTheme.warning(scheme) }
+    package static func error(_ scheme: ColorScheme) -> Color { ClaudioTheme.error(scheme) }
     package static func hairline(_ scheme: ColorScheme) -> Color { Color(nsColor: .separatorColor) }
 
     package static func horizontalPadding(compact: Bool) -> CGFloat { compact ? 26 : 32 }

@@ -3,13 +3,13 @@
 基线：`66af148d342053b5e2fbd0f8e0d92fdbf8bff422`，`main`，开始时工作树干净。
 本记录记录实施候选的提交前验证结果。本批已获精确范围本地提交授权；不包含 push、发布或 issue 状态变更。
 
-**当前收口状态：本批实现、最终四个前台 selectors、后台、Debug 构建、格式及外部 AX 复验均已完成。现有浏览器全量仍有基线可复现的失败，见下文；clean HEAD 综合门禁将在本地提交后执行，结果另行补记。**
+**当前收口状态：本批实现、最终四个前台 selectors、后台、Debug 构建、格式及外部 AX 复验均已完成；clean HEAD 综合门禁已在 `cce0354` 上通过（见文末）。评审修正（亮色语义色对比度、AI 提示音剩余用色、原型 token 作用域与错误行字号）见「评审修正」一节；现有浏览器全量仍有基线可复现的失败，见下文。**
 
 ## 实现范围
 
-- 设置成功／警告／错误分别使用 `NSColor.systemGreen`／`systemOrange`／`systemRed`，信息使用系统强调色，反馈正文使用 `secondaryLabelColor`。保留原分类与告警底色透明度。
+- 设置成功／警告／错误使用 `DESIGN.md`「UI 语义色」表已实测的暗／亮值：暗色为 `#34C759`／`#FF9F0A`／`#FF453A`，亮色为 `#2FA24E`／`#B87000`／`#E0453A`；信息使用系统强调色，反馈正文使用 `secondaryLabelColor`。保留原分类与告警底色透明度。
 - package 内部环境标记在设置内容最外层启用并传递到 sheet；`FailureRow` 公共初始化接口及默认面板颜色保留。
-- 声音错误入口与 AI 局部失败使用共享错误行；活动、连接、关于、登录项、工作区、提醒与静音、AI 服务与凭据反馈沿用同一颜色合同。未新增播报通道或动作 owner。
+- 声音错误入口与 AI 局部失败使用共享错误行；活动、连接、关于、登录项、工作区、提醒与静音、AI 服务、AI 提示音 composer 与凭据反馈沿用同一颜色合同。未新增播报通道或动作 owner。
 - AI 展开卡片使用 `SettingsNativeSurface(.group)`，普通描边为系统分隔色，增强对比度为次级文字色 60%／1.5 pt。原尺寸、圆角、状态转换、焦点与 Reduce Motion 保留。
 - 音量百分比只在既有 `usesSettingsAppearance` 分支换色；原 Slider、字号、宽度及提交／回滚路径保留。
 - 同步主原型的设置提示与表单错误、`DESIGN.md` 现行说明。未修改面板、品牌、五事件、事件动画预览、导航入口、配置或领域 owner；未挂载的旧 AI composer 未清理。
@@ -102,7 +102,7 @@ VoiceOver 实际朗读、macOS 12 真机、真实宿主回调、真实 Provider 
 bash scripts/verify-settings-experience.sh 66af148 --foreground
 ```
 
-**结果：退出码 0，综合门禁通过。** 本节为该提交的后续文档记录，不把后续文档提交当作已运行门禁的 SHA。
+**结果：退出码 0，综合门禁通过。** 本节为该提交的后续文档记录，不把后续文档提交当作已运行门禁的 SHA。后续评审修正发生在 `cce0354` 之后；以下综合数字仅适用于 `cce0354`，修正后的验证见下一节。
 
 - helper：6,187 checks，通过。
 - GUI `--all`：后台与前台串行，26,013 executed checks，通过。
@@ -115,3 +115,25 @@ bash scripts/verify-settings-experience.sh 66af148 --foreground
 环境为本机 Apple Swift 6.4 与兼容 SDK `MacOSX26.5.sdk`。临时包装仅为 SwiftPM 的 run/build 子命令提供 SDK 与 native build 参数，并在调用真实工具时移除导出函数；仓库门禁脚本和全部阈值保持原样。首次启动因包装把参数放在 executable 名称之后，被 harness 以未知参数拒绝（退出码 2），尚未执行 GUI 测试；修正临时包装后完整重跑，以上结果均取自该完整成功运行。
 
 收尾读回确认 `AppleKeyboardUIMode` 恢复为 `0`，其他临时系统偏好仍为前述原值；15 项真实可执行文件的 SHA-256 与 POSIX mode 均与启动前一致。临时启动包装、日志与进程采样用完清理，不保留源码或构建备份。标准 `dist/claudi0.app` 为脚本生成的本地检验产物，不属于正式签名、公证或发布证据。
+
+## 评审修正（2026-10-26 后续）
+
+评审发现本批初版把设置语义色直接换成亮色系统色，与 `DESIGN.md`「Color」节已实测的「UI 语义色」及 T17f「图标 ≥3:1」先例冲突；同时原型的全局警示 token 还承载删除按钮与宿主状态正文。修正如下：
+
+- 设置成功／警告／错误改回文档已实测的暗／亮值（亮色 `#2FA24E`／`#B87000`／`#E0453A`，暗色 `#34C759`／`#FF9F0A`／`#FF453A`）。实测亮色系统绿／橙对白底仅 **2.22:1／2.31:1**，增强对比度 appearance 也不改变这两个值；修正后 success／warning／error 对窗口与功能组底均 ≥3:1。信息提示仍用系统强调色。
+- 原型恢复 `--warning`／`--error`／`--success` 的既有文本用途，并新增仅装饰图标使用的 `--feedback-warning`／`--feedback-error`／`--feedback-success`（声音编辑器为 `--sf-feedback-error`）。`host-status.attention`、`small-button.destructive` 与 `sf-danger` 等正文不再随反馈色变浅。
+- `EventSettingsAICueView` 的名称错误改用共享 `FailureRow`，成功、错误与部分候选图标改用 `SettingsAppearance`；设置内不再残留 `ClaudioTheme` 语义色。
+- 删除 `SettingsSoundsLibraryView.errorLabel` 无效的 `.font(.callout)`：共享失败行固定 11 pt，`DESIGN.md` 已明确该并入行为；不再声称字体体系完全未变。
+- `ContrastSuite` 新增 12 条设置语义色对比度断言（成功／警告／错误 × 明／暗 × 窗口／功能组底）；挂载像素断言改为解析文档色而非 `.systemRed`；新浏览器断言直接比较反馈图标 token；共享像素 helper 移入 `FeedbackPixelSupport.swift`。
+- `FailureRow` 的设置环境标记同时启用静态文本 AX 暴露；`DESIGN.md` 与本记录同步说明。面板默认隔离测试新增 panel `text-2` 正文断言，避免设置色与面板色同值后失去区分度。
+- 前述截图与 `mounted-results.txt` 来自初版候选；暗色色值差异很小，但精确色值以本节断言与 `correction-results.txt` 为准。
+
+**修正后验证**（本机 macOS 27.0.1 / arm64 / Swift 6.4，SDK `MacOSX26.5`）：
+
+- GUI 后台：**15,377 executed checks，通过**；GUI Debug product 构建通过；helper：**6,187 checks，通过**。
+- `--foreground --settings-polish-native`：**280 / 0**；`--five-page-settings-native`：**903 / 0**；`--five-page-forms-native`：**541 / 0**。
+- `--foreground --settings-navigation-native-focus` 临时开启 `AppleKeyboardUIMode=2` 后重跑三次，均在未改动的 `SettingsNavigationFocusSuite`／`SettingsKeyboardConfirmationSuite` 中出现数量不稳定的焦点失败（313/2、327/4、307/5）；同一选择器在 `cce0354` 综合门禁中曾 287/0。本轮不把该选择器计为通过，也不据此宣称焦点回归；`AppleKeyboardUIMode` 已读回 `0`。
+- 浏览器：两条反馈用例通过（含图标 token 精确比较）、五页原型 6/6、Node 原型 109/109。
+- 静态检查：`jq empty`、`git diff --check` 通过；改动 Swift 文件的 `swift format lint --strict` 无新增诊断（`ContrastSuite` 保留既有行宽诊断）。
+- **未验证**：完整 `verify-settings-experience.sh`（含 Release、体积、bundle）、外部 AX 冷启动、VoiceOver 实际朗读、真实宿主回调与音频、签名／公证；AI 展开卡片从 SwiftUI 填充切到 `SettingsNativeSurface` 后的背景过渡动画只有几何与底色断言，未单独验证过渡（现有 fixture 关闭动画）。成功／警告的设置内挂载像素未单独断言，二者由对比度数学断言与原型 token 断言覆盖，挂载像素仍只覆盖 error。修正提交后未重跑完整 clean-HEAD 综合门禁。
+- 修正证据：[correction-results.txt](evidence/settings-feedback-2026-10-26/correction-results.txt)。
