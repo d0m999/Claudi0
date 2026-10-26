@@ -1,0 +1,71 @@
+Source: polish-latest.txt
+Original SHA-256: 540ce113d2a5d7ef3093a232996224ab45a3907d4b96300e85c84309079fefec
+Verbatim lines: 4-70 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-polish-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings feedback: actual success root and About sheet zhHans/false/960.0
+• Settings feedback: actual warning root zhHans/false/960.0
+• Settings feedback: actual partial-candidate form zhHans/false/960.0
+• Settings feedback: actual success root and About sheet zhHans/false/1240.0
+• Settings feedback: actual warning root zhHans/false/1240.0
+• Settings feedback: actual partial-candidate form zhHans/false/1240.0
+• Settings feedback: actual success root and About sheet zhHans/true/960.0
+• Settings feedback: actual warning root zhHans/true/960.0
+• Settings feedback: actual partial-candidate form zhHans/true/960.0
+• Settings feedback: actual success root and About sheet zhHans/true/1240.0
+• Settings feedback: actual warning root zhHans/true/1240.0
+• Settings feedback: actual partial-candidate form zhHans/true/1240.0
+• Settings feedback: actual success root and About sheet english/false/960.0
+• Settings feedback: actual warning root english/false/960.0
+• Settings feedback: actual partial-candidate form english/false/960.0
+• Settings feedback: actual success root and About sheet english/false/1240.0
+• Settings feedback: actual warning root english/false/1240.0
+• Settings feedback: actual partial-candidate form english/false/1240.0
+• Settings feedback: actual success root and About sheet english/true/960.0
+• Settings feedback: actual warning root english/true/960.0
+• Settings feedback: actual partial-candidate form english/true/960.0
+• Settings feedback: actual success root and About sheet english/true/1240.0
+• Settings feedback: actual warning root english/true/1240.0
+• Settings feedback: actual partial-candidate form english/true/1240.0
+• Settings feedback: mounted system error zhHans/false/960.0
+• Settings feedback: mounted system error zhHans/false/1240.0
+• Settings feedback: mounted system error zhHans/true/960.0
+• Settings feedback: mounted system error zhHans/true/1240.0
+• Settings feedback: mounted system error english/false/960.0
+• Settings feedback: mounted system error english/false/1240.0
+• Settings feedback: mounted system error english/true/960.0
+• Settings feedback: mounted system error english/true/1240.0
+• Settings feedback: root to naming sheet zhHans/false/960.0
+• Settings feedback: root to naming sheet zhHans/false/1240.0
+• Settings feedback: root to naming sheet zhHans/true/960.0
+• Settings feedback: root to naming sheet zhHans/true/1240.0
+• Settings feedback: root to naming sheet english/false/960.0
+• Settings feedback: root to naming sheet english/false/1240.0
+• Settings feedback: root to naming sheet english/true/960.0
+• Settings feedback: root to naming sheet english/true/1240.0
+• Settings feedback: long selectable message false/false
+• Settings feedback: long selectable message false/true
+• Settings feedback: long selectable message true/false
+• Settings feedback: long selectable message true/true
+• Settings feedback: panel default isolation false
+• Settings feedback: panel default isolation true
+• Settings polish: update switch and sound headings zhHans/false/960.0
+• Settings polish: diagnostics keyboard route zhHans/false/960.0
+• Settings polish: update switch and sound headings zhHans/false/1240.0
+• Settings polish: diagnostics keyboard route zhHans/false/1240.0
+• Settings polish: update switch and sound headings zhHans/true/960.0
+• Settings polish: diagnostics keyboard route zhHans/true/960.0
+• Settings polish: update switch and sound headings zhHans/true/1240.0
+• Settings polish: diagnostics keyboard route zhHans/true/1240.0
+• Settings polish: update switch and sound headings english/false/960.0
+• Settings polish: diagnostics keyboard route english/false/960.0
+• Settings polish: update switch and sound headings english/false/1240.0
+• Settings polish: diagnostics keyboard route english/false/1240.0
+• Settings polish: update switch and sound headings english/true/960.0
+• Settings polish: diagnostics keyboard route english/true/960.0
+• Settings polish: update switch and sound headings english/true/1240.0
+• Settings polish: diagnostics keyboard route english/true/1240.0
+• Settings polish: destructive action progress clearActivity
+• Settings polish: destructive action progress clearLog
+Settings native polish: 368 checks, 0 failures

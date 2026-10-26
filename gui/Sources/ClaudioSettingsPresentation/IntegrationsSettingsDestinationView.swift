@@ -70,7 +70,11 @@ struct IntegrationsSettingsDestinationView: View {
                                 } else {
                                     if let agent = model.agent(for: facts.host) { agentRow(agent) }
                                     supportedReminders(facts)
-                                    Button(l10n.text(.integrationsAutoSoundScopes)) {
+                                    SettingsNavigationRow(
+                                        title: l10n.text(.integrationsAutoSoundScopes),
+                                        identifier:
+                                            "integrations.destination.manage-events.\(facts.host.rawValue)"
+                                    ) {
                                         onManageSoundScopes()
                                     }
                                     SettingsSectionCard(padding: 0) {
@@ -109,11 +113,11 @@ struct IntegrationsSettingsDestinationView: View {
                                 )
                                 .fixedSize(horizontal: false, vertical: true)
                             agentSections
-                            Button(
-                                l10n.text(.settingsDestinationUsage), action: onActivityDiagnostics
+                            SettingsNavigationRow(
+                                title: l10n.text(.settingsDestinationUsage),
+                                identifier: "integrations.destination.activity-diagnostics",
+                                action: onActivityDiagnostics
                             )
-                            .accessibilityIdentifier(
-                                "integrations.destination.activity-diagnostics")
                             Text(l10n.text(.integrationsAgentHint))
                                 .font(SettingsAppearance.font(.caption)).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)

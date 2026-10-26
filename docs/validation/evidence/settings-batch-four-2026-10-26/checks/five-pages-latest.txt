@@ -1,0 +1,15 @@
+Source: five-pages-latest.txt
+Original SHA-256: dd24f87ac8317734da61c75761c2c33e04dcb1fb1082b376080d206846c47d63
+Verbatim lines: 4-14 (only build output before the harness is omitted)
+
+GUI checks: foreground --five-page-settings-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Native settings shell: toolbar, source list and keyboard transaction
+• Native settings shell: later activity groups retain reading position
+• Native settings shell: ambiguous saved anchors use the relative fallback
+• Native settings shell: five pages and diagnostics layout combinations
+• Five-page settings native：About attaches to General and returns modal focus
+• Five-page settings native：workspace profile detail geometry
+• Five-page settings native：source connections link returns to workspace reading position
+• Five-page settings native：workspace creation explains sources and permits clearing all
+Five-page native: 903 checks, 0 failures

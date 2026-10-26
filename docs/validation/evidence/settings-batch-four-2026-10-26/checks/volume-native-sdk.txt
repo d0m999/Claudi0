@@ -1,0 +1,54 @@
+Source: volume-native-sdk.txt
+Original SHA-256: fd953d4c72629528ddfb0b492a1a4e0e765144a55cd2cde226d037d916592533
+Verbatim lines: 4-53 (only build output before the harness is omitted)
+
+GUI checks: foreground --mounted-lifecycle-contracts
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Mounted volume: settings percentage color false
+• Mounted volume: settings percentage color true
+• Mounted volume：生产 Panel 的输入、磁盘重基、隐藏冲刷与失败回滚
+• 声音实际生成表单：百炼准入同时约束生成和凭据入口
+• 声音原生流程：列表、五事件来源、附属表单与凭据返回
+• 声音原生生命周期：关闭表单继续生成，结果从记录入口恢复
+• 声音原生生命周期：持久草稿的 AI 首音发布不会被页面切换撤销
+• 声音原生候选：部分成功显示实际数量与已有许可说明
+• Settings executable deletion contract：controller 与 menu 不恢复第二 owner
+• Settings executable gallery：所有场景只经 target-owned production root mount
+• Settings native announcement adapter：deferred exact-head post/ack 与 key retry
+• Settings sound entrance session：首次默认、手选工作区与失效目标
+• Settings shared sound selection：已打开页面跟随面板切换并结束旧目标活动
+• Settings Sounds AI：面板换组保留包级凭据弹窗与候选试听
+• Settings shared sound selection：同目录配置修复后保留页面恢复可用
+• Settings shared sound selection：配置重读不替换显式失效深链
+• Settings panel workspace shortcut：同 UUID 换绑保留旧目录并定位不可用说明
+• Settings panel workspace shortcut：先读回磁盘再判断有效新目录
+• Settings mounted sound entrance：失效工作区显示重选入口
+• Settings session route：generic、explicit 与 repeated 请求保持单事务
+• Settings session rejection：invalid/stale 保留 requested destination 且零 target mutation
+• Settings integrations details：typed detailsHost 经 session 单事务，host 变更由 owner 清空
+• Settings session failure matrix：Surface、scope、pack、Event 均只发布 typed failure
+• Settings failed route：错误页卸载旧 lifecycle，后续 success/close 不重复 cleanup
+• Settings session event shortcut：未知 raw scope 可见且不授权 Global fallback
+• Settings session lifecycle：old inactive 先于 new active 且每次 route 只发布一次
+• Settings Sounds detail lifecycle：本地意图经 session 仲裁且离开 destination 重置
+• Settings sound pack deletion transition：只有本会话成功的删除才转换
+• Settings session：删除正在查看的声音包，此前失败 0 次
+• Settings session：删除正在查看的声音包，此前失败 1 次
+• Settings mounted root：visible explicit route 必须消费 emitted focus debt
+• Settings mounted Events：离开 destination 的 preview/AI cleanup 必须恰好一次
+• Settings Events AI generation：emitted tuple 必须签发当前 candidate adoption permit
+• Settings session close：Events transient cleanup 恰好一次且 close 幂等
+• Settings session announcement：key/active gate 与 post→exact ack 顺序
+• Settings session effects：event audibility 与 Calendar privacy 各走一次 typed seam
+• Settings platform effect wiring：reveal 与 copy 视图只经 typed seam
+• 刷新失败播报：快速重试返回相同失败时，逐次发布路径仍会再次调度
+• 刷新失败播报：订阅先于 SwiftUI 打开回调时合成一句
+• 刷新失败播报：打开摘要和首次提示合成一句，同一失败期间不重复
+• 刷新失败播报：隐藏时延后，首次可见时才说；被内容门禁挡住时不消费
+• 刷新失败播报：离开失败态后，相同文案的新失败仍需再播报
+• 双宿主面板播报：只消费已组合 header，并规范为一句完整播报
+• T17g【拼句】没有子句 → nil，绝不是一个孤零零的句号（空串 = 一次打断 VoiceOver 却什么都不说的 post）
+• T17g【去重器】同一次打开里，一句话的后缀不许再 post 一遍（那只会截断用户正在听的话）
+• T17g【去重器】跨两次打开重复同一句面板句，必须照说 —— 否则重开面板就是一片死寂
+• T17g【去重器】nil / 空串不 post，也不污染「刚说过什么」
+Mounted lifecycle contracts: 314 checks, 0 failures

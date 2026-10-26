@@ -11628,13 +11628,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Events & Sounds"
+            "value": "Workspace Sound Settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "前往事件与提示音"
+            "value": "工作区声音设置"
           }
         }
       }

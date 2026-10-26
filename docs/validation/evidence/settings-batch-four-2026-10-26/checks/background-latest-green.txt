@@ -1,0 +1,1516 @@
+Source: background-latest-green.txt
+Original SHA-256: e1289e62af5cc02e6091459a4d377798db1cdd00429c6ab6cfbd8f6cb2118751
+Verbatim lines: 5-1516 (only build output before the harness is omitted)
+
+GUI checks: background batch
+Foreground GUI checks: NOT RUN. Use --foreground when the desktop is available.
+• GUI harness: desktop access is explicit and invalid arguments fail closed
+• GUI harness: the actual batch dispatcher excludes foreground work by default
+• GUI harness: executable preflight cannot fall through into native execution
+• GUI harness: every focused entry point has a desktop-access classification
+• Shared writes：组合根的静音、切包、音量与编辑器竞争同一把 config.lock
+• Shared writes：同 UUID 换绑目录使旧目标拒写，显式重选只授权当前目标
+• Native regression composition：fixture 与 session 借用同一批核心 owner
+• Native regression composition：文件 defaults 使快捷键、作用域与偏好隔离并可重开
+• Native regression composition：未注入的画廊保持既有快捷键与 About 默认行为
+• Panel composition：隔离构造、类型化工厂与外部副作用边界
+• Panel composition：未绑定 router 时 refresh/action 仍发布到同一个 store
+• Panel composition：共享库刷新、作用域拒写、快捷键与可听性回调
+• Panel composition：刷新反馈由环境注入，模型强持工厂依赖
+• Panel composition：模型工厂失败向调用方传播
+• Review repair: removed and expired frozen rows expose refresh
+• Review repair: repeated diagnostics routing retains the shared freeze
+• Review repair: a reader reopened after privacy starts a new freeze
+• Review repair: banner cancellation cannot cancel another entrance
+• Review repair: pack drift stops the remaining preview sequence
+• Review repair: native adapter wiring
+• Claudio localization
+• About bundle facts are honest pure values
+• About diagnostic redacts rich host rows to closed semantic facts
+• About diagnostic production sources do not access sensitive domains
+• About bundled path validation rejects links, escapes, and wrong shapes
+• About behavior model maps injected copy, open, and Surface outcomes
+• About GUI exposes only ticket-scoped actions and visible failures
+• About resources have one repository source and a bundle assembly contract
+• About copied version information localizes unknown values
+• Login item adapter：覆盖全部投影状态
+• Login item adapter：首次读取和刷新只投影系统事实
+• Login item adapter：成功后采用返回事实，失败保留旧状态并可重试
+• Login item adapter：内嵌 helper 缺失错误保持原状态
+• Modern login item factory：注入调用覆盖注册、取消、恢复和错误
+• Legacy login item factory：只采用 launchd 注册事实并拒绝不一致结果
+• Login item projector：跨 Xcode toolchain 保持显式 MainActor Sendable closure
+• Production login item wiring：modern/legacy API 与 macOS 12 floor 完整
+• Login item 人工门禁：真实签名登录/重启与自动证据分离
+• Legacy LoginItem bundle validator：缺失和损坏必须失败关闭
+• 刷新失败播报：快速重试返回相同失败时，逐次发布路径仍会再次调度
+• 刷新失败播报：订阅先于 SwiftUI 打开回调时合成一句
+• 刷新失败播报：打开摘要和首次提示合成一句，同一失败期间不重复
+• 刷新失败播报：隐藏时延后，首次可见时才说；被内容门禁挡住时不消费
+• 刷新失败播报：离开失败态后，相同文案的新失败仍需再播报
+• 双宿主面板播报：只消费已组合 header，并规范为一句完整播报
+• T17g【拼句】没有子句 → nil，绝不是一个孤零零的句号（空串 = 一次打断 VoiceOver 却什么都不说的 post）
+• T17g【去重器】同一次打开里，一句话的后缀不许再 post 一遍（那只会截断用户正在听的话）
+• T17g【去重器】跨两次打开重复同一句面板句，必须照说 —— 否则重开面板就是一片死寂
+• T17g【去重器】nil / 空串不 post，也不污染「刚说过什么」
+• 本机 pre-RC：公开入口把全部 gate 绑定到同一 clean HEAD
+• 本机 pre-RC：输出目录 symlink 在删除旧报告前失败关闭
+• 本机输出目录：验证后替换父路径仍只操作已钉住目录
+• 本机输出目录：同路径重建普通目录仍视为身份已更换
+• 本机 pre-RC：报告 trap 不得删除替换后目录中的外部报告
+• 本机 pre-RC：继承错误 identity 仍必须先清理旧报告
+• 本机 pre-RC：跨 gate 替换普通目录必须保留首次身份
+• 本机 pre-RC：嵌套 dev-bundle 必须继承首次身份
+• dev-bundle：dist symlink 在清理旧 app 前失败关闭
+• dev-bundle：进入 dist 后替换父路径仍不写仓库外 app
+• 本机 pre-RC：贡献者文档只把报告描述为 pre-RC 证据
+• Bundled helper：真实 app bundle 定位，hasHelper=true
+• Bundled helper：真实 app bundle 定位，hasHelper=false
+• Factory Pack 组装只复制已批准选择
+• Factory Pack 组装拒绝复用非空目标目录
+• Factory Pack 组装拒绝带尾随路径分量的目标符号链接
+• Factory Pack 组装拒绝带尾随路径分量的源符号链接
+• Factory Pack 组装拒绝以换行结尾的源与目标符号链接
+• Factory Pack 组装拒绝以 .. 结尾的源与目标路径
+• Factory Pack 批准选择异常时失败关闭
+• 声音包选型板通过可执行状态 seam 覆盖完整候选与重置行为
+• release.yml 真的把 helper 放在 GUI 会去找的那个位置
+• 分发脚本对 Release GUI 与 helper 使用 -Osize 和 full LTO
+• CI 在 bundle 构建完成后保存 GUI SwiftPM 缓存
+• 体积优化合同跨行与参数调序仍会拒绝错误目标
+• full LTO 合同跨行与参数调序仍会拒绝错误目标和模式
+• Release 导出合同按 SwiftPM target 与配置绑定
+• HostIcons：SwiftPM、开发 bundle 与 arm64 release 都 fail closed 复制同一资源 bundle
+• dev/release 分发源包含 minimal-chime 1.1.0、第五音频与 CC0 台账
+• release-size 门禁：逐架构边界、别名、架构与 bundle 总量都 fail closed
+• release-size 默认预算与文档使用同一重基线
+• App 图标 icns 由品牌包素材派生且在仓库中
+• 开发 bundle 使用无 entitlement 的 ad-hoc 签名，release 保留生产 entitlement
+• release.yml 必须 Developer ID 签名、公证并失败关闭，不能回退 ad-hoc
+• RC dispatch 必须绑定单独授权、精确 main commit 与 0.1.0 输入
+• RC verifier 文档入口必须只从唯一验收账本读取 identity
+• RC 必须分别公证 app/DMG，并从最终挂载容器复验完整分发契约
+• 开发、tag、CLI、Info.plist、DMG 与 CI 共用同一版本契约
+• Homebrew cask 保持可选、签名分发且卸载不删除用户数据
+• 下载的 RC artifact 必须与 run、artifact、commit、版本、DMG 和 SHA-256 同时匹配
+• dev bundle signature verifier 拒绝 entitlement 与不可验证产物
+• release signature verifier 统一核对 authority、team、runtime 与 timestamp
+• T3 有限调用图：跨文件调度、非 func 写入及公开闭包逃逸分别报错
+• 扫描器：字符串字面量里的 `//` 不是注释起点（be332ff 那条恒真守卫真正想守的东西）
+• 扫描器：插值里的**嵌套字符串**不结束外层串（2f107b5 那条守卫全程沉默的洞）
+• 扫描器：插值里的括号要配平（第一个 `)` 不结束插值 —— 误判区内含 `//`）
+• 扫描器：嵌套插值 —— 插值栈不能是个标志位（误判区末尾挂一条真注释）
+• 扫描器：多行字符串里的插值 —— 插值内是**代码**，那里的块注释必须被剥掉
+• 扫描器：`\\(` **不是**插值起点 —— 而那个 `//` 必须落在假插值**内部**
+• 扫描器：真正的行尾注释仍然被剥掉（剥太少 → 负向断言假红 → 守卫被删）
+• 扫描器：整行 doc comment 里的 URL —— 不假红，也不吃掉下一行
+• 扫描器：转义引号不结束字符串（`"\" // …"` 里那个 `//` 仍在串内）
+• 扫描器：多行字符串里的 `//` 不截断，字符串结束之后的代码照常在
+• 扫描器：空字符串字面量 `""` 不把后面的代码吞掉
+• 扫描器：块注释被剥掉（`/* … */` 里的代码不算代码）
+• 扫描器：行结构保住（顺序断言靠它 —— notePanelHidden 必须在 guard 之前）
+• 扫描器：撞见 raw string 要**记一笔**，而不是安静地给出一份不可信的文本
+• 扫描器：扩展 regex 字面量 `#/…/#` 也要记一笔（它能含裸 `//`）
+• 扫描器：裸 regex 与除法分开，无法判别时显式记账
+• 扫描器：`hasPrefix("#")` **不是** raw string（守卫必须位置感知，否则它自己会假红）
+• 扫描器：结构性失步要记一笔 —— **四个** note 站点各一条 fixture，一个都不许漏
+• 扫描器：正常源码**不**记账（兜底不能假红 —— 假红的守卫会被删掉）
+• 扫描器：`callArguments` 认得空格形式 —— 四种写法切出**同一份**实参
+• 扫描器：`callArguments` 的两条边界 —— 换行不算调用、左词边界仍在
+• 围栏：`unmodeledConstructionShapes` 对每一类认不出的形状**各**记一笔（正向对照，有牙）
+• 围栏：`unmodeledConstructionShapes` 在正常源码上**不**记账（假红的守卫会被删掉）
+• `isInside` 按**路径分量**判：兄弟位逃逸挡得住，真子孙放得进（两侧都有牙）
+• 扫描器：`codeWithoutStringLiterals` 清空字符串**内容**、但界定符与插值里的代码原样留下
+• 扫描器：两个测试包里的哨兵区块**逐字节相同**（`/codex review 2f107b5` 的 P2）
+• 绊线（T3）：gui/Sources（两个 target，递归）里**每个**经 mutateManifestJSON 的文件，其导出写函数不带已知并发 token（黑名单，非完备）且逐个带 @MainActor；T12 PackRestore 的目录级发布另受同步/@MainActor/staging 守卫
+• ManifestBinding：完整读改写本体只能从 packs.lock 闭包内调用
+• 绊线（T3）内容围栏自证有牙：整条生产路径对子目录里的脏 manifest 写者必须真的开火
+• 绊线（T3）围栏消费边自证有牙：findings 必须真的变成红，一条都不许少（含生产实参向量）
+    ↓ 下面几行 ✗ 是这条 suite **故意**造的证据（空前缀向量（显式传 ""）），稍后撤回，不是回归
+  ✗ ClaudioGUI/Deep/DirtyThree.swift 的代码里出现了并发构造，命中 token：Task —— manifest.json 的读-改-写现在整段跑在 `~/.claudio/packs.lock` 里（`mutateManifestJSON(at:lockFile:_:)`），而这条腿守的是**那把锁的作用域**：`Task.detached { … write … }` / 改成 async 并在读与写之间插一个 `await` —— 两者都把真正的写**挪到锁释放之后**，锁当场形同虚设，而编译器一条诊断都不会给（`Data`/`URL` 都是 Sendable，`Data.write` 是 nonisolated；本轮实测：注入 `Task.detached` 包住那次 write，两个包都 Build complete、零警告）。锁与这条绊线不互相替代。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ ClaudioGUICore/DirtyTwo.swift 的导出写函数 `dirtyTwo` 没有 @MainActor 隔离（导出 1 个声明，带 @MainActor 的只有 0 个）—— manifest.json 的跨进程互斥已经交给 `~/.claudio/packs.lock`，而 @MainActor 守的是**进程内**那一半：少了它（或被标 nonisolated、或被一个同名重载洗白），这个写者就能被后台线程同步调用。删掉 `@MainActor` 是一次**放宽** —— 现存调用方本身都在主 actor 上，放宽后调用依然合法，**编译器零诊断**（本轮实测：删掉原语的 @MainActor，`swift build` 直接 Build complete）。编译器强制的是注解的*后果*，从不是注解的*存在*，所以这条绊线是它唯一的守卫。给它加回 @MainActor（PLAN-SOUND-MANAGER.md §2.1 / 4c「并发不变式」）。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ DirtyOne.swift 的代码里出现了并发构造，命中 token：async —— manifest.json 的读-改-写现在整段跑在 `~/.claudio/packs.lock` 里（`mutateManifestJSON(at:lockFile:_:)`），而这条腿守的是**那把锁的作用域**：`Task.detached { … write … }` / 改成 async 并在读与写之间插一个 `await` —— 两者都把真正的写**挪到锁释放之后**，锁当场形同虚设，而编译器一条诊断都不会给（`Data`/`URL` 都是 Sendable，`Data.write` 是 nonisolated；本轮实测：注入 `Task.detached` 包住那次 write，两个包都 Build complete、零警告）。锁与这条绊线不互相替代。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ DirtyOne.swift 的导出写函数 `dirtyOne` 没有 @MainActor 隔离（导出 1 个声明，带 @MainActor 的只有 0 个）—— manifest.json 的跨进程互斥已经交给 `~/.claudio/packs.lock`，而 @MainActor 守的是**进程内**那一半：少了它（或被标 nonisolated、或被一个同名重载洗白），这个写者就能被后台线程同步调用。删掉 `@MainActor` 是一次**放宽** —— 现存调用方本身都在主 actor 上，放宽后调用依然合法，**编译器零诊断**（本轮实测：删掉原语的 @MainActor，`swift build` 直接 Build complete）。编译器强制的是注解的*后果*，从不是注解的*存在*，所以这条绊线是它唯一的守卫。给它加回 @MainActor（PLAN-SOUND-MANAGER.md §2.1 / 4c「并发不变式」）。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ ClaudioGUI/Deep/DirtyThree.swift 的 manifest 跨文件调用链 `dirtyThree` 含并发构造：Task  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ ClaudioGUICore/DirtyTwo.swift 的 manifest 调用链导出函数 `dirtyTwo` 缺少 @MainActor  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ DirtyOne.swift 的 manifest 调用链导出函数 `dirtyOne` 缺少 @MainActor  (claudio_gui_tests/SourceScannerSuite.swift:800)
+    ↑ 以上 7 行 ✗ 是证据，已撤回
+    ↓ 下面几行 ✗ 是这条 suite **故意**造的证据（生产向量（pathPrefix 与真围栏逐字相同）），稍后撤回，不是回归
+  ✗ gui/Sources/ClaudioGUI/Deep/DirtyThree.swift 的代码里出现了并发构造，命中 token：Task —— manifest.json 的读-改-写现在整段跑在 `~/.claudio/packs.lock` 里（`mutateManifestJSON(at:lockFile:_:)`），而这条腿守的是**那把锁的作用域**：`Task.detached { … write … }` / 改成 async 并在读与写之间插一个 `await` —— 两者都把真正的写**挪到锁释放之后**，锁当场形同虚设，而编译器一条诊断都不会给（`Data`/`URL` 都是 Sendable，`Data.write` 是 nonisolated；本轮实测：注入 `Task.detached` 包住那次 write，两个包都 Build complete、零警告）。锁与这条绊线不互相替代。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/ClaudioGUICore/DirtyTwo.swift 的导出写函数 `dirtyTwo` 没有 @MainActor 隔离（导出 1 个声明，带 @MainActor 的只有 0 个）—— manifest.json 的跨进程互斥已经交给 `~/.claudio/packs.lock`，而 @MainActor 守的是**进程内**那一半：少了它（或被标 nonisolated、或被一个同名重载洗白），这个写者就能被后台线程同步调用。删掉 `@MainActor` 是一次**放宽** —— 现存调用方本身都在主 actor 上，放宽后调用依然合法，**编译器零诊断**（本轮实测：删掉原语的 @MainActor，`swift build` 直接 Build complete）。编译器强制的是注解的*后果*，从不是注解的*存在*，所以这条绊线是它唯一的守卫。给它加回 @MainActor（PLAN-SOUND-MANAGER.md §2.1 / 4c「并发不变式」）。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/DirtyOne.swift 的代码里出现了并发构造，命中 token：async —— manifest.json 的读-改-写现在整段跑在 `~/.claudio/packs.lock` 里（`mutateManifestJSON(at:lockFile:_:)`），而这条腿守的是**那把锁的作用域**：`Task.detached { … write … }` / 改成 async 并在读与写之间插一个 `await` —— 两者都把真正的写**挪到锁释放之后**，锁当场形同虚设，而编译器一条诊断都不会给（`Data`/`URL` 都是 Sendable，`Data.write` 是 nonisolated；本轮实测：注入 `Task.detached` 包住那次 write，两个包都 Build complete、零警告）。锁与这条绊线不互相替代。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/DirtyOne.swift 的导出写函数 `dirtyOne` 没有 @MainActor 隔离（导出 1 个声明，带 @MainActor 的只有 0 个）—— manifest.json 的跨进程互斥已经交给 `~/.claudio/packs.lock`，而 @MainActor 守的是**进程内**那一半：少了它（或被标 nonisolated、或被一个同名重载洗白），这个写者就能被后台线程同步调用。删掉 `@MainActor` 是一次**放宽** —— 现存调用方本身都在主 actor 上，放宽后调用依然合法，**编译器零诊断**（本轮实测：删掉原语的 @MainActor，`swift build` 直接 Build complete）。编译器强制的是注解的*后果*，从不是注解的*存在*，所以这条绊线是它唯一的守卫。给它加回 @MainActor（PLAN-SOUND-MANAGER.md §2.1 / 4c「并发不变式」）。  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/ClaudioGUI/Deep/DirtyThree.swift 的 manifest 跨文件调用链 `dirtyThree` 含并发构造：Task  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/ClaudioGUICore/DirtyTwo.swift 的 manifest 调用链导出函数 `dirtyTwo` 缺少 @MainActor  (claudio_gui_tests/SourceScannerSuite.swift:800)
+  ✗ gui/Sources/DirtyOne.swift 的 manifest 调用链导出函数 `dirtyOne` 缺少 @MainActor  (claudio_gui_tests/SourceScannerSuite.swift:800)
+    ↑ 以上 7 行 ✗ 是证据，已撤回
+• 绊线（T3）围栏消费边接线自证：生产调用点必须接在会消费的那个入口上
+• 绊线（T3）@MainActor 腿判定精度自证有牙：字符串不算注解、重载不互相洗白、多写者逐个查、非 public func 形状要喊（含生产实参向量）
+• 绊线（T3）围栏极性自证有牙：symlink 这种「枚举器看不进去」的东西必须变红，不是被静默跳过
+• 绊线（T3）围栏极性自证有牙之二：根目录不在 / 文件读不到 / 子树枚举出错，三种「无从判定」都得红
+• 绊线（T3）围栏极性自证有牙之三：属性读不到 / 判不出类型，两条 fail-closed 分支必须真的开火
+• 绊线（T3）并发 token 判据自证有牙：脏源码必须命中、清白必须放行、只在注释里提到不算
+• 绊线（T3）@MainActor 检查自证有牙：缺失→未隔离、存在→已隔离、隔壁函数的不算数
+• Event Notice：交互式面板失去 key window 时沿关闭路径收起
+• Event Notice：栈标签中性，各卡辅助功能按捕获记录与语言分流
+• Event Notice：executable 跨窗口接线转交 Settings restoration，重复交互不重捕获
+• T2 图形与横向字标是所有 UI 品牌入口的单一实现
+• T2 几何：旋转、横向组合落位与笔画是可以量出来的品牌包数值
+• T2 渲染：容器、字标在原生像素上成立
+• App 图标运行资产派生自 T2 品牌包，且不含旧品牌几何
+• 扫描器的前提：三个 GUI production targets 没有一处它自己不认识的构造
+• 主动播报出口按 surface 唯一：Panel、Integrations 与统一 Settings 各一个
+• PanelView 单作用域边界：无宿主探测，固定呈现 scope/报告/当前来源内容
+• 行内集成入口接线：选择器只转发宿主身份，typed route 提交留在 MenuBarController
+• config.lock 经 PanelAppComposition 灌进共享写者，PanelView 不持有任何锁
+• ClaudioGUI 只许一处生产 PanelView 构造点，且全 target 不得出现未锚定的锁
+• C1：MenuBarController 注入共享选择 owner，面板与设置消费同一事实
+• `AudioImportEnvironment.packsLockFile` 不许有默认值 —— 编译器执行「必须传」的那一半
+• 生产侧两处显式包锁各自锚到调用点 —— 它们换来了 lockLeaks 普查的两个豁免
+• 注入包锁的构造点全测试包只此一处 ——「唯一来源」这句散文的可执行版本
+• 生产侧 `AudioImportEnvironment(…)` 构造点**普查** ——「两个构造点」那句散文的可执行版本
+• ClaudioGUIApp.swift 的 AudioImportEnvironment(…) 必须显式传 factoryPacksDirectory —— 否则 builtinPackIDs 生产环境恒为空集
+• 锁转发的**编译期前提**：`mutateManifestJSON` 的 `lockFile:` 不许有默认值
+• ClaudioGUICore 的代码里一个字都不许出现 play 的去抖锁（两套绊线中间那条缝）
+• MenuBarController：Panel 关闭必须先发出隐藏信号，保证主音量冲刷
+• MenuBarController 里没有 Bundle.main —— 那次查找必须留在可测的核心里
+• PanelView：config 不可用时必须换态（渲染层接线的存在性；行为那半在 PanelConfigControllerSuite）
+• MasterVolumeRow：三个已作废/已实证的坑不许出现（step: / onDisappear / 任何动画入口）
+• MasterVolumeRow：popover 隐藏必须冲刷（D22/D37，复用既有 hideCount 信号，不新增 closeCount）
+• 声音包窗口：清除绑定只走窗口；面板恢复携带精确包与事件路由
+• 事件声音入口归还接线：onConfigureSound 把路由的事件身份传入 Settings 归还链路
+• 声音页拖放接线：受理身份先于 URL 装载固定，迟到回调经重验拒止
+• 生产面板事件行：旧版绑定详情来自共享矩阵并进入可见文案与 VoiceOver
+• 生产面板事件行：复用批准的 24pt 双波纹静音图标，不回退 SF Symbols
+• 生产面板事件行声音入口：形制锁在变体 D（mono 弱文字链接 + hover/焦点黏土），不回退系统 link 蓝
+• 全状态画廊：声音包窗口用生产视图覆盖复杂库与失败态，且预览不读用户磁盘
+• 三界面无障碍护栏：每个交互构造都有显式非空 Name 与稳定 identifier
+• Panel 固定退出入口：required onQuit 无默认值；实际 geometry/action 由挂载回归保护
+• 退出生命周期：SwiftUI 只发意图，唯一 composition root 正常 terminate 且不预关闭
+• 退出按钮 AX 与焦点：精确 label/hint/id、图标隐藏，quit 明确不是事件焦点
+• State Gallery：直接复用生产 PanelQuitFooter，覆盖双语固定紧凑布局
+• State Gallery：生产 Agent 面板覆盖双语固定紧凑布局与六个关键状态
+• 生产 Panel 固定紧凑布局，Settings 不再挂载 Display
+• PanelView：设置入口进入保留的统一 Settings session
+• 声音包窗口：完整映射菜单列出已有音频并经窗口 model 绑定；面板不消费 inventory
+• 声音包窗口：提示音卡片与映射控件使用统一全宽列，文件名不再推动试听按钮
+• T11：管理窗口孤儿行的删除是显式永久确认，分配与删除都接到窗口 model
+• T10：CoverageTrack 的 present 接事件色、missing 接 text-2，且真实行底是糖果盘 surface
+• 声音包窗口剩余动作：共享 picker/player、底部动作栏、异步身份与统一公告均接到生产视图
+• T12：管理窗口恢复出厂是内置包专属的显式替换确认，成功/失败告知都在窗口内可见
+• 任务开始事件：共享身份字形保持 paperplane.fill
+• Chat AX tracer wiring scanner：只接受直接 DEBUG region 内的真实代码
+• Chat AX tracer GUI wiring：owner、start 与 terminate 各自直接受 DEBUG 保护
+• Chat AX tracer allowlist：完整身份与独立 surface 摘要必须逐字匹配
+• Chat AX tracer surface 摘要：只接受固定 lowercase SHA-256，并只派生 Chat 检查要求
+• Chat AX tracer inspection candidates：异构 framework projection 独立 exact 命中
+• Chat AX tracer framework path：真实 Foundation 错误区分 missing 与 unreadable
+• Chat AX tracer code identity：运行与磁盘四次取样必须绑定同一签名
+• Chat AX tracer validation gate：同代只允许一个检查且迟到结果不能误杀新会话
+• Chat AX tracer validation deadline：并发 producer 只能有一个 winner
+• Chat AX tracer system query gate：所有 session 共用 single-flight lease
+• Chat AX tracer event query gate：每代只运行一个并合并最新 successor
+• Chat AX tracer event coordinator：后台 heartbeat 与 storm latest-wins
+• Chat AX tracer event coordinator：shared lease busy 只延后并可恢复
+• Chat AX tracer event coordinator：deferred retry 在 common run-loop mode 恢复
+• Chat AX tracer event coordinator：contention 总期限到期只失效一次
+• Chat AX tracer event coordinator：timeout 与 unreadable 只失效一次
+• Chat AX tracer event coordinator：stop/restart 丢弃旧 generation 结果
+• Chat AX tracer event coordinator：reentrant restart 不启动旧 successor
+• Chat AX tracer event coordinator：先 promote successor 再发布 reentrant callback
+• Chat AX tracer deadline：调用者预先取消时绝不启动 detached query
+• Chat AX tracer validation deadline：阻塞 sampler 超时且即时结果直达
+• Chat AX tracer surface canonicalization：固定 anchor vector 且任一结构漂移改摘要
+• Chat AX tracer event surface：callback lineage 必须绑定同一 Chat anchor/window
+• Chat AX tracer 属性边界：只暴露审查后的结构/状态元数据
+• Chat AX tracer window ordinal：只接受无损、非负的整数 CFNumber
+• Chat AX tracer 候选检测：脱敏正控恰好一次 submit/end，负控与重复零事件
+• Chat AX tracer 生命周期：默认关闭，且只在 GUI+显式启用+allowlist 命中时运行
+• Chat AX tracer debug 启动：三项显式输入缺一不可，普通环境保持关闭
+• Chat AX tracer release boundary：Core/GUI whole-file DEBUG 且无 public API
+• Chat AX tracer 系统边界：只用有界非正文 AX 事实且从不弹权限
+• Chat AX tracer 证据：fixture 走 observer→detector→受限 JSON 完整路径
+• Chat AX tracer evidence accumulator：高频 session 热路径与退出 finalization
+• sniffAudioFormat: recognizes every whitelisted format by its magic bytes
+• sniffAudioFormat: rejects unrelated content regardless of what it claims to be
+• sniffAudioFormat: an ftyp box WITHOUT a moov marker does not pass as .m4a
+• sniffAudioFormat: an ftyp box with a non-audio brand does not pass as .m4a
+• AI 提示音领域：生成请求只有描述与非采用上下文
+• AI 提示音领域：描述和最终名称分别做有界校验
+• AI 提示音领域：本地声音方案覆盖语音、动物、音效与混合声音
+• AI 提示音领域：台词中的声音词不改变纯语音路线
+• AI 提示音领域：provider-neutral compiler 生成三个有意差异的请求
+• AI 提示音领域：采用目标显式冻结 surface、Event 与 packID
+• AI 候选 VoiceOver：播放与停止动作共享本地化候选身份
+• AI 提示音 Provider registry：默认五个固定 profile 与 route-derived capability
+• AI 提示音 Provider registry：未知 profile 与被篡改的固定合同 fail closed
+• AI 提示音 Provider registry：fixture 可完整验证 gated SenseAudio 固定合同
+• AI 提示音 Provider registry：可选 asset policy 唯一决定四或五个固定 profile
+• AI 提示音 Provider registry：policy keys 精确等于 remote-assets profile 集合
+• AI 提示音 Provider registry：四个 profile 的 route、slot 与 policy 精确冻结
+• AI 提示音 request compiler：台词与用户 style 分离且公共请求无 HTTP 字段
+• AI 提示音 request compiler：三个语音变体保留同一用户 style 且指令各异
+• AI 提示音 request compiler：未知 profile、能力与 locale 在本地 fail closed
+• AI 提示音台词语法：缺引号、空引号和缺右引号都本地拒绝
+• AI 提示音 runtime：同一 factory 精确装配四或五个 generator 与 probe subset
+• AI 提示音 runtime：binding 缺失、重复或完整 profile 漂移时初始化失败
+• AI 提示音 runtime：真实 dispatcher/engine 覆盖五个 profile 且不 fallback
+• AI 提示音 runtime：关闭 gated profile 时偏好只读回落且不删除数据
+• AI 提示音 runtime：VM 作废后真实 dispatcher/engine 丢弃迟到结果
+• AI 提示音 transport：Foundation fallback 跟随剩余 route deadline，不重置预算
+• AI 提示音 unary transport：exact origin/path 后按 auth enum 注入且 request 不含 secret
+• AI 提示音 unary transport：注入配置不能夹带旧 auth 或 cookie
+• AI 提示音 unary transport：拒绝 origin/path 漂移与预注入认证 header
+• AI 提示音 unary transport：统一执行 status、MIME 与 streamed wire ceiling
+• AI 提示音 unary transport：inactivity timeout 与调用方 cancel 都终止在途任务
+• AI 提示音 unary/SSE transport：按绝对截止时间分类 Foundation timeout
+• AI 提示音 unary transport：长计算 POST 在响应头前只受 generation deadline
+• AI 提示音 unary transport：scheme/port/path 逐项 exact，远端下载 URL 无法扩权
+• AI 提示音 unary transport：redirect 在第二个请求前拒绝
+• AI 提示音 asset policy：只接受 exact HTTPS host/443 与正常资源 path
+• AI 提示音 asset fetch：GET 不带 credential/cookie/referer 且同 URL 有界重试
+• AI 提示音 asset fetch：真实 loader 只重试 transient/408/5xx 且最多一次
+• AI 提示音 asset fetch：429 只接受 Retry-After 1...5，其他 HTTP 不重试
+• AI 提示音 asset fetch：安全/MIME/size/credential 类错误永不重试
+• AI 提示音 asset fetch：未知 loader 错误归一为基础设施失败且不重试
+• AI 提示音 URLSession asset loader：拒绝 redirect/MIME/wire overflow
+• AI 提示音 URLSession asset loader：final URL、HTTP、MIME 与 wire 边界真实生效
+• AI 提示音 URLSession asset loader：相邻请求不继承认证、cookie 或 cache 状态
+• AI 提示音 asset fetch：already/in-flight/backoff/second-load cancel 统一映射
+• AI 提示音 URLSession asset loader：connection/inactivity/absolute deadline 均终止
+• AI 提示音 URLSession asset loader：绝对边界的 Foundation timeout 不降级为 transient
+• AI 提示音 asset fetch：过期 deadline 在 loader 前失败
+• AI 提示音 SSE parser：byte-by-byte 支持 LF/CRLF、空行与 callback 跨 JSON/Base64
+• AI 提示音 SSE parser：terminal 唯一且 EOF-before-terminal fail closed
+• AI 提示音 SSE parser：wire ceiling 与畸形 UTF-8 均失败关闭
+• AI 提示音 SSE transport：流式派发且仅在 validated boundary 注入 Bearer
+• AI 提示音 SSE transport：连接 inactivity 与调用方取消终止 stream
+• AI 提示音 SSE transport：慢消费者触发有界背压而非缓存完整 stream
+• AI 提示音 decoded ceilings：三家 wire/decoded 常量按 ticket 独立冻结
+• AI 提示音 hex decoder：合法跨字节值解码，奇数/非法/decoded oversize 拒绝
+• AI 提示音 Base64 decoder：跨任意 append 分片且 decoded ceiling 独立于 SSE wire
+• AI 提示音凭据：registry slot 直接复用 legacy account 并隔离地区
+• AI 提示音凭据：read-only profile probe 成功后才原子替换
+• AI 提示音凭据：probe 或 Keychain 失败保留旧 active
+• AI 提示音凭据：gated SenseAudio 只读 probe 使用独立 slot 并保留旧 key
+• AI 提示音凭据：一次性输入和 generation lease 的描述不泄漏
+• SenseAudio 本地凭据：ACL 查询和 staging 查询故障保旧值并清理
+• SenseAudio 本地凭据：staging 继承 ACL 时在写入字节前拒绝
+• SenseAudio 本地凭据：0600 文件拒绝 allow 与 deny 扩展 ACL，不改已有文件
+• SenseAudio 本地凭据：0700 目录上的扩展 ACL 必须拒绝且保留旧值
+• SenseAudio 本地凭据：缺失查询不写盘，重建实例可读取，替换与删除仅影响自身
+• SenseAudio 本地凭据：实际 manager 保存、重启与生成取用，不触碰 Keychain
+• SenseAudio 本地凭据：拒绝不安全文件与父目录，错误不包含路径或值
+• SenseAudio 本地凭据：如实披露存储与错误，不冒充 Keychain
+• 百炼本地配置：旧 Keychain 不可用不阻止显式保存新配置
+• 百炼本地配置：完整保存、重新装配、验证状态和权限失败保留旧配置
+• 百炼本地配置：不安全文件、损坏记录、staging 故障不覆盖旧值
+• 百炼本地配置：双语披露真实文件政策和恢复操作
+• ElevenLabs registry：四类能力与旧 Keychain account 只来自固定 profile
+• ElevenLabs adapter：只读 models 验证 key 与两个固定模型
+• ElevenLabs transport：只在构造 URLRequest 时注入 xi-api-key
+• ElevenLabs adapter：缺少任一必需模型时 key 不得被视为可用
+• ElevenLabs adapter：即使注入 transport 跟随了 redirect，最终 URL 变化仍失败关闭
+• ElevenLabs adapter：语音候选使用固定 voice/model/output，正文不夹带采用上下文
+• ElevenLabs adapter：纯音效使用 sound-generation 固定模型与有界时长
+• ElevenLabs adapter：speech/mixed/animal/soundEffect 逐项保持固定 route
+• ElevenLabs adapter：认证、额度、权限、限流和服务错误只返回脱敏分类
+• ElevenLabs adapter：成功状态仍拒绝 JSON/空音频，不信任 MIME
+• ElevenLabs adapter：统一 transport 的 MIME、大小、deadline 与取消错误稳定映射
+• ElevenLabs generation：真实 adapter 恰好三候选并经统一私有发布链
+• MiniMax registry：只开放固定 Mandarin speech profile
+• MiniMax probe：固定 Bearer POST /v1/get_voice 与 all body
+• MiniMax probe：非零 provider status、缺固定 voice 与畸形 JSON fail closed
+• MiniMax adapter：固定 model/voice/hex 与 32 kHz/128 kbps/mono MP3
+• MiniMax adapter：不支持的 modality/locale/过期 deadline 在网络前拒绝
+• MiniMax generation：能力与 locale 门禁先于 Keychain lease 和临时目录
+• MiniMax adapter：非零状态、畸形 JSON、空/奇数/非法 hex 全部拒绝
+• MiniMax adapter：声明格式冲突与 MP3 magic mismatch fail closed
+• MiniMax adapter：wire、envelope 与 decoded ceiling 分别执行
+• MiniMax adapter：认证、权限/额度、429、5xx、取消均为脱敏统一错误
+• MiniMax generation：统一 deadline 下顺序生成恰好三候选
+• MiniMax generation：第三候选失败时不发布 partial 并清理临时文件
+• 百炼：WorkspaceId 边界、声音类型与预算、旧选择迁移
+• 百炼：限定 OSS 的 HTTPS 转换保留签名且拒绝边界绕过
+• 百炼：同一 Keychain 记录编码与安全解码
+• 百炼：两模型推理权限只读检查
+• 百炼：Flash 新 SSE、中文与英文音色、风格实际发送、末包 URL 不下载
+• 百炼：Next 同步计算超过连接预算仍受原始生成 deadline 约束
+• 百炼：坏 SSE、空 PCM、超长、超限与终包违规均失败
+• 百炼：Next JSON、WAV 与下载违约；缺政策时零 POST
+• 百炼：四槽迁移、缺失、删除失败重试、重复启动、其他服务隔离
+• 百炼：配置原子替换、权限/写入失败保留旧配置、版本竞争拒绝迟到发布
+• 百炼：三候选完整成功、共享预算、零 429 重试与失败清理
+• SenseAudio SFX：资源合同违约立即整批失败，成功首项不得授权 partial
+• SenseAudio probe：固定 Bearer POST /v1/get_voice 并要求 system voice
+• SenseAudio probe：仅 HTTP 401 拒绝 key，业务失败、畸形响应与缺音色独立分类
+• SenseAudio probe：仅确认缺固定音色时显示音色文案，并按旧 Key 状态区分
+• SenseAudio TTS：同一固定 body 顺序 POST 三次并返回 numbered 候选
+• SenseAudio TTS：第 1/2/3 次失败均不重试可能计费的 POST
+• SenseAudio TTS：status、hex、metadata 与 MP3 magic 任一异常均拒绝
+• SenseAudio SFX：单次 native batch body，URL 预检后按 index 顺序下载
+• SenseAudio SFX：生成 POST 的 429/5xx/timeout/network 永不自动重试
+• SenseAudio SFX：最多三项六次 GET、共享 deadline 且严格串行
+• SenseAudio SFX：backoff 基础设施故障终止整批而非静默 partial
+• SenseAudio SFX：partial_success 与普通单项下载失败保留真实编号
+• SenseAudio SFX：声明 MP3 但实际为 WAV/AIFF 时只淘汰对应单项
+• SenseAudio SFX：未知 batch 状态、index/URL 冲突和越界 URL 整批拒绝
+• SenseAudio SFX：completed 单项声明缺失可降级，cancel/deadline 必须整批终止
+• SenseAudio→Engine：asset 401 整批失败，不污染 active credential
+• SenseAudio→Engine：remote complete 可本地降级 partial，zero 必须清理
+• SenseAudio→Engine：首项落盘后第二项 storage failure 整批清理
+• AI 提示音 candidate identity：ordinal 仅允许 1...3 且 styled 不伪造 numbered
+• AI 提示音 legacy adapter：styled 与 numbered policy 决定候选身份
+• AI 提示音 legacy adapter：整个候选集合最多消费一次 1...5 秒 429 retry
+• AI 提示音 legacy adapter：retry sleep 耗尽绝对预算后不得再次请求
+• AI 提示音 candidate-set engine：乱序 styled 响应排序后完整提交
+• AI 提示音 candidate-set engine：重复或错误语义 identity 整批拒绝并清理
+• AI 提示音 candidate-set engine：少于 route minimum 时不发布
+• AI 提示音 candidate-set engine：numbered route 可由本地验证降级为 partial
+• AI 提示音 candidate-set engine：本地有效项少于 minimum 时整批清理
+• AI 提示音生成：目录 prepare 后的错误由既有 owner 确定性清理
+• AI 提示音生成：目录 prepare 后取消会清理且不触发 provider
+• AI 提示音生成：profile、能力、locale 与台词门禁先于 key/network
+• AI 提示音生成：缺少 key 时不调用 provider、不创建候选
+• AI 提示音生成：顺序生成 A/B/C，三项校验后才返回私有临时文件
+• AI 提示音生成：第二个请求失败时第一个半成品也被清理
+• AI 提示音生成：坏格式和超时长都 fail closed 且不继续请求
+• AI 提示音生成：只有带安全 Retry-After 的 429 至多重试一次
+• AI 提示音生成：absolute deadline 取消在途 provider 且不发布 partial
+• AI 提示音生成：deadline 不等待失控 vault/provider 的迟到结果
+• AI 提示音生成：第三个 duration probe 越过 deadline 不得发布
+• AI 提示音生成：429 sleep 消耗同一预算，不能在 retry 时重置
+• AI 提示音生成：整次 generation 只有一个 429 retry 名额
+• AI 提示音生成：deferred lease 在完整三候选成功后只验证一次
+• AI 提示音生成：后续非 401 失败不提升 pending
+• AI 提示音生成：pending 401 不自动 fallback 到旧 key
+• AI 提示音生成：显式丢弃只删除对应 generation
+• AI 提示音 dispatcher：只把显式 profile 路由给对应 engine 并归还清理
+• AI 提示音 dispatcher：profile 集合或返回身份漂移时失败关闭
+• AI 提示音 dispatcher：gated registry 必须精确接入 SenseAudio 且不 fallback
+• AI 提示音 manifest：事件绑定与显示名在一次原子 RMW 中发布并保留未知字段
+• AI 提示音 manifest：可见名称后缀在合法 manifest 上不会饱和碰撞
+• AI 提示音 manifest：损坏 audio_names 时旧事件绑定一个字节都不改
+• AppUpdate：共享投影、重复检查、偏好不乐观伪写
+• AppUpdate：已有会话聚焦不等待新检查回调，可反复找回窗口
+• AppUpdate：后台提醒和权限会话聚焦保留当前投影
+• AppUpdate：DMG、只读卷、Translocation 与路径边界
+• 退出：等待采用事务，结束后重读风险，取消保留旧 app
+• 构建存储能力：预览标记由编译合同决定
+• 公开预览：Keychain Provider 全操作关闭、旧槽保留、本地存储隔离
+• 声音设置核心集成：持久草稿、本地预览字节、首次发布、改名与组选包隔离
+• 声音设置核心集成：目录包预览、发布、命名复制和未知元数据
+• 声音设置核心集成：历史首音、删除独立副本、完整来源 CAS
+• 声音包命名：跨存储竞争、宽度避重、历史同名和未改名无操作
+• 声音包命名：库中普通文件不阻断新建、复制或改名
+• 声音包导入：拒绝库无法发现的隐藏身份，并在发布边界复核
+• 声音试听：真实回调、旧播放隔离、互斥与系统输出相对增益
+• 生成退出判定：合并请求、重读状态、不重新发起任务
+• 生成记录：整批保存、幂等、重建、改名与独立 Trash
+• 生成记录：单条最后删除、损坏隔离和 Trash 失败恢复
+• 生成记录：发布结果不确定的幂等恢复、Trash 回滚失败与链接拒绝
+• 生成协调器：关表单继续同一任务、全局拒绝并发、保存后才恢复资格
+• 生成协调器：部分 Trash 失败保留剩余资产，仍阻止下一轮
+• 生成协调器：归档失败保留音频、门禁不能绕过、重试不访问 Provider
+• 生成协调器：取消隔离迟到成功，采用事务持有资产直到返回
+• 声音选用：首次匹配的兼容投影可接入，新选用不继承已关闭上下文
+• 声音选用：五类入口共享一次性上下文，刷新保留、离页永不复活
+• 声音选用：本机暂存迟到成功与失败均隔离，源文件保留
+• 声音选用：关闭先停止自身试听、释放暂存，重复旧关闭不停止接管者
+• 声音选用：UI 意图在创建异步 Task 前捕获来源身份
+• 声音选用：生产 interface 采用冻结字节，离页后在途事务仍结算且不覆盖新目标
+• 声音选用：历史管理借用相同暂存 seam，迟到读取不抢新试听
+• 声音选用：关闭生成表单继续归档，重开不继承旧候选或采用资格
+• AI 提示音状态层：生成中拒绝描述变动且原请求仍能完成
+• AI 提示音状态层：显式取消保留描述且迟到成功只能清理
+• AI 提示音状态层：只有 SenseAudio SFX 在点击入口冻结 180 秒 route budget
+• AI 提示音状态层：迟到的同 profile 状态读取不得覆盖新凭据 mutation
+• AI 提示音状态层：保存 key 保留描述且绝不自动触发计费生成
+• AI 提示音状态层：将 composition root 选择的 profile 原样传给生成器
+• AI 提示音状态层：生成拒绝后立即投影当前 profile 的 rejected 状态
+• AI 提示音状态层：候选完整就绪后才建议名称，改名不重新请求
+• AI 提示音状态层：修改声音描述立即作废并清理旧候选
+• AI 提示音状态层：采用成功后才进入 applied，并清理临时候选
+• AI 提示音状态层：采用失败保留候选以便恢复，旧完成态不得伪造
+• AI 提示音状态层：orphan 诚实可见且保留候选恢复路径
+• AI 提示音状态层：隐藏后的迟到 adoption 只清理 generation 不复活 UI
+• AI 提示音状态层：替换 key 失败时保留已配置状态与描述
+• AI 提示音状态层：切换 profile 保留后台生成并使未采用候选失效
+• AI 提示音状态层：profile 偏好只接受 allowlist 且不含 credential
+• AI 提示音包名称：去空白、64 字符上限与双语顺序
+• 声音页草稿名称状态：归一化后统一控制保存与采纳
+• AI 提示音包使用范围：Global 继承、Surface 覆盖与损坏配置分离
+• AI 提示音包资格：健康用户包与损坏配置解耦，内置/损坏/缺失包仍拒绝
+• AI 提示音路由：普通编辑与复制并应用保留不同意图及精确作用域
+• 声音页联网生成门：目标会话与健康可编辑包必须一致
+• 声音页缺声深链：加载时待定，ready 后定位包再打开事件
+• AI 提示音空组：取消只清理草稿，不创建可选声音包
+• AI 提示音草稿事务：音频与绑定先在隐藏树完成，再一次性发布并去除归属声明
+• AI 提示音草稿事务：发布前失败不暴露最终包
+• 已安装声音包复制：用户来源优先、保留未知字段并去除归属
+• 复制后应用失败：副本保留，且不自动重新生成
+• 声音页包级生成：配置损坏不阻断健康包或未发布草稿
+• 声音页包级生成：Surface 写入目标损坏仍可编辑独立健康包
+• AI 提示音草稿：关闭发生在导入末尾后仍不得发布
+• importAudioFile: oversize source is rejected with the exact byte counts, human message
+• importAudioFile: a source EXACTLY at the size cap imports; one byte over is rejected — the bounded read's cap edge
+• importAudioFile: a valid file larger than the 64 KiB read chunk imports byte-for-byte — exercises the multi-iteration bounded read
+• importAudioFile: a source that can't actually be read (a directory) is reported as .copyFailed, not misreported as .nonWhitelistFormat
+• importAudioFile: a SPECIAL (non-regular) source — a FIFO/named pipe — is opened without blocking (O_NONBLOCK) and refused by the fstat regular-file gate, never read (no hang, no unbounded read)
+• importAudioFile: a SPECIAL source that opens fine but is not a regular file — a character device (/dev/null) — is refused on the descriptor's real type, never read
+• importAudioFile: a source that does not exist at import time (e.g. a vanished NSItemProvider temp file) is rejected as .copyFailed, never crashes
+• importAudioFile: non-whitelist content is rejected regardless of its .mp3 extension
+• importAudioFile: path traversal via parent-escape is rejected
+• importAudioFile: path traversal via absolute-path is rejected
+• importAudioFile: path traversal via nul-byte is rejected
+• importAudioFile: path traversal via empty-name is rejected
+• importAudioFile: an unsafe packID (path traversal) is rejected before any pack directory is even touched
+• importAudioFile: a destination that is a symlink escaping the pack directory is rejected
+• importAudioFile: a SOURCE that is a symlink to a large file is rejected, never planted as a symlink in the pack dir, and never fully read into memory
+• importAudioFile: a SOURCE symlink small enough to pass the (bypassed) size check is still rejected, not silently copied as a symlink
+• importAudioFile: over-duration source is rejected with the exact seconds, human message
+• importAudioFile: an undeterminable duration (probe returns nil) is rejected too, fail-closed
+• importAudioFile: duration is probed on the validated copy's bytes, never by re-opening the original source
+• importAudioFile: a legal wav file copies into the user pack, surfaces filename
+• importAudioFile: a legal mp3 (id3) file copies into the user pack, surfaces filename
+• importAudioFile: a legal mp3 (frame sync) file copies into the user pack, surfaces filename
+• importAudioFile: a legal aiff file copies into the user pack, surfaces filename
+• importAudioFile: a legal m4a file copies into the user pack, surfaces filename
+• importAudioFile: a same-name import gets -2, preserves 中断了's bound bytes, and later collisions advance to -3
+• importAudioFile: a collision on a NAME_MAX filename truncates the stem and still imports uniquely
+• importAudioFile: an external symlink created after allocation remains untouched and forces the next suffix
+• importAudioFile: 分配后、锚定前出现同名符号链接时重试下一个名称
+• importAudioFile: pack directory replacement after allocation cannot redirect publication
+• importAudioFile: a same-name import beside an in-pack symlink creates -2 and leaves the link and its target untouched
+• importAudioFile: a same-name import beside a dangling in-pack symlink creates -2 and preserves the dangling link
+• importAudioFile: importing into a pack id in environment.builtinPackIDs is refused
+• importAudioFile: T6 decoupling — a pack id that exists ONLY in bundledPacksDirectory (not in builtinPackIDs) is no longer refused; it imports normally
+• importAudioFile: once a user copy of a same-id pack already exists, import proceeds normally
+• importAudioFile: a pack id with no bundled counterpart at all is never treated as a collision
+• importAudioFile: 包锁被占住时必须报 .lockBusy，且不许创建目录 / 写入任何文件
+• importAudioFile: 成功导入之后必须把包锁还回去（不许一直持有）
+• importAudioFiles: a mixed batch accepts the valid files and lists each rejection's reason
+• importAudioFiles: an all-valid batch accepts every file, rejects none
+• importAudioFiles: an all-invalid batch rejects every file, accepts none
+• CoverageState: previewEnabled is true ONLY for .present
+• CoverageState: entersDoctor is true ONLY for .broken
+• EventRow.eventActionOperable: .present + enabled is operable (the preview plays)
+• EventRow.eventActionOperable: .present + muted 仍可手工试听（静音只控制真实事件）
+• EventRow.eventActionOperable: .unmapped is NEVER operable, mute or not (试听 ▶ is permanently disabled — CoverageState.previewEnabled is false; ``PanelFocusTarget/eventSound(_:)`` is this row's actually-fixable, always-operable slot instead)
+• EventRow.eventActionOperable: .broken is NEVER operable, mute or not (same reason as .unmapped)
+• packCoverage: an event absent from the manifest reports .unmapped
+• packCoverage: an event mapped to an existing, contained file reports .present
+• packCoverage: an event mapped to a file that doesn't exist on disk reports .broken
+• packCoverage: an event mapped to a file resolving outside the pack dir (symlink escape) reports .broken, never .present
+• packCoverage: an event mapped to a filename that is an IN-PACK symlink whose target resolves INSIDE the pack dir reports .present
+• packCoverage: 一个名叫 stop.mp3 的**目录** → .broken，绝不是 .present（与 helper 的正规文件闸门对齐）
+• packCoverage: 一个名叫 stop.mp3 的 FIFO → .broken（`fileExists` 会说它在；`stat`+S_IFREG 不会）
+• packCoverage: covers all five current events, exactly once each
+• packCoverage: an unresolvable packID reports every event as .unmapped
+• packCoverage: an EMPTY packID (PanelConfigState.resolvedConfig's non-operational default) reports every event .unmapped, never crashes
+• packCoverage: a bundled-only pack (no user copy) resolves its coverage from the bundled root
+• packCoverage: a corrupt manifest.json reports every event as .unmapped, never crashes
+• packCoverage: enabled=false does not change the computed CoverageState (orthogonal axes)
+• packCoverage: an event absent from config.events defaults to enabled (opt-out design)
+• checkPackIntegrity: a mapped-but-missing file (the same shape CoverageState calls .broken) is reported by doctor as .incomplete
+• fixture 自证：注入的包锁必须**不可**从 `userPacksDirectory` 派生出来
+• bindEventToManifest: binding an unmapped event sets it, and recomputes to .present via packCoverage
+• bindEventToManifest: preserves unknown top-level keys (name/author/license/schema) and sibling events
+• bindEventToManifest: creates the `events` object when the manifest has none at all
+• bindEventToManifest: a malformed non-object `events` field (e.g. a JSON array) fails CLOSED — .manifestUnreadable, manifest.json left byte-for-byte unchanged
+• bindEventToManifest: rebinding an already-mapped event overwrites its filename
+• bindEventToManifest: an unresolvable packID is rejected as .packNotFound
+• bindEventToManifest: binding into a pack that exists ONLY as a bundled pack is refused
+• bindEventToManifest: a path-traversal filename is rejected as .unsafeFileName
+• bindEventToManifest: a destination filename that is a symlink escaping the pack dir is rejected as .unsafeFileName
+• bindEventToManifest: a safe filename that doesn't actually exist is rejected as .fileNotFound
+• bindEventToManifest: 一个名叫 stop.mp3 的**目录** → .fileNotFound，且一个字节都不写
+• bindEventToManifest: 一个名叫 stop.mp3 的 FIFO → .fileNotFound（`fileExists` 会说它在；`stat`+S_IFREG 不会）
+• bindEventToManifest: a MISSING manifest.json (pack dir exists, file present) is rejected as .manifestUnreadable
+• bindEventToManifest: a VALID-JSON but non-object top level (a JSON array) fails closed as .manifestUnreadable, file untouched
+• bindEventToManifest: a corrupt manifest.json is rejected as .manifestUnreadable
+• bindEventToManifest: an unknown top-level key holding a clean float (0.8) survives the RMW as raw bytes "0.8" — never JSONSerialization's dirty %.17g rendering
+• bindEventToManifest: an unknown top-level key holding a LARGE INTEGER survives the RMW byte-for-byte — never routed through Double, which would lose precision above 2^53
+• bindEventToManifest: a float NESTED INSIDE AN ARRAY under an unknown top-level key is also normalized cleanly — the recursion must reach into arrays, not just objects
+• bindEventToManifest: a manifest.json containing -1e400 (parses to -inf) is rejected as .failure(.writeFailed) WITHOUT aborting the process, and is left byte-for-byte untouched
+• bindEventToManifest: a write that genuinely can't land (pack directory made unwritable AFTER every read-side guard passes) is reported as .failure(.writeFailed)
+• importAudioFiles + bindEventToManifest: a successful import binds to the event
+• bindEventToManifest: a pack directory WITHOUT manifest.json rejects the bind as .manifestUnreadable and leaves the file untouched
+• bindEventToManifest: an `events` object holding a NON-STRING value ({"stop": 1}) fails closed — PackManifest could not decode the result, so the bind must not claim success
+• bindEventToManifest: a manifest with no valid top-level `id` (missing / non-string / empty) fails closed — PackManifest requires a non-empty string id
+• mutateManifestJSON: transform 能改**顶层**任意字段，不仅仅是 events —— forkPack（T6）改写顶层 id / 删 license 需要的正是这条
+• mutateManifestJSON: 交换后冲突保留已发布失败和外部恢复文件
+• mutateManifestJSON: 发布后包目录换位仍保留已发布失败
+• mutateManifestJSON: events 存在但不是 JSON 对象 → .manifestUnreadable，transform 从不被调用，字节不变
+• mutateManifestJSON: events 对象里出现非字符串取值 → .manifestUnreadable，transform 从不被调用，字节不变
+• mutateManifestJSON: 顶层 id 缺失 / 非字符串 / 空 → .manifestUnreadable，transform 从不被调用，字节不变
+• mutateManifestJSON: a MISSING manifest.json is rejected as .manifestUnreadable, transform never called
+• mutateManifestJSON: a manifest containing -1e400 (parses to -inf) is rejected as .writeFailed WITHOUT aborting, byte-for-byte untouched
+• clearEventBinding: 清除一个已绑定的 event → recompute 到 .unmapped，且文件仍在磁盘上
+• clearEventBinding: 清除一个本来就 unmapped 的 event → 幂等成功（events 里没有这个 key，以及 events 整个不存在两种子情形）
+• clearEventBinding: 保留未知顶层键（name/author/license/schema）与其它 sibling events
+• clearEventBinding: 一个无法解析的 packID → .packNotFound
+• clearEventBinding: 只存在于只读 bundled 包根的 pack 被拒绝为 .packNotFound，bundled 的 manifest 一字节不动
+• clearEventBinding 对比 broken：外部删文件 → doctor 报缺陷 + .broken；主动清除 → doctor .complete + .unmapped
+• 五个事件全部清空的三方回答同时钉死：doctor .complete / play 全部 .notReady / 面板包行 partial(0/5)，且五个音频文件全部原封不动
+• mutateManifestJSON：包锁被占住时 bind 必须报 .lockBusy，且磁盘一个字节都不许动
+• mutateManifestJSON：跨进程包锁争用与成功返回前写盘
+• mutateManifestJSON：成功跑完必须把锁还回去（不许一直持有 / 不许泄漏 fd）
+• clearEventBinding：与 bind 同等待遇 —— 锁被占住时也必须报 .lockBusy
+• full library synthesizes a selected broken placeholder for a missing selected_pack
+• starredPackDisplayIDs: absent defaults, explicit empty, disk intersection, de-duplication, and defensive cap
+• availablePacks: a complete pack (every declared file present) reports .complete
+• factoryIntegrity: clean built-in pack compares manifest and every declared file byte-for-byte
+• factoryIntegrity: manifest bytes or a changed declared file marks the row modified
+• factoryIntegrity: equal-size byte replacement is detected, not just a size change
+• factoryIntegrity: non-built-in packs and nil factory roots do not produce a warning
+• factoryIntegrity: missing or non-regular declared files fail closed
+• factoryIntegrity: nil factory root is honest even for a built-in-shaped fixture id
+• availablePacks: a pack missing 1-2 declared files reports .partial with the right count
+• availablePacks: an unmapped event + a declared-but-missing file — present == presentEvents.count
+• availablePacks: extra forward-compat event keys with missing files never push present below 0
+• availablePacks: a pack with a corrupt manifest.json reports .broken
+• availablePacks: a pack directory with NO manifest.json at all reports .broken
+• availablePacks: a manifest with no `name` field falls back to nil (the view renders the id)
+• availablePacks: a manifest declaring ZERO events reports .partial(present: 0, total: 5), never .complete
+• availablePacks: a stray regular FILE in the packs root is never listed as a pack
+• availablePacks: a user pack shadows a same-id bundled pack (user wins), only one card
+• availablePacks: a bundled-only pack (no user copy) still appears
+• availablePacks: a non-CC0 license does not set isCC0
+• availablePacks: cards are sorted by id, and a dot-prefixed scratch dir is excluded
+• availablePacks: an empty pack root reports no cards, never crashes
+• packCoverage: 按 packID 的入口 == 按已解码 manifest 的下层入口（薄包装，不是第二套逻辑）
+• availablePacks: 卡片的 presentEvents 仍逐个来自 packCoverage —— 不是 PackGallery 自己重算的一套
+• packRowTrailingSlot: exhaustive over the three PackCardState shapes
+• packRowTrailingSlot: agrees with real availablePacks() output, not just hand-built PackCardState literals
+• packRowMetaSlots: exhaustive over isCC0 × PackCardState
+• packRowMetaSlots: agrees with real availablePacks() output — a CC0 partial pack keeps both badges
+• 旧四事件声音包无需 schema 迁移即可加载，并明确显示 4/5 缺任务开始
+• packAudioFiles：只枚举包根直属正规音频，按真实文件名排序并标出未引用文件
+• packAudioFiles：引用判定服从文件系统真实大小写语义，不把大小写别名误报成孤儿
+• packAudioFiles：manifest 不可读时 fail closed，不提供可分配或可删除的伪孤儿列表
+• packAudioFiles/delete：包内外符号链接都不是可分配或可删除的正规音频行
+• deleteOrphanAudioFile：引用中的文件拒删；孤儿只在显式删除调用后消失
+• deleteOrphanAudioFile：陈旧孤儿快照不作数，删除时必须在锁内重读 manifest
+• deleteOrphanAudioFile：packs.lock 被占用时不运行任何删除
+• deleteOrphanAudioFile：内置包恒只读，即使用户目录里有可写副本也拒删
+• bindEventToManifest：复用包内既有音频绑定事件并转 present
+• AudioImportEnvironment.builtinPackIDs: nil factoryPacksDirectory ⇒ empty set
+• AudioImportEnvironment.builtinPackIDs: real subdirectories only — dot-prefixed dirs and plain files are excluded
+• nextForkPackID: no collision ⇒ <fromID>-copy
+• nextForkPackID: -copy taken ⇒ -copy-2, then -copy and -copy-2 both taken ⇒ -copy-3
+• nextForkPackID: checks at most occupied.count + 1 unique candidates
+• occupiedPackBasenames: files, directories, symlinks and hidden entries all reserve names
+• forkPack: success — new manifest id/name are rewritten, license/author removed, events and audio files preserved
+• forkPack: no `name` in the source manifest ⇒ the copy's name falls back to fromID
+• forkPack: terminal factory symlink is rejected before copy or external manifest mutation
+• forkPack: never removes a predictable PID staging path it did not create
+• forkPack: publish-time EEXIST is typed and never overwrites the occupier
+• forkPack: injected non-collision publish failure cleans staging and returns renameFailed
+• forkPack: refuses when userPacksDirectory/newID already exists — the source manifest's bytes are left completely untouched
+• forkPack: refuses an unsafe newID (path traversal) before any disk write
+• forkPack: refuses an unsafe fromID before any disk write
+• forkPack: missing factory source is rejected before staging
+• forkPack: a corrupt source manifest fails the mutateManifestJSON step — nothing non-dot-prefixed ever appears at the final path
+• forkPack: factoryPacksDirectory nil ⇒ .sourceUnavailable, before any disk write
+• structural: a pack id that exists ONLY under factoryPacksDirectory never appears in availablePacks() — factoryPacksDirectory never reaches resolvePackDirectory
+• restoreFactoryPack：即使已安装包可用也用出厂副本替换，原目录完整 salvage，恢复后重回 CC0
+• restoreFactoryPack：已存在的同名 salvage 永不覆盖，下一份顺延且两份用户数据都保留
+• restoreFactoryPack：salvage 后、rename 前失败时不暴露残包，旧目录仍完整且错误携带可告知路径
+• restoreFactoryPack：salvage 搬移失败会清 staging，用户旧目录保持原位且不伪造告知路径
+• restoreFactoryPack：目标缺失时仍从 factory 安装，且诚实返回无内容需要 salvage
+• restoreFactoryPack：unsafe id / 非内置 id 在任何磁盘写入前拒绝
+• restoreFactoryPack：factory symlink 不得被当拷贝源，安装目标保持原样
+• restoreFactoryPack：factory 内绝对音频 symlink 复制后会逃出 staging，必须在 salvage 前拒绝
+• restoreFactoryPack：factory 内相对音频 symlink 复制后仍留在包内，可以安全恢复
+• restoreFactoryPack：factory manifest/声明文件不完整时在 salvage 前失败，旧安装保持原位
+• restoreFactoryPack：目标是 symlink 时只搬链接本身，绝不触碰它指向的用户目录
+• User Sound Pack 删除：确认后在共享锁内移出库且保留完整目录
+• User Sound Pack 删除：active、built-in、不安全 ID 与 symlink 全部 fail closed
+• User Sound Pack 删除：默认组与任一工作区引用都阻止删除
+• User Sound Pack 删除：验证后路径被替换时不把替换项送进 Trash
+• User Sound Pack 删除：极端回滚失败信息按当前语言解析
+• User Sound Pack 删除：确认后新写入的 Global 引用在 config.lock 内复验
+• User Sound Pack 删除：config.lock 争用与畸形引用事实均 fail closed
+• User Sound Pack 删除：退役的损坏 Surface 覆盖不阻止删除
+• User Sound Pack 删除：packs.lock 争用时不执行废纸篓动作
+• User Sound Pack 删除：Release 测试 seam 保持 Xcode 16.4 Sendable 合同
+• Sounds 普通同作用域导航保留正在检查的包并读回配置
+• SoundPacks editor route：试听失败保留旧目录，激活时拒绝同 UUID 换绑
+• SoundPacks editor owner：Events 切包只在真实成功后刷新共享编辑器
+• SoundPacks gallery restore failure：retry status 与 model lifecycle 共享身份
+• SoundPacks editor owner：manifest 恢复能力绑定失败时包身份
+• Sound editor Events interface：投影语义资格与 opaque 试听 capability
+• Sound editor interface：一次 transition 只发布一个 coherent root
+• Sound editor interface：reentrant subscriber 不能让旧 root 覆盖新 root
+• Sound editor interface：duplicate terminal 不虚增 revision 或重签 capability
+• Sound editor interface：fresh missing 保留 typed route 并显示 stale failure
+• Sound editor presentation：inspection 与 active scope 是两个事实
+• Sound editor presentation：退役 Surface 覆盖不再构成声音包引用
+• Sound editor presentation：工作区引用不完整时不签发 Delete
+• Sound editor presentation：CC0 与 factory integrity 可直接渲染
+• Sound editor presentation：library lifecycle 与 failure reason 语义化且脱敏
+• Sound editor presentation：ready 库可显式刷新并保留组配置
+• Sound editor presentation：inventory failure 语义化且脱敏
+• Sound editor presentation：broken Event mapping 仍签 clear capability
+• Sound editor presentation：non-fresh previous 只签 target-free stop/retry
+• Sound editor presentation：inactive common slice 保留 installed identities
+• Sound editor presentation：视觉 status 与 announcement debt 生命周期分离
+• Sound editor presentation：空库明确区分 factory restore 与安全 root reveal
+• Sound editor actions：inspect A→B→A 使旧 capability 永久失效且零写入
+• Sound editor actions：use 同栈 accepted/busy/single-use，取消零写，成功零 scan
+• Sound editor actions：Surface use 只稀疏改目标 override 并保留 Global/unknown
+• Sound editor actions：assign 同栈 accepted/busy，落盘后 exact one refresh
+• Sound editor actions：clear noChange 零 refresh，重试成功仍保持同栈 busy
+• Sound editor actions：star 使用 lock-time CAS 保留外部 sibling
+• Sound editor actions：star cap/default/fifth/broken eligibility 只签真实能力
+• Sound editor confirmation：请求零写、confirm 单次消费、busy 同栈发布、公告成功才消费
+• Sound editor delete orphan：锁内 stale fact 是 noChange 且只观察 refresh 一次
+• Sound editor delete user：成功保留完整 tree 并只刷新 exact inactive pack
+• Sound editor delete user：rollback 失败保留 tree 并报告 changedDespiteFailure
+• Sound editor confirmation：scope failure 优先返回但仍单次消费
+• Sound editor confirmation：cancel 后 reissue 不复活旧 token
+• Sound editor ordering：invalidate-before-write 拒绝旧 terminal 并 exact follow-up
+• Sound editor restore：publish 前 noChange failure 零 completion refresh
+• Sound editor restore：salvage changedDespiteFailure 后 recovery retry 成功
+• Sound editor restore batch：partial/changedDespiteFailure 共存且 exact one refresh
+• Sound editor fork：成功发布隔离 user tree、exact refresh 与单一 compound announcement
+• Sound editor fork：EEXIST exhaustion 不覆盖 occupier 且零 fake refresh
+• Sound editor impact：assign packs.lock failure 保留 typed debt 且零主动 scan
+• Sound editor impact：fork 两次 EEXIST 后成功只为最终 published ID scan 一次
+• Sound editor impact：user delete 普通 trashFailed 回滚原 tree 且零主动 scan
+• Sound editor impact：isolationChangedRetained 保留 typed path 并 exact refresh
+• Sound editor impact：orphan packs.lock failure 保留旧 truth 且零主动 scan
+• Sound editor impact：retry publishFailed nil 保留既有 salvage 且零新 scan
+• Sound editor impact：retry 新 salvage 追加保留并 exact refresh 一次
+• Sound editor impact：restore batch all-success 只 scan 一次 exact attempted IDs
+• Sound editor impact：restore batch all-noChange 保留 exact failures 且零 scan
+• Sound editor DEBUG：transaction quiescence 等待 writer、shared scan 与 settle
+• Sound editor native target：installed empty pack 仍可签发目录 reveal
+• Sound editor native target：mapped preview 携带 shared URL 与 声音页相对增益 1.0
+• Sound editor native target：inventory direct regular file 可签发 reveal
+• Sound editor native target：escape symlink、broken mapping 与 missing pack 不签 target
+• Sound editor native target：下一次 observation 前消费旧 immutable fact
+• Sound editor native target：shared failure 换代使旧 action stale 且不重签 target
+• Sound editor perform：import+bind 消费 permit 且只刷新目标包一次
+• Sound editor perform：stale permit 在 I/O 前拒绝，A→B→A 不能复活
+• Sound editor perform：partial 保留 accepted/rejected 并只刷新一次
+• Sound editor perform：全部拒绝仍保留逐项原因且不写盘
+• Sound editor perform：A→B→A 发生在 import 中途时保留 orphan 与旧 binding
+• Sound editor perform：in-flight cancel 不伪造 rollback
+• Sound editor perform：serial queue 中尚未执行的 cancel 零写入零假刷新
+• Sound editor activity：cancelAction 必须取消真实 queued import
+• Sound editor perform：AI adoption 绑定 candidate generation 并 compound 刷新一次
+• Sound editor perform：AI adoption 经共享 coordinator 自动刷新现有 Panel
+• Sound editor activity：in-flight cancelAction 保留 adoption orphan 且不继续 bind
+• Sound editor perform：AI generation 在 import 前漂移时零 I/O 且 permit 已消费
+• Sound editor perform：AI generation A→B→A 在 import 前不能复活旧 permit
+• Sound editor perform：AI generation 在 final bind 前漂移会保留旧 binding 与 orphan
+• Sound editor perform：AI generation A→B→A 在 final bind 前仍是 orphan
+• Sound editor perform：scope failure 首次调用也必须消费 permit
+• Sound editor perform：identical activate 也必须使旧 permit stale
+• Sound editor perform：generic post-write cancel 的 typed outcome 禁止前台 follow-up
+• Sound editor perform：post-sample cancel 阻止 Event final bind
+• Sound editor perform：post-sample cancel 阻止 AI adoption final bind
+• Sound editor operation：乱序完成保持 stable ID、mode 与 announcement FIFO
+• Sound editor perform：包级 permit 与默认组配置选择独立
+• Sound editor presentation：built-in 与 shared user pack 不签 adoption permit
+• Import/bind transaction：三个 variant 的成功终态各只 settle 一次
+• Import/bind transaction：cancel-before-start 不写盘、不 finish scope
+• Import/bind transaction：cancel-mid-flight 按 variant 处理已落盘字节
+• Import/bind transaction：empty 结果按 variant 映射且保留逐项拒绝原因
+• Import/bind transaction：bind 失败的 typed 归因与 cleanup
+• Import/bind transaction：stale target 与 freshness 丢失 fail closed
+• Import/bind transaction：草稿 finalize 的 orphan stage 统一清理
+• Import/bind transaction：draft 与非 draft 的失败归因完全等价
+• [129-GAP-RED] O-01 empty/all-rejected 保持四平面 no-change 且不泄露绝对路径
+• [129-GAP-RED] import/adoption 在 source I/O 前刷新 shared observation 并拒绝消失目标
+• [129-GAP-RED] import/adoption final bind 以 actionEpoch A→B→A fail closed
+• [129-GAP-RED] import/adoption final bind 拒绝最新 shared snapshotRevision 漂移
+• [129-GAP-RED] adoption manifest lock failure 保留旧 binding/unknown 并报告 orphan
+• [129-GAP-RED] accepted sync action 在 writer 前遇到 A→B→A 必须拒绝
+• [129-ANN-RED] window open 形成可重试 semantic debt
+• [129-ANN-RED] inspection selection 形成独立 semantic debt
+• [129-ANN-RED] shared library loading→ready transition 保持 FIFO
+• [129-ANN-RED] failure status 抢占 notice，ack 后恢复较低优先级 head
+• [129-ANN-RED] 同 severity FIFO 与 exact-head acknowledgement
+• [129-ANN-RED] fork 保留精确成功信息且不重复 selection debt
+• [129-ANN-RED] restore success 保留既有 salvage 去向且不扩散其它路径
+• [129-ANN-RED] I-04 sibling package 可见 kind 但不能构造/恢复 payload
+• Sound editor native effects：picker 模式、permit 与取消保持一条 typed flow
+• Sound editor native effects：preview、stop 与 Finder 各 exact once
+• Sound editor native effects：drop 在 suspension 前取得独立 single-use permit
+• Sound editor native effects：foreground import follow-up exact once，取消仍消费 permit
+• Sound editor native effects：drop 无 provider 仍精确消费 owner permit
+• Sound editor native lifecycle：Settings close 与 Sounds disappear 共享一次 stop
+• Sound editor native effects：Events 只执行 owner-signed preview 且生命周期有序
+• Sound editor native effects：AI candidate 与 Events 共用 retained playback lifecycle
+• Sound editor local detail：磁盘移除原包后保留身份并聚焦不可用原因
+• Sound editor local detail：所用包缺失占位不能冒充空音频清单
+• Sound editor detail：fork applyFailure=false 精确结果定向过渡
+• Sound editor detail：copy applyFailure=false 精确结果定向过渡
+• Sound editor detail：copyAndApply applyFailure=false 精确结果定向过渡
+• Sound editor detail：copyAndApply applyFailure=true 精确结果定向过渡
+• Sound editor detail：离开原事件详情后迟到 copy 结果不得重定向新详情
+• Sound editor detail：写入开始前的新导航保留 owner 的陈旧操作拒绝
+• Sound editor detail：首个系统音成功发布草稿后保持捕获身份
+• Sound editor detail route：首次 pending 深链收敛后才完成一次导航
+• Sound editor view：compiled seam 只接受 owner presentation 与 native adapter
+• Sound editor gallery：compiled production interface 不需要用户路径
+• Sound editor overview：初始导航不抢统一设置标题焦点
+• Sound editor read-only deep link：缺声也定位目标事件
+• Sound editor stale workspace deep link：失效说明取得请求焦点
+• Sound editor focus：同一 route request 只推进一次，settlement 与重新打开仍推进
+• Sound editor gallery：真实 owner busy fixture 不执行 writer 仍发布写入中状态
+• EventMuteController()'s default lockFile is ClaudioPaths.configLockFile, never playLockFile
+• EventMuteController: setEnabled fails closed with .configMissing when config.json doesn't exist yet (D23 定稿① — it used to silently create one with an empty selected_pack; setEventEnabled no longer does that, see EventEnabledSuite.swift)
+• EventMuteController: setEnabled writes through and returns true, clearing lastError
+• EventMuteController: a corrupt config.json fails and records lastError
+• EventMuteController: a contended lock fails and records .lockBusy
+• EventMuteController: a second successful call after a failure clears the recorded error
+• MasterVolumeController()'s default lockFile is ClaudioPaths.configLockFile, never playLockFile
+• MasterVolumeController: setVolume writes through, returns the landed value, clearing lastError
+• MasterVolumeController: a missing config.json fails closed with .configMissing
+• MasterVolumeController: a corrupt config.json fails and records lastError
+• MasterVolumeController: a contended lock fails and records .lockBusy
+• MasterVolumeController: a second successful call after a failure clears the recorded error
+• previewVolume(for:): forwards masterVolume through AfplayVolume.clamped, in-range value unchanged
+• previewVolume(for:): default masterVolume forwards straight through
+• previewVolume(for:): defers clamping of out-of-range and non-finite values to AfplayVolume.clamped
+• FocusRequestCoordinator：issue 推进单调代次并携带精确目标，nil 表示默认焦点策略
+• FocusRequestCoordinator：每个代次只消费一次，陈旧或未来代次不得抢焦点
+• FocusRequestCoordinator：同步发布回调内可消费新代次及其精确目标
+• FocusRequestCoordinator：同步发布回调内取消后不得复活该请求
+• FocusRequestCoordinator：取消未消费请求与清除目标各有明确语义
+• FocusRequestCoordinator：与六个旧机制的去重语义等价
+• FocusRequestCoordinator：return-focus debt 按压入顺序交付、只消费一次、可整体清除
+• FocusApplicationTracker：首次、变化与强制各推进一次，未变投影不得重复抢焦点
+• 声音作用域浮层焦点：只列出当前可见的作用域
+• panelFocusOrder：Global 正常顺序为设置 → 近期提示 → 作用域 → 五行试听/静音 → 包选择 → 音量 → 退出
+• panelFirstFocusTarget：生产开局策略——归还目标优先，其次声音作用域，再退到首项
+• panelFocusOrder：WorkBuddy 未实现事件不产生试听或静音焦点
+• panelFocusOrder：缺失声音只移除试听，保留已实现事件静音
+• panelFocusOrder：主音量为零移除试听，不影响静音
+• panelFocusOrder：config recovery 位于作用域之后、事件之前
+• panelFocusOrder：needsPack 保留设置、近期提示、作用域、包选择与退出，禁用主音量
+• 刷新失败重试：焦点位于作用域之后、事件之前；消失时回到作用域
+• 写失败恢复：按钮位于主音量之后，消失时回到作用域
+• panelFocusAfterTopContentChange：错误原因文字变化不重置仍存在的控件焦点
+• panelFocusAfterTopContentChange：原本无焦点时内容发布不主动聚焦
+• panelFocusAfterTopContentChange：事件控件消失时优先恢复按钮，否则回到声音作用域
+• Native migration: malformed pack remains distinguishable from silent event mappings
+• Native migration: reader consumers never pause or reset the banner
+• Native migration: freeze, explicit refresh, stale actions and privacy
+• Native migration: banner failure and retry use the remaining reading budget
+• Native migration: opening a retained reminder cannot dismiss a newer banner
+• Native migration: sidebar, traversal and Escape have one order
+• Native migration: return context rejects missing scopes without a default write target
+• Native migration: invalid return and DEBUG isolation fail closed
+• Attention：普通事件各自四秒展示，不进入提醒历史
+• Attention：淡入中的新事件追加，当前条目不被替换或延长
+• Attention：淡出中新瞬时与待接手事件抢占旧展示
+• Attention：淡出中显式重开列表与详情失效旧任务
+• Attention：暂停交叠只恢复剩余时间，展开不会重置横幅倒计时
+• Attention：完整身份归并、版本冻结与陈旧动作拒绝
+• Attention：不完整/parent/未知主会话与不同项目安装独立保留
+• Attention：重复 UUID 不续期，旧观察不替换，冻结版本各自 TTL
+• Attention：同会话 watermark 拒绝缺失或无效观察的版本覆盖
+• Attention：Stop 不清，生产后续提交关闭，可信主会话严格后序才移除
+• Attention：0/1/5/6/50/51 容量，冻结详情保护与安全占位
+• Attention：容量压力也不能擦除正在阅读的横幅
+• Attention：静默不补播，锁屏与睡眠交叠，禁用和 epoch 隔离
+• Attention：不透明 ID 按字节区分，元数据淘汰不破坏仍保留的版本
+• Attention：Notification 原因与未实现 binding 的诚实分类
+• Attention：批量一次发布、持续到达徽标不饥饿、元数据有界且到期释放
+• Banner Stack：ABC 同屏、D 排队、下一提交合并级联，FIFO 补位
+• Banner Stack：展示与等待合计 50，拒收不淘汰 FIFO，提醒独立保留
+• Banner Stack：同提醒新版原位替换，重获四秒，旧动作与旧导航失效
+• Banner Stack：排队新版不占位，独立预算、全栈暂停与模态交叠
+• Banner Stack：小屏回队列保存预算，重新展示与重绘不重置
+• Banner Stack：首次实测不让位，入场中补位共享计划，回队后原地展示
+• Banner Stack：完整实测卡高选择前缀，队列受剩余高度限制
+• Banner Stack：纯动效计划、让位延迟、纱层与中途 Reduce Motion
+• Banner Stack：按动作保留反馈，关闭B不取消A，单在途原始三秒
+• Banner Stack：精确返回仅移除捕获版本，其他横幅与应用回退保留
+• Banner Stack：来源 OFF、TTL、静默、隐私包含队列退场与迟到回调
+• Banner Stack：新增队列文案双语、参数与注册
+• Banner Stack：迟到的旧提交不能启动或取消新展示批次
+• Stack presentation：零、一、三卡与 FIFO 未测量前项
+• Stack presentation：逐 k 队列两态、容量提示与剩余空间
+• Stack presentation：短队列自然高度不改变准入
+• Stack presentation：测量身份、A B A、乱序和非法回调
+• Stack presentation：新版自身预算、原位更新与无效旧版本
+• Stack presentation：几何挂起、回队及暂停原因并集
+• Stack presentation：原子发布、重复输入和订阅重入
+• Stack presentation：反馈重测与原始导航期限
+• Stack presentation：小数位置也提交，亚像素调整不启动让位
+• Stack presentation：同代次反馈乱序与原子方案校验
+• Stack presentation：输出重入改变几何仍暂停阅读
+• Stack presentation：输出订阅者重入隐私清空
+• Stack presentation：双订阅者不接收重入撤回后的旧输出
+• Stack presentation：关闭中间横幅与退场回收保留剩余安全几何
+• Stack presentation：隐私和撤回同步失效、退场高度
+• 自动集成状态：准备和真实 binding 回执分开，关闭意愿与接入配置分开
+• 通知 revision：旧消息可解码，缺失/非法 revision 拒收，复制和降级保留 revision
+• 关闭来源：收起横幅且拒绝迟到输入，保留冻结阅读、待接手和主动导航身份
+• Event Banner：共享年龄向下取整，中英文边界与长式
+• Event Banner：全部原因和瞬时事件使用行动文案，未知原因中性
+• Event Banner：只有可信目标的明确父会话绑定才使用返回父会话
+• Event Banner：正文、主操作和阅读器共用完整导航反馈投影
+• Event Banner：4秒采样、交叠暂停、版本替代与隐私期限
+• Source App：打开保留提醒、重复点击保护、失败和超时
+• Source App：版本、目标、期限、隐私、取消和代次变化阻止迟到激活
+• Source App adapter：真实实例激活、退出后重开、路径变化与迟到回调
+• Event Banner：chip 实际浅染底的正文与描边对比度
+• Event Notice：来源 App 失败就地反馈，成功不抢回焦点
+• Navigation：生产只有真实详情与有效 ID 复制能力
+• Navigation：双击只派发一次、三秒超时恢复、迟到确认不能移除
+• Navigation：新版本/epoch/能力代次使旧结果失效，只有 exactReturnConfirmed 移除
+• Navigation：瞬时项精确返回确认成功但不执行提醒移除
+• Navigation：复制如实反馈、陈旧 ID 不写入、隐私清空不改主动导出
+• Host navigation：证据独立解析、实例和版本绑定、无cwd/title猜测
+• Host navigation：applicationFallback的提醒与阅读语义
+• Host navigation：requestSent的提醒与阅读语义
+• Host navigation：failed的提醒与阅读语义
+• Host navigation：exactReturnConfirmed的提醒与阅读语义
+• Host navigation：取消/超时/新版本禁止迟到确认及应用回退
+• Host navigation：deadline先于延迟timer、预期焦点交接有明确阶段
+• Host navigation：回退共享截止时间，旧宿主回调不能覆盖回退
+• Host navigation：普通及待接手三类成功、失败重试和剩余阅读时间
+• Host navigation：入口代次检查、只有所属关闭可取消
+• Zed navigation：两个同项目terminal只打开来源应用，保留提醒和阅读预算
+• Zed navigation：应用重开沿用三秒截止时间，超时禁止迟到激活
+• System login navigation：Terminal和iTerm2仍绑定shell，保留原有路由
+• Zed managed：内核 peer、父链、启动身份和两层 TTY 同时复验
+• Zed managed：同项目两个会话接入唯一模型与生产协调器
+• Zed native bindings：默认 terminal 清屏键不可用于分屏导航
+• Zed native window：IPC 不确定结果必须读回具体窗口，仍受原期限约束
+• Zed managed：窗口、pane 与 tab 搜索必须由目标新回执确认
+• Zed managed：未注册的前窗口不能耗尽后窗口的焦点检查预算
+• Zed managed：后窗口隐藏分屏须在原预算内找到新回执
+• Zed managed：空编辑分屏的 tab 探测不能饿死相邻 terminal
+• Zed managed：窗口激活未恢复 terminal 焦点时须先探测 dock
+• Zed managed：三分屏中必须访问上方 terminal 的下方邻居
+• Zed managed：持续聚焦窗口仍须先搜索其隐藏 terminal
+• Zed managed：未安装方向配置仍支持后窗口的 tab 返回
+• Zed managed：旧回执、失焦、干预和预算耗尽都不能确认成功
+• Zed input：本应用按键和点击同步撤销资格，原事件仍交给应用
+• Zed input：仅忽略本请求自己派发的键盘事件；stop 移除监听
+• Zed input：本应用干预后不再激活窗口，不启动失败应用回退
+• tmux navigation：唯一client、内核实例、有界稳定paneID
+• IDE socket：私有发现、真实peerPID、有界帧和关闭清理
+• Navigation review：过期预算在Process.run前拒绝，包括排队后过期
+• Navigation review：焦点失效立即取消悬挂动作并发布cancelled
+• Navigation review：32条成批发布，慢解析保留余项并让出
+• Navigation review：准备任务上限、取消与epoch隔离
+• Navigation review：socket被新server占用时拒绝旧server证据
+• Attention timers：取消及释放 token 不保留30分钟闭包
+• Attention ingress：一千事件十秒，批次让出 MainActor、徽标有进展且无资源累积
+  synthetic stress: events=1000 duration=9.996s p95=3.260ms first-badge=100.305ms batches=1000
+• Attention ingress：容量128，隐私清空后旧队列不能回填
+• Manual preview: cross-surface claims, completion and old lifecycle isolation
+• Manual preview: failed starts, synchronous completion and pending cancellation
+• Manual preview sequence: gaps and late steps cannot steal playback
+• Manual preview: reopened source and explicit sequence-gap stop
+• Manual preview: retained Settings lifecycle preserves non-key playback
+• AI task surface: real phases and detached results
+• 作用域 Motion：提交不等待收起动画，重入在同一 gate 内拒绝
+• 声音作用域控件：生产组件接缝可编译且三类策略唯一
+• 声音作用域行：选择焦点与集成动作焦点共享整行状态
+• 声音作用域行：普通 hover 不移动 chevron，集成动作 hover/focus 才移动
+• 声音作用域行：selected 与 hover/focus 可并存且不覆盖选中身份
+• 声音作用域行：任一子按钮 pressed 都驱动统一的 0.985 回弹
+• 声音作用域行：Reduce Motion 保留静态焦点而取消几何变化
+• 声音作用域行：动效时长与 spring 参数保持合同
+• 声音作用域行：成功动作等回弹完成，Reduce Motion 下不引入延迟
+• 声音作用域菜单：不同控件连续激活只接受第一次
+• 声音作用域菜单：Reduce Motion 成功动作同步完成
+• 声音作用域菜单：宿主刷新移除目标后拒绝延迟选择写回
+• 声音作用域行：动画键只投影各自实际渲染事实
+• 声音作用域行：集成动作文字静止时仍使用主文字强调
+• 面板事件行声音入口：按包性质暴露路由与动词键，缺上下文不暴露入口
+• 面板焦点顺序：声音入口排在试听之前，缺省不制造 Tab stop
+• 声音页拖放：文件 URL 直接进入与选择面板一致的预览态，取消保留旧绑定
+• 声音页投影：按包可编辑性暴露事件行拖放可用性
+• 声音页拖放受理：URL 装载悬挂期间的上下文更替作废受理（ADR 0008 迟到结果隔离）
+• 事件入口的归还焦点身份：事件深链还给触发入口，其余 Sounds 路由还给作用域选择器
+• 事件与提示音路由：保留 Global/Surface，并为声音编辑携带同一作用域
+• 事件设置作用域：与面板同源过滤未连接 Surface，陈旧深链接保留可见失败
+• 试听全部：只消费 opaque Event capability，保持顺序并可取消
+• 声音作用域菜单：未取得视口测量时仍完整提供可见选项
+• 声音作用域菜单：最大字号按滚动视口剩余高度裁定选项区，不再为 footer 保留高度
+• 声音选择器只显示默认组与工作区，与来源状态无关
+• 行内集成入口：仅异常 Surface 行产生动作宿主，Global/已激活/未连接保持只读
+• 行内集成入口文案：动作 label 与选择摘要可区分，双语注册
+• 面板作用域文案：英文同样分离覆盖数与状态，不回退共享 readiness 文案
+• 面板作用域恢复：失效工作区保留身份，未知旧值显示默认组
+• WorkBuddy 五行：三项已实现，两项显式未实现
+• Codex 4/5：无原生事件的 StopFailure 不得伪装成 claudi0 事件 ID
+• Global 行使用 claudi0 事件 ID 与全局默认，不伪造宿主事实
+• 事件可用性：缺失声音只禁试听；主音量为零不禁静音；禁止写入时静音 fail closed
+• 默认组与工作区共用安全试听投影，事件自动静音不影响手工试听
+• 当前声音：事件行同时显示真实文件名与 AI 提示音名称
+• 能力格显式保留 support/implementation，视图无需从文案反推
+• 事件设置 selection：route/focus/preview/AI 生命周期单点收敛
+• 事件设置 selection：同步 subscriber 重入仍发布最终 coherent projection
+• 设置试听失败：点击后保留目标，换组清理，音量恢复只聚焦原组
+• 默认组锁忙重试：原值不变才显式提交，旧动作只消费一次
+• 默认组锁忙重试：外部改值或配置损坏均拒绝重放并给出原因
+• 切包与事件开关：读回已变化时不重放旧请求
+• 工作区锁忙重试：同一 ID 改绑目录不可写入新目标或默认组
+• 工作区适用来源：原列表变化后拒绝重放
+• 发布冲突的读回仍保留 typed 恢复事实
+• 冲突读回：不可用配置保留 typed 失败，不宣称已读回
+• 删除锁忙重试：原目标重新确认，不复用已消费请求
+• 删除锁忙重试：同一 ID 改绑目录时明确拒绝旧目标
+• 删除发布冲突：关联恢复路径不会吞掉实际读回
+• 陈旧删除：读回原规则仍要求显式重新选择
+• 事件设置 detail：进入/返回经 selection 单写入，陈旧目标按 workspaceTarget 规则失效
+• 事件设置 detail：删除请求钉住工作区目标并保留发起页面
+• contrastRatio: sanity — pure black on pure white is the known 21:1 maximum
+• contrastRatio: identical colors have a ratio of exactly 1.0 (no contrast)
+• palette: clay-hover stays pinned to the documented warm interaction values
+• palette: T2 brand tokens stay on their documented surfaces
+• palette: Sound Scope opacity recipes preserve light/dark interaction contracts
+• contrast: icon-action hover foregrounds clear their real clay-soft backgrounds
+• settings: feedback icons clear the 3:1 non-text floor on real settings surfaces
+• contrastRatio: is symmetric — argument order does not matter
+• contrastRatio: a malformed hex string fails closed to 1.0, never crashes
+• contrastRatio: a malformed SECOND argument also fails closed to 1.0 (both operands are guarded)
+• contrastRatio: a `#`-prefixed hex parses identically to the bare form (documented behavior)
+• contrastRatio: a too-short hex (3-digit shorthand) fails closed rather than mis-parsing
+• contrast: text/panel dark is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text/panel light is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text/panel deepest light is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text-2/panel dark (muted 次要文字 + 报错文案) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text-2/panel light (muted 次要文字 + 报错文案) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text-2/panel deepest light is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text/surface dark (pack-row name) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text/surface light (pack-row name) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text-2/surface dark (pack-row status) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: text-2/surface light (pack-row status) is ≥ 4.5:1 (DESIGN.md line 127, WCAG AA normal text)
+• contrast: TaskStart dark glyph vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: TaskStart light glyph vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Stop dark glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Stop light glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: StopFailure dark glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: StopFailure light glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Notification dark glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Notification light glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: SubagentStop dark glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: SubagentStop light glyph vs surface-2 (pack 卡 2×2 网格底) is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: TaskStart dark glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: TaskStart light glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Stop dark glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Stop light glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: StopFailure dark glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: StopFailure light glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Notification dark glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: Notification light glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: SubagentStop dark glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: SubagentStop light glyph vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: error 真红 dark ICON vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: error 真红 light ICON vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: error 真红 dark ICON vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: error 真红 light ICON vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: warning 琥珀 dark ICON vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: warning 琥珀 light ICON vs panel is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: warning 琥珀 dark ICON vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: warning 琥珀 light ICON vs surface-2 is ≥ 3:1 (ENGINEERING.md 无障碍规格, WCAG 1.4.11 non-text)
+• contrast: 5-slot 覆盖轨 present dark（最弱 SubagentStop） vs surface is ≥ 3:1 (DESIGN.md「5-slot 覆盖轨」)
+• contrast: 5-slot 覆盖轨 present light（最弱 Notification） vs surface is ≥ 3:1 (DESIGN.md「5-slot 覆盖轨」)
+• contrast: 5-slot 覆盖轨 missing dark（text-2 描边 + 斜杠） vs surface is ≥ 3:1 (DESIGN.md「5-slot 覆盖轨」)
+• contrast: 5-slot 覆盖轨 missing light（text-2 描边 + 斜杠） vs surface is ≥ 3:1 (DESIGN.md「5-slot 覆盖轨」)
+• contract: 真红 error 亮色够不到正文 ≥4.5:1 —— 所以它只做图标，文案一律 text-2
+• contract: clay 亮色够不到正文 ≥4.5:1，所以 drop-zone hover 文案改用 text-2（2026-07-11 决议，AudioDropZoneView.promptLabel 已落地，绝不回退到 clay）
+• contract: 控件行的 clay 填充对面板过非文本 ≥3:1 —— 暗色专名一对（D25 ①，亮色见上方 drop-zone 那条）
+• contrast: event-row host indicator Claude dark is ≥ 3:1
+• contrast: event-row host indicator Claude light deepest is ≥ 3:1
+• contrast: event-row host indicator Codex dark is ≥ 3:1
+• contrast: event-row host indicator Codex light deepest is ≥ 3:1
+• contrast: event-row host indicator inactive dark at 75% is ≥ 3:1
+• contrast: event-row host indicator inactive light deepest at 75% is ≥ 3:1
+• compositedHex: alpha 0.5 的白覆在黑上 = 808080（gamma 空间逐通道混合，与 CoreGraphics 一致）
+• compositedHex: alpha 边界 —— 1.0 就是前景本身，0.0 就是背景本身
+• compositedHex: 失败关闭 —— 畸形 hex / 越界 alpha 一律 nil，绝不返回一个「看着合理」的错误颜色
+• compositedHex: 符号前缀 token（"+FFFFF"）也必须失败关闭 —— 与 contrastRatio 同一套守卫
+• compositedHex: 合法的 6 位 token 仍然正常合成（守卫不能把真颜色一起拒了）
+• contrast: TaskStart dark 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: TaskStart light · 糖果盘最深底 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: Stop dark 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: Stop light · 糖果盘最深底 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: StopFailure dark 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: StopFailure light · 糖果盘最深底 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: Notification dark 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: Notification light · 糖果盘最深底 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: SubagentStop dark 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• contrast: SubagentStop light · 糖果盘最深底 事件字形对「事件色 @15% 覆在 panel 上」的自染 tile 复合底 ≥ 3:1（glyphTile / previewButtonBody 真实渲染的那一对，WCAG 1.4.11）
+• 可见性护栏: TaskStart dark 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: TaskStart light · 糖果盘最深底 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: Stop dark 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: Stop light · 糖果盘最深底 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: StopFailure dark 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: StopFailure light · 糖果盘最深底 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: Notification dark 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: Notification light · 糖果盘最深底 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: SubagentStop dark 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 可见性护栏: SubagentStop light · 糖果盘最深底 的自染 tile 底对 panel ≥ 1.10:1 —— tile 必须真的看得见，不能被「量没了」
+• 反向护栏: surface-2 当 tile 底 = tile 消失 —— 亮色对 panel 仅 ~1.0006:1，远低于 1.10 的可见性下限
+• contrastRatio: a SIGN-prefixed 6-char token ("+FFFFF") fails closed to 1.0 — it parses as an integer, but it is not a color
+• contrastRatio: a MINUS-prefixed token ("-FFFFF") fails closed to 1.0
+• contrastRatio: a sign-prefixed token is rejected in the SECOND operand too
+• contrastRatio: a sign-prefixed token stays fail-closed even when `#`-prefixed ("#+FFFF" — the `#` strip must not open a second door)
+• contrastRatio: an all-hex 6-char token still parses normally (the digit sweep must not reject VALID colors)
+• 固定紧凑布局：Panel geometry 不再由字号或宽度偏好分支
+• 显示偏好删除：Panel 使用单一固定紧凑布局
+• 面板声音包四态：固定包 1 行/上限 4 行、无固定、无包与读取失败互斥
+• 声音包事实可用性：首次加载/硬失败不输出伪造计数，旧快照状态继续输出真值
+• 刷新失败提示：只有事件内容和带旧快照的 refreshFailed 显示
+• 按需音频清单：loading/ready/failed 与真实空清单保持可区分
+• 声音包窗口路由：首次 hydration 保留 editEvent，只有 ready 能证明目标缺失
+• 手工试听：事件静音不参与判定，主音量零、缺失、损坏均给明确原因
+• 集成恢复动作：每个能力状态都有唯一产品意图
+• 配置路径：只把真实 home 前缀缩写为波浪号
+• first-run prototype restores the hidden phase
+• first-run prototype marks the row that was heard
+• first-run prototype render output stays out of the evidence folder
+• first-run prototype keeps an existing render and saves the new one beside it
+• first-run prototype preserves the sidecar across repeated renders
+• first-run prototype accepts only a full-size panel bitmap
+• PanelAccessibility: needsPack × 零行的 label 明确指向「管理声音包…」，且不产生半截事件标题
+• PanelAccessibility: needsPack × 有包行的 label 指向「点一个声音包」，不误导用户先去管理
+• 宿主事件文案：五个 UI 名称统一为声音语义，不泄漏原生事件名
+• 宿主来源共享 presentation：产品 registry 永久出现，AX identity 只留在诊断层
+• 共享能力矩阵：严格由五个语义行和产品宿主单元组成，缺失映射保持 fail closed
+• 旧版 Claude 任务开始与通知：共享矩阵和面板详情保留逐绑定事实
+• 工作区通知静音：面板旧版绑定详情不借用默认组可听状态
+• 旧版事件状态：面板可见文字与 VoiceOver 不显示来源计数占位符
+• Accessibility Beta qualification：能力格和事件指示器共享双语限定语
+• 真实回执 presentation：只显示宿主、事件、时间与脱敏结果
+• 回执变化与播放结果：结构化 evidence 区分同毫秒摘要，六种结果均可脱敏显示
+• 共享反馈模型：右下 toast 的五秒边界、代次保护与 Reduce Motion 不变
+• 声音来源行：emitter 只产出类型化详情事实，不再预渲染文字
+• 声音来源行 localized seam：类型化详情枚举双语精确渲染
+• 声音来源行 localized seam：五态 readiness 双语渲染与 placeholder 同构
+• 声音来源行：端到端类型化事实经唯一 seam 双语渲染
+• 集成 destination Agent 行：固定消费 productVisibleCases 顺序，不混入 AX identity
+• 集成 destination 五态投影：Toggle、Badge 与连接状态附加动作穷举
+• 集成 destination 四行 typed contract：顺序、Surface 范围与动作归属固定
+• 集成 destination 共享事实：矩阵仍可供其他消费者使用，Agent 不读取 GUI 文件
+• 集成 destination 事件能力：五事件支持／实现／激活分别投影，保留已激活绑定
+• 集成 destination 历史：三来源独立传递完整回执，不提升当前激活
+• 集成 destination 历史分代与身份：缺少 installation 为 unknown，条目身份稳定且可区分
+• 集成 destination 历史读取状态：available、missing、damaged 与 unreadable 保真
+• 集成 destination 双语动作：可见标题只消费 typed action 与状态
+• 集成 destination 当前动作 projection：目标宿主稳定且 legacy repair 显示升级
+• 集成 destination feedback：五秒、代次、逐条回执与 Reduce Motion 语义保留
+• 集成 Agent 分组：桌面应用在前、命令行工具在后，组内保持 productVisibleCases 顺序
+• 集成 Agent 分组：空组不生成 section
+• 集成 Agent 分组标题：中英目录条目成对
+• 集成表面类型：host→kind 映射唯一归属，AX identity 归为桌面
+• Grok Build：命令行末行、2/5 公共覆盖与六条独立能力事实
+• Grok Build：授权需要你，提问意图只瞬时展示，错误保留中断提醒
+• Grok Build：沿用可信终端导航；仅打开应用时保留提醒
+• 新增来源呈现：接入机制、公共覆盖与实际绑定分别读取共享快照
+• 新增来源呈现：配置完成不制造回执，双语说明可靠事件边界
+• 集成 destination 偏好：missing、valid、unknown、AX 与 generic 恢复
+• 集成 destination reconcile：当前 Agent 被刷新移除时按产品顺序选择并持久化
+• 集成 destination route：有效 deep link 精确选中 Surface，stale/invalid 不持久化
+• 集成 destination Toggle：直接关闭、逐来源并行、保存完成前无乐观翻转
+• 集成 destination connect/clear：未连接 Toggle 执行 connect，清除确认归属第四行
+• 集成 destination outcome/error：manager failure、throw、store unavailable 都保留可见失败事实
+• 集成 destination receipt/feedback：回执变化逐条反馈，窗口生命周期限制主动播报
+• WorkBuddy Notification：4/5 能力、宿主 ready 与逐绑定回执相互独立
+• WorkBuddy 回执投影：宿主级回执、旧代次与错位 binding 均不能冒充 Notification
+• WorkBuddy 七态 fixture：仍由生产 manager presentation 进入同一 destination
+• WorkBuddy 七态 status：4/5 不被错误化，连接 Badge 和 Toggle 只由事实决定
+• WorkBuddy 七态 localization：英文与 zh-Hans 保留能力覆盖和诊断 literal
+• 集成 destination 焦点：Agent、Toggle、四行组与 toast 使用 typed target
+• WorkBuddy 七态焦点边界：切换 Agent 不改变四行顺序，也不把未实现事件加入焦点
+• HostIntegrationManagerBridge 首启：只 bootstrap 共享 runtime + inspect，绝不自动连接宿主
+• HostIntegrationManagerBridge 动作：repair 先修共享 runtime，再只重连目标 adapter
+• Codex repair：helper 更新失败时不改写宿主连接
+• WorkBuddy 动作：只改变连接事实，不创建或删除 Surface 声音覆盖
+• WorkBuddy Connect：缺少 Surface override 时也不隐式创建
+• HostIntegrationManagerBridge Codex 准备：无真实回执不推断授权要求
+• HostIntegrationManagerBridge 历史：bootstrap 与 refresh 读取各来源真实旧／当前回执
+• HostIntegrationManagerBridge 历史读取：损坏、不可读与缺失仍保留各来源事实
+• HostIntegrationManagerBridge 清除历史：逐来源读回真实空历史，其它来源与激活不变
+• HostIntegrationManagerBridge 清除历史锁忙：返回 failure 与真实历史，允许重试
+• HostIntegrationManagerBridge 动作失败：仍返回全产品新状态与 failure 反馈，不冻结另一侧
+• HostIntegrationManagerBridge 矩阵：真实 config + manifest 依次投影 audible、muted、missingSound
+• HostIntegrationManagerBridge uses the selected system sound for audibility
+• HostIntegrationManagerBridge 矩阵：每个 surface 消费自己的 effective pack
+• 集成 destination executable wiring：系统 adapter 留在 ClaudioGUI，核心 owner 由唯一组合根持有
+• 固定基线门禁：脚本、harness 与文档使用当前 Integration Destination suites
+• RetainedWindowHandbackTracker：Settings 移交延迟动作保留最新宿主与原面板目标
+• RetainedWindowHandbackTracker：只消费可见期间最近一次外部激活，关闭后不回填旧债务
+• Choreography：面板打开捕获 Settings key 归属与前台外部应用，显式关闭一次性归还
+• Choreography：点外或切换应用关闭绝不归还旧 Settings 焦点
+• Choreography：close-before-show——面板在时排队、关闭时交付同一份 presentation
+• Choreography：排队展示优先于旧 Settings 焦点债务且只交付一次
+• Choreography：面板未打开时立即呈现，显式 handback 赢过捕获的应用
+• Choreography：Settings 关闭回调把最新宿主与精确面板目标一起归还
+• Choreography：handback 应用解析——自身与陈旧 PID 都不得激活
+• Choreography：handback 拒绝 PID 复用及无法确认的应用实例
+• Choreography：状态栏转发点击保护只在三项当前事实同时成立时启动
+• loadPanelConfig: a missing config.json is .needsPack — not an error, the self-heal path (picking a pack) is open
+• loadPanelConfig: a corrupt config.json is .malformed with an actionable reason — never .needsPack (D23: these two used to be the same empty-pack fallback, hiding that self-heal is NOT open here)
+• loadPanelConfig: selected_pack is an empty string is .needsPack, same as a missing file
+• loadPanelConfig: a well-formed config.json decodes exactly into .operational
+• loadPanelConfig: selected_pack parses fine but master_volume is a string (读得动、写不动) — must be .malformed, never .operational (D23 定稿②'s whole reason for existing: the read axis alone would call this usable, and every click would then fail)
+• loadPanelConfig: content is fine but the parent directory is read-only → .unwritable, not .operational
+• loadPanelConfig: 一次刷新只消费一份有界配置快照，磁盘在读取后变化也不混合三份结果
+• inspectConfig: 同一次读取同时提供写判定、选包判定和已解码配置
+• panelConfigRecoveryTarget: 文件存在时定位文件，文件缺失时定位最近的现存目录
+• panelConfigRecoveryTarget: 悬空 config 链接定位链接节点本身
+• 恢复文件定位：只接受现存正规文件，不回退到目录或悬空链接
+• PanelConfigState.topContent: 单一分类——.operational→.events, .needsPack→.needsPack, .malformed/.unwritable→.configFailure，且 .malformed 与 .unwritable 折叠成同一张失败卡并原样带上 reason
+• PanelTopContent.showsEventContent / .hasConfigFailureNotice：两颗焦点投影的返回值——.events 独有 showsEventContent，.configFailure 独有 hasConfigFailureNotice，其余全 false
+• panelRefreshRoute：写成功 → 只重读 config（.configOnly），不扫包库
+• panelRefreshRoute：成功压过陈旧的 error —— 不许被上一次失败的残留改道
+• panelRefreshRoute：.lockBusy → 什么都不做（.noRefresh）—— 我们连 config.json 都没打开过
+• panelRefreshRoute：证明不了「没变」 → 重读 config（.configOnly），但不扫包库
+• panelRefreshRoute：.configMissing → 全量（.full）—— 自救的入口是画廊，它必须新鲜
+• packSwitchRefreshRoute：可证明什么也没揭示的（.lockBusy / .invalidPackID）→ .noRefresh
+• packSwitchRefreshRoute：证明不了「没变」 → 重读 config（.configOnly）
+• packSwitchRefreshRoute：.packNotFound → 全量（.full）—— 画廊里挂着一张幽灵卡
+• masterVolumeRefreshRoute：写成功 → 只重读 config（.configOnly），不扫包库
+• masterVolumeRefreshRoute：成功压过陈旧的 error —— 不许被上一次失败的残留改道
+• masterVolumeRefreshRoute：.lockBusy → 什么都不做（.noRefresh）—— 我们连 config.json 都没打开过
+• masterVolumeRefreshRoute：证明不了「没变」→ 重读 config（.configOnly），但不扫包库
+• masterVolumeRefreshRoute：.configMissing → 全量（.full）—— 自救的入口是画廊，它必须新鲜
+• 整条链：config.json 不存在 → EventMuteController 记下 .configMissing → 路由必须是 .full
+• 发布后失败的三个 config 写者都只重读配置，不扫描包库
+• SoundPacksWindow scope：Global/Surface 定向切包并保留未知字段，错误 scope 不误写 Global
+• SoundPacksWindow 无效 scope：整体损坏配置仍以未知 scope 对齐 UI 与 VoiceOver
+• SoundPacksWindow route：overview/editEvent 降级时始终保留 Surface
+• SoundPacksWindow 无效 scope：生产视图统一移除全部写焦点并禁用变更控件
+• SoundPacksRefreshCoordinator：completion 只发布 revision，不返回 caller refresh flag
+• SoundPacksRefreshCoordinator：窗口成功写只发 panel full reload
+• SoundPacksRefreshCoordinator：config-only 窗口写只重投影，不要求扫描包库
+• SoundPacksRefreshCoordinator：面板到窗口的 config 与磁盘变化保留扫描语义
+• SoundPacksRefreshCoordinator：窗口失败写不发布任何刷新
+• SoundPacksRefreshCoordinator：失败前已改变磁盘仍发布真实 full reload
+• shared bootstrap 完成：启动前已 hydration 的 PanelConfigController 必须 full reload 新磁盘真相
+• app activation：保留窗口重投影外部 config，且包扫描由生命周期入口单独负责
+• SoundPacksRefreshCoordinator：面板切包仅成功时通知窗口
+• SoundPacksRefreshCoordinator：面板包音频真实变化只刷新窗口内容，不强迫侧栏跟随 active pack
+• SoundPacksRefreshCoordinator：面板 config 真实变化只刷新窗口读模型
+• 共享 config fact：单 controller 发布 pack/Event/volume，选择经共享 owner 收敛
+• 集成取消静音：config-only revision 让保留的声音包窗口重读 enabled
+• PanelConfigController.switchPack 返回真实 outcome：成功刷窗口，失败不假刷
+• 共享 coordinator：popover 成功切包后窗口模型自动跟随；失败保持原状态
+• SoundPacksWindowModel：manifest 已发布后报冲突仍重读窗口并通知面板
+• SoundPacksWindowModel：安全拒删会重读确认期间漂移的音频清单，不发布假写刷新
+• SoundPacksWindowModel：分配孤儿复用 T3 bind，刷新事件行/孤儿状态并通知面板
+• SoundPacksWindowModel：manifest 读失败保留原操作和包身份供恢复
+• T11 双向刷新：面板复用包内音频后，已打开窗口不再保留陈旧孤儿；普通内容刷新不改侧栏选择
+• SoundPacksWindowModel：显式确认后的删除刷新孤儿列表；失败删除不假刷新
+• SoundPacksWindowModel：显式确认后的恢复会告知 salvage 路径、重回 CC0，并全量刷新面板
+• SoundPacksWindowModel：salvage 失败保持原包、显示原包身份且不发布假刷新
+• SoundPacksWindowModel：陈旧确认拒绝恢复；publish 失败显示 salvage 路径并刷新磁盘真相
+• SoundPacksWindowModel：恢复重试再次 salvage 后失败仍保留全部路径
+• SoundPacksWindowModel fork：factory bytes、顺序、config/star 零副作用与单次公告 token
+• SoundPacksWindowModel fork：publish EEXIST 只重试有限次数且不做下一次
+• SoundPacksWindowModel route：缺失包明确拒绝且不污染当前检查上下文
+• SoundPacksWindowModel：切包已发布后报冲突仍重读配置并通知面板
+• SoundPacksWindowModel use：only explicit action changes selected_pack and preserves stars
+• Panel master volume：成功落盘后及时刷新保留窗口的 preview config
+• SoundPacksWindowModel status：失败优先，同级按最新 revision 排序
+• SoundPacksWindowModel empty restore：all factory IDs attempted，partial failure aggregated，one refresh
+• SoundPacksWindowModel batch restore：success sibling cannot hide salvaged publish failure retry
+• SoundPacksWindowModel restore：单包失败后重选再成功仍吸收同 ID 全部 batch salvage
+• SoundPacksWindowModel restore：重试焦点严格投影最新 windowStatuses 视觉顺序
+• SoundPacksWindow 是普通 library target，只有两个 shipping executable 使用 @main
+• SoundPacks editor owner：raw model 只由单一 package owner 暴露 coherent interface
+• Panel Settings：AppKit 入口转发到单一窗口编排 owner
+• SoundPackLibrary composition root：只有真实 app bundle 配置必需 factory root
+• SoundPackLibrary composition root：生产只构造一个实例并接入双消费者与激活刷新
+• SoundPackLibrary 注入：面板与管理窗口共享一次扫描，构造过程不等待磁盘
+• SoundPacksWindowModel fork：刷新期间手动选包会清除延迟副本目标
+• SoundPackLibrary 按需清单：慢读取有独立 loading，不伪装成真实空包
+• SoundPackLibrary 按需清单：瞬时失败不进入会话缓存，成功结果才复用
+• SoundPackLibrary factory IDs：生产快照把内置只读事实送达两个消费者
+• SoundPackLibrary 五态：首次失败、重试与双消费者恢复
+• SoundPackLibrary 五态：后台刷新保留旧快照，失败后可再次重试
+• SoundPackLibrary 写后失效：同步 manifest 写保持原语不变，两侧异步收敛到新事实
+• SoundPackLibrary 生产写链：assign/delete/import/clear 精确失效并让双消费者收敛
+• SoundPackLibrary 生产写链：restore retry、fork 与 batch restore 精确失效
+• PanelConfigController：config-only 发现外部切到新包时升级后台库刷新
+• PanelConfigController：切到已有快照内的包只重投影，不重复扫描
+• SoundPackLibrary：在途观察请求合并为一次 follow-up，新订阅者重放最终值
+• SoundPackLibrary：显式新鲜度请求等待下一次终态而不是重放旧快照
+• SoundPackLibrary：显式新鲜度等待者加入在途刷新并只接收合并后的终态
+• SoundPacksWindowModel：延迟返回的旧刷新 waiter 不得覆盖更高 revision
+• SoundPackLibrary：写入失效使在途旧结果不可发布，并且最多追加一次扫描
+• SoundPackLibrary：通过早期 revision 检查后再失效，旧 ready 仍不得发布
+• SoundPackLibrary：通过早期 revision 检查后再失效，旧 failed 仍不得发布
+• SoundPackLibrary：空 packIDs 表示全量失效，不得退化成未失效增量扫描
+• SoundPackLibrary：刷新失败保留上一成功快照，不伪装为空库
+• SoundPackLibrary 失败边界：坏包降级为 broken，坏根目录才让整库失败
+• SoundPackLibrary 根目录错误：用户根 ENOENT 可为空，配置 factory 根消失保留旧快照
+• SoundPackLibrary manifest 边界：未知事件不进指纹，当前事件路径长度有硬上限
+• SoundPackLibrarySnapshot：磁盘事实与 config 投影正交
+• SoundPackLibrary 内存：全库扫描延迟 inventory，按需结果只保留四包 LRU
+• SoundPackLibrary 指纹：app 激活刷新能发现未经过本进程的 manifest 变化
+• SoundPackLibrary 稳定读次：扫描中原子替换 manifest 不得把旧事实绑定到新指纹
+• SoundPackLibrary transaction：idle noChange 不启动 scan
+• SoundPackLibrary transaction：idle changed 启动一次 exact-ID scan
+• manifest 已发布后报冲突须结束 mutation 并刷新共享声音包库
+• SoundPackLibrary transaction：old in-flight + noChange 只追加一次 follow-up
+• SoundPackLibrary transaction：old in-flight + changed 只追加一次 exact-union follow-up
+• SoundPackLibrary transaction：stale failure 不发布且不提前恢复 waiter
+• SoundPackLibrary transaction：overlapping tokens 任意 close order 只在 final close 扫一次
+• SoundPackLibrary transaction：foreign/replay token fail closed 且不能释放 fence
+• SoundPackLibrary transaction：refreshSnapshot waiter 仅在 final terminal 后恢复
+• 音频清单辅助功能：指派与删除值区分未绑定、单事件和旧重复绑定
+• SoundPacksWindow a11y：焦点序跟随视觉序，空态/陈旧选择不制造死焦点
+• SoundPacksWindow a11y：四档文字与真实详情宽度共同决定重排且不截名
+• SoundPacksWindow a11y：每次真实 hidden→visible 都能发出独立首焦点请求
+• SoundPacksWindow a11y：包级动作栏、空态 CTA 与视觉顺序完全一致
+• SoundPacksWindow a11y：事件菜单与试听按视觉序进入焦点，内置包只保留可用试听
+• SoundPacksWindow a11y：T12 恢复出厂是内置包独有的真焦点，位于 Finder 动作之后
+• SoundPacksWindow a11y：包行 Name/Value 区分当前、残缺、损坏与 license
+• SoundPacksWindow a11y：五条映射的 present/unmapped/broken 与静音轴逐字可辨
+• SoundPacksWindow a11y：窗口/选择/失败播报由窗口自己的策略完整成句
+• SoundPacksWindow a11y：音频操作错误保留为可随语言切换解析的语义文本
+• SoundPacksWindow a11y：新窗口 target 不得耦合任何面板专用 a11y 类型
+• SoundPacks editor accessibility：operation semantic renderer 穷尽动作且不泄露目标
+• T17 星标窗口状态源保留原始有效五颗星，而面板显示集独立防御性截为前四
+• T17 窗口取消手工第五颗星会经 setStarredPacks 写盘，并发布 PanelConfigController 的全量 packCards 重算
+• T17 星标 toggle：窗口陈旧时保留外部并发加入的 sibling
+• T17 加入第四颗星后窗口发布 full reload，面板 packCards 不得停在三行 stale 显示
+• T17 满四颗时未星标按钮显式禁用并给原因，取消一颗后恢复
+• T17 第一次取消默认内置星会物化显式空数组，不让默认星在下一次 reload 复活
+• T17 星标写失败保留窗口可见 reason，并将同一句 reason 交给窗口 VoiceOver 策略
+• 星标兼容：旧配置读写保留，但生产窗口不再提供失效的面板显示动作
+• PanelConfigController.selectedPackMetadata：当前包不在显示集时仍从该包 manifest 读到真名
+• SelectedPackMetadata.displayName：第三方包名压成单行并限制为 80 个 Character
+• SelectedPackMetadata.displayName：缺失 name 时回退 id 也必须单行化并截断
+• SelectedPackMetadata.displayName：完整字素边界之外另限 256 个 Unicode 标量
+• PanelConfigController.toggleMute 成功：翻转位落盘 + 读模型重算（钉死红队 #3 翻转、#2 可达性）
+• PanelConfigController.toggleMute 成功（真包）：翻**对**事件的位、不碰别的事件、coverage 原样带过（红队 round4）
+• PanelConfigController.toggleMute + 外部删除：reload() 必须把 configState 翻到 .needsPack（钉死红队 #1 执行）
+• PanelConfigController.toggleMute 成功走轻量刷新：afterFullReload 不被调（钉死路由分流）
+• PanelConfigController 轻量刷新：AI 提示音名称不因静音或 config-only 重投影丢失
+• PanelConfigController.reloadConfigOnly 遇到外部切包：升级为全量重载并 retarget 到新包
+• PanelConfigController.switchPack 失败：error 必须记进 packSwitchError，不许静默丢弃
+• PanelConfigController.switchPack 成功：reload 的全部五个读模型都反映新包 + 清错 + afterFullReload 收到新包
+• PanelConfigController.switchPack 失败（.packNotFound）：必须走全量 .full（afterFullReload 被调），不是轻量 .configOnly（覆盖率审计：mutation-tested 逮到的活缺口）
+• PanelConfigController.toggleMute 真失败：muteError 必须把非 .configMissing 的错误 republish 上来（红队 round3）
+• PanelConfigController.toggleMute 成功：muteError 必须被清成 nil（不许旧失败的红字残留）
+• [P1-a] toggleMute 撞上被外部改坏的 config：configState 必须翻到 .malformed
+• [P1-b] switchPack 撞上被外部改坏的 config：configState 必须翻到 .malformed
+• [P1-c] toggleMute 撞上写不动的目录：configState 必须翻到 .unwritable（不是 .malformed）
+• [P1-d] toggleMute 撞上 .lockFailed（目录写不动、锁文件还没建出来）：configState 必须翻到 .unwritable
+• [P1-d] switchPack 撞上 .lockFailed：同一格，另一条写路径
+• [反向对照-a] toggleMute 撞上 .lockBusy：不许 reload —— 哪怕磁盘上那份 config 此刻是坏的
+• [反向对照-b] switchPack 撞上 .lockBusy：不许 reload —— 同上，坏 config 在盘上做证
+• PanelConfigController.switchPack 冷启动：configFile 从不存在开始（.needsPack）→ 首次选包必须把 configState/config/eventRows/packCards 全部翻到 .operational
+• PanelConfigController.setMasterVolume 成功：落盘 + 返回落地值 + 读模型走轻量刷新（D27）
+• PanelConfigController.setMasterVolume + config 缺失：.configMissing 全量重路由到 .needsPack（D43）
+• PanelConfigController.setMasterVolume 撞上 .lockBusy：不许 reload（可证明什么也没揭示）
+• PanelConfigController.setMasterVolume 撞上被外部改坏的 config：configState 翻到 .malformed（轻量刷新）
+• PanelConfigController.setMasterVolume 成功：清掉上一次失败留下的 masterVolumeError（不许旧红字残留）
+• PanelConfigController surface profile：稀疏继承、定向写、全局音量与 reset 边界
+• 工作区来源勾选：零来源合法且只改工作区来源集合
+• 声音包编辑：工作区使用与复制应用复用现有写入口
+• 工作区编辑与复制应用拒绝同 UUID 换绑的目录
+• 工作区控制器：独立配置、失败原值、失效路由和延迟音量目标
+• 工作区展示：五项试听与宿主支持独立，回调不改变手动选择
+• C1 选择 owner：首启动显示默认组且绝不落盘，垃圾值规范化回 global
+• C1 选择 owner：显式选择持久化并钉定写目标，失效形态逐个失败关闭
+• C1 选择 owner：Surface 选择不持久化，快捷键路由三分支保留失败原因
+• C1 选择 owner：fixture defaults 结构隔离，默认 owner 绝不碰 .standard
+• C1 注入：controller 与 owner 是同一份投影，目录换绑失败关闭后显式重钉恢复
+• system sound selection errors localize the reason in the current app language
+• system sound presentation follows typed pack coverage
+• workspace preview follows its pack and detects retired system choices
+• Pack source writer upgrades schema and rejects normalized duplicate bindings
+• Pack source CAS compares full source across import and adoption races
+• Legacy duplicate mappings stay playable and can be repaired individually
+• Editor publishes first system sound, keeps groups unchanged, cancels empty drafts
+• Failed first system sound leaves no published pack or staging tree
+• Asynchronous import and adoption preserve a concurrent system sound change
+• First system sound publication joins the existing shared library transaction
+• Shared library refreshes system availability and all pack consumers
+• PanelConfigController：写后刷新保留错误，外部刷新清除过期错误
+• PanelConfigController：同一次失败的不同写者可并存，成功同类操作才清除自身错误
+• PanelConfigController：试听文件失效后全量刷新保留未解决的写入错误
+• Surface 声音问题：结构性损坏只在当前覆盖有效读回恢复后清除
+• Surface 声音问题：写失败不因健康读回而消失
+• PanelFocusCoordinator: starts at 0
+• PanelFocusCoordinator: requestFocus increments showCount
+• PanelFocusCoordinator: retained window 恢复精确触发控件，普通打开会清掉旧请求
+• PanelFocusCoordinator: each requestFocus call is a distinct, observable increment
+• PanelFocusCoordinator: hideCount 从 0 开始
+• PanelFocusCoordinator: notePanelHidden 每次都是一次独立可观察的递增
+• PanelFocusCoordinator: 显示与隐藏是两个独立的计数器，互不干扰
+• PanelFocusCoordinator: 焦点归还可重复计数，但关闭后可见性必须为 false
+• Settings preferences：语言模式身份与旧值迁移
+• Settings preferences：隔离 defaults suite、持久化与损坏回退
+• Settings preferences：退役 Display 路由与状态点值保持原值
+• Settings preferences：system locale 即时重投影且多消费者一致
+• Settings preferences：owner 保持 Foundation-only 且 locale 更新无业务重建
+• Dynamic Quiet refresh timer：common mode 在事件跟踪期间仍执行
+• Dynamic Quiet policy：两项默认关闭且只有对应显式 toggle-on 请求权限
+• Calendar EventKit seam：跨版本授权与 current-event query 可结果级注入
+• Calendar busy reducer：半开时间边界、全天和非 busy 确定性 fail safe
+• Dynamic Quiet reducer：Focus、Calendar 与组合原因共用一次 publication
+• Dynamic Quiet snapshot health：失败在短 TTL 内可见，过期后明确恢复
+• Notifications wiring：单一组合 owner、跨版本 EventKit 与 privacy boundary
+• Activity diagnostic log is bounded, redacted, and independently clearable
+• Activity diagnostics keeps activity projection independent from log clearing
+• Activity clear success cannot revive the pre-clear successful snapshot
+• Activity production wiring has no receipt-history usage projection
+• Settings：Settings handback 在激活 Claudio 前选择外部前台 app
+• Five-page settings：visible order is independent of compatibility routes
+• Five-page settings：legacy persisted values are projected without repair
+• Five-page settings：diagnostics retain real history and reading position
+• Five-page settings：list history preserves the shared sound scope
+• Five-page settings：About is a stamped modal attached to General
+• Five-page settings：workspace summaries derive complete independent profiles
+• Five-page settings：retired global keys have no registration or persistence consumer
+• Settings destinations：固定身份、顺序与双语名称
+• Settings routes：只携带稳定 ID，非法或陈旧目标不回退
+• Settings Sounds 详情路由：audio/service/panel 的稳定身份、校验与焦点让位
+• Settings Integrations route：detailsHost 身份、路径组件与 fail-closed 解析
+• Settings Sounds route：只在共享库 fresh ready 后判定陈旧 pack
+• Settings failed deep links：请求可见失败说明，普通导航保留标题焦点
+• Settings Sounds 工作区路由：身份、缺包回退与失效拒绝
+• Settings sound shell：inactive editor 通过一个 coherent projection 提供 route 事实
+• Settings sound shell：无关 editor publication 不重复唤醒订阅
+• Settings sound shell：host/editor transaction 与 announcement queue 保持同一投影
+• Settings shell：尺寸、单滚动、焦点序、DEBUG gallery 与生产通用页
+• Settings presentation target：direct dependencies、resources 与 DAG 固定
+• Settings presentation target：root 以下 child view 保持 module-local
+• Events & Sounds scope selector：完整真实作用域且不按 Product 分类
+• Settings presentation target：Release view tree 不携带 DEBUG recorder modifier
+• Settings presentation target：Release projection 删除 caller-specific metadata
+• Sounds publication：复制只接受晚于上次最大状态版本的结果
+• Sounds publication：非 Sounds 发布清除先前草稿观察
+• Sounds publication：重置后的迟到复制结果不替换新详情
+• Sound editor context：值相等继续包含完整目录目标及请求版本
+• Sound editor snapshot：保留的值与后续集合写入相互独立
+• 声音包入口离屏布局：合法长名称换行，收藏按钮完整显示，缩放后重新排版
+  zh-Hans/starred=false/960: name=(300.0, 178.0, 503.5, 32.0), favorite=(831.5, 190.0, 74.5, 24.0)
+  zh-Hans/starred=false/1240: name=(452.0, 178.0, 516.0, 32.0), favorite=(1001.5, 190.0, 74.5, 24.0)
+  zh-Hans/starred=false/960: name=(300.0, 178.0, 503.5, 32.0), favorite=(831.5, 190.0, 74.5, 24.0)
+  zh-Hans/starred=true/960: name=(300.0, 178.0, 490.5, 32.0), favorite=(818.5, 190.0, 87.5, 24.0)
+  zh-Hans/starred=true/1240: name=(452.0, 178.0, 503.5, 32.0), favorite=(988.5, 190.0, 87.5, 24.0)
+  zh-Hans/starred=true/960: name=(300.0, 178.0, 490.5, 32.0), favorite=(818.5, 190.0, 87.5, 24.0)
+  en/starred=false/960: name=(300.0, 178.0, 477.5, 32.0), favorite=(809.5, 190.0, 96.5, 24.0)
+  en/starred=false/1240: name=(452.0, 178.0, 490.5, 32.0), favorite=(979.5, 190.0, 96.5, 24.0)
+  en/starred=false/960: name=(300.0, 178.0, 477.5, 32.0), favorite=(809.5, 190.0, 96.5, 24.0)
+  en/starred=true/960: name=(300.0, 178.0, 464.5, 32.0), favorite=(801.5, 190.0, 104.5, 24.0)
+  en/starred=true/1240: name=(452.0, 178.0, 490.5, 32.0), favorite=(971.5, 190.0, 104.5, 24.0)
+  en/starred=true/960: name=(300.0, 178.0, 464.5, 32.0), favorite=(801.5, 190.0, 104.5, 24.0)
+• Preview capsule reserves readable localized stop titles
+• AI task failure retains the unavailable service reason
+• AI task surface: system group across phases false/false
+• AI task surface: system group across phases false/true
+• AI task surface: system group across phases true/false
+• AI task surface: system group across phases true/true
+• AI task surface: mounted content measurement survives identity changes
+• 原生验收偏好：临时根读回、独立实例和策略值均隔离
+• 设置迁移提示：沿用既有键且写入隔离偏好域
+• 设置登录项：显式重新检测采用实际系统状态且不发起写入
+• PreviewFixtures supplies the complete About state gallery values
+• PreviewFixtures.assertExhaustive() visits every case plus all-product scenarios
+• PreviewFixtures.eventRows covers every CoverageState case × enabled (true and false)
+• PreviewFixtures.eventRows covers every Event case (the gallery is the EXHAUSTIVE visual truth source — an unrendered event is an unreviewed event)
+• PreviewFixtures.packCards' coverage track renders every Event in BOTH present and absent styles (scoped to .track-resolving cards — .broken renders no track at all)
+• PreviewFixtures.masterVolumeStates covers both MasterVolumeState cases, exactly 6 fixtures (D38)
+• PreviewFixtures.packCards covers every PackCardState case × isSelected (true and false)
+• PreviewFixtures covers panel pack loading/four-result rendering plus 1-row/4-row density
+• PreviewFixtures.settingsRouteScenarios pins the fixed eight-slot route gallery
+• PreviewFixtures.settingsRouteFailureScenarios covers every visible failure case
+• PreviewFixtures.settingsExperienceScenarios pins five production destinations
+• PreviewFixtures.aiCueGalleryScenarios pins all profiles and visible lifecycle states
+• Finalized Events fixture pins Claude ElevenLabs verified prompt state
+• Finalized Panel fixture keeps Claude 5/5 truth and real unsupported coverage
+• PreviewFixtures.hostIntegrationScenarios pins the complete 10-state product roster
+• Host integration fixtures: every frame is a catalog-driven dynamic AudibilityMatrix
+• Host integration fixtures: 4/5 stays normal; awaiting, legacy and failures stay distinct
+• 规范原型：现行四个 profile 与路线能力保持同步
+• prototype compatibility boundary is synchronized across both plans
+• VolumeDragSession.init: baseline and draft both start at the given value, verbatim
+• VolumeDragSession.init: an out-of-range baseline is clamped, not stored verbatim
+• VolumeDragSession: 1 began + N dragged + 1 ended = 恰好 1 次 commit
+• VolumeDragSession: drag(to:) is ignored entirely unless begin() was called first
+• VolumeDragSession: 只 dragged 没 ended → flushPending() 必须吐出 commit（不是 0）
+• VolumeDragSession: flushPending() on a session with nothing pending returns nil, repeatedly
+• VolumeDragSession: 未拖动 → 0 commit
+• VolumeDragSession: baseline 0.42（不在网格上）未拖动 → 0 commit
+• VolumeDragSession: dragging back to the exact baseline leaves the session clean
+• VolumeDragSession: commitFailed() 后 draft == baseline
+• VolumeDragSession: commitSucceeded(_:) adopts the landed value as the new baseline AND draft
+• VolumeDragSession.snap: 0.42 → 0.40
+• VolumeDragSession.snap: an already-on-grid value is a fixed point (0.8 恒等)
+• VolumeDragSession.snap: out-of-range and non-finite input are clamped, never carried through
+• VolumeDragSession.snap: all 21 grid stops render as the same short literal a human would type (≤4 characters)
+• VolumeDragSession.rebase: 非拖动时采纳外部新值（baseline 与 draft 一起动）
+• VolumeDragSession.rebase: 拖动中不抢手（只有 baseline 动，draft 保持用户手里的值）
+• VolumeDragSession.rebase: clamps non-finite/out-of-range input like init does
+• VolumeDragSession.adjust: !isDragging 时必须 commit（对偶于 drag(to:) 被忽略）
+• VolumeDragSession.adjust: unchanged value → nil (rule 3 applies here too)
+• VolumeDragSession.adjust: ignored while a real drag is in flight (the mouse/trackpad owns draft)
+• VolumeDragSession.adjust: after commitSucceeded, a further identical adjust is a no-op
+• panelWriteFailures：三者皆 nil → 空列表
+• panelWriteFailures：muteError == .configMissing 被排除
+• panelWriteFailures：masterVolumeError == .configMissing 被排除
+• panelWriteFailures：muteError 的其余 case 一律保留（只有 .configMissing 是例外）
+• panelWriteFailures：masterVolumeError 的其余 case 一律保留（只有 .configMissing 是例外）
+• panelWriteFailures：packSwitchError（UseError）没有 .configMissing case——全部保留
+• panelWriteFailures：三个写者同时失败、文案互不相同 → 全部保留，互不顶替
+• panelWriteFailures：顺序稳定——静音、切包、主音量，与写者声明顺序一致
+• panelWriteFailures：同因去重——两个写者撞上同一份 .lockBusy 文案 → 只保留一条
+• panelWriteFailures：同因去重——三个写者全部撞上 .lockBusy → 只保留一条
+• panelWriteFailures：同因去重按 reason 精确匹配——理由不同的 configReadFailure 不合并
+• panelWriteFailures：去重不吞掉 .configMissing 排除之外的合法重复——保留去重后的先到先得顺序
+• panelWriteFailureItems：同因按 typed reason 去重，配置卡只吞掉完全相同的原因
+• panelWriteFailureItems：三个写者的已发布失败保留同一类型原因
+• panelWriteFailureRecoveryFiles：只列出现存恢复文件，并按首次出现顺序去重
+• 面板错误文案：三个写者的每类原因均映射为双语三句式
+• 面板错误文案：配置失败与 Surface 写失败按类型投影
+• 面板错误文案：仅配置位置修复类提供访达恢复入口
+• 面板错误文案：不同 typed reason 各自可见，恢复文件仍完整保留
+• Activity projection shares event counts, message semantics and capability coverage
+• Activity projection distinguishes unavailable, stale, partial and empty states
+• Activity bar preserves stable order and minimum keyboard hit widths
+• 提问意图：沿用 notification，仅瞬时展示即将提问和对应无障碍文字
+• 提问意图：不更新同会话需要你版本、观察水位或期限
+• 提问意图：静默不补播，明确输入和普通信息保持现有分类
+• 提问回执：旧通知、错误原生事件与安装代次不能激活新提问绑定
+• 多绑定展示：五事件覆盖，通知与提问分别展示当前回执
+• 开发观察提示：独立来源，无假 hook、回执身份或需要你
+• 开发观察提示：按运行会话请求去重，独立请求与新代次分别接受
+• 开发观察提示：隐私、关闭与无效观察阻断，静默不补播
+• 开发观察提示：不修改同会话宿主需要你与原期限
+• 开发观察提示：共享去重内存有界且按期限清除
+• Codex 开发观察：必须显式开启、指定单文件与一致会话 UUID
+• Codex 开发观察：历史不解析，新同步和异步调用均只表达意图
+• Codex 开发观察：精确名称、普通事件与未验证明确请求格式
+• Codex 开发观察：历史追加、未来时间与新运行均不回放
+• Codex 开发观察：半行、开始时残行、超时与隐私清空
+• Codex 开发观察：敏感重复键、类型与 JSON 格式失效均无输出
+• Codex 开发观察：容量、积压与超限以整批失败关闭
+• Codex 开发观察：截断、替换、改写、权限失败使代次失效
+• Codex 开发观察：符号链接和非常规文件不被当作 rollout
+• Settings history: cross-page traversal, repeat, branch and close
+• Settings history: bounded capacity, bookmarks and operation stamps
+• Settings history: stale target identities fail closed
+• Settings history: malformed input and modal navigation
+• Settings history: pending resolution and viewed pack use current configuration
+• Settings history: restoring a refreshed overview retains its viewed pack
+• Settings history: a newer inspection cancels a pending viewed pack recovery
+• Settings history: compatibility roots refer to the same visible position
+• Settings history: restoring the workspace list keeps the shared sound scope
+• Settings sidebar: wordmark ink aligns on 1x and 2x backing grids
+  Sidebar backing 1.0x/960.0: brand=32.0, icon=32.0, host=(22.0, 534.0, 134.0, 38.0)
+  Sidebar backing 1.0x/1240.0: brand=32.0, icon=32.0, host=(22.0, 534.0, 134.0, 38.0)
+  Sidebar backing 2.0x/960.0: brand=32.0, icon=32.0, host=(22.0, 534.0, 134.0, 38.0)
+  Sidebar backing 2.0x/1240.0: brand=32.0, icon=32.0, host=(22.0, 534.0, 134.0, 38.0)
+
+✓ background: all 15391 executed checks passed

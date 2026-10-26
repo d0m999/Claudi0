@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import ClaudioCore
 import ClaudioGUIComponents
 import ClaudioGUICore
 import ClaudioLocalization
@@ -8,6 +9,7 @@ import SwiftUI
 
 @MainActor
 func runSettingsFeedbackNativeSuites() async {
+    await runMountedSemanticFeedbackSuites()
     for language in ClaudioAppLanguage.allCases {
         for dark in [false, true] {
             for width: CGFloat in [960, 1240] {
@@ -20,7 +22,7 @@ func runSettingsFeedbackNativeSuites() async {
                     let probe = NativeSettingsShellProbe(
                         session: fixture.session, width: width, dark: dark)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     fixture.session.send(.setLoginItemEnabled(true))
                     await probe.settle()
                     expect(
@@ -66,7 +68,7 @@ func runSettingsFeedbackNativeSuites() async {
                     let probe = NativeSettingsShellProbe(
                         session: fixture.session, width: width, dark: dark)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     let add = settingsKeyboardAXElements(probe.shell.view).first {
                         $0.accessibilityIdentifier?() == "settings.sounds.new-pack"
                     }
@@ -190,6 +192,157 @@ func runSettingsFeedbackNativeSuites() async {
                 "Default public FailureRow keeps the panel text-2 body, not the settings label")
         }
     }
+}
+
+@MainActor
+private func runMountedSemanticFeedbackSuites() async {
+    for language in [ClaudioAppLanguage.zhHans, .english] {
+        for dark in [false, true] {
+            for width: CGFloat in [960, 1240] {
+                await suite(
+                    "Settings feedback: actual success root and About sheet \(language)/\(dark)/\(width)"
+                ) {
+                    let fixture = SettingsPresentationFixtures.generalLogin(
+                        language: language, route: .destination(.usage))
+                    let probe = NativeSettingsShellProbe(
+                        session: fixture.session, width: width, dark: dark)
+                    defer { probe.close() }
+                    guard await probe.presentAndSettle() else { return }
+                    fixture.activityDiagnostics.clearActivity()
+                    let completed = await settingsKeyboardWait {
+                        fixture.activityDiagnostics.feedback != nil
+                    }
+                    expect(
+                        completed, "The isolated clear operation returns actual success feedback")
+                    await probe.settle()
+                    _ = probe.scrollReading(to: probe.maximumReadingOffset ?? 0)
+                    await probe.settle()
+                    expect(
+                        feedbackPixelCount(
+                            in: probe.shell.view,
+                            color: NSColor(SettingsAppearance.success(dark ? .dark : .light))) > 3,
+                        "Root success icon uses the current appearance's semantic color")
+                    captureFeedback(
+                        probe.window, "success-root-\(language.rawValue)-\(dark)-\(Int(width))")
+                    fixture.session.send(.selectSidebar(.general))
+                    guard await probe.presentAndSettle() else { return }
+                    let about = settingsKeyboardAXElements(probe.shell.view).first {
+                        $0.accessibilityIdentifier?() == "settings.general.about"
+                    }
+                    expect(
+                        about?.accessibilityPerformPress?() == true, "Open the actual About sheet")
+                    let opened = await settingsKeyboardWait {
+                        probe.window.attachedSheet?.isKeyWindow == true
+                    }
+                    guard opened, let sheet = probe.window.attachedSheet,
+                        let content = sheet.contentView
+                    else {
+                        expect(false, "About is a key attached sheet"); return
+                    }
+                    fixture.aboutSettings.copyVersionInformation(language: language)
+                    await probe.settle()
+                    scrollFeedbackToEnd(content)
+                    await probe.settle()
+                    expect(
+                        feedbackPixelCount(
+                            in: content,
+                            color: NSColor(SettingsAppearance.success(dark ? .dark : .light))) > 3,
+                        "The actual About success icon inherits the settings appearance")
+                    expect(
+                        feedbackPixelCount(in: content, color: .secondaryLabelColor) > 20,
+                        "The attached form retains neutral secondary body text")
+                    captureFeedback(
+                        sheet, "success-sheet-\(language.rawValue)-\(dark)-\(Int(width))")
+                    settingsKeyboardPress(53, "\u{1b}", in: sheet)
+                    await probe.settle()
+                }
+                await suite("Settings feedback: actual warning root \(language)/\(dark)/\(width)") {
+                    let fixture = SettingsPresentationFixtures.generalLogin(
+                        language: language, route: .events(scope: .workspace(UUID()), event: nil))
+                    let probe = NativeSettingsShellProbe(
+                        session: fixture.session, width: width, dark: dark)
+                    defer { probe.close() }
+                    guard await probe.presentAndSettle() else { return }
+                    expect(
+                        fixture.session.state.routeResolution.failure != nil,
+                        "The stale workspace remains unavailable")
+                    expect(
+                        feedbackPixelCount(
+                            in: probe.shell.view,
+                            color: NSColor(SettingsAppearance.warning(dark ? .dark : .light))) > 3,
+                        "Root warning icon uses the current appearance's semantic color")
+                    expect(
+                        feedbackPixelCount(in: probe.shell.view, color: .secondaryLabelColor) > 20,
+                        "The warning body stays neutral")
+                    captureFeedback(
+                        probe.window, "warning-root-\(language.rawValue)-\(dark)-\(Int(width))")
+                }
+                await suite(
+                    "Settings feedback: actual partial-candidate form \(language)/\(dark)/\(width)"
+                ) {
+                    let fixture = SettingsPresentationFixtures.generalLogin(
+                        language: language, aiCueScenario: .senseAudioPartial)
+                    let probe = NativeSettingsShellProbe(
+                        session: fixture.session, width: width, dark: dark)
+                    defer { probe.close() }
+                    guard await probe.presentAndSettle() else { return }
+                    @MainActor func views(_ view: NSView) -> [NSView] {
+                        [view] + view.subviews.flatMap(views)
+                    }
+                    guard let event = fixture.aiCueViewModel.session?.event,
+                        let control = views(probe.shell.view).compactMap({ $0 as? NSPopUpButton })
+                            .first(where: {
+                                $0.accessibilityIdentifier()
+                                    == "settings.sounds.event.\(event.rawValue).source"
+                            }), let menu = control.menu,
+                        let index = menu.items.firstIndex(where: {
+                            $0.accessibilityIdentifier() == "settings.sounds.source.ai"
+                        })
+                    else {
+                        expect(false, "The actual event source menu exposes AI generation"); return
+                    }
+                    control.selectItem(at: index)
+                    expect(
+                        control.sendAction(control.action, to: control.target),
+                        "Choose AI through the native menu action")
+                    let opened = await settingsKeyboardWait {
+                        probe.window.attachedSheet?.isKeyWindow == true
+                    }
+                    guard opened, let sheet = probe.window.attachedSheet,
+                        let content = sheet.contentView
+                    else {
+                        expect(false, "The partial-candidate form attaches to Settings"); return
+                    }
+                    await probe.settle()
+                    let partial = settingsKeyboardAXElements(content).filter {
+                        $0.accessibilityIdentifier?() == "settings.sounds.ai.partial"
+                    }
+                    expect(!partial.isEmpty, "The current AI form mounts the partial result notice")
+                    expect(
+                        feedbackPixelCount(
+                            in: content,
+                            color: NSColor(SettingsAppearance.warning(dark ? .dark : .light))) > 3,
+                        "The partial-candidate warning has the semantic icon color")
+                    captureFeedback(
+                        sheet, "warning-sheet-\(language.rawValue)-\(dark)-\(Int(width))")
+                    settingsKeyboardPress(53, "\u{1b}", in: sheet)
+                    await probe.settle()
+                }
+            }
+        }
+    }
+}
+
+@MainActor
+private func scrollFeedbackToEnd(_ root: NSView) {
+    func views(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(views) }
+    guard
+        let scroll = views(root).compactMap({ $0 as? NSScrollView })
+            .max(by: { $0.bounds.height < $1.bounds.height }), let document = scroll.documentView
+    else { return }
+    scroll.contentView.scroll(
+        to: NSPoint(x: 0, y: max(0, document.bounds.height - scroll.contentView.bounds.height)))
+    scroll.reflectScrolledClipView(scroll.contentView)
 }
 
 @MainActor

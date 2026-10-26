@@ -88,6 +88,8 @@ struct GUIHarnessSelection {
         "--review-findings", "--gui-baseline-regressions", "--sounds-review-recovery",
         "--integration-automation-native", "--settings-notification-navigation",
         "--settings-navigation-native-focus", "--workspace-deletion-native-focus",
+        "--settings-disk-pack-native-focus",
+        "--settings-about-native-focus",
         "--ai-cue-native-focus", "--sound-editor-ai-lifecycle", "--settings-native-states",
         "--event-notice-reader", "--event-notice-presentation-live", "--event-notice-presentation",
         "--hit-targets", "--event-modal-lifecycle", "--event-reading-live", "--event-animation",
@@ -98,6 +100,7 @@ struct GUIHarnessSelection {
         "--settings-sounds-layout", "--settings-sounds-sheet-layout", "--mounted-panel-contracts",
         "--mounted-lifecycle-contracts", "--native-regression-composition",
         "--settings-polish-native", "--five-page-settings-native", "--five-page-forms-native",
+        "--ai-cue-animation-native",
         "--settings-navigation-core", "--settings-review-repairs", "--settings-scope-pickers",
         "--ci-native-regressions", "--settings-native-alignment", "--settings-native-regressions",
     ]

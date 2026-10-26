@@ -1,5 +1,13 @@
 # Design System — claudi0
 
+## 设置常驻导航入口（现行 · 2026-10-26）
+
+连接首页的活动与诊断、宿主详情的工作区声音入口、默认组／工作区详情的管理声音包、工作区详情的管理来源连接，以及提醒与静音的「工作区声音设置 / Workspace Sound Settings」，统一使用功能组中的整行前进入口。保留现行系统字体、13 pt 正文、14／7 pt 水平／垂直内边距和最小 38 pt 行高；长文字换行，右侧箭头仅作装饰。整行只有一个原生可访问按钮，支持 Tab、Space、Return、系统焦点环和禁用状态；获得焦点时滚动到可视区。
+
+`SettingsNavigationRow` 是设置呈现模块内部组件，复用 `EventAnimationActionButton`。动作仍由原 session／回调处理；不保存路由、声音作用域或配置。活动与诊断正文仍归属连接侧栏；管理声音包保留捕获作用域、工作区目录身份与返回位置。Back／Forward 恢复入口焦点及阅读位置，目标失效和模态阻断沿用现有合同。返回、取消、恢复、表单及破坏性动作不改为前进入口。
+
+声音 AI 表单的部分候选提示补齐警告装饰图标，正文继续采用系统次级文字色；不改变候选或采用规则。主原型回归使用现行五页、通用附属关于与持久生成任务合同。原生矩阵、真实动画、冷启动 AX 和用户 VoiceOver 听读分别记录于[第四批验收记录](docs/validation/settings-batch-four-2026-10-26.md)。
+
 ## 工作区来源勾选呈现修订（现行 · 2026-10-24）
 
 工作区详情与添加工作区表单统一使用「使用此工作区声音设置的来源」（English: “Sources that use this workspace’s sound settings”）。标题下常驻可换行说明：「勾选后，该来源在此目录范围内使用本工作区的声音包、音量和事件开关。取消勾选不会关闭提示音；未匹配工作区设置时使用默认组。」英文为 “Selected sources use this workspace’s sound pack, volume, and event switches within this directory scope. Deselecting a source does not turn off its sounds. The Default Group is used when no workspace settings match.”。

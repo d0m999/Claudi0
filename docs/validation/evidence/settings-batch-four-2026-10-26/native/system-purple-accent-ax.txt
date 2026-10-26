@@ -1,0 +1,48 @@
+Window: "claudi0 · Settings", App: Claudio App Motion Preview.
+0 system dialog claudi0 · Settings, Secondary Actions: Raise
+	1 split group
+		2 unknown claudi0
+		3 scroll area
+			4 table Description: claudi0 · Settings, ID: settings.sidebar
+				5 row (selectable)
+					6 cell
+						7 text Workspace
+				8 row (selectable)
+					9 cell
+						10 text Sound Packs
+				11 row (selectable)
+					12 cell
+						13 text Connections
+				14 row (selected)
+					15 cell (selected)
+						16 text Alerts & Quiet
+				17 row (selectable)
+				18 row (selectable)
+					19 cell
+						20 text General
+		21 text ID: settings.sidebar.local-first, Value: Sounds stay on this Mac.
+You start AI generation.
+		22 splitter (disabled, settable, float) 210
+		23 scroll area settings.scroll.notifications
+			24 container settings.destination.notifications
+				25 heading Automatic quiet
+				26 switch Value: off, ID: settings.notifications.focus-toggle, When enabled and authorized, Focus temporarily suppresses automatic playback. Manual preview always remains available.
+				27 text Focus permission, Authorized
+				28 switch Value: off, ID: settings.notifications.calendar-toggle, When enabled and authorized, only a current non-all-day busy event temporarily suppresses automatic playback. Event details are never retained.
+				29 text Calendar permission, Authorized
+				30 heading Event banners
+				31 switch Show short event banners. Needs You reminders remain available in the panel for up to 30 minutes., Value: on, Details: Event source prompts enabled, ID: settings.notifications.event-source-prompts
+				32 disclosure triangle Description: Event-notice receiver, Value: off
+				33 button Description: Event animation, Value: Original icons, ID: settings.notifications.event-animation
+				34 disclosure triangle Description: Current status, Value: off, ID: settings.notifications.health-details
+				35 button Description: Workspace Sound Settings, ID: settings.notifications.open-events
+	36 toolbar
+		37 container settings.navigation
+			38 button Back
+			39 button (disabled) Forward
+		40 heading Value: Alerts & Quiet, ID: settings.title.notifications
+	41 close button
+	42 zoom button
+	43 minimize button
+
+The focused UI element is 35 button Description: Workspace Sound Settings, ID: settings.notifications.open-events

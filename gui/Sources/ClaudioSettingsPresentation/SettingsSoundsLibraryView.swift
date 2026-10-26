@@ -64,6 +64,7 @@ struct SettingsSoundsLibraryView: View {
     @FocusState private var focusedEvent: Event?
     @FocusState private var focusedReadOnlyEvent: Event?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     private var l10n: ClaudioL10n { ClaudioL10n(language: preferences.language) }
     private var selection: SoundEventSelectionContext? { selectionSession.context }
@@ -922,11 +923,19 @@ struct SettingsSoundsLibraryView: View {
                         Text(l10n.format(.soundsGeneratedCount, Int64(generation.candidates.count)))
                             .font(.caption).foregroundColor(.secondary)
                         if generation.completion == .partial {
-                            Text(
-                                l10n.format(
-                                    .aiCueCandidatePartial, Int64(generation.candidates.count))
-                            )
-                            .font(.caption).foregroundColor(.secondary)
+                            Label {
+                                Text(
+                                    l10n.format(
+                                        .aiCueCandidatePartial, Int64(generation.candidates.count))
+                                )
+                                .foregroundColor(SettingsAppearance.secondaryText(colorScheme))
+                                .fixedSize(horizontal: false, vertical: true)
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(SettingsAppearance.warning(colorScheme))
+                                    .accessibilityHidden(true)
+                            }
+                            .font(.caption)
                             .accessibilityIdentifier("settings.sounds.ai.partial")
                         }
                         List(selection: $selectedCandidate) {

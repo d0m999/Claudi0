@@ -1,0 +1,15 @@
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.sounds.sheet.newPack
+		2 text New Sound Pack…
+		3 scroll area
+			4 text field (settable) Value: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, Placeholder: Sound Pack Name, ID: settings.sounds.name-input
+		5 text ID: settings.sounds.error, Secondary Actions: show menu, Value: Enter a valid name: up to 64 characters for a pack or 40 for audio, without control characters or line breaks.
+		6 button Description: Close, ID: settings.sounds.sheet.close
+		7 button Description: Save name, ID: settings.sounds.sheet.use
+
+Selected text: ```
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Note: Pay special attention to the content selected by the user. If the user asks a question or refers to the content they are looking at on-screen, they might be referring to the selected content (but they might be referring to something else that's visible, too).

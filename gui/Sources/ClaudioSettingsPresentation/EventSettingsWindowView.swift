@@ -469,7 +469,10 @@ struct EventSettingsWindowView: View {
                     }
                     previewControls
                 }
-                Button(l10n.text(.eventSettingsManageSounds)) {
+                SettingsNavigationRow(
+                    title: l10n.text(.eventSettingsManageSounds),
+                    identifier: "workspace.manage-sounds"
+                ) {
                     openSoundOverview(scope: selection.route.scope)
                 }
             } else {
@@ -742,8 +745,9 @@ struct EventSettingsWindowView: View {
     }
 
     private var manageConnectionsButton: some View {
-        Button(l10n.text(.workspaceManageConnections), action: onManageConnections)
-            .accessibilityIdentifier("workspace.manage-connections")
+        SettingsNavigationRow(
+            title: l10n.text(.workspaceManageConnections),
+            identifier: "workspace.manage-connections", action: onManageConnections)
     }
 
     @ViewBuilder

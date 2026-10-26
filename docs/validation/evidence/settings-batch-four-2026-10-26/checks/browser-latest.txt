@@ -1,0 +1,9 @@
+Source: browser-latest.txt
+Original SHA-256: c2ad7745966b5633df7e89881220b3c5f3da4704950b54f30abcbfb95e15d8d7
+Verbatim lines: 1-5 (only build output before the harness is omitted)
+
+................................................................................
+----------------------------------------------------------------------
+Ran 80 tests in 144.631s
+
+OK

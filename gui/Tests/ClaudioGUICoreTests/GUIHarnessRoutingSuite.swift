@@ -78,7 +78,9 @@ func runGUIHarnessRoutingSuites() async {
     }
 
     suite("GUI harness: executable preflight cannot fall through into native execution") {
-        let executable = URL(fileURLWithPath: CommandLine.arguments[0])
+        // SwiftPM can supply a relative argv[0] when using an external scratch directory.
+        // Process must receive the resolved URL, not a URL retaining that relative base.
+        let executable = URL(fileURLWithPath: CommandLine.arguments[0]).absoluteURL
         for (arguments, status, message) in [
             (["--dry-run"], Int32(0), "GUI checks: background batch"),
             (["--foreground", "--dry-run"], 0, "GUI checks: foreground batch"),
@@ -110,6 +112,7 @@ func runGUIHarnessRoutingSuites() async {
                 ], 2, "Run with --foreground"
             ),
             (["--settings-navigation-native-focus"], 2, "Run with --foreground"),
+            (["--ai-cue-animation-native"], 2, "Run with --foreground"),
             (["--foregound"], 2, "Unknown test argument"),
         ] {
             let result = runTestProcess(executableURL: executable, arguments: arguments)

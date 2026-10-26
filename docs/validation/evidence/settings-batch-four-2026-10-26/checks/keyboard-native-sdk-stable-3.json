@@ -1,0 +1,8 @@
+{
+  "source": "keyboard-native-sdk-stable-3.txt",
+  "sourceSHA256": "de167b2a6c33e00686f35cca2fc4e51f5b8aef8b6f5b0f758f20a723923dd08c",
+  "resultLine": 4091,
+  "result": "Settings navigation native focus: 957 checks, 0 failures",
+  "diagnosticMode": "CLAUDIO_SETTINGS_KEY_LIFECYCLE=1",
+  "boundary": "Earlier pre-AX-fix run; latest ordinary-mode runs supersede it."
+}

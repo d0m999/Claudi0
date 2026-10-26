@@ -1,0 +1,11 @@
+Source: harness-path-green.txt
+Original SHA-256: 05129b00dfcd02bee4795286e8026ec4bc51946c348ced564bb5fc46372fb785
+Verbatim lines: 11-17 (only build output before the harness is omitted)
+
+GUI checks: background --harness-routing
+Foreground GUI checks: NOT RUN. Use --foreground when the desktop is available.
+• GUI harness: desktop access is explicit and invalid arguments fail closed
+• GUI harness: the actual batch dispatcher excludes foreground work by default
+• GUI harness: executable preflight cannot fall through into native execution
+• GUI harness: every focused entry point has a desktop-access classification
+GUI harness routing: 289 checks, 0 failures

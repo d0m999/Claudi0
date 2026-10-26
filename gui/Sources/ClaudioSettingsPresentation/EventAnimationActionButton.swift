@@ -44,7 +44,7 @@ private struct EventAnimationActionSurface: NSViewRepresentable {
         view.onActivate = action
         view.isEnabled = context.environment.isEnabled
         view.setAccessibilityLabel(title)
-        view.setAccessibilityIdentifier(identifier)
+        view.actionIdentifier = identifier
         view.setAccessibilityValue(value)
         view.setAccessibilitySelected(selected)
         view.requestsFocus = requestsFocus
@@ -60,6 +60,9 @@ final class EventAnimationActionView<Label: View>: NSView {
     var onMove: ((Int) -> Void)?
     private(set) var isHovered = false
     var isEnabled = true
+    // SwiftUI may apply an ancestor's AX identifier to a representable after updateNSView.
+    // Keep the action's identity at the native focus/reading-restoration seam.
+    var actionIdentifier = ""
     var requestsFocus = false {
         didSet { if !requestsFocus { appliedFocusRequest = false } }
     }
@@ -78,6 +81,11 @@ final class EventAnimationActionView<Label: View>: NSView {
 
     required init?(coder: NSCoder) { nil }
     override var acceptsFirstResponder: Bool { isEnabled }
+    override func becomeFirstResponder() -> Bool {
+        guard super.becomeFirstResponder() else { return false }
+        scrollToVisible(bounds.insetBy(dx: -2, dy: -2))
+        return true
+    }
     override var needsPanelToBecomeKey: Bool { true }
     override var intrinsicContentSize: NSSize { host.fittingSize }
     override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 2, dy: 2) }
@@ -114,6 +122,9 @@ final class EventAnimationActionView<Label: View>: NSView {
         onActivate()
     }
     override func isAccessibilityFocused() -> Bool { window?.firstResponder === self }
+    override func accessibilityIdentifier() -> String {
+        actionIdentifier.isEmpty ? super.accessibilityIdentifier() : actionIdentifier
+    }
     override func isAccessibilityEnabled() -> Bool { isEnabled }
     override func accessibilityPerformPress() -> Bool {
         guard isEnabled else { return false }

@@ -1,0 +1,66 @@
+Source: debug-latest.txt
+Original SHA-256: b23646a3e83d1609ecbe8f3ed0a491e896923db475e5c695148ae476ed5b791c
+Verbatim lines: 1-62 (only build output before the harness is omitted)
+
+Building for debugging...
+[0/4] Write swift-version--1AB21518FC5DEDBE.txt
+[2/29] Compiling ClaudioGUI MenuBarIcon.swift
+[3/29] Compiling ClaudioGUI NativeRegressionClock.swift
+[4/29] Compiling ClaudioGUI NativeRegressionGenerator.swift
+[5/32] Compiling ClaudioGUI NativeUIRegressionController.swift
+[6/32] Compiling ClaudioGUI SettingsPlatformActionsAdapter.swift
+[7/32] Compiling ClaudioGUI SettingsProductImageResources.swift
+[8/32] Compiling ClaudioGUI DesignTokens.swift
+[9/32] Compiling ClaudioGUI DynamicQuietSystemObserver.swift
+[10/32] Compiling ClaudioGUI EventAnimationResourceComposition.swift
+[11/32] Compiling ClaudioGUI EventNoticeRuntime.swift
+[12/32] Compiling ClaudioGUI IntegrationDestinationClipboardAdapter.swift
+/Users/d0m999/Desktop/Claudio/gui/Sources/ClaudioGUI/LoginItemServiceAdapter.swift:34:29: warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+32 | private func legacyLoginItemIsRegistered(_ identifier: String) -> Bool? {
+33 |     guard
+34 |         let unmanagedJobs = SMCopyAllJobDictionaries(kSMDomainUserLaunchd),
+   |                             `- warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+35 |         let jobs = unmanagedJobs.takeRetainedValue() as? [[String: Any]]
+36 |     else {
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[13/32] Compiling ClaudioGUI LoginItemServiceAdapter.swift
+/Users/d0m999/Desktop/Claudio/gui/Sources/ClaudioGUI/LoginItemServiceAdapter.swift:34:29: warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+32 | private func legacyLoginItemIsRegistered(_ identifier: String) -> Bool? {
+33 |     guard
+34 |         let unmanagedJobs = SMCopyAllJobDictionaries(kSMDomainUserLaunchd),
+   |                             `- warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+35 |         let jobs = unmanagedJobs.takeRetainedValue() as? [[String: Any]]
+36 |     else {
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[14/32] Compiling ClaudioGUI MenuBarController.swift
+/Users/d0m999/Desktop/Claudio/gui/Sources/ClaudioGUI/LoginItemServiceAdapter.swift:34:29: warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+32 | private func legacyLoginItemIsRegistered(_ identifier: String) -> Bool? {
+33 |     guard
+34 |         let unmanagedJobs = SMCopyAllJobDictionaries(kSMDomainUserLaunchd),
+   |                             `- warning: 'SMCopyAllJobDictionaries' was deprecated in macOS 10.10 [#DeprecatedDeclaration]
+35 |         let jobs = unmanagedJobs.takeRetainedValue() as? [[String: Any]]
+36 |     else {
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[15/32] Emitting module ClaudioGUI
+[16/32] Compiling ClaudioGUI AboutSettingsModel.swift
+[17/32] Compiling ClaudioGUI AudioDurationProbe.swift
+[18/32] Compiling ClaudioGUI ClaudioGUIApp.swift
+[19/32] Compiling ClaudioGUI CodexQuestionObservationSession.swift
+[20/32] Compiling ClaudioGUI EventNoticeWindowController.swift
+[21/32] Compiling ClaudioGUI GUIResourceBundle.swift
+[22/32] Compiling ClaudioGUI GenerationQuitPrompt.swift
+[23/32] Compiling ClaudioGUI HostIntegrationMaintenanceRuntime.swift
+[24/32] Compiling ClaudioGUI SystemChatAXTraceObserver.swift
+[25/32] Compiling ClaudioGUI UsageActivityAdapter.swift
+[26/32] Compiling ClaudioGUI resource_bundle_accessor.swift
+[27/32] Compiling ClaudioGUI SettingsWindowController.swift
+[28/32] Compiling ClaudioGUI SparkleAppUpdateAdapter.swift
+[29/32] Compiling ClaudioGUI StateGalleryView.swift
+[29/32] Write Objects.LinkFileList
+[30/32] Linking ClaudioGUI
+[31/32] Applying ClaudioGUI
+Build of product 'ClaudioGUI' complete! (4.91s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.

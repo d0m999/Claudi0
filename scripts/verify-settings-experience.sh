@@ -7,6 +7,11 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_root="$(cd -- "$script_dir/.." && pwd -P)"
 format_base="${1:-}"
 source "$script_dir/settings-format-diagnostics.sh"
+swift_options=()
+if [[ -n "${CLAUDIO_BUILD_SDK:-}" ]]; then
+    # SDKROOT also feeds compiler probes, but SwiftPM needs its explicit SDK option.
+    swift_options+=(--build-system native --sdk "$CLAUDIO_BUILD_SDK")
+fi
 
 if [[ -z "$format_base" || $# -ne 2 || "${2:-}" != "--foreground" ]]; then
     echo "usage: $0 <format-baseline-commit> --foreground (full native verification uses windows and focus)" >&2
@@ -82,6 +87,11 @@ for suite in \
     runSettingsHandbackSuites \
     runFivePageSettingsSuites \
     runFivePageSettingsNativeSuites \
+    runSettingsNavigationRowSuites \
+    runSettingsKeyboardAboutSuites \
+    runSettingsDiskPackFocusSuites \
+    runSettingsNavigationRowLayoutSuites \
+    runAICueTaskAnimationSuites \
     runSettingsNavigationSuites \
     runEventSettingsWindowSelectionSuites \
     runSettingsPresentationLifecycleSuites \
@@ -94,12 +104,20 @@ do
 done
 echo "✅ required integration suites are registered"
 
-swift run --package-path helper claudio-tests
-swift run --package-path gui claudio-gui-tests --all
-swift build -c debug --package-path gui --target ClaudioSettingsPresentation
-swift build -c release --package-path gui --target ClaudioSettingsPresentation
-swift build -c debug --package-path gui --product ClaudioGUI
-swift build -c release --package-path gui --product ClaudioGUI
+swift run "${swift_options[@]+"${swift_options[@]}"}" --package-path helper claudio-tests
+swift run "${swift_options[@]+"${swift_options[@]}"}" --package-path gui claudio-gui-tests --all
+for attempt in 1 2 3; do
+    echo "Settings keyboard stability: fresh process $attempt/3"
+    swift run "${swift_options[@]+"${swift_options[@]}"}" --package-path gui claudio-gui-tests --foreground --settings-navigation-native-focus
+done
+swift run "${swift_options[@]+"${swift_options[@]}"}" --package-path gui claudio-gui-tests --foreground --ai-cue-animation-native
+python3 scripts/test-panel-settings-prototype-browser.py
+python3 scripts/test-five-page-settings-prototype.py
+node scripts/test-panel-settings-prototype.js
+swift build "${swift_options[@]+"${swift_options[@]}"}" -c debug --package-path gui --target ClaudioSettingsPresentation
+swift build "${swift_options[@]+"${swift_options[@]}"}" -c release --package-path gui --target ClaudioSettingsPresentation
+swift build "${swift_options[@]+"${swift_options[@]}"}" -c debug --package-path gui --product ClaudioGUI
+swift build "${swift_options[@]+"${swift_options[@]}"}" -c release --package-path gui --product ClaudioGUI
 jq empty gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings
 bash scripts/dev-bundle.sh
 bash scripts/check-release-size.sh dist/claudi0.app

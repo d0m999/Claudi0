@@ -1,0 +1,33 @@
+Source: keyboard-baseline.txt
+Original SHA-256: 0943b5aa4c7f80b97d2e5d20482d87c95a885dd35df6c27e908c6ac2cb5fbfc8
+Verbatim lines: 5-33 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:36771B66-FA43-4536-9815-07125A6381AF, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.presentation.general, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:9C4598BD-371C-4650-BD17-EEBF19F69703, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.presentation.general, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+• Settings keyboard: cancellation restores clearLog without clearing
+Settings navigation native focus: 287 checks, 0 failures

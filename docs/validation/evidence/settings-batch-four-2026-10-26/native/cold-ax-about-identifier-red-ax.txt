@@ -1,0 +1,45 @@
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container
+		2 heading Description: 关于, ID: settings.about.sheet
+		3 scroll area ID: settings.about.sheet, Secondary Actions: Scroll Up, Scroll Down
+			4 text Value: claudi0, ID: settings.destination.about
+			5 unknown Description: 版本, 0.1.0, ID: settings.destination.about, Secondary Actions: show menu
+			6 unknown Description: 构建, 42, ID: settings.destination.about, Secondary Actions: show menu
+			7 unknown Description: 架构, arm64, ID: settings.destination.about, Secondary Actions: show menu
+			8 unknown Description: 最低 macOS, 12.0, ID: settings.destination.about, Secondary Actions: show menu
+			9 unknown Description: 当前 macOS, 15.6.1, ID: settings.destination.about, Secondary Actions: show menu
+			10 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.destination.about
+			11 heading Description: 资源, ID: settings.destination.about
+			12 text Value: 打开这份 claudi0 实际随包附带的文档。, ID: settings.destination.about
+			13 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.destination.about
+			14 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.destination.about
+			15 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.destination.about
+			16 heading Description: 安全诊断, ID: settings.destination.about
+			17 text ID: settings.destination.about, Value: 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+			18 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.destination.about
+			19 scroll bar (settable, float) 0
+				20 value indicator (settable, float) 0
+				21 increment arrow button
+				22 decrement arrow button
+				23 increment page button
+				24 decrement page button
+		25 button Description: 关闭, ID: settings.about.sheet
+
+The focused UI element is 10 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.destination.about

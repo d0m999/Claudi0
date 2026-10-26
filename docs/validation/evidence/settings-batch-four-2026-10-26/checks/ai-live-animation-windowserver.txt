@@ -1,0 +1,23 @@
+Source: ai-live-animation-windowserver.txt
+Original SHA-256: 471874053e1300dd4abba98d025e3f617e2ae418c2d2d1bfca4597047ce7cca0
+Verbatim lines: 57-75 (only build output before the harness is omitted)
+
+GUI checks: foreground --ai-cue-animation-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI live task animation: en=false/dark=false/reduced=false
+  keyDown 49 modifiers=0: window=63001, key=true, appKey=63001, order=[63001], responder=KeyViewProxy@ObjectIdentifier(0x0000000142b14f30), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+• AI live task animation: en=false/dark=false/reduced=true
+  keyDown 49 modifiers=0: window=63002, key=true, appKey=63002, order=[63002, 63001], responder=KeyViewProxy@ObjectIdentifier(0x0000000141e567d0), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+• AI live task animation: en=false/dark=true/reduced=false
+  keyDown 49 modifiers=0: window=63003, key=true, appKey=63003, order=[63003, 63002], responder=KeyViewProxy@ObjectIdentifier(0x0000000142b4d480), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+• AI live task animation: en=false/dark=true/reduced=true
+  keyDown 49 modifiers=0: window=63004, key=true, appKey=63004, order=[63004, 63003], responder=KeyViewProxy@ObjectIdentifier(0x0000000141e57090), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+• AI live task animation: en=true/dark=false/reduced=false
+  keyDown 49 modifiers=0: window=63005, key=true, appKey=63005, order=[63005, 63004], responder=KeyViewProxy@ObjectIdentifier(0x0000000142b4f270), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+• AI live task animation: en=true/dark=false/reduced=true
+  keyDown 49 modifiers=0: window=63006, key=true, appKey=63006, order=[63006, 63005], responder=KeyViewProxy@ObjectIdentifier(0x0000000141e432a0), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+• AI live task animation: en=true/dark=true/reduced=false
+  keyDown 49 modifiers=0: window=63007, key=true, appKey=63007, order=[63007, 63006], responder=KeyViewProxy@ObjectIdentifier(0x0000000141e51d90), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+• AI live task animation: en=true/dark=true/reduced=true
+  keyDown 49 modifiers=0: window=63008, key=true, appKey=63008, order=[63008, 63007], responder=KeyViewProxy@ObjectIdentifier(0x0000000141e6f4b0), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+AI live task animation: 992 checks, 0 failures

@@ -31,7 +31,7 @@ func runSettingsNativePolishSuites() async {
                     let probe = NativeSettingsShellProbe(
                         session: fixture.session, width: width, dark: dark)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     let l10n = ClaudioL10n(language: language)
                     _ = polishAXElements(probe.shell.view)
                     expect(
@@ -71,7 +71,7 @@ func runSettingsNativePolishSuites() async {
                         }, "Unavailable updates remove the control")
 
                     fixture.session.send(.route(.sounds(.overview)))
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     let headings = polishAXElements(
                         probe.readingScrollView?.documentView ?? probe.shell.view
                     )
@@ -86,7 +86,7 @@ func runSettingsNativePolishSuites() async {
                         "The native toolbar retains the page's accessible heading")
                     capturePolish(probe, "sounds-\(language.rawValue)-\(dark)-\(Int(width))")
                     fixture.session.send(.inspectSoundPack("settings-fixture-pack"))
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     expect(
                         polishAXElements(probe.readingScrollView?.documentView ?? probe.shell.view)
                             .contains { $0.accessibilityRole?()?.rawValue == "AXHeading" },
@@ -94,7 +94,7 @@ func runSettingsNativePolishSuites() async {
                     fixture.session.send(
                         .route(
                             .sounds(SoundPacksWindowRoute(scope: .global, destination: .history))))
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     expect(
                         polishAXElements(probe.readingScrollView?.documentView ?? probe.shell.view)
                             .contains {
@@ -113,7 +113,7 @@ func runSettingsNativePolishSuites() async {
                     let probe = NativeSettingsShellProbe(
                         session: fixture.session, width: width, dark: dark)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     capturePolish(probe, "connections-\(language.rawValue)-\(dark)-\(Int(width))")
                     for keyCode: UInt16 in [49, 36] {
                         guard
@@ -141,7 +141,7 @@ func runSettingsNativePolishSuites() async {
                             charactersIgnoringModifiers: keyCode == 49 ? " " : "\r",
                             isARepeat: false, keyCode: keyCode)!
                         control.keyDown(with: event)
-                        await probe.presentAndSettle()
+                        guard await probe.presentAndSettle() else { return }
                         expect(
                             fixture.session.state.routeResolution.route
                                 == .integrations(
@@ -149,7 +149,7 @@ func runSettingsNativePolishSuites() async {
                                 ) && fixture.session.navigationHistory.version == version + 1,
                             "Space/Return navigate exactly once to this host's diagnostics")
                         fixture.session.send(.goBack)
-                        await probe.presentAndSettle()
+                        guard await probe.presentAndSettle() else { return }
                         expect(
                             fixture.session.state.routeResolution.route == route
                                 && fixture.actionRecorder.actions.isEmpty,
@@ -183,7 +183,7 @@ func runSettingsNativePolishSuites() async {
             let probe = NativeSettingsShellProbe(
                 session: fixture.session, width: 960, dark: action == .clearLog)
             defer { probe.close() }
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             _ = probe.scrollReading(to: probe.maximumReadingOffset ?? 0)
             await probe.settle()
             let l10n = ClaudioL10n(language: fixture.preferences.language)

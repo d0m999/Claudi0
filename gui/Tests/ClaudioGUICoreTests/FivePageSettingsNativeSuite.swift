@@ -16,7 +16,7 @@ func runFivePageSettingsNativeSuites() async {
                 let probe = NativeSettingsShellProbe(
                     session: fixture.session, width: width, dark: width == 960)
                 defer { probe.close() }
-                await probe.presentAndSettle()
+                guard await probe.presentAndSettle() else { return }
                 fixture.session.send(.route(.destination(.about)))
                 await probe.settle()
                 for _ in 0..<32 where probe.window.attachedSheet == nil {
@@ -129,7 +129,7 @@ func runFivePageSettingsNativeSuites() async {
                         session: fixture.session, width: width, dark: dark,
                         reduceMotion: width == 960)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     expect(probe.shell.view.bounds.width <= width + 1, "工作区完整详情不横向溢出")
                     expect(probe.scrollReading(to: probe.maximumReadingOffset ?? 0), "完整详情可滚动到底")
                     await probe.settle()
@@ -179,7 +179,7 @@ func runFivePageSettingsNativeSuites() async {
         let session = fixture.session
         let probe = NativeSettingsShellProbe(session: session, width: 960, dark: false)
         defer { probe.close() }
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         _ = probe.scrollReading(to: probe.maximumReadingOffset ?? 0)
         await probe.settle()
         let offset = probe.readingOffset ?? -1
@@ -189,7 +189,7 @@ func runFivePageSettingsNativeSuites() async {
         // A stale host-detail visit must not turn the new entry into a host deep link.
         session.send(.route(.integrations(.init(surface: .codex, detailsHost: .codex))))
         session.send(.goBack)
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         guard
             let link = workspaceSourceAXElements(in: probe.shell.view).first(where: {
                 $0.accessibilityIdentifier?() == "workspace.manage-connections"
@@ -198,7 +198,7 @@ func runFivePageSettingsNativeSuites() async {
             expect(false, "实际挂载工作区详情必须存在连接入口"); return
         }
         expect(link.accessibilityPerformPress?() == true, "从真实 SwiftUI 按钮进入连接")
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             session.state.routeResolution.route == .destination(.integrations),
             "入口使用既有 session 的连接首页路由")
@@ -206,7 +206,7 @@ func runFivePageSettingsNativeSuites() async {
             probe.window.contentViewController === probe.shell && probe.window.attachedSheet == nil,
             "连接复用同一 retained window，不创建新窗口或表单")
         session.send(.goBack)
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             session.navigationHistory.current?.location == location
                 && fixture.eventSettingsModel.selectedSoundScope == selectedScope
@@ -228,7 +228,7 @@ func runFivePageSettingsNativeSuites() async {
                     let probe = NativeSettingsShellProbe(
                         session: fixture.session, width: width, dark: dark)
                     defer { probe.close() }
-                    await probe.presentAndSettle()
+                    guard await probe.presentAndSettle() else { return }
                     let add = workspaceSourceAXElements(in: probe.shell.view).first {
                         $0.accessibilityIdentifier?() == "workspace.add"
                     }

@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-10-26T10:54:27.143440+00:00",
+  "appearanceBefore": {
+    "-g:AppleAccentColor": {
+      "present": false,
+      "value": null
+    },
+    "-g:AppleHighlightColor": {
+      "present": false,
+      "value": null
+    },
+    "-g:AppleInterfaceStyle": {
+      "present": false,
+      "value": null
+    },
+    "com.apple.universalaccess:increaseContrast": {
+      "present": true,
+      "value": "0"
+    },
+    "com.apple.universalaccess:reduceTransparency": {
+      "present": true,
+      "value": "0"
+    },
+    "com.apple.universalaccess:reduceMotion": {
+      "present": true,
+      "value": "0"
+    }
+  },
+  "appearanceAfter": {
+    "-g:AppleAccentColor": {
+      "present": false,
+      "value": null
+    },
+    "-g:AppleHighlightColor": {
+      "present": false,
+      "value": null
+    },
+    "-g:AppleInterfaceStyle": {
+      "present": false,
+      "value": null
+    },
+    "com.apple.universalaccess:increaseContrast": {
+      "present": true,
+      "value": "0"
+    },
+    "com.apple.universalaccess:reduceTransparency": {
+      "present": true,
+      "value": "0"
+    },
+    "com.apple.universalaccess:reduceMotion": {
+      "present": true,
+      "value": "0"
+    }
+  },
+  "appearanceRestored": true,
+  "keyboardExpected": "0",
+  "keyboardAfter": "0",
+  "keyboardRestored": true,
+  "taskTemporaryRootRemoved": true
+}

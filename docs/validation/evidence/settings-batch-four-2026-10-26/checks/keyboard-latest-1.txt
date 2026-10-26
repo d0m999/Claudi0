@@ -1,0 +1,122 @@
+Source: keyboard-latest-1.txt
+Original SHA-256: b9db20e8b2d6386677ffa1be0baa557ff39068339b60676c7de56d4c90f1da53
+Verbatim lines: 672-789 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:FFE54A77-7B18-4451-BCE9-F8460EDDFBB9, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.general.login-item.toggle, settings.general.login-item.recheck, settings.general.about, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:91E182A1-2660-433F-A13A-D4AA87314C4B, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.general.login-item.toggle, settings.general.login-item.recheck, settings.general.about, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+  clear clearActivity / escape: previous=[], window=65133, key=true, appKey=65133, order=[65133, 65132], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bc01800), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / escape: recorded=[], window=65132, key=true, appKey=65132, order=[65132], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bc00c00), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: previous=[], window=65134, key=true, appKey=65134, order=[65134, 65132], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bc02d00), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: recorded=[], window=65132, key=true, appKey=65132, order=[65132], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bc00c00), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: previous=[], window=65135, key=true, appKey=65135, order=[65135, 65132], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bc00000), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearActivity], window=65132, key=true, appKey=65132, order=[65132], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bc02a00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: cancellation restores clearLog without clearing
+  clear clearLog / escape: previous=[], window=65137, key=true, appKey=65137, order=[65137, 65136], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bbb3300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / escape: recorded=[], window=65136, key=true, appKey=65136, order=[65136], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bbb3900), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: previous=[], window=65138, key=true, appKey=65138, order=[65138, 65136], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bbb1b00), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: recorded=[], window=65136, key=true, appKey=65136, order=[65136], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bbb3900), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: previous=[], window=65139, key=true, appKey=65139, order=[65139, 65136], responder=_NSAlertButton@ObjectIdentifier(0x0000007a4bbb1800), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearLog], window=65136, key=true, appKey=65136, order=[65136], responder=KeyViewProxy@ObjectIdentifier(0x0000007a4bbb2d00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: About opens and cancels from its entry / zhHans
+• Settings keyboard: About opens and cancels from its entry / english
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/49
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/36
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/49
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(88F64479-C495-4974-A2B2-2650DEFA357C), event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(88F64479-C495-4974-A2B2-2650DEFA357C), event: nil)/zhHans/36
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(88F64479-C495-4974-A2B2-2650DEFA357C), event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(88F64479-C495-4974-A2B2-2650DEFA357C), event: nil)/zhHans/36
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/49
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/36
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/49
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/36
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/49
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(4D9DCC63-7C31-4867-8BCA-6306274D15B8), event: nil)/english/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(4D9DCC63-7C31-4867-8BCA-6306274D15B8), event: nil)/english/36
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(4D9DCC63-7C31-4867-8BCA-6306274D15B8), event: nil)/english/49
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(4D9DCC63-7C31-4867-8BCA-6306274D15B8), event: nil)/english/36
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/49
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/36
+• Settings native focus: disk-backed detail / builtin=false
+• Settings native focus: disk-backed detail / builtin=true
+• Settings navigation layout: 0/zhHans/false/960.0
+• Settings navigation layout: 1/zhHans/false/960.0
+• Settings navigation layout: 2/zhHans/false/960.0
+• Settings navigation layout: 3/zhHans/false/960.0
+• Settings navigation layout: 4/zhHans/false/960.0
+• Settings navigation layout: 5/zhHans/false/960.0
+• Settings navigation layout: 0/zhHans/false/1240.0
+• Settings navigation layout: 1/zhHans/false/1240.0
+• Settings navigation layout: 2/zhHans/false/1240.0
+• Settings navigation layout: 3/zhHans/false/1240.0
+• Settings navigation layout: 4/zhHans/false/1240.0
+• Settings navigation layout: 5/zhHans/false/1240.0
+• Settings navigation layout: 0/zhHans/true/960.0
+• Settings navigation layout: 1/zhHans/true/960.0
+• Settings navigation layout: 2/zhHans/true/960.0
+• Settings navigation layout: 3/zhHans/true/960.0
+• Settings navigation layout: 4/zhHans/true/960.0
+• Settings navigation layout: 5/zhHans/true/960.0
+• Settings navigation layout: 0/zhHans/true/1240.0
+• Settings navigation layout: 1/zhHans/true/1240.0
+• Settings navigation layout: 2/zhHans/true/1240.0
+• Settings navigation layout: 3/zhHans/true/1240.0
+• Settings navigation layout: 4/zhHans/true/1240.0
+• Settings navigation layout: 5/zhHans/true/1240.0
+• Settings navigation layout: 0/english/false/960.0
+• Settings navigation layout: 1/english/false/960.0
+• Settings navigation layout: 2/english/false/960.0
+• Settings navigation layout: 3/english/false/960.0
+• Settings navigation layout: 4/english/false/960.0
+• Settings navigation layout: 5/english/false/960.0
+• Settings navigation layout: 0/english/false/1240.0
+• Settings navigation layout: 1/english/false/1240.0
+• Settings navigation layout: 2/english/false/1240.0
+• Settings navigation layout: 3/english/false/1240.0
+• Settings navigation layout: 4/english/false/1240.0
+• Settings navigation layout: 5/english/false/1240.0
+• Settings navigation layout: 0/english/true/960.0
+• Settings navigation layout: 1/english/true/960.0
+• Settings navigation layout: 2/english/true/960.0
+• Settings navigation layout: 3/english/true/960.0
+• Settings navigation layout: 4/english/true/960.0
+• Settings navigation layout: 5/english/true/960.0
+• Settings navigation layout: 0/english/true/1240.0
+• Settings navigation layout: 1/english/true/1240.0
+• Settings navigation layout: 2/english/true/1240.0
+• Settings navigation layout: 3/english/true/1240.0
+• Settings navigation layout: 4/english/true/1240.0
+• Settings navigation layout: 5/english/true/1240.0
+• Settings navigation layout: long label, whole-row hit and disabled action
+Settings navigation native focus: 971 checks, 0 failures

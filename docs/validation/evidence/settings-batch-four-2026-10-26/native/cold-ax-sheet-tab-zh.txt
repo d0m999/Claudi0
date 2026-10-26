@@ -1,0 +1,31 @@
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 6 button Description: 关闭, ID: settings.sounds.sheet.close
+---
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 7 button Description: 保存名称, ID: settings.sounds.sheet.use
+---
+There has been no change in the accessibility tree for Window: "".
+Selected text: ```
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Note: Pay special attention to the content selected by the user. If the user asks a question or refers to the content they are looking at on-screen, they might be referring to the selected content (but they might be referring to something else that's visible, too).
+---
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 6 button Description: 关闭, ID: settings.sounds.sheet.close
+---
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 7 button Description: 保存名称, ID: settings.sounds.sheet.use
+---
+There has been no change in the accessibility tree for Window: "".
+Selected text: ```
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Note: Pay special attention to the content selected by the user. If the user asks a question or refers to the content they are looking at on-screen, they might be referring to the selected content (but they might be referring to something else that's visible, too).
+---
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 6 button Description: 关闭, ID: settings.sounds.sheet.close
+---
+There has been no change in the accessibility tree for Window: "".
+The focused UI element is 7 button Description: 保存名称, ID: settings.sounds.sheet.use

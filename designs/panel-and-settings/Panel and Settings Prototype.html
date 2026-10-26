@@ -5069,7 +5069,7 @@ function navigateOriginal(page,detail=null,options={}){
  if(S.operation)cancelOperation();S.epoch++;
  if(S.page==='usage'&&page!=='usage'){S.reading=null;S.pendingExpanded=false;}
  if(S.draft&&(page!=='sounds'||!detail?.startsWith('edit:'))){S.draft=null;S.pack=S.lastInstalledPack||S.packs[0]?.id;}
- S.page=page;S.detail=detail;S.notice=null;if(options.scope)S.scope=options.scope;if(options.pack)S.pack=options.pack;
+ S.page=page;S.detail=detail;S.notice=null;if(options.scope)S.scope=options.scope;if(options.pack)S.pack=options.pack;if('returnContext' in options)S.returnContext=options.returnContext;
  render();$('page-scroll').scrollTop=options.scroll??scrollByRoute[routeKey()]??0;
  if(options.focus!==false)$('page-title').focus({preventScroll:true});
 }
@@ -5143,6 +5143,7 @@ function renderEvents(){
  const paused=S.library!=='ready'||!!S.operation;
  html+=section(T('声音配置','Sound configuration'),row(T('声音包','Sound pack'),T('该组独立选包，不逐项继承默认组。','This group selects a pack independently.'),picker(T('此组的声音包','Pack for this group'),'scope-pack',S.packs.map(p=>[p.id,packName(p)]),g.pack,paused))+row(T('音量','Volume'),T('仅调整所选默认组或工作区','Applies to the selected group only'),volumeControl(g))+(g.volume===0?reason(T('音量为 0，无法听到试听。调高音量后继续。','Volume is 0. Raise the volume to hear previews.')):''));
  html+=section(T('事件提示音','Event cues'),events.map((e,i)=>row(e.name(),scopeMappedNote(p,i),previewButton(i,!p?.sounds[i]||g.volume===0||!p.healthy)+toggle(e.name(),`event:${i}`,g.enabled[i],paused)+`<button class="small-button" data-action="edit-from-scope:${i}" aria-label="${esc(T(p?.builtin?'查看包内声音':'编辑包内声音',p?.builtin?'View sound in pack':'Edit sound in pack')+' '+e.name())}" aria-description="${esc(T('查看或编辑提示音','View or edit cue'))}">${T(p?.builtin?'查看包内声音…':'编辑包内声音…',p?.builtin?'View sound in pack…':'Edit sound in pack…')}</button>`,{id:`event-${e.id}`,icon:e.icon,color:e.color})).join('')+feedback()+(S.faults.preview?reason(T('试听文件不可读。可重新读取声音包，或进入对应事件修复来源。','The preview file is unreadable. Reload the pack or repair the event source.'),'error')+row(T('试听恢复','Preview recovery'),'',button(T('重新读取声音包','Reload pack'),'refresh-library')+button(T('修复提示音…','Repair cue…'),'edit-from-scope:3')):''),T('开关只控制自动播放。关闭后仍可手工试听。','Switches control automatic playback. Manual previews remain available.'),button(T('试听可用事件','Preview available events'),'preview-all','link',!p?.sounds.some(Boolean)||g.volume===0||!p.healthy));
+ html+=section('',disclosure(T('管理声音包','Manage Sound Packs'),'','','manage-sounds'));
  if(g.id!=='default')html+=renderScopeDetails(false);
  if(g.id!=='default')html+=section('',row(T('移除工作区','Remove workspace'),esc(scopeName(g))+' · '+T('仅移除声音规则，保留项目文件和声音包。','Remove the sound rule only. Project files and sound packs remain.'),button(T('移除工作区…','Remove workspace…'),'delete-workspace','small-button destructive',!!S.operation)));
  html+=`<div class="section-actions">${button(T('添加工作区…','Add workspace…'),'add-workspace','small-button',!!S.operation)}</div>`;
@@ -5154,7 +5155,7 @@ function workspaceSoundSourcesTitle(){return T('使用此工作区声音设置�
 function workspaceSoundSourcesDescription(){return T('勾选后，该来源在此目录范围内使用本工作区的声音包、音量和事件开关。取消勾选不会关闭提示音；未匹配工作区设置时使用默认组。','Selected sources use this workspace’s sound pack, volume, and event switches within this directory scope. Deselecting a source does not turn off its sounds. The Default Group is used when no workspace settings match.');}
 function workspaceSoundSourcesHint(){return T('控制此来源是否在此目录范围内使用本工作区的声音设置，不会更改来源连接。','Controls whether this source uses this workspace’s sound settings within this directory scope. Does not change the source connection.');}
 function workspaceSoundSourcesEmpty(){return T('未选择来源；此工作区的声音设置暂不使用。','No sources selected; this workspace’s sound settings are not in use.');}
-function manageSourceConnections(){return `<div class="section-actions">${button(T('管理来源连接…','Manage Source Connections…'),'nav:integrations')}</div>`;}
+function manageSourceConnections(){return section('',disclosure(T('管理来源连接…','Manage Source Connections…'),'','','nav:integrations'));}
 function renderScopeDetails(includeConnections=true){const g=scope();if(!g)return reason(T('工作区不可用，请显式重新选择。','Workspace unavailable. Select explicitly.'),'error','target-unavailable');
  return section('',row(esc(scopeName(g)),T('名称由目录派生。','The name is derived from the directory.'), '',{icon:'folder'}))+
  section(T('目录范围','Directory scope'),row(T('目录','Directory'),esc(g.path))+row(T('匹配范围','Matching scope'),g.kind==='git'?T('Git 仓库及关联 worktree','Git repository and linked worktrees'):T('实际目录及子目录','Resolved directory and descendants')))+
@@ -5292,7 +5293,7 @@ function createApprovedSoundsView(root,bridge) {
   function textNode(text,className='sf-secondary') {const el=document.createElement('p');el.className=className;el.textContent=text;return el;}
   function icons() {bridge.icons(root);}
   function stopPreview() {playing=null;clearTimeout(playTimer);AppMotionPreview.clear('sounds');syncPreview();}
-  function syncPreview() {all('[data-preview]').forEach(b=>{const active=playing===b.dataset.preview;AppMotionPreview.button(b,active);b.setAttribute('aria-label',(active?'停止试听 ':'试听 ')+(b.dataset.audioName||''));b.setAttribute('aria-pressed',String(active));});}
+  function syncPreview() {all('[data-preview]').forEach(b=>{const active=playing===b.dataset.preview;AppMotionPreview.button(b,active);b.setAttribute('aria-label',(active?T('停止试听 ','Stop previewing '):T('试听 ','Preview '))+(b.dataset.audioName||''));b.setAttribute('aria-pressed',String(active));});}
   function listen(id,name,duration) {
     if(playing===id) {stopPreview();return;}
     stopPreview();AppMotionPreview.claim('sounds',stopPreview);playing=id;syncPreview();playTimer=setTimeout(stopPreview,Math.max(800,duration*1000));
@@ -5465,7 +5466,8 @@ function createApprovedSoundsView(root,bridge) {
       const prompt=q('#sf-ai-prompt');prompt.value=state.prompt;
       const t=state.task,active=t&&['running','pending'].includes(t.phase),own=!!t&&t.context===d.context;
       prompt.disabled=!!active;
-      const generate=q('[data-act="generate"]');generate.disabled=!!active||!state.prompt.trim();generate.textContent=own&&t.phase==='saved'?T('再次生成','Generate Again'):T('生成','Generate');
+      const unavailable=bridge.generationReason();
+      const generate=q('[data-act="generate"]');generate.disabled=!!active||!state.prompt.trim()||!!unavailable;generate.textContent=own&&t.phase==='saved'?T('再次生成','Generate Again'):T('生成','Generate');
       if(active||own&&['failed','cancelled'].includes(t?.phase)) {const tv=taskView();if(tv) q('[data-ai-progress]').append(tv);}
       if(active&&!own)q('[data-ai-progress]').prepend(textNode(T('这是之前发起的任务，结果会保存到生成记录。当前目标不会自动使用这些结果。','This task was started earlier. Results go to generation history and will not be used automatically for this target.')));
       if(own&&t?.phase==='saved') {
@@ -5476,7 +5478,8 @@ function createApprovedSoundsView(root,bridge) {
         q('[data-ai-results]').append(textNode(T('这次生成已完成，音频已保存到生成记录。','This generation finished; the audio is saved in generation history.')),button(T('从生成记录选择…','Choose from Generation History…'),'use-history'));
       }
       const reason=q('[data-ai-reason]');
-      if(t?.phase==='pending') {reason.hidden=false;reason.textContent=T('请先保存或放弃待处理音频，再开始新的生成。','Save or discard the pending audio before generating again.');}
+      if(unavailable&&!active){reason.hidden=false;reason.textContent=unavailable;}
+      else if(t?.phase==='pending') {reason.hidden=false;reason.textContent=T('请先保存或放弃待处理音频，再开始新的生成。','Save or discard the pending audio before generating again.');}
       else if(t?.phase==='running') {reason.hidden=false;reason.textContent=T('关闭此表单后会继续生成，可从“生成记录”查看进度。','Generation continues after you close this form; follow progress in Generation History.');}
       const expanded=!!active||own&&['saved','failed'].includes(t?.phase);
       const content=document.createElement('div');content.className='sf-motion-content';
@@ -5557,7 +5560,7 @@ function createApprovedSoundsView(root,bridge) {
   root.addEventListener('submit',event=>{event.preventDefault();saveName();});
   root.addEventListener('input',event=>{
     if(event.target.id==='sf-name-input') {top().value=event.target.value;top().error='';q('[data-name-error]').hidden=true;persist();}
-    if(event.target.id==='sf-ai-prompt') {state.prompt=event.target.value;bridge.prompt(state.prompt);const b=q('[data-act="generate"]');if(b)b.disabled=!state.prompt.trim()||['running','pending'].includes(state.task?.phase);persist();}
+    if(event.target.id==='sf-ai-prompt') {state.prompt=event.target.value;bridge.prompt(state.prompt);const b=q('[data-act="generate"]');if(b)b.disabled=!state.prompt.trim()||['running','pending'].includes(state.task?.phase)||!!bridge.generationReason();const reason=q('[data-ai-reason]');if(reason&&!['running','pending'].includes(state.task?.phase)){reason.textContent=bridge.generationReason();reason.hidden=!reason.textContent;}persist();}
   });
   root.addEventListener('change',event=>{if(event.target.matches('[data-choice]')) {top().selected=event.target.value;commit();}});
   root.addEventListener('click',event=>{
@@ -5651,12 +5654,31 @@ function createApprovedSoundsView(root,bridge) {
   render();
   return {
     element:root,modal:()=>!!top(),
+    // URL/review scenes use the same form and reducer as user actions, with fixed local results.
+    demoDraft(){
+      const result=dispatch({type:'name',mode:'new',name:freshName(T('新的声音包','New Sound Pack'))});
+      if(result.error)return;
+      ui.packID=result.id;ui.route='detail';bridge.browse('detail',ui.packID);commit();
+    },
+    demoAI(scene,prompt=state.prompt){
+      state.prompt=prompt;bridge.prompt(prompt);
+      const d={type:'ai',source:'ai',packID:ui.packID,event:'notification',context:'demo-'+Date.now(),selected:null};
+      openDialog(d);
+      if(scene==='ready'||bridge.generationReason())return;
+      dispatch({type:'start',description:prompt,context:d.context,outcome:bridge.outcome(),service:bridge.service(),count:bridge.count(),time:'2026-10-26 12:00',due:Date.now()+1100});
+      if(scene!=='generating')dispatch({type:'finish',id:state.task.id});
+      if(scene==='applied'&&state.task?.phase==='saved'){
+        dispatch({type:'adopt',packID:d.packID,event:d.event,audio:state.task.items[0],origin:'ai',context:d.context});
+        closeDialog();
+      }
+      commit();
+    },
     profileChanged(){const d=ui.dialogs.find(d=>d.type==='ai');if(d){d.watching=state.task?.id;dispatch({type:'invalidate',context:d.context});}stopPreview();persist();},
     sync(detail,packID){
       state=bridge.read();root.style.colorScheme=container.dataset.theme==='dark'?'dark':'light';
       ui.packID=packID||state.packs[0]?.id;ui.route=detail==='history'?'history':detail==='pack'||detail?.startsWith('edit:')?'detail':'library';
       if(!state.packs.some(p=>p.id===ui.packID)&&ui.route==='detail')ui.route='library';if(!detail?.startsWith('edit:'))lastRequestedEvent=null;
-      render();if(detail?.startsWith('edit:')&&lastRequestedEvent!==packID+':'+detail){lastRequestedEvent=packID+':'+detail;requestAnimationFrame(()=>{const row=root.querySelector('[data-event="'+detail.slice(5)+'"]');if(!row)return;row.tabIndex=-1;row.scrollIntoView({block:'center'});row.focus();});}
+      render();if(detail?.startsWith('edit:')&&lastRequestedEvent!==packID+':'+detail){lastRequestedEvent=packID+':'+detail;requestAnimationFrame(()=>{const row=root.querySelector('[data-event="'+detail.slice(5)+'"]');if(!row)return;const target=selectedPack().kind==='builtin'?q('[data-act="copy-pack"]'):q('[data-act="sources"]',row);target?.scrollIntoView({block:'center'});target?.focus({preventScroll:true});});}
     },
     suspend(){stopPreview();ui.dialogs.forEach(d=>{if(d.type==='ai')dispatch({type:'invalidate',context:d.context});});ui.dialogs=[];ui.menu=null;bridge.modal(false);persist();},
     dispose(){this.suspend();clearTimeout(taskTimer);scheduledID=null;},
@@ -5707,9 +5729,10 @@ function approvedSoundsGuard(action){
   // answers to the restore fault below instead.
   if(p&&!p.healthy&&!isRestore)return T('此声音包不可用，原内容保留。','This pack is unavailable; its content is retained.');
   if(isRestore&&S.faults.restore)return T('恢复出厂声音失败，现有内容保留。','Restoring the factory sound failed; current contents are retained.');
-  if(['clear','adopt'].includes(action.type)&&S.faults.binding)return T('映射写入失败，原提示音保留。','Binding write failed; the previous cue is retained.');
+  if(['clear','adopt'].includes(action.type)&&(S.faults.binding||S.faults.adopt))return T('映射写入失败，原提示音保留。','Binding write failed; the previous cue is retained.');
   if(action.type==='delete-file'&&S.faults.fileDelete)return T('移到废纸篓失败，音频仍在包内。','Moving to Trash failed; audio remains in the pack.');
   if(action.type==='delete-pack'&&S.faults.deleteRetained)return T('移到废纸篓失败，声音包保留。','Moving to Trash failed; the pack is retained.');
+  if(action.type==='start'&&!cueRoute(S.approvedCues?.prompt??S.description).supported)return cueRoute(S.approvedCues?.prompt??S.description).message;
   if(action.type==='start'&&!hasCredential())return T('请先为当前生成服务配置 API Key，再生成候选。','Configure an API Key for the selected Provider before generating.');
   return '';
 }
@@ -5736,13 +5759,14 @@ function mountApprovedSounds(){
       icons:node=>{const names={'audio-lines':'wave','volume-2':'speaker',plug:'plug',bell:'bell',settings:'gear',command:'command',activity:'chart',info:'info','chevron-left':'back',plus:'plus','square-arrow-down':'file',sparkles:'ai','clock-3':'chart','chevron-right':'next',pencil:'edit',send:'start','circle-check':'finish','circle-pause':'interrupt','check-check':'branch','music-2':'wave','folder-open':'folder','file-audio':'file','trash-2':'trash',package:'file'};node.querySelectorAll('[data-lucide]').forEach(el=>{el.outerHTML=icon(names[el.dataset.lucide]||'wave');});},
       serviceStatus:()=>credentialText(credential()),
       hasCredential:()=>hasCredential(),
+      generationReason:()=>cueRoute(S.approvedCues?.prompt??S.description).message||(!hasCredential()?T('请先配置 API Key。','Configure an API Key first.'):''),
       serviceManagement:renderService
     });
   } else mount.append(approvedSoundsView.element);
   approvedSoundsView.sync(S.detail,S.pack);
 }
 
-function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+(S.returnContext?section('',button(T('返回工作区 · ','Back to Workspace · ')+S.returnContext.name,'return-scope')+`<p>${esc(S.returnContext.name)} › ${events[S.returnContext.event].name()}</p>`):'')+'<div id="approved-sounds-mount"></div>';}
+function renderSounds(){if(S.detail==='service')return renderService();if(S.detail==='panel')return renderPanelPacks();return libraryStatus()+feedback()+(S.returnContext?section('',button(T('返回工作区 · ','Back to Workspace · ')+S.returnContext.name,'return-scope')+`<p>${esc(S.returnContext.name)}${S.returnContext.event===null?'':' › '+events[S.returnContext.event].name()}</p>`):'')+'<div id="approved-sounds-mount"></div>';}
 function packActions(p){return row(T('包操作','Pack actions'),'',button(T('在 Finder 中显示…','Reveal in Finder…'),'reveal-pack','small-button',!installed(p)));}
 function renderSoundsLegacy(){
  if(S.detail==='service')return renderService();if(S.detail==='audio')return renderAudioFiles();if(S.detail==='panel')return renderPanelPacks();if(editorIndex()>=0)return renderSoundEditor();
@@ -5798,8 +5822,8 @@ function renderService(){const p=profile();return compactService()+
 const characterCount=value=>[...new Intl.Segmenter('und',{granularity:'grapheme'}).segment(value)].length;
 function describeError(){return S.description.trim()?'':T('请先描述想要的声音。','Describe the sound you want first.');}
 function nameError(value,limit){const n=value.trim();return !n?T('名称不能为空。','The name cannot be empty.'):characterCount(n)>limit?T(`名称最多 ${limit} 个字符。`,`The name may contain up to ${limit} characters.`):/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(n)?T('名称不能包含控制字符或换行。','The name cannot contain control characters or newlines.'):'';}
-function cueRoute(){
- const text=S.description,lower=text.toLowerCase();let quoted=false,words=null;
+function cueRoute(text=S.description){
+ const lower=text.toLowerCase();let quoted=false,words=null;
  for(const [a,b]of[['“','”'],['‘','’'],['「','」'],['『','』'],['"','"']]){const start=text.indexOf(a);if(start<0)continue;quoted=true;const end=text.indexOf(b,start+1);if(end>start+1&&text.slice(start+1,end).trim()){words=text.slice(start+1,end).trim();break;}}
  const noVoice=['不要人声','无人声','不要语音','不要说话','不说话','没有说话','无需说话','no voice','without voice','without speech'].reduce((t,n)=>t.replaceAll(n,''),lower);
  const speech=quoted||['说','朗读','念出','人声','语音','voice','say ','spoken','speech'].some(n=>noVoice.includes(n));
@@ -5856,7 +5880,7 @@ function renderIntegrations(){
  const desktop=S.hosts.filter(h=>hostKind(h)==='Desktop'),cli=S.hosts.filter(h=>hostKind(h)==='CLI');
  return `<p class="intro">${T('自动接收已启用应用的事件，并按声音设置播放提示音。','Automatically receive events from enabled apps and play cues using your sound settings.')}</p>`+
  (desktop.length?section(T('桌面应用','Desktop apps'),desktop.map(integrationHostRow).join('')):'')+
- (cli.length?section(T('命令行工具','CLI tools'),cli.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.')):'')+section('',button(T('活动与诊断','Activity & Diagnostics'),'nav:usage'));
+ (cli.length?section(T('命令行工具','CLI tools'),cli.map(integrationHostRow).join(''),T('接入准备与更新由 claudi0 自动完成。声音包、音量和事件开关在「工作区」中设置。','claudi0 prepares and maintains integrations automatically. Choose sound packs, volume, and event switches in Workspaces.')):'')+section('',disclosure(T('活动与诊断','Activity & Diagnostics'),'','','nav:usage'));
 }
 function hostBindings(h,i){
  const native=['UserPromptSubmit','Stop','StopFailure','Notification','SubagentStop'][i];
@@ -5895,6 +5919,7 @@ function reminderQualification(h,i){
 }
 function renderHostDetails(){const h=host();return section('',row(h.name+' <span class="host-kind">'+hostKind(h)+'</span>',hostIssue(h),`<span class="host-status">${hostState(h)}</span>`+toggle(h.name+' '+T('接收提醒','receive events'),`host-enabled:${h.id}`,h.enabled,h.installed===false&&!h.enabled),{host:h.icon})+(hostIntervention(h)?row(T('需要你的操作','Your action is needed'),'',hostIntervention(h)):''))+
  section(T('支持的提醒','Supported reminders'),events.map((e,i)=>{const c=capability(h,i);return row(e.name(),reminderQualification(h,i),`<span class="value">${!c.supported||!c.implemented?T('暂不支持','Unavailable'):!c.releaseAdmitted?T('待验证','Awaiting verification'):c.partial?T('部分支持','Partially supported'):T('支持','Supported')}</span>`,{id:`reminder-${e.id}`,icon:e.icon,color:e.color});}).join(''),h.id==='workbuddy'?T('WorkBuddy 可按目录适用工作区声音配置。通知仅覆盖授权与空闲提醒；执行中断尚未实现。','WorkBuddy follows workspace sound rules by directory. Notifications cover permission and idle prompts only; interruption is not implemented.'):T('按此应用提供的事件自动提醒；各类提醒可在声音设置中单独开关。','Events provided by this app trigger reminders automatically. Turn individual reminders on or off in sound settings.'))+
+ section('',disclosure(T('在工作区中设置声音','Set sounds in Workspaces'),'','','to-events'))+
  section('',disclosure(T('诊断详情…','Diagnostics…'),T('接入信息与排障记录。','Integration information and troubleshooting records.'),'','host-diagnostics'));}
 function renderHostDiagnostics(){const h=host();return `<p class="intro">${T('这些信息用于排查接入问题，日常使用无需调整。','These details help troubleshoot integration issues. No changes are needed for everyday use.')}</p>`+
  section(T('接入信息','Integration information'),row(T('连接状态','Connection status'),hostState(h),button(T('重新检测','Check again'),'detect-host','small-button',!!h.maintenance))+row(T('接入方式','Integration method'),h.id==='workbuddy'?'Desktop hooks':h.id==='opencode'?'Server plugin':'Native hooks')+row(T('配置来源','Configuration source'),hostPath(h),button(h.id==='workbuddy'?T('复制 /hooks','Copy /hooks'):T('复制路径','Copy path'),'copy-host-path'))+row(T('安装代次','Installation identity'),esc(h.installationID))+row(T('维护连接','Maintain connection'),T('重新配置此应用的接入。','Prepare this app’s integration again.'),button(T('重新配置','Prepare again'),'repair-host','small-button',!h.enabled||!!h.maintenance)))+
@@ -5910,7 +5935,7 @@ function renderNotifications(){const f=S.focusAuth,c=S.calendarAuth;const animKe
  (S.receiver==='unavailable'?`<p class="caption">${T('实时来源提示暂不可用（RECEIVER_BIND_FAILED）','Live source prompts unavailable (RECEIVER_BIND_FAILED)')}</p>`:''))+
 section('',`<button class="row disclosure-row multi" data-action="animation-detail" data-focus-key="animation-detail"><span class="label"><strong>${T('事件动画','Event animation')}</strong><small>${T('选择横幅中显示的图标或角色，切换后立即生效。','Choose the icon or character shown in event banners. Changes apply immediately.')}</small></span><span class="controls"><span class="value">${T(...animationStyleNames[animKey])}</span>${icon('next','chevron')}</span></button>`)+
 `<details class="section"><summary>${T('健康信息','Health details')}</summary>`+ section(T('当前状态','Current state'),row(T('当前原因','Current reason'),T(...quietNames[S.quietReason]),'',{id:'quiet-status'})+row(T('快照状态','Snapshot status'),T(...healthNames[S.quietHealth]),'',{id:'quiet-health'})+(S.quietHealth!=='current'?reason(T('无法发布 Dynamic Quiet State；之前的快照过期后，自动提示音会继续播放。','Dynamic Quiet State could not be published. Automatic sounds continue after any previous snapshot expires.'),'warning'):'')+((S.focusObservedActive===null&&S.quietReason!=='observerFailure')?reason(T('Dynamic Quiet State observer 不可用；自动提示音继续播放','A Dynamic Quiet State observer is unavailable; automatic sounds continue'),'warning'):''))+`</details>`+
- section('',button(T('前往事件与提示音','Open Events & Sounds'),'to-events'))+feedback();}
+ section('',disclosure(T('工作区声音设置','Workspace Sound Settings'),'','','to-events'))+feedback();}
 const loginNames={enabled:['已由 macOS 启用','Enabled by macOS'],disabled:['未向 macOS 注册','Not registered with macOS'],requiresApproval:['已注册，但 macOS 正等待你在登录项设置中批准','Registered, but macOS is waiting for your approval in Login Items settings'],unavailable:['此安装中的登录项服务不可用。请重新安装 claudi0。','Login item service is unavailable in this installation. Reinstall claudi0.']};
 function renderGeneral(){return  section('',row(T('语言','Language'),S.language==='system'?T(`当前系统语言显示为${S.systemLanguage==='zh'?'简体中文':'English'}。`,`System language currently displays as ${S.systemLanguage==='zh'?'简体中文':'English'}.`):'',picker(T('语言','Language'),'language',[['system',T('跟随系统','Follow System')],['zh',T('简体中文','Simplified Chinese')],['en',T('English','English')]],S.language)))+
  section('',row(T('登录时打开 claudi0','Open claudi0 at login'),T(...loginNames[S.login]),toggle(T('登录时打开 claudi0','Open claudi0 at login'),'login',['enabled','requiresApproval'].includes(S.login),S.login==='unavailable'||!!S.operation))+
@@ -6046,15 +6071,13 @@ function applyAIDeepLink(params){
   navigate('sounds','service');S.credentials[S.profile]={status:'missing'};render();credentialSheet();return;
  }
  if(!['candidates','generating','applied'].includes(scene)){render();return;}
- navigate('sounds','edit:notification',{pack:'studio'});S.expandedEvent=3;
- S.description=profile().routes.includes('soundEffect')
+ navigate('sounds','edit:notification',{pack:'studio'});
+ const prompt=profile().routes.includes('soundEffect')
   ?T('一声清脆的木琴上行提示音，短促干净，不要背景音乐','A crisp ascending marimba sound effect, short and clean, no background music')
   :T('说“任务完成”','Say "Task complete" in English');
- // These URL scenes use fixed local demo outcomes, never provider requests.
- if(!cueRoute().supported){render();return;}
- if(!hasCredential())S.credentials[S.profile]={status:'verified'};
- beginGeneration(scene!=='generating');
- if(scene==='applied'&&S.candidates.length)adoptCandidate(0);
+ // Fixed demo credentials and local outcomes, never provider requests.
+ if(cueRoute(prompt).supported&&!hasCredential())S.credentials[S.profile]={status:'verified'};
+ approvedSoundsView.demoAI(scene,prompt);
 }
 function credentialSheet(){const pr=profile(),profileID=S.profile;openSheet('设置 API Key','Set up API Key',()=>`<p>${profileName(pr)}</p><div class="form-stack">${pr.workspace?`<label for="credential-workspace">${T('百炼业务空间 ID','Bailian workspace ID')}</label><input id="credential-workspace" class="field" value="prototype-space" readonly><p>${T('模型权限已检查 · 待真实生成验证','Model permissions checked · Generation unverified')}</p>`:''}<label for="credential-key">API Key</label><input id="credential-key" type="password" class="field" value="prototype-fake-key" readonly aria-label="${T('演示 API Key，不接收真实 Key','Demo API Key; real keys are not accepted')}"></div><p>${providerDisclosure(pr)}</p><p>${credentialStorage(pr)}</p><div class="group">${row(T('状态','Status'),credentialText(S.credentials[profileID]),'',{id:'credential-status'})}${row(T('保存位置','Storage'),pr.local?T('私有本地文件，未加密','Private local file, unencrypted'):'macOS Keychain')}</div><p>${T('只选择固定演示结果，不接收真实 API Key。保存不会自动生成。','Only fixed demo outcomes are accepted, never real API keys. Saving does not generate audio.')}</p><div class="form-stack"><label for="credential-demo">${T('演示验证结果','Demo validation outcome')}</label><select id="credential-demo"><option value="valid">${T('通过','Accepted')}</option><option value="rejected">${T('拒绝','Rejected')}</option><option value="unavailable">${T('存储不可用','Storage unavailable')}</option><option value="writeFailure">${T('保存失败','Save failed')}</option></select></div>`,()=>button(T('检查已保存 Key','Check saved Key'),'check-credential','small-button',S.credentials[profileID].status==='missing')+button(pr.deferred?T('保存 API Key','Save API Key'):T('验证并保存','Verify and save'),'save-credential','small-button primary')+(S.credentials[profileID].status==='pending'?button(T('取消替换','Cancel replacement'),'cancel-replacement'):'')+button(T('删除凭据…','Delete credential…'),'delete-credential','small-button destructive',S.credentials[profileID].status==='missing'),()=>{
  const check=$('sheet').querySelector('[data-action="check-credential"]');check.onclick=()=>{const previous=structuredClone(S.credentials[profileID]),token=modalEpoch,epoch=S.epoch;S.credentialCheck={previous,profile:profileID,epoch};S.credentials[profileID].status='checking';$('credential-status').querySelector('small').textContent=credentialText(S.credentials[profileID]);$('sheet').querySelectorAll('[data-action="check-credential"],[data-action="save-credential"],[data-action="cancel-replacement"],[data-action="delete-credential"],#credential-demo').forEach(e=>e.disabled=true);setTimeout(()=>{if(S.profile!==profileID||epoch!==S.epoch||token!==modalEpoch)return;S.credentials[profileID]=previous;S.credentialCheck=null;render();if($('sheet').open)renderSheet();},450);};
@@ -6147,13 +6170,14 @@ function action(value,control){const [a,id]=value.split(':');
  if(a==='sheet-cancel')return closeSheet();
  if(a==='detail-back')return detailBack();
  if(a==='workspaces')return navigate('events','workspaces');if(a==='scope-details')return navigate('events','scope-details');
+ if(a==='manage-sounds'){const g=scope();if(!g)return;const captured={...scopeIdentity(g),name:scopeName(g),event:null};navigate('sounds',null,{returnContext:captured});return;}
  if(a==='select-workspace')return navigate('events','profile',{scope:id});if(a==='add-workspace')return addWorkspace();if(a==='to-events')return navigate('events');
  if(a==='back-sounds')return navigate('sounds');if(a==='service')return navigate('sounds','service');if(a==='audio-files')return navigate('sounds','audio');if(a==='panel-packs')return navigate('sounds','panel');
  if(a==='preview'){if(control.classList.contains('playing'))return stopAudio();return playTone(Number(id),control);}if(a==='preview-all')return playAll();if(a==='candidate-preview'){if(control.classList.contains('playing'))return stopAudio();return playTone(editorIndex(),control);}
  if(a==='edit-from-scope'){const g=scope();if(!g)return;S.returnContext={...scopeIdentity(g),name:scopeName(g),event:Number(id)};S.expandedEvent=null;return navigate('sounds',`edit:${events[Number(id)].id}`,{pack:g.pack});}
  if(a==='edit-pack'){S.expandedEvent=null;return navigate('sounds',`edit:${events[Number(id)].id}`);}
  if(a==='generate-pack'){const i=Number(id);S.expandedEvent=i;navigate('sounds',`edit:${events[i].id}`);$('cue-description')?.focus();return;}
- if(a==='return-scope'){const r=S.returnContext;if(!r)return navigate('events');const valid=validScope(r);S.scope=r.id;S.invalidScope=valid?null:r;navigate('events','profile',{scope:r.id});S.returnContext=null;if(valid)requestAnimationFrame(()=>$('page-content').querySelector(`[data-action="edit-from-scope:${r.event}"]`)?.focus());else focusReason();return;}
+ if(a==='return-scope'){const r=S.returnContext;if(!r)return navigate('events');const valid=validScope(r);S.scope=r.id;S.invalidScope=valid?null:r;navigate('events','profile',{scope:r.id});S.returnContext=null;if(valid)requestAnimationFrame(()=>$('page-content').querySelector(r.event===null?'[data-action="manage-sounds"]':`[data-action="edit-from-scope:${r.event}"]`)?.focus());else focusReason();return;}
  if(a==='delete-pack'){closeSheet();return deletePack();}
  if(a==='restore-library'){closeSheet();return restoreFactory(true);}if(a==='restore-pack'){closeSheet();return restoreFactory(false);}
  if(a==='retry-last'){const retry=S.retry;if(!retry)return;S.retry=null;S.faults[retry.fault]=false;return retry.run();}
@@ -6248,7 +6272,7 @@ function setScene(value){approvedSoundsView?.dispose();approvedSoundsView=null;c
  else if(value==='importBindFailure'){sounds('edit:notification');S.faults.importBind=true;}
  else if(value==='importPartial'){sounds();S.faults.importPartial=true;}
  else if(value==='fileDeleteFailure'){sounds('audio');S.faults.fileDelete=true;}
- else if(value==='draft'){S.page='sounds';newPack();}
+ else if(value==='draft'){sounds('pack');}
  else if(['partial','generationFailure','adoptionFailure'].includes(value)){sounds('edit:notification');S.expandedEvent=3;S.profile=value==='partial'?'senseaudio-cn':'elevenlabs-global';S.faults[{partial:'partial',generationFailure:'generation',adoptionFailure:'adopt'}[value]]=true;}
  else if(value.startsWith('credential')){sounds('service');if(value==='credentialDeferred'){S.profile='bailian-beijing';S.credentials[S.profile]={status:'deferred'};}else if(value==='credentialDeleteFailure')S.faults.credentialDelete=true;else S.credentials[S.profile]={status:{credentialChecking:'checking',credentialMissing:'missing',credentialRejected:'rejected',credentialUnavailable:'unavailable'}[value]};}
  else if(value.startsWith('host')||value==='receiptClearFailure'){S.page='integrations';const h=host();h.state={hostNotConnected:'notConnected',hostLegacy:'legacy',hostAwaiting:'awaitingActivation',hostPreparing:'awaitingActivation',hostRecovering:'awaitingActivation',hostManual:'awaitingActivation',hostReady:'ready',hostFailure:'needsAttention'}[value]||'ready';h.enabled=h.state!=='notConnected';h.receipts.forEach(r=>r.current=h.state==='ready');if(value==='hostReady')h.receipts=events.map((_,event)=>receiptFixture(h,event,event!==2)).filter(r=>r.current);if(value==='hostManual')h.manualRequired=h.requiresConfirmation=true;if(value==='hostNotInstalled')h.installed=false;if(value==='hostOffUninstalled'){h.installed=false;h.enabled=false;h.state='notConnected';}if(value==='hostFailure')S.faults.host=h.id;if(value==='receiptClearFailure'){S.faults.receiptClear=true;S.detail='host-diagnostics';}}
@@ -6270,6 +6294,8 @@ function setScene(value){approvedSoundsView?.dispose();approvedSoundsView=null;c
  else if(value==='platformFailure'){S.page='general';S.login='requiresApproval';S.faults.platform=true;}
  else if(value==='updateFailure'){S.page='about';S.updateState='failed';}
  attachReceiptFacts();render();$('page-scroll').scrollTop=0;
+ if(value==='draft')approvedSoundsView.demoDraft();
+ if(['firstGeneration','partial','generationFailure','adoptionFailure'].includes(value))approvedSoundsView.demoAI('ready');
  if(['hostPreparing','hostRecovering','hostLegacy'].includes(value))maintainHost(host(),value==='hostPreparing'?'preparing':'recovering');
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b&&!b.disabled)action(b.dataset.action,b);});
@@ -6302,6 +6328,13 @@ function closeWindow(minimized=false){cleanup();if($('sheet').open)closeSheet();
 $('window-close').onclick=()=>closeWindow();$('window-minimize').onclick=()=>closeWindow(true);$('window-maximize').onclick=()=>{$('preview-size').value=$('settings-window').classList.contains('minimum')?'default':'minimum';applySize();};
 document.addEventListener('keydown',e=>{if(e.key!=='Escape'||$('sheet').open)return;if(S.generation==='busy')return action('cancel-generation');$('settings-nav').querySelector('.active')?.focus();});
 $('sheet').addEventListener('cancel',e=>{e.preventDefault();closeSheet();});
+$('sheet').addEventListener('keydown',e=>{
+ if(e.key!=='Tab')return;
+ const controls=[...$('sheet').querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')].filter(el=>!el.closest('[hidden]'));
+ const first=controls[0],last=controls.at(-1),active=document.activeElement;
+ if(e.shiftKey&&active===first){e.preventDefault();last?.focus();}
+ else if(!e.shiftKey&&active===last){e.preventDefault();first?.focus();}
+});
 function applyTheme(){const t=$('preview-theme').value;document.documentElement.dataset.theme=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;if(S.page==='notifications'&&S.detail==='animation')renderAnimationAlignment();}
 function applySize(){$('settings-window').classList.toggle('minimum',$('preview-size').value==='minimum');}
 $('preview-scene').innerHTML=scenes.map(s=>`<option value="${s.id}">${s.zh}</option>`).join('');
@@ -6318,11 +6351,11 @@ window.prototypeReview={getState:()=>JSON.parse(JSON.stringify(S)),setScene,expi
 // Throwaway navigation demo: browsing identity and reading position only.
 const browsing={entries:[],cursor:-1,version:0};
 function clearBrowsingHistory(){browsing.entries=[];browsing.cursor=-1;browsing.version++;}
-const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action});
+const position=()=>({page:S.page,detail:S.detail,scope:S.scope,pack:S.pack,host:S.selectedHost,returnContext:S.returnContext?structuredClone(S.returnContext):null,directory:S.scopes.find(v=>v.id===S.scope)?.path,scroll:$('page-scroll').scrollTop,focus:document.activeElement?.dataset.action,focusRegion:$('settings-nav').contains(document.activeElement)?'nav':'content'});
 const same=(a,b)=>a&&b&&['page','detail','scope','pack','host','directory'].every(k=>a[k]===b[k]);
 function recordPosition(p,replace=false){if(replace&&browsing.cursor>=0)browsing.entries[browsing.cursor]=p;else{browsing.entries.splice(browsing.cursor+1);browsing.entries.push(p);if(browsing.entries.length>64)browsing.entries.shift();browsing.cursor=browsing.entries.length-1;}browsing.version++;}
-function navigate(page,detail=null,options={}){if($('sheet').open||approvedSoundsView?.modal())return;const about=page==='about';if(about||page==='shortcuts'||page==='display')page='general';if(page==='events'&&!detail)detail='workspaces';const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(detail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page==='usage'?'integrations':page}"]`)?.focus();}if(about){modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));openSheet('关于 claudi0','About claudi0',renderAbout);modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));}}
-function traverse(delta){if($('sheet').open||approvedSoundsView?.modal())return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();document.querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
+function navigate(page,detail=null,options={}){if($('sheet').open||approvedSoundsView?.modal())return;const requestedDetail=detail;const about=page==='about';if(about||page==='shortcuts'||page==='display')page='general';if(page==='events'&&!detail)detail='workspaces';const previous=position();if(browsing.cursor>=0)browsing.entries[browsing.cursor]=previous;if(options.host)S.selectedHost=options.host;navigateOriginal(page,detail,{...options,focus:false});const next=position();if(!same(previous,next)||browsing.cursor<0)recordPosition(next);drawNavigation();if(options.focus!==false){if(requestedDetail)$('page-title').focus({preventScroll:true});else document.querySelector(`[data-action="nav:${page==='usage'?'integrations':page}"]`)?.focus();}if(about){modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));openSheet('关于 claudi0','About claudi0',renderAbout);modalReturn=captureFocus(document.querySelector('[data-action="open-about"]'));}}
+function traverse(delta){if($('sheet').open||approvedSoundsView?.modal())return;const cursor=browsing.cursor+delta;if(cursor<0||cursor>=browsing.entries.length)return;browsing.entries[browsing.cursor]=position();browsing.cursor=cursor;browsing.version++;const p=browsing.entries[cursor];S.selectedHost=p.host;S.returnContext=p.returnContext?structuredClone(p.returnContext):null;navigateOriginal(p.page,p.detail,{scope:p.scope,pack:p.pack,scroll:p.scroll,focus:false});if(p.directory&&S.scopes.find(v=>v.id===p.scope)?.path!==p.directory)$('page-content').innerHTML=reason(T('此工作区的目录身份已改变。请选择新的位置。','This workspace directory identity has changed. Choose a new location.'),'error','target-unavailable');drawNavigation();(p.focusRegion==='nav'?$('settings-nav'):$('page-content')).querySelector(`[data-action="${p.focus}"]`)?.focus({preventScroll:true});}
 const renderOriginal=render;
 render=function(){renderOriginal();if(S.page==='notifications'&&S.detail==='animation')renderAnimationAlignment();drawNavigation();};
 function renderAnimationAlignment(){

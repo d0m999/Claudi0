@@ -1,0 +1,47 @@
+Source: keyboard-serial-1.txt
+Original SHA-256: a2d88e20dc0bc2bbc9e3ebfc4de9b81bcb3a3efbc32c89f3ad7f74f832c8d457
+Verbatim lines: 5-47 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:99257B39-49BA-4DAD-9625-47823B05369E, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:1054DDD9-C559-4541-9063-E1F326258B13, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+  clear clearActivity / escape: previous=[], window=61093, key=true, appKey=61093, order=[61093, 61092], responder=_NSAlertButton@ObjectIdentifier(0x0000007907a24000), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / escape: recorded=[], window=61092, key=true, appKey=61092, order=[61092], responder=KeyViewProxy@ObjectIdentifier(0x0000007907a26700), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: previous=[], window=61094, key=true, appKey=61094, order=[61094, 61092], responder=_NSAlertButton@ObjectIdentifier(0x0000007907a24900), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: recorded=[], window=61092, key=true, appKey=61092, order=[61092], responder=KeyViewProxy@ObjectIdentifier(0x0000007907a26700), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: previous=[], window=61095, key=true, appKey=61095, order=[61095, 61092], responder=_NSAlertButton@ObjectIdentifier(0x0000007907a24c00), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearActivity], window=61092, key=true, appKey=61092, order=[61092], responder=KeyViewProxy@ObjectIdentifier(0x0000007907a27900), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: cancellation restores clearLog without clearing
+  clear clearLog / escape: previous=[], window=61097, key=true, appKey=61097, order=[61097, 61096], responder=_NSAlertButton@ObjectIdentifier(0x0000007907ea8300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / escape: recorded=[], window=61096, key=true, appKey=61096, order=[61096], responder=KeyViewProxy@ObjectIdentifier(0x0000007907eaa700), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: previous=[], window=61098, key=true, appKey=61098, order=[61098, 61096], responder=_NSAlertButton@ObjectIdentifier(0x00000079078d2a00), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: recorded=[], window=61096, key=true, appKey=61096, order=[61096], responder=KeyViewProxy@ObjectIdentifier(0x0000007907eaa700), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: previous=[], window=61099, key=true, appKey=61099, order=[61099, 61096], responder=_NSAlertButton@ObjectIdentifier(0x00000079078d3600), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearLog], window=61096, key=true, appKey=61096, order=[61096], responder=KeyViewProxy@ObjectIdentifier(0x0000007907eabc00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: About opens and cancels from its entry / zhHans
+• Settings keyboard: About opens and cancels from its entry / english
+Settings navigation native focus: 352 checks, 0 failures

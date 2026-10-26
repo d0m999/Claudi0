@@ -1,0 +1,137 @@
+{
+  "checkedAt": "2026-10-26T10:59:07.147939+00:00",
+  "lateBaselineTime": "2026-10-26T08:23:20.077043+00:00",
+  "boundary": "Launcher snapshots began at task setup. Actual CLT Swift/Git and ffmpeg snapshots began before the final independent fixture, not before the earliest diagnostic runs. Both SHA-256 and POSIX modes match these recorded baselines after cleanup.",
+  "tools": [
+    {
+      "executable": "/usr/bin/swift",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/usr/bin/swiftc",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3.10",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "aec1c00170b6ad6497ef3e9fa5d98fa9669bc00588df1b25e381cf7857edfe8a",
+        "mode": "0o775"
+      },
+      "afterCloseout": {
+        "sha256": "aec1c00170b6ad6497ef3e9fa5d98fa9669bc00588df1b25e381cf7857edfe8a",
+        "mode": "0o775"
+      },
+      "matches": true
+    },
+    {
+      "executable": "$USER_HOME/.nvm/versions/node/v24.4.1/bin/node",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "0429b268de244397f6b8921a938f55151c4469ab70571799780533eae6abfbce",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "0429b268de244397f6b8921a938f55151c4469ab70571799780533eae6abfbce",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/usr/bin/git",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/usr/bin/codesign",
+      "baseline": "task-start-launchers",
+      "expected": {
+        "sha256": "d517c9be608ffd266ec106c685e880cda71abc94001450e36d2476016406dd1e",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "d517c9be608ffd266ec106c685e880cda71abc94001450e36d2476016406dd1e",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/Library/Developer/CommandLineTools/usr/bin/swift-frontend",
+      "baseline": "before-final-fixture",
+      "expected": {
+        "sha256": "cf81104bf554eef05e28a8bb5285c763f1323b4511b944d755d8bdd6cb8db717",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "cf81104bf554eef05e28a8bb5285c763f1323b4511b944d755d8bdd6cb8db717",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/Library/Developer/CommandLineTools/usr/bin/git",
+      "baseline": "before-final-fixture",
+      "expected": {
+        "sha256": "a73bf622a2e470d5d57a4b1d5aef1e8680e67278018d4858a2f93825b7d595c7",
+        "mode": "0o755"
+      },
+      "afterCloseout": {
+        "sha256": "a73bf622a2e470d5d57a4b1d5aef1e8680e67278018d4858a2f93825b7d595c7",
+        "mode": "0o755"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/opt/homebrew/Cellar/ffmpeg/9.0.2/bin/ffmpeg",
+      "baseline": "before-final-fixture",
+      "expected": {
+        "sha256": "c8173e9755795978bce8e104f8d7044fabe7d6d84044aba37d3648c6f4e4e1a8",
+        "mode": "0o555"
+      },
+      "afterCloseout": {
+        "sha256": "c8173e9755795978bce8e104f8d7044fabe7d6d84044aba37d3648c6f4e4e1a8",
+        "mode": "0o555"
+      },
+      "matches": true
+    },
+    {
+      "executable": "/opt/homebrew/Cellar/ffmpeg/9.0.2/bin/ffprobe",
+      "baseline": "before-final-fixture",
+      "expected": {
+        "sha256": "56559c234422b0e3722c54b2bd99bbd8cd83d3732a13a6d207589982a6b7085e",
+        "mode": "0o555"
+      },
+      "afterCloseout": {
+        "sha256": "56559c234422b0e3722c54b2bd99bbd8cd83d3732a13a6d207589982a6b7085e",
+        "mode": "0o555"
+      },
+      "matches": true
+    }
+  ]
+}

@@ -30,6 +30,7 @@ struct AboutSettingsSheet: View {
             }
         }
         .padding(24).frame(width: 620, height: 520)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.about.sheet")
         .task {
             await Task.yield()

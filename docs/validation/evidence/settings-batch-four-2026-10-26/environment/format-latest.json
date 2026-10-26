@@ -1,0 +1,29 @@
+{
+  "baseline": 687,
+  "current": 687,
+  "added": [],
+  "changedSwiftFiles": [
+    "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift",
+    "gui/Sources/ClaudioSettingsPresentation/AboutSettingsSheet.swift",
+    "gui/Sources/ClaudioSettingsPresentation/AboutSettingsView.swift",
+    "gui/Sources/ClaudioSettingsPresentation/EventAnimationActionButton.swift",
+    "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift",
+    "gui/Sources/ClaudioSettingsPresentation/IntegrationsSettingsDestinationView.swift",
+    "gui/Sources/ClaudioSettingsPresentation/SettingsNativeShellController.swift",
+    "gui/Sources/ClaudioSettingsPresentation/SettingsNavigationRow.swift",
+    "gui/Sources/ClaudioSettingsPresentation/SettingsRootView.swift",
+    "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsLibraryView.swift",
+    "gui/Tests/ClaudioGUICoreTests/AICueTaskAnimationSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/FivePageSettingsNativeSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/GUIHarnessExecution.swift",
+    "gui/Tests/ClaudioGUICoreTests/GUIHarnessRoutingSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsFeedbackNativeSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsKeyboardAboutSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsKeyboardConfirmationSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsNativePolishSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsNativeShellSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsNavigationFocusSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/SettingsNavigationRowSuite.swift",
+    "gui/Tests/ClaudioGUICoreTests/main.swift"
+  ]
+}

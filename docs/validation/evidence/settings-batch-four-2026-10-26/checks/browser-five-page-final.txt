@@ -1,0 +1,9 @@
+Source: browser-five-page-final.txt
+Original SHA-256: 2abebc5492271163520597850f15e83a9e775965b96797a40d52d2246f1955c2
+Verbatim lines: 1-5 (only build output before the harness is omitted)
+
+......
+----------------------------------------------------------------------
+Ran 6 tests in 9.832s
+
+OK

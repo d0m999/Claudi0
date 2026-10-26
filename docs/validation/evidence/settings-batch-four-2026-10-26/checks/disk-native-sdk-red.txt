@@ -1,0 +1,16 @@
+Source: disk-native-sdk-red.txt
+Original SHA-256: 9434b5456ff1b2010ec88ee976ec1a72058db6ca47ef264a94e05b7704bde526
+Verbatim lines: 9002-9013 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-disk-pack-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: disk-backed detail / builtin=false
+• Settings native focus: disk-backed detail / builtin=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  ✗ Disk hydration retains a mounted content responder: window=63715, key=true, appKey=63715, order=[63715], responder=RetainedSettingsWindow@ObjectIdentifier(0x0000007a49afdb80), ax=||, sheet=0, fullKeyboard=true  (claudio_gui_tests/SettingsNavigationFocusSuite.swift:289)
+Settings disk pack focus: 8 checks, 1 failures

@@ -1,0 +1,164 @@
+Source: navigation-visual-feedback-red-1.txt
+Original SHA-256: 3c56e425a93f3e47063a568e4229f1dd2a0f6ac9800ae75cf5d2d778a0372425
+Verbatim lines: 430-589 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-polish-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings feedback: actual success root and About sheet zhHans/false/960.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root zhHans/false/960.0
+• Settings feedback: actual partial-candidate form zhHans/false/960.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet zhHans/false/1240.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root zhHans/false/1240.0
+• Settings feedback: actual partial-candidate form zhHans/false/1240.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet zhHans/true/960.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root zhHans/true/960.0
+• Settings feedback: actual partial-candidate form zhHans/true/960.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet zhHans/true/1240.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root zhHans/true/1240.0
+• Settings feedback: actual partial-candidate form zhHans/true/1240.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet english/false/960.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root english/false/960.0
+• Settings feedback: actual partial-candidate form english/false/960.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet english/false/1240.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root english/false/1240.0
+• Settings feedback: actual partial-candidate form english/false/1240.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet english/true/960.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root english/true/960.0
+• Settings feedback: actual partial-candidate form english/true/960.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: actual success root and About sheet english/true/1240.0
+  ✗ Root success icon uses the current appearance's semantic color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:212)
+  ✗ The actual About success icon inherits the settings appearance  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:228)
+• Settings feedback: actual warning root english/true/1240.0
+• Settings feedback: actual partial-candidate form english/true/1240.0
+  ✗ The partial-candidate warning has the semantic icon color  (claudio_gui_tests/SettingsFeedbackNativeSuite.swift:276)
+• Settings feedback: mounted system error zhHans/false/960.0
+• Settings feedback: mounted system error zhHans/false/1240.0
+• Settings feedback: mounted system error zhHans/true/960.0
+• Settings feedback: mounted system error zhHans/true/1240.0
+• Settings feedback: mounted system error english/false/960.0
+• Settings feedback: mounted system error english/false/1240.0
+• Settings feedback: mounted system error english/true/960.0
+• Settings feedback: mounted system error english/true/1240.0
+• Settings feedback: root to naming sheet zhHans/false/960.0
+• Settings feedback: root to naming sheet zhHans/false/1240.0
+• Settings feedback: root to naming sheet zhHans/true/960.0
+• Settings feedback: root to naming sheet zhHans/true/1240.0
+• Settings feedback: root to naming sheet english/false/960.0
+• Settings feedback: root to naming sheet english/false/1240.0
+• Settings feedback: root to naming sheet english/true/960.0
+• Settings feedback: root to naming sheet english/true/1240.0
+• Settings feedback: long selectable message false/false
+• Settings feedback: long selectable message false/true
+• Settings feedback: long selectable message true/false
+• Settings feedback: long selectable message true/true
+• Settings feedback: panel default isolation false
+• Settings feedback: panel default isolation true
+• Settings navigation layout: 0/zhHans/false/960.0
+• Settings navigation layout: 1/zhHans/false/960.0
+• Settings navigation layout: 2/zhHans/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 3/zhHans/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/zhHans/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/zhHans/false/960.0
+• Settings navigation layout: 0/zhHans/false/1240.0
+• Settings navigation layout: 1/zhHans/false/1240.0
+• Settings navigation layout: 2/zhHans/false/1240.0
+• Settings navigation layout: 3/zhHans/false/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 19.0, 716.0, 19.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/zhHans/false/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/zhHans/false/1240.0
+• Settings navigation layout: 0/zhHans/true/960.0
+• Settings navigation layout: 1/zhHans/true/960.0
+• Settings navigation layout: 2/zhHans/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 3/zhHans/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/zhHans/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/zhHans/true/960.0
+• Settings navigation layout: 0/zhHans/true/1240.0
+• Settings navigation layout: 1/zhHans/true/1240.0
+• Settings navigation layout: 2/zhHans/true/1240.0
+• Settings navigation layout: 3/zhHans/true/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 19.0, 716.0, 19.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/zhHans/true/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/zhHans/true/1240.0
+• Settings navigation layout: 0/english/false/960.0
+• Settings navigation layout: 1/english/false/960.0
+• Settings navigation layout: 2/english/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 3/english/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/english/false/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/english/false/960.0
+• Settings navigation layout: 0/english/false/1240.0
+• Settings navigation layout: 1/english/false/1240.0
+• Settings navigation layout: 2/english/false/1240.0
+• Settings navigation layout: 3/english/false/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 19.0, 716.0, 19.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/english/false/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/english/false/1240.0
+• Settings navigation layout: 0/english/true/960.0
+• Settings navigation layout: 1/english/true/960.0
+• Settings navigation layout: 2/english/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 3/english/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/english/true/960.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 697.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/english/true/960.0
+• Settings navigation layout: 0/english/true/1240.0
+• Settings navigation layout: 1/english/true/1240.0
+• Settings navigation layout: 2/english/true/1240.0
+• Settings navigation layout: 3/english/true/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 19.0, 716.0, 19.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 4/english/true/1240.0
+  ✗ Focused navigation row scrolls fully into view: (0.0, 0.0, 0.0, 0.0) / (0.0, 0.0, 716.0, 38.0)  (claudio_gui_tests/SettingsNavigationRowSuite.swift:127)
+• Settings navigation layout: 5/english/true/1240.0
+• Settings navigation layout: long label, whole-row hit and disabled action
+• Settings polish: update switch and sound headings zhHans/false/960.0
+• Settings polish: diagnostics keyboard route zhHans/false/960.0
+• Settings polish: update switch and sound headings zhHans/false/1240.0
+• Settings polish: diagnostics keyboard route zhHans/false/1240.0
+• Settings polish: update switch and sound headings zhHans/true/960.0
+• Settings polish: diagnostics keyboard route zhHans/true/960.0
+• Settings polish: update switch and sound headings zhHans/true/1240.0
+• Settings polish: diagnostics keyboard route zhHans/true/1240.0
+• Settings polish: update switch and sound headings english/false/960.0
+• Settings polish: diagnostics keyboard route english/false/960.0
+• Settings polish: update switch and sound headings english/false/1240.0
+• Settings polish: diagnostics keyboard route english/false/1240.0
+• Settings polish: update switch and sound headings english/true/960.0
+• Settings polish: diagnostics keyboard route english/true/960.0
+• Settings polish: update switch and sound headings english/true/1240.0
+• Settings polish: diagnostics keyboard route english/true/1240.0
+• Settings polish: destructive action progress clearActivity
+• Settings polish: destructive action progress clearLog
+Settings native polish: 613 checks, 44 failures

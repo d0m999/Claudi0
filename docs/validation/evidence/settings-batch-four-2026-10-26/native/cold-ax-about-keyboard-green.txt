@@ -1,0 +1,575 @@
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0
+				21 value indicator (settable, float) 0
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 26 button Description: 关闭, ID: settings.about.close
+
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.1557943207981581
+				21 value indicator (settable, float) 0.1557943207981581
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.2524942440521872
+				21 value indicator (settable, float) 0.2524942440521872
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+
+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 26 button Description: 关闭, ID: settings.about.close
+
+shift+Tab
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.about.sheet
+		2 heading 关于
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container settings.destination.about
+				5 text Value: claudi0, ID: settings.about.identity
+				6 unknown Description: 版本, 0.1.0, Secondary Actions: show menu
+				7 unknown Description: 构建, 42, Secondary Actions: show menu
+				8 unknown Description: 架构, arm64, Secondary Actions: show menu
+				9 unknown Description: 最低 macOS, 12.0, Secondary Actions: show menu
+				10 unknown Description: 当前 macOS, 15.6.1, Secondary Actions: show menu
+				11 button Description: 复制版本信息, Help: 复制当前显示的应用与系统事实, ID: settings.about.copy-version
+				12 heading 资源
+				13 text 打开这份 claudi0 实际随包附带的文档。
+				14 button Description: 开源许可, Help: 从当前应用的随包资源中打开“开源许可”, ID: settings.about.resource.openSourceLicense
+				15 button Description: 声音归属, Help: 从当前应用的随包资源中打开“声音归属”, ID: settings.about.resource.soundAttribution
+				16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement
+				17 heading 安全诊断
+				18 text 只包含版本、架构、macOS、已发布 Surface 的语义状态，以及固定应用资源是否存在；绝不包含路径值或用户内容。 claudi0-version: 0.1.0
+claudi0-build: 42
+architecture: arm64
+macos: 15.6.1
+minimum-macos: 12.0
+surface.codex: awaiting-activation
+surface.claude-code: awaiting-activation
+surface.workbuddy: awaiting-activation
+surface.opencode: awaiting-activation
+surface.kimi-code: awaiting-activation
+surface.grok-build: awaiting-activation
+path.application-bundle: present
+path.bundled-helper: present
+path.bundled-sounds: present
+path.open-source-license: present
+path.sound-attribution: present
+path.privacy-statement: present
+				19 button Description: 复制安全诊断, Help: 只复制上方显示的脱敏摘要, ID: settings.about.diagnostics.copy
+			20 scroll bar (settable, float) 0.3491941673062164
+				21 value indicator (settable, float) 0.3491941673062164
+				22 increment arrow button
+				23 decrement arrow button
+				24 increment page button
+				25 decrement page button
+		26 button Description: 关闭, ID: settings.about.close
+
+The focused UI element is 16 button Description: 隐私说明, Help: 从当前应用的随包资源中打开“隐私说明”, ID: settings.about.resource.privacyStatement

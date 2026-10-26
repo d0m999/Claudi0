@@ -1,0 +1,723 @@
+Source: navigation-row-red.txt
+Original SHA-256: 206fbba10fbad3db8bf1db9e151c0bf563ff703a137d996cf73f4a3ea2a7f496
+Verbatim lines: 484-1202 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:58571EDA-7AF6-4840-AF1C-E8D8405A7D03, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:6C8B3B4A-A265-48DB-A448-463F244BD55C, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+  clear clearActivity / escape: previous=[], window=61247, key=true, appKey=61247, order=[61247, 61246], responder=_NSAlertButton@ObjectIdentifier(0x0000000139ec1eb0), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / escape: recorded=[], window=61246, key=true, appKey=61246, order=[61246], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000139ef06c0), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: previous=[], window=61248, key=true, appKey=61248, order=[61248, 61246], responder=_NSAlertButton@ObjectIdentifier(0x000000013a9c3ef0), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: recorded=[], window=61246, key=true, appKey=61246, order=[61246], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000139ef06c0), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: previous=[], window=61249, key=true, appKey=61249, order=[61249, 61246], responder=_NSAlertButton@ObjectIdentifier(0x000000013a970b40), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearActivity], window=61246, key=true, appKey=61246, order=[61246], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ac1f940), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: cancellation restores clearLog without clearing
+  clear clearLog / escape: previous=[], window=61251, key=true, appKey=61251, order=[61251, 61250], responder=_NSAlertButton@ObjectIdentifier(0x000000013ab420f0), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / escape: recorded=[], window=61250, key=true, appKey=61250, order=[61250], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000139eb6f00), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: previous=[], window=61252, key=true, appKey=61252, order=[61252, 61250], responder=_NSAlertButton@ObjectIdentifier(0x000000013ac43e80), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: recorded=[], window=61250, key=true, appKey=61250, order=[61250], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000139eb6f00), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: previous=[], window=61253, key=true, appKey=61253, order=[61253, 61250], responder=_NSAlertButton@ObjectIdentifier(0x000000013a980ff0), ax=action-button-1|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearLog], window=61250, key=true, appKey=61250, order=[61250], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000139e6ab70), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: About opens and cancels from its entry / zhHans
+• Settings keyboard: About opens and cancels from its entry / english
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/49
+  Tab transitions:
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260, 61259], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=KeyViewProxy@ObjectIdentifier(0x0000000139e1fec0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011ffaa120), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ffa55e0), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61260, key=true, appKey=61260, order=[61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000013ab2ac10), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry integrations.destination.manage-events.codex  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/36
+  Tab transitions:
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261, 61260], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a37f200), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=KeyViewProxy@ObjectIdentifier(0x000000011f943b50), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9c87f0), ax=integrations.destination.toggle.codex|AXCheckBox|启用 Codex, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9a2680), ax=|AXButton|在工作区中设置声音…, sheet=0, fullKeyboard=true
+window=61261, key=true, appKey=61261, order=[61261], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f9bfce0), ax=integrations.destination.open-diagnostics|AXButton|诊断详情…, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry integrations.destination.manage-events.codex  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/49
+  Tab transitions:
+window=61262, key=true, appKey=61262, order=[61262, 61261], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ab885e0), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262, 61261], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013ab557b0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262, 61261], responder=KeyViewProxy@ObjectIdentifier(0x000000012877e170), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262, 61261], responder=KeyViewProxy@ObjectIdentifier(0x0000000128791ae0), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x00000001287920e0), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9b5800), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792530), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792af0), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792f40), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287d5c80), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793390), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793640), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793a90), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287dbec0), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793ee0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794330), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794780), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287e33b0), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794bd0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128795020), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128795470), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287ea730), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x00000001287958c0), ax=workspace.preview-available|AXButton|试听可用事件, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f92afa0), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013c2f5800), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f92c7a0), ax=workspace.migration-dismiss|AXButton|知道了, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ab885e0), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013ab557b0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x000000012877e170), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128791ae0), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x00000001287920e0), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9b5800), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792530), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792af0), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128792f40), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287d5c80), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793390), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793640), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793a90), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287dbec0), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128793ee0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794330), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794780), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287e33b0), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128794bd0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128795020), ax=||, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128795470), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=PlatformSwitch@ObjectIdentifier(0x00000001287ea730), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61262, key=true, appKey=61262, order=[61262], responder=KeyViewProxy@ObjectIdentifier(0x00000001287958c0), ax=workspace.preview-available|AXButton|试听可用事件, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/36
+  Tab transitions:
+window=61263, key=true, appKey=61263, order=[61263, 61262], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ab8e670), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263, 61262], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013ab7d8f0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263, 61262], responder=KeyViewProxy@ObjectIdentifier(0x0000000128783190), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263, 61262], responder=KeyViewProxy@ObjectIdentifier(0x00000001287809b0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x0000000128753fb0), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab80770), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x0000000139eb3a90), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9befd0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ec690), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab6a780), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ec940), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9becc0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f983c00), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abdba70), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f984050), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9844a0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9848f0), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abe2f90), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f984d40), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f974000), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f974450), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abea2f0), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9748a0), ax=workspace.preview-available|AXButton|试听可用事件, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013abbc750), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013c4a2a00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ab67130), ax=workspace.migration-dismiss|AXButton|知道了, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ab8e670), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013ab7d8f0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x0000000128783190), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x00000001287809b0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x0000000128753fb0), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab80770), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x0000000139eb3a90), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9befd0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ec690), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab6a780), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ec940), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9becc0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f983c00), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abdba70), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f984050), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9844a0), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9848f0), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abe2f90), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f984d40), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f974000), ax=||, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f974450), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=PlatformSwitch@ObjectIdentifier(0x000000013abea2f0), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61263, key=true, appKey=61263, order=[61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9748a0), ax=workspace.preview-available|AXButton|试听可用事件, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(76B82B85-70A3-4F0A-A302-753B5728D91D), event: nil)/zhHans/49
+  Tab transitions:
+window=61264, key=true, appKey=61264, order=[61264, 61263], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ac9e970), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264, 61263], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013aca15e0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264, 61263], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95bb50), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91dc90), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac91bd0), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91e0e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c5820), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac11710), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c5c70), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c6370), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac7bf90), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f944d50), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f965ea0), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013acb21e0), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9662f0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91ae80), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013acbb1b0), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ac432d0), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95e4e0), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f8bc0), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9460), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9d00), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000012d6044d0), ax=workspace.sound-source.kimi-code|AXCheckBox|Kimi Code, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SettingsActionView@ObjectIdentifier(0x000000011f9e55f0), ax=workspace.remove|AXButton|移除工作区…, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ac4c1a0), ax=workspace.manage-connections|AXButton|管理来源连接…, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013c27bc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ac95580), ax=workspace.migration-dismiss|AXButton|知道了, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SettingsPopUpButton@ObjectIdentifier(0x000000013ac9e970), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013aca15e0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95bb50), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91dc90), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac91bd0), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91e0e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c5820), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac11710), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c5c70), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c6370), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac7bf90), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f944d50), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f965ea0), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013acb21e0), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9662f0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f91ae80), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=PlatformSwitch@ObjectIdentifier(0x000000013acbb1b0), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000013ac432d0), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95e4e0), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f8bc0), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9460), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61264, key=true, appKey=61264, order=[61264], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9d00), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(76B82B85-70A3-4F0A-A302-753B5728D91D), event: nil)/zhHans/36
+  Tab transitions:
+window=61265, key=true, appKey=61265, order=[61265, 61264], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011ff89970), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265, 61264], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011ff8c5e0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265, 61264], responder=KeyViewProxy@ObjectIdentifier(0x000000012d615920), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d615e80), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000011ff96cf0), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616130), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616b40), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000011ff9ff50), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616f90), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d617690), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac6f220), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d617ae0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d618380), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013aceb690), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d6187d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d619070), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac85c20), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ff7b770), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d619910), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61a1b0), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61aa50), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61b2f0), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61bb90), ax=workspace.sound-source.kimi-code|AXCheckBox|Kimi Code, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SettingsActionView@ObjectIdentifier(0x000000013abe3780), ax=workspace.remove|AXButton|移除工作区…, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ff7e0e0), ax=workspace.manage-connections|AXButton|管理来源连接…, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a48ce00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ff80580), ax=workspace.migration-dismiss|AXButton|知道了, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011ff89970), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011ff8c5e0), ax=event-settings.master-volume|AXSlider|音量, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d615920), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d615e80), ax=workspace.event.task_start.edit|AXButton|编辑包内声音… 用户发起, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000011ff96cf0), ax=|AXCheckBox|用户发起, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616130), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616b40), ax=workspace.event.stop.edit|AXButton|编辑包内声音… 响应结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000011ff9ff50), ax=|AXCheckBox|响应结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d616f90), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d617690), ax=workspace.event.stop_failure.edit|AXButton|编辑包内声音… 执行中断, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac6f220), ax=|AXCheckBox|执行中断, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d617ae0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d618380), ax=workspace.event.notification.edit|AXButton|编辑包内声音… 等待介入, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013aceb690), ax=|AXCheckBox|等待介入, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d6187d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d619070), ax=workspace.event.subagent_stop.edit|AXButton|编辑包内声音… 子任务结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac85c20), ax=|AXCheckBox|子任务结束, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011ff7b770), ax=|AXButton|管理声音包, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d619910), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61a1b0), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61aa50), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61265, key=true, appKey=61265, order=[61265], responder=KeyViewProxy@ObjectIdentifier(0x000000012d61b2f0), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(76B82B85-70A3-4F0A-A302-753B5728D91D), event: nil)/zhHans/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(76B82B85-70A3-4F0A-A302-753B5728D91D), event: nil)/zhHans/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Diagnostics belongs to Connections and the other destinations retain their sidebar  (claudio_gui_tests/SettingsNavigationRowSuite.swift:60)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Diagnostics belongs to Connections and the other destinations retain their sidebar  (claudio_gui_tests/SettingsNavigationRowSuite.swift:60)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/49
+  Tab transitions:
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272, 61271], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2f8e00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=KeyViewProxy@ObjectIdentifier(0x000000013a9aeaf0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991cd0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9223c0), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61272, key=true, appKey=61272, order=[61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f97f790), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry integrations.destination.manage-events.codex  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/36
+  Tab transitions:
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273, 61272], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a242a00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec95b0), ax=integrations.destination.agent.codex|AXButton|Codex, CLI, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9749b0), ax=integrations.destination.toggle.codex|AXCheckBox|Enable Codex, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f981b90), ax=|AXButton|Configure sounds in Workspace…, sheet=0, fullKeyboard=true
+window=61273, key=true, appKey=61273, order=[61273], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x000000011f968800), ax=integrations.destination.open-diagnostics|AXButton|Diagnostics…, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry integrations.destination.manage-events.codex  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/49
+  Tab transitions:
+window=61274, key=true, appKey=61274, order=[61274, 61273], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011f9503c0), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274, 61273], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011f989260), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274, 61273], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9e0bb0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274, 61273], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9db860), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f90ed00), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f906380), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9991b0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f989b60), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f988140), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f90dc20), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ae3d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9a25e0), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c77f0), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f96a750), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f97d290), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c3c00), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95bae0), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9d59a0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e07d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7290), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7540), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991110), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7990), ax=workspace.preview-available|AXButton|Preview available events, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9434e0), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a2bf400), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f91ae80), ax=workspace.migration-dismiss|AXButton|Got it, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011f9503c0), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011f989260), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9e0bb0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9db860), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f90ed00), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f906380), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9991b0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f989b60), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f988140), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f90dc20), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9ae3d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9a25e0), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c77f0), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f96a750), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f97d290), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9c3c00), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f95bae0), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f9d59a0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e07d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7290), ax=||, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7540), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=PlatformSwitch@ObjectIdentifier(0x000000011f991110), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61274, key=true, appKey=61274, order=[61274], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7990), ax=workspace.preview-available|AXButton|Preview available events, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/36
+  Tab transitions:
+window=61275, key=true, appKey=61275, order=[61275, 61274], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011f947330), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275, 61274], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013acdf9f0), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275, 61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f952540), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275, 61274], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9527f0), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9e1c50), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac8b3f0), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9df0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f92fd00), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de3c0), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab8d520), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de670), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de920), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ded70), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abd5060), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287df1c0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287df610), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287f66d0), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abf88b0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e3120), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7de0), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e8090), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abf9f80), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e84e0), ax=workspace.preview-available|AXButton|Preview available events, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f97ea70), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013c33e800), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9b3a00), ax=workspace.migration-dismiss|AXButton|Got it, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=SettingsPopUpButton@ObjectIdentifier(0x000000011f947330), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=CustomMarkedSlider@ObjectIdentifier(0x000000013acdf9f0), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f952540), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9527f0), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9e1c50), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013ac8b3f0), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f9f9df0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x000000011f92fd00), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de3c0), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013ab8d520), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de670), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287de920), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ded70), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abd5060), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287df1c0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287df610), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287f66d0), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abf88b0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e3120), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e7de0), ax=||, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e8090), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=PlatformSwitch@ObjectIdentifier(0x000000013abf9f80), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61275, key=true, appKey=61275, order=[61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e84e0), ax=workspace.preview-available|AXButton|Preview available events, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(9841D3F7-E761-47ED-94B8-E601F20DC0BF), event: nil)/english/49
+  Tab transitions:
+window=61276, key=true, appKey=61276, order=[61276, 61275], responder=SettingsPopUpButton@ObjectIdentifier(0x0000000139e46290), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276, 61275], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011f93d310), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276, 61275], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e9a80), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287dc930), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x000000011f92ebf0), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287f93e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000011f90b520), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x000000011f95e4e0), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000011f908450), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287b3d80), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287382a0), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a3e80), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879cc00), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287f79c0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879ceb0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879d410), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287eee70), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9b7620), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ac890), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a5800), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e8ae0), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ed2b0), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x0000000128745310), ax=workspace.sound-source.kimi-code|AXCheckBox|Kimi Code, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SettingsActionView@ObjectIdentifier(0x00000001287ddbb0), ax=workspace.remove|AXButton|Remove workspace…, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f907730), ax=workspace.manage-connections|AXButton|Manage Source Connections…, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a196c00), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f987a70), ax=workspace.migration-dismiss|AXButton|Got it, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SettingsPopUpButton@ObjectIdentifier(0x0000000139e46290), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=CustomMarkedSlider@ObjectIdentifier(0x000000011f93d310), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e9a80), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287dc930), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x000000011f92ebf0), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287f93e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000011f90b520), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x000000011f95e4e0), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000011f908450), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287b3d80), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287382a0), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a3e80), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879cc00), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287f79c0), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879ceb0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x000000012879d410), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=PlatformSwitch@ObjectIdentifier(0x00000001287eee70), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=SwiftUIAppKitButton@ObjectIdentifier(0x000000011f9b7620), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ac890), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a5800), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287e8ae0), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61276, key=true, appKey=61276, order=[61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287ed2b0), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(9841D3F7-E761-47ED-94B8-E601F20DC0BF), event: nil)/english/36
+  Tab transitions:
+window=61277, key=true, appKey=61277, order=[61277, 61276], responder=SettingsPopUpButton@ObjectIdentifier(0x000000012873c040), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277, 61276], responder=CustomMarkedSlider@ObjectIdentifier(0x00000001287387d0), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277, 61276], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec3ed0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277, 61276], responder=KeyViewProxy@ObjectIdentifier(0x00000001287444a0), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x000000012870fa30), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012871a0d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287195a0), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128717fa0), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a18f0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287092a0), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x000000012871fe00), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d719680), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012879f490), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128727630), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012879f8e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d719fb0), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128706f60), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000128779140), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d71a850), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d71d480), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d706260), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d704660), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d71dfb0), ax=workspace.sound-source.kimi-code|AXCheckBox|Kimi Code, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SettingsActionView@ObjectIdentifier(0x000000012d717150), ax=workspace.remove|AXButton|Remove workspace…, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000128745f00), ax=workspace.manage-connections|AXButton|Manage Source Connections…, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SettingsSidebarTableView@ObjectIdentifier(0x000000013a6db800), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000128748540), ax=workspace.migration-dismiss|AXButton|Got it, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SettingsPopUpButton@ObjectIdentifier(0x000000012873c040), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=CustomMarkedSlider@ObjectIdentifier(0x00000001287387d0), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x0000000139ec3ed0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287444a0), ax=workspace.event.task_start.edit|AXButton|Edit sound in pack… User initiated, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x000000012870fa30), ax=|AXCheckBox|User initiated, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012871a0d0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287195a0), ax=workspace.event.stop.edit|AXButton|Edit sound in pack… Response ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128717fa0), ax=|AXCheckBox|Response ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287a18f0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x00000001287092a0), ax=workspace.event.stop_failure.edit|AXButton|Edit sound in pack… Execution interrupted, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x000000012871fe00), ax=|AXCheckBox|Execution interrupted, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d719680), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012879f490), ax=workspace.event.notification.edit|AXButton|Edit sound in pack… Waiting for input, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128727630), ax=|AXCheckBox|Waiting for input, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012879f8e0), ax=|AXStaticText|, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d719fb0), ax=workspace.event.subagent_stop.edit|AXButton|Edit sound in pack… Subtask ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=PlatformSwitch@ObjectIdentifier(0x0000000128706f60), ax=|AXCheckBox|Subtask ended, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=SwiftUIAppKitButton@ObjectIdentifier(0x0000000128779140), ax=|AXButton|Manage Sound Packs, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d71a850), ax=workspace.sound-source.codex|AXCheckBox|Codex, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d71d480), ax=workspace.sound-source.claude-code|AXCheckBox|Claude Code, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d706260), ax=workspace.sound-source.workbuddy|AXCheckBox|WorkBuddy, sheet=0, fullKeyboard=true
+window=61277, key=true, appKey=61277, order=[61277], responder=KeyViewProxy@ObjectIdentifier(0x000000012d704660), ax=workspace.sound-source.opencode|AXCheckBox|OpenCode, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the persistent forward entry workspace.manage-sounds  (claudio_gui_tests/SettingsNavigationRowSuite.swift:36)
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(9841D3F7-E761-47ED-94B8-E601F20DC0BF), event: nil)/english/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(9841D3F7-E761-47ED-94B8-E601F20DC0BF), event: nil)/english/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Diagnostics belongs to Connections and the other destinations retain their sidebar  (claudio_gui_tests/SettingsNavigationRowSuite.swift:60)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/49
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ Back restores focus to the original navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:75)
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/36
+  ✗ The row is one native button  (claudio_gui_tests/SettingsNavigationRowSuite.swift:49)
+  ✗ One key activation creates exactly one visit  (claudio_gui_tests/SettingsNavigationRowSuite.swift:54)
+  ✗ The entry retains its existing destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:57)
+  ✗ Diagnostics belongs to Connections and the other destinations retain their sidebar  (claudio_gui_tests/SettingsNavigationRowSuite.swift:60)
+  ✗ Forward restores the destination  (claudio_gui_tests/SettingsNavigationRowSuite.swift:81)
+Settings navigation native focus: 516 checks, 52 failures

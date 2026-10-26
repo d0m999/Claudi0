@@ -47,6 +47,7 @@ struct AboutSettingsView: View {
         }
         .font(SettingsAppearance.font(.body))
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.about))
         .onReceive(model.$feedback.dropFirst().compactMap { $0 }) { feedback in
             onAnnouncement(feedbackText(feedback))

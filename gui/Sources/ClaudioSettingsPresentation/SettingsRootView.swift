@@ -358,6 +358,7 @@ package struct SettingsDestinationContentView: View {
             }
         }
         .frame(maxWidth: 820, alignment: .leading)
+        .accessibilityElement(children: .contain)
         .settingsMountIdentity(SettingsPresentationAccessibilityID.destination(.general))
     }
 
@@ -579,10 +580,12 @@ package struct SettingsDestinationContentView: View {
                 .accessibilityIdentifier("settings.notifications.publication-failed")
             }
 
-            Button(l10n.text(.settingsNotificationsOpenEvents)) {
+            SettingsNavigationRow(
+                title: l10n.text(.settingsNotificationsOpenEvents),
+                identifier: "settings.notifications.open-events"
+            ) {
                 settingsPresentationSession.send(.route(.destination(.eventsAndSounds)))
             }
-            .accessibilityIdentifier("settings.notifications.open-events")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)

@@ -1,0 +1,112 @@
+{
+  "baseSHA": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+  "sourceHEAD": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+  "boundary": "Uncommitted implementation source fingerprint; clean candidate SHA is pending local commit authorization. Documentation and evidence excluded to avoid self-reference.",
+  "files": [
+    {
+      "path": "designs/panel-and-settings/Panel and Settings Prototype.html",
+      "sha256": "561436668939e7aa6934315552ecad147a010b65a188f1bda7a10204cd8a0e8d"
+    },
+    {
+      "path": "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift",
+      "sha256": "d5a2a872a0612c64bef18e33915c82f80f5464289c52ed934dfbbdb18bf13a56"
+    },
+    {
+      "path": "gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings",
+      "sha256": "3b97e7bd11811c6b4032b5fae4248c0e002f312388861405f7e5915a0ddc92fe"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsSheet.swift",
+      "sha256": "b7092e449d0eadb014f4dd2ce045bfe71405a721fe4fc101816781d794ad7d73"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsView.swift",
+      "sha256": "8b05a58bad1bf194ef685982fe31c0e4328140386b1a4eedac69e13f1cb4afd5"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationActionButton.swift",
+      "sha256": "ba3d2419d637eec5de5f53c0ddffabd94567eb523b5bc727c7fc5eaa4e5f8069"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift",
+      "sha256": "3059e70540cb02c09d5c1c9afe803f4b5ade7c5e19cdc5d47adaf047f5bef5d6"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/IntegrationsSettingsDestinationView.swift",
+      "sha256": "6855a8852f221eeb14397124b2cfe9023dc719b13d14d51180951829284b44bf"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNativeShellController.swift",
+      "sha256": "8dd2d776b829174672fe4d8816ed223bf2f8c4b74678525c6222296e3efa65c3"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNavigationRow.swift",
+      "sha256": "42e9fe0d3509118b14a83fbb9e2c9474a5354a98629a61a8a08832379832d959"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootView.swift",
+      "sha256": "6e3ed1dfa81aaf028faf8971adf2df94624428681655f61ee5d7ea85bcca77b5"
+    },
+    {
+      "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsLibraryView.swift",
+      "sha256": "457d6efa1db7e5898a736e12aa4a0f16d4b0e7bcce32b92c3cace13c4e923503"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/AICueTaskAnimationSuite.swift",
+      "sha256": "176d5e10ba29a43c52d1dad2c3f7ade98b54d99ca410e36b2754dc3df951532d"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/FivePageSettingsNativeSuite.swift",
+      "sha256": "6cffbaed12a97fa1b3eb0b4af48dea6270de33c84003549474b705a9659bcd54"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/GUIHarnessExecution.swift",
+      "sha256": "926aad34cab72f4e48e3779a17a4c211e5c9bd612628362c7e5471c0b0847ae7"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/GUIHarnessRoutingSuite.swift",
+      "sha256": "0530858ba062e6b41338ac16fae3019e278e9e1e91a053f0bf323c7adf337963"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsFeedbackNativeSuite.swift",
+      "sha256": "474e3fc3f29a302b362bbcc6e08c79441e48ae9acd43d43d59e16c54ee124715"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsKeyboardAboutSuite.swift",
+      "sha256": "058197025e67bba05e72e362aa5617bdfcb25e741ded9003665caed0de19c8da"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsKeyboardConfirmationSuite.swift",
+      "sha256": "1ff3095c5a774726fa950ee046662c127817d377ec70c41a044f515754e967f9"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsNativePolishSuite.swift",
+      "sha256": "76df14bd6c8f64a909d0c102c3b42c4259bcc1b21f778a45b67b7355104c0b20"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsNativeShellSuite.swift",
+      "sha256": "e554c49fa707b94f1c15f9bda9da386fe850011aaa07bdcba4bae74d8ff2f555"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsNavigationFocusSuite.swift",
+      "sha256": "42258037f45f995eeeac7a6b5d2112b8d403873ecca86f4e765f5a3b6476c522"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/SettingsNavigationRowSuite.swift",
+      "sha256": "b7e180241b94e959032cd0cbbdc33749cf3a984f3e2ca144c685202eb890bbd1"
+    },
+    {
+      "path": "gui/Tests/ClaudioGUICoreTests/main.swift",
+      "sha256": "daaccfac0bbaa3ddabf7ae8e471ae1be80a98abae55a01803222cba7be2654b4"
+    },
+    {
+      "path": "scripts/test-panel-settings-prototype-browser.py",
+      "sha256": "caacb17df05e62288adbe382f1ac591222e1db027e5e4184d1bd0a98ab3dc366"
+    },
+    {
+      "path": "scripts/verify-settings-experience.sh",
+      "sha256": "cdf40fb67c7f7d345d1a29f807e137f41b10b9cfdeafd720af6513e314ad1a38"
+    }
+  ],
+  "fingerprint": "152d43ab2ead0358e6a28fb2b5abeeae4e5fa189e148a196c180a6f26d929cad"
+}

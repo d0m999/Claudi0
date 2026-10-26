@@ -1,0 +1,9 @@
+Source: about-sheet-public-ax-green.txt
+Original SHA-256: 251e52e228311dee9a39bb051eff180937580f7a5d7f5e4bafee96da94546d2c
+Verbatim lines: 15-19 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-about-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings keyboard: About opens and cancels from its entry / zhHans
+• Settings keyboard: About opens and cancels from its entry / english
+Settings About focus: 76 checks, 0 failures

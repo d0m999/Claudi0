@@ -1,0 +1,23 @@
+Source: harness-path-diagnostic.txt
+Original SHA-256: 6db5b4df02f86cb91cf85589e880834f1e7ea908ddb5cfffb108fef0877a1d09
+Verbatim lines: 11-29 (only build output before the harness is omitted)
+
+GUI checks: background --harness-routing
+Foreground GUI checks: NOT RUN. Use --foreground when the desktop is available.
+• GUI harness: desktop access is explicit and invalid arguments fail closed
+• GUI harness: the actual batch dispatcher excludes foreground work by default
+• GUI harness: executable preflight cannot fall through into native execution
+  preflight executable: argv0=../../../../var/folders/1m/2jsf455s4r7dx9t8l233n55c0000gp/T/claudio-batch4-jn8emn92/claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/claudio-gui-tests, cwd=/Users/d0m999/Desktop/Claudio, url=../../../../var/folders/1m/2jsf455s4r7dx9t8l233n55c0000gp/T/claudio-batch4-jn8emn92/claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/claudio-gui-tests -- file:///Users/d0m999/Desktop/Claudio/, relativePath=../../../../var/folders/1m/2jsf455s4r7dx9t8l233n55c0000gp/T/claudio-batch4-jn8emn92/claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/claudio-gui-tests, base=Optional(file:///Users/d0m999/Desktop/Claudio/), bundle=Optional(file:///var/folders/1m/2jsf455s4r7dx9t8l233n55c0000gp/T/claudio-batch4-jn8emn92/claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/claudio-gui-tests)
+  ✗ CLI preflight ["--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--foreground", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--all", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--foreground", "--settings-native-states", "--settings-native-cancel-only", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--foreground", "--settings-native-cancel-only", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--foreground", "--gui-baseline-regressions", "--settings-native-cancel-only", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--settings-native-states", "--settings-native-cancel-only", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--background", "--settings-native-states", "--settings-native-cancel-only", "--dry-run"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--settings-navigation-native-focus"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--ai-cue-animation-native"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+  ✗ CLI preflight ["--foregound"]: The file “claudio-gui-tests” doesn’t exist.  (claudio_gui_tests/GUIHarnessRoutingSuite.swift:118)
+• GUI harness: every focused entry point has a desktop-access classification
+GUI harness routing: 289 checks, 11 failures

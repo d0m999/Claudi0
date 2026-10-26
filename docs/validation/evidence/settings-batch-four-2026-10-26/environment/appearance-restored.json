@@ -1,0 +1,26 @@
+{
+  "-g:AppleAccentColor": {
+    "present": false,
+    "value": null
+  },
+  "-g:AppleHighlightColor": {
+    "present": false,
+    "value": null
+  },
+  "-g:AppleInterfaceStyle": {
+    "present": false,
+    "value": null
+  },
+  "com.apple.universalaccess:increaseContrast": {
+    "present": true,
+    "value": "0"
+  },
+  "com.apple.universalaccess:reduceTransparency": {
+    "present": true,
+    "value": "0"
+  },
+  "com.apple.universalaccess:reduceMotion": {
+    "present": true,
+    "value": "0"
+  }
+}

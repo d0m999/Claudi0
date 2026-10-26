@@ -1,0 +1,879 @@
+Source: helper-latest.txt
+Original SHA-256: 7cd763b93072ec42026bd40fe79ae7b5dfded2b6a2838f0b3481c302686bf405
+Verbatim lines: 5-879 (only build output before the harness is omitted)
+
+• 事件协议固定为五个声音语义，任务开始排第一
+• settingsName / cliName round-trip, manifestKey == cliName
+• rawValue is pinned to cliName, never Swift's default camelCase derivation
+• SubagentStop is never lowercased into subagentstop
+• StopFailure is mapped (verified real via spike, 决议 2)
+• non-core events (v2 / out of scope) are rejected
+• question binding: exact matcher, five events, stable existing identities
+• question configuration: missing, broad, duplicate and mixed-generation slots
+• question configuration: preserve third-party hooks and opaque extensions
+• question configuration: legacy play under PreToolUse is not owned by this migration
+• question activation: old notification never activates a new reminder
+• Question hook：精确工具、身份与字段校验先于所有副作用
+• Question hook：新请求使用 notification，重复仍记录真实 callback
+• Question hook：先前 Stop 及旧播放锁均不吞不同提问
+• Question hook：真实并发时同请求一次、不同请求可在播放器返回前进入
+• Question hook：静音和启动失败消费身份，恢复后不补播
+• Question hook：代次和 scope 失效没有活动、声音、回执或提示
+• Question hook：入口 sourcePayload 是提示与声音的唯一已验证输入
+• Question hook：新事件未验证目录时使用默认组的声音与音量
+• Question hook：去重锁忙、写失败和损坏文件如实失败
+• Question hook：消费表有界且不驱逐未过期身份
+• Question hook：截断、超限和超时输入不能通过明确入口
+• 新增来源：独立身份、桥接事件与首版支持边界
+• 新增来源：配置根与新版 kimi 安装发现
+• OpenCode：连接、重复连接、修复、断开保留第三方原字节
+• OpenCode：并发编辑不被覆盖，不发布新代次
+• OpenCode：自有代码被修改时拒绝覆盖和删除
+• OpenCode：断开时的并发外部编辑必须保留
+• Kimi Code：连接、重复连接、修复、断开保留第三方原字节
+• Kimi Code：并发编辑不被覆盖，不发布新代次
+• Kimi Code：自有代码被修改时拒绝覆盖和删除
+• Kimi Code：断开时的并发外部编辑必须保留
+• Kimi Code：托管标记外的字段不能改变自有或第三方 hook
+• Kimi Code：托管块后的注释和独立表可安全修复与断开
+• 新增来源：操作锁只阻塞本来源，另一来源仍能连接
+• Kimi Code：损坏或不支持的 TOML 零写入，旧 Kimi 配置不受影响
+• OpenCode：外来文件、重复注册、损坏 JSONC 和符号链接均拒绝安装
+• Kimi Code：dotfiles 符号链接保持，断开恢复目标字节
+• opencode：已知配置版本 0 安全迁移及直接断开
+• opencode：已知配置版本 1 安全迁移及直接断开
+• opencode：已知配置版本 2 安全迁移及直接断开
+• opencode：已知配置版本 3 安全迁移及直接断开
+• opencode：已知但未准入的部分配置仍属于 Claudio
+• opencode：历史配置被修改或含未知事件时拒绝迁移及删除
+• kimi-code：已知配置版本 0 安全迁移及直接断开
+• kimi-code：已知但未准入的部分配置仍属于 Claudio
+• kimi-code：历史配置被修改或含未知事件时拒绝迁移及删除
+• Kimi：托管块外的未准入自有 hook 仍应拒绝为重复配置
+• OpenCode：非法输入在一切副作用前拒绝
+• OpenCode：所有已实现事件走默认声音、脱敏回执和提示
+• OpenCode：payload cwd 命中工作区规则使用工作区声音，不匹配回落默认组
+• OpenCode：请求身份去重、并发会话和重连代次隔离
+• OpenCode：scope 失效和静音仍保持既有事实边界
+• OpenCode：播放期间重连不能写旧回执或发旧提示
+• OpenCode：回执锁内复核相同 UUID 的 scope 变化
+• Kimi Code：非法输入在一切副作用前拒绝
+• Kimi Code：所有已实现事件走默认声音、脱敏回执和提示
+• Kimi Code：payload cwd 命中工作区规则使用工作区声音，不匹配回落默认组
+• Kimi Code：请求身份去重、并发会话和重连代次隔离
+• Kimi Code：scope 失效和静音仍保持既有事实边界
+• Kimi Code：播放期间重连不能写旧回执或发旧提示
+• Kimi Code：回执锁内复核相同 UUID 的 scope 变化
+• OpenCode：取消、恢复、缺少终态及子会话身份全部失败关闭
+• Kimi Code：精确提问、未启用终态与两个成功子任务
+• Grok Build：独立身份、三条绑定、两类公共事件和发布门槛
+• Grok Build：GROK_HOME 和 Finder 可执行发现、版本／根／绑定 scope
+• Grok Build：普通 Release 仍能精准卸载旧候选模板
+• Grok Build：宿主不可用时仍关闭，清理冲突保留原字节并撤销资格
+• Grok Build：维护期间版本探测不阻塞其他来源发布或保存 OFF
+• Grok Build：最终发布前 scope 变化或保存 OFF 不激活旧安装
+• Grok Build：当前真实回执提升来源摘要，未观察绑定仍待验证
+• Grok Build：发现后自动准备，关闭清理冲突仍优先 OFF，退出撤销运行资格
+• Grok Build：安装／修复／卸载幂等及一次备份
+• Grok Build：外来、空白、修改与重复 binding 文件拒绝覆盖和删除
+• Grok Build：符号链接与最终发布并发编辑失败关闭
+• Grok Build：原生合同、camel/snake 别名和有界输入
+• Grok Build：Claude compatibility 与旧 play 来源防护
+• Grok Build：三条绑定分别留回执、原因和脱敏来源；提问使用默认组
+• Grok Build：错误按 session+prompt、提问按 session+tool 去重；授权沿用通知去抖
+• Grok Build：拒收、旧代次、关闭与 GUI 退出不消费身份和提示
+• Grok Build：事件静音和动态静默消费请求，恢复不补播
+• activation scope：宿主版本、Claudio 版本与当前 binding schema 共同决定身份
+• activation scope：GUI PATH 缺少用户目录时仍从绝对路径探测 Claude 与 Codex
+• activation scope：精简 GUI PATH 仍发现 OpenCode 官方安装且尊重显式 PATH
+• activation scope：OpenCode 2 的品牌版本行仍解析数字版本并进入作用域
+• activation scope：Volta/mise dispatcher 必须通过原始 shim 路径执行
+• activation scope：mise 自定义、XDG、默认与兼容 shim 目录均可发现
+• activation scope：候选不是可执行普通文件时继续失败关闭
+• 宿主能力目录：接口能力与当前实现分离
+• 宿主 registry：基础来源稳定，新增来源仅由验收策略开放
+• 原生事件归一化：UserPromptSubmit 映射任务开始，未知事件与 Codex StopFailure 拒绝
+• AudibilityMatrix 完全消费 adapter 能力数据，Codex 4/5 是中性就绪
+• AudibilityMatrix：未安装且未连接是中性空态，不是 degraded
+• AudibilityMatrix：Claude 旧四事件连接把 taskStart 明确投影为需要升级
+• Shared runtime inspect：helper 必须是非空、可执行、无隔离的普通文件
+• Shared runtime inspect：可执行的旧 helper 仍须显示版本不一致
+• Shared runtime inspect：声音包只缺单事件时保持 ready，由矩阵精确显示 missingSound
+• HostHookReceipt：最小脱敏 JSON 可形成当前 installation 的真实 activation evidence
+• HostHookReceiptStore：事件锁彼此独立，争用与文件系统失败均显式返回
+• HostHookReceipt：同毫秒不同微秒回执无损 round-trip 后仍能选出最新 evidence
+• HostHookReceipt：旧 schema-1 回执可解码但不能升级为当前 activation evidence
+• HostHookReceiptStore：损坏、旧代次、宿主或事件错位均不是 activation evidence
+• HostHookReceiptStore：重连后的迟到旧代次不能覆盖当前稳定回执
+• HostHookReceiptStore：断开撤销代次后，迟到回执被拒绝且不能恢复 activation
+• HostHookReceiptStore：历史按 surface 保留 20 条 / 30 天，断开保留且可显式清除
+• HostHookReceiptStore：历史快照有界、目录 no-follow，且 20 条外损坏仍可见
+• HostHookReceiptStore：批量历史清理中途失败会恢复已 staging 的 Surface
+• HostHookReceiptStore：root 替换失败关闭，提交后删除失败保留可重试 tombstone
+• Receipt pruning: 19 regular files after archive
+• Receipt pruning: 20 regular files after archive
+• Receipt pruning: 21 regular files after archive
+• Receipt pruning: 25 regular files after archive
+• Receipt pruning: damaged JSON and no-follow at 20
+• Receipt pruning: damaged JSON and no-follow at 21
+• Receipt pruning: expiry uses mtime independently of content time
+• Receipt pruning: overflow preserves sub-microsecond content precision
+• Receipt pruning: stale installation and both locks forbid archive changes
+• Receipt pruning: clear holds installation lock and preserves current receipt
+• Receipt pruning: removal failure stays explicit after both publications
+• Receipt pruning: multiple expiries preserve ordered partial failure
+• Receipt pruning: archive failure keeps current publication and reports failure
+• hook measurement: disabled, scoped, throwing and bounded collection
+• version cache: Codex remains a bounded original-path probe without cache qualification
+• version cache: Codex legacy bytes and changing resources never supply a fallback value
+• version cache: explicit refresh qualifies observations; forced probes never renew
+• version cache: independent helper processes share only validated disk observation
+• version cache: clock rollback during a hit requires a real probe
+• version cache: expiry, rollback, reboot and clock skew miss without negative cache
+• version cache: Claude identities invalidate; Codex metadata stays ineligible
+• version cache: same-inode mutation and PATH selection cannot keep old observation
+• version cache: probe-time upgrade rejects result and never publishes it
+• version cache: untrusted signature and mismatching package version only probe
+• version cache: malformed, oversize, symlink, permissions and lock contention preserve probe result
+• version cache: bounded retention, concurrent fills and no-cache default
+• version cache: cached scope cannot replace live reception eligibility
+• version cache: unknown dispatcher retains original argv0; publication lease forbids probing
+• version refresh: ordinary misses and diagnostics never sign or create cache
+• version refresh: expiry misses never refill or renew; signing time counts toward TTL
+• version refresh: cancellation, upgrades and failed probe revoke replaced observation
+• version refresh: publication failure preserves a successful probe result
+• version refresh: late failed miss cannot delete a newer successful refresh
+• version refresh: nonblocking operation lock spans probe; write lock remains free
+• version refresh: signature work leaves write lock free and hosts independent
+• version refresh: refusal to revoke must skip probe and signature
+• version refresh: process exit after revocation leaves no unverified observation
+• version refresh: independent processes serialize refresh and reuse observation
+• hook measurement: opt-in preserves full hook outcome and side effects
+• WorkBuddy hook：旧 scope 不得播放或写当前回执
+• host hook：UserPromptSubmit 严格映射任务开始，Codex StopFailure 与未知事件失败关闭
+• WorkBuddy SubagentStop：真实回调只激活当前 binding
+• host hook：真实事件即使静音、未就绪或播放失败也留下脱敏回执
+• host hook：有效 Dynamic Quiet 只抑制自动播放并保留既有 muted receipt 语义
+• host hook：拒绝的 Dynamic Quiet 快照正常播放且只记录脱敏诊断码
+• host hook：任务开始 250ms 与 lifecycle 1.5s 分轨，且宿主之间互不相吞
+• host hook：任务开始在静音与缺音状态也会独立去抖并写回执
+• host hook：来源提示是旁路 best-effort，不改变播放、回执与 CLI 结果
+• host hook：playback stub 连续 100 次的返回延迟 p95 不超过 100ms
+  helper source-enabled hook p95: 8.18ms (100 calls, playback/send stub)
+• host hook：真实 pipe/socket 来源增量 p95 保持 30ms 门槛
+  helper source delta p95: 3.29ms; enabled 8.35ms; disabled 5.25ms (100 pairs, real pipe/socket, playback stub)
+• host hook：观察时间在播放前捕获，入口时间跨过声音失败仍保留
+• Codex approval: same-turn reviewer changes cannot qualify a frozen rollout snapshot
+• Codex approval: an unqualified PermissionRequest is silent
+• Codex approval: silent routes do not consume the next confirmed human request
+• Codex approval: neither settings records nor child identity prove a request reviewer
+• HostEventSource：按宿主白名单提取项目、会话与父会话身份
+• HostEventSource：同名项目不合并且缺失字段明确降级
+• HostEventSource：未知宿主、重复字段、危险文本和超限输入 fail closed
+• HostEventInput：白名单原因与来源独立降级且不猜测正文
+• HostEventInput：WorkBuddy 已验证通知类型只投影提醒原因
+• HostEventInput：身份不截断，parent 标记缺失或损坏不能变为主会话
+• HostEventNotice：schema 1 新旧双向兼容且未来字段独立降级
+• Process ancestry：同用户、断链、循环、16 层边界
+• Process ancestry：复验 PID 复用、用户、父链和最近 App
+• Process ancestry：旧消息兼容、8KiB 和仅最小字段
+• Navigation evidence：旧消息、坏字段、超限字段都保留事件
+• System login：官方 Zed 的完整祖先链与来源复验
+• System login：权限、身份、系统路径、签名与查询期间变化均停止识别
+• System login：普通读取不变，未知跨UID进程和其他用户仍拒绝
+• System login：计入16层上限，循环和后续其他用户仍拒绝
+• Zed PTY：分块焦点报告与原始输入透传
+• Zed PTY：虚拟化子进程的 focus-report mode
+• Zed PTY：任意分块与有界不完整 CSI
+• Zed PTY：真实双层 PTY 的字节、尺寸、信号与退出恢复
+• HookInputReader：完整 JSON 不等待 EOF 且恢复 stdin flags
+• HookInputReader：真实 pipe 跨 read framing，字符串括号与转义不提前结束
+• HookInputReader：空输入、超限和无 EOF 分片都有界
+• HookInputReader：真实 64KiB 上限及 20ms 无 EOF 故障预算
+  helper partial stdin fault: 21.03ms (configured 20ms; includes OS scheduling)
+• EventNoticeTransport：私有 receiver 接收合法 datagram 并隔离陈旧 epoch
+• EventNoticeTransport：真实 pipe → 规范化 → socket，以及旧 schema 1 wire 可配对
+• EventNoticeTransport：连续发送中停止会回收 endpoint 且无迟到交付
+• EventNoticeTransport：100 次 receiver 生命周期和发送不会持续增长 FD
+  event notice FD (0..<1024): 9 → 9 → 9, 100 receiver/send/stop cycles
+• ConfigFileTransaction：外科式更新、一次备份、未知键与数组顺序保真
+• ConfigFileTransaction typed report：备份逐一继承 0600/0640/0644，fresh 明确 notNeeded
+• ConfigFileTransaction：已有备份若为 symlink、目录或 FIFO 必须失败关闭
+• ConfigFileTransaction：空文件、畸形 JSON、只读与锁争用全部失败关闭
+• ConfigFileTransaction：普通 symlink 保留链接节点并原子改写目标
+• ConfigFileTransaction：dangling preserveTarget symlink 失败关闭且链接节点不变
+• ConfigFileTransaction：初始 missing 在 CAS 前变成 dangling symlink 必须失败关闭
+• ConfigFileTransaction：reject 策略必须在锁内重检后来出现的 symlink
+• ConfigFileTransaction：RENAME_EXCL 不受支持时用 link(2) 安全发布一次备份
+• ConfigFileTransaction：CAS 发现外部并发修改后绝不覆盖
+• ConfigFileTransaction：备份前冲突不创建一次性备份
+• ConfigFileTransaction：staging 完成后的最终发布 CAS 仍拒绝外部新字节
+• ConfigFileTransaction：备份发布后目标被删除，最终交换不能复活旧配置
+• ConfigFileTransaction：preserveTarget symlink 改指向时即使目标字节相同也必须 CAS 失败
+• ConfigFileTransaction：symlink NFC/NFD 目标字节变化即使解析到同一文件也必须 CAS 失败
+• ConfigFileTransaction：编码后超过 maximumBytes 必须拒绝且零写入
+• AnchoredFileIO：已有目标被外部删除后不得复活
+• AnchoredFileIO：首次创建与外部创建竞争时不得覆盖
+• AnchoredFileIO：symlink 改指向与父目录换位都不得重定向
+• AnchoredFileIO：成功交换保留链接；晚期外部替换保留恢复文件
+• terminalSafePackID：控制字符与双向控制符不会修改终端呈现
+• terminalSafePackID：同时限制 grapheme、scalar 与最终字节数
+• FileWriteWatch：原地恢复、原子替换、创建后删除均可观测
+• FileWriteWatch：只读探测和畸形 config 拒写无事件
+• Claude transform：显式 connect 清理旧 helper 路径 modern hooks，并保留第三方顺序
+• Claude transform：当前完整连接夹带 stale modern 时 connect 归一为每事件一个 canonical
+• Claude transform：legacy 四事件只识别不静默升级，显式连接后五事件共用真实代次
+• Claude transform：纯能力升级补 UserPromptSubmit 时沿用唯一 installation ID
+• Claude transform：升级删除旧 prompt 通知，断开保留第三方与非管理 legacy
+• Claude transform：完整 modern 夹旧 prompt notification 不得被 configured 掩盖
+• Claude transform：所有事件都扫描 modern callback，但非正式事件中的 legacy 仍保留
+• Claude transform：部分安装、代次冲突、畸形 schema 全部诚实失败关闭
+• Codex hooks connect：清理仅旧 helper 路径 modern hooks，并保留第三方数组顺序
+• Codex hooks connect：当前完整连接夹带 stale modern 时归一为每事件一个 canonical
+• Codex hooks connect：旧 helper relocated command 位于错误事件时失败关闭且零写入
+• Codex hooks connect：全新配置只新增四个真实事件并保留顶层未知配置
+• Codex hooks inspect：区分 absent、partial、complete、UUID 冲突与错位命令
+• Codex hooks connect：部分安装沿用原 UUID，补齐时不改第三方数组顺序，重复连接零字节变化
+• Codex hooks upgrade：只删除当前 root 的旧提示词通知，保留第三方、look-alike、空 group 与顺序
+• Codex hooks schema：hooks/event/group/inner 任一层畸形都失败关闭且原字节不变
+• Codex hooks disconnect：只扫当前 root 的 Codex entries，并精确处理空 group
+• Codex hooks connect：已知 wrapper 外管 Stop 时只写其余三事件且外部 UUID 参与一致性
+• WorkBuddy connect：只写四绑定、五条命令，并保留未知配置
+• WorkBuddy Notification matcher：任一缺失为 incomplete，重复、错配和混代为 conflict
+• WorkBuddy Notification：第三方同 matcher、未知字段与未来事件在连接及断开后保留
+• WorkBuddy inspect：新增 binding 的缺失、重复与错误 matcher 失败关闭
+• WorkBuddy connect：完整 current 配置幂等，旧 helper 路径会归一
+• WorkBuddy inspect/disconnect：错位失败关闭，断开只删自有条目
+• WorkBuddy stdin：只为已实证新增 binding 要求有界输入
+• WorkBuddy stdin：缺失、错位、重复和超限事件名不得播放
+• WorkBuddy Notification 输入合同：只允许两类 matcher，拒绝 auth_success
+• WorkBuddy Notification：已验证 subtype 在发送前投影正确提醒原因
+• WorkBuddy Notification：两个 subtype 无目录也使用默认组声音包与音量
+• WorkBuddy Notification：事件静音、零音量与动态静默分别遵守既有播放合同
+• WorkBuddy Notification：畸形、重复、未知类型及有界读取失败无播放或回执
+• WorkBuddy Notification：与 Stop/SubagentStop 共享 1.5s，任务开始独立 250ms
+• WorkBuddy scope：入口与播放器启动前均拒绝旧版本、缺身份和断开
+• WorkBuddy scope：播放后的版本变化、同 ID scope 替换与重连拒绝迟到回执
+• WorkBuddy 回执：在安装锁内核对完整 scope，不改变正式格式
+• LegacyCodexNotifyMigration：已知 9 行 wrapper 可检测，迁移只替换 Claudio 分支
+• LegacyCodexNotifyMigration：nested/previous-notify 文本不是顶层 notify 引用
+• LegacyCodexNotifyMigration：真实 --previous-notify argv 严格 JSON 引用当前 wrapper
+• LegacyCodexNotifyMigration：wrapper 与 helper 路径按 UTF-8 字节精确匹配
+• LegacyCodexNotifyMigration：已迁移可识别，disconnect 保留 notifier，随后可重连新代次
+• LegacyCodexNotifyMigration：未知修改、另一 root 与无法解码一律 fail closed
+• LegacyCodexNotifyMigration：当前 binary 的其它合法 shell quoting 仍可精确识别
+• LegacyCodexNotifyMigration：双引号内非特殊反斜杠不能被误解码
+• LegacyCodexNotifyMigration：会被 shell 展开的路径必须引用，不能把 glob 当字面量
+• CLI observation: one live probe per inspection, without disk mutation
+• CLI observation: failures do not retry or reuse success; later checks recover
+• CLI observation: separate discovery/scope qualification and publication lease
+• CLI observation: connection completion always observes after publication
+• CLI observation: doctor forwards one observation per host and isolates failures
+• 双 adapter：现代 hook 只有精确指向当前 helper 才计入连接
+• Codex adapter：同事件重复 Claudio hook 必须 conflict 且连接零写入
+• Claude adapter：只有 type=command 的现代条目才能计入连接
+• adapter 快照：同一毫秒内按完整精度选出真正最新回执
+• Claude adapter：modern 与 legacy 混装必须成为可操作 conflict，不能伪报缺少空列表
+• Claude adapter：legacy 显式升级、任务开始回执点亮、断开只保留第三方
+• Codex adapter：只写 composable hooks，notify/trust 不变，4/5 待确认而非 degraded
+• Codex adapter：已知旧 wrapper 显式迁移，保留 notifier 且 Stop 不重复
+• Codex adapter：notifier-only wrapper 不冒充 Stop 管理者
+• Codex legacy wrapper：最终 rename 前 expected-bytes CAS 保留第三方新内容
+• Codex adapter：未知或修改过的旧 wrapper fail closed，不另装 Stop
+• 双 adapter：配置文件已不存在时仍按 marker fallback 撤销当前代次
+• 双 adapter：dangling 配置 symlink 必须在只读快照中显式阻塞
+• 双 adapter：已连接配置的父目录不可发布时必须报维护故障
+• 双 adapter：配置 ID 与 marker 漂移时断开优先撤销真实 marker
+• 双 adapter：版本 scope 变化使旧连接失效，显式 repair 必须换代
+• adapter：配置写入成功但代次 marker 发布失败时返回 configuration error
+• 宿主级 operation lock：两侧 connect 争用时配置与 marker 都零写入
+• disconnect：marker 撤销失败时必须在配置写入前停止
+• Codex legacy wrapper：hooks connect 事务失败会 CAS 回滚 wrapper
+• Codex legacy wrapper：hooks disconnect 解析失败会回滚 wrapper 并保持 marker 失效
+• HostIntegrationManager：注册表宿主永久存在，已注册 adapter 可并行连接
+• WorkBuddy adapter：四事件连接、逐 binding 回执与断开边界
+• WorkBuddy adapter：三绑定旧 scope 升级为四绑定时必须轮换代次
+• WorkBuddy adapter：版本身份变化让旧回执失败关闭，显式 repair 恢复
+• WorkBuddy 只读 preflight：commit 身份只能绑定当前 HEAD
+• WorkBuddy 只读 preflight：commit gate 必须先于宿主事实采集
+• WorkBuddy 只读 preflight：记录脱敏基线与证据等级
+• WorkBuddy 只读 preflight：当前回执只提升对应 binding 与声音结果
+• WorkBuddy 只读 preflight：doctor 总体等级由 Core 统一归类
+• HostIntegrationManager：registry 只发布正常产品表面，AX 仅保留直接诊断目录
+• HostIntegrationManager：产品动作入口拒绝 AX identity 且零副作用
+• HostIntegrationManager：连接进行中可观察，失败保持到显式刷新
+• HostIntegrationManager：断开进行中可观察，成功后恢复 idle
+• HostIntegrationManager：refresh 与 connect 的 operation 投影保留 latestReceipt
+• 接入意愿：迁移保留声音、第三方及未来来源；显式关闭跨迁移不复活
+• 接入意愿：损坏和锁忙均拒写，不解释成默认开启
+• 运行资格：独立于横幅接收器，内核启动身份/用户/损坏/撤销失败关闭
+• 发布许可：最终 rename 前关闭；off→on 后旧安装和旧清理均失败
+• 事件门禁：GUI 不运行及关闭来源时活动、回执、去重、日志、音频和通知均零副作用
+• 真实可执行文件发现：配置目录缺失仍已安装；目录和不可验证版本不证明安装
+• 真实 hook 发布竞争：各副作用发布前关闭，拒绝后续活动/去重/回执/音频/通知
+• 文件变化提示：无关活动/日志不重试来源，单来源意愿和配置变化保持隔离
+• 维护锁忙：1/3/10 有限重试，耗尽后等事实变化或用户重试
+• 启动失败：兜底等待事实变化，未取得运行注册不发布后台接入
+• 后续新安装：意愿迁移锁忙也有限重试，保存成功前不发布接入
+• 自动维护：准备不制造回执，重复检测不重装；单来源失败隔离，未安装保留关闭
+• 宿主目录：首次创建为私有目录，既有权限与只读配置保持原样
+• 关闭来源：配置或 hooks 消失仍撤销 marker，恢复旧配置不复用旧激活
+• 单来源维护：无关来源 inspect 挂起不延迟目标连接或关闭
+• doctor：当前回执不覆盖已保存 OFF、损坏意愿、待迁移或退出门禁
+• 单来源异步检查：退出或重新开启使已经开始的旧清理失效
+• tryLock acquires an uncontended lock
+• a second holder cannot acquire while the first still holds the lock
+• unlock releases the lock so a later tryLock can succeed
+• deinit releases the lock without an explicit unlock() call
+• locks on different paths never conflict
+• tryLock is idempotent-safe when called twice by the same holder
+• withNonBlockingLock runs the body and returns .ran(value) when uncontended
+• withNonBlockingLock returns .skipped without running the body when contended
+• attemptLock reports .busy (not .failed) under real contention
+• attemptLock self-heals a missing parent directory (first-run onboarding) and acquires
+• attemptLock reports .failed (not .busy) when self-heal itself cannot fix the real error
+• withNonBlockingLock surfaces .failed (never .skipped) on a real system error
+• withNonBlockingLock releases the lock after the body returns
+• withNonBlockingLock releases the lock even when the body throws
+• ClaudioConfig decodes required + optional fields with graceful defaults
+• resolvePackDirectory prefers the user pack root over the bundled pack
+• resolvePackDirectory falls back to the bundled pack when no user pack exists
+• resolvePackDirectory rejects a pack id occupied by a plain file, not a directory
+• resolvePackDirectory returns nil when the pack exists nowhere
+• isSafePackID rejects traversal / separators / empty, accepts plain ids
+• isSafePackID is not fooled by a combining mark fused onto the separator
+• resolvePackDirectory refuses a `../` pack id even when the target exists
+• resolvePackDirectory refuses a pack directory that is a symlink escaping the pack root
+• resolvePackDirectory refuses a CHAINED symlink pack directory (symlink -> symlink -> outside)
+• resolvePackDirectory still finds a real bundled pack when the user pack is an escaping symlink
+• checkPackIntegrity: no config.json at all → .noConfig (fresh install, not an error)
+• checkPackIntegrity: corrupt config.json → .configUnreadable, not a crash
+• checkPackIntegrity: config.json is a DIRECTORY → .configUnreadable, not a crash
+• checkPackIntegrity: config.json is a FIFO → .configUnreadable, doctor still returns (never hangs)
+• checkPackIntegrity: a VALID (fully decodable) but oversize (> 64 KiB) config.json is rejected by the size gate → .configUnreadable, even though the pack it names is otherwise complete (proving the size bound is what's rejecting it, not a coincidental decode failure — a raw, unbounded Data(contentsOf:) would read and decode this exact file successfully and report .complete instead)
+• checkPackIntegrity: selected pack missing from disk → .packNotFound
+• checkPackIntegrity: corrupt manifest.json → .manifestUnreadable
+• checkPackIntegrity: manifest.json itself being a symlink escaping the pack dir → .manifestUnreadable
+• checkPackIntegrity: manifest present but declared audio file missing → .incomplete
+• checkPackIntegrity: a manifest event escaping the pack dir is missing, not complete
+• checkPackIntegrity: a declared event file that is a symlink escaping the pack dir is missing, not complete
+• checkPackIntegrity: NFC/NFD Unicode-normalization mismatch between the manifest-declared filename and the on-disk symlink name does not bypass the escape guard
+• checkPackIntegrity: all declared audio files present → .complete
+• checkPackIntegrity: an empty events object is selectable but warns that no supported audio is mapped
+• checkPackIntegrity: a fully legitimate real (non-symlink) pack resolved via the bundled fallback still reports .complete
+• resolvePackDirectory refuses a pack directory that is a DANGLING symlink (target never existed)
+• loadPackManifest: decodes a well-formed manifest.json
+• loadPackManifest: missing manifest.json → .unreadable, not a crash
+• loadPackManifest: corrupt JSON → .decodeFailed
+• loadPackManifest: manifest.json as a symlink escaping the pack dir → .unreadable
+• loadPackManifestData: returns the exact raw bytes on disk, unparsed
+• loadPackManifest: reason surfaces the same human message checkPackIntegrity always used
+• probeSettingsWritable: existing writable file → .writable
+• probeSettingsWritable: existing writable file still requires atomic-publish parent access
+• probeSettingsWritable: preserved symlink requires its target parent to publish
+• probeSettingsWritable: existing read-only file → .notWritable
+• probeSettingsWritable: missing file, writable parent dir → .writable
+• probeSettingsWritable: never actually writes to disk (read-only probe)
+• probeSettingsWritable: parent path exists but is a regular file → .notWritable
+• runDoctorChecks: 畸形 config（旧读路径照常能读）→ config 检查报 warning，且指令可执行
+• runDoctorChecks: 全新安装（还没有 config.json）→ config 检查是 .ok，绝不假报警
+• runDoctorChecks: afplay missing is a hard failure (non-zero exit)
+• runDoctorChecks: missing claudio binary at the fixed hooks path is a hard failure (non-zero exit)
+• runDoctorChecks: unwritable settings.json is a hard failure (non-zero exit)
+• runDoctorChecks: fresh install with no pack configured is a warning, NOT a hard failure
+• runDoctorChecks: everything healthy → no failures, no warnings
+• summarizeRecentLogFailures: no claudio.log at all (fresh install) → .ok, never a hard failure
+• summarizeRecentLogFailures: recent failures are surfaced as a warning, never .failure
+• runDoctorChecks: a recent claudio.log failure surfaces as a warning, not hasFailure
+• runDoctorChecks: a Claude Code version below the verified minimum surfaces a human warning — never hasFailure, exit code stays 0 (T13 acceptance 2)
+• runDoctorChecks: an undetectable Claude Code version (claude not on PATH) is a warning too, never hasFailure
+• runDoctorChecks: a Claude Code version at/above the verified minimum reports .ok
+• runDoctorChecks: macos-version check is always .ok, even when the injected current version is below the documented floor (anchor 3: informational, never a real gate — this branch is provably unreachable on a real machine)
+• doctor `.absent` 文案 ↔ 行为：静音创建不了 config.json，那句话就不许说它能
+• configRewritabilityResult: 任意 reason 的畸形 config 都必须 warning，绝不因 reason 文本翻成 ok
+• 双宿主 doctor：共享 runtime 不可用必须 hard fail，已连接宿主不得继续假绿
+• 双宿主 doctor：helper 目录不能冒充可执行二进制
+• 双宿主 doctor：新版完整报告不再用旧 Claude-only settings 检查误判双未安装
+• 双宿主 doctor：双未连仍固定返回两行 warning，且没有 hard failure
+• 双宿主 doctor：已有连接的一侧宿主不可用是 failure，不影响另一侧行
+• 双宿主 doctor：Codex 四条 hook 无回执时已准备好，不猜测授权
+• 双宿主 doctor：当前回执与 Codex 声明支持 4/5 分别说明
+• 双宿主 doctor：Claude 当前回执仍只覆盖五个公共事件
+• 双宿主 doctor：Codex hook 缺失与损坏均是 failure
+• 双宿主 doctor：完整连接但 Codex 配置不可写是 failure
+• 双宿主 doctor：Claude legacy 可听但无真实回执，因此仅 warning
+• 双宿主 doctor：Claude modern/legacy 混装给出 conflict，绝不显示空缺失列表
+• 双宿主 doctor：Claude legacy 配置不可写是 connected failure
+• 双宿主 doctor：旧代次与损坏 receipt 都不能点亮 Codex
+• 双宿主 doctor：已迁移 codex-notify 的 Stop 与 adapter 使用同一事实源
+• installClaudioHooks：精确迁移旧未引号命令且第二次无写入
+• installClaudioHooks：身份不明的疑似旧命令保留并提示人工检查
+• installClaudioHooks：完整现代 Claude 连接按幂等成功处理，不混装 legacy hook
+• installClaudioHooks：部分现代 Claude 配置失败关闭，不能用 legacy 补成混合连接
+• installClaudioHooks：冲突的现代 Claude 配置失败关闭且零写入
+• installClaudioHooks：现代 callback 旁有畸形 group 时失败关闭，不能绕过 inspect 追加 legacy
+• installClaudioHooks：modern 与 legacy 已混装时返回 typed repair error 且零写入
+• installClaudioHooks：同 root 旧 helper modern callback 一律失败关闭，不能追加 legacy
+• installClaudioHooks: fresh settings.json installs all four legacy lifecycle events, no backup
+• installClaudioHooks: idempotent — second call makes no changes, no duplicate entries
+• installClaudioHooks: writes StopFailure unconditionally alongside the other three events — install has NO Claude Code version awareness of any kind, so an old client that doesn't understand StopFailure simply never fires that hook key, harmlessly (T13 acceptance 3a — regression pin for existing behavior, not new)
+• installClaudioHooks: appends alongside an existing other-tool hook without overwriting it
+• installClaudioHooks: backs up the pre-claudio original exactly once, never overwrites it
+• installClaudioHooks: an atomic-publish-blocked parent aborts before backup, settings.json left untouched
+• uninstallClaudioHooks: no settings.json at all → .notInstalled, no file created
+• uninstallClaudioHooks: no claudio hooks present → .notInstalled, file left byte-identical
+• uninstallClaudioHooks: precisely removes claudio entries, preserves other-tool hooks
+• uninstallClaudioHooks: sweeps a relocated/historical claudio binary path (T13 acceptance 1: survives a future binary move) while never touching structural look-alikes (basename mismatch / extra argv segment / outside .claudio namespace / unknown event name) or an unrelated third-party hook — all in ONE fixture
+• uninstallClaudioHooks: a home directory with a space — sweeps BOTH today's quoted entry and the legacy bare one a pre-quoting claudio left behind, and still spares an identically-shaped entry under a different root
+• uninstallClaudioHooks: a claudioBinaryPath naming no .claudio root removes nothing and never writes (fail-closed; unreachable in production, where the path defaults to ClaudioPaths.claudioBinary)
+• uninstallClaudioHooks: removes only claudio's entry from a group shared with another tool
+• uninstallClaudioHooks: preserves a third-party group that was ALREADY empty before the sweep — it must drop only a group WE emptied, never collaterally delete someone else's empty `{ "hooks": [] }` artifact in this no-backup path
+• installClaudioHooks: a leftover entry with our command but no "type" is not counted as installed — install self-heals with a real command hook
+• uninstallClaudioHooks: still removes a leftover entry carrying our command even without a "type" (loose, command-only match)
+• corrupt JSON syntax: install and uninstall both abort without writing or backing up
+• malformed hooks shape: "hooks" is not an object → abort without writing
+• malformed hooks shape: an event's array is not an array → abort without writing
+• installClaudioHooks: unwritable settings.json (read-only) aborts via the writability probe
+• uninstallClaudioHooks: read-only settings.json without Claudio hooks remains idempotent
+• installClaudioHooks: missing parent directory aborts via the writability probe, no crash
+• installClaudioHooks: a busy lock is reported as .lockBusy and never writes (non-blocking)
+• uninstallClaudioHooks: a busy lock is reported as .lockBusy and never writes (non-blocking)
+• installClaudioHooks: first-run production topology — settings.json's directory exists but the lock file's directory (~/.claudio/ equivalent) never has, and install must still succeed
+• uninstallClaudioHooks: first-run production topology — never-created lock directory must not cause .lockFailed even when there's nothing to uninstall
+• install then uninstall round-trips: pre-existing hooks and unrelated keys survive both operations
+• installClaudioHooks: refuses a binary path that lives inside a .claudio namespace but is not a shape that namespace's own uninstall could sweep, and writes NOTHING — shellQuotedPath is strictly more permissive than matchedClaudioEvent, so without this guard a future relocation into `lib exec/` would append a hook entry no uninstall could ever remove, to the one file uninstall takes no backup of
+• installClaudioHooks: still accepts a binary path that names NO .claudio namespace at all. uninstall fail-closes on such a path rather than claiming it could sweep it, so there is no contradiction to refuse — and HookStatusSuite's stale-namespace / self-heal coverage installs a `.claudio-OLD` entry through this very branch
+• installClaudioHooks x uninstallClaudioHooks: the round trip holds for every home segment shape claudio does not control — whatever install is willing to write for a path inside our namespace, uninstall anchored at that same namespace must remove again. This is the invariant binaryPathContradictsItsNamespace exists to keep true
+• SettingsUpdateError.unsweepableBinaryPath: its user-facing description names the offending path verbatim, so a future release that trips the guard gives an actionable message rather than an opaque failure
+• installClaudioHooks: the unsweepable-path guard is a pre-I/O precondition — it fires BEFORE any read/write/lock, so an unsweepable path is refused as such even when settings.json is absent or its directory is unwritable, never masked as a write/probe failure. This pins the guard's POSITION, which the error-precedence a caller sees depends on
+• installClaudioHooks: refuses a `..` path INSIDE our own namespace, and the refusal is not academic — the entry it would have written survives every uninstall anchored at the true root. `claudioNamespaceRoot` returns nil for a `..` path exactly as it does for `/usr/local/bin/claudio`, but only the latter is the no-namespace carve-out: this one resolves back into `.claudio` through /bin/sh, so the hook fires
+• installClaudioHooks: aborts with .concurrentModification when another writer changes settings.json between the read and the write, and leaves that writer's bytes exactly as they were — this file has no restore path, so clobbering is permanent
+• uninstallClaudioHooks: aborts with .concurrentModification too — it takes no backup at all, so a clobber here is strictly worse than on the install path
+• installClaudioHooks: a byte-identical atomic replacement changes the target identity and must not be overwritten by the pending install
+• installClaudioHooks: a settings.json that IS a symlink (dotfiles: stow/chezmoi) has its TARGET rewritten in place — the link survives, so the dotfiles repo keeps tracking the file. Writing the link path with .atomic would temp+rename ON the link and silently replace it with a regular file, diverging from the repo forever
+• installClaudioHooks: a DANGLING settings.json symlink fails closed and preserves the dotfiles node instead of replacing it with a regular file
+• ensurePrivateDirectoryTree：umask 000 下新建树仍为 0700，已有祖先权限不变
+• ensurePrivateDirectoryTree：已有最终目录会收紧到 0700，validate-only 入口保留显式只读权限
+• ensurePrivateDirectoryTree：任一层 symlink 或非目录节点都失败关闭
+• BootstrapReportStore：0600/0700、纯失败合并、不可逆记录保留与确认删除
+• BootstrapReportStore：带 journal ID 的纯失败不与无身份记录合并
+• BootstrapReportStore：历史数量不阻断自举，损坏文件与 symlink 仍失败关闭
+• bootstrap report 积压不得阻断新版 helper 发布
+• 共享 runtime 重启时不重复复制相同 helper 或新增报告
+• bootstrap journal：中断后按实际磁盘恢复 helper、包和选包事实
+• bootstrap journal：无副作用且 runtime 健康的空中断记录自动清理
+• bootstrap journal：最终 report 已写入而 journal 尚在时按 journal ID 幂等恢复
+• bootstrap journal：第二个调用等待活跃 owner，不把其 journal 误报为中断
+• every ClaudioPaths location has no space in its path (T4 root cause)
+• claudioBinary is the exact path a settings.json hook command embeds
+• claudi0Binary is a sibling branding alias, never the hook ownership anchor
+• every Claudio-owned path lives under ~/.claudio, except claudeSettingsFile
+• packDirectory(id:) joins packsDirectory/<id> and differs per id
+• path computation is pure: no I/O, and never crashes for a nonexistent id/dir
+• root/configFile/etc. resolve to absolute, concrete paths (not a literal '~')
+• 扫描器：字符串字面量里的 `//` 不是注释起点（be332ff 那条恒真守卫真正想守的东西）
+• 扫描器：插值里的**嵌套字符串**不结束外层串（2f107b5 那条守卫全程沉默的洞）
+• 扫描器：插值里的括号要配平（第一个 `)` 不结束插值 —— 误判区内含 `//`）
+• 扫描器：嵌套插值 —— 插值栈不能是个标志位（误判区末尾挂一条真注释）
+• 扫描器：多行字符串里的插值 —— 插值内是**代码**，那里的块注释必须被剥掉
+• 扫描器：`\\(` **不是**插值起点 —— 而那个 `//` 必须落在假插值**内部**
+• 扫描器：真正的行尾注释仍然被剥掉（剥太少 → 负向断言假红 → 守卫被删）
+• 扫描器：整行 doc comment 里的 URL —— 不假红，也不吃掉下一行
+• 扫描器：转义引号不结束字符串（`"\" // …"` 里那个 `//` 仍在串内）
+• 扫描器：多行字符串里的 `//` 不截断，字符串结束之后的代码照常在
+• 扫描器：空字符串字面量 `""` 不把后面的代码吞掉
+• 扫描器：块注释被剥掉（`/* … */` 里的代码不算代码）
+• 扫描器：行结构保住（顺序断言靠它 —— notePanelHidden 必须在 guard 之前）
+• 扫描器：撞见 raw string 要**记一笔**，而不是安静地给出一份不可信的文本
+• 扫描器：扩展 regex 字面量 `#/…/#` 也要记一笔（它能含裸 `//`）
+• 扫描器：裸 regex 与除法分开，无法判别时显式记账
+• 扫描器：`hasPrefix("#")` **不是** raw string（守卫必须位置感知，否则它自己会假红）
+• 扫描器：结构性失步要记一笔 —— **四个** note 站点各一条 fixture，一个都不许漏
+• 扫描器：正常源码**不**记账（兜底不能假红 —— 假红的守卫会被删掉）
+• 扫描器：`codeWithoutStringLiterals` 清空字符串**内容**、但界定符与插值里的代码原样留下
+• 扫描器：两个测试包里的哨兵区块**逐字节相同**（`/codex review 2f107b5` 的 P2）
+• 扫描器的前提：被它扫的源文件里，没有一处它自己不认识的构造
+• 五把锁是五个不同的文件 —— 锁分离的中心论点，此前零断言
+• 生产默认值：每个写者默认拿的是它自己那把锁（源码绊线 —— 测试从不求值这些默认值）
+• CLI 的三个调用点仍是全默认调用 —— 上面那一排默认值的唯一活路（`/codex review d5ec97e,8f9cfa2`）
+• SetupEnvironment 的三把锁默认值（运行期可求值 —— 它是 struct，不是自由函数）
+• 包锁重试的**生产默认值**（测试全都显式注入，所以默认值没人求值过）
+• 接管路径的调用点确实转发 SetupEnvironment 的锁（上面那四条断言的唯一活路）
+• 生产默认路径：play/config/settings 锁跨进程互不误阻，同行锁仍争用
+• 写盘绊线①：围栏 —— 碰了写盘表面的生产文件，必须逐字等于台账（认不出 ⇒ 红，不是隐形）
+• 写盘绊线②：围栏之内 —— 每一处内容替换式写盘都必须原子，且**每个文件几处**是钉死的
+• 写盘绊线③：正向对照 —— 喂合成源码，**走整条真实管线**（剥注释 → 清空字符串 → 取实参 → 判形状）
+• 写盘绊线：PTY 完整写入复用唯一裸写点，调用形状变化仍拒绝
+• 写盘绊线④：写意图的裸 fd —— 只允许逐文件登记并由专门不变量审计
+• 写盘绊线：目录 fd 发布内核的暂存、交换与冲突保留形状
+• 写盘绊线：声音资产完整写入私有文件，再原子发布；Trash 不永久删除兜底
+• 写盘绊线：SenseAudio／百炼凭据仅经私有 staging 完整写入后原子替换
+• 写盘绊线⑤：AI 提示音临时候选只做私有、不可覆盖、失败即删除的首次创建
+• Dynamic Quiet publication：五字段最小快照、私有权限与组合原因判定
+• Dynamic Quiet reader：损坏、额外字段、过期与异常远期 expiry 全部 fail safe
+• Dynamic Quiet reader：symlink、oversize、revision 倒退与读取失败全部 fail safe
+• Dynamic Quiet publisher：写失败不发布假成功，旧 true 也受短 TTL 约束
+• Dynamic Quiet reader：目录、schema 与 revision 水位故障都恢复正常播放
+• Dynamic Quiet reader：水位写失败、锁争用与锁系统错误都不静默
+• PlayEnvironment()'s default lockFile is ClaudioPaths.playLockFile, never config/settingsLockFile
+• playSoundEvent: unknown event name -> .unknownEvent, never spawns
+• playSoundEvent: no config.json at all (fresh install) -> .notReady, never spawns
+• playSoundEvent: corrupt config.json -> .notReady, never spawns
+• playSoundEvent: selected pack doesn't exist anywhere -> .notReady, never spawns
+• playSoundEvent: event key absent from the manifest (未配音) -> .notReady, never spawns
+• playSoundEvent: stop_failure absent from an old/incomplete manifest -> .notReady, never spawns, never writes a claudio.log line (T13 acceptance 3b — regression pin: an old Claude Code without StopFailure support, or a pack that simply never mapped stop_failure, both fall through this exact existing silent path; this test pins that Play.swift already behaves this way, it is not new behavior)
+• playSoundEvent: declared audio file missing on disk -> .notReady, never spawns
+• playSoundEvent: a manifest event value escaping the pack dir (../) never plays, reported as .notReady
+• playSoundEvent: an absolute-path manifest event value never plays
+• playSoundEvent: config disables the event (静音钮) -> .disabled, never spawns even though the pack is complete
+• playSoundEvent: happy path plays every one of the five events through their exact manifest keys
+• playSoundEvent: a custom in-range config.json master_volume is threaded through to the afplay spawn as -v <mapped value> (T9)
+• playSoundEvent: an out-of-range config.json master_volume is clamped before reaching the afplay -v argument (T9) — never passed through raw
+• playSoundEvent: a corrupt/wrong-type config.json master_volume falls back to ClaudioConfig.defaultMasterVolume's mapped -v argument, never spawns with a raw/garbage value
+• playSoundEvent: a currently-held play.lock produces .skippedDebounce, never spawns
+• playSoundEvent: stale callback cannot debounce a valid callback after reconnect
+• playSoundEvent: a second call for the SAME event inside the debounce window is skipped as .skippedRecentPlay — even with zero lock contention (sequential, non-overlapping calls), proving the debounce is a real time window and not merely 'did two calls literally race on the lock' (ENGINEERING.md「并发 / 进程堆积处理」+ 决议 5)
+• playSoundEvent: the shared debounce timestamp is event-agnostic by design (ENGINEERING.md 决议 5: 一个共享时间戳) — a DIFFERENT event inside the same window is also skipped
+• playSoundEvent: a real lock filesystem error is reported as .lockFailed, never conflated with .skippedDebounce
+• playSoundEvent: a spawn failure (e.g. missing/broken afplay) still reports .played (T5 outcome contract unchanged) but appends a claudio.log diagnostic line (T6)
+• playSoundEvent: a successful spawn never appends a claudio.log line
+• playSoundEvent: high-frequency concurrent calls (subagent_stop) — exactly one truly enters the critical section, the rest are skipped
+• playSoundEvent returns immediately without waiting for the spawned playback to finish
+• SystemProcessSpawner.spawn launches a real background process without blocking the caller
+• SystemProcessSpawner.spawn silently no-ops when the executable doesn't exist
+• playSoundEvent: config.json is a DIRECTORY -> .notReady, never spawns, never hangs
+• playSoundEvent: config.json is a FIFO -> .notReady, never spawns, never hangs
+• playSoundEvent: a VALID (fully decodable) but oversize (> 64 KiB) config.json is rejected by the size gate before ever resolving the pack it names -> .notReady, never spawns (the pack it names is otherwise complete and playable — proving this is the size bound doing the rejecting, not a coincidental decode failure)
+• playSoundEvent: play.state is a FIFO -> the debounce read never hangs, and the call still plays (an unreadable state file means 'never debounced yet', not an error)
+• appendLogLine writes a line readRecentLogEntries parses back exactly
+• appendLogLine self-heals a missing parent directory (first-run onboarding)
+• readRecentLogEntries: missing log file (fresh install) -> empty, never crashes
+• readRecentLogEntries: a garbled/malformed line is skipped, not crashed on
+• parseRecentLogEntries：复用调用方已完成 bounded read 的同一份字节快照
+• LogEntry redaction：自由文本 reason 只投影固定失败分类
+• readRecentLogEntries returns entries oldest-to-newest, capped at maxLines
+• rotation (acceptance 1): appending far past maxBytes keeps the log bounded, never growing unboundedly
+• rotation never leaves a truncated/partial first line that misparses (only whole lines survive a rotation cut)
+• concurrency (acceptance 3): concurrent appendLogLine calls from many threads never tear or interleave a line's content
+• readRecentLogEntries: a garbled trailing line doesn't shrink the maxLines budget of well-formed entries (codex review of ea08eca, P2)
+• appendLogLine reports failure (not success) when the underlying write fails (codex review of ea08eca, P2)
+• detectHookInstallStatus: no settings.json at all → .notInstalled, never creates one
+• detectHookInstallStatus: freshly installed by installClaudioHooks reads back as .installed
+• detectHookInstallStatus: three of four legacy lifecycle events installed → still .notInstalled (partial)
+• detectHookInstallStatus: claudio hooks coexisting with another tool's hooks still read as .installed
+• detectHookInstallStatus: an entry with our command but a missing "type" → .notInstalled (not a runnable command hook)
+• detectHookInstallStatus: an entry with our command but a non-command "type" → .notInstalled
+• detectHookInstallStatus: corrupt JSON syntax → .settingsUnreadable(.parseFailure), never writes
+• detectHookInstallStatus: malformed hooks shape → .settingsUnreadable(.malformedHooksSection)
+• detectHookInstallStatus: uninstalling drops back to .notInstalled
+• detectHookInstallStatus: a different claudio binary path's hooks do not count as installed
+• AfplayVolume.clamped: in-range values pass through unchanged
+• AfplayVolume.clamped: exact boundary values (0.0 / 1.0) pass through unchanged
+• AfplayVolume.clamped: negative values clamp to 0.0
+• AfplayVolume.clamped: values above 1.0 clamp to 1.0
+• AfplayVolume.clamped: non-finite input (NaN / +inf / -inf) falls back to ClaudioConfig.defaultMasterVolume, the single documented source of truth
+• AfplayVolume.afplayArgument: renders the clamped value with a '.' decimal separator
+• AfplayVolume.afplayArgument: a literal -0.0 master_volume renders as "0.0", never "-0.0"
+• AfplayVolume.afplayArgument: out-of-range and non-finite input renders the clamped/default string
+• selectPack: rejects an unsafe pack id without touching the filesystem
+• selectPack: fails when the pack doesn't exist in either root
+• selectPack: fresh install creates config.json with defaults + the selected pack
+• selectPack: an existing config.json keeps master_volume/events, only selected_pack changes
+• selectPack: a pack that only exists in the bundled root still resolves
+• selectPack: a configFile whose parent directory is blocked by a regular file fails with .configWriteFailure
+• selectPack: a corrupt existing config.json aborts without overwriting it
+• selectPack: a contended lock fails with .lockBusy instead of silently losing the write (Codex + red team, T17)
+• selectPack: unreadable manifest fails before config mutation and preserves exact bytes
+• nonEmptyRegularFileExists rejects empty regular files, directories, and FIFO
+• minimal-chime：逐字节 pristine 1.0.0 原子升级到 1.1.0，重复启动幂等
+• minimal-chime：格式化、extra、音频改动、symlink、FIFO 与子目录全部视为自定义
+• minimal-chime：发布前目标漂移会失败关闭，绝不覆盖外部新字节
+• minimal-chime：最终复验后再漂移也由原子交换 CAS 回滚，不覆盖用户字节
+• minimal-chime：原子替换失败保留 1.0.0，下一次正常启动可重试成功
+• minimal-chime：卷不支持 RENAME_SWAP 时保留 1.0.0 并继续 bootstrap
+• injectedSetupPacksLock(under:)：同一个 root 两次构造，父目录与叶名必须两次都不同
+• performSharedRuntimeBootstrap：完成共享自举，但不读取、锁定或改写 Claude settings
+• performFirstRunSetup：包锁在重试预算内被放开 ⇒ 挺过去，不是当场失败
+• performFirstRunSetup：包锁被占住时必须失败，绝不许静默跳过包却照样报成功
+• performFirstRunSetup: 覆盖一个**已存在**的二进制 —— 新内容 + 新执行位，旧文件的元数据一个字节都不留
+• performFirstRunSetup: 目标是一条指向真实文件的 symlink —— 必须发布出一份常规二进制，不能永久失败
+• performFirstRunSetup: running from inside a bundle copies binary + pack, selects default, installs hooks
+• performFirstRunSetup：完整现代 Claude 连接传播为幂等成功，settings 逐字不变
+• performFirstRunSetup: already running from the fixed destination only ensures hooks (no copy)
+• performFirstRunSetup: not running from a bundle (no sibling packs/) still copies the binary — but refuses to write hooks with zero packs
+• performFirstRunSetup: never clobbers a same-id pack the user already has
+• performFirstRunSetup: a pack that already exists (not copied this run) still gets selected when config.json is missing
+• performFirstRunSetup: re-running from the already-installed location selects a default pack that exists but has no config.json yet
+• performFirstRunSetup: an existing config.json's selected_pack is left untouched
+• performFirstRunSetup: a dot-prefixed directory in the user pack root (a killed setup's `.<id>.tmp-<pid>` leftover, or any hidden dir) is NEVER eligible as the default selection — even though it sorts BEFORE a real pack id, the real pack is chosen
+• performFirstRunSetup: multiple bundled packs default-select the alphabetically-first one
+• currentExecutablePath: an absolute process-image path behind a symlink resolves to the real target
+• currentExecutablePath: a relative process-image result is normalized only in the explicit test seam
+• currentExecutablePath: an absolute process-image result wins over a bare fallback spelling
+• currentExecutablePath: a long verified path resolves without MAXPATHLEN truncation
+• currentExecutablePath: process-image C string preserves trailing filename controls
+• currentExecutablePath: query failure is explicit and leaves the filesystem untouched
+• performFirstRunSetup: blocked runtime parent fails closed at the bootstrap journal before binary copy
+• performFirstRunSetup: 一份已存在、selected_pack 为空串的 config.json（旧判据下永久静音的现场） → 仍然选出默认包（regression pin：旧的 `!fileExists` 判据在这里必定失败）
+• performFirstRunSetup: setEventEnabled 现在对缺失的 config fail closed（D23 定稿①）—— 静音钮再也造不出 selected_pack:"" 的 config，随后跑的仍是一次干净的全新安装
+• performFirstRunSetup: 一份读不出来 / 畸形的 config.json → 自举不选包、一个字节不改它 —— 但也**不许把它报成成功**（T17e：本 suite 的本意原样保留，结论被推翻）
+• performFirstRunSetup: re-running from inside the bundle a second time is idempotent
+• T17e/策略: packSelectionPlan —— 六个格子逐格钉死
+• T17e/修复: config 指向的包已经不在了、但画廊里还有别的包 → 替他换上一个能响的、hooks 照写（**绝不能**把他挡在唯一能换包的那个界面之外）
+• T17e/修复: 一个能用的包都没有 → 这时才硬失败（画廊本来就是空的，写 hooks 只会得到纯静音）
+• T17e/修复: 用户真实的 settings.json 在失败路径上必须**逐字节**不变（而不是「文件不存在」这种在真机上永远不成立的弱断言）
+• T17e/同源: packs/ 里有一个读不出 manifest 的残骸目录（字典序还排在真包前面）→ 选包必须跳过它、选中真正能用的那个（而不是选中残骸，再把一台全新机器判成装不上）
+• T17e/同源: packs/<id> 是一条逃出 packs/ 之外的符号链接 → `play` 的 resolvePackDirectory 根本解析不出来（isReallyContained）→ 它不算能用的包（钉死 bundledPacksDirectory: nil 这条链）
+• T17e/自愈: 上一次复制被杀掉、留下半个包（有音频、没 manifest）→ 从 bundle 重跑 setup 必须把残骸挪开、重新复制一份完整的、然后装成功（**而不是每一次重跑都一字不差地失败**）
+• T17e/自愈: 连挪两次残骸（pid 复用 / 同一次运行里撞名）→ 绝不覆盖上一次挪走的那一份（那里面装着用户的文件——一句顺手的 removeItem 就是一条数据丢失路径）
+• T17e/原子: 复制在树的中途失败 → 最终路径 packs/<id> 上**一个字节都不能有**（否则下一次重跑会把这堆半成品当成「已经在了」而永远跳过——正是上面那条死锁的成因）
+• T17e/自愈: packs/<id> 是一条**悬空**符号链接 → 同样必须被挪开（fileExists 跟随链接、会说它「不存在」，于是它从判据的缝里漏过去、直奔 moveItem 抛 EEXIST → 每次重跑一字不差地失败）
+• T17e/自愈: 一个 manifest 读得出来的同名用户包，绝不能被 bundle 里的同名包覆盖
+• T17e/内容: manifest 声明了 stop.mp3、而文件此刻不在 → **必须照常装完**（面板画成 .broken，用户看得见、拖一个文件就能修；拦住他等于把他挡在唯一能修好它的界面之外）
+• T17e/内容: manifest 一个事件都没声明（events: {}，一个刚建出来、还没导入声音的空包）→ **必须照常装完**（面板画五行 .unmapped，用户看得见）
+• stripQuarantineAttribute: 剥掉一个正规文件上的章
+• stripQuarantineAttribute: 递归 —— 目录、子目录、里面每个文件
+• stripQuarantineAttribute: 没有章 / 路径不存在 —— 不崩、不抱怨（ENOATTR / ENOENT 都是成功）
+• hasQuarantineAttribute: 只回答「这条路径上有没有章」，不跟随符号链接
+• quarantineVerdict: getxattr 成功 = 这条路径上真的有章
+• quarantineVerdict: ENOATTR / ENOENT 是仅有的两种「干净」
+• quarantineVerdict【假阴性回归】读不出来 ≠ 干净：其他 errno 一律当成盖着章
+• performFirstRunSetup: 从一个带隔离章的 bundle 装出来的 helper，必须是干净的
+• performFirstRunSetup: 重跑（alreadyInstalled，跳过复制）也会把一个遗留的章清掉
+• performFirstRunSetup: 隔离剥不掉时 → binaryQuarantined，且**一条 hook 都不写**
+• doctor: 一个带隔离章的二进制是硬失败，不是「✓ 在位」
+• SemanticVersion.init(parsing:) parses full major.minor.patch
+• SemanticVersion.init(parsing:) zero-pads missing components — "2.1" == "2.1.0", a defined, non-ambiguous behavior for unequal component counts
+• SemanticVersion.init(parsing:) rejects malformed input, never a partial guess
+• SemanticVersion comparison is NUMERIC, never string/lexical — 2.1.201 > 2.1.99 even though "99" > "201" as strings
+• SemanticVersion comparison handles multi-digit minor version components correctly
+• SemanticVersion.description round-trips to "major.minor.patch"
+• parseClaudeCodeVersionOutput extracts the version from the real "<semver> (Claude Code)" shape
+• parseClaudeCodeVersionOutput returns nil for garbage/empty output
+• checkClaudeCodeVersion: a version at/above the verified minimum reports .verified
+• checkClaudeCodeVersion: exactly the verified minimum itself reports .verified (boundary, not .belowVerifiedMinimum)
+• checkClaudeCodeVersion: a version below the verified minimum reports .belowVerifiedMinimum — proves the numeric (not lexical) comparison reaches all the way through this function, using the task's own 2.1.201 vs 2.1.99 example
+• checkClaudeCodeVersion: a non-zero exit code (claude not on PATH via env) is .undetectable
+• checkClaudeCodeVersion: unparsable stdout is .undetectable, never a crash
+• checkClaudeCodeVersion: a runner-reported timeout is .undetectable, never hangs
+• checkClaudeCodeVersion: a launch failure (env itself missing) is .undetectable
+• claudeCodeVersionDoctorResult: every ClaudeCodeVersionStatus outcome maps to .ok or .warning, NEVER .failure (anchor 2: doctor's hard-failure set must never widen)
+• claudeCodeVersionDoctorResult: the below-minimum warning explains StopFailure in plain language, and does not blame the other three events
+• macOSVersionDoctorResult: at/above the documented floor reports .ok
+• macOSVersionDoctorResult: even an (impossible on a real machine) below-floor injected version still reports .ok — never .warning, never .failure — because this branch is provably unreachable in production and must not masquerade as a live signal
+• VersionCompatibility constants match the documented values (single source of truth — no test hardcodes a second copy of either number)
+• SystemCommandRunner.run: a real subprocess that finishes within the timeout reports .completed with its actual stdout and exit code
+• SystemCommandRunner.run: a REAL enforced timeout — a subprocess that sleeps far longer than the given timeout is actively terminated and reported as .timedOut quickly, never waited out to completion (task requirement: 超时必须真的实现)
+• SystemCommandRunner.run: a non-existent executable reports .launchFailed, never crashes
+• SystemCommandRunner.run：忽略 SIGTERM 的直接子进程会被 SIGKILL 并确认回收
+• SystemCommandRunner.run: a non-zero exit code is reported faithfully, not swallowed
+• SystemCommandRunner.run: stdout larger than the ~64KB pipe buffer is drained without deadlocking the child — the property the original background reader existed to provide, which the single-threaded poll(2) drain must not give up
+• SystemCommandRunner.run: retained stdout is capped at 1 MiB, and the child is still drained to EOF past the cap so it never blocks and never becomes a timeout
+• SystemCommandRunner.run: the timeout covers READING stdout, not just waiting for exit — a child that exits while a grandchild still holds its stdout never EOFs the pipe, and must not be able to block run() past the deadline
+• SystemCommandRunner.run: repeated grandchild-holds-stdout timeouts strand no threads — the deadline-bounded drain runs on the caller's thread, so there is no reader to leak in the first place
+• SystemCommandRunner.run: a failed launch leaks neither the stdout reader nor its pipe
+• SystemCommandRunner.run: a completed run leaks no file descriptor
+• SystemCommandRunner.run: a failed launch leaks neither end of the pipe
+• SystemCommandRunner.run: a timed-out run leaks no file descriptor
+• ClaudioVersion embeds the development default or a strict injected release version
+• 新版双宿主 hook 命令：严格 round-trip，拒绝 Codex 假能力与外部路径
+• 新版当前 helper matcher：NFC/NFD 路径必须按 UTF-8 字节精确区分
+• matchedClaudioEvent: recognizes today's canonical path for every one of the 5 events
+• matchedClaudioEvent: round-trips whatever claudioHookCommand actually writes, for every event × both a plain and a space-carrying binary path — the writer and this matcher are a quoting/unquoting pair, and a drift between them is exactly the bug that made uninstall unable to clean up its own entries
+• matchedClaudioEvent: sweeps a LEGACY unquoted space-carrying command — written by a pre-quoting claudio, never runnable (the shell split it), but unambiguously ours, so uninstall must still be able to remove it
+• matchedClaudioEvent: sweeps a LEGACY unquoted command whose home carries an APOSTROPHE. `'` is the character shellWordContents cannot round-trip out of a bare word: one leaves the scan inside a quote, two are silently deleted. Both were removable before the writer started quoting (exact string equality on main; whitespace tokenizing in this file's first draft), so failing to sweep them is a regression, not an unimplemented tolerance
+• matchedClaudioEvent: sweeps a LEGACY unquoted command whose home carries a BACKSLASH. `\` is the other character shellWordContents refuses (it only ever decodes the `'\''` idiom's), so a bare legacy path containing one used to strand an orphan hook in settings.json that uninstall could never remove
+• matchedClaudioEvent: an apostrophe in the home directory round-trips through the '\'' single-quote idiom
+• matchedClaudioEvent: rejects a claudio-shaped command under a DIFFERENT .claudio root — /tmp, another user's home, a sibling dot-folder. `uninstall` takes no backup, so 'some component is named .claudio' must never be mistaken for 'is OUR root'
+• matchedClaudioEvent: recognizes a RELOCATED binary path under a different subdirectory of the SAME root — the load-bearing case T13 exists for (a future release moving bin/ -> libexec/, or any other subpath)
+• matchedClaudioEvent: recognizes the binary living directly at the root (no subdirectory at all) — namespace membership doesn't require any particular depth
+• matchedClaudioEvent: rejects a basename mismatch — a DIFFERENT tool living inside our own root is not claudio, even with the right trailing argv
+• matchedClaudioEvent: rejects a claudio-named binary OUTSIDE the namespace — the task's own example of a user's unrelated tool
+• matchedClaudioEvent: rejects `..` traversal that escapes the root
+• matchedClaudioEvent: rejects a QUOTE-HIDDEN `..` — a component that is not literally `..` but whose /bin/sh quote-removal yields one, so argv[0] resolves OUTSIDE the root. The raw-word fallback must not let quoting smuggle a traversal past the `..` guard (both the raw candidate AND a lossy decode are checked, so both must fail)
+• matchedClaudioEvent: rejects a COMMAND SUBSTITUTION / variable below the root — `$(…)`, backticks, `$VAR`. The decoder strips neither, so the decoded candidate is no safer than the raw one; /bin/sh would expand these and exec an out-of-root binary. claudio never writes a `$` or backtick below its own root
+• matchedClaudioEvent: rejects an embedded NEWLINE that /bin/sh reads as a command separator — a `\r\n` pair fuses into one Swift grapheme cluster that a Set<Character> scan would miss, so the below-root guard scans Unicode scalars. The second, attacker-chosen command's argv[0] is fully outside the root
+• matchedClaudioEvent: rejects an unrecognized event name
+• matchedClaudioEvent: rejects trailing argv segments and shell operators — anything that makes ` play <event>` stop being the command's suffix
+• matchedClaudioEvent: rejects a prefixed command — allowing unquoted spaces in the path must not let an attacker-controlled prefix ride along, because the decoded word still has to START at the root
+• matchedClaudioEvent: rejects a command missing the event argument entirely
+• matchedClaudioEvent: rejects a subcommand other than "play"
+• matchedClaudioEvent: rejects a relative path even if it lexically contains .claudio/
+• matchedClaudioEvent: rejects a completely unrelated third-party hook command
+• matchedClaudioEvent: trims leading/trailing whitespace, but does NOT collapse internal runs — tolerating `path␣␣play␣␣stop` is unrepresentable alongside supporting a real path that contains a space, and claudio never emits either
+• matchedClaudioEvent: does NOT expand $HOME — a variable-relative form is not prefixed by the resolved root and safely falls through as "not ours" (documented limitation, not a bug)
+• matchedClaudioEvent: does NOT strip double quotes — shellQuotedPath emits single quotes only, so accepting a double-quoted form would widen the destructive match surface for a shape we have never produced
+• matchedClaudioEvent: rejects an unterminated single quote
+• matchedClaudioEvent: rejects an empty command string, and an empty root
+• shellQuotedPath: is the identity function for every path that already works unquoted — including non-ASCII — so an upgraded claudio still recognizes its own previously-installed hook instead of appending a duplicate
+• shellQuotedPath: quotes exactly the characters that break an unquoted /bin/sh word
+• shellQuotedPath: a REAL /bin/sh -c execs the intended binary — the unquoted form of a glob-carrying path executes a DIFFERENT one, which is why * ? [ are unsafe even though an unquoted glob with no sibling match looks like it works
+• shellQuotedPath: decides on Unicode SCALARS, not Characters — a metacharacter fused with a following combining mark (or a CR+LF pair) is ONE Character equal to no member of the unsafe set, while /bin/sh still reads the underlying byte and mangles the word
+• shellQuotedPath: a REAL /bin/sh execs the intended binary even when the glob character is fused with a combining mark — the Character-level scan left this path unquoted, so the hook silently ran a DIFFERENT program under a sibling directory
+• claudioHookCommand → matchedClaudioEvent round-trips a path whose metacharacter is fused with a combining mark: the writer quotes it on scalars and the decoder unquotes it on scalars, so uninstall can still sweep the entry install just wrote
+• shellWordContents (via the matcher): rejects a backslash escaping anything but a single quote — shellQuotedPath emits no other backslash, so accepting one would widen the destructive match surface for a shape we never produced
+• claudioNamespaceRoot: derives the root from any binary path inside it
+• claudioNamespaceRoot: anchors to the FIRST .claudio component, not the last — a nested `.claudio/.claudio` must resolve to the outer root, so uninstall's sweep still covers everything the installation owns rather than one sub-branch of it
+• claudioNamespaceRoot: is fail-closed — nil for anything that names no root
+• claudioNamespaceRoot: production's real binary path always names a root — the fail-closed nil branch is unreachable outside a hand-passed path
+• matchedClaudioEvent: the root gate compares Unicode SCALARS, not Characters. Swift's String equality is canonical equivalence, so a `hasPrefix` gate answers TRUE for an NFC-spelled command under an NFD-spelled root even though the two are not the same bytes. On a normalization-INsensitive volume (APFS) they name one directory; on a normalization-sensitive home (NFS/SMB — the AD-account case) they are two, and sweeping across them deletes a settings.json hook out of a root that is not ours, from a file uninstall takes no backup of
+• matchedClaudioEvent: slices the same view it compared. A combining mark right after the root's trailing `/` fuses with it into ONE grapheme cluster, so a Character-level `dropFirst(root.count + 1)` would eat the mark along with the slash — slicing a different view than the prefix was checked on. On scalars the mark survives into the below-root scan, where it belongs: it names a real subdirectory INSIDE our own root, carries no metacharacter, and sweeping it is the job
+• binaryPathContradictsItsNamespace: install's writer-side guard. shellQuotedPath will quote ANY path into one valid /bin/sh word, but matchedClaudioEvent refuses a below-root metacharacter or a basename that is not `claudio` — so a path inside a .claudio namespace must be a shape that namespace's own sweep matches back out, or install would append an entry no uninstall could ever remove
+• binaryPathContradictsItsNamespace: a path naming NO .claudio namespace is not a contradiction. claudioNamespaceRoot yields nil for it, so uninstall fail-closes and never claimed it could sweep such an entry — and HookStatusSuite's stale-namespace coverage installs a `.claudio-OLD` hook through the real API on purpose
+• binaryPathContradictsItsNamespace: a path that NAMES our namespace but whose root claudioNamespaceRoot refuses to derive — a `..` component, or a relative path — is a contradiction, not the no-namespace carve-out. Both shapes reach a real binary through /bin/sh, so the hook they write FIRES; both are rejected outright by isClaudioBinaryPath, so no uninstall can ever sweep them back out
+• setEventEnabled: a missing config.json fails closed with .configMissing and creates nothing (D23 定稿① — this used to create a fresh config with an empty selected_pack; that was the only place on disk selected_pack: "" could ever come from, silently fabricating a selection nobody made)
+• setEventEnabled: an existing config.json only changes the one event, everything else survives
+• setEventEnabled: toggling back to true clears the muted state
+• setEventEnabled: a corrupt existing config.json aborts without overwriting it
+• setEventEnabled: a contended lock fails with .lockBusy instead of silently losing the write
+• setEventEnabled: a real lock filesystem error is reported as .lockFailed, never conflated with .lockBusy
+• setEventEnabled: an existing-but-unreadable config.json (a directory at its path) fails with .configReadFailure
+• setEventEnabled: a write failure is reported as .configWriteFailure, never a silent success
+• SetEventEnabledError: every case carries a distinct, human-readable description
+• setEventEnabled: shares config.lock with selectPack — the two calls serialize on the same lock
+• setEventEnabled: N 个并发写者打在同一个 config.json 上——写完之后文件仍是合法 JSON、三个最小 键与一个未知顶层键全都还在，且每一次调用要么真的成功要么 .lockBusy，绝不静默损坏
+• setEventEnabled: 未知顶层键（night_dim / ui_theme）在一次静音后逐字幸存，绝不被合成的 Encodable 抹掉
+• setEventEnabled: master_volume 是字符串（损坏）→ fail closed，绝不静默换成默认 0.8 再写回
+• setEventEnabled: events 里有非布尔值（"false" 字符串）→ 整份文件按损坏处理，不只是跳过那一项
+• setEventEnabled: events 的值是对象（更丰富的未来 schema）→ fail closed，绝不把整张表抹平
+• setEventEnabled: 对照组——一份完全正常的 config.json，只翻目标事件，master_volume 与兄弟事件纹丝不动
+• setEventEnabled: events 的值是数字 1（NSNumber/Bool 桥接陷阱）→ fail closed，绝不被静默读成 true
+• setEventEnabled: master_volume 是布尔 true → fail closed（布尔不是数字，是坏文件）
+• setEventEnabled: 顶层不是 JSON 对象（是数组）→ fail closed
+• setEventEnabled: events 存在但不是对象（是数组）→ fail closed
+• selectPack: 全新安装写出的 config.json 恰好是三个最小必需键，没有多也没有少
+• selectPack: 未知顶层键与 master_volume 在一次切包后逐字幸存
+• selectPack: master_volume 是字符串（损坏）→ fail closed，文件逐字未动
+• selectPack: events 的值是对象（更丰富的未来 schema）→ fail closed，整张表逐字幸存
+• selectPack: 全新安装写出的 master_volume 逐字是 0.8，不是 0.80000000000000004
+• setEventEnabled: 一份原本干净的 master_volume: 0.35，读-改-写之后磁盘上仍逐字是 0.35
+• setEventEnabled: 写回后 events 里的 true 仍是 true，绝不被数字规范化变成 1
+• setEventEnabled: 未知键里**嵌套**的数字（对象里、数组里）同样不被写脏
+• setEventEnabled: 超出 Double 精度的大整数逐字保留（整数绝不走 doubleValue）
+• setEventEnabled: 连点两次静音，第二次写出的字节与第一次完全一致（不会一次比一次脏）
+• selectPack: 首次装机（config 不存在，走 Setup → selectPack）写出的 master_volume 逐字是 0.8
+• setEventEnabled: events.stop 是数字 1 → 失败原因是**可执行指令**（哪个键 / 必须是什么 / 当前是什么 / 怎么修）
+• setEventEnabled: master_volume 是字符串 → 原因带上当前值与两条出路
+• probeConfigRewritable: 文件不存在 → .absent（全新安装，不是错误）
+• probeConfigRewritable: 一份合法 config → .rewritable
+• probeConfigRewritable: 畸形 config → .malformed，reason 与真去写时拿到的那一句**逐字相同**
+• probeConfigRewritable: 只读探针——一个字节都不写
+• selectPack: 一份缺了 selected_pack 的 config.json 视为损坏 → fail closed（保持既有契约）
+• setEventEnabled: master_volume 是 -1e400（解析成 -inf）→ fail closed，绝不 abort，文件逐字未动
+• selectPack: master_volume 是 -1e400（解析成 -inf）→ fail closed，绝不 abort，文件逐字未动
+• setEventEnabled: -1e400 藏在一个未知顶层键的**对象**里（night_dim.level）→ 同样 fail closed
+• setEventEnabled: -1e400 藏在一个未知顶层键的**数组**里（x[0]）→ 同样 fail closed
+• probeConfigRewritable: master_volume 是 -1e400 → .malformed（这是 doctor 假绿的另一半：写下去会 abort 的文件不能被诊断为可安全重写）
+• probeConfigRewritable 与 setEventEnabled 对 -1e400 给出的 reason 逐字相同（doctor 与写路径必须说同一句话）
+• setEventEnabled: JSON 嵌套超过 maxJSONNestingDepth（64）层 → fail closed，不炸栈
+• probeConfigRewritable: config.json 是一个目录 → .malformed，不是 .rewritable
+• probeConfigRewritable: config.json 是一个 FIFO → .malformed，且绝不挂起
+• probeConfigRewritable: 不可读节点保留与真实写路径相同的修复指引
+• probeConfigRewritable: 一份**合法、可完整解析**但超过 64 KiB 上限的 config.json → .malformed（换一个不裸读大小上限的 Data(contentsOf:) 实现，这份文件会解析成功并报 .rewritable——这条要钉的正是「上限本身在起作用」，而不是巧合地读到一份读不懂的文件）
+• setEventEnabled: selected_pack 是数字 42（不是字符串）→ fail closed，文件逐字未动
+• selectPack: selected_pack 是数字 42（不是字符串）→ fail closed，文件逐字未动
+• setEventEnabled: selected_pack 是布尔 true（不是字符串）→ fail closed，文件逐字未动
+• selectPack: selected_pack 是布尔 true（不是字符串）→ fail closed，文件逐字未动
+• probeConfigRewritable: 内容合法但父目录只读（chmod 0o500）→ .unwritable，不是 .rewritable；configRewritabilityResult 报 warning；真实写也确实失败（探针与写路径必须一致）
+• probeConfigRewritable: 缺失 config 的父目录链可创建时才是 .absent
+• probeConfigRewritable: 缺失 config 的路径被普通文件占位时 → .unwritable，并点名占位路径
+• probeConfigRewritable: 缺失 config 经用户目录链接时 → .unwritable，与写路径一致
+• probeConfigRewritable: 缺失 config 经悬空符号链接祖先时 → .unwritable
+• selectPack: 已存在的 config 父目录仍拒绝更高一级的符号链接
+• selectPack: 交换窗口中的外部替换保留已发布失败身份
+• selectPack: 发布后父目录换位仍报告磁盘已变
+• loadPackManifest: manifest.json 是 FIFO → .unreadable，拒读原因讲清「不是正规文件」，且绝不阻塞
+• loadPackManifest: manifest.json 是目录 → .unreadable（不是崩溃，也不是「读到了空」）
+• loadPackManifest: manifest.json 超过 1 MiB 上限 → .unreadable，绝不整份吞进内存
+• loadPackManifest: 上限之内的正常 manifest.json 仍然照常读取（闸门不能误伤）
+• checkPackIntegrity: manifest.json 是 FIFO → .manifestUnreadable，doctor 照常返回
+• playSoundEvent: manifest.json 是 FIFO → .notReady、不 spawn、且绝不阻塞（hook 绝不阻断 Claude Code）
+• loadPackManifest: manifest.json 是包内、指向同包内真实文件的符号链接 → 照常读取（与音频文件同一句话）
+• loadPackManifest: manifest.json 是指向包内 FIFO 的符号链接 → 仍然拒读（正规文件闸门跟着 fd 走）
+• loadPackManifest: manifest.json 是逃出包目录的符号链接 → 仍然拒读（挡它的是 isReallyContained，不是 O_NOFOLLOW）
+• checkPackIntegrity: 一个 manifest.json 与音频文件**都是**包内符号链接的包 → .complete
+• checkPackIntegrity: 名叫 stop.mp3 的**目录**必须报 .incomplete——绝不能把一个发不出声的包报成 complete
+• checkPackIntegrity: 名叫 stop.mp3 的 FIFO 同样必须报 .incomplete
+• checkPackIntegrity: 包内指向同包内真实文件的符号链接仍然算 .complete（正规文件闸门不能误伤合法包）
+• playSoundEvent: 名叫 stop.mp3 的目录 → .notReady，绝不 spawn afplay 去放一个目录
+• playSoundEvent: 名叫 stop.mp3 的 FIFO → .notReady，绝不 spawn
+• packSelection: config.json 不存在 → .notSelected（全新安装，不是错误）
+• packSelection: selected_pack 是空串 → .notSelected（与文件不存在是同一件事）
+• packSelection: selected_pack 是一个非空字符串 → .selected(packID:)，不校验它是否真的存在
+• packSelection: 顶层不是 JSON 对象 → .malformed
+• packSelection: 缺少 selected_pack 这个必需键 → .malformed
+• packSelection: selected_pack 不是字符串（是数字）→ .malformed，不猜不重建
+• packSelection: config.json 是一个目录 → .malformed，绝不挂起、绝不崩溃
+• packSelection 与 checkPackIntegrity 对同一份读不出来的 config.json 给出逐字相同的 reason（两条读路径描述的是同一件事，不该各自发明说法）
+• 合成矩阵：一份 selected_pack 正常、但 master_volume 是字符串的 config —— packSelection 说「选了」，probeConfigRewritable 说「写不了」，两者必须不一致（这正是要两条轴的理由）
+• 合成矩阵：文件不存在时，读写两轴的答案必须一致地『没问题』（.notSelected / .absent）
+• 合成矩阵：一份完全正常的 config —— 读写两轴都必须放行（.selected / .rewritable）
+• 合成矩阵：selected_pack 缺失/坏掉的 config —— 读写两轴必须同时报 .malformed（同一份坏文件，两条轴不该有一条独自放行）
+• setMasterVolume: an existing config.json only changes master_volume, everything else survives
+• setMasterVolume: a value above 1.0 clamps to 1.0 via AfplayVolume.clamped, never written raw
+• setMasterVolume: a value below 0.0 clamps to 0.0 via AfplayVolume.clamped, never written raw
+• setMasterVolume: a literal negative zero clamps to a clean +0.0, not a rendered -0.0
+• setMasterVolume: non-finite input (NaN/±infinity) falls back to the documented default, never reaches the encoder raw
+• setMasterVolume: a missing config.json fails closed with .configMissing and creates nothing（同 setEventEnabled 的 D23 定稿①：这个调用没有任何 pack 上下文，凭空新建等于伪造一次谁也 没做过的选择——这个签名从一开始就没有 freshSelectedPack 参数，D13 已判死）
+• setMasterVolume: a corrupt existing config.json aborts without overwriting it
+• setMasterVolume: an existing-but-unreadable config.json (a directory at its path) fails with .configReadFailure
+• setMasterVolume: a contended lock fails with .lockBusy instead of silently losing the write
+• setMasterVolume: a real lock filesystem error is reported as .lockFailed, never conflated with .lockBusy
+• setMasterVolume: a write failure is reported as .configWriteFailure, never a silent success
+• setMasterVolume: unknown top-level keys, events, and selected_pack all survive untouched
+• SetMasterVolumeError: every case carries a distinct, human-readable description
+• setMasterVolume: shares config.lock with selectPack and setEventEnabled — all three serialize on the same lock
+• retired Surface sounds: overrides never affect automatic defaults
+• retired Surface writes fail explicitly without changing bytes
+• workspace directories: ordinary directory outside Git tree resolves
+• workspace directories: two repositories, two worktrees, child and symlink identities
+• workspace Git lookup rejects stale .git targets
+• workspace Git lookup retries one transient deadline, but a persistent hang fails closed
+• workspace matching: exact path boundary, most specific directory, missing cwd, malformed match
+• workspace mutations: explicit full profile, duplicate refusal, unknown fields, one exact migration backup
+• workspace config growth: rejects oversized writes without changing original bytes
+• workspace edits reject a different directory reusing the same UUID
+• workspace playback: independent volume, five switches, damaged pack stops without fallback
+• system choice guard requires the current installed helper
+• system sound catalog accepts only installed, contained regular audio
+• retired group system sound writers preserve config
+• Pack sources decode file, mixed and system-only manifests
+• Pack mapping controls playback, independent group volume and event switches
+• Malformed retired fields survive ordinary config writes without invalidating profiles
+• workspace delete: captured directory and UUID guard the locked transaction
+• workspace delete: publication conflict is typed and current config remains readable
+• ClaudioConfig.starredPacks: missing, empty, and populated arrays remain three distinct read states
+• starred_packs: parser validates only array-of-string shape, never pack-id contents
+• setStarredPacks: a first mutation materializes defaults with the requested non-built-in star
+• setStarredPacks: normalizes duplicate ids, prunes stale ids only while writing, and preserves unrelated keys
+• toggleStarredPack: membership decision uses latest locked JSON and preserves external siblings
+• setStarredPacks: rejects more than four distinct existing ids without silently truncating or writing
+• setStarredPacks: missing config and a busy config lock both fail closed without creating or changing a file
+• setStarredPacks: an unreadable pack directory fails closed instead of silently clearing defaults
+• starred_packs malformed shapes make probe and every writer fail closed with exactly the same actionable reason
+• existing config writers preserve a valid starred_packs array
+• play and doctor keep their pre-starred-packs decisions for valid, five-id, and malformed star values
+• SetStarredPacksError: common config-lock descriptions stay identical to SetEventEnabledError
+• config.json: selectPack / setEventEnabled / setMasterVolume / setStarredPacks 混跑在同一把 config.lock 上（D7）——文件永远不撕裂、旧键永远不丢，每次调用要么真成功要么各自的 .lockBusy
+• legacy install preflight refuses missing config and an all-silent pack
+• legacy install preflight allows partial playback and reports every missing mapping
+• legacy install preflight follows play's lenient optional-config decoding
+• Local activity records only the accepted installation and keeps playback independent
+• Local activity lock contention defers then merges without loss
+• Local activity pending staging never waits for its quota lock
+• Local activity host records defer existing pending backlog work
+• Local activity pending timestamps preserve the post-clear subsecond boundary
+• Local activity migrates numeric schema 1 timestamps back to compatible strings
+• Local activity pure reads migrate numeric schema 1 timestamps
+• Local activity failed clear preserves a published batch without recounting
+• Local activity failed clear preserves pending facts beside a damaged summary
+• Local activity reads stay ready when cleared pending cleanup is denied
+• Local activity clear retains post-boundary facts from a published batch
+• Local activity recovers a published pending batch by identity without recounting
+• Local activity pending staging enforces its hard limit under concurrency
+• Local activity updates preserve unknown fields inside retained date buckets
+• Local activity uses Gregorian calendar dates and clear excludes late old callbacks
+• Local activity clear fails closed on a summary symlink
+• Local activity clear fails closed on a non-regular summary node
+
+✓ all 6188 checks passed

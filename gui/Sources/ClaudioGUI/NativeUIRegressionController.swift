@@ -652,6 +652,11 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
                 "about": fixture.aboutSettings === composition.aboutSettings,
             ],
             "destination": fixture.session.state.routeResolution.destination.rawValue,
+            "settingsNavigation": [
+                "stamp": String(describing: fixture.session.navigationHistory.stamp),
+                "mounted": String(describing: fixture.session.renderedNavigationStamp),
+                "restoration": String(describing: fixture.session.state.navigationRestoration),
+            ],
             "language": preferences.language.rawValue, "reminders": notices.snapshot.totalCount,
             "eventAnimation": [
                 "style": preferences.eventAnimation.style.rawValue,
@@ -708,6 +713,13 @@ final class NativeUIRegressionController: NSObject, ObservableObject {
             "keyWindow": NSApp.keyWindow?.title ?? "none",
             "isActive": NSApp.isActive,
             "fullKeyboardAccess": NSApp.isFullKeyboardAccessEnabled,
+            "systemAccessibility": [
+                "increaseContrast": NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast,
+                "reduceTransparency": NSWorkspace.shared
+                    .accessibilityDisplayShouldReduceTransparency,
+                "reduceMotion": NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                "accentColor": NSColor.controlAccentColor.description,
+            ],
             "keyWindowFirstResponder": NSApp.keyWindow?.firstResponder.map {
                 String(reflecting: type(of: $0))
             } ?? "none",

@@ -1,0 +1,9 @@
+Source: disk-native-focus-green.txt
+Original SHA-256: 2de5d382daefba2eb96fa32580ecc105a1656b66dc9c77b1f6760ec2a4d333f9
+Verbatim lines: 11-15 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-disk-pack-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: disk-backed detail / builtin=false
+• Settings native focus: disk-backed detail / builtin=true
+Settings disk pack focus: 8 checks, 0 failures

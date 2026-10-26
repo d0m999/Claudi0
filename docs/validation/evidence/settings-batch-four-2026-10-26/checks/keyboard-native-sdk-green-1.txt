@@ -1,0 +1,176 @@
+Source: keyboard-native-sdk-green-1.txt
+Original SHA-256: 2d5dddef9b2f095bd2d14642079fbaf628a681b4ab2a499cf1393366eeff7fe0
+Verbatim lines: 5-176 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:4A03752E-B80C-4BB6-8EF4-6C972B088037, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:3FEFDD5E-55FB-4D73-82EF-9013509F97D2, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.general.about, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+  clear clearActivity / escape: previous=[], window=63753, key=true, appKey=63753, order=[63753, 63752], responder=_NSAlertButton@ObjectIdentifier(0x0000007595dbf000), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / escape: recorded=[], window=63752, key=true, appKey=63752, order=[63752], responder=KeyViewProxy@ObjectIdentifier(0x0000007595dbf900), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: previous=[], window=63754, key=true, appKey=63754, order=[63754, 63752], responder=_NSAlertButton@ObjectIdentifier(0x0000007595dbf600), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: recorded=[], window=63752, key=true, appKey=63752, order=[63752], responder=KeyViewProxy@ObjectIdentifier(0x0000007595dbf900), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: previous=[], window=63755, key=true, appKey=63755, order=[63755, 63752], responder=_NSAlertButton@ObjectIdentifier(0x0000007595dbc300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearActivity], window=63752, key=true, appKey=63752, order=[63752], responder=KeyViewProxy@ObjectIdentifier(0x0000007595dbfc00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: cancellation restores clearLog without clearing
+  clear clearLog / escape: previous=[], window=63757, key=true, appKey=63757, order=[63757, 63756], responder=_NSAlertButton@ObjectIdentifier(0x000000759620e100), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / escape: recorded=[], window=63756, key=true, appKey=63756, order=[63756], responder=KeyViewProxy@ObjectIdentifier(0x000000759600e700), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: previous=[], window=63758, key=true, appKey=63758, order=[63758, 63756], responder=_NSAlertButton@ObjectIdentifier(0x000000759620f300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: recorded=[], window=63756, key=true, appKey=63756, order=[63756], responder=KeyViewProxy@ObjectIdentifier(0x000000759600e700), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: previous=[], window=63759, key=true, appKey=63759, order=[63759, 63756], responder=_NSAlertButton@ObjectIdentifier(0x000000759620f900), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearLog], window=63756, key=true, appKey=63756, order=[63756], responder=KeyViewProxy@ObjectIdentifier(0x000000759600de00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: About opens and cancels from its entry / zhHans
+• Settings keyboard: About opens and cancels from its entry / english
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/49
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/zhHans/36
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/49
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/zhHans/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/zhHans/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(B9C514A0-428D-4784-AE62-A636A03AAED3), event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(B9C514A0-428D-4784-AE62-A636A03AAED3), event: nil)/zhHans/36
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(B9C514A0-428D-4784-AE62-A636A03AAED3), event: nil)/zhHans/49
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(B9C514A0-428D-4784-AE62-A636A03AAED3), event: nil)/zhHans/36
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/49
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/zhHans/36
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/49
+• Settings navigation row: integrations.destination.activity-diagnostics/destination(ClaudioGUICore.SettingsDestination.integrations)/english/36
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/49
+• Settings navigation row: integrations.destination.manage-events.codex/integrations(ClaudioGUICore.IntegrationsSettingsRoute(surface: ClaudioCore.HostSurfaceID.codex, detailsHost: Optional(ClaudioCore.HostID.codex), level: ClaudioGUICore.IntegrationSettingsLevel.application))/english/36
+  ✗ Settings fixture readiness timed out: key=false, canKey=true, visible=true, deferred=false, appKey=false, shellWindow=true, stamp=true, ready=true, requestReady=true, enabled=true, sheet=false, request=Optional(ClaudioGUICore.SettingsNavigationFocus.content), appHidden=false, appActive=false, keyType=nil, modalType=nil  (claudio_gui_tests/SettingsNavigationRowSuite.swift:59)
+  readiness: window=63794, key=false, appKey=0, order=[63794], responder=NSHostingView<AnyView>@ObjectIdentifier(0x00000075973f8800), ax=workspace.rule.global|AXButton|Default Group, settings-fixture-pack · 70% · 5/5 events on · All surfaces when no workspace matches, sheet=0, fullKeyboard=true; navigation=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: C333F786-F786-418D-A7CC-AF22DAA53F67, version: 2)), mounted=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: C333F786-F786-418D-A7CC-AF22DAA53F67, version: 2)), restoration=Optional(ClaudioGUICore.SettingsNavigationRestoration(stamp: ClaudioGUICore.SettingsNavigationStamp(entryID: C333F786-F786-418D-A7CC-AF22DAA53F67, version: 2), location: ClaudioGUICore.SettingsLocation(route: ClaudioGUICore.SettingsRoute.destination(ClaudioGUICore.SettingsDestination.eventsAndSounds), workspaceRoute: Optional(ClaudioGUICore.EventSettingsWindowRoute(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil, workspaceTarget: nil, unavailableRequestedScopeStoredValue: nil, detail: ClaudioGUICore.WorkspaceSettingsDetail.workspaces)), viewedPackID: nil), bookmark: ClaudioGUICore.SettingsReadingBookmark(focusIdentifier: nil, scrollAnchorIdentifier: nil, anchorOffset: 0.0, relativeScrollPosition: 0.0), focus: ClaudioGUICore.SettingsNavigationFocus.content))
+
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.global, event: nil)/english/36
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(7DA0C2CE-09B9-431D-A943-F6946AEF4C38), event: nil)/english/49
+• Settings navigation row: workspace.manage-sounds/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(7DA0C2CE-09B9-431D-A943-F6946AEF4C38), event: nil)/english/36
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(7DA0C2CE-09B9-431D-A943-F6946AEF4C38), event: nil)/english/49
+• Settings navigation row: workspace.manage-connections/events(scope: ClaudioGUICore.PanelSoundScopeID.workspace(7DA0C2CE-09B9-431D-A943-F6946AEF4C38), event: nil)/english/36
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/49
+• Settings navigation row: settings.notifications.open-events/destination(ClaudioGUICore.SettingsDestination.notifications)/english/36
+• Settings native focus: disk-backed detail / builtin=false
+• Settings native focus: disk-backed detail / builtin=true
+• Settings navigation layout: 0/zhHans/false/960.0
+• Settings navigation layout: 1/zhHans/false/960.0
+• Settings navigation layout: 2/zhHans/false/960.0
+• Settings navigation layout: 3/zhHans/false/960.0
+• Settings navigation layout: 4/zhHans/false/960.0
+• Settings navigation layout: 5/zhHans/false/960.0
+• Settings navigation layout: 0/zhHans/false/1240.0
+• Settings navigation layout: 1/zhHans/false/1240.0
+• Settings navigation layout: 2/zhHans/false/1240.0
+• Settings navigation layout: 3/zhHans/false/1240.0
+• Settings navigation layout: 4/zhHans/false/1240.0
+• Settings navigation layout: 5/zhHans/false/1240.0
+• Settings navigation layout: 0/zhHans/true/960.0
+• Settings navigation layout: 1/zhHans/true/960.0
+• Settings navigation layout: 2/zhHans/true/960.0
+• Settings navigation layout: 3/zhHans/true/960.0
+• Settings navigation layout: 4/zhHans/true/960.0
+• Settings navigation layout: 5/zhHans/true/960.0
+• Settings navigation layout: 0/zhHans/true/1240.0
+• Settings navigation layout: 1/zhHans/true/1240.0
+• Settings navigation layout: 2/zhHans/true/1240.0
+• Settings navigation layout: 3/zhHans/true/1240.0
+• Settings navigation layout: 4/zhHans/true/1240.0
+• Settings navigation layout: 5/zhHans/true/1240.0
+• Settings navigation layout: 0/english/false/960.0
+• Settings navigation layout: 1/english/false/960.0
+• Settings navigation layout: 2/english/false/960.0
+• Settings navigation layout: 3/english/false/960.0
+  Tab transitions:
+window=63849, key=true, appKey=63849, order=[63849, 63848], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007597f9c900), ax=event-settings.sound-pack-picker|AXPopUpButton|, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849, 63848], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849, 63848], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849, 63848], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+window=63849, key=false, appKey=0, order=[63849], responder=KeyViewProxy@ObjectIdentifier(0x00000075972b2a00), ax=event-settings.master-volume|AXSlider|Volume, sheet=0, fullKeyboard=true
+  ✗ Tab reaches the navigation row  (claudio_gui_tests/SettingsNavigationRowSuite.swift:176)
+• Settings navigation layout: 4/english/false/960.0
+• Settings navigation layout: 5/english/false/960.0
+• Settings navigation layout: 0/english/false/1240.0
+• Settings navigation layout: 1/english/false/1240.0
+• Settings navigation layout: 2/english/false/1240.0
+• Settings navigation layout: 3/english/false/1240.0
+• Settings navigation layout: 4/english/false/1240.0
+• Settings navigation layout: 5/english/false/1240.0
+• Settings navigation layout: 0/english/true/960.0
+• Settings navigation layout: 1/english/true/960.0
+• Settings navigation layout: 2/english/true/960.0
+• Settings navigation layout: 3/english/true/960.0
+• Settings navigation layout: 4/english/true/960.0
+• Settings navigation layout: 5/english/true/960.0
+• Settings navigation layout: 0/english/true/1240.0
+• Settings navigation layout: 1/english/true/1240.0
+• Settings navigation layout: 2/english/true/1240.0
+• Settings navigation layout: 3/english/true/1240.0
+• Settings navigation layout: 4/english/true/1240.0
+• Settings navigation layout: 5/english/true/1240.0
+• Settings navigation layout: long label, whole-row hit and disabled action
+Settings navigation native focus: 943 checks, 2 failures

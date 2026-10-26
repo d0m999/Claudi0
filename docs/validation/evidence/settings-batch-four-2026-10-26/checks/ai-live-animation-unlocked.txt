@@ -1,0 +1,30 @@
+Source: ai-live-animation-unlocked.txt
+Original SHA-256: c08be3c787a68357d251c3e0ca1133480743872ea4efe5dd70f6d7be9108e918
+Verbatim lines: 1-26 (only build output before the harness is omitted)
+
+GUI checks: foreground --ai-cue-animation-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI live task animation: en=false/dark=false/reduced=false
+  keyDown 49 modifiers=0: window=62991, key=true, appKey=62991, order=[62991], responder=KeyViewProxy@ObjectIdentifier(0x000000012a61e6b0), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+• AI live task animation: en=false/dark=false/reduced=true
+  keyDown 49 modifiers=0: window=62993, key=true, appKey=62993, order=[62991], responder=KeyViewProxy@ObjectIdentifier(0x000000012c65d3b0), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=false/dark=true/reduced=false
+  keyDown 49 modifiers=0: window=62994, key=true, appKey=62994, order=[62993], responder=KeyViewProxy@ObjectIdentifier(0x000000012c66d540), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=false/dark=true/reduced=true
+  keyDown 49 modifiers=0: window=62995, key=true, appKey=62995, order=[62994], responder=KeyViewProxy@ObjectIdentifier(0x000000012c228fa0), ax=animation.generate|AXButton|生成, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=false/reduced=false
+  keyDown 49 modifiers=0: window=62996, key=true, appKey=62996, order=[62995], responder=KeyViewProxy@ObjectIdentifier(0x000000012c664c40), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=false/reduced=true
+  keyDown 49 modifiers=0: window=62997, key=true, appKey=62997, order=[62996], responder=KeyViewProxy@ObjectIdentifier(0x000000012a64cfc0), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=true/reduced=false
+  keyDown 49 modifiers=0: window=62998, key=true, appKey=62998, order=[62997], responder=KeyViewProxy@ObjectIdentifier(0x000000012c6613c0), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=true/reduced=true
+  keyDown 49 modifiers=0: window=62999, key=true, appKey=62999, order=[62998], responder=KeyViewProxy@ObjectIdentifier(0x000000012a656830), ax=animation.generate|AXButton|Generate, sheet=0, fullKeyboard=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+AI live task animation: 145 checks, 7 failures

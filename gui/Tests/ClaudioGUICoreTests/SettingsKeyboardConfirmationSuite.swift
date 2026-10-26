@@ -28,7 +28,7 @@ func runSettingsKeyboardConfirmationSuites() async {
                 route: .destination(.integrations), activityDiagnostics: model)
             let probe = NativeSettingsShellProbe(session: fixture.session, width: 1240, dark: false)
             defer { probe.close() }
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             _ = settingsKeyboardAXElements(probe.shell.view)
             let diagnostics = await settingsKeyboardTabTo(
                 "integrations.destination.activity-diagnostics", in: probe.window)
@@ -44,6 +44,10 @@ func runSettingsKeyboardConfirmationSuites() async {
             expect(
                 mounted && probe.window.isKeyWindow,
                 "keyboard navigation mounts Activity with native key focus")
+            guard mounted && probe.window.isKeyWindow else {
+                print("  mount: \(probe.readingRestorationStatus)")
+                return
+            }
             let identifier =
                 action == .clearActivity ? "settings.activity.clear" : "settings.activity.clear-log"
             let title = ClaudioL10n(language: .zhHans).text(
@@ -64,7 +68,11 @@ func runSettingsKeyboardConfirmationSuites() async {
                 guard let sheet = probe.window.attachedSheet, presented else { return }
                 let ownsKey = await settingsKeyboardWait { sheet.isKeyWindow }
                 expect(ownsKey, "each repeated confirmation owns the actual native key window")
+                guard ownsKey else { return }
                 let previous = await calls.actions
+                print(
+                    "  clear \(action) / \(cancellation): previous=\(previous), \(settingsKeyboardWindowState(sheet))"
+                )
                 if cancellation == "escape" {
                     settingsKeyboardPress(53, "\u{1b}", in: sheet)
                 } else {
@@ -101,6 +109,9 @@ func runSettingsKeyboardConfirmationSuites() async {
                     let recorded = await calls.actions
                     expect(recorded == previous, "cancellation never clears either store")
                 }
+                print(
+                    "  clear \(action) / \(cancellation): recorded=\(await calls.actions), \(settingsKeyboardWindowState(probe.window))"
+                )
             }
         }
     }
@@ -114,8 +125,14 @@ private actor SettingsClearOperationRecorder {
 @MainActor
 func settingsKeyboardPress(
     _ code: UInt16, _ characters: String, in window: NSWindow,
-    modifiers: NSEvent.ModifierFlags = []
+    modifiers: NSEvent.ModifierFlags = [], queued: Bool = false
 ) {
+    let tracing = ProcessInfo.processInfo.environment["CLAUDIO_SETTINGS_KEY_TRACE"] == "1"
+    if tracing {
+        print(
+            "  keyDown \(code) modifiers=\(modifiers.rawValue): \(settingsKeyboardWindowState(window))"
+        )
+    }
     // AppKit interprets the back-tab character, not a forward Tab with only the Shift flag.
     let keyCharacters = code == 48 && modifiers.contains(.shift) ? "\u{19}" : characters
     func event(_ type: NSEvent.EventType) -> NSEvent {
@@ -125,9 +142,16 @@ func settingsKeyboardPress(
             context: nil, characters: keyCharacters, charactersIgnoringModifiers: keyCharacters,
             isARepeat: false, keyCode: code)!
     }
+    if queued {
+        // SwiftUI plain buttons consume the application's ordered key-down/key-up pair.
+        NSApp.postEvent(event(.keyDown), atStart: false)
+        NSApp.postEvent(event(.keyUp), atStart: false)
+        return
+    }
     // Native buttons can track Space synchronously, just as mouseDown tracks mouseUp.
     NSApp.postEvent(event(.keyUp), atStart: true)
     window.sendEvent(event(.keyDown))
+    if tracing { print("  keyDispatch: \(settingsKeyboardWindowState(window))") }
 }
 
 @MainActor
@@ -162,12 +186,32 @@ private func settingsKeyboardTabToLabel(_ title: String, in window: NSWindow) as
 
 @MainActor
 private func settingsKeyboardTabTo(in window: NSWindow, matches: () -> Bool) async -> Bool {
+    var transitions: [String] = [settingsKeyboardWindowState(window)]
     for _ in 0..<48 {
         if matches() { return true }
         settingsKeyboardPress(48, "\t", in: window)
         try? await Task.sleep(nanoseconds: 20_000_000)
+        transitions.append(settingsKeyboardWindowState(window))
     }
-    return matches()
+    let found = matches()
+    if !found { print("  Tab transitions:\n" + transitions.joined(separator: "\n")) }
+    return found
+}
+
+@MainActor
+func settingsKeyboardWindowState(_ window: NSWindow) -> String {
+    let responder = window.firstResponder.map { "\(type(of: $0))@\(ObjectIdentifier($0))" } ?? "nil"
+    return
+        "window=\(window.windowNumber), key=\(window.isKeyWindow), appKey=\(NSApp.keyWindow?.windowNumber ?? 0), order=\(settingsKeyboardWindowOrder()), responder=\(responder), ax=\(settingsKeyboardFocusIdentity(in: window)), sheet=\(window.attachedSheet?.windowNumber ?? 0), fullKeyboard=\(NSApp.isFullKeyboardAccessEnabled)"
+}
+
+@MainActor
+func settingsKeyboardWindowOrder() -> [Int] {
+    return
+        (CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID)
+        as? [[String: Any]] ?? []).filter {
+            ($0[kCGWindowOwnerPID as String] as? Int32) == ProcessInfo.processInfo.processIdentifier
+        }.compactMap { $0[kCGWindowNumber as String] as? Int }
 }
 
 @MainActor

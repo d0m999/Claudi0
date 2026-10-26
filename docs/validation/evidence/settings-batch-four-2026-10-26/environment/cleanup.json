@@ -1,0 +1,393 @@
+{
+  "removed": [
+    {
+      "path": "claudio-ui-regression-168813D5-8820-403E-9B81-9FFB3D2D8CDA",
+      "files": 84,
+      "bytes": 724871,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-40CDED13-62C5-40AD-9E82-C269C054A3CC",
+      "files": 76,
+      "bytes": 694925,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-5696A3DE-D31C-4E0D-AD93-266252F7C789",
+      "files": 76,
+      "bytes": 694903,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-65360E21-1963-4674-995E-688B973AF5A8",
+      "files": 76,
+      "bytes": 693850,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-87FFBB62-1E57-40F6-86B5-78EF29D06091",
+      "files": 76,
+      "bytes": 694809,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-90E6BABE-BD4D-43A3-85BC-75BC706D62F6",
+      "files": 76,
+      "bytes": 695125,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-AA3924FA-7B7D-46F4-B85B-F3FDA15A4DA6",
+      "files": 76,
+      "bytes": 694933,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-AA7AA9D9-013F-45B0-9340-BA246830E490",
+      "files": 76,
+      "bytes": 696123,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-ui-regression-D56EBEFB-E5F4-4A5D-A62A-A579081FC717",
+      "files": 76,
+      "bytes": 694038,
+      "links": [],
+      "removed": true
+    },
+    {
+      "path": "claudio-native-ui-build.5Lir9w",
+      "files": 111,
+      "bytes": 49455818,
+      "links": [
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+          "target": "Versions/Current/PrivateHeaders"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+          "target": "Versions/Current/Resources"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+          "target": "Versions/Current/Updater.app"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+          "target": "Versions/Current/Headers"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+          "target": "Versions/Current/XPCServices"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+          "target": "Versions/Current/Modules"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+          "target": "Versions/Current/Autoupdate"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+          "target": "Versions/Current/Sparkle"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+          "target": "B"
+        }
+      ],
+      "removed": true
+    },
+    {
+      "path": "claudio-native-ui-build.JIyY8E",
+      "files": 111,
+      "bytes": 49133354,
+      "links": [
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+          "target": "Versions/Current/PrivateHeaders"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+          "target": "Versions/Current/Resources"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+          "target": "Versions/Current/Updater.app"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+          "target": "Versions/Current/Headers"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+          "target": "Versions/Current/XPCServices"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+          "target": "Versions/Current/Modules"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+          "target": "Versions/Current/Autoupdate"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+          "target": "Versions/Current/Sparkle"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+          "target": "B"
+        }
+      ],
+      "removed": true
+    },
+    {
+      "path": "claudio-native-ui-build.TgBd47",
+      "files": 111,
+      "bytes": 49129066,
+      "links": [
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+          "target": "Versions/Current/PrivateHeaders"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+          "target": "Versions/Current/Resources"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+          "target": "Versions/Current/Updater.app"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+          "target": "Versions/Current/Headers"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+          "target": "Versions/Current/XPCServices"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+          "target": "Versions/Current/Modules"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+          "target": "Versions/Current/Autoupdate"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+          "target": "Versions/Current/Sparkle"
+        },
+        {
+          "path": "Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+          "target": "B"
+        }
+      ],
+      "removed": true
+    }
+  ],
+  "activePointerRemoved": true,
+  "boundary": "All task-created temporary Apps, scratch builds, fixture data, redundant frames and probes removed; retained evidence is in this Git scope. Existing repository build caches remain for the clean-candidate gate.",
+  "remainingTaskTemporaryRoot": {
+    "name": "claudio-batch4-jn8emn92",
+    "files": 11611,
+    "bytes": 1255392963,
+    "links": [
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/debug",
+        "target": "arm64-apple-macosx/debug"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/PrivateHeaders",
+        "target": "Versions/Current/PrivateHeaders"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Resources",
+        "target": "Versions/Current/Resources"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Updater.app",
+        "target": "Versions/Current/Updater.app"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Headers",
+        "target": "Versions/Current/Headers"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/XPCServices",
+        "target": "Versions/Current/XPCServices"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Modules",
+        "target": "Versions/Current/Modules"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Autoupdate",
+        "target": "Versions/Current/Autoupdate"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Sparkle",
+        "target": "Versions/Current/Sparkle"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Versions/Current",
+        "target": "B"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/PrivateHeaders",
+        "target": "Versions/Current/PrivateHeaders"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Resources",
+        "target": "Versions/Current/Resources"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Updater.app",
+        "target": "Versions/Current/Updater.app"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Headers",
+        "target": "Versions/Current/Headers"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/XPCServices",
+        "target": "Versions/Current/XPCServices"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Modules",
+        "target": "Versions/Current/Modules"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Autoupdate",
+        "target": "Versions/Current/Autoupdate"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Sparkle",
+        "target": "Versions/Current/Sparkle"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/swift/arm64-apple-macosx/debug/Sparkle.framework/Versions/Current",
+        "target": "B"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+        "target": "Versions/Current/PrivateHeaders"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+        "target": "Versions/Current/Resources"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+        "target": "Versions/Current/Updater.app"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+        "target": "Versions/Current/Headers"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+        "target": "Versions/Current/XPCServices"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+        "target": "Versions/Current/Modules"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+        "target": "Versions/Current/Autoupdate"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+        "target": "Versions/Current/Sparkle"
+      },
+      {
+        "path": "claudio-native-ui-build.jHtHU0/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+        "target": "B"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+        "target": "Versions/Current/PrivateHeaders"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+        "target": "Versions/Current/Resources"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+        "target": "Versions/Current/Updater.app"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+        "target": "Versions/Current/Headers"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+        "target": "Versions/Current/XPCServices"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+        "target": "Versions/Current/Modules"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+        "target": "Versions/Current/Autoupdate"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+        "target": "Versions/Current/Sparkle"
+      },
+      {
+        "path": "claudio-native-ui-build.GrsDXW/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+        "target": "B"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/PrivateHeaders",
+        "target": "Versions/Current/PrivateHeaders"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Resources",
+        "target": "Versions/Current/Resources"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Updater.app",
+        "target": "Versions/Current/Updater.app"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Headers",
+        "target": "Versions/Current/Headers"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/XPCServices",
+        "target": "Versions/Current/XPCServices"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Modules",
+        "target": "Versions/Current/Modules"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Autoupdate",
+        "target": "Versions/Current/Autoupdate"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Sparkle",
+        "target": "Versions/Current/Sparkle"
+      },
+      {
+        "path": "claudio-native-ui-build.Tq5Lug/Claudio App Motion Preview.app/Contents/Frameworks/Sparkle.framework/Versions/Current",
+        "target": "B"
+      }
+    ],
+    "removed": true
+  }
+}

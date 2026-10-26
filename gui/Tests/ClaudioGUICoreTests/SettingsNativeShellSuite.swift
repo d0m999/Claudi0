@@ -173,7 +173,7 @@ func runSettingsNativeReadingSuites() async {
         let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.usage))
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
         defer { probe.close() }
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             probe.window.isKeyWindow,
             "Reading restoration exercises a real key window: \(probe.readingRestorationStatus)")
@@ -192,7 +192,7 @@ func runSettingsNativeReadingSuites() async {
             return
         }
         expect(probe.scrollReading(to: min(maximum, later.minY - 1)), "Scroll to a later group")
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         guard let originalOffset = probe.readingOffset,
             let bookmark = fixture.session.captureReadingPosition?()
         else {
@@ -211,9 +211,9 @@ func runSettingsNativeReadingSuites() async {
             probe.window.firstResponder === probe.shell.sidebarController.table,
             "Leaving via the sidebar establishes the actual native list responder")
         fixture.session.send(.selectSidebar(.general))
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         fixture.session.send(.goBack)
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             fixture.session.state.chrome.destination == .usage
                 && fixture.session.state.navigationRestoration == nil,
@@ -229,7 +229,7 @@ func runSettingsNativeReadingSuites() async {
         let fixture = SettingsPresentationFixtures.generalLogin(route: .destination(.usage))
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 960, dark: false)
         defer { probe.close() }
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             probe.window.isKeyWindow,
             "Ambiguous-anchor restoration exercises a real key window: \(probe.readingRestorationStatus)"
@@ -249,7 +249,7 @@ func runSettingsNativeReadingSuites() async {
                     relativeScrollPosition: 0.72), stamp: stamp))
         expect(probe.scrollReading(to: 0), "Move away from the saved reading position")
         fixture.session.send(.setNavigationBlocked(id: "reading-fixture", blocked: false))
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         let expected = (probe.maximumReadingOffset ?? maximum) * 0.72
         expect(
             fixture.session.state.navigationRestoration == nil,
@@ -267,6 +267,7 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
     let window: RetainedSettingsWindow
     let shell: SettingsNativeShellController
     let session: SettingsPresentationSession
+    private var keyEvents: [String] = []
     init(
         session: SettingsPresentationSession, width: CGFloat, dark: Bool, reduceMotion: Bool? = nil
     ) {
@@ -291,13 +292,23 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
         guard let changedWindow = notification.object as? NSWindow, changedWindow === window else {
             return
         }
+        recordKeyEvent("became")
         session.send(.windowPhaseChanged(.key))
     }
     func windowDidResignKey(_ notification: Notification) {
         guard let changedWindow = notification.object as? NSWindow, changedWindow === window else {
             return
         }
+        recordKeyEvent("resigned")
         session.send(.windowPhaseChanged(.visibleNonKey))
+    }
+    private func recordKeyEvent(_ event: String) {
+        guard ProcessInfo.processInfo.environment["CLAUDIO_SETTINGS_KEY_LIFECYCLE"] == "1" else {
+            return
+        }
+        let state =
+            "\(ProcessInfo.processInfo.systemUptime): \(event), window=\(window.windowNumber), responder=\(String(describing: window.firstResponder)), event=\(String(describing: NSApp.currentEvent)), stamp=\(String(describing: session.navigationHistory.stamp)), mount=\(String(describing: session.renderedNavigationStamp))"
+        keyEvents.append(state + "\n" + Thread.callStackSymbols.prefix(25).joined(separator: "\n"))
     }
     func settle() async {
         for _ in 0..<4 {
@@ -306,27 +317,36 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
             pumpNativeRunLoop()
         }
     }
-    func presentAndSettle() async {
-        // Match an explicit foreground Settings request; do not bypass native key/readiness guards.
-        window.presentForUserRequest()
+    func presentAndSettle(file: StaticString = #file, line: UInt = #line) async -> Bool {
+        // The constructor issued the explicit presentation request. Navigation must settle
+        // without another presentation or makeKey call that could repair the tested behavior.
         await settle()
-        for _ in 0..<32 {
-            if window.isKeyWindow,
+        let deadline = Date(timeIntervalSinceNow: 2)
+        while Date() < deadline {
+            if window.isVisible, window.isKeyWindow, NSApp.keyWindow === window,
+                settingsKeyboardWindowOrder().contains(window.windowNumber),
+                shell.view.window === window, window.attachedSheet == nil,
                 session.renderedNavigationStamp == session.navigationHistory.stamp,
                 session.state.navigationRestoration == nil
             {
-                return
+                if ProcessInfo.processInfo.environment["CLAUDIO_SETTINGS_KEY_TRACE"] == "1" {
+                    print("  mounted: \(readingRestorationStatus)")
+                }
+                return true
             }
-            // SwiftUI can clear its prior FocusState while mounting a new destination. Wait for
-            // that real mount, then repeat the probe's explicit native foreground request.
-            if session.renderedNavigationStamp == session.navigationHistory.stamp,
-                !window.isKeyWindow
-            {
-                window.makeKey()
-            }
+            // Observe the one explicit request. Reasserting key ownership here would hide a
+            // real focus regression and could steal focus back from a newly attached sheet.
             try? await Task.sleep(nanoseconds: 10_000_000)
             window.contentView?.layoutSubtreeIfNeeded()
         }
+        expect(
+            false, "Settings fixture readiness timed out: \(readingRestorationStatus)", file: file,
+            line: line)
+        print(
+            "  readiness: \(settingsKeyboardWindowState(window)); navigation=\(String(describing: session.navigationHistory.stamp)), mounted=\(String(describing: session.renderedNavigationStamp)), restoration=\(String(describing: session.state.navigationRestoration))"
+        )
+        print(keyEvents.joined(separator: "\n"))
+        return false
     }
     var readingRestorationStatus: String {
         let request = session.state.navigationRestoration
@@ -374,6 +394,7 @@ final class NativeSettingsShellProbe: NSObject, NSWindowDelegate {
         }
     }
     func close() {
+        if !keyEvents.isEmpty { print("  KEY LIFECYCLE\n" + keyEvents.joined(separator: "\n")) }
         window.delegate = nil
         session.send(.windowWillClose)
         window.orderOut(nil)

@@ -1,0 +1,26 @@
+Source: handback-native-sdk.txt
+Original SHA-256: 5265e28a1fcf26c53801af55383f139ca7c499536e22f24e62363971b422a068
+Verbatim lines: 4-25 (only build output before the harness is omitted)
+
+GUI checks: foreground --panel-settings-handback
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• 菜单与 Settings 从创建起就是非激活窗口
+• 真实 NSPanel 打开和取消保持普通窗口顺序
+• 菜单打开期间显式 Settings 请求解除自动焦点抑制
+• 菜单关闭只消费一次原来的 Settings key 所有权
+• Settings 与真实活动 sheet 仍是同一个 key owner
+• 菜单栏命中使用原始事件坐标
+• 生产窗口 owner 接入非激活呈现与状态项激活保护
+• Choreography：面板打开捕获 Settings key 归属与前台外部应用，显式关闭一次性归还
+• Choreography：点外或切换应用关闭绝不归还旧 Settings 焦点
+• Choreography：close-before-show——面板在时排队、关闭时交付同一份 presentation
+• Choreography：排队展示优先于旧 Settings 焦点债务且只交付一次
+• Choreography：面板未打开时立即呈现，显式 handback 赢过捕获的应用
+• Choreography：Settings 关闭回调把最新宿主与精确面板目标一起归还
+• Choreography：handback 应用解析——自身与陈旧 PID 都不得激活
+• Choreography：handback 拒绝 PID 复用及无法确认的应用实例
+• Choreography：状态栏转发点击保护只在三项当前事实同时成立时启动
+• 状态项激活保护在菜单显示后恢复普通层级
+• 状态项回调缺失时解除保护并保留较新的窗口选择
+• 状态项屏幕命中和迟到事件使用同一个坐标转换
+Panel settings handback: 136 checks, 0 failures

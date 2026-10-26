@@ -1,0 +1,26 @@
+Source: disk-native-focus-diagnostics.txt
+Original SHA-256: 5284ead376007bb981245463f2c7df4da2f14504de1b565fdae84f7111a73bdd
+Verbatim lines: 11-32 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-disk-pack-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Settings native focus: disk-backed detail / builtin=false
+RESTORATION focus=content responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x106ee7da0>)
+CONTENT FIRST nextValid=Optional(<SwiftUI.KeyViewProxy: 0x7c1807b600>)
+RESTORATION focus=content responder=Optional(<ClaudioGUIComponents.RetainedSettingsWindow: 0x7c18dd8500>)
+CONTENT FIRST nextValid=nil
+RESTORATION focus=restore responder=Optional(<ClaudioGUIComponents.RetainedSettingsWindow: 0x7c18dd8500>)
+• Settings native focus: disk-backed detail / builtin=true
+RESTORATION focus=content responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7c17e38000>)
+CONTENT FIRST nextValid=Optional(<SwiftUI.KeyViewProxy: 0x7c17ce3600>)
+RESTORATION focus=content responder=Optional(<ClaudioGUIComponents.RetainedSettingsWindow: 0x7c18119b80>)
+CONTENT FIRST nextValid=nil
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  content focus candidate: KeyViewProxy, id=, role=Optional(__C.NSAccessibilityRole(_rawValue: AXUnknown)), enabled=false, control=false, hidden=true
+  ✗ Disk hydration retains a mounted content responder: window=63717, key=true, appKey=63717, order=[63717], responder=RetainedSettingsWindow@ObjectIdentifier(0x0000007c18119b80), ax=||, sheet=0, fullKeyboard=true  (claudio_gui_tests/SettingsNavigationFocusSuite.swift:289)
+RESTORATION focus=restore responder=Optional(<ClaudioGUIComponents.RetainedSettingsWindow: 0x7c18119b80>)
+Settings disk pack focus: 8 checks, 1 failures

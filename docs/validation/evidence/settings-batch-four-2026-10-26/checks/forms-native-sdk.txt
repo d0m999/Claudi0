@@ -1,0 +1,1139 @@
+Source: forms-native-sdk.txt
+Original SHA-256: 171ae9cd7dcc3015f52805d8f4b13b2283fb6efd52123491717cc8a302b08397
+Verbatim lines: 4-1138 (only build output before the harness is omitted)
+
+GUI checks: foreground --five-page-forms-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• Five-page settings native：About attaches to General and returns modal focus
+  KEY LIFECYCLE
+150601.81739066666: became, window=64491, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x109038390>), event=nil, stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1B593CE0-8D8B-4476-952E-F23795101F97, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a40830 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU_TY0_ + 1268
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fc05 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ1_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150602.04332925: resigned, window=64491, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x76379e1b00>), event=Optional(NSEvent: type=KitDefined loc=(0,900) time=150601.8 flags=0 win=0x0 winNum=0 ctxt=0x0 subtype=1 data1=1286 data2=0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1B593CE0-8D8B-4476-952E-F23795101F97, version: 2)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150604.46816345834: became, window=64491, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x76379e1b00>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150604.3 flags=0x20000 win=0x7636b2b200 winNum=64492 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1B593CE0-8D8B-4476-952E-F23795101F97, version: 2)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1B593CE0-8D8B-4476-952E-F23795101F97, version: 2))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150604.9333505: became, window=64493, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91200>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150604.3 flags=0x20000 win=0x0 winNum=64492 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 0986623D-E974-44FE-AFF8-6A1F0EABEF13, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a49590 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU_TY20_ + 1408
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fc05 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ1_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150605.11976637502: resigned, window=64493, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7639028000>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150604.3 flags=0x20000 win=0x0 winNum=64492 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 0986623D-E974-44FE-AFF8-6A1F0EABEF13, version: 2)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150607.47832750002: became, window=64493, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7639028000>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150607.3 flags=0x20000 win=0x7635c82800 winNum=64494 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 0986623D-E974-44FE-AFF8-6A1F0EABEF13, version: 2)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 0986623D-E974-44FE-AFF8-6A1F0EABEF13, version: 2))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091d0 __CFRunLoopRun + 816
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  Foundation                          0x00000001a030cd5c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 212
+24  Foundation                          0x00000001a038175c -[NSRunLoop(NSRunLoop) runUntilDate:] + 100
+  KEY LIFECYCLE
+150607.92688487502: became, window=64495, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150607.3 flags=0x20000 win=0x0 winNum=64494 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: DDE28BA7-7FD4-441B-AE2A-52056D4EAD66, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a49590 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU_TY20_ + 1408
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fc05 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ1_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150608.12167925: resigned, window=64495, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7637e61800>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150607.3 flags=0x20000 win=0x0 winNum=64494 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: DDE28BA7-7FD4-441B-AE2A-52056D4EAD66, version: 2)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150610.50853445835: became, window=64495, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7637e61800>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150610.3 flags=0x20000 win=0x7636672f80 winNum=64496 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: DDE28BA7-7FD4-441B-AE2A-52056D4EAD66, version: 2)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: DDE28BA7-7FD4-441B-AE2A-52056D4EAD66, version: 2))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091d0 __CFRunLoopRun + 816
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  Foundation                          0x00000001a030cd5c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 212
+24  Foundation                          0x00000001a038175c -[NSRunLoop(NSRunLoop) runUntilDate:] + 100
+  KEY LIFECYCLE
+150610.95910654168: became, window=64497, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150610.4 flags=0x20000 win=0x0 winNum=64496 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: EF95CF8B-BB34-4E65-B2A7-211B665B67EB, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a49590 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU_TY20_ + 1408
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fc05 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ1_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150611.14514395833: resigned, window=64497, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7638a5de00>), event=Optional(NSEvent: type=MouseEntered loc=(982.006,463.541) time=150611.1 flags=0 win=0x7636988000 winNum=64497 ctxt=0x0 evNum=0 trackNum=763693f840 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: EF95CF8B-BB34-4E65-B2A7-211B665B67EB, version: 2)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150613.49460733336: became, window=64497, responder=Optional(<ClaudioGUIComponents.SettingsPopUpButton: 0x7638a5de00>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150613.3 flags=0x20000 win=0x7635c26800 winNum=64498 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: EF95CF8B-BB34-4E65-B2A7-211B665B67EB, version: 2)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: EF95CF8B-BB34-4E65-B2A7-211B665B67EB, version: 2))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091d0 __CFRunLoopRun + 816
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  Foundation                          0x00000001a030cd5c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 212
+24  Foundation                          0x00000001a038175c -[NSRunLoop(NSRunLoop) runUntilDate:] + 100
+• Five-page settings native：workspace profile detail geometry
+  KEY LIFECYCLE
+150614.03423816667: became, window=64499, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150613.4 flags=0x20000 win=0x0 winNum=64498 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: F6DAF1CC-3A79-4FFD-90F1-4682FDFD38EE, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a4fda4 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY0_ + 1920
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150614.48861145834: became, window=64500, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KeyUp loc=(0,0) time=150613.4 flags=0x20000 win=0x0 winNum=64498 ctxt=0x0 chars="" unmodchars="" repeat=0 keyCode=48), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 0DBED318-C1AB-4243-A941-40C7EAC6275D, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150614.92185375: became, window=64501, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=MouseEntered loc=(982.006,463.541) time=150614.6 flags=0 win=0x7635f82a80 winNum=64500 ctxt=0x0 evNum=0 trackNum=7636b25720 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: D30D9697-A3DC-47A3-9B22-2F43022F6ED8, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150615.35500729168: became, window=64502, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,820) time=150614.6 flags=0 win=0x0 winNum=64500 ctxt=0x0 subtype=4 data1=1151008768 data2=1145896960), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 7AF21810-9743-4A3B-BA8B-E6EF99F651BE, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150615.77279762502: became, window=64503, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=MouseEntered loc=(974.707,462.496) time=150615.5 flags=0 win=0x7635f3ef80 winNum=64502 ctxt=0x0 evNum=0 trackNum=7635c894a0 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 671DCF97-B466-40CF-9A7D-92D6AF76321D, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150616.17649333333: became, window=64504, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,820) time=150615.4 flags=0 win=0x0 winNum=64502 ctxt=0x0 subtype=4 data1=1151008768 data2=1145896960), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: CC7B70B9-BC83-49C8-B554-921E443FEF37, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150616.59398379168: became, window=64505, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KitDefined loc=(0,640) time=150615.8 flags=0 win=0x0 winNum=64503 ctxt=0x0 subtype=4 data1=1148190720 data2=1142947840), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 2F457556-93FF-4BAB-847F-2BB41BF81663, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+  KEY LIFECYCLE
+150617.00905000002: became, window=64506, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,820) time=150616.2 flags=0 win=0x0 winNum=64504 ctxt=0x0 subtype=4 data1=1151008768 data2=1145896960), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: AFDC7E7F-0007-45A8-9538-BE35578909E0, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a50bfc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU0_TY4_ + 2348
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fd19 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ3_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+• Five-page settings native：source connections link returns to workspace reading position
+  KEY LIFECYCLE
+150617.41005145834: became, window=64507, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=MouseEntered loc=(982.006,463.541) time=150617.2 flags=0 win=0x7636adaf80 winNum=64506 ctxt=0x0 evNum=0 trackNum=7636b81180 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: BFF6325D-9E6E-498F-AFCA-3F5FA3284193, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a54e18 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU1_TY0_ + 1012
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3fe2d $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ5_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+• Five-page settings native：workspace creation explains sources and permits clearing all
+  KEY LIFECYCLE
+150618.27473729168: became, window=64508, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150617.8 flags=0 win=0x0 winNum=64506 ctxt=0x0 evNum=0 trackNum=96af4 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: E2A86327-5290-41FA-83DB-F1F75246A834, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a580bc $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY0_ + 1532
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150618.44232820833: resigned, window=64508, responder=Optional(<SwiftUI.KeyViewProxy: 0x7638a5fc00>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150617.8 flags=0 win=0x0 winNum=64506 ctxt=0x0 evNum=0 trackNum=96af4 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: E2A86327-5290-41FA-83DB-F1F75246A834, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: E2A86327-5290-41FA-83DB-F1F75246A834, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150619.17105612502: became, window=64508, responder=Optional(<SwiftUI.KeyViewProxy: 0x7638a5fc00>), event=Optional(NSEvent: type=KitDefined loc=(0,502) time=150618.5 flags=0 win=0x7635c26f80 winNum=64509 ctxt=0x0 subtype=4 data1=1140981760 data2=1140523008), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: E2A86327-5290-41FA-83DB-F1F75246A834, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: E2A86327-5290-41FA-83DB-F1F75246A834, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091d0 __CFRunLoopRun + 816
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  Foundation                          0x00000001a030cd5c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 212
+24  Foundation                          0x00000001a038175c -[NSRunLoop(NSRunLoop) runUntilDate:] + 100
+  KEY LIFECYCLE
+150619.59247520834: became, window=64510, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KitDefined loc=(0,531) time=150619.1 flags=0 win=0x0 winNum=64509 ctxt=0x0 subtype=4 data1=1140981760 data2=1141161984), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 21B89ED1-A0AE-4A92-B218-CF799EDFD5B2, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150619.74355154167: resigned, window=64510, responder=Optional(<SwiftUI.KeyViewProxy: 0x7637e60c00>), event=Optional(NSEvent: type=KitDefined loc=(0,531) time=150619.1 flags=0 win=0x0 winNum=64509 ctxt=0x0 subtype=4 data1=1140981760 data2=1141161984), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 21B89ED1-A0AE-4A92-B218-CF799EDFD5B2, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 21B89ED1-A0AE-4A92-B218-CF799EDFD5B2, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150620.47276150002: became, window=64510, responder=Optional(<SwiftUI.KeyViewProxy: 0x7637e60c00>), event=Optional(NSEvent: type=KitDefined loc=(0,502) time=150619.8 flags=0 win=0x7636b2aa80 winNum=64511 ctxt=0x0 subtype=4 data1=1140981760 data2=1140523008), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 21B89ED1-A0AE-4A92-B218-CF799EDFD5B2, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 21B89ED1-A0AE-4A92-B218-CF799EDFD5B2, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150620.90846420833: became, window=64512, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,531) time=150620.4 flags=0 win=0x0 winNum=64511 ctxt=0x0 subtype=4 data1=1140981760 data2=1141161984), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1A23D4BD-6643-4ED4-9A7C-4E02A0B4D657, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150621.07498358336: resigned, window=64512, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=KitDefined loc=(0,531) time=150620.4 flags=0 win=0x0 winNum=64511 ctxt=0x0 subtype=4 data1=1140981760 data2=1141161984), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1A23D4BD-6643-4ED4-9A7C-4E02A0B4D657, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1A23D4BD-6643-4ED4-9A7C-4E02A0B4D657, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150621.809362125: became, window=64512, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150621.4 flags=0 win=0x0 winNum=64510 ctxt=0x0 evNum=0 trackNum=96af8 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1A23D4BD-6643-4ED4-9A7C-4E02A0B4D657, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 1A23D4BD-6643-4ED4-9A7C-4E02A0B4D657, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150622.23802041667: became, window=64514, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150621.4 flags=0 win=0x0 winNum=64510 ctxt=0x0 evNum=0 trackNum=96af8 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 93AB95EA-5D78-4D37-B4F1-7E08FAD1E9AE, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150622.377217625: resigned, window=64514, responder=Optional(<SwiftUI.KeyViewProxy: 0x7637132a00>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150621.4 flags=0 win=0x0 winNum=64510 ctxt=0x0 evNum=0 trackNum=96af8 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 93AB95EA-5D78-4D37-B4F1-7E08FAD1E9AE, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 93AB95EA-5D78-4D37-B4F1-7E08FAD1E9AE, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150623.09181983335: became, window=64514, responder=Optional(<SwiftUI.KeyViewProxy: 0x7637132a00>), event=Optional(NSEvent: type=KitDefined loc=(0,502) time=150622.4 flags=0 win=0x763698a300 winNum=64515 ctxt=0x0 subtype=4 data1=1140981760 data2=1140523008), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 93AB95EA-5D78-4D37-B4F1-7E08FAD1E9AE, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 93AB95EA-5D78-4D37-B4F1-7E08FAD1E9AE, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150623.53485075: became, window=64516, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,502) time=150622.4 flags=0 win=0x0 winNum=64515 ctxt=0x0 subtype=4 data1=1140981760 data2=1140523008), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 612B59A9-3571-42D3-B688-634ECE31E434, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150623.69110720835: resigned, window=64516, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=KitDefined loc=(360,676) time=150623.0 flags=0 win=0x0 winNum=64515 ctxt=0x0 subtype=4 data1=1140981760 data2=1141161984), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 612B59A9-3571-42D3-B688-634ECE31E434, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 612B59A9-3571-42D3-B688-634ECE31E434, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150624.42380670834: became, window=64516, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150624.0 flags=0 win=0x0 winNum=64514 ctxt=0x0 evNum=0 trackNum=96afc userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 612B59A9-3571-42D3-B688-634ECE31E434, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 612B59A9-3571-42D3-B688-634ECE31E434, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150624.85890841667: became, window=64518, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KitDefined loc=(0,559) time=150624.4 flags=0 win=0x0 winNum=64517 ctxt=0x0 subtype=4 data1=1140981760 data2=1141620736), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 34BCC5D5-E4FE-43E8-AFB0-716658AE719C, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150625.009379875: resigned, window=64518, responder=Optional(<SwiftUI.KeyViewProxy: 0x76394f8600>), event=Optional(NSEvent: type=KitDefined loc=(0,559) time=150624.4 flags=0 win=0x0 winNum=64517 ctxt=0x0 subtype=4 data1=1140981760 data2=1141620736), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 34BCC5D5-E4FE-43E8-AFB0-716658AE719C, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 34BCC5D5-E4FE-43E8-AFB0-716658AE719C, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150625.727521875: became, window=64518, responder=Optional(<SwiftUI.KeyViewProxy: 0x76394f8600>), event=Optional(NSEvent: type=KitDefined loc=(0,530) time=150625.1 flags=0 win=0x7635c81900 winNum=64519 ctxt=0x0 subtype=4 data1=1140981760 data2=1141145600), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 34BCC5D5-E4FE-43E8-AFB0-716658AE719C, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 34BCC5D5-E4FE-43E8-AFB0-716658AE719C, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+  KEY LIFECYCLE
+150626.156358125: became, window=64520, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b92400>), event=Optional(NSEvent: type=KitDefined loc=(0,530) time=150625.1 flags=0 win=0x0 winNum=64519 ctxt=0x0 subtype=4 data1=1140981760 data2=1141145600), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 5D825F1F-DD3D-4427-9109-A23DD0A5E205, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150626.31054258335: resigned, window=64520, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=KitDefined loc=(360,690) time=150625.7 flags=0 win=0x0 winNum=64519 ctxt=0x0 subtype=4 data1=1140981760 data2=1141620736), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 5D825F1F-DD3D-4427-9109-A23DD0A5E205, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 5D825F1F-DD3D-4427-9109-A23DD0A5E205, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150627.03733233333: became, window=64520, responder=Optional(<SwiftUI.KeyViewProxy: 0x76393f7000>), event=Optional(NSEvent: type=MouseExited loc=(974.707,462.496) time=150626.6 flags=0 win=0x0 winNum=64518 ctxt=0x0 evNum=0 trackNum=96b00 userData=0x0), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 5D825F1F-DD3D-4427-9109-A23DD0A5E205, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 5D825F1F-DD3D-4427-9109-A23DD0A5E205, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091d0 __CFRunLoopRun + 816
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  Foundation                          0x00000001a030cd5c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 212
+24  Foundation                          0x00000001a038175c -[NSRunLoop(NSRunLoop) runUntilDate:] + 100
+  KEY LIFECYCLE
+150627.47008420835: became, window=64522, responder=Optional(<ClaudioSettingsPresentation.SettingsSidebarTableView: 0x7638b91800>), event=Optional(NSEvent: type=KitDefined loc=(0,559) time=150627.0 flags=0 win=0x0 winNum=64521 ctxt=0x0 subtype=4 data1=1140981760 data2=1141620736), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 41096426-0693-4E9B-84BE-DA9D1EADBEB2, version: 1)), mount=nil
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+11  claudio-gui-tests                   0x0000000104b6957c $s20ClaudioGUIComponents22RetainedSettingsWindowC21presentForUserRequestyyF + 388
+12  claudio-gui-tests                   0x0000000105dec814 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfc + 2104
+13  claudio-gui-tests                   0x0000000105dd96d4 $s17claudio_gui_tests24NativeSettingsShellProbeC7session5width4dark12reduceMotionAC07ClaudioE12Presentation0eN7SessionC_12CoreGraphics7CGFloatVS2bSgtcfC + 68
+14  claudio-gui-tests                   0x0000000105a61904 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFyyYaYbScMYcXEfU2_TY10_ + 1712
+15  claudio-gui-tests                   0x0000000106390399 $s17claudio_gui_tests5suiteyySS_yyYaYbScMYcXEtYaFTQ1_ + 1
+16  claudio-gui-tests                   0x0000000105a3ff41 $s17claudio_gui_tests31runFivePageSettingsNativeSuitesyyYaFTQ7_ + 1
+17  claudio-gui-tests                   0x00000001063898d5 $s17claudio_gui_testsyyYacfU29_TQ2_ + 1
+18  claudio-gui-tests                   0x0000000106391425 $s17claudio_gui_testsyyYacfU29_TATQ0_ + 1
+19  claudio-gui-tests                   0x00000001048a2785 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+20  claudio-gui-tests                   0x00000001048a38cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+21  libswift_Concurrency.dylib          0x00000002cb446d41 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+150627.610977: resigned, window=64522, responder=Optional(<SwiftUI.KeyViewProxy: 0x7638a5c600>), event=Optional(NSEvent: type=KitDefined loc=(0,559) time=150627.0 flags=0 win=0x0 winNum=64521 ctxt=0x0 subtype=4 data1=1140981760 data2=1141620736), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 41096426-0693-4E9B-84BE-DA9D1EADBEB2, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 41096426-0693-4E9B-84BE-DA9D1EADBEB2, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105ded8f8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105dedab0 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidResignKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a33142cc -[NSWindow resignKeyWindow] + 636
+9   AppKit                              0x00000001a342ba80 -[NSPanel resignKeyWindow] + 72
+10  AppKit                              0x00000001a3c03640 -[NSWindow _sendResignKeyWindow] + 100
+11  AppKit                              0x00000001a32b8a80 -[NSWindow _changeKeyAndMainLimitedOK:] + 612
+12  AppKit                              0x00000001a32b87f4 -[NSWindow makeKeyWindow] + 144
+13  AppKit                              0x00000001a32b85ac -[NSWindow _makeKeyRegardlessOfVisibility] + 56
+14  AppKit                              0x00000001a3cf6020 -[NSSheetMoveHelper openSheet] + 408
+15  AppKit                              0x00000001a342a1d8 -[NSWindow(NSSheets) _orderFrontRelativeToWindow:] + 216
+16  AppKit                              0x00000001a3c08b20 -[NSWindow _reallyDoOrderWindowAboveOrBelow:] + 1880
+17  AppKit                              0x00000001a3c093e0 -[NSWindow _reallyDoOrderWindow:] + 64
+18  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+19  AppKit                              0x00000001a33eb2d8 -[NSApplication _orderFrontModalWindow:relativeToWindow:] + 268
+20  AppKit                              0x00000001a3429c6c -[NSWindow _beginWindowBlockingModalSessionForSheet:service:completionHandler:isCritical:] + 1016
+21  SwiftUI                             0x00000001d72a09e0 $s7SwiftUI11SheetBridgeC07presentC11IfNecessary33_7B5508BFB2B0CAF1E28E206F2014E66BLLyyAA07RunningC0AELLVFyycfU_ + 676
+22  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+23  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+24  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+150628.323929125: became, window=64522, responder=Optional(<SwiftUI.KeyViewProxy: 0x7638a5c600>), event=Optional(NSEvent: type=KitDefined loc=(0,530) time=150627.7 flags=0 win=0x76366a6300 winNum=64523 ctxt=0x0 subtype=4 data1=1140981760 data2=1141145600), stamp=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 41096426-0693-4E9B-84BE-DA9D1EADBEB2, version: 1)), mount=Optional(ClaudioGUICore.SettingsNavigationStamp(entryID: 41096426-0693-4E9B-84BE-DA9D1EADBEB2, version: 1))
+0   claudio-gui-tests                   0x0000000105ded444 $s17claudio_gui_tests24NativeSettingsShellProbeC14recordKeyEvent33_4D3C0636C2FA922671B3A05A4148C796LLyySSF + 2392
+1   claudio-gui-tests                   0x0000000105deca3c $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVF + 484
+2   claudio-gui-tests                   0x0000000105ded6d8 $s17claudio_gui_tests24NativeSettingsShellProbeC18windowDidBecomeKeyyy10Foundation12NotificationVFTo + 264
+3   CoreFoundation                      0x000000019ebff1a0 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148
+4   CoreFoundation                      0x000000019ec8e394 ___CFXRegistrationPost_block_invoke + 92
+5   CoreFoundation                      0x000000019ec8e2d8 _CFXRegistrationPost + 440
+6   CoreFoundation                      0x000000019ebcb3d0 _CFXNotificationPost + 688
+7   Foundation                          0x00000001a02bc38c -[NSNotificationCenter postNotificationName:object:userInfo:] + 88
+8   AppKit                              0x00000001a330d450 -[NSWindow becomeKeyWindow] + 856
+9   AppKit                              0x00000001a32b8a90 -[NSWindow _changeKeyAndMainLimitedOK:] + 628
+10  AppKit                              0x00000001a3c07858 -[NSWindow _orderOut:calculatingKeyWithOptions:documentWindow:] + 920
+11  AppKit                              0x00000001a3201b5c NSPerformVisuallyAtomicChange + 128
+12  AppKit                              0x00000001a3c0908c -[NSWindow _reallyDoOrderWindowOutRelativeTo:] + 516
+13  AppKit                              0x00000001a3c093f0 -[NSWindow _reallyDoOrderWindow:] + 80
+14  AppKit                              0x00000001a3c09664 -[NSWindow _doOrderWindow:] + 300
+15  AppKit                              0x00000001a3c0f5b8 NSWindowEndWindowModalSession + 568
+16  SwiftUI                             0x00000001d72a37c0 $s7SwiftUI11SheetBridgeC06updateC13Presentations13presentations20sheetModifierRemovedySayAA0C10PreferenceVG_SbSgtF8teardownL_yyF + 760
+17  SwiftUICore                         0x00000002429e51b4 $s7SwiftUI11TransactionVAAE20addAnimationListener11allFinishedyyyc_tFyAcAE0E14CompletionInfoVcfU_TA + 28
+18  SwiftUICore                         0x00000002429e0fb4 $sIeg_IeyB_TRTm + 36
+19  CoreFoundation                      0x000000019ec0a4b0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 28
+20  CoreFoundation                      0x000000019ec0a3f0 __CFRunLoopDoBlocks + 396
+21  CoreFoundation                      0x000000019ec091fc __CFRunLoopRun + 860
+22  CoreFoundation                      0x000000019ece382c _CFRunLoopRunSpecificWithOptions + 536
+23  HIToolbox                           0x00000001ac03c590 RunCurrentEventLoopInMode + 320
+24  HIToolbox                           0x00000001ac03f91c ReceiveNextEventCommon + 492
+Five-page native: 541 checks, 0 failures

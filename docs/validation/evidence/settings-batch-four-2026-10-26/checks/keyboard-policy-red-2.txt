@@ -1,0 +1,150 @@
+Source: keyboard-policy-red-2.txt
+Original SHA-256: 624a832d651783c187b2f8d3bf7311ebc0c50a7c294be63cf8953093652a0569
+Verbatim lines: 5-150 (only build output before the harness is omitted)
+
+GUI checks: foreground --settings-navigation-native-focus
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+  ✗ keyboard fixtures preserve the production nonactivating accessory policy  (claudio_gui_tests/SettingsNavigationFocusSuite.swift:17)
+• Settings native focus: an occluded key window retains keyboard lifecycle
+• Settings native focus: five-page traversal eventsAndSounds/zhHans
+  Tab order: workspace.rule.global, workspace.rule.workspace:5F51EBA2-D292-4232-A6B1-622CCB1DA6BE, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/zhHans
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/zhHans
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/zhHans
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/zhHans
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.presentation.general, settings.sidebar
+• Settings native focus: five-page traversal eventsAndSounds/english
+  Tab order: workspace.rule.global, workspace.rule.workspace:C5BA934E-FCAC-4DCD-B5A8-853053FA06E0, workspace.add, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal sounds/english
+  Tab order: settings.sounds.new-pack, settings.sounds.import-pack, settings.sounds.history, settings.sounds.pack.settings-fixture-pack, settings.sounds.pack.settings-fixture-pack.panel, settings.sounds.pack.settings-fixture-workbuddy-pack, settings.sounds.pack.settings-fixture-workbuddy-pack.panel, settings.sounds.pack.gallery-pack, settings.sounds.pack.gallery-pack.panel, , settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal integrations/english
+  Tab order: integrations.destination.agent-list.desktop, integrations.destination.agent-list.desktop, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.agent-list.cli, integrations.destination.activity-diagnostics, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal notifications/english
+  Tab order: settings.notifications.focus-toggle, settings.notifications.calendar-toggle, settings.notifications.event-source-prompts, , settings.notifications.event-animation, , settings.notifications.open-events, settings.navigation, settings.sidebar
+• Settings native focus: five-page traversal general/english
+  Tab order: settings.general.language, settings.presentation.general, settings.presentation.general, settings.presentation.general, settings.sidebar
+• Settings native focus: sidebar arrows follow the five visible destinations
+• Settings native focus: event-animation radio arrows use window key dispatch
+• Settings native focus: empty sound library has no phantom pack stop
+• Settings keyboard: cancellation restores clearActivity without clearing
+  clear clearActivity / escape: previous=[], window=60611, key=true, appKey=60611, order=[60611, 60610], responder=_NSAlertButton@ObjectIdentifier(0x0000007bfa15b300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / escape: recorded=[], window=60610, key=true, appKey=60610, order=[60610], responder=KeyViewProxy@ObjectIdentifier(0x0000007bfa159b00), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: previous=[], window=60612, key=true, appKey=60612, order=[60612, 60610], responder=_NSAlertButton@ObjectIdentifier(0x0000007bfa15a700), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / cancel: recorded=[], window=60610, key=true, appKey=60610, order=[60610], responder=KeyViewProxy@ObjectIdentifier(0x0000007bfa159b00), ax=settings.activity.clear|AXButton|清除活动汇总, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: previous=[], window=60613, key=true, appKey=60613, order=[60613, 60610], responder=_NSAlertButton@ObjectIdentifier(0x0000007bfa158000), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearActivity / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearActivity], window=60610, key=true, appKey=60610, order=[60610], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97a9800), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: cancellation restores clearLog without clearing
+  clear clearLog / escape: previous=[], window=60615, key=true, appKey=60615, order=[60615, 60614], responder=_NSAlertButton@ObjectIdentifier(0x0000007bf9988300), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / escape: recorded=[], window=60614, key=true, appKey=60614, order=[60614], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998b600), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: previous=[], window=60616, key=true, appKey=60616, order=[60616, 60614], responder=_NSAlertButton@ObjectIdentifier(0x0000007bf998a700), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / cancel: recorded=[], window=60614, key=true, appKey=60614, order=[60614], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998b600), ax=settings.activity.clear-log|AXButton|清除诊断日志, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: previous=[], window=60617, key=true, appKey=60617, order=[60617, 60614], responder=_NSAlertButton@ObjectIdentifier(0x0000007bf9989200), ax=action-button-2|AXButton|取消, sheet=0, fullKeyboard=true
+  clear clearLog / confirm: recorded=[ClaudioGUICore.ActivityDiagnosticsAction.clearLog], window=60614, key=true, appKey=60614, order=[60614], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998bc00), ax=settings.usage.back-to-connections|AXButton|连接, sheet=0, fullKeyboard=true
+• Settings keyboard: About opens and cancels from its entry / zhHans
+  Tab transitions:
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618, 60614], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8cc00), ax=settings.sidebar|AXTable|claudi0 · 设置, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bfa1af300), ax=settings.general.language|AXPopUpButton|语言, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=NSSwitch@ObjectIdentifier(0x0000007bfa1adb00), ax=settings.presentation.general|AXButton|登录时打开 claudi0, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf97ab600), ax=settings.presentation.general|AXButton|重新检测, sheet=0, fullKeyboard=true
+window=60618, key=true, appKey=60618, order=[60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf7343200), ax=settings.presentation.general|AXButton|关于, sheet=0, fullKeyboard=true
+  ✗ Tab reaches About  (claudio_gui_tests/SettingsKeyboardAboutSuite.swift:18)
+• Settings keyboard: About opens and cancels from its entry / english
+  Tab transitions:
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619, 60618], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsSidebarTableView@ObjectIdentifier(0x0000007bf9a8d200), ax=settings.sidebar|AXTable|claudi0 · Settings, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=SettingsPopUpButton@ObjectIdentifier(0x0000007bf95df900), ax=settings.general.language|AXPopUpButton|Language, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=NSSwitch@ObjectIdentifier(0x0000007bf95df000), ax=settings.presentation.general|AXButton|Open claudi0 at login, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=KeyViewProxy@ObjectIdentifier(0x0000007bf998a700), ax=settings.presentation.general|AXButton|Recheck, sheet=0, fullKeyboard=true
+window=60619, key=true, appKey=60619, order=[60619], responder=EventAnimationActionView<Color>@ObjectIdentifier(0x0000007bf8d50500), ax=settings.presentation.general|AXButton|About, sheet=0, fullKeyboard=true
+  ✗ Tab reaches About  (claudio_gui_tests/SettingsKeyboardAboutSuite.swift:18)
+Settings navigation native focus: 290 checks, 3 failures

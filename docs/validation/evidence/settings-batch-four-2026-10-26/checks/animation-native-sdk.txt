@@ -1,0 +1,15 @@
+Source: animation-native-sdk.txt
+Original SHA-256: 6003a83ed2b3aa81ea9abc85ef799d8238cb15832103a15fe0472006fb2e8e04
+Verbatim lines: 4-14 (only build output before the harness is omitted)
+
+GUI checks: foreground --ai-cue-animation-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI live task animation: en=false/dark=false/reduced=false
+• AI live task animation: en=false/dark=false/reduced=true
+• AI live task animation: en=false/dark=true/reduced=false
+• AI live task animation: en=false/dark=true/reduced=true
+• AI live task animation: en=true/dark=false/reduced=false
+• AI live task animation: en=true/dark=false/reduced=true
+• AI live task animation: en=true/dark=true/reduced=false
+• AI live task animation: en=true/dark=true/reduced=true
+AI live task animation: 992 checks, 0 failures

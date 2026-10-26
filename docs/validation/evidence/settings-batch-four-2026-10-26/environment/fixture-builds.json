@@ -1,0 +1,2494 @@
+[
+  {
+    "sourceHEAD": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+    "baseSHA": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+    "worktreeFingerprint": "2c99b4620c3738e9d5d375bcf0e1875986fc8db4d3122d51c8f141acda653e32",
+    "macOS": "27.0.1",
+    "architecture": "arm64",
+    "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk",
+    "clockMode": "manual",
+    "bundleSHA256": "859a6e3c48c8719210509201bec264663286299bbb01ff7f9a57bcc1ece2ee8a",
+    "bundleBytes": 48809103,
+    "build": "claudio-native-ui-build.Tq5Lug",
+    "sourceFiles": [
+      {
+        "path": "designs/panel-and-settings/Panel and Settings Prototype.html",
+        "sha256": "19163115f64073e5ad51dcf2d442bd1138587ca048e8e0ad0a1154b29424355c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/AboutSettingsModel.swift",
+        "sha256": "c94e2e05f999ea0438ac0b178f966d28803c784a955287b910cb9c5601e7b286"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/AudioDurationProbe.swift",
+        "sha256": "47f60e0c8c897fa18a2ada7c11f42e726910d0c34a8deebc04ba24d2227bf813"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/ClaudioGUIApp.swift",
+        "sha256": "a365f5bd60e5a277a8a98ab5fd8b3fe51fb8c03ad0694df7e6e018ef782a3513"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift",
+        "sha256": "0d33d4a15ade9aab198e9505b5d2042d1523823aaec21d3e474e1063d0e22c06"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/DesignTokens.swift",
+        "sha256": "f83cafb8343628a1c20b1d58376bd9ed1a06a2a8b66ea65bac0ea56da655a42b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/DynamicQuietSystemObserver.swift",
+        "sha256": "62b03c00b9877dfab9b805e0a7274134ebde96ada375daec6ec47c2db3823516"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventAnimationResourceComposition.swift",
+        "sha256": "f218e2fe2d84565fe85b8f3dd8e991a22fc1b3928b68f4fccc810c5ce758a890"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventNoticeRuntime.swift",
+        "sha256": "8740800e2b5b50f84c5a61408efd1c1c6f1f26d80c5b86b5881ed3eff463bccb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift",
+        "sha256": "a33b77aac9787a4c13d9157ff802f3b231a283ce8e31b58eb6f819fb9d45dcdb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/GUIResourceBundle.swift",
+        "sha256": "2655d84e996aeb2bcc8d43cd8fdc110010a61586b13f9f4bac8972a23cda68e1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/GenerationQuitPrompt.swift",
+        "sha256": "fda07e4fc2201823a5a7b87b06aa1616a7756fbc65bb0282900c45498b6d6ea8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/HostIntegrationMaintenanceRuntime.swift",
+        "sha256": "795b9c99a02e982bf898c4b32ea9369d81416caed7b6b9dcd37586b29abb0c89"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/IntegrationDestinationClipboardAdapter.swift",
+        "sha256": "50089e6527d34b008fad0f0d93235769b1b752843d18b8831e8b80ba63d377b2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/LoginItemServiceAdapter.swift",
+        "sha256": "879f4f4bc00b7c093e4c1c09dbd22cd9f69af70dacd4f1f761f45178616cfb91"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/MenuBarController.swift",
+        "sha256": "6b87ebecd60fe738ed2c761877435e3e21e2ce867e58d8e83643580cdd5620d4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/MenuBarIcon.swift",
+        "sha256": "82d6ce8783d76eb3473731a31a4150c1c10a2111d6b01fcefc0b05a96eaee454"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeRegressionClock.swift",
+        "sha256": "361d76ce9e3437b4c4fa8c6a35b439976f56d652b4e948d2a02566ce8d675f34"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift",
+        "sha256": "1d28eb2cc558142c25fc2484cccd15f8dc52c19e0d82dd45c538cd4040a4c233"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift",
+        "sha256": "d5a2a872a0612c64bef18e33915c82f80f5464289c52ed934dfbbdb18bf13a56"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/sprites-dark.png",
+        "sha256": "7c412b94bf6afe53a8abb5a8885fb30db5dc02905834971f9e6853cae367bd88"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/sprites.png",
+        "sha256": "0225de0b1b0f6506d9482ca3b3163e8c53058ab9fd68805da3d430d7dba6d8c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/timing.json",
+        "sha256": "d263f6aa0045e4322425e84b656ad4b08485102b45dffbcc51ef2b32ef2edd54"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/G/sprites.png",
+        "sha256": "33229e3532d0288d44e40f1d94244c25828f860f30b737e6206d3a8fd93c2603"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/G/timing.json",
+        "sha256": "66f1d78dc5bab418e54b6068589a129afcad46ad2179204faa4386b6aa5815a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/H/sprites.png",
+        "sha256": "9fe289c64c169d60e431e0fe2ed3b190afd56fa9ee9ebda864fc0935f76bccb3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/H/timing.json",
+        "sha256": "d60a2a9a31a33e0ef1b2cad3eea48f6f1bbff130d25cd505d6555e55a78c113b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/provenance.json",
+        "sha256": "018e886abf47aa4b1b2c468e7a3f2f980f2e18c768cf85b78446a5e453cfd028"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/HostIcons/claude.pdf",
+        "sha256": "be2901ce54e711530b4a32724d60a9f96ea3be15aacb61db868acafd80aac065"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/HostIcons/codex.pdf",
+        "sha256": "6a70885af16c5ac1f1e62b77f7352ca07d5ddf5e699a98d5385b97d4e7a1574e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/PROVENANCE.md",
+        "sha256": "d10fb0531111a0e4be3e9bbe0286af33d33f8f8728edcfea64910a131823f7a5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/claude-light.png",
+        "sha256": "1bec5f7b12a4a46fea879633464ebf1d32144ef731a0f054539b2d7251871cb6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/codex-dark.png",
+        "sha256": "69fb4384e161be8a20dcb94a9ac34aea4fbfaeb67514110a71e7b0732eccb0fc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/codex-light.png",
+        "sha256": "de7d43f3386105ab20952958c2c25beb0d903e2aeb6e1aef57c49a648c0d1c07"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/grok-build-light.png",
+        "sha256": "768cbbf7a7528d6e7b3af8112d7cde43eb6c9c8989ad9b06be8047dae1227463"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/kimi-code-light.png",
+        "sha256": "6c14f9c3062e953b3ed57ae3e19db931c1c1bba38d4d8d55550544f31d55e469"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/opencode-light.png",
+        "sha256": "d4b192c5d634ba493fcf48b33db8a3ce8e6f5d58ef078884f257b064f52c6480"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/workbuddy-light.png",
+        "sha256": "3c2bc7d338c9eacc027af2b27693056b7cbea3a6c0a09225cf87020afe57fd7b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsPlatformActionsAdapter.swift",
+        "sha256": "7f040dd5356bfc6a7be4a5fb8382c9a696fd10e21efa1b4c8821c3aebfd94736"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsProductImageResources.swift",
+        "sha256": "8db88de4c011bda4e02010c9f7d44085da353a3077fb1c7bdc0027dd5f078399"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsWindowController.swift",
+        "sha256": "db91ac4cb416c39afb58a0b7de9677a2f469bbf14f12aafa7eb1890700be4f6c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SparkleAppUpdateAdapter.swift",
+        "sha256": "423078f6f02a570dae1086aac6d1961cfb358a556a6cc66089d073d8fe212c46"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/StateGalleryView.swift",
+        "sha256": "6ddd3aa026b5be59b1b04c0d172655ab8e30a34c632024498580f0f081c202c1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SystemChatAXTraceObserver.swift",
+        "sha256": "bf6696e5d488cac7f640c5a2618c78f08e041f9a24cb886e2048a6eda7c24f50"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/UsageActivityAdapter.swift",
+        "sha256": "0bf3494cd67a1637c59b320a0660c24889b3060fca858b9f979dc772f87ce69d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AppMotion.swift",
+        "sha256": "74cd220addda6afdc4d0c247150cfd5bfbbb0b23b8f06cae8e737d4dcfcff3ef"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AudioOpenPanel.swift",
+        "sha256": "c7a5a85aeeb16afbbbc7f847d0037a3d9d140542d6fb938e1c56a77d7c9becf0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AudioPreviewPlayer.swift",
+        "sha256": "516aef5ca3804fddcc14c92ee06484290058fb0cf90af28f9a60679b5ccbac72"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ClaudioBranding.swift",
+        "sha256": "4adac31d1f43b39111b8716bd78e6346744c7c43f7255f6fac8893bbacb071be"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ClaudioTheme.swift",
+        "sha256": "a3039493823beaba76da2ecf31a9ce8639f4fd6a1688b50184960ffbd04683c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationResources.swift",
+        "sha256": "fbc564e709710fd1f11cd661605b1651def59219749abbc7ea8674ae5fd28cf1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationView.swift",
+        "sha256": "7b6009e5bd70f7773c6c579543b951195c8fb0f3f3e28185856a5c4cb8a771c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationVisibility.swift",
+        "sha256": "0ae5de32f3021d1a98a322b73d20b8cde756964e06f6243d84bbe0e33dcb7e55"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventMuteSpeakerIcon.swift",
+        "sha256": "bbee5bc31e6c1fa38b1210d2edec597fbec8b432208c0646ff0febf81f4722d0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeActionStyle.swift",
+        "sha256": "5bae215a954a694951afca8bff49ac1cd06d916566f90e1b7a1184876a347438"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift",
+        "sha256": "cda08c1d1831546fddc97bf04cb71462d699f2d62e97a9a89c08726f112d2fc5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeCard.swift",
+        "sha256": "138f47a3ec5b6050e9cb83410fcfdfe21bcda74297240a471cfdafb66834da67"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeCardContent.swift",
+        "sha256": "c4209ae86f0544119368cd963a221b4e3540a39c3a27cbb1bf488bbc785a5793"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeHeightPreference.swift",
+        "sha256": "c607ea9e5deef5a1c944ebf1d3162ec3b728a70df9c9ec63fa1cb17aabd334e6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeHostingView.swift",
+        "sha256": "be59a3db33db05a5707cd0d90d40322344a8b40c8d2034bb4666a0961bc67a31"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementRequest.swift",
+        "sha256": "3b9dd26e46b13e3cb87569e333c8751fabfc6fa28e9b9d38caf44f4ee9661eb0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementRole.swift",
+        "sha256": "45fdf83f5cbbbbdc489cff1f1bccfb94d097ecd35222ee46a7f031d63102b128"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementToken.swift",
+        "sha256": "3d44316b1d40dcdcc825b95379b2152a2a955a9d17570b812b7ce33b922ac7f7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeModalPauseObserver.swift",
+        "sha256": "2430fdfd2835947f820ab3cc4b872a8333f5d7f3668bcb1d83a3e5f41f5bdcc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeNavigationIngress.swift",
+        "sha256": "a78d0a543096fa9a5cca070078c4bd3e03c2b21f473b38a5bfd8f7471a816b8b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticePanel.swift",
+        "sha256": "ad2c9a75e21ae4092897121f7b647b01260a2537efb3e8121ee4d829d23e4963"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticePlacement.swift",
+        "sha256": "0544efdabd9bcacdd4cacdf001cf6f2b46e54a200304426a5db93c6ce6f65a40"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeProjection.swift",
+        "sha256": "67446b6529660bd2651269e27fd3d7a8cef2ef101d0587419326409d90420334"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueContent.swift",
+        "sha256": "4167107a4a1f2dfdc244a1a2bc975c5697623564c059546afad1c86afaef659e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueEntry.swift",
+        "sha256": "87af550076b8b533d707bea6bc701e6180f856186b32164c6f6c82db47c7acc6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueList.swift",
+        "sha256": "b659e8b500a371e9f5cda465b3a05e2b9d53f6da5d61274465b4a330853bb3ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReaderTestProbe.swift",
+        "sha256": "28faf8d097d88b39b776dcb0b11f3aa162a096190d7b3e674f337b4cc910df56"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReadingTrack.swift",
+        "sha256": "b7d47c5e77c9c23f760135b48b979198ebc11e865774238066c41432f5eaccd8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReadingView.swift",
+        "sha256": "eb13196677530a43a2cfc290734e945e45ef14122b49922ac1a1b5c7c6aa8388"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeStackPresentation.swift",
+        "sha256": "dc39cf1ecdb62b69fd68c04da5c4536bf1a1e27397c7da46c49588057d689dd8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeStackPresentationOutput.swift",
+        "sha256": "f06091c021f8c98be1985df0df448d29ab21c4f2b79ae36489b40f41369b25b9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeView.swift",
+        "sha256": "a80021d35d11adac6f1ee8ba2b5061c45ca6cb9c2a98cdeee0160016d795658d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/FailureRow.swift",
+        "sha256": "90d49125fca584d0ecbea7956c214e64bb42cc2470c2e5f5a9917012ea5b69b7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/HostSessionNavigationAdapter.swift",
+        "sha256": "293dd95eea23a12f38c48fd68e3179346cff4b1c87364583f8fa1f555e944922"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/IDENavigationBridge.swift",
+        "sha256": "1aa217302343111747ba5b6299a53199a114d5e4a0420f5035ea711f9e2aa453"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift",
+        "sha256": "f9de4e17c6c2fd976a8d152778c5f487200dde2b01f77859a7b2bf73a88102ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/MenuBarPanel.swift",
+        "sha256": "1043f7311375e0cf525f9a9abab4697bc0bca7996baf240aa2d57dcacf5ca233"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/MotionPreviewButton.swift",
+        "sha256": "16c24b56dec65f8fa0a56267dff35bb114858a69787135ba751e0cd0184816c0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NativeMenuControlStyle.swift",
+        "sha256": "ee6ba3d21b852202a043c7500c58b61ce94d718550615c74cd98582fb7f9f02d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NavigationCommand.swift",
+        "sha256": "23472686d9e0996e286a87e59caf3ceac8739bb75db15780d9c3d1384afdb445"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NavigationFocusGuard.swift",
+        "sha256": "d9d94f6b79121c1a2f0885d36c36f25e10c3c85be287456001a8584cd556fbfc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/PanelSoundScopeControls.swift",
+        "sha256": "b211e15612442db5fc1335cdfaa7e05e491320025ed1486e2312dce86ef32ad1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/RetainedSettingsWindow.swift",
+        "sha256": "463cecc83755320f24c85c4e792e160e02a8602b755b9b95fd8268191c6eb1e3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsAppearance.swift",
+        "sha256": "479bb90dc10001cb6570e41901fc745eb14e7776b85de540a1b28759612e352b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsCompactLayoutKey.swift",
+        "sha256": "1fb71febbe1fd10a90960f616ffba7cb8511fa10f333a42cd37523e5616d2ce7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsControlRow.swift",
+        "sha256": "d0544b8b47c156d133fd4b2d8f7ca3b3ad5d990f1ff815903226e687e23d702b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsFocusableButton.swift",
+        "sha256": "3d8a4711e849055386fd765efd337aa5da81c559f03f90b645bb313fcf5ead0e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeActionMenu.swift",
+        "sha256": "fafb8f0e1df340cc6167e882a4b87d646d6675eef484c062f2f8dc0b3e77f2e7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativePopUp.swift",
+        "sha256": "58dbf833764c173f26ff550d21972ccb2d9bb3c3485d3b174b2f9be434ceb4d7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSelectionControl.swift",
+        "sha256": "133125badbb9c3622ac10b7ba7ef0a0d996a4a2ab93040abc017e10110528401"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSurface.swift",
+        "sha256": "e6f01208b9338ecfadde7803788c2ea02400da26e6204c494e1bb99bdbc158bc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSwitch.swift",
+        "sha256": "12ce54c0acbcbea81e70824be37a9de0e837132b43ceb0e6e689ea960b5e0699"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNavigationFocusEnvironment.swift",
+        "sha256": "6c8190db2e0251ebbeec8a5d48b537c34ca21ce791353185cff3d840a2e7997c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsPageLayout.swift",
+        "sha256": "b5548750cfff60472ff1b816226c4d5dff2c05ce886c802fb7e3e6f831299bff"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsSectionSurface.swift",
+        "sha256": "696d4eead97f25919807c4bd2835b14894cdfcd415b79175d0b5dd33bd0ec59e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsStatusCapsule.swift",
+        "sha256": "248f91484fb310d26fbc7500381598df8b8eba1936821e0321bd18eb888a4ddc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsWindowFocus.swift",
+        "sha256": "5de5c689819621d32da252cc66f093fb5dd1b4bf1a407c26595e9171bd3d56b0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SharedMasterVolumeSlider.swift",
+        "sha256": "30613caa7bd033b0271223fa0d9f8165c9e15b7c62c63e7e98bc46380f9fd9c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationAdapter.swift",
+        "sha256": "eb6eaac57c51c5993c054f1a100a1b47a180623384a734bbb515312724370828"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationDescriptor.swift",
+        "sha256": "5a73c70376d3486d7d1452ee0f0a32e528c874b62707b6bde36ce5b380062258"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationEnvironment.swift",
+        "sha256": "3af1b07bdd09e3cc56c98a682f3562b896193a78c03eca2ce445f808a8b77abd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/StatusItemMouseEvent.swift",
+        "sha256": "9d0cc9fc41f3f59446b0bea71d296ec69c6b6fd3c11e76a12d1908144f13784a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/StatusItemWindowOrderGuard.swift",
+        "sha256": "48a6b2b87c78be18bfc62ff13dcb6de7a6d3a447f43b462ae2667a9e13b5e5bc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/TmuxNavigationAdapter.swift",
+        "sha256": "36c65356c000a8a2a0bd4e7bfd8c266d26b1a31385caac3e130ec060348c29ad"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedNativeNavigation.swift",
+        "sha256": "0e8600f8314dac0e70536ff516dc2af12067bb53d35c66927692f9e81a727503"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedNavigationInputMonitor.swift",
+        "sha256": "51afff06b7f1154c93d6b56962ce7c8b07586736f9dcc0ae2904c0f53440da1d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift",
+        "sha256": "ccb7491fcc94ad8922afa73baff9450b1b75f76dbd17b5a1cfbef006a143fc79"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueAdoption.swift",
+        "sha256": "e81dc4f4b4e44e433e8b5b4f63f20d26d21273e792ea379736a91cb79831d6d9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueAssetFetching.swift",
+        "sha256": "7e049f8b2c6352da3632c06135ad47945fc991a97deba65de37384a0d72357f7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueCredentialAccessPolicy.swift",
+        "sha256": "38767f9b64baa8c484f890462d985f187840d51bb7da5c767b738cafaee4d145"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueCredentials.swift",
+        "sha256": "1ca5ed2c28c1dac4aa1aae3c15160f2100e1df8cf679d22f5e096625776eec9b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueDomain.swift",
+        "sha256": "636800a53ede9d2ba81b6109ef7bc0203b584c3e001f7122e52e2580163d00e7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueElevenLabsProvider.swift",
+        "sha256": "611762d19cb6742f9bc21422d1b170b98f658a551a3ab5f6e99777fac29b4606"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationCoordinator.swift",
+        "sha256": "64ee9c0f4e43f36b254a864090b56be8909b3a37f4977144f8638b3158d92b39"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationDispatcher.swift",
+        "sha256": "6a1269b19302c5c7f00d607c983c7824ace28f75e3f42bcd653adbea3fa92f09"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationEngine.swift",
+        "sha256": "e3cb53d233c6af015f4bdc2a2623e040d2c511c248847871a2939efb2edf866d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationViewModel.swift",
+        "sha256": "57f8227d49d1c8f1a9a93726cabb3983b8655f9b02a711e9f1b4391805dc6405"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueHTTPTransport.swift",
+        "sha256": "11d2343304fdff63008d849868cb4aaeab89ea6fd8e71d2e929b93fd01123f85"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueLocalCredentials.swift",
+        "sha256": "6d567b8ca8946b5f8a7253888618a59e94c584a33a87b1df3092113f23bdc2c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueMiniMaxProvider.swift",
+        "sha256": "f372a5b229ed891f793e5f892601ee78dec061f785aafa1c2fbd7ad19f384fd0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePackDraftTransaction.swift",
+        "sha256": "bf519b09f0fe41b23b7c1c0574e3f98deeac9907e43de8e073e8a05f06e0fd08"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePackScoped.swift",
+        "sha256": "6dae99a632b7cb1c6cfae6a03caab36c69ab305d053a1060bbbd0f0c9ff52db9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePayloadDecoding.swift",
+        "sha256": "3cb1cc951dcb12760f432dcc89eea3675519b782a9e3870fc193a5d33a888f19"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProvider.swift",
+        "sha256": "aeda0a703b21bca12e0e5c67163ea6b871be5e2007a909a6764e7ed633656641"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderContracts.swift",
+        "sha256": "c7f06df59907b49ec1d1091c9428d40d090981920e4e9c3674ab475016277720"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderPreferences.swift",
+        "sha256": "f9019a3e0097e0970d04e515c9690cd590d9d1e798a4b7d5e4d8de641f9a0f84"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderRegistry.swift",
+        "sha256": "ca389b8c0618dbe8804de8b5bfc7fa401d882fbe4e883fff8a47c3b5e55e95b1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueRuntime.swift",
+        "sha256": "c588ba5f8cb287cdaa2b455b18281e58d13a72ecc316417cf5794be471cc88bd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueSSETransport.swift",
+        "sha256": "4285a3cd9c46bf0b10ba85489cb69f8c29a2753b09266446a717819547843cc8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTaskPresentation.swift",
+        "sha256": "c5e95c3b262a946b291c8901cd3923bd90df8930212f9b6fd8afd02462711fee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTerminationGate.swift",
+        "sha256": "702876ffe068f161a835a4e147dc70e35af45cb079a16ace99e18d69e07eb365"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTransportContracts.swift",
+        "sha256": "47a7262f2a982f0f58752bd4faab8d3711cf160315931c11caeda1a3cb348e03"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AboutInformation.swift",
+        "sha256": "b79564a711766cef9d79d2351ce87fa51501723dc9d66c8476c756404ba4c5c9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AboutSettingsModel.swift",
+        "sha256": "f2945f4fea354a999a67c87eeb53dc085420574c5ca9aed992dd27fd00771e45"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ActivityDiagnosticsLog.swift",
+        "sha256": "8590c288cb4e8e867c6786cd704d85a03f8190c10e19bee25c5624977af83a3b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ActivityOverview.swift",
+        "sha256": "ea4e0bc3fa027818b92d41df2b807a67d9b5d5cc5e589532ba22b8d5a5b9d37a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AppUpdateModel.swift",
+        "sha256": "c36abfe5df0f2d68de029cb3b66d940f13135e592d56b7d98ab8688c21bd559a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioFormat.swift",
+        "sha256": "80e1bdbdeff374a66be0c82f0976df3a95f919f05ac73b9061295ef1b8b95457"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioImport.swift",
+        "sha256": "c46169654012e871d7aebe7506397438a7c35e1ace59a410f15d744b78332674"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioImportEnvironment.swift",
+        "sha256": "08c96435cea0f8f6521fd2f0c0dce25f99fbc7e89c90135d404aa2b26680c5ad"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianAICueProvider.swift",
+        "sha256": "a3b29ed889ba74ae42fae8334364441fcbfd2bd3baac6d889750f7d5a141cf4e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianAssetContract.swift",
+        "sha256": "5ff05631c14317f4dad965f8032458f2ab31838027e15c8eac98250fe75fb580"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianWorkspaceID.swift",
+        "sha256": "fc33028e47731420e077a8474cb3cf4e58bdb8c3128b70f62d0d7c9d76b744a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BundledHelperResources.swift",
+        "sha256": "4ec58070e93a37edf7639bb4675f4fe688bc3f120ce11a482dfb731417f2e917"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ChatAXTracer.swift",
+        "sha256": "35b9bb775929c826d4a56bdebbffcd563c680d60ce99564c5779f21e1b805cc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ClaudioColorHex.swift",
+        "sha256": "0812653156932151da28148b8804a42343301348c3b9fa40fd3c8720cf3c0dc2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CodexQuestionObservation.swift",
+        "sha256": "e0ac87f26e7a5a3b113c1d5947aa85becef2e090e361e231a43eaa3efb221a67"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CodexRolloutObservationReader.swift",
+        "sha256": "16fbb5c80b18feaf83099b3186667a49ecac8289865d56fe4293044015b29683"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ContrastRatio.swift",
+        "sha256": "b2e2e0f24101f5d0f1bb57ca53db45aa3dc92fb92d6050da50229c0df53d628e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CoverageState.swift",
+        "sha256": "a50e6b674a341e7cc42586aead98ef851e4ae6fe2bcfcf65945663b830b1880d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/DropZoneState.swift",
+        "sha256": "99cccfe19b14c5bc4f6f8d235530cb3700e01ed224e3b9e7c26b12f42ca85d07"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/DynamicQuietPolicy.swift",
+        "sha256": "a67cc4697456303f22c0655e280b7a119c9794cb7d6871c6cfaf090eca1c97ca"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationPreferences.swift",
+        "sha256": "fbae199195dcf3772cd1e887bc2014a4114f17deaa371c94397b70e280b028b2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationPreviewSession.swift",
+        "sha256": "d4771bae5f6bfbb4ab3f034e9f30f434a25057a53e2444ddfeb59d7017b3ef55"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationTimeline.swift",
+        "sha256": "0ad6c33ea0e67ce989f2a8aa676e32119ba9414c27c7901f376838fdedda3b1b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventMuteController.swift",
+        "sha256": "cb7fcf1d31105dff69fee823bbe042a7c297bde3a3aa7c11142d1a1cf8d79f30"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeBannerItem.swift",
+        "sha256": "13a2b5e40b9c5baa38290d8dc8ae4bd96d492f29835d1bd7315af4f68a548335"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeHealth.swift",
+        "sha256": "b937fa280a3d1f62e675d2f7bfab92bc3d999a1afbbf2b45fc5b7ffc55ca7e26"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeIngress.swift",
+        "sha256": "a7ebc8766d8add27240f0ebf3673da5c7b601bddefa42e9f0325428772347196"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeModel.swift",
+        "sha256": "9ceb9757edb9b1598e3ff9617b08f7d4f69e0036b8efc4f40ae90c25c3c94695"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeMotionPlan.swift",
+        "sha256": "6b9fbd0bd9654260471bdbedb98916212d6534eb8ed5ecc3f02a5245e61f0d2f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeProvenance.swift",
+        "sha256": "7c482c3bb142a936f44e6c7d58bc56ae98b972471ee6211b5de4a5cec1009150"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeReadingSnapshot.swift",
+        "sha256": "fe35e2a7e91f83e4d6c105d2b17cd60f074518ec380b8119c9ee7cfed01ed204"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeReadingTime.swift",
+        "sha256": "c980a17d526a5c0c1acae0b1c7a22efddd0cd6a4ff44454be2942d842f1f9427"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeStackLayout.swift",
+        "sha256": "bb6dae09aee8ed4776a9354da1fe9ff2cfcf13cbe44e0a3968f7936614101534"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeStackSnapshot.swift",
+        "sha256": "240e74bb9775df5133dc0da735c55ec4138e9f90466d1148acf6228038d45dfd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventPreviewSequence.swift",
+        "sha256": "322b7904c534e5cc5ac66efe56b1a1832ac5fc8030f0f1473d04b5c73041f81e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/FocusRequestCoordinator.swift",
+        "sha256": "47563e655e089f248664e1849a206dfb4d1dc55df95a4422961f00493e6aa6d1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/GenerationHistoryStore.swift",
+        "sha256": "ec64b7a04c2af9d581d0bab5eacae4da18854a5c958e377e44134e7ff4eecf9f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationManagerBridge.swift",
+        "sha256": "24f397538487fae964d305edb928341ee05133927464e9380dc7334a701c1e7c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationPresentation.swift",
+        "sha256": "a4e9080281a31e20a48ad21d86008c45cd38bb147916ecc8e493e21f518478a0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationPresentationStore.swift",
+        "sha256": "880dc64a78dc6e9d1bc737f0f52d5151a8a03b594e93fa35bbe9ee1e304c3cc5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostSessionNavigationTarget.swift",
+        "sha256": "72dcee918b3e887278ee661e3d50686abf0c892e60ea12ffc98a4b6b8f826f8f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationAutomaticPresentation.swift",
+        "sha256": "2d184f37c75f6bf32690067bae7abc2fc5450cbb01d0664aad692d942191a592"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationBindingReceiptPresentation.swift",
+        "sha256": "13845029a2a5762d40f802436e3832dbb5a5d0c7ff73c9a76176a3f4009384c8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationFocus.swift",
+        "sha256": "dc457a3ac1704d216e77e922602dfcca225be0df8058290006705dc4d3dc9184"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationModel.swift",
+        "sha256": "317bc280b1d9cf9166ebd2ddf216dcc96bb17e892b4dc3bc6d189ac92eac5ad6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationPresentation.swift",
+        "sha256": "22f02bb7f4bee7165db182e978cdaa83bcc13387080701465e3a7b6314f49975"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationReceiptHistoryPresentation.swift",
+        "sha256": "e30b8a06b6e3d0151dbd6ef4d320811570d59e4ae06be80196a8068b06d141a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/LocalizedPresentation.swift",
+        "sha256": "d4e3b7a0523fcd63837cc687ec8116a58e0301dc3ca411515a95486831645c7a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/LoginItemManagement.swift",
+        "sha256": "8fd80cd573cc83fe034c513b9c3ec8bb726940cf1f7753a58b38a5ccc3b5e0b8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManifestBinding.swift",
+        "sha256": "d8221b4be38f3b82d046cb33ee6979b71e4202d09a8680ccf96883d803897a5b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManifestEventBindingExpectation.swift",
+        "sha256": "61d2b005b4551e595898605982651330336278d8eb93f38803856d6bafc56b86"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManualAudioPreviewSession.swift",
+        "sha256": "7e3d3cb979b306e70db271624a401db845d399e9005833a147697265f0abe64f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManualPreviewIdentity.swift",
+        "sha256": "fd74aa8f8d92bcd4816093bd2d4ea1c0a5d78e97a8f6896084b18ea439ae470b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/MasterVolumeController.swift",
+        "sha256": "72f1959f563f0a948c60dee9ee3c63936713455c4b0b3f813d1d06ca1bd54a76"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackFork.swift",
+        "sha256": "7b3b51326b8160ef85cf145bd40f92abd3cbab0bcf80b06a98a7a90cf538beb2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackGallery.swift",
+        "sha256": "311760522445088286744f98877f726fec10cdb030d29b0eb3e4e29a0f424744"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackRestore.swift",
+        "sha256": "d19aaa9a06e1ab2f52b659abf7af46d27450f558b12d9efc23be29fe098d12ca"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAccessibility.swift",
+        "sha256": "86d7987287ba2ddeaff31be0842f6521aeecbc6aab22dc9b381f0a4b95a8ee33"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAnnouncement.swift",
+        "sha256": "3da2ddc26cf434e431f5dcbc64fb9b025fb549cc34d174aa9b1722b8ec910928"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAppComposition.swift",
+        "sha256": "c7b5d03c30569009aa57325b6a745c31e91a036b7adef29d1f1e3f7b9050beba"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelConfig.swift",
+        "sha256": "314d7b90f96ca515bc62593bdb3028a754de408d84c7a137ac52fb647d885658"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelConfigController.swift",
+        "sha256": "985e924e4c86e4ed3daf08cadcab03db70ce5ea49fd09c4b5ae5d81a8b179988"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelErrorCopy.swift",
+        "sha256": "423f288557a87211ef63f949c0d26eddb027d193537ce234f55335c7217aa892"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelFocusCoordinator.swift",
+        "sha256": "b85f2718d77bb59a50016adcad8ef95f2af20b01fc789c93173cdd85ad4a96a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelFocusOrder.swift",
+        "sha256": "fc14b6110dda723dc426967700ca7fccb5a33246a57e54192afeaf23fd455c24"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelLayout.swift",
+        "sha256": "0e80287f5c4518c836080eb6ea3d15de9bcd631c3cffa6f82261b63eb934c8e4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelPresentation.swift",
+        "sha256": "cc684e973cf7d2196694f260d8951eeedbafa376eb3252beb6c11471230af192"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelRefreshRoute.swift",
+        "sha256": "bd5c518ad55ed8b863ef95c57ff9fce5e4640ab89e2e34417f55970eaaf0e304"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSettingsChoreography.swift",
+        "sha256": "a0600de7ff0d370bd65b5b74d8a009c65b8f90a49d03165d72ea4a8fa0ab6249"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSettingsHandback.swift",
+        "sha256": "088e74f9579ec72ce571dc61f1eba7547cb821de2e1ecce0961b4c3ab92ef08a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSoundScopeRowInteraction.swift",
+        "sha256": "e68028ceb09b01045193c9cdf223ec617bc29f988bb6eb8a48714075925cfb6e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelWriteFailures.swift",
+        "sha256": "d500e74cebc216fd57acffe3e9fc3fc3db147097c2cc3b8a1ecad7f93ee65e7b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PreviewDensity.swift",
+        "sha256": "2f9b1b8da9f9ce546de6705ea0d8ac60ae5d7561fedee09cbe4c819e10cd9502"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PreviewFixtures.swift",
+        "sha256": "572141b016673d906e3cdcbfeeb239f2cbfcfa5d0f0b1a2d937e976e5402042e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift",
+        "sha256": "11cbd7ae5591cb900be95f535c8b5b69336f77d300a8aae580c31cfb75d6b8c7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ProductUIModels.swift",
+        "sha256": "5e4c8104d5f473f8d6987a9b323ecdeb85b641335c20bd5d1ed0baf3448bdf41"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/RetainedWindowHandbackTracker.swift",
+        "sha256": "4db18df149d0d4e6a1b7e18b07916c8ab0cd689411333c0efb153635a4471fe9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SenseAudioAICueProvider.swift",
+        "sha256": "2d6a1739cc53d6385696507f4573b3f84d545ee501d918633689f3b52487aeba"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SessionNavigation.swift",
+        "sha256": "175e24b72b9032ac29c9177c8d1fcc63088073436e6a22837844d2122f198ed3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SessionNavigationFeedback.swift",
+        "sha256": "6fcad246f8a950a41a0babb5e97a6f1036a9092887ca0a2097150a2bf20fea14"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsHandbackApplication.swift",
+        "sha256": "89a57a22dc07e503e679a55b378963a44c754073e2be35782a8b8a6df78aa83b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsLocation.swift",
+        "sha256": "8fe4eb88df3b1aa6b13cb50b8493df60264b60b183f40d16e2aa724460d2cf2b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigation.swift",
+        "sha256": "215fd960edc8563e6b910a666462052f81cdcd4b049d0c80b54cee7f9a17a4ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigationHistory.swift",
+        "sha256": "dc3e053c962a17b636e34ba47fd8499a52118b42fbcd644352bb62cef1c0ba1a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigationRestoration.swift",
+        "sha256": "bb1b5ba3b75b5211bfd8f947af33b74ff5dcf77945e70b4ea07a474090141b19"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsPreferences.swift",
+        "sha256": "a9511d6242ace9074742ae35534ad6269ff84a41b29118137b10273dbc34ef7c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundEventSelection.swift",
+        "sha256": "e0e97981d1c706ff47ce75bcbaceb685c14a3d79c83fdc7778025e08a3a17b1a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundEventSelectionSession.swift",
+        "sha256": "047855edcc89cffd5477ba8fe9f430efde40a9a54fe921d4fd9199785851cf02"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackAudioImportExecutor.swift",
+        "sha256": "aacfdc95dd8d18cd7dabfbe27aefcc1b596d6ac151acba450d80abc19970f167"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackDirectoryTransfer.swift",
+        "sha256": "8ca5c13cb356ac90cfb0ea0cee7c58e38399952a725f2a2071755b440424457c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackDraftStore.swift",
+        "sha256": "8127fec0311074bab35ce54f44a9137fe2f90416dc2e62be205eb37af5c861b8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackImportBindTransaction.swift",
+        "sha256": "5108e6c684938ff95873860445b20404c66c18752d8b4b91e2e6ea3e8fb43ab2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackLibrary.swift",
+        "sha256": "41a7a248e7251d5b1efa5d7939a3b36247501930728731b47de9a8fd22a372c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksEditorOwner.swift",
+        "sha256": "5099e6f172342b3a6f69b71f3498dc1c17af395984b4d57acd35c2c2629665eb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksEditorPresentation.swift",
+        "sha256": "f921dbdfa95a065f1b0cec2aed20063c3523604edbb4e39ba571ed143c7fa796"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksRefreshCoordinator.swift",
+        "sha256": "c1d77df787d77dd094506150828f1c3aa4b669b1e0fb60940612c0680a565d58"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowAccessibility.swift",
+        "sha256": "d1857dd3d50099890967888f7247bb47ae97b26fb042ad1e9da799a0d31c22b0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowModel.swift",
+        "sha256": "bc1319128596e9b7a9ff5c3b86bf594d4ffe822194bf528aa36a3f8bd1b6808c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowStarredPacks.swift",
+        "sha256": "7561259d55ea370fe77e38b967017db1c51c1539be5e07e92cfaac5ba5df6d9d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundScopeSelection.swift",
+        "sha256": "66ec395125ec8708794f155353665a1436ca9a158a62151c0efa2bac52c405bb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SourceApplicationOpenResult.swift",
+        "sha256": "6d58fb683f984d30f3b4036cb88632256921c1ce49e47e90c032b748bda21788"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SourceApplicationTarget.swift",
+        "sha256": "0ceeb00d4d46ab38c8524a3127ccec942f736e4ef4e8f82327393650213c4ef4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SystemSoundSelectionPresentation.swift",
+        "sha256": "6e38b4bd24453cf504642f328eea401051930a913723d1f49942ff36bbfc5c5c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/UserSoundPackDeletion.swift",
+        "sha256": "e72317eb941376ddcffa7f0fa8d75e9c8a2977fe1110bccdd7e39e53d71e5cb3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/VolumeDragSession.swift",
+        "sha256": "5ad8c8673ce36f2056943beb4705a9de18e455ed51b66dbe8666a2972c1a503c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/WorkspaceSettingsSummary.swift",
+        "sha256": "b7ef0038d07c86a532d5d03b6e8496a9a3053da97fdefe706a34618a772b6712"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/WorkspaceSoundPresentation.swift",
+        "sha256": "95b1b9ea1c8ecf1fe88f06d5cf63eacfcd5588927301538b5b486da44c7a09bf"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedManagedSession.swift",
+        "sha256": "7706e9fb18952a549d228c5dc886c9c156c431c6c38094bbf3015c724b3b7bd7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedNavigationBindings.swift",
+        "sha256": "960186d6cf9a2ac4600ab12903f96624682ce2f2bae5e7bed9413f9be46cf81f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedNavigationSearch.swift",
+        "sha256": "2a88f661ebf85d85cd73aa2083ed8354a9f8ad4e4c951810a9556e5686cc6618"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedWindowSelection.swift",
+        "sha256": "d44cfe3b705a71a5a84b33b20d4bac2885c92bbd5612e6a7aa772a65be8f83ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/ClaudioLocalization.swift",
+        "sha256": "0ad03098ed65381d7abca019b9d3f115a9651d48cc7716d6a313407f7e6a8af9"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings",
+        "sha256": "3b97e7bd11811c6b4032b5fae4248c0e002f312388861405f7e5915a0ddc92fe"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/SoundsLocalization.swift",
+        "sha256": "cb1aac66e4404310675ce847ec4a90da9520aaeffc176dc4ec3d7050ba0bdade"
+      },
+      {
+        "path": "gui/Sources/ClaudioLoginItem/main.swift",
+        "sha256": "314091933c1c594c3f2c7ca120136f48bf8912c92a0e6b13ac16e6e737ff2046"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/MasterVolumeRow.swift",
+        "sha256": "dcbae054576d5fde2e53d4912963781e03b66070d50f78628b5fd10b30cee2d7"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PackGalleryView.swift",
+        "sha256": "237c64f0d75e97db578c034630864f82b0b1c3ca7332eb81522e635aab8d9ccf"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelAppUpdateReminder.swift",
+        "sha256": "ac8d4f63dc12c90e3f552e4ef9a3aae333502494523bbdce8844d0212c3ccfa7"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelPackSectionView.swift",
+        "sha256": "9f157c7d0d93636ee7d11fc79b57417269f31e5a4ac197901a0d98ba4178440e"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelQuitFooter.swift",
+        "sha256": "dec12490a04a58210ea06cc56eff84542ce0a4714ccefb078be8bb9947508260"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelSoundScopePicker.swift",
+        "sha256": "99f74013906ec67eb2a8ba3531840697f0ff4069fe152b3263d485b6390e753d"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelView.swift",
+        "sha256": "31b5d365a25012fb9368550fb1ef2ee692bf80aed7c8423ae01182fb0afb900c"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AICueTaskSurface.swift",
+        "sha256": "ded1512c234f6d7c2de3d48fa0883880c236d4294d9e4ea0499361d4af6bb520"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsSheet.swift",
+        "sha256": "e9e77a70a355c0925c4dc6d73e37f6f6d038004308025ed726a4f01b0dee2f65"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsView.swift",
+        "sha256": "3ff7f7e9f022464620b042ce14bdd4cd6aa6d01eb4dcb1ede7b44d13704e80ad"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift",
+        "sha256": "395caa2da152a1bb52c3c2972a44abb6e70f02397cc32f7cc73da0889bd1d0ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AppUpdateSettingsView.swift",
+        "sha256": "d7d611408f03dcd6a9a21971c61f48d271c0317780494199e1c0a1a2e3279482"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationActionButton.swift",
+        "sha256": "ba3d2419d637eec5de5f53c0ddffabd94567eb523b5bc727c7fc5eaa4e5f8069"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationGallery.swift",
+        "sha256": "6d37f6e317ca75c5ec59c6ca788d1d75b7527cda665d02843ddb4918195ebfc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationSettingsView.swift",
+        "sha256": "4f5df2632417247cdcb6daff76fb6c175a85dc59d13a1c981129b548cb7eb177"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsAICueView.swift",
+        "sha256": "ba972e46655e3db7f804936da96dddb8d54ea642a0b5675e94a5031253bdca52"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowSelection.swift",
+        "sha256": "15495761472653c2686c2100fdaedd547c471030fe2451c76af1fdcf72d6653b"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift",
+        "sha256": "3059e70540cb02c09d5c1c9afe803f4b5ade7c5e19cdc5d47adaf047f5bef5d6"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/IntegrationsSettingsDestinationView.swift",
+        "sha256": "6855a8852f221eeb14397124b2cfe9023dc719b13d14d51180951829284b44bf"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/LoginItemSettingsModel.swift",
+        "sha256": "9214da5eccab77a50b5081ee399fef95cfd10aa179fe4c5be683169ab7711793"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/LoginItemSettingsSection.swift",
+        "sha256": "baeb25e613757a674d36d1d0adfa96782b21597733b7d0c2311e3cbdaa3b8801"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsAnnouncementDelivery.swift",
+        "sha256": "a6568afa0fd3996f49b4f17fecbc1adab2fd236f26e6dd835e5f1acf202f97de"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsDestinationPage.swift",
+        "sha256": "fe98e813596010624568c1eb8328e4cc4391f85bf1096b5c996faf68f2bc2acd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsFixtureDefaults.swift",
+        "sha256": "3ebf7f15f43b0ca740f944c812775a3433cd684effb9a837f2a1dbd806f287dd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsMountIdentity.swift",
+        "sha256": "72f368d1a7cd67781e57bacfdd477a13d2263844a32db4d6ed98936d21ba56bd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNativeShellController.swift",
+        "sha256": "8dd2d776b829174672fe4d8816ed223bf2f8c4b74678525c6222296e3efa65c3"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNativeSidebarController.swift",
+        "sha256": "ab887f510e847a678e5ff0f42dab99d2f8c6cf39190a01a256d2e7f8ccaced4b"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNavigationRow.swift",
+        "sha256": "42e9fe0d3509118b14a83fbb9e2c9474a5354a98629a61a8a08832379832d959"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationActions.swift",
+        "sha256": "6185a4667c3b0c34965d7688d0b2dd31f7f0909388ff1f9ac0f3b61a980c6951"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationAnnouncement.swift",
+        "sha256": "03db066898213f2079bbf15e148692b548206c8ca61c572f23dc46cfeada4a5c"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationDependencies.swift",
+        "sha256": "9a7097ac340b1c7a9ff2058970e5da8ed8a9636c142825a42eca3fe9afbd6431"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationFixtures.swift",
+        "sha256": "10dc32ea95fbef23370aac8d1705b84ba4dffb7b9a5a01fff4eb4837bde27462"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationSession.swift",
+        "sha256": "72478c4b02fc41892ccbe79b5429a33bc4855a2fa3607327e1143d46adf011a5"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationState.swift",
+        "sha256": "5e1bc16475f9b3da8854ce265e58e0940411520a043a5d18c662e4efee25d74a"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsProductImages.swift",
+        "sha256": "6fbcea4432f0f52f965a6c2ff7b9aed4d86d42d1e15a983ca825306cf47d2a7e"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootInteraction.swift",
+        "sha256": "71daefac6aec3f8626c1706deb2a5d3761aa8c1ef1b30bd71d2a30b82ea21001"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootNativeView.swift",
+        "sha256": "e0ec2194a0d8bcd58cfee365c41762ca637d2ec6de6911b85e1df63d8cfa4190"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootView.swift",
+        "sha256": "ef7ac6b6a680845bca86becbb47f44da42ab62302c2186496f03dc1ef975cb35"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSidebarIcon.swift",
+        "sha256": "37298b3a78b73e843f61c23d42ef21dc548446fa7673875c5f730edd2cf06a39"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundPackDeletionTransition.swift",
+        "sha256": "d89e995e7d533d8198819c4af97abd0eda67c14ddf411c183b9fb4afeadcc650"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundReturnContext.swift",
+        "sha256": "149e69cfa938e5f8d79441bf461889bb9514663222a1bcf175a67e616d9406fb"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundScopePicker.swift",
+        "sha256": "7c292ea19dc0bac87c868097912e46bc76eaf6fea9f3a6c2b34dc05875d9152f"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsAICueView.swift",
+        "sha256": "fb0155cee73c972b89dcadfc10b6508ae039ca2073cbd58b60bebfaad32608ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsDetailArbitration.swift",
+        "sha256": "cd8cadba7bacb6b342ad4b70e43722ca3a10900bccb37027bc0c5044b92b299e"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsLibraryView.swift",
+        "sha256": "457d6efa1db7e5898a736e12aa4a0f16d4b0e7bcce32b92c3cace13c4e923503"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsStateGalleryView.swift",
+        "sha256": "8fa123c05578279cb6f8fbae7bc0ed7c6ae11ea7db47619c200a1cbdd9f2d3cf"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsVisualComponents.swift",
+        "sha256": "b86665891bcacd315d3e8e9b9f6123e96067d6b5dcf741417cd9a79a1c162126"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/WorkspaceDeletionPresentation.swift",
+        "sha256": "ee913c0d2a6bf9e0e56e6c08974fb00a2fdff5f3d01fe6e4faeadc7e970c8f63"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksAudioDropRequest.swift",
+        "sha256": "637c0bfd3882220c8846bdd55f8bbc5d234fbc76ed98b379bde846721451e393"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksEditorNativeEffects.swift",
+        "sha256": "f1c1c8076dec56bdf35c2bfd7794ca60281791ff5345c63f45af015756a71dc7"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksImportResultPresentation.swift",
+        "sha256": "1a31f9d70e4ae6ecbc3fdba61a3ba74cced3d8465b8ebd1aafe36a942f683bab"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksLayoutProbe.swift",
+        "sha256": "5e2c31aa9f6e2078b708eb93b75cb4151bb14fc920e601246986b805135b9eca"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksSettingsDetail.swift",
+        "sha256": "3eba52a14dae69274d8ca7be5ac4ed7a7cf731cdb1ba8a85ac677791dec1885e"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowAccessibilityBridge.swift",
+        "sha256": "f234a508d734a23ad0e2a3c83fc7d8d8142ace29283ee6e57b0429e395d27e48"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowStateGalleryView.swift",
+        "sha256": "0d88d88f52792d3f46799d04ec412ecb5c715e8abfb3188f0287c5a10c7fd8e3"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift",
+        "sha256": "6ad257d20224d91aafbd4881e15bde39a8433a093df5ad2d9ac7cbca9a4af1c8"
+      }
+    ]
+  },
+  {
+    "sourceHEAD": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+    "baseSHA": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
+    "worktreeFingerprint": "5def97efbf1671386140acd15b3b8739298e2cd04476fe6f8234335c99c9cd62",
+    "macOS": "27.0.1",
+    "architecture": "arm64",
+    "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk",
+    "clockMode": "manual",
+    "bundleSHA256": "6071513538111f37378b36188caefa12b27df32ab1a9c6170a8d3a70e13dc1eb",
+    "bundleBytes": 48816095,
+    "build": "claudio-native-ui-build.GrsDXW",
+    "sourceFiles": [
+      {
+        "path": "designs/panel-and-settings/Panel and Settings Prototype.html",
+        "sha256": "19163115f64073e5ad51dcf2d442bd1138587ca048e8e0ad0a1154b29424355c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/AboutSettingsModel.swift",
+        "sha256": "c94e2e05f999ea0438ac0b178f966d28803c784a955287b910cb9c5601e7b286"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/AudioDurationProbe.swift",
+        "sha256": "47f60e0c8c897fa18a2ada7c11f42e726910d0c34a8deebc04ba24d2227bf813"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/ClaudioGUIApp.swift",
+        "sha256": "a365f5bd60e5a277a8a98ab5fd8b3fe51fb8c03ad0694df7e6e018ef782a3513"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/CodexQuestionObservationSession.swift",
+        "sha256": "0d33d4a15ade9aab198e9505b5d2042d1523823aaec21d3e474e1063d0e22c06"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/DesignTokens.swift",
+        "sha256": "f83cafb8343628a1c20b1d58376bd9ed1a06a2a8b66ea65bac0ea56da655a42b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/DynamicQuietSystemObserver.swift",
+        "sha256": "62b03c00b9877dfab9b805e0a7274134ebde96ada375daec6ec47c2db3823516"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventAnimationResourceComposition.swift",
+        "sha256": "f218e2fe2d84565fe85b8f3dd8e991a22fc1b3928b68f4fccc810c5ce758a890"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventNoticeRuntime.swift",
+        "sha256": "8740800e2b5b50f84c5a61408efd1c1c6f1f26d80c5b86b5881ed3eff463bccb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/EventNoticeWindowController.swift",
+        "sha256": "a33b77aac9787a4c13d9157ff802f3b231a283ce8e31b58eb6f819fb9d45dcdb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/GUIResourceBundle.swift",
+        "sha256": "2655d84e996aeb2bcc8d43cd8fdc110010a61586b13f9f4bac8972a23cda68e1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/GenerationQuitPrompt.swift",
+        "sha256": "fda07e4fc2201823a5a7b87b06aa1616a7756fbc65bb0282900c45498b6d6ea8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/HostIntegrationMaintenanceRuntime.swift",
+        "sha256": "795b9c99a02e982bf898c4b32ea9369d81416caed7b6b9dcd37586b29abb0c89"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/IntegrationDestinationClipboardAdapter.swift",
+        "sha256": "50089e6527d34b008fad0f0d93235769b1b752843d18b8831e8b80ba63d377b2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/LoginItemServiceAdapter.swift",
+        "sha256": "879f4f4bc00b7c093e4c1c09dbd22cd9f69af70dacd4f1f761f45178616cfb91"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/MenuBarController.swift",
+        "sha256": "6b87ebecd60fe738ed2c761877435e3e21e2ce867e58d8e83643580cdd5620d4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/MenuBarIcon.swift",
+        "sha256": "82d6ce8783d76eb3473731a31a4150c1c10a2111d6b01fcefc0b05a96eaee454"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeRegressionClock.swift",
+        "sha256": "361d76ce9e3437b4c4fa8c6a35b439976f56d652b4e948d2a02566ce8d675f34"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeRegressionGenerator.swift",
+        "sha256": "1d28eb2cc558142c25fc2484cccd15f8dc52c19e0d82dd45c538cd4040a4c233"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/NativeUIRegressionController.swift",
+        "sha256": "d5a2a872a0612c64bef18e33915c82f80f5464289c52ed934dfbbdb18bf13a56"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/sprites-dark.png",
+        "sha256": "7c412b94bf6afe53a8abb5a8885fb30db5dc02905834971f9e6853cae367bd88"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/sprites.png",
+        "sha256": "0225de0b1b0f6506d9482ca3b3163e8c53058ab9fd68805da3d430d7dba6d8c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/E/timing.json",
+        "sha256": "d263f6aa0045e4322425e84b656ad4b08485102b45dffbcc51ef2b32ef2edd54"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/G/sprites.png",
+        "sha256": "33229e3532d0288d44e40f1d94244c25828f860f30b737e6206d3a8fd93c2603"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/G/timing.json",
+        "sha256": "66f1d78dc5bab418e54b6068589a129afcad46ad2179204faa4386b6aa5815a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/H/sprites.png",
+        "sha256": "9fe289c64c169d60e431e0fe2ed3b190afd56fa9ee9ebda864fc0935f76bccb3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/H/timing.json",
+        "sha256": "d60a2a9a31a33e0ef1b2cad3eea48f6f1bbff130d25cd505d6555e55a78c113b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/EventAnimations/provenance.json",
+        "sha256": "018e886abf47aa4b1b2c468e7a3f2f980f2e18c768cf85b78446a5e453cfd028"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/HostIcons/claude.pdf",
+        "sha256": "be2901ce54e711530b4a32724d60a9f96ea3be15aacb61db868acafd80aac065"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/HostIcons/codex.pdf",
+        "sha256": "6a70885af16c5ac1f1e62b77f7352ca07d5ddf5e699a98d5385b97d4e7a1574e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/PROVENANCE.md",
+        "sha256": "d10fb0531111a0e4be3e9bbe0286af33d33f8f8728edcfea64910a131823f7a5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/claude-light.png",
+        "sha256": "1bec5f7b12a4a46fea879633464ebf1d32144ef731a0f054539b2d7251871cb6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/codex-dark.png",
+        "sha256": "69fb4384e161be8a20dcb94a9ac34aea4fbfaeb67514110a71e7b0732eccb0fc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/codex-light.png",
+        "sha256": "de7d43f3386105ab20952958c2c25beb0d903e2aeb6e1aef57c49a648c0d1c07"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/grok-build-light.png",
+        "sha256": "768cbbf7a7528d6e7b3af8112d7cde43eb6c9c8989ad9b06be8047dae1227463"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/kimi-code-light.png",
+        "sha256": "6c14f9c3062e953b3ed57ae3e19db931c1c1bba38d4d8d55550544f31d55e469"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/opencode-light.png",
+        "sha256": "d4b192c5d634ba493fcf48b33db8a3ce8e6f5d58ef078884f257b064f52c6480"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/Resources/SettingsHostIcons/workbuddy-light.png",
+        "sha256": "3c2bc7d338c9eacc027af2b27693056b7cbea3a6c0a09225cf87020afe57fd7b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsPlatformActionsAdapter.swift",
+        "sha256": "7f040dd5356bfc6a7be4a5fb8382c9a696fd10e21efa1b4c8821c3aebfd94736"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsProductImageResources.swift",
+        "sha256": "8db88de4c011bda4e02010c9f7d44085da353a3077fb1c7bdc0027dd5f078399"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SettingsWindowController.swift",
+        "sha256": "db91ac4cb416c39afb58a0b7de9677a2f469bbf14f12aafa7eb1890700be4f6c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SparkleAppUpdateAdapter.swift",
+        "sha256": "423078f6f02a570dae1086aac6d1961cfb358a556a6cc66089d073d8fe212c46"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/StateGalleryView.swift",
+        "sha256": "6ddd3aa026b5be59b1b04c0d172655ab8e30a34c632024498580f0f081c202c1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/SystemChatAXTraceObserver.swift",
+        "sha256": "bf6696e5d488cac7f640c5a2618c78f08e041f9a24cb886e2048a6eda7c24f50"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUI/UsageActivityAdapter.swift",
+        "sha256": "0bf3494cd67a1637c59b320a0660c24889b3060fca858b9f979dc772f87ce69d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AppMotion.swift",
+        "sha256": "74cd220addda6afdc4d0c247150cfd5bfbbb0b23b8f06cae8e737d4dcfcff3ef"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AudioOpenPanel.swift",
+        "sha256": "c7a5a85aeeb16afbbbc7f847d0037a3d9d140542d6fb938e1c56a77d7c9becf0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/AudioPreviewPlayer.swift",
+        "sha256": "516aef5ca3804fddcc14c92ee06484290058fb0cf90af28f9a60679b5ccbac72"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ClaudioBranding.swift",
+        "sha256": "4adac31d1f43b39111b8716bd78e6346744c7c43f7255f6fac8893bbacb071be"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ClaudioTheme.swift",
+        "sha256": "a3039493823beaba76da2ecf31a9ce8639f4fd6a1688b50184960ffbd04683c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationResources.swift",
+        "sha256": "fbc564e709710fd1f11cd661605b1651def59219749abbc7ea8674ae5fd28cf1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationView.swift",
+        "sha256": "7b6009e5bd70f7773c6c579543b951195c8fb0f3f3e28185856a5c4cb8a771c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventAnimationVisibility.swift",
+        "sha256": "0ae5de32f3021d1a98a322b73d20b8cde756964e06f6243d84bbe0e33dcb7e55"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventMuteSpeakerIcon.swift",
+        "sha256": "bbee5bc31e6c1fa38b1210d2edec597fbec8b432208c0646ff0febf81f4722d0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeActionStyle.swift",
+        "sha256": "5bae215a954a694951afca8bff49ac1cd06d916566f90e1b7a1184876a347438"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeBannerContent.swift",
+        "sha256": "cda08c1d1831546fddc97bf04cb71462d699f2d62e97a9a89c08726f112d2fc5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeCard.swift",
+        "sha256": "138f47a3ec5b6050e9cb83410fcfdfe21bcda74297240a471cfdafb66834da67"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeCardContent.swift",
+        "sha256": "c4209ae86f0544119368cd963a221b4e3540a39c3a27cbb1bf488bbc785a5793"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeHeightPreference.swift",
+        "sha256": "c607ea9e5deef5a1c944ebf1d3162ec3b728a70df9c9ec63fa1cb17aabd334e6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeHostingView.swift",
+        "sha256": "be59a3db33db05a5707cd0d90d40322344a8b40c8d2034bb4666a0961bc67a31"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementRequest.swift",
+        "sha256": "3b9dd26e46b13e3cb87569e333c8751fabfc6fa28e9b9d38caf44f4ee9661eb0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementRole.swift",
+        "sha256": "45fdf83f5cbbbbdc489cff1f1bccfb94d097ecd35222ee46a7f031d63102b128"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeMeasurementToken.swift",
+        "sha256": "3d44316b1d40dcdcc825b95379b2152a2a955a9d17570b812b7ce33b922ac7f7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeModalPauseObserver.swift",
+        "sha256": "2430fdfd2835947f820ab3cc4b872a8333f5d7f3668bcb1d83a3e5f41f5bdcc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeNavigationIngress.swift",
+        "sha256": "a78d0a543096fa9a5cca070078c4bd3e03c2b21f473b38a5bfd8f7471a816b8b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticePanel.swift",
+        "sha256": "ad2c9a75e21ae4092897121f7b647b01260a2537efb3e8121ee4d829d23e4963"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticePlacement.swift",
+        "sha256": "0544efdabd9bcacdd4cacdf001cf6f2b46e54a200304426a5db93c6ce6f65a40"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeProjection.swift",
+        "sha256": "67446b6529660bd2651269e27fd3d7a8cef2ef101d0587419326409d90420334"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueContent.swift",
+        "sha256": "4167107a4a1f2dfdc244a1a2bc975c5697623564c059546afad1c86afaef659e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueEntry.swift",
+        "sha256": "87af550076b8b533d707bea6bc701e6180f856186b32164c6f6c82db47c7acc6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeQueueList.swift",
+        "sha256": "b659e8b500a371e9f5cda465b3a05e2b9d53f6da5d61274465b4a330853bb3ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReaderTestProbe.swift",
+        "sha256": "28faf8d097d88b39b776dcb0b11f3aa162a096190d7b3e674f337b4cc910df56"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReadingTrack.swift",
+        "sha256": "b7d47c5e77c9c23f760135b48b979198ebc11e865774238066c41432f5eaccd8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeReadingView.swift",
+        "sha256": "eb13196677530a43a2cfc290734e945e45ef14122b49922ac1a1b5c7c6aa8388"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeStackPresentation.swift",
+        "sha256": "dc39cf1ecdb62b69fd68c04da5c4536bf1a1e27397c7da46c49588057d689dd8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeStackPresentationOutput.swift",
+        "sha256": "f06091c021f8c98be1985df0df448d29ab21c4f2b79ae36489b40f41369b25b9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/EventNoticeView.swift",
+        "sha256": "a80021d35d11adac6f1ee8ba2b5061c45ca6cb9c2a98cdeee0160016d795658d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/FailureRow.swift",
+        "sha256": "90d49125fca584d0ecbea7956c214e64bb42cc2470c2e5f5a9917012ea5b69b7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/HostSessionNavigationAdapter.swift",
+        "sha256": "293dd95eea23a12f38c48fd68e3179346cff4b1c87364583f8fa1f555e944922"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/IDENavigationBridge.swift",
+        "sha256": "1aa217302343111747ba5b6299a53199a114d5e4a0420f5035ea711f9e2aa453"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift",
+        "sha256": "f9de4e17c6c2fd976a8d152778c5f487200dde2b01f77859a7b2bf73a88102ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/MenuBarPanel.swift",
+        "sha256": "1043f7311375e0cf525f9a9abab4697bc0bca7996baf240aa2d57dcacf5ca233"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/MotionPreviewButton.swift",
+        "sha256": "16c24b56dec65f8fa0a56267dff35bb114858a69787135ba751e0cd0184816c0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NativeMenuControlStyle.swift",
+        "sha256": "ee6ba3d21b852202a043c7500c58b61ce94d718550615c74cd98582fb7f9f02d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NavigationCommand.swift",
+        "sha256": "23472686d9e0996e286a87e59caf3ceac8739bb75db15780d9c3d1384afdb445"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/NavigationFocusGuard.swift",
+        "sha256": "d9d94f6b79121c1a2f0885d36c36f25e10c3c85be287456001a8584cd556fbfc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/PanelSoundScopeControls.swift",
+        "sha256": "b211e15612442db5fc1335cdfaa7e05e491320025ed1486e2312dce86ef32ad1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/RetainedSettingsWindow.swift",
+        "sha256": "463cecc83755320f24c85c4e792e160e02a8602b755b9b95fd8268191c6eb1e3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsAppearance.swift",
+        "sha256": "479bb90dc10001cb6570e41901fc745eb14e7776b85de540a1b28759612e352b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsCompactLayoutKey.swift",
+        "sha256": "1fb71febbe1fd10a90960f616ffba7cb8511fa10f333a42cd37523e5616d2ce7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsControlRow.swift",
+        "sha256": "d0544b8b47c156d133fd4b2d8f7ca3b3ad5d990f1ff815903226e687e23d702b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsFocusableButton.swift",
+        "sha256": "3d8a4711e849055386fd765efd337aa5da81c559f03f90b645bb313fcf5ead0e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeActionMenu.swift",
+        "sha256": "fafb8f0e1df340cc6167e882a4b87d646d6675eef484c062f2f8dc0b3e77f2e7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativePopUp.swift",
+        "sha256": "58dbf833764c173f26ff550d21972ccb2d9bb3c3485d3b174b2f9be434ceb4d7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSelectionControl.swift",
+        "sha256": "133125badbb9c3622ac10b7ba7ef0a0d996a4a2ab93040abc017e10110528401"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSurface.swift",
+        "sha256": "e6f01208b9338ecfadde7803788c2ea02400da26e6204c494e1bb99bdbc158bc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNativeSwitch.swift",
+        "sha256": "12ce54c0acbcbea81e70824be37a9de0e837132b43ceb0e6e689ea960b5e0699"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsNavigationFocusEnvironment.swift",
+        "sha256": "6c8190db2e0251ebbeec8a5d48b537c34ca21ce791353185cff3d840a2e7997c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsPageLayout.swift",
+        "sha256": "b5548750cfff60472ff1b816226c4d5dff2c05ce886c802fb7e3e6f831299bff"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsSectionSurface.swift",
+        "sha256": "696d4eead97f25919807c4bd2835b14894cdfcd415b79175d0b5dd33bd0ec59e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsStatusCapsule.swift",
+        "sha256": "248f91484fb310d26fbc7500381598df8b8eba1936821e0321bd18eb888a4ddc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SettingsWindowFocus.swift",
+        "sha256": "5de5c689819621d32da252cc66f093fb5dd1b4bf1a407c26595e9171bd3d56b0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SharedMasterVolumeSlider.swift",
+        "sha256": "30613caa7bd033b0271223fa0d9f8165c9e15b7c62c63e7e98bc46380f9fd9c2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationAdapter.swift",
+        "sha256": "eb6eaac57c51c5993c054f1a100a1b47a180623384a734bbb515312724370828"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationDescriptor.swift",
+        "sha256": "5a73c70376d3486d7d1452ee0f0a32e528c874b62707b6bde36ce5b380062258"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/SourceApplicationEnvironment.swift",
+        "sha256": "3af1b07bdd09e3cc56c98a682f3562b896193a78c03eca2ce445f808a8b77abd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/StatusItemMouseEvent.swift",
+        "sha256": "9d0cc9fc41f3f59446b0bea71d296ec69c6b6fd3c11e76a12d1908144f13784a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/StatusItemWindowOrderGuard.swift",
+        "sha256": "48a6b2b87c78be18bfc62ff13dcb6de7a6d3a447f43b462ae2667a9e13b5e5bc"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/TmuxNavigationAdapter.swift",
+        "sha256": "36c65356c000a8a2a0bd4e7bfd8c266d26b1a31385caac3e130ec060348c29ad"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedNativeNavigation.swift",
+        "sha256": "0e8600f8314dac0e70536ff516dc2af12067bb53d35c66927692f9e81a727503"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedNavigationInputMonitor.swift",
+        "sha256": "51afff06b7f1154c93d6b56962ce7c8b07586736f9dcc0ae2904c0f53440da1d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift",
+        "sha256": "ccb7491fcc94ad8922afa73baff9450b1b75f76dbd17b5a1cfbef006a143fc79"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueAdoption.swift",
+        "sha256": "e81dc4f4b4e44e433e8b5b4f63f20d26d21273e792ea379736a91cb79831d6d9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueAssetFetching.swift",
+        "sha256": "7e049f8b2c6352da3632c06135ad47945fc991a97deba65de37384a0d72357f7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueCredentialAccessPolicy.swift",
+        "sha256": "38767f9b64baa8c484f890462d985f187840d51bb7da5c767b738cafaee4d145"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueCredentials.swift",
+        "sha256": "1ca5ed2c28c1dac4aa1aae3c15160f2100e1df8cf679d22f5e096625776eec9b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueDomain.swift",
+        "sha256": "636800a53ede9d2ba81b6109ef7bc0203b584c3e001f7122e52e2580163d00e7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueElevenLabsProvider.swift",
+        "sha256": "611762d19cb6742f9bc21422d1b170b98f658a551a3ab5f6e99777fac29b4606"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationCoordinator.swift",
+        "sha256": "64ee9c0f4e43f36b254a864090b56be8909b3a37f4977144f8638b3158d92b39"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationDispatcher.swift",
+        "sha256": "6a1269b19302c5c7f00d607c983c7824ace28f75e3f42bcd653adbea3fa92f09"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationEngine.swift",
+        "sha256": "e3cb53d233c6af015f4bdc2a2623e040d2c511c248847871a2939efb2edf866d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueGenerationViewModel.swift",
+        "sha256": "57f8227d49d1c8f1a9a93726cabb3983b8655f9b02a711e9f1b4391805dc6405"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueHTTPTransport.swift",
+        "sha256": "11d2343304fdff63008d849868cb4aaeab89ea6fd8e71d2e929b93fd01123f85"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueLocalCredentials.swift",
+        "sha256": "6d567b8ca8946b5f8a7253888618a59e94c584a33a87b1df3092113f23bdc2c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueMiniMaxProvider.swift",
+        "sha256": "f372a5b229ed891f793e5f892601ee78dec061f785aafa1c2fbd7ad19f384fd0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePackDraftTransaction.swift",
+        "sha256": "bf519b09f0fe41b23b7c1c0574e3f98deeac9907e43de8e073e8a05f06e0fd08"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePackScoped.swift",
+        "sha256": "6dae99a632b7cb1c6cfae6a03caab36c69ab305d053a1060bbbd0f0c9ff52db9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICuePayloadDecoding.swift",
+        "sha256": "3cb1cc951dcb12760f432dcc89eea3675519b782a9e3870fc193a5d33a888f19"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProvider.swift",
+        "sha256": "aeda0a703b21bca12e0e5c67163ea6b871be5e2007a909a6764e7ed633656641"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderContracts.swift",
+        "sha256": "c7f06df59907b49ec1d1091c9428d40d090981920e4e9c3674ab475016277720"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderPreferences.swift",
+        "sha256": "f9019a3e0097e0970d04e515c9690cd590d9d1e798a4b7d5e4d8de641f9a0f84"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueProviderRegistry.swift",
+        "sha256": "ca389b8c0618dbe8804de8b5bfc7fa401d882fbe4e883fff8a47c3b5e55e95b1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueRuntime.swift",
+        "sha256": "c588ba5f8cb287cdaa2b455b18281e58d13a72ecc316417cf5794be471cc88bd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueSSETransport.swift",
+        "sha256": "4285a3cd9c46bf0b10ba85489cb69f8c29a2753b09266446a717819547843cc8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTaskPresentation.swift",
+        "sha256": "c5e95c3b262a946b291c8901cd3923bd90df8930212f9b6fd8afd02462711fee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTerminationGate.swift",
+        "sha256": "702876ffe068f161a835a4e147dc70e35af45cb079a16ace99e18d69e07eb365"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AICueTransportContracts.swift",
+        "sha256": "47a7262f2a982f0f58752bd4faab8d3711cf160315931c11caeda1a3cb348e03"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AboutInformation.swift",
+        "sha256": "b79564a711766cef9d79d2351ce87fa51501723dc9d66c8476c756404ba4c5c9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AboutSettingsModel.swift",
+        "sha256": "f2945f4fea354a999a67c87eeb53dc085420574c5ca9aed992dd27fd00771e45"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ActivityDiagnosticsLog.swift",
+        "sha256": "8590c288cb4e8e867c6786cd704d85a03f8190c10e19bee25c5624977af83a3b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ActivityOverview.swift",
+        "sha256": "ea4e0bc3fa027818b92d41df2b807a67d9b5d5cc5e589532ba22b8d5a5b9d37a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AppUpdateModel.swift",
+        "sha256": "c36abfe5df0f2d68de029cb3b66d940f13135e592d56b7d98ab8688c21bd559a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioFormat.swift",
+        "sha256": "80e1bdbdeff374a66be0c82f0976df3a95f919f05ac73b9061295ef1b8b95457"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioImport.swift",
+        "sha256": "c46169654012e871d7aebe7506397438a7c35e1ace59a410f15d744b78332674"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/AudioImportEnvironment.swift",
+        "sha256": "08c96435cea0f8f6521fd2f0c0dce25f99fbc7e89c90135d404aa2b26680c5ad"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianAICueProvider.swift",
+        "sha256": "a3b29ed889ba74ae42fae8334364441fcbfd2bd3baac6d889750f7d5a141cf4e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianAssetContract.swift",
+        "sha256": "5ff05631c14317f4dad965f8032458f2ab31838027e15c8eac98250fe75fb580"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BailianWorkspaceID.swift",
+        "sha256": "fc33028e47731420e077a8474cb3cf4e58bdb8c3128b70f62d0d7c9d76b744a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/BundledHelperResources.swift",
+        "sha256": "4ec58070e93a37edf7639bb4675f4fe688bc3f120ce11a482dfb731417f2e917"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ChatAXTracer.swift",
+        "sha256": "35b9bb775929c826d4a56bdebbffcd563c680d60ce99564c5779f21e1b805cc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ClaudioColorHex.swift",
+        "sha256": "0812653156932151da28148b8804a42343301348c3b9fa40fd3c8720cf3c0dc2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CodexQuestionObservation.swift",
+        "sha256": "e0ac87f26e7a5a3b113c1d5947aa85becef2e090e361e231a43eaa3efb221a67"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CodexRolloutObservationReader.swift",
+        "sha256": "16fbb5c80b18feaf83099b3186667a49ecac8289865d56fe4293044015b29683"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ContrastRatio.swift",
+        "sha256": "b2e2e0f24101f5d0f1bb57ca53db45aa3dc92fb92d6050da50229c0df53d628e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/CoverageState.swift",
+        "sha256": "a50e6b674a341e7cc42586aead98ef851e4ae6fe2bcfcf65945663b830b1880d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/DropZoneState.swift",
+        "sha256": "99cccfe19b14c5bc4f6f8d235530cb3700e01ed224e3b9e7c26b12f42ca85d07"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/DynamicQuietPolicy.swift",
+        "sha256": "a67cc4697456303f22c0655e280b7a119c9794cb7d6871c6cfaf090eca1c97ca"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationPreferences.swift",
+        "sha256": "fbae199195dcf3772cd1e887bc2014a4114f17deaa371c94397b70e280b028b2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationPreviewSession.swift",
+        "sha256": "d4771bae5f6bfbb4ab3f034e9f30f434a25057a53e2444ddfeb59d7017b3ef55"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventAnimationTimeline.swift",
+        "sha256": "0ad6c33ea0e67ce989f2a8aa676e32119ba9414c27c7901f376838fdedda3b1b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventMuteController.swift",
+        "sha256": "cb7fcf1d31105dff69fee823bbe042a7c297bde3a3aa7c11142d1a1cf8d79f30"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeBannerItem.swift",
+        "sha256": "13a2b5e40b9c5baa38290d8dc8ae4bd96d492f29835d1bd7315af4f68a548335"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeHealth.swift",
+        "sha256": "b937fa280a3d1f62e675d2f7bfab92bc3d999a1afbbf2b45fc5b7ffc55ca7e26"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeIngress.swift",
+        "sha256": "a7ebc8766d8add27240f0ebf3673da5c7b601bddefa42e9f0325428772347196"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeModel.swift",
+        "sha256": "9ceb9757edb9b1598e3ff9617b08f7d4f69e0036b8efc4f40ae90c25c3c94695"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeMotionPlan.swift",
+        "sha256": "6b9fbd0bd9654260471bdbedb98916212d6534eb8ed5ecc3f02a5245e61f0d2f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeProvenance.swift",
+        "sha256": "7c482c3bb142a936f44e6c7d58bc56ae98b972471ee6211b5de4a5cec1009150"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeReadingSnapshot.swift",
+        "sha256": "fe35e2a7e91f83e4d6c105d2b17cd60f074518ec380b8119c9ee7cfed01ed204"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeReadingTime.swift",
+        "sha256": "c980a17d526a5c0c1acae0b1c7a22efddd0cd6a4ff44454be2942d842f1f9427"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeStackLayout.swift",
+        "sha256": "bb6dae09aee8ed4776a9354da1fe9ff2cfcf13cbe44e0a3968f7936614101534"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventNoticeStackSnapshot.swift",
+        "sha256": "240e74bb9775df5133dc0da735c55ec4138e9f90466d1148acf6228038d45dfd"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/EventPreviewSequence.swift",
+        "sha256": "322b7904c534e5cc5ac66efe56b1a1832ac5fc8030f0f1473d04b5c73041f81e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/FocusRequestCoordinator.swift",
+        "sha256": "47563e655e089f248664e1849a206dfb4d1dc55df95a4422961f00493e6aa6d1"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/GenerationHistoryStore.swift",
+        "sha256": "ec64b7a04c2af9d581d0bab5eacae4da18854a5c958e377e44134e7ff4eecf9f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationManagerBridge.swift",
+        "sha256": "24f397538487fae964d305edb928341ee05133927464e9380dc7334a701c1e7c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationPresentation.swift",
+        "sha256": "a4e9080281a31e20a48ad21d86008c45cd38bb147916ecc8e493e21f518478a0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostIntegrationPresentationStore.swift",
+        "sha256": "880dc64a78dc6e9d1bc737f0f52d5151a8a03b594e93fa35bbe9ee1e304c3cc5"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/HostSessionNavigationTarget.swift",
+        "sha256": "72dcee918b3e887278ee661e3d50686abf0c892e60ea12ffc98a4b6b8f826f8f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationAutomaticPresentation.swift",
+        "sha256": "2d184f37c75f6bf32690067bae7abc2fc5450cbb01d0664aad692d942191a592"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationBindingReceiptPresentation.swift",
+        "sha256": "13845029a2a5762d40f802436e3832dbb5a5d0c7ff73c9a76176a3f4009384c8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationFocus.swift",
+        "sha256": "dc457a3ac1704d216e77e922602dfcca225be0df8058290006705dc4d3dc9184"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationModel.swift",
+        "sha256": "317bc280b1d9cf9166ebd2ddf216dcc96bb17e892b4dc3bc6d189ac92eac5ad6"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationDestinationPresentation.swift",
+        "sha256": "22f02bb7f4bee7165db182e978cdaa83bcc13387080701465e3a7b6314f49975"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/IntegrationReceiptHistoryPresentation.swift",
+        "sha256": "e30b8a06b6e3d0151dbd6ef4d320811570d59e4ae06be80196a8068b06d141a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/LocalizedPresentation.swift",
+        "sha256": "d4e3b7a0523fcd63837cc687ec8116a58e0301dc3ca411515a95486831645c7a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/LoginItemManagement.swift",
+        "sha256": "8fd80cd573cc83fe034c513b9c3ec8bb726940cf1f7753a58b38a5ccc3b5e0b8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManifestBinding.swift",
+        "sha256": "d8221b4be38f3b82d046cb33ee6979b71e4202d09a8680ccf96883d803897a5b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManifestEventBindingExpectation.swift",
+        "sha256": "61d2b005b4551e595898605982651330336278d8eb93f38803856d6bafc56b86"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManualAudioPreviewSession.swift",
+        "sha256": "7e3d3cb979b306e70db271624a401db845d399e9005833a147697265f0abe64f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ManualPreviewIdentity.swift",
+        "sha256": "fd74aa8f8d92bcd4816093bd2d4ea1c0a5d78e97a8f6896084b18ea439ae470b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/MasterVolumeController.swift",
+        "sha256": "72f1959f563f0a948c60dee9ee3c63936713455c4b0b3f813d1d06ca1bd54a76"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackFork.swift",
+        "sha256": "7b3b51326b8160ef85cf145bd40f92abd3cbab0bcf80b06a98a7a90cf538beb2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackGallery.swift",
+        "sha256": "311760522445088286744f98877f726fec10cdb030d29b0eb3e4e29a0f424744"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PackRestore.swift",
+        "sha256": "d19aaa9a06e1ab2f52b659abf7af46d27450f558b12d9efc23be29fe098d12ca"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAccessibility.swift",
+        "sha256": "86d7987287ba2ddeaff31be0842f6521aeecbc6aab22dc9b381f0a4b95a8ee33"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAnnouncement.swift",
+        "sha256": "3da2ddc26cf434e431f5dcbc64fb9b025fb549cc34d174aa9b1722b8ec910928"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelAppComposition.swift",
+        "sha256": "c7b5d03c30569009aa57325b6a745c31e91a036b7adef29d1f1e3f7b9050beba"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelConfig.swift",
+        "sha256": "314d7b90f96ca515bc62593bdb3028a754de408d84c7a137ac52fb647d885658"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelConfigController.swift",
+        "sha256": "985e924e4c86e4ed3daf08cadcab03db70ce5ea49fd09c4b5ae5d81a8b179988"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelErrorCopy.swift",
+        "sha256": "423f288557a87211ef63f949c0d26eddb027d193537ce234f55335c7217aa892"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelFocusCoordinator.swift",
+        "sha256": "b85f2718d77bb59a50016adcad8ef95f2af20b01fc789c93173cdd85ad4a96a3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelFocusOrder.swift",
+        "sha256": "fc14b6110dda723dc426967700ca7fccb5a33246a57e54192afeaf23fd455c24"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelLayout.swift",
+        "sha256": "0e80287f5c4518c836080eb6ea3d15de9bcd631c3cffa6f82261b63eb934c8e4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelPresentation.swift",
+        "sha256": "cc684e973cf7d2196694f260d8951eeedbafa376eb3252beb6c11471230af192"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelRefreshRoute.swift",
+        "sha256": "bd5c518ad55ed8b863ef95c57ff9fce5e4640ab89e2e34417f55970eaaf0e304"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSettingsChoreography.swift",
+        "sha256": "a0600de7ff0d370bd65b5b74d8a009c65b8f90a49d03165d72ea4a8fa0ab6249"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSettingsHandback.swift",
+        "sha256": "088e74f9579ec72ce571dc61f1eba7547cb821de2e1ecce0961b4c3ab92ef08a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelSoundScopeRowInteraction.swift",
+        "sha256": "e68028ceb09b01045193c9cdf223ec617bc29f988bb6eb8a48714075925cfb6e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PanelWriteFailures.swift",
+        "sha256": "d500e74cebc216fd57acffe3e9fc3fc3db147097c2cc3b8a1ecad7f93ee65e7b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PreviewDensity.swift",
+        "sha256": "2f9b1b8da9f9ce546de6705ea0d8ac60ae5d7561fedee09cbe4c819e10cd9502"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PreviewFixtures.swift",
+        "sha256": "572141b016673d906e3cdcbfeeb239f2cbfcfa5d0f0b1a2d937e976e5402042e"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/PrivateSoundAssetIO.swift",
+        "sha256": "11cbd7ae5591cb900be95f535c8b5b69336f77d300a8aae580c31cfb75d6b8c7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ProductUIModels.swift",
+        "sha256": "5e4c8104d5f473f8d6987a9b323ecdeb85b641335c20bd5d1ed0baf3448bdf41"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/RetainedWindowHandbackTracker.swift",
+        "sha256": "4db18df149d0d4e6a1b7e18b07916c8ab0cd689411333c0efb153635a4471fe9"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SenseAudioAICueProvider.swift",
+        "sha256": "2d6a1739cc53d6385696507f4573b3f84d545ee501d918633689f3b52487aeba"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SessionNavigation.swift",
+        "sha256": "175e24b72b9032ac29c9177c8d1fcc63088073436e6a22837844d2122f198ed3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SessionNavigationFeedback.swift",
+        "sha256": "6fcad246f8a950a41a0babb5e97a6f1036a9092887ca0a2097150a2bf20fea14"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsHandbackApplication.swift",
+        "sha256": "89a57a22dc07e503e679a55b378963a44c754073e2be35782a8b8a6df78aa83b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsLocation.swift",
+        "sha256": "8fe4eb88df3b1aa6b13cb50b8493df60264b60b183f40d16e2aa724460d2cf2b"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigation.swift",
+        "sha256": "215fd960edc8563e6b910a666462052f81cdcd4b049d0c80b54cee7f9a17a4ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigationHistory.swift",
+        "sha256": "dc3e053c962a17b636e34ba47fd8499a52118b42fbcd644352bb62cef1c0ba1a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsNavigationRestoration.swift",
+        "sha256": "bb1b5ba3b75b5211bfd8f947af33b74ff5dcf77945e70b4ea07a474090141b19"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SettingsPreferences.swift",
+        "sha256": "a9511d6242ace9074742ae35534ad6269ff84a41b29118137b10273dbc34ef7c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundEventSelection.swift",
+        "sha256": "e0e97981d1c706ff47ce75bcbaceb685c14a3d79c83fdc7778025e08a3a17b1a"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundEventSelectionSession.swift",
+        "sha256": "047855edcc89cffd5477ba8fe9f430efde40a9a54fe921d4fd9199785851cf02"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackAudioImportExecutor.swift",
+        "sha256": "aacfdc95dd8d18cd7dabfbe27aefcc1b596d6ac151acba450d80abc19970f167"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackDirectoryTransfer.swift",
+        "sha256": "8ca5c13cb356ac90cfb0ea0cee7c58e38399952a725f2a2071755b440424457c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackDraftStore.swift",
+        "sha256": "8127fec0311074bab35ce54f44a9137fe2f90416dc2e62be205eb37af5c861b8"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackImportBindTransaction.swift",
+        "sha256": "5108e6c684938ff95873860445b20404c66c18752d8b4b91e2e6ea3e8fb43ab2"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPackLibrary.swift",
+        "sha256": "41a7a248e7251d5b1efa5d7939a3b36247501930728731b47de9a8fd22a372c4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksEditorOwner.swift",
+        "sha256": "5099e6f172342b3a6f69b71f3498dc1c17af395984b4d57acd35c2c2629665eb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksEditorPresentation.swift",
+        "sha256": "f921dbdfa95a065f1b0cec2aed20063c3523604edbb4e39ba571ed143c7fa796"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksRefreshCoordinator.swift",
+        "sha256": "c1d77df787d77dd094506150828f1c3aa4b669b1e0fb60940612c0680a565d58"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowAccessibility.swift",
+        "sha256": "d1857dd3d50099890967888f7247bb47ae97b26fb042ad1e9da799a0d31c22b0"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowModel.swift",
+        "sha256": "bc1319128596e9b7a9ff5c3b86bf594d4ffe822194bf528aa36a3f8bd1b6808c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundPacksWindowStarredPacks.swift",
+        "sha256": "7561259d55ea370fe77e38b967017db1c51c1539be5e07e92cfaac5ba5df6d9d"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SoundScopeSelection.swift",
+        "sha256": "66ec395125ec8708794f155353665a1436ca9a158a62151c0efa2bac52c405bb"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SourceApplicationOpenResult.swift",
+        "sha256": "6d58fb683f984d30f3b4036cb88632256921c1ce49e47e90c032b748bda21788"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SourceApplicationTarget.swift",
+        "sha256": "0ceeb00d4d46ab38c8524a3127ccec942f736e4ef4e8f82327393650213c4ef4"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/SystemSoundSelectionPresentation.swift",
+        "sha256": "6e38b4bd24453cf504642f328eea401051930a913723d1f49942ff36bbfc5c5c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/UserSoundPackDeletion.swift",
+        "sha256": "e72317eb941376ddcffa7f0fa8d75e9c8a2977fe1110bccdd7e39e53d71e5cb3"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/VolumeDragSession.swift",
+        "sha256": "5ad8c8673ce36f2056943beb4705a9de18e455ed51b66dbe8666a2972c1a503c"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/WorkspaceSettingsSummary.swift",
+        "sha256": "b7ef0038d07c86a532d5d03b6e8496a9a3053da97fdefe706a34618a772b6712"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/WorkspaceSoundPresentation.swift",
+        "sha256": "95b1b9ea1c8ecf1fe88f06d5cf63eacfcd5588927301538b5b486da44c7a09bf"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedManagedSession.swift",
+        "sha256": "7706e9fb18952a549d228c5dc886c9c156c431c6c38094bbf3015c724b3b7bd7"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedNavigationBindings.swift",
+        "sha256": "960186d6cf9a2ac4600ab12903f96624682ce2f2bae5e7bed9413f9be46cf81f"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedNavigationSearch.swift",
+        "sha256": "2a88f661ebf85d85cd73aa2083ed8354a9f8ad4e4c951810a9556e5686cc6618"
+      },
+      {
+        "path": "gui/Sources/ClaudioGUICore/ZedWindowSelection.swift",
+        "sha256": "d44cfe3b705a71a5a84b33b20d4bac2885c92bbd5612e6a7aa772a65be8f83ee"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/ClaudioLocalization.swift",
+        "sha256": "0ad03098ed65381d7abca019b9d3f115a9651d48cc7716d6a313407f7e6a8af9"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/Resources/Localizable.xcstrings",
+        "sha256": "3b97e7bd11811c6b4032b5fae4248c0e002f312388861405f7e5915a0ddc92fe"
+      },
+      {
+        "path": "gui/Sources/ClaudioLocalization/SoundsLocalization.swift",
+        "sha256": "cb1aac66e4404310675ce847ec4a90da9520aaeffc176dc4ec3d7050ba0bdade"
+      },
+      {
+        "path": "gui/Sources/ClaudioLoginItem/main.swift",
+        "sha256": "314091933c1c594c3f2c7ca120136f48bf8912c92a0e6b13ac16e6e737ff2046"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/MasterVolumeRow.swift",
+        "sha256": "dcbae054576d5fde2e53d4912963781e03b66070d50f78628b5fd10b30cee2d7"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PackGalleryView.swift",
+        "sha256": "237c64f0d75e97db578c034630864f82b0b1c3ca7332eb81522e635aab8d9ccf"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelAppUpdateReminder.swift",
+        "sha256": "ac8d4f63dc12c90e3f552e4ef9a3aae333502494523bbdce8844d0212c3ccfa7"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelPackSectionView.swift",
+        "sha256": "9f157c7d0d93636ee7d11fc79b57417269f31e5a4ac197901a0d98ba4178440e"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelQuitFooter.swift",
+        "sha256": "dec12490a04a58210ea06cc56eff84542ce0a4714ccefb078be8bb9947508260"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelSoundScopePicker.swift",
+        "sha256": "99f74013906ec67eb2a8ba3531840697f0ff4069fe152b3263d485b6390e753d"
+      },
+      {
+        "path": "gui/Sources/ClaudioPanelPresentation/PanelView.swift",
+        "sha256": "31b5d365a25012fb9368550fb1ef2ee692bf80aed7c8423ae01182fb0afb900c"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AICueTaskSurface.swift",
+        "sha256": "ded1512c234f6d7c2de3d48fa0883880c236d4294d9e4ea0499361d4af6bb520"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsSheet.swift",
+        "sha256": "b7092e449d0eadb014f4dd2ce045bfe71405a721fe4fc101816781d794ad7d73"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AboutSettingsView.swift",
+        "sha256": "8b05a58bad1bf194ef685982fe31c0e4328140386b1a4eedac69e13f1cb4afd5"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/ActivityDiagnosticsView.swift",
+        "sha256": "395caa2da152a1bb52c3c2972a44abb6e70f02397cc32f7cc73da0889bd1d0ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/AppUpdateSettingsView.swift",
+        "sha256": "d7d611408f03dcd6a9a21971c61f48d271c0317780494199e1c0a1a2e3279482"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationActionButton.swift",
+        "sha256": "ba3d2419d637eec5de5f53c0ddffabd94567eb523b5bc727c7fc5eaa4e5f8069"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationGallery.swift",
+        "sha256": "6d37f6e317ca75c5ec59c6ca788d1d75b7527cda665d02843ddb4918195ebfc7"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventAnimationSettingsView.swift",
+        "sha256": "4f5df2632417247cdcb6daff76fb6c175a85dc59d13a1c981129b548cb7eb177"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsAICueView.swift",
+        "sha256": "ba972e46655e3db7f804936da96dddb8d54ea642a0b5675e94a5031253bdca52"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowSelection.swift",
+        "sha256": "15495761472653c2686c2100fdaedd547c471030fe2451c76af1fdcf72d6653b"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift",
+        "sha256": "3059e70540cb02c09d5c1c9afe803f4b5ade7c5e19cdc5d47adaf047f5bef5d6"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/IntegrationsSettingsDestinationView.swift",
+        "sha256": "6855a8852f221eeb14397124b2cfe9023dc719b13d14d51180951829284b44bf"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/LoginItemSettingsModel.swift",
+        "sha256": "9214da5eccab77a50b5081ee399fef95cfd10aa179fe4c5be683169ab7711793"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/LoginItemSettingsSection.swift",
+        "sha256": "baeb25e613757a674d36d1d0adfa96782b21597733b7d0c2311e3cbdaa3b8801"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsAnnouncementDelivery.swift",
+        "sha256": "a6568afa0fd3996f49b4f17fecbc1adab2fd236f26e6dd835e5f1acf202f97de"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsDestinationPage.swift",
+        "sha256": "fe98e813596010624568c1eb8328e4cc4391f85bf1096b5c996faf68f2bc2acd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsFixtureDefaults.swift",
+        "sha256": "3ebf7f15f43b0ca740f944c812775a3433cd684effb9a837f2a1dbd806f287dd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsMountIdentity.swift",
+        "sha256": "72f368d1a7cd67781e57bacfdd477a13d2263844a32db4d6ed98936d21ba56bd"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNativeShellController.swift",
+        "sha256": "8dd2d776b829174672fe4d8816ed223bf2f8c4b74678525c6222296e3efa65c3"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNativeSidebarController.swift",
+        "sha256": "ab887f510e847a678e5ff0f42dab99d2f8c6cf39190a01a256d2e7f8ccaced4b"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsNavigationRow.swift",
+        "sha256": "42e9fe0d3509118b14a83fbb9e2c9474a5354a98629a61a8a08832379832d959"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationActions.swift",
+        "sha256": "6185a4667c3b0c34965d7688d0b2dd31f7f0909388ff1f9ac0f3b61a980c6951"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationAnnouncement.swift",
+        "sha256": "03db066898213f2079bbf15e148692b548206c8ca61c572f23dc46cfeada4a5c"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationDependencies.swift",
+        "sha256": "9a7097ac340b1c7a9ff2058970e5da8ed8a9636c142825a42eca3fe9afbd6431"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationFixtures.swift",
+        "sha256": "10dc32ea95fbef23370aac8d1705b84ba4dffb7b9a5a01fff4eb4837bde27462"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationSession.swift",
+        "sha256": "72478c4b02fc41892ccbe79b5429a33bc4855a2fa3607327e1143d46adf011a5"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsPresentationState.swift",
+        "sha256": "5e1bc16475f9b3da8854ce265e58e0940411520a043a5d18c662e4efee25d74a"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsProductImages.swift",
+        "sha256": "6fbcea4432f0f52f965a6c2ff7b9aed4d86d42d1e15a983ca825306cf47d2a7e"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootInteraction.swift",
+        "sha256": "71daefac6aec3f8626c1706deb2a5d3761aa8c1ef1b30bd71d2a30b82ea21001"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootNativeView.swift",
+        "sha256": "e0ec2194a0d8bcd58cfee365c41762ca637d2ec6de6911b85e1df63d8cfa4190"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsRootView.swift",
+        "sha256": "6e3ed1dfa81aaf028faf8971adf2df94624428681655f61ee5d7ea85bcca77b5"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSidebarIcon.swift",
+        "sha256": "37298b3a78b73e843f61c23d42ef21dc548446fa7673875c5f730edd2cf06a39"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundPackDeletionTransition.swift",
+        "sha256": "d89e995e7d533d8198819c4af97abd0eda67c14ddf411c183b9fb4afeadcc650"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundReturnContext.swift",
+        "sha256": "149e69cfa938e5f8d79441bf461889bb9514663222a1bcf175a67e616d9406fb"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundScopePicker.swift",
+        "sha256": "7c292ea19dc0bac87c868097912e46bc76eaf6fea9f3a6c2b34dc05875d9152f"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsAICueView.swift",
+        "sha256": "fb0155cee73c972b89dcadfc10b6508ae039ca2073cbd58b60bebfaad32608ec"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsDetailArbitration.swift",
+        "sha256": "cd8cadba7bacb6b342ad4b70e43722ca3a10900bccb37027bc0c5044b92b299e"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsSoundsLibraryView.swift",
+        "sha256": "457d6efa1db7e5898a736e12aa4a0f16d4b0e7bcce32b92c3cace13c4e923503"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsStateGalleryView.swift",
+        "sha256": "8fa123c05578279cb6f8fbae7bc0ed7c6ae11ea7db47619c200a1cbdd9f2d3cf"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/SettingsVisualComponents.swift",
+        "sha256": "b86665891bcacd315d3e8e9b9f6123e96067d6b5dcf741417cd9a79a1c162126"
+      },
+      {
+        "path": "gui/Sources/ClaudioSettingsPresentation/WorkspaceDeletionPresentation.swift",
+        "sha256": "ee913c0d2a6bf9e0e56e6c08974fb00a2fdff5f3d01fe6e4faeadc7e970c8f63"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksAudioDropRequest.swift",
+        "sha256": "637c0bfd3882220c8846bdd55f8bbc5d234fbc76ed98b379bde846721451e393"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksEditorNativeEffects.swift",
+        "sha256": "f1c1c8076dec56bdf35c2bfd7794ca60281791ff5345c63f45af015756a71dc7"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksImportResultPresentation.swift",
+        "sha256": "1a31f9d70e4ae6ecbc3fdba61a3ba74cced3d8465b8ebd1aafe36a942f683bab"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksLayoutProbe.swift",
+        "sha256": "5e2c31aa9f6e2078b708eb93b75cb4151bb14fc920e601246986b805135b9eca"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksSettingsDetail.swift",
+        "sha256": "3eba52a14dae69274d8ca7be5ac4ed7a7cf731cdb1ba8a85ac677791dec1885e"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowAccessibilityBridge.swift",
+        "sha256": "f234a508d734a23ad0e2a3c83fc7d8d8142ace29283ee6e57b0429e395d27e48"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowStateGalleryView.swift",
+        "sha256": "0d88d88f52792d3f46799d04ec412ecb5c715e8abfb3188f0287c5a10c7fd8e3"
+      },
+      {
+        "path": "gui/Sources/SoundPacksWindow/SoundPacksWindowView.swift",
+        "sha256": "6ad257d20224d91aafbd4881e15bde39a8433a093df5ad2d9ac7cbca9a4af1c8"
+      }
+    ]
+  }
+]

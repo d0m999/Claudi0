@@ -640,7 +640,20 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
     def open_scope_settings_from_panel(self):
         self.assertEqual(self.page.locator("#editWorkspaceBtn").count(), 0)
         self.page.locator("#gearBtn").click()
+        self.open_selected_workspace()
+
+    def open_selected_workspace(self):
+        scope = self.settings_state()["scope"]
         self.page.locator('[data-action="nav:events"]').click()
+        self.page.locator(f'[data-action="select-workspace:{scope}"]').click()
+
+    def open_activity_diagnostics(self):
+        self.page.locator('#settings-nav [data-action="nav:integrations"]').click()
+        self.page.locator('#page-content [data-action="nav:usage"]').click()
+
+    def open_library_service(self):
+        self.page.locator('.sf-service-details summary').click()
+        self.page.locator('[data-service-manage]:visible').click()
 
     def open_panel_with_write_conflict(self, language):
         self.open(panel="1", lang=language)
@@ -671,7 +684,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
 
     def test_first_settings_show_preserves_the_selected_scene_detail(self):
         for previously_opened in [False, True]:
-            for scene, detail in [("draft", "edit:task_start"), ("partial", "edit:notification")]:
+            for scene, detail in [("draft", "pack"), ("partial", "edit:notification")]:
                 with self.subTest(previously_opened=previously_opened, scene=scene):
                     self.open()
                     if previously_opened:
@@ -683,15 +696,16 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.assertEqual(state["detail"], detail)
                     self.assertTrue(self.page.locator("#settings-window").is_visible())
                     if scene == "draft":
-                        self.assertIsNotNone(state["draft"])
-                        self.assertEqual(state["pack"], state["draft"]["id"])
-                        self.assertNotIn(state["pack"], [p["id"] for p in state["packs"]])
-                        self.assertTrue(self.page.locator('[data-action="rename-draft"]').is_visible())
+                        draft = next(p for p in state["packs"] if p["id"] == state["pack"])
+                        self.assertTrue(draft["draft"])
+                        self.assertEqual(draft["sounds"], [None] * 5)
+                        expect(self.page.locator('[data-act="rename-pack"]')).to_be_visible()
+                        self.assertNotIn(draft["id"], state["stars"])
                     else:
-                        self.assertEqual(state["expandedEvent"], 3)
-                        self.assertTrue(self.page.locator("#cue-description").is_visible())
-                        self.page.locator('[data-action="generate"]').click()
-                        self.page.wait_for_function("MacSettings.getState().candidates.length === 2")
+                        expect(self.page.locator("#sf-ai-prompt")).to_be_visible()
+                        self.page.locator('[data-act="generate"]').click()
+                        self.page.wait_for_function("MacSettings.getState().approvedCues.task?.phase === 'saved'", timeout=10000)
+                        self.assertEqual(len(self.settings_state()["approvedCues"]["task"]["items"]), 2)
                         self.assertEqual(self.settings_state()["detail"], detail)
 
     def test_disabling_banners_stops_the_stack_queue_and_navigation_but_keeps_reminders(self):
@@ -750,7 +764,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.assertTrue(feedback.is_visible())
                 self.assertIn("写入失败" if language == "zh" else "Could not save", feedback.inner_text())
                 self.page.locator("#gearBtn").click()
-                self.page.locator('[data-action="nav:events"]').click()
+                self.open_selected_workspace()
                 self.page.locator('[data-action="retry-config"]').click()
                 self.page.locator("#window-close").click()
                 self.assertEqual(mute.get_attribute("aria-pressed"), "true")
@@ -797,7 +811,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.assertEqual(self.settings_state()["panelWriteFailure"]["scope"], scope)
                     self.assertTrue(self.page.locator("#popover #panelWriteFailure").is_visible())
                     self.page.locator("#gearBtn").click()
-                    self.page.locator('[data-action="nav:events"]').click()
+                    self.open_selected_workspace()
                     self.page.locator('[data-action="retry-config"]').click()
                     updated = self.settings_state()["scopes"]
                     self.assertEqual(next(g for g in updated if g["id"] == scope)["volume"], 30)
@@ -888,7 +902,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
     def test_disabled_banners_still_publish_reminders_to_open_consumers(self):
         self.open(win="1", pane="notifications")
         self.page.locator('[data-control="notifications"]').uncheck()
-        self.page.locator('[data-action="nav:usage"]').click()
+        self.open_activity_diagnostics()
         self.page.locator("#mbIcon").click()
         original = len(self.settings_state()["pending"])
         self.page.evaluate("showNoticeScene('permission')")
@@ -906,9 +920,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             self.assertEqual(self.settings_state()["scope"], workspace)
             self.assertEqual(self.page.locator('[data-control="volume"]').input_value(),
                              "55" if workspace == "claudio" else "40")
-            self.assertIsNone(self.settings_state()["detail"])
+            self.assertEqual(self.settings_state()["detail"], "profile")
             if workspace == "claudio":
-                self.page.locator('[data-action="scope-details"]').click()
+                self.page.locator('#page-content [data-action="nav:integrations"]').click()
             self.page.locator("#mbIcon").click()
         self.page.locator('[data-control="volume"]').fill("31")
         scopes = {g["id"]: g for g in self.settings_state()["scopes"]}
@@ -943,7 +957,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 before = self.page.evaluate("({visible:S.banners.map(n=>n.reminderID),queued:S.bannerQueue.map(n=>n.reminderID)})")
                 removed = before["visible" if position == "visible" else "queued"][0]
                 self.page.locator("#viewWindow").click()
-                self.page.locator('[data-action="nav:usage"]').click()
+                self.open_activity_diagnostics()
                 self.page.locator('[data-action="toggle-pending"]').click()
                 self.page.locator(f'[data-action="notice:{removed}"]').click()
                 self.page.locator('[data-action="remove-reminder"]').click()
@@ -964,51 +978,67 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                         self.assertEqual(state["page"], "sounds")
                         if scene == "credential":
                             self.assertEqual(state["credentials"][profile]["status"], "missing")
+                            expect(self.page.locator("#credential-key")).to_be_visible()
                             self.assertTrue(self.page.locator("#sheet").evaluate("el=>el.open"))
+                            continue
+                        self.assertEqual((state["pack"], state["detail"]), ("studio", "edit:notification"))
+                        cue = state["approvedCues"]
+                        if profile == "minimax-global" and lang == "en":
+                            self.assertIsNone(cue["task"])
+                            self.assertEqual(cue["history"], [])
+                            self.assertEqual(state["credentials"][profile]["status"], "missing")
+                            expect(self.page.locator('[data-ai-reason]')).to_have_text("This route supports Chinese speech only.")
+                            expect(self.page.locator('[data-act="generate"]')).to_be_disabled()
+                            continue
+                        if scene == "generating":
+                            self.assertEqual(cue["task"]["phase"], "running")
+                            expect(self.page.locator('[data-cancel-task]')).to_be_visible()
+                            self.page.wait_for_function("MacSettings.getState().approvedCues.task.phase === 'saved'")
+                        elif scene == "candidates":
+                            self.assertEqual(cue["task"]["phase"], "saved")
+                            self.assertEqual(len(cue["task"]["items"]), 3)
+                            self.assertEqual(self.page.locator('[data-preview^="candidate:"]').count(), 3)
                         else:
-                            self.assertEqual(state["pack"], "studio")
-                            self.assertEqual(state["detail"], "edit:notification")
-                            if profile == "minimax-global" and lang == "en":
-                                self.assertIsNone(state["generation"])
-                                self.assertEqual(state["candidates"], [])
-                                self.assertEqual(state["credentials"][profile]["status"], "missing")
-                                self.assertTrue(self.page.locator("#cue-route-reason").inner_text())
-                                continue
-                            if scene == "generating":
-                                self.assertEqual(state["generation"], "busy")
-                                self.page.wait_for_function("MacSettings.getState().generation==='ready'")
-                            elif scene == "candidates":
-                                self.assertEqual(state["generation"], "ready")
-                                self.assertEqual(len(state["candidates"]), 3)
-                            else:
-                                self.page.wait_for_function("MacSettings.getState().packs.find(p=>p.id==='studio').sounds[3]!=='knock.wav'")
-                                state = self.settings_state()
-                                pack = next(p for p in state["packs"] if p["id"] == "studio")
-                                self.assertNotEqual(pack["sounds"][3], "knock.wav")
-                                self.assertIn(pack["sounds"][3], pack["audio"])
-                                self.assertNotIn("license", pack)
+                            pack = next(p for p in state["packs"] if p["id"] == "studio")
+                            self.assertNotEqual(pack["sounds"][3], "knock.wav")
+                            self.assertIn(pack["sounds"][3], pack["audio"])
+                            self.assertNotIn("license", pack)
+                            expect(self.page.locator('.sf-overlay')).to_be_hidden()
+                        self.assertEqual(len(self.settings_state()["approvedCues"]["history"]), 1)
 
     def test_ai_deep_links_keep_partial_policy_and_failure_preserves_binding(self):
         for profile, count in [("senseaudio-cn", 2), ("elevenlabs-global", 3), ("bailian-beijing", 3)]:
             with self.subTest(profile=profile):
                 self.open(win="1", pane="sounds", ai="candidates", aiProfile=profile, aiPartial="1")
                 state = self.settings_state()
-                self.assertEqual(len(state["candidates"]), count)
-                self.assertTrue(all(c["profile"] == profile and c["pack"] == "studio" and c["event"] == 3
-                                    for c in state["candidates"]))
+                task = state["approvedCues"]["task"]
+                self.assertEqual(len(task["items"]), count)
+                self.assertEqual(state["approvedCues"]["history"][0]["items"], task["items"])
+                self.assertEqual(self.page.locator('[data-preview^="candidate:"]').count(), count)
+                self.assertEqual(next(p for p in state["packs"] if p["id"] == "studio")["sounds"][3], "knock.wav")
         self.open(win="1", pane="sounds", ai="generating", aiFail="generation")
-        self.page.wait_for_function("MacSettings.getState().generation==='failed'")
+        self.page.wait_for_function("MacSettings.getState().approvedCues.task?.phase === 'failed'")
         state = self.settings_state()
-        self.assertEqual(state["candidates"], [])
+        self.assertEqual(state["approvedCues"]["task"]["items"], [])
+        expect(self.page.locator('[data-task-error]')).to_be_visible()
         self.assertEqual(next(p for p in state["packs"] if p["id"] == "studio")["sounds"][3], "knock.wav")
 
-    def test_ai_generating_deep_link_discards_late_results_after_navigation(self):
+    def test_ai_generation_continues_after_form_close_and_navigation_without_binding(self):
         self.open(win="1", pane="sounds", ai="generating", aiProfile="bailian-beijing")
-        self.assertEqual(self.settings_state()["generation"], "busy")
-        self.page.locator('[data-action="nav:general"]').click()
-        self.page.wait_for_timeout(1200)
-        self.assertIsNone(self.settings_state()["generation"])
-        self.assertEqual(self.settings_state()["candidates"], [])
+        before = self.settings_state()
+        self.assertEqual(before["approvedCues"]["task"]["phase"], "running")
+        self.page.locator('.sf-sheet [data-act="close"]').click()
+        self.page.locator('#settings-nav [data-action="nav:general"]').click()
+        self.page.wait_for_function("MacSettings.getState().approvedCues.task?.phase === 'saved'")
+        state = self.settings_state()
+        self.assertEqual(state["packs"], before["packs"])
+        self.assertEqual(state["scopes"], before["scopes"])
+        self.assertIsNone(state["approvedCues"]["task"]["context"])
+        self.assertEqual(len(state["approvedCues"]["history"][0]["items"]), 3)
+        self.page.locator('#settings-nav [data-action="nav:sounds"]').click()
+        self.page.locator('[data-act="history"]').click()
+        self.assertEqual(self.page.locator('[data-preview^="history:"]').count(), 3)
+        self.assertFalse(self.page.locator('#sf-ai-prompt').is_visible())
 
     def test_panel_controls_receive_clicks_above_retained_settings(self):
         self.open(win="1", pane="general")
@@ -1052,33 +1082,85 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
             )
         )
 
-    def test_native_shortcut_sheet_captures_then_releases_keyboard(self):
-        self.open(win="1", pane="shortcuts")
-        self.page.locator('[data-action="record-key:0"]').click()
-        self.assertTrue(self.page.locator("#sheet").evaluate("el => el.open"))
-        self.page.keyboard.press("Meta+k")
-        self.page.wait_for_timeout(650)
-        self.assertEqual(self.settings_state()["keys"][0], "⌘ K")
-        self.assertEqual(self.page.evaluate("S.prefs.scPanel"), "⌘K")
-        self.assertFalse(self.page.locator("#sheet").evaluate("el => el.open"))
-        self.page.locator('[data-action="nav:general"]').click()
-        self.page.keyboard.press("Meta+v")
-        self.assertEqual(self.settings_state()["keys"][0], "⌘ K")
+    def test_navigation_rows_preserve_history_focus_and_scope(self):
+        entries = [
+            ("integrations", None, "nav:usage", "usage", "integrations"),
+            ("integrations", "open-host:codex", "to-events", "events", "events"),
+            ("groups", "select-workspace:default", "manage-sounds", "sounds", "sounds"),
+            ("groups", "select-workspace:claudio", "manage-sounds", "sounds", "sounds"),
+            ("groups", "select-workspace:claudio", "nav:integrations", "integrations", "integrations"),
+            ("notifications", None, "to-events", "events", "events"),
+        ]
+        for lang in ["zh", "en"]:
+            for pane, detail, action, target, sidebar in entries:
+                for key in ["Space", "Enter"]:
+                    with self.subTest(lang=lang, entry=(pane, detail, action), key=key):
+                        self.open(win="1", pane=pane, lang=lang)
+                        if detail:
+                            self.page.locator(f'#page-content [data-action="{detail}"]').first.click()
+                        row = self.page.locator(f'#page-content [data-action="{action}"]')
+                        self.assertEqual(row.count(), 1)
+                        self.assertIn("disclosure-row", row.get_attribute("class"))
+                        self.page.locator('#settings-nav [aria-current]').focus()
+                        for _ in range(64):
+                            self.page.keyboard.press("Tab")
+                            if row.evaluate("el => el === el.getRootNode().activeElement"):
+                                break
+                        expect(row).to_be_focused()
+                        row.scroll_into_view_if_needed()
+                        before = self.settings_state()
+                        offset = self.page.locator('#page-scroll').evaluate("el => el.scrollTop")
+                        history = self.page.evaluate("MacSettings.review.navigation.getState()")
+                        self.page.keyboard.press(key)
+                        after = self.settings_state()
+                        self.assertEqual(after["page"], target)
+                        expect(self.page.locator(f'#settings-nav [data-action="nav:{sidebar}"]')).to_have_attribute('aria-current', 'page')
+                        visited = self.page.evaluate("MacSettings.review.navigation.getState()")
+                        self.assertEqual(visited["cursor"], history["cursor"] + 1)
+                        self.assertEqual(visited["version"], history["version"] + 1)
+                        self.assertEqual(after["scopes"], before["scopes"])
+                        self.assertEqual(after["scope"], before["scope"])
+                        if action == "manage-sounds":
+                            self.assertEqual(after["returnContext"]["id"], before["scope"])
+                        self.page.locator('#detail-back').click()
+                        expect(row).to_be_focused()
+                        self.assertAlmostEqual(self.page.locator('#page-scroll').evaluate("el => el.scrollTop"), offset, delta=2)
+                        self.assertEqual(self.settings_state()["detail"], before["detail"])
+                        self.page.locator('#detail-forward').click()
+                        self.assertEqual(self.settings_state()["page"], target)
+                        if action == "manage-sounds":
+                            self.assertEqual(self.settings_state()["returnContext"], after["returnContext"])
 
-    def test_native_sheet_escape_cancels_recording_and_never_closes_settings(self):
+    def test_retired_shortcut_route_resolves_to_general_without_recording(self):
         self.open(win="1", pane="shortcuts")
-        self.page.locator('[data-action="record-key:0"]').click()
-        self.page.keyboard.press("Escape")
+        self.assertEqual(self.settings_state()["page"], "general")
+        self.assertEqual(self.page.locator('[data-action^="record-key:"]').count(), 0)
+        keys = self.settings_state()["keys"]
+        self.page.keyboard.press("Meta+k")
+        self.page.keyboard.press("Meta+v")
+        self.assertEqual(self.settings_state()["keys"], keys)
         self.assertFalse(self.page.locator("#sheet").evaluate("el => el.open"))
-        self.assertTrue(self.page.locator("#window").is_visible())
-        self.assertEqual(self.settings_state()["keys"][0], "⌃ ⌥ C")
+
+    def test_general_about_sheet_contains_focus_and_escape_restores_entry(self):
+        self.open(win="1", pane="general")
+        entry = self.page.locator('[data-action="open-about"]')
+        entry.click()
+        sheet = self.page.locator("#sheet")
+        self.assertTrue(sheet.evaluate("el => el.open"))
+        before = self.page.evaluate("MacSettings.review.navigation.getState()")
+        for key in ["Tab"] * 12 + ["Shift+Tab"] * 12:
+            self.page.keyboard.press(key)
+            self.assertTrue(sheet.evaluate("el => el.contains(el.getRootNode().activeElement)"))
+        self.page.evaluate("MacSettings.review.navigation.navigate('sounds')")
+        self.assertEqual(self.settings_state()["page"], "general")
         self.page.keyboard.press("Escape")
+        self.assertFalse(sheet.evaluate("el => el.open"))
         self.assertTrue(self.page.locator("#window").is_visible())
-        self.assertTrue(
-            self.page.locator("#settings-nav .nav-item.active").evaluate(
-                "el => el === el.getRootNode().activeElement"
-            )
-        )
+        expect(entry).to_be_focused()
+        self.assertEqual(self.page.evaluate("MacSettings.review.navigation.getState()"), before)
+        self.page.keyboard.press("Escape")
+        expect(self.page.locator('#settings-nav [data-action="nav:general"]')).to_be_focused()
+        self.assertTrue(self.page.locator("#window").is_visible())
 
     def test_native_close_button_preserves_preferences_and_reopens(self):
         self.open(win="1", pane="notifications")
@@ -1121,13 +1203,13 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.assertAlmostEqual(box['width'],1240)
         self.assertAlmostEqual(box['height'],820)
 
-    def test_eight_native_pages_share_shell_and_expected_system_palette(self):
+    def test_five_native_pages_share_shell_and_expected_system_palette(self):
         for theme in ["light","dark"]:
-            for pane,page in [("groups","events"),("sounds","sounds"),("integrations","integrations"),("notifications","notifications"),("general","general"),("shortcuts","shortcuts"),("activity","usage"),("about","about")]:
+            for pane,page in [("groups","events"),("sounds","sounds"),("integrations","integrations"),("notifications","notifications"),("general","general")]:
                 with self.subTest(theme=theme,pane=pane):
                     self.open(win="1",pane=pane,th=theme)
                     self.assertEqual(self.settings_state()["page"],page)
-                    self.assertEqual(self.page.locator("#settings-nav button").count(),8)
+                    self.assertEqual(self.page.locator("#settings-nav button").count(),5)
                     self.assertEqual(self.page.locator("#wMain, #wSide").count(),0)
                     self.assertEqual(self.page.locator("#sidebar").evaluate("el => getComputedStyle(el).backgroundColor"),
                                      "rgb(233, 233, 236)" if theme == "light" else "rgb(43, 43, 46)")
@@ -1137,10 +1219,11 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         self.open(panel="1")
         self.page.locator("#scopeBtn").click()
         self.page.locator('[data-scope="claudio"]').click()
-        self.open_scope_settings_from_panel()
+        self.page.locator("#gearBtn").click()
+        self.page.locator('#settings-nav [data-action="nav:events"]').click()
         self.assertEqual(self.settings_state()["scope"],"claudio")
         self.assertTrue(self.page.locator('[data-action="nav:events"]').evaluate("el => el === el.getRootNode().activeElement"))
-        for page in ["integrations","events","notifications","sounds","usage","shortcuts","about","general"]:
+        for page in ["integrations","events","notifications","sounds","general"]:
             self.page.locator(f'[data-action="nav:{page}"]').click()
             self.assertEqual(self.settings_state()["scope"],"claudio")
             self.assertTrue(self.page.locator(f'[data-action="nav:{page}"]').evaluate("el => el === el.getRootNode().activeElement"))
@@ -1183,14 +1266,14 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.open(win="1", pane="integrations", lang=language)
                 self.page.locator("#demo-host-update").click()
                 self.assertEqual(next(h for h in self.settings_state()["hosts"] if h["id"] == "codex")["maintenance"], "recovering")
-                sidebar = self.page.locator('[data-action="nav:usage"]')
+                sidebar = self.page.locator('#settings-nav [data-action="nav:notifications"]')
                 sidebar.click()
                 self.assertTrue(sidebar.evaluate("el => el === el.getRootNode().activeElement"))
                 self.page.wait_for_function("!MacSettings.getState().hosts.find(h => h.id === 'codex').maintenance")
                 self.assertTrue(sidebar.evaluate("el => el === el.getRootNode().activeElement"))
                 self.page.keyboard.press("ArrowDown")
-                self.assertEqual(self.settings_state()["page"], "about")
-                self.assertTrue(self.page.locator('[data-action="nav:about"]').evaluate("el => el === el.getRootNode().activeElement"))
+                self.assertEqual(self.settings_state()["page"], "general")
+                self.assertTrue(self.page.locator('[data-action="nav:general"]').evaluate("el => el === el.getRootNode().activeElement"))
 
     def test_settings_minimization_keeps_the_window_history(self):
         self.open(win="1", pane="general")
@@ -1239,8 +1322,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 self.open(win="1", pane="integrations", th=theme, lang=lang)
                 rows = self.page.locator(".integration-host-row")
                 self.assertEqual(rows.count(), 5)
-                sections = self.page.locator("#page-content .section")
+                sections = self.page.locator("#page-content .section").filter(has=self.page.locator(".integration-host-row"))
                 self.assertEqual(sections.count(), 2)
+                expect(self.page.locator('#page-content [data-action="nav:usage"]')).to_be_visible()
                 headings = sections.locator(".section-heading h2").all_inner_texts()
                 self.assertEqual(headings, [heading[lang] for heading, _, _ in groups])
                 for index, (_, kind, members) in enumerate(groups):
@@ -1441,7 +1525,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                     self.open(win="1", pane="sounds", ai="candidates", aiProfile=profile, lang=initial_lang)
                     if lang == "en" and profile == "minimax-global":
                         self.page.evaluate("document.getElementById('langBtn').click()")
-                    buttons = self.page.locator('[data-action^="candidate-preview:"]')
+                    buttons = self.page.locator('[data-preview^="candidate:"]')
                     labels = buttons.evaluate_all("els => els.map(el => el.getAttribute('aria-label'))")
                     self.assertEqual(len(set(labels)), 3)
                     for index in range(3):
@@ -1479,7 +1563,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 expect(title).to_have_text(favorited_label)
                 self.assertTrue(favorite.evaluate("el => el.getRootNode().activeElement === el"))
 
-                self.page.locator('[data-action="nav:events"]').click()
+                self.open_selected_workspace()
                 self.page.locator('[data-action="reload-config"]').click()
                 self.page.locator('[data-action="nav:sounds"]').click()
                 self.assertEqual(feedback.count(), 0, "navigation clears the previous feedback")
@@ -1553,7 +1637,9 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
                 if origin == "ai-form":
                     self.open_approved_ai_form()
                     self.page.locator("#sf-ai-prompt").fill("Retain this description")
-                self.page.locator('[data-service-manage]:visible').click()
+                    self.page.locator('[data-service-manage]:visible').click()
+                else:
+                    self.open_library_service()
                 picker = self.page.locator('.sf-sheet [data-control="profile"]')
                 self.assertEqual(picker.count(), 1, "both Manage entries must expose the shared profile selector")
                 # The shared card's Data & fees button precedes the profile selector.
@@ -1573,7 +1659,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
         for result in ["valid", "rejected", "unavailable", "writeFailure"]:
             with self.subTest(result=result):
                 self.open(win="1", pane="sounds", aiProfile="bailian-beijing")
-                self.page.locator('[data-service-manage]:visible').click()
+                self.open_library_service()
                 manager = self.page.locator('.sf-sheet [data-action="credential"]')
                 manager.click()
                 self.assertEqual(self.page.locator("#credential-workspace").count(), 1,
@@ -1672,7 +1758,7 @@ class PanelSettingsPrototypeBrowserTests(unittest.TestCase):
 
     def test_native_sounds_editor_and_ai_service_are_available(self):
         self.open(win="1", pane="sounds")
-        self.page.locator('[data-act="service"]').click()
+        self.open_library_service()
         self.assertTrue(self.page.locator('.sf-sheet [data-control="profile"]').is_visible())
         self.page.locator('.sf-sheet [data-act="close"]').click()
         self.open_approved_ai_form()

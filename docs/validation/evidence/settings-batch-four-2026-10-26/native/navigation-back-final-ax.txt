@@ -1,0 +1,48 @@
+Window: "claudi0 · 设置", App: Claudio App Motion Preview.
+0 system dialog claudi0 · 设置, Secondary Actions: Raise
+	1 split group
+		2 unknown claudi0
+		3 scroll area
+			4 table Description: claudi0 · 设置, ID: settings.sidebar
+				5 row (selectable)
+					6 cell
+						7 text 工作区
+				8 row (selectable)
+					9 cell
+						10 text 声音包
+				11 row (selectable)
+					12 cell
+						13 text 连接
+				14 row (selected)
+					15 cell (selected)
+						16 text 提醒与静音
+				17 row (selectable)
+				18 row (selectable)
+					19 cell
+						20 text 通用
+		21 text ID: settings.sidebar.local-first, Value: 声音留在本机。
+AI 生成由你主动发起。
+		22 splitter (disabled, settable, float) 252
+		23 scroll area settings.scroll.notifications
+			24 container settings.destination.notifications
+				25 heading 自动静默
+				26 switch 开启并授权后，Focus 会临时抑制自动播放；手工试听始终可用。, Value: off, ID: settings.notifications.focus-toggle
+				27 text Focus 权限, 已授权
+				28 switch 开启并授权后，只有当前非全天 busy 事件会临时抑制自动播放；事件详情不会被保留。, Value: off, ID: settings.notifications.calendar-toggle
+				29 text 日历权限, 已授权
+				30 heading 事件横幅
+				31 switch 显示简短事件横幅。「需要你」提醒最多保留 30 分钟，可在面板内查看。, Value: on, Details: 事件来源提示已开启, ID: settings.notifications.event-source-prompts
+				32 disclosure triangle Description: 提示来源接收器, Value: off
+				33 button Description: 事件动画, Value: 原版图标, ID: settings.notifications.event-animation
+				34 disclosure triangle Description: 当前状态, Value: off, ID: settings.notifications.health-details
+				35 button Description: 工作区声音设置, ID: settings.notifications.open-events
+	36 toolbar
+		37 container settings.navigation
+			38 button 返回
+			39 button 前进
+		40 heading Value: 提醒与静音, ID: settings.title.notifications
+	41 close button
+	42 zoom button
+	43 minimize button
+
+The focused UI element is 35 button Description: 工作区声音设置, ID: settings.notifications.open-events

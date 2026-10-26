@@ -1,0 +1,53 @@
+Window: "claudi0 · 设置", App: Claudio App Motion Preview.
+0 system dialog claudi0 · 设置, Secondary Actions: Raise
+	1 split group
+		2 unknown claudi0
+		3 scroll area
+			4 table Description: claudi0 · 设置, ID: settings.sidebar
+				5 row (selectable)
+					6 cell
+						7 text 工作区
+				8 row (selected)
+					9 cell (selected)
+						10 text 声音包
+				11 row (selectable)
+					12 cell
+						13 text 连接
+				14 row (selectable)
+					15 cell
+						16 text 提醒与静音
+				17 row (selectable)
+				18 row (selectable)
+					19 cell
+						20 text 通用
+		21 text ID: settings.sidebar.local-first, Value: 声音留在本机。
+AI 生成由你主动发起。
+		22 splitter (disabled, settable, float) 252
+		23 scroll area settings.destination.sounds
+			24 heading builtin-pack
+			25 button Description: 复制并编辑…, ID: settings.sounds.copy-pack
+			26 button 在访达中显示
+			27 button 恢复出厂声音…
+			28 button Description: 管理包内音频…, ID: settings.sounds.manage-files
+			29 text 内置包为只读。复制后即可编辑。 用户发起 Fixture tone
+			30 button Description: 试听, ID: settings.sounds.preview.event.task_start
+			31 text 响应结束 Fixture tone
+			32 button Description: 试听, ID: settings.sounds.preview.event.stop
+			33 text 执行中断 Fixture tone
+			34 button Description: 试听, ID: settings.sounds.preview.event.stop_failure
+			35 text 等待介入 Fixture tone
+			36 button Description: 试听, ID: settings.sounds.preview.event.notification
+			37 text 子任务结束 Fixture tone
+			38 button Description: 试听, ID: settings.sounds.preview.event.subagent_stop
+			39 button (disabled) Description: 移到废纸篓, ID: settings.sounds.delete-pack
+			40 text 内置声音包为只读，不能移除。 CC0
+	41 toolbar
+		42 container settings.navigation
+			43 button 返回
+			44 button (disabled) 前进
+		45 heading Value: 声音包, ID: settings.title.sounds
+	46 close button
+	47 zoom button
+	48 minimize button
+
+The focused UI element is 25 button Description: 复制并编辑…, ID: settings.sounds.copy-pack

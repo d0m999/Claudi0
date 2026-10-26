@@ -1,0 +1,48 @@
+Window: "claudi0 · Settings", App: Claudio App Motion Preview.
+0 system dialog claudi0 · Settings, Secondary Actions: Raise
+	1 split group
+		2 unknown claudi0
+		3 scroll area
+			4 table Description: claudi0 · Settings, ID: settings.sidebar
+				5 row (selectable)
+					6 cell
+						7 text Workspace
+				8 row (selectable)
+					9 cell
+						10 text Sound Packs
+				11 row (selectable)
+					12 cell
+						13 text Connections
+				14 row (selectable)
+					15 cell
+						16 text Alerts & Quiet
+				17 row (selectable)
+				18 row (selected)
+					19 cell (selected)
+						20 text General
+		21 text ID: settings.sidebar.local-first, Value: Sounds stay on this Mac.
+You start AI generation.
+		22 splitter (disabled, settable, float) 210
+		23 scroll area settings.scroll.general
+			24 pop up button Description: Language, Help: Use the arrow keys to choose a language mode. The interface updates immediately., Value: English, ID: settings.presentation.general
+			25 text Value: Open claudi0 at login Not registered with macOS, ID: settings.presentation.general
+			26 switch Description: Open claudi0 at login, Help: Enable or disable the macOS login service. The switch changes only after the system call succeeds., Value: Not registered with macOS, ID: settings.presentation.general
+			27 text ID: settings.presentation.general, Value: Let macOS start claudi0 when you sign in. This control always reflects the current system service status.
+			28 button Description: Recheck, ID: settings.presentation.general
+			29 heading Description: Software Update, ID: settings.presentation.general
+			30 text Value: Updates are unavailable in this development build., ID: settings.presentation.general
+			31 button (disabled) Description: Check for Updates…, ID: settings.presentation.general
+			32 button Description: About, ID: settings.presentation.general
+	33 toolbar
+		34 container settings.navigation
+			35 button Back
+			36 button (disabled) Forward
+		37 heading Value: General, ID: settings.title.general
+	38 close button
+	39 zoom button
+	40 minimize button
+
+Selected:
+	18 row (selected)
+
+Note: Pay special attention to the content selected by the user. If the user asks a question or refers to the content they are looking at on-screen, they might be referring to the selected content (but they might be referring to something else that's visible, too).

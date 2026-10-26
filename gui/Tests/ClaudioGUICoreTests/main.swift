@@ -308,12 +308,52 @@ if CommandLine.arguments.contains("--settings-notification-navigation") {
     exit(1)
 }
 
+if CommandLine.arguments.contains("--ai-cue-animation-native") {
+    let application = NSApplication.shared
+    configureGUIHarnessApplication(application)
+    Task { @MainActor in
+        await runAICueTaskAnimationSuites()
+        print("AI live task animation: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--settings-about-native-focus") {
+    let application = NSApplication.shared
+    configureGUIHarnessApplication(application)
+    Task { @MainActor in
+        await runSettingsKeyboardAboutSuites()
+        print("Settings About focus: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
+if CommandLine.arguments.contains("--settings-disk-pack-native-focus") {
+    let application = NSApplication.shared
+    configureGUIHarnessApplication(application)
+    Task { @MainActor in
+        await runSettingsDiskPackFocusSuites()
+        print("Settings disk pack focus: \(totalChecks) checks, \(failures) failures")
+        exit(failures == 0 ? 0 : 1)
+    }
+    application.run()
+    exit(1)
+}
+
 if CommandLine.arguments.contains("--settings-navigation-native-focus") {
     let application = NSApplication.shared
-    application.setActivationPolicy(.regular)
+    configureGUIHarnessApplication(application)
     Task { @MainActor in
         await runSettingsNavigationFocusSuites()
         await runSettingsKeyboardConfirmationSuites()
+        await runSettingsKeyboardAboutSuites()
+        await runSettingsNavigationRowSuites()
+        await runSettingsDiskPackFocusSuites()
+        await runSettingsNavigationRowLayoutSuites()
         print("Settings navigation native focus: \(totalChecks) checks, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }

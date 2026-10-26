@@ -38,12 +38,19 @@ fixture、源代码扫描、构建或 ad-hoc bundle 升格为原生 UI、真实�
 从仓库根目录传入实施前固定 commit：
 
 ```bash
-bash scripts/verify-settings-experience.sh <BASE_SHA>
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk \
+CLAUDIO_BUILD_SDK=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk \
+bash scripts/verify-settings-experience.sh <BASE_SHA> --foreground
 ```
+
+设置 `CLAUDIO_BUILD_SDK` 时，脚本把该路径显式传给 SwiftPM 的 native build system，
+并与 `SDKROOT` 一同使用；原生验收须读回产物的 Mach-O SDK，避免旧 SDK 兼容行为影响配色与焦点。
 
 脚本确认 `<BASE_SHA>` 是 `HEAD` 的祖先且 working tree/index 没有 tracked 或 untracked 改动，然后执行：
 
 - helper 与 GUI executable harness；
+- 预留桌面中的键盘导航专项（三个新进程）与真实 AI 动画专项；键盘专项要求系统「键盘导航」开启，并由进程读回确认。测试前记录系统原值，结束及中断时恢复；原生 harness、Computer Use 与 VoiceOver 串行运行；
+- 主原型全量浏览器、五页专项与 Node 回归；
 - Settings target 与 GUI app 的 Debug/Release build、localization JSON、开发 bundle 与
   release-size 检查；
 - working tree 和 `<BASE_SHA>...HEAD` 的 `git diff --check`；
@@ -63,6 +70,10 @@ bash scripts/verify-settings-experience.sh <BASE_SHA>
 |---|---|
 | 五页导航投影、八个兼容 raw values、隐藏诊断历史、旧值只读恢复与 production root 挂载 | `FivePageSettingsSuite`、`SettingsPresentationTargetSuite`、`SettingsNavigationSuite` |
 | 关于附属表单、Tab／Shift+Tab key-view loop、Esc 归焦与工作区详情几何 | `FivePageSettingsNativeSuite`、`SettingsNativeShellSuite` |
+| 常驻导航行、Space／Return 单次导航、历史／焦点／阅读位置、长标签与禁用命中 | `SettingsNavigationRowSuite`、`SettingsNavigationFocusSuite` |
+| 关于与清除确认的真实窗口按键、取消和归焦 | `SettingsKeyboardAboutSuite`、`SettingsKeyboardConfirmationSuite` |
+| 根页／附属表单成功、警告、错误挂载及当前 appearance 像素 | `SettingsFeedbackNativeSuite` |
+| AI 真实动画、快速反转、Reduce Motion、内容与焦点稳定 | `AICueTaskAnimationSuite`；窗口捕获帧须另行人工检查 |
 | production root 的 sidebar 整行/行外 mouse route、真实 sidebar `Button`、Login `Toggle`、mounted child identity 与 AI credential sheet | `SettingsRootInteractionSuite`、`SettingsPresentationTargetSuite` |
 | typed route/failure、focus debt、window phase、destination lifecycle、announcement post/ack 与 gallery 共用 production root | `SettingsPresentationLifecycleSuite`、`EventSettingsWindowSelectionSuite` |
 | 唯一 retained window、controller→`SettingsRootView(session:)` composition、系统 adapter 与声音写入 owner 唯一 | `SettingsPresentationLifecycleSuite`、`SoundPacksEditorOwnerSuite`、`IntegrationDestinationPresentationSuite`、`IntegrationDestinationModelSuite`、`IntegrationDestinationWiringSuite` |
@@ -97,7 +108,7 @@ synthetic event 与 compiled mount 证据，不是系统 AX/TCC、真实键盘�
 工作区删除的取消焦点另有可独立执行的 key-window 回归：
 
 ```bash
-swift run --package-path gui claudio-gui-tests --workspace-deletion-native-focus
+swift run --package-path gui claudio-gui-tests --foreground --workspace-deletion-native-focus
 ```
 
 它需要可激活窗口的 macOS 桌面，运行期间不要切换前台 app；分别在系统「键盘导航」关闭和开启时

@@ -1,0 +1,22 @@
+Source: ai-live-animation-valid-baseline-red.txt
+Original SHA-256: a6f2c4310be30bd80f979210f35183b59fb7459c9864196a8e57ff710380ca58
+Verbatim lines: 494-511 (only build output before the harness is omitted)
+
+GUI checks: foreground --ai-cue-animation-native
+Foreground checks use visible windows and focus. Run GUI harness processes serially.
+• AI live task animation: en=false/dark=false/reduced=false
+• AI live task animation: en=false/dark=false/reduced=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=false/dark=true/reduced=false
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=false/dark=true/reduced=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=false/reduced=false
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=false/reduced=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=true/reduced=false
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+• AI live task animation: en=true/dark=true/reduced=true
+  ✗ Space starts the actual Generate action  (claudio_gui_tests/AICueTaskAnimationSuite.swift:133)
+AI live task animation: 145 checks, 7 failures

@@ -14,6 +14,9 @@ func runSettingsNavigationFocusSuites() async {
     expect(
         NSApp.isFullKeyboardAccessEnabled, "enable system Keyboard navigation for this regression")
     guard NSApp.isFullKeyboardAccessEnabled else { return }
+    expect(
+        NSApp.activationPolicy() == .accessory,
+        "keyboard fixtures preserve the production nonactivating accessory policy")
     suite("Settings native focus: an occluded key window retains keyboard lifecycle") {
         expect(
             SettingsWindowPhase.native(isVisible: true, isKey: true, hasVisiblePixels: false)
@@ -43,7 +46,7 @@ func runSettingsNavigationFocusSuites() async {
                 let probe = NativeSettingsShellProbe(
                     session: fixture.session, width: width, dark: dark)
                 defer { probe.close() }
-                await probe.presentAndSettle()
+                guard await probe.presentAndSettle() else { return }
                 _ = settingsKeyboardAXElements(probe.shell.view)
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = .sortedKeys
@@ -51,7 +54,7 @@ func runSettingsNavigationFocusSuites() async {
                 expect(
                     settingsKeyboardClickSidebar(destination, probe: probe),
                     "select the real sidebar row")
-                await probe.presentAndSettle()
+                guard await probe.presentAndSettle() else { return }
                 expect(
                     probe.window.firstResponder === probe.shell.sidebarController.table,
                     "navigation retains sidebar focus")
@@ -119,13 +122,20 @@ func runSettingsNavigationFocusSuites() async {
                     expect(reached, "Tab reaches the actual pack detail entry")
                     if reached {
                         settingsKeyboardPress(49, " ", in: probe.window)
-                        await probe.presentAndSettle()
+                        guard await probe.presentAndSettle() else { return }
                         expect(
                             fixture.session.navigationHistory.current?.location.viewedPackID
                                 == "settings-fixture-pack",
                             "Space inspects a pack without applying it")
+                        expect(
+                            probe.window.firstResponder is NSView
+                                && probe.window.firstResponder
+                                    !== probe.shell.sidebarController.table
+                                && probe.window.firstResponder !== probe.shell.navigationControl,
+                            "detail navigation places focus in its mounted content: \(settingsKeyboardWindowState(probe.window))"
+                        )
                         fixture.session.send(.goBack)
-                        await probe.presentAndSettle()
+                        guard await probe.presentAndSettle() else { return }
                         expect(
                             settingsKeyboardFocusedIdentifier(in: probe.window) == pack,
                             "Back restores the pack entry's actual focus")
@@ -152,14 +162,14 @@ func runSettingsNavigationFocusSuites() async {
         let fixture = SettingsPresentationFixtures.generalLogin()
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 1240, dark: false)
         defer { probe.close() }
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         expect(
             settingsKeyboardClickSidebar(.eventsAndSounds, probe: probe),
             "focus the first native row")
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         for destination in SettingsDestination.sidebarCases.dropFirst() {
             settingsKeyboardPress(125, "\u{f701}", in: probe.window)
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             expect(
                 fixture.session.state.chrome.destination == destination
                     && probe.window.firstResponder === probe.shell.sidebarController.table,
@@ -167,7 +177,7 @@ func runSettingsNavigationFocusSuites() async {
         }
         for destination in SettingsDestination.sidebarCases.dropLast().reversed() {
             settingsKeyboardPress(126, "\u{f700}", in: probe.window)
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             expect(
                 fixture.session.state.chrome.destination == destination,
                 "Up skips the sidebar spacer")
@@ -178,7 +188,7 @@ func runSettingsNavigationFocusSuites() async {
             route: .notifications(.eventAnimation))
         let probe = NativeSettingsShellProbe(session: fixture.session, width: 1240, dark: false)
         defer { probe.close() }
-        await probe.presentAndSettle()
+        guard await probe.presentAndSettle() else { return }
         _ = settingsKeyboardAXElements(probe.shell.view)
         let first = EventAnimationStyle.allCases[0]
         let second = EventAnimationStyle.allCases[1]
@@ -214,10 +224,10 @@ func runSettingsNavigationFocusSuites() async {
             let fixture = SettingsPresentationFixtures.generalLogin(soundPacksEditor: owner)
             let probe = NativeSettingsShellProbe(session: fixture.session, width: 1240, dark: false)
             defer { probe.close() }
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             _ = settingsKeyboardAXElements(probe.shell.view)
             expect(settingsKeyboardClickSidebar(.sounds, probe: probe), "select empty Sounds")
-            await probe.presentAndSettle()
+            guard await probe.presentAndSettle() else { return }
             for _ in 0..<12 {
                 settingsKeyboardPress(48, "\t", in: probe.window)
                 await probe.settle()
@@ -227,6 +237,67 @@ func runSettingsNavigationFocusSuites() async {
                 if probe.window.firstResponder === probe.shell.sidebarController.table { break }
             }
             expect(fixture.actionRecorder.actions.isEmpty, "empty traversal performs no writes")
+        }
+    }
+}
+
+@MainActor
+func runSettingsDiskPackFocusSuites() async {
+    for builtin in [false, true] {
+        await suite("Settings native focus: disk-backed detail / builtin=\(builtin)") {
+            await withTempDirectory { root in
+                let editor = makeSoundEditorFixture(
+                    root: root, packIDs: ["keyboard-pack"],
+                    builtinPackIDs: builtin ? ["keyboard-pack"] : [])
+                let fixture = SettingsPresentationFixtures.generalLogin(
+                    temporaryParent: root, route: .destination(.sounds),
+                    soundPacksEditor: editor.owner)
+                await waitForSoundEditorReady(editor.owner, library: editor.library)
+                let probe = NativeSettingsShellProbe(
+                    session: fixture.session, width: 960, dark: false)
+                defer { probe.close() }
+                guard await probe.presentAndSettle() else { return }
+                let entry = "settings.sounds.pack.keyboard-pack"
+                let reached = await settingsKeyboardTabTo(entry, in: probe.window)
+                expect(reached, "Tab reaches the disk-backed pack")
+                guard reached else { return }
+                settingsKeyboardPress(49, " ", in: probe.window)
+                // Observe natural rendering after the real key. Forcing layout here can remove
+                // the outgoing control before the production restoration request sees it.
+                let mounted = await settingsKeyboardWait {
+                    fixture.session.renderedNavigationStamp
+                        == fixture.session.navigationHistory.stamp
+                        && fixture.session.state.navigationRestoration == nil
+                        && probe.window.isKeyWindow
+                }
+                expect(mounted, "The disk detail settles its own mounted navigation request")
+                guard mounted else { return }
+                await waitForSoundEditorReady(editor.owner, library: editor.library)
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                let content = probe.shell.splitViewItems[1].viewController.view
+                let responder = probe.window.firstResponder as? NSView
+                if responder?.isDescendant(of: content) != true {
+                    @MainActor func candidates(_ view: NSView) -> [NSView] {
+                        [view] + view.subviews.flatMap(candidates)
+                    }
+                    for view in candidates(content) where view.acceptsFirstResponder {
+                        print(
+                            "  content focus candidate: \(type(of: view)), id=\(view.accessibilityIdentifier()), role=\(String(describing: view.accessibilityRole())), enabled=\(view.isAccessibilityEnabled()), control=\(view is NSControl), hidden=\(view.isHiddenOrHasHiddenAncestor)"
+                        )
+                    }
+                }
+                expect(
+                    responder?.isDescendant(of: content) == true
+                        && responder?.window === probe.window
+                        && responder?.acceptsFirstResponder == true,
+                    "Disk hydration retains a mounted content responder: \(settingsKeyboardWindowState(probe.window))"
+                )
+                fixture.session.send(.goBack)
+                guard await probe.presentAndSettle() else { return }
+                expect(
+                    settingsKeyboardFocusedIdentifier(in: probe.window) == entry,
+                    "Back restores the real disk pack row")
+            }
         }
     }
 }

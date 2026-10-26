@@ -322,11 +322,13 @@ package final class SettingsNativeShellController: NSSplitViewController, NSTool
     }
 
     private func focusFirstContentTarget(window: NSWindow) {
-        if let control = contentController.view.settingsDescendants.first(where: {
-            $0.acceptsFirstResponder && !$0.isHiddenOrHasHiddenAncestor
-                && (($0 as? NSControl)?.isEnabled == true || $0.accessibilityRole() == .radioButton)
-        }) {
-            window.makeFirstResponder(control)
+        // SwiftUI can represent a button with a hidden key-view proxy rather than an
+        // NSControl. Ask AppKit for the same eligible target that Tab would reach.
+        window.recalculateKeyViewLoop()
+        if let target = sidebarController.table.nextValidKeyView,
+            target.isDescendant(of: contentController.view)
+        {
+            window.makeFirstResponder(target)
         }
     }
 

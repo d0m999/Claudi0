@@ -1,0 +1,35 @@
+Window: "", App: Claudio App Motion Preview.
+0 sheet Secondary Actions: Raise
+	1 container settings.sounds.sheet.ai
+		2 text Generate with AI… regression-pack · User initiated
+		3 scroll area Secondary Actions: Scroll Up, Scroll Down
+			4 container event-settings.ai-cue.service
+				5 pop up button Description: Provider and region, Help: Capabilities: speech, animal calls, sound effects, mixed sounds, Value: ElevenLabs · Global, ID: event-settings.ai-cue.provider-profile
+				6 text Value: ElevenLabs · Global · Saved · verified, ID: event-settings.ai-cue.credential-status
+				7 button Description: Manage…, ID: event-settings.ai-cue.credential-manage
+			8 text Sound Description
+			9 scroll area Secondary Actions: Scroll Up, Scroll Down
+				10 text entry area (settable) Value: A short, clear fixture notification tone.	, ID: settings.sounds.ai.description
+				11 scroll bar (disabled, settable, float) 0
+			12 container settings.sounds.ai.task-surface
+				13 text New Audio Saved 3 candidates
+				14 scroll area
+					15 list settings.sounds.ai.candidates
+						16 row (selectable) Description: Play Preview, Value: A short 1
+0.2 sec
+						17 row (selectable) Description: Play Preview, Value: A short 2
+0.2 sec
+						18 row (selectable) Description: Play Preview, Value: A short 3
+0.2 sec
+				19 text Adopting this cue will remove any whole-pack license and author claims from the edited pack. Separate attribution files remain unchanged.
+				20 button Description: Generate Again, ID: settings.sounds.ai.generate
+			21 scroll bar (settable, float) 1
+				22 value indicator (settable, float) 1
+				23 increment arrow button
+				24 decrement arrow button
+				25 increment page button
+				26 decrement page button
+		27 button Description: Close, ID: settings.sounds.sheet.close
+		28 button (disabled) Description: Use, ID: settings.sounds.sheet.use
+
+The focused UI element is 10 text entry area (settable) Value: A short, clear fixture notification tone.	, ID: settings.sounds.ai.description
