@@ -197,7 +197,7 @@
     }
   ],
   "activePointerRemoved": true,
-  "boundary": "All task-created temporary Apps, scratch builds, fixture data, redundant frames and probes removed; retained evidence is in this Git scope. Existing repository build caches remain for the clean-candidate gate.",
+  "boundary": "Task-created Apps, scratch builds, fixture data, redundant frames, probes and final gate development bundle removed. Existing repository build caches and unrelated dist contents preserved.",
   "remainingTaskTemporaryRoot": {
     "name": "claudio-batch4-jn8emn92",
     "files": 11611,
@@ -389,5 +389,32 @@
       }
     ],
     "removed": true
+  },
+  "finalGateCleanup": {
+    "candidateSHA": "da4928782e482a5698a377603c2d2d612dd16e0f",
+    "developmentBundleRemoved": true,
+    "developmentBundle": "dist/claudi0.app",
+    "bundleInventory": "checks/integration-gate.json",
+    "temporaryRoot": "claudio-batch4-gate-x_k805kp",
+    "temporaryFilesRemoved": [
+      {
+        "path": "foreground.lock",
+        "bytes": 0
+      },
+      {
+        "path": "gui-sample.txt",
+        "bytes": 4335632
+      },
+      {
+        "path": "integration-gate.txt",
+        "bytes": 898231
+      },
+      {
+        "path": "result.json",
+        "bytes": 261
+      }
+    ],
+    "pointerRemoved": true,
+    "otherDistContentsPreserved": true
   }
 }

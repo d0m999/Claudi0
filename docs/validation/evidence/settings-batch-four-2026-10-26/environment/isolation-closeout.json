@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-26T10:54:27.143440+00:00",
+  "checkedAt": "2026-10-26T11:56:27.814938+00:00",
   "appearanceBefore": {
     "-g:AppleAccentColor": {
       "present": false,
@@ -36,8 +36,8 @@
       "value": null
     },
     "-g:AppleInterfaceStyle": {
-      "present": false,
-      "value": null
+      "present": true,
+      "value": "Dark"
     },
     "com.apple.universalaccess:increaseContrast": {
       "present": true,
@@ -52,9 +52,12 @@
       "value": "0"
     }
   },
-  "appearanceRestored": true,
+  "appearanceRestored": false,
   "keyboardExpected": "0",
   "keyboardAfter": "0",
   "keyboardRestored": true,
-  "taskTemporaryRootRemoved": true
+  "taskTemporaryRootRemoved": true,
+  "automaticAppearanceAfter": "1",
+  "appearanceBoundary": "Final readback differs only in AppleInterfaceStyle=Dark; automatic appearance remains enabled (1), consistent with the original automatic setting. No forced style override was written during closeout.",
+  "finalGateTemporaryRootRemoved": true
 }

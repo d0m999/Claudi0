@@ -1,7 +1,7 @@
 {
   "baseSHA": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
   "sourceFingerprint": "152d43ab2ead0358e6a28fb2b5abeeae4e5fa189e148a196c180a6f26d929cad",
-  "candidateCommit": "Pending explicit local commit authorization",
+  "candidateCommit": "da4928782e482a5698a377603c2d2d612dd16e0f",
   "selfExcluded": true,
   "permissions": {
     "previewed": true,
@@ -19,8 +19,8 @@
       "path": "README.md",
       "mode": "0o600",
       "type": "file",
-      "bytes": 2693,
-      "sha256": "5d310bf71c88724de4a0b1a579f0ec33fdfeca9421a0cea44deef518da307e04"
+      "bytes": 3218,
+      "sha256": "e6c8aad915771c01ed2933effec8e8cfade9cfdd16c9d921821490856490598f"
     },
     {
       "path": "animation-frames",
@@ -446,6 +446,13 @@
       "sha256": "e666c8613761c026d5607dcbbb3b2847fd4336603c707d03935b198055c9baec"
     },
     {
+      "path": "checks/integration-gate.json",
+      "mode": "0o600",
+      "type": "file",
+      "bytes": 43812,
+      "sha256": "8b0c55f7215c253b7b9321bc0e95a10793c60ff6c51c2ed519984e469b291145"
+    },
+    {
       "path": "checks/keyboard-baseline.txt",
       "mode": "0o600",
       "type": "file",
@@ -622,15 +629,15 @@
       "path": "environment/candidate-sources.json",
       "mode": "0o600",
       "type": "file",
-      "bytes": 4974,
-      "sha256": "cb91445f76411ef63a52151976e9c08aee59166a51c59bbbe0a6b6e2c5fa36d8"
+      "bytes": 5083,
+      "sha256": "3b33a60871698e7f8bce855017c064b0867f1e8a90e72b1bc16de33d174af9c2"
     },
     {
       "path": "environment/cleanup.json",
       "mode": "0o600",
       "type": "file",
-      "bytes": 15770,
-      "sha256": "5a8ce00d63e14539912efb2c4aaf3c0f6664942295e3ed57d488f61e8398dc69"
+      "bytes": 16435,
+      "sha256": "8b7135c2067b8b9d30df659d3a146bbdebe52b092bc6196d7e691c87441aad21"
     },
     {
       "path": "environment/fixture-builds.json",
@@ -650,8 +657,8 @@
       "path": "environment/isolation-closeout.json",
       "mode": "0o600",
       "type": "file",
-      "bytes": 1347,
-      "sha256": "4b65f8326ac20b48f24b5dce9d6b07928fa8eb34fe6b89ae1f7dad5f9eb59eaa"
+      "bytes": 1654,
+      "sha256": "99a4739345296226a03a0a8719e73a0e6d28b0ae62a4889b1577d1461ceb03f5"
     },
     {
       "path": "environment/macho-builds.txt",
@@ -664,8 +671,8 @@
       "path": "environment/tools-isolation.json",
       "mode": "0o600",
       "type": "file",
-      "bytes": 4590,
-      "sha256": "d6018fa575f2630a963cad2565b0ed20b367f4550c7e392e94defd716bf052af"
+      "bytes": 4591,
+      "sha256": "436d495ba4b8ece0f6beac22fcf324bec04f03bde90682b04c1650bf562d36c9"
     },
     {
       "path": "native",

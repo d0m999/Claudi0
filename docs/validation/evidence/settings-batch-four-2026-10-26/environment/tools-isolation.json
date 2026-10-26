@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-26T10:59:07.147939+00:00",
+  "checkedAt": "2026-10-26T11:56:27.814938+00:00",
   "lateBaselineTime": "2026-10-26T08:23:20.077043+00:00",
   "boundary": "Launcher snapshots began at task setup. Actual CLT Swift/Git and ffmpeg snapshots began before the final independent fixture, not before the earliest diagnostic runs. Both SHA-256 and POSIX modes match these recorded baselines after cleanup.",
   "tools": [

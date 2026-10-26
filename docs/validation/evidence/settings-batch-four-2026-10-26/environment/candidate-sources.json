@@ -1,7 +1,7 @@
 {
   "baseSHA": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
   "sourceHEAD": "6b5aaf20ed2013103fcd937785d12203bb1fcb6c",
-  "boundary": "Uncommitted implementation source fingerprint; clean candidate SHA is pending local commit authorization. Documentation and evidence excluded to avoid self-reference.",
+  "boundary": "Source fingerprint captured before implementation commit and verified unchanged at final closeout. sourceHEAD records the original capture baseline. Documentation and evidence excluded to avoid self-reference.",
   "files": [
     {
       "path": "designs/panel-and-settings/Panel and Settings Prototype.html",
@@ -108,5 +108,6 @@
       "sha256": "cdf40fb67c7f7d345d1a29f807e137f41b10b9cfdeafd720af6513e314ad1a38"
     }
   ],
-  "fingerprint": "152d43ab2ead0358e6a28fb2b5abeeae4e5fa189e148a196c180a6f26d929cad"
+  "fingerprint": "152d43ab2ead0358e6a28fb2b5abeeae4e5fa189e148a196c180a6f26d929cad",
+  "candidateCommit": "da4928782e482a5698a377603c2d2d612dd16e0f"
 }
