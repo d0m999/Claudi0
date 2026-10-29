@@ -53,6 +53,20 @@ issue or spec as the scope and acceptance boundary; keep the change focused and 
 schema, path, hook, or migration changes. Implementing or committing does not authorize pushing,
 releasing, deploying, or changing issue state.
 
+Before adding complexity for a speculative or vanishingly unlikely race or security edge case,
+explain the concrete failure mode, likelihood, and complexity cost to the user and get their buy-in.
+Do not silently expand scope for theoretical robustness. Do not remove or weaken a check, lock, CAS
+boundary, fail-closed path, or test already required by current code, a schema, or an ADR.
+
+Validate unknown values once at the boundary that owns them. Pass typed values inward. Do not
+defensively revalidate values already guaranteed by a schema, constructor, or internal type.
+
+Do not extract a single-use helper. Inline it unless it is reused, hides a genuinely complex
+boundary, or has a clear name that makes the caller easier to read.
+
+Do not add tests for branches you cannot name a triggering input for. Test the behavior that was
+requested. Focused regression coverage for a changed behavior still applies.
+
 Use Swift 6 and the checked-in `.swift-format`. New localized UI text requires matching English and
 `zh-Hans` catalog entries with identical placeholders plus registration in
 `ClaudioL10nKey.allKnown`.
