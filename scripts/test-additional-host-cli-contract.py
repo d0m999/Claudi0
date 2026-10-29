@@ -69,6 +69,8 @@ def payload(host, native, request="r"):
         value["client_type"] = "kimi_code_cli"
         if native == "TurnStarted":
             value.update(turn_id=1, origin_kind="user", prompt="PRIVATE_BODY")
+        elif native == "Stop":
+            value["stop_hook_active"] = False
         elif native == "SubagentStop":
             value.update(agent_name="fixture child", response="PRIVATE_BODY")
         else:
@@ -102,7 +104,7 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
     for label, host, events, version_env in (
         ("opencode", "opencode", ["UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested", "QuestionAsked", "SubagentCompleted"], {}),
         ("opencode-v2", "opencode", ["UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested", "QuestionAsked", "SubagentCompleted"], {"CLAUDIO_TEST_OPENCODE_VERSION": "opencode v2.0.27"}),
-        ("kimi-code", "kimi-code", ["TurnStarted", "PermissionRequest", "PreToolUse", "SubagentStop"], {}),
+        ("kimi-code", "kimi-code", ["TurnStarted", "Stop", "PermissionRequest", "PreToolUse", "SubagentStop"], {}),
     ):
         home = base / label / "home"
         root = home / ".claudio"
@@ -111,6 +113,12 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
         (root / "config.json").write_text('{"selected_pack":"minimal-chime","master_volume":0,"events":{}}')
         config_root = base / label / "configuration"
         config_root.mkdir()
+        if host == "kimi-code":
+            wire = config_root / "sessions/wd_fixture/fixture-session/agents/main/wire.jsonl"
+            wire.parent.mkdir(parents=True)
+            wire.write_text(
+                '{"type":"metadata","protocol_version":"1.5","created_at":1900000000000}\n'
+                '{"type":"agent.turn.ended","turnId":0,"outcome":"done","time":1900000000001}\n')
         plugin = config_root / "plugins/claudio.js"
         file = plugin if host == "opencode" else config_root / "config.toml"
         protected = config_root / ("opencode.jsonc" if host == "opencode" else "config.toml")
@@ -142,7 +150,8 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
             check(installed.endswith((REPO / "integrations/opencode/claudio.js").read_bytes()), "compiled template equals shipped JS verbatim")
             check(protected.read_bytes() == original, "JSONC bytes preserved")
         else:
-            check(b"timeout = 2" in installed and b'event = "StopFailure"' not in installed,
+            check(b"timeout = 2" in installed and b'event = "Stop"' in installed
+                  and b'event = "StopFailure"' not in installed,
                   "only supported hooks with timeout 2")
             check(file.with_suffix(".toml.claudio.bak").read_bytes() == original, "one-shot backup exact bytes")
         inactive = bytes_on_disk(root)

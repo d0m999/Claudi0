@@ -61,6 +61,9 @@ OpenCode 原 JSONC 与 Vibe Island 插件 SHA-256 与备份一致。Kimi 首次�
 | Kimi Code `SubagentStop` | 待验证 | 未验证 | 未验证 | 关闭 |
 
 Kimi Code `Stop`／`StopFailure` 继续未实现，不以其他绑定的成功借用身份或终态证据。
+
+> 2026-10-29：`Stop` 已通过主 agent 落盘 wire 1.5 实现为 acceptance 候选；`StopFailure`
+> 仍未实现。见 [Kimi Stop 主轮落盘判定](kimi-stop-transcript-2026-10-29.md)。
 精确会话导航、VoiceOver、完整键盘／焦点、Intel、Developer ID、公证、CI 和发布未验证。
 
 ## 原生观察与声音输出

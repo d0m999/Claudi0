@@ -1,4 +1,5 @@
 import ClaudioCore
+import ClaudioHookInput
 import Foundation
 
 @MainActor
@@ -147,14 +148,15 @@ func runGrokBuildHookSuites() {
     }
 
     guard AdditionalHostReleasePolicy.isAcceptanceBuild else { return }
-    suite("Grok Build：三条绑定分别留回执、原因和脱敏来源；提问使用默认组") {
-        let f = GrokBuildHookFixture()
-        defer { f.cleanup() }
+    suite("Grok Build：五条绑定分别留回执、原因和脱敏来源；提问使用默认组") {
         for (native, event, reason) in [
             ("StopFailure", Event.stopFailure, nil),
             ("Notification", .notification, HostEventNoticeReason.permission),
             ("PreToolUse", .notification, .questionIntent),
+            ("UserPromptSubmit", .taskStart, nil),
+            ("Stop", .stop, nil),
         ] {
+            let f = GrokBuildHookFixture()
             let result = f.handle(native)
             expect(
                 result?.event == event && result?.playbackResult == .played, "合法 \(native) 走公共事件")
@@ -166,13 +168,62 @@ func runGrokBuildHookSuites() {
             expect(
                 notice?.source?.sessionID == "grok-session"
                     && notice?.source?.projectLabel == "grok-project", "只投影安全来源")
+            expect(f.spawner.calls.count == 1, "\(native) 独立播放，不被其他事件去抖")
+            for file in [f.summary, f.dedup.stateFile]
+            where FileManager.default.fileExists(atPath: file.path) {
+                let bytes = try! Data(contentsOf: file)
+                expect(!String(decoding: bytes, as: UTF8.self).contains("PRIVATE_BODY"), "正文不持久化")
+                expect(!String(decoding: bytes, as: UTF8.self).contains("grok-session"), "身份只留摘要")
+            }
+            f.cleanup()
         }
-        expect(f.spawner.calls.count == 3, "两条 notification binding 不被宿主时间去抖互相吞掉")
-        for file in [f.summary, f.dedup.stateFile] {
-            let bytes = try! Data(contentsOf: file)
-            expect(!String(decoding: bytes, as: UTF8.self).contains("PRIVATE_BODY"), "正文不持久化")
-            expect(!String(decoding: bytes, as: UTF8.self).contains("grok-session"), "身份只留摘要")
-        }
+    }
+
+    suite("Grok Build：结束使用已验收工作区，提问意图仍用默认组") {
+        let f = GrokBuildHookFixture()
+        let workspace = f.root.appendingPathComponent("workspace")
+        try! FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
+        var config = ClaudioConfig(selectedPack: "default", masterVolume: 0.17)
+        config.workspaceRules = [
+            WorkspaceSoundRule(
+                directory: .init(kind: .directory, path: workspace.path),
+                surfaces: [.grokBuild],
+                profile: .init(selectedPack: "work", volume: 0.9))
+        ]
+        try! JSONEncoder().encode(config).write(to: f.config)
+        let packs = f.root.appendingPathComponent("packs")
+        let work = packs.appendingPathComponent("work")
+        try! FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+        let events = Dictionary(
+            uniqueKeysWithValues: Event.allCases.map { ($0.cliName, "work.aiff") })
+        try! JSONSerialization.data(withJSONObject: [
+            "id": "work", "name": "Work", "events": events,
+        ]).write(to: work.appendingPathComponent("manifest.json"))
+        try! Data("work".utf8).write(to: work.appendingPathComponent("work.aiff"))
+        var environment = grokBuildRunnerEnvironment("StopFailure")
+        environment["GROK_WORKSPACE_ROOT"] = workspace.path
+        let stop = f.handle(
+            "StopFailure",
+            data: grokBuildPayload(
+                "StopFailure", overrides: ["cwd": workspace.path, "workspaceRoot": workspace.path]),
+            environment: environment)
+        expect(stop?.playbackResult == .played, "结束使用工作区规则")
+        expect(
+            f.spawner.calls.last?.contains { $0.contains("/packs/work/") } == true,
+            "工作区包参与播放路径")
+        var questionEnvironment = grokBuildRunnerEnvironment("PreToolUse")
+        questionEnvironment["GROK_WORKSPACE_ROOT"] = workspace.path
+        let question = f.handle(
+            "PreToolUse",
+            data: grokBuildPayload(
+                "PreToolUse", request: "question-1",
+                overrides: ["cwd": workspace.path, "workspaceRoot": workspace.path]),
+            environment: questionEnvironment)
+        expect(question?.playbackResult == .played, "提问意图仍可播放")
+        expect(
+            f.spawner.calls.last?.contains { $0.contains("/packs/default/") } == true,
+            "提问意图固定使用默认组")
+        f.cleanup()
     }
 
     suite("Grok Build：错误按 session+prompt、提问按 session+tool 去重；授权沿用通知去抖") {
@@ -197,17 +248,48 @@ func runGrokBuildHookSuites() {
         expect(f.handle("Notification")?.playbackResult == .played, "授权通知首次播放")
         expect(f.handle("Notification")?.playbackResult == .debounced, "无请求 ID 的授权通知走时间去抖")
         expect(!FileManager.default.fileExists(atPath: f.dedup.stateFile.path), "不编造授权请求身份")
+        for native in ["UserPromptSubmit", "Stop"] {
+            let f = GrokBuildHookFixture()
+            expect(f.handle(native)?.playbackResult == .played, "\(native) 首次播放")
+            expect(f.handle(native)?.playbackResult == .debounced, "\(native) 共享时间去抖")
+            f.cleanup()
+        }
     }
 
     suite("Grok Build：拒收、旧代次、关闭与 GUI 退出不消费身份和提示") {
         let f = GrokBuildHookFixture()
         defer { f.cleanup() }
         for native in [
-            "UserPromptSubmit", "Stop", "SubagentStop", "StopCancelled", "PermissionDenied",
-            "PostToolUseFailure",
+            "SubagentStop", "StopCancelled", "PermissionDenied", "PostToolUseFailure",
         ] {
             expect(f.handle(native) == nil, "未实现事件在副作用前拒收")
         }
+        for (native, overrides) in [
+            ("UserPromptSubmit", ["promptId": "task-completed-11111111-1111-4111-8111-111111111111"]),
+            ("UserPromptSubmit", ["prompt": "<system-reminder>\nwake</system-reminder>"]),
+            ("UserPromptSubmit", ["promptId": "request-1"]),
+            ("UserPromptSubmit", ["prompt": []]),
+            ("Stop", ["reason": "shutdown"]),
+            ("Stop", ["reason": false]),
+            ("Stop", ["stopHookActive": true, "stop_hook_active": true]),
+            ("Stop", ["stopHookActive": 1]),
+            ("Stop", ["backgroundTasks": "none"]),
+            ("Stop", ["sessionCrons": false]),
+            ("UserPromptSubmit", ["subagentType": "explore"]),
+            ("Stop", ["subagentType": "explore"]),
+        ] as [(String, [String: Any])] {
+            expect(
+                f.handle(native, data: grokBuildPayload(native, overrides: overrides)) == nil,
+                "合成唤醒、会话关闭与被阻止的结束在副作用前拒收")
+        }
+        expect(
+            f.handle("Stop", data: grokBuildPayload("Stop", removing: ["promptId"])) == nil,
+            "无 turn 身份的结束拒收")
+        expect(
+            f.handle(
+                "UserPromptSubmit",
+                data: grokBuildPayload("UserPromptSubmit", removing: ["prompt"])) == nil,
+            "开始需有界 prompt")
         expect(
             f.handle(
                 "StopFailure",
@@ -220,6 +302,8 @@ func runGrokBuildHookSuites() {
                     "Notification", overrides: ["notificationType": "idle_prompt"])) == nil,
             "普通 idle 拒收")
         expect(f.handle("PreToolUse", environment: [:]) == nil, "未绑定 runner 身份拒收")
+        expect(f.handle("UserPromptSubmit", environment: [:]) == nil, "开始缺少 runner 身份拒收")
+        expect(f.handle("Stop", environment: [:]) == nil, "结束缺少 runner 身份拒收")
         expect(f.handle("PreToolUse", id: UUID())?.playbackResult == .notReady, "旧安装不播放")
         expect(f.spawner.calls.isEmpty && f.notices.values.isEmpty, "拒收无播放和提示")
         expect(!FileManager.default.fileExists(atPath: f.dedup.stateFile.path), "拒收不消费身份")
@@ -244,32 +328,43 @@ func runGrokBuildHookSuites() {
         let f = GrokBuildHookFixture()
         defer { f.cleanup() }
         var config = ClaudioConfig(selectedPack: "default", masterVolume: 0.17)
-        config.eventsEnabled = ["notification": false, "stop_failure": false]
+        config.eventsEnabled = [
+            "notification": false, "stop_failure": false, "task_start": false, "stop": false,
+        ]
         try! JSONEncoder().encode(config).write(to: f.config)
-        for native in ["StopFailure", "PreToolUse"] {
+        for native in ["StopFailure", "PreToolUse", "UserPromptSubmit"] {
             expect(f.handle(native)?.playbackResult == .muted, "事件开关抑制对应声音")
         }
         config.eventsEnabled = [:]
         try! JSONEncoder().encode(config).write(to: f.config)
-        for native in ["StopFailure", "PreToolUse"] {
+        for native in ["StopFailure", "PreToolUse", "UserPromptSubmit"] {
             expect(f.handle(native)?.playbackResult == .debounced, "恢复开关不补播旧请求")
         }
+        let stopOnly = GrokBuildHookFixture()
+        var stopConfig = ClaudioConfig(selectedPack: "default", masterVolume: 0.17)
+        stopConfig.eventsEnabled = ["stop": false]
+        try! JSONEncoder().encode(stopConfig).write(to: stopOnly.config)
+        expect(stopOnly.handle("Stop")?.playbackResult == .muted, "结束事件开关独立生效")
+        expect(stopOnly.spawner.calls.isEmpty, "结束静音不启动播放器")
+        stopOnly.cleanup()
+        let quiet = GrokBuildHookFixture()
         let publisher = DynamicQuietSnapshotPublisher(
-            snapshotFile: f.play.dynamicQuietEnvironment.snapshotFile,
-            revisionStateFile: f.play.dynamicQuietEnvironment.revisionStateFile)
-        _ = publisher.publish(focusActive: true, now: f.now)
-        for native in ["StopFailure", "PreToolUse"] {
+            snapshotFile: quiet.play.dynamicQuietEnvironment.snapshotFile,
+            revisionStateFile: quiet.play.dynamicQuietEnvironment.revisionStateFile)
+        _ = publisher.publish(focusActive: true, now: quiet.now)
+        for native in ["StopFailure", "PreToolUse", "UserPromptSubmit"] {
             expect(
-                f.handle(native, data: grokBuildPayload(native, request: "quiet"))?.playbackResult
-                    == .muted, "静默覆盖原生事件")
+                quiet.handle(native, data: grokBuildPayload(native, request: "quiet"))?
+                    .playbackResult == .muted, "静默覆盖原生事件")
         }
-        _ = publisher.publish(focusActive: false, now: f.now)
-        for native in ["StopFailure", "PreToolUse"] {
+        _ = publisher.publish(focusActive: false, now: quiet.now)
+        for native in ["StopFailure", "PreToolUse", "UserPromptSubmit"] {
             expect(
-                f.handle(native, data: grokBuildPayload(native, request: "quiet"))?.playbackResult
-                    == .debounced, "静默恢复不补播")
+                quiet.handle(native, data: grokBuildPayload(native, request: "quiet"))?
+                    .playbackResult == .debounced, "静默恢复不补播")
         }
-        expect(f.spawner.calls.isEmpty, "静音与静默期间无播放器")
+        expect(f.spawner.calls.isEmpty && quiet.spawner.calls.isEmpty, "静音与静默期间无播放器")
+        quiet.cleanup()
     }
 }
 
@@ -322,6 +417,15 @@ private struct GrokBuildHookFixture {
         environment: [String: String]? = nil, authorization: HostEventAuthorization? = nil
     ) -> HostHookHandlingOutcome? {
         let payload = data ?? grokBuildPayload(native)
+        let sourceEnvironment = environment ?? grokBuildRunnerEnvironment(native)
+        let isGrokStartStop =
+            host == .grokBuild && (native == "UserPromptSubmit" || native == "Stop")
+        let grokSource =
+            isGrokStartStop
+            ? GrokStartStopAdmission.source(
+                nativeEvent: native, data: payload, environment: sourceEnvironment)
+            : nil
+        if isGrokStartStop, grokSource == nil { return nil }
         return handleHostHook(
             host: host, nativeEvent: native, installationID: id ?? self.id,
             environment: HostHookEnvironment(
@@ -336,7 +440,8 @@ private struct GrokBuildHookFixture {
                         notices.append($0); return .sent
                     }),
                 sourcePayload: payload,
-                sourceEnvironment: environment ?? grokBuildRunnerEnvironment(native),
+                sourceEnvironment: sourceEnvironment,
+                additionalHostStartStopSource: grokSource,
                 scopeFingerprint: { [scope] in scope },
                 questionScopeFingerprint: { [scope] in scope },
                 questionDeduplicationStore: dedup, now: { [now] in now }))

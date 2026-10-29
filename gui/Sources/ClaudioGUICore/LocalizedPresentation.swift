@@ -197,8 +197,8 @@ func localizedQualification(
         "仅用户发起的 TurnStarted": .qualificationUserOriginOnly,
         "缺少主／子 agent 身份，首版暂未启用": .qualificationMainAgentUnavailable,
         "仅成功结束；无法定位具体子任务": .qualificationSubagentUnavailable,
-        "无法可靠区分人工输入与自动唤醒，尚未实现": .qualificationPromptOriginUnavailable,
-        "可被阻止的结束尝试，尚未实现": .qualificationCompletionGateOnly,
+        "已排除自动唤醒与合成提示": .qualificationPromptOriginUnavailable,
+        "结束仍可能被其他 Stop hook 阻止；按首个结束尝试提醒": .qualificationCompletionGateOnly,
         "仅主会话因 API 错误导致的中断": .qualificationMainSessionAPIErrorOnly,
     ]
     if let key = additionalKeys[value] { return ClaudioL10n(language: language).text(key) }

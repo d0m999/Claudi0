@@ -48,22 +48,31 @@ def run_grok_build_cli_contract(debug, base, tools, check):
         return json.loads(marker.read_text())["installation_id"]
 
     def payload(native, request="request-1"):
+        prompt_id = "11111111-1111-4111-8111-111111111111" if native == "UserPromptSubmit" else request
         value = dict(hookEventName={"StopFailure": "stop_failure", "Notification": "notification",
-                                    "PreToolUse": "pre_tool_use"}.get(native, "stop"),
+                                    "PreToolUse": "pre_tool_use", "UserPromptSubmit": "user_prompt_submit",
+                                    "Stop": "stop"}.get(native, "notification"),
                      hook_event_name=native, sessionId="fixture-grok-session",
                      session_id="fixture-grok-session", cwd="/fixture/project", workspaceRoot="/fixture/project",
-                     promptId=request, timestamp="2026-10-21T00:00:00Z", permissionMode="default")
+                     promptId=prompt_id, timestamp="2026-10-21T00:00:00Z", permissionMode="default")
         if native == "StopFailure":
             value.update(error="server_error", errorDetails="PRIVATE_BODY")
         elif native == "PreToolUse":
             value.update(toolName="ask_user_question", toolUseId=request,
                          toolInput={"question": "PRIVATE_BODY"}, toolInputTruncated=False)
+        elif native == "UserPromptSubmit":
+            value.update(prompt="fixture prompt")
+        elif native == "Stop":
+            value.update(reason="end_turn", stopHookActive=False, stop_hook_active=False,
+                         lastAssistantMessage="OK", last_assistant_message="OK",
+                         backgroundTasks=[], sessionCrons=[])
         else:
             value.update(notificationType="permission_prompt", message="PRIVATE_BODY")
         return value
 
     def runner(native):
-        return dict(env, GROK_HOOK_EVENT={"StopFailure": "stop_failure", "PreToolUse": "pre_tool_use"}.get(native, "notification"),
+        return dict(env, GROK_HOOK_EVENT={"StopFailure": "stop_failure", "PreToolUse": "pre_tool_use",
+                                          "UserPromptSubmit": "user_prompt_submit", "Stop": "stop"}.get(native, "notification"),
                     GROK_HOOK_NAME="claudio", GROK_SESSION_ID="fixture-grok-session", GROK_WORKSPACE_ROOT="/fixture/project")
 
     def hook(native, installation, data=None, environment=None, host="grok-build"):
@@ -84,9 +93,11 @@ def run_grok_build_cli_contract(debug, base, tools, check):
     installed = file.read_bytes()
     check(connect() == installation and file.read_bytes() == installed, "Grok install bytes and identity are idempotent")
     hooks = json.loads(installed)["hooks"]
-    check(set(hooks) == {"StopFailure", "Notification", "PreToolUse"}, "exactly three native Grok bindings")
+    check(set(hooks) == {"StopFailure", "Notification", "PreToolUse", "UserPromptSubmit", "Stop"},
+          "exactly five native Grok bindings")
     check(hooks["Notification"][0]["matcher"] == "^permission_prompt$"
           and hooks["PreToolUse"][0]["matcher"] == "^(ask_user_question)$"
+          and "matcher" not in hooks["Stop"][0] and "matcher" not in hooks["UserPromptSubmit"][0]
           and all(group[0]["hooks"][0]["timeout"] == 2 for group in hooks.values()), "exact matchers and timeout=2")
     before = disk()
     hook("StopFailure", installation)
@@ -97,7 +108,7 @@ def run_grok_build_cli_contract(debug, base, tools, check):
         receipt = root / "integrations/receipts/grok-build" / (native + ".json")
         check(receipt.is_file(), "current Grok receipt: " + native)
     doctor = invoke(["doctor"]).stdout.decode()
-    check("Grok Build 已收到事件；支持 2/5" in doctor,
+    check("Grok Build 已收到事件；支持 4/5" in doctor,
           "doctor reports real Grok binding receipts separately from capability coverage: " + doctor)
     for native in ("StopFailure", "PreToolUse"):
         hook(native, installation)
@@ -109,8 +120,12 @@ def run_grok_build_cli_contract(debug, base, tools, check):
                  dict(payload("StopFailure"), session_id="other"),
                  dict(payload("StopFailure"), error="permission_cancelled")):
         hook("StopFailure", installation, data=data)
-    for native in ("UserPromptSubmit", "Stop", "SubagentStop", "StopCancelled", "PermissionDenied", "PostToolUseFailure"):
+    for native in ("SubagentStop", "StopCancelled", "PermissionDenied", "PostToolUseFailure"):
         hook(native, installation)
+    hook("UserPromptSubmit", installation,
+         data=dict(payload("UserPromptSubmit"), promptId="task-completed-11111111-1111-4111-8111-111111111111"))
+    hook("Stop", installation, data=dict(payload("Stop"), reason="shutdown"))
+    hook("Stop", installation, data=dict(payload("Stop"), stopHookActive=True, stop_hook_active=True))
     hook("Notification", installation, data=dict(payload("Notification"), notificationType="idle_prompt"))
     hook("Notification", installation, data=dict(payload("Notification"), permissionMode="bypassPermissions"))
     hook("PreToolUse", installation, environment=env)
@@ -144,7 +159,8 @@ def run_grok_build_cli_contract(debug, base, tools, check):
     env["CLAUDIO_TEST_GROK_VERSION"] = "grok 1.0.63 (fixture)"
     replacement = connect()
     check(replacement != installation, "Grok version change rotates installation")
-    check(file.with_suffix(".json.claudio.bak").read_bytes() == installed, "one-shot Grok configuration backup")
+    check((file.parent.parent / "claudio-hooks.backup.json").read_bytes() == installed,
+          "one-shot Grok configuration backup stays outside the scanned hooks directory")
     before = disk()
     hook("PreToolUse", installation, data=payload("PreToolUse", "late"))
     check(disk() == before, "late old installation cannot consume identity")

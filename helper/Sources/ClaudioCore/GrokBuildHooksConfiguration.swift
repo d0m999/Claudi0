@@ -3,6 +3,10 @@ import Foundation
 /// One dedicated native hook file. Only exact known Claudio templates establish ownership;
 /// a marker, a filename, or a command substring never authorizes replacement or deletion.
 enum GrokBuildHooksConfiguration {
+    /// The v1 acceptance file before task-start/stop bindings. Its exact bytes remain owned so
+    /// repair can upgrade it; no other subset is accepted.
+    private static let previousV1NativeEvents = ["Notification", "PreToolUse", "StopFailure"]
+
     static func render(installationID: UUID, helperPath: String, events: [String]? = nil) throws
         -> Data
     {
@@ -61,9 +65,10 @@ enum GrokBuildHooksConfiguration {
             .filter(\.isImplementedCapability).compactMap(\.nativeEvent).sorted()
         let admitted = HostCapabilityCatalog.bindings(for: .grokBuild)
             .filter(\.isAudibleCapability).compactMap(\.nativeEvent).sorted()
-        // The full v1 acceptance template remains owned in ordinary Release, including when
-        // no binding is admitted. Arbitrary edited subsets are never treated as our templates.
-        guard installed == implemented || (!admitted.isEmpty && installed == admitted),
+        // The full acceptance template remains owned in ordinary Release, including when no
+        // binding is admitted. Arbitrary edited subsets are never treated as our templates.
+        guard installed == implemented || (!admitted.isEmpty && installed == admitted)
+            || installed == previousV1NativeEvents,
             try render(installationID: match.installationID, helperPath: path, events: installed)
                 == data
         else { throw conflict() }

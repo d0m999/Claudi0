@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cannot reliably distinguish human input from automatic wake-ups; not implemented."
+            "value": "Automatic wake-ups and synthetic prompts are excluded."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法可靠区分人工输入与自动唤醒，尚未实现"
+            "value": "已排除自动唤醒与合成提示"
           }
         }
       }
@@ -58,13 +58,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A completion attempt that can still be blocked; not implemented."
+            "value": "Other Stop hooks can still block the end; alerts on the first end attempt."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "可被阻止的结束尝试，尚未实现"
+            "value": "结束仍可能被其他 Stop hook 阻止；按首个结束尝试提醒"
           }
         }
       }

@@ -61,10 +61,27 @@ extension Claudio {
                     observedUptime: observedUptime,
                     sender: { notice in EventNoticeTransport.send(notice, to: descriptor) })
             }
+            let isGrokStartStop =
+                parsedHost == .grokBuild
+                && (nativeEvent == "UserPromptSubmit" || nativeEvent == "Stop")
+            let isKimiStop = parsedHost == .kimiCode && nativeEvent == "Stop"
+            let additionalHostStartStopSource: HostEventSource?
+            if isGrokStartStop {
+                additionalHostStartStopSource = GrokStartStopAdmission.source(
+                    nativeEvent: nativeEvent, data: hookInput?.data,
+                    environment: ProcessInfo.processInfo.environment)
+            } else if isKimiStop {
+                additionalHostStartStopSource = KimiStopTranscriptAdmission.source(
+                    nativeEvent: nativeEvent, data: hookInput?.data)
+            } else {
+                additionalHostStartStopSource = nil
+            }
+            if (isGrokStartStop || isKimiStop), additionalHostStartStopSource == nil { return }
             let environment = systemHostHookEnvironment(
                 for: parsedHost,
                 eventNoticeChannel: channel,
                 sourcePayload: hookInput?.data, authorizationToken: token,
+                additionalHostStartStopSource: additionalHostStartStopSource,
                 codexApprovalRouting: { CodexApprovalRoutingResolver.resolve($0) })
             _ = handleHostHook(
                 host: parsedHost,

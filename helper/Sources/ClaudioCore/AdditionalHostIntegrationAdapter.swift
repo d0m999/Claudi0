@@ -64,6 +64,16 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
     var host: HostID { environment.host }
     var capabilities: [HostCapabilityBinding] { HostCapabilityCatalog.bindings(for: host) }
 
+    /// Grok discovers hooks by reading the files in `~/.grok/hooks`, so a one-time backup kept
+    /// beside the managed file can be loaded as a second, stale hook source. Keep only Grok's
+    /// backup outside that directory; other hosts read a single named config file.
+    private var backupFile: URL? {
+        guard let file = environment.file else { return nil }
+        guard host == .grokBuild else { return file.appendingPathExtension("claudio.bak") }
+        return file.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("claudio-hooks.backup.json")
+    }
+
     func inspect(runtime: SharedRuntimeHealth) async -> HostIntegrationSnapshot {
         inspectAdditionalHostSnapshot(environment: environment, runtime: runtime)
     }
@@ -101,8 +111,7 @@ struct AdditionalHostIntegrationAdapter: HostIntegrationAdapter {
                 environment.receiptStore.currentInstallationScopeFingerprint(host: host)
                     == scope ? environment.receiptStore.currentInstallationID(host: host) : nil
             let transaction = ConfigFileTransaction(
-                file: file, lockFile: environment.lockFile,
-                backupFile: file.appendingPathExtension("claudio.bak"),
+                file: file, lockFile: environment.lockFile, backupFile: backupFile,
                 symlinkPolicy: host == .kimiCode ? .preserveTarget : .reject)
             let requested = UUID()
             var scopeBeforePublication: String?

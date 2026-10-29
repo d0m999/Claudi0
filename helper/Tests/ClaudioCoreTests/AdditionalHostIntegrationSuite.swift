@@ -35,7 +35,10 @@ func runAdditionalHostIntegrationSuites() async {
             HostCapabilityCatalog.semanticEvent(host: .opencode, nativeEvent: "ResponseCompleted")
                 == .stop,
             "Claudio 桥接终态才能映射公共事件")
-        for native in ["Stop", "StopFailure", "Notification", "UserPromptSubmit"] {
+        expect(
+            HostCapabilityCatalog.semanticEvent(host: .kimiCode, nativeEvent: "Stop") == .stop,
+            "Stop 由主 agent 落盘轨迹启用")
+        for native in ["StopFailure", "Notification", "UserPromptSubmit"] {
             expect(
                 HostCapabilityCatalog.semanticEvent(host: .kimiCode, nativeEvent: native) == nil,
                 "Kimi Code 未启用 \(native)")
@@ -49,7 +52,7 @@ func runAdditionalHostIntegrationSuites() async {
             Set(
                 HostCapabilityCatalog.bindings(for: .kimiCode).filter(\.isAudibleCapability)
                     .map(\.event)
-            ).count == 3, "Kimi Code 候选只覆盖三类公共事件")
+            ).count == 4, "Kimi Code 候选覆盖四类公共事件")
     }
 
     suite("新增来源：配置根与新版 kimi 安装发现") {
@@ -144,6 +147,17 @@ func runAdditionalHostIntegrationSuites() async {
                 HostActivationScope.additionalHost(
                     .kimiCode, configurationRoot: root,
                     executableLocator: locator) == nil, "旧 Python CLI 不能冒充新版")
+            let slowDirectory = root.appendingPathComponent("slow-bin")
+            let slowBinary = slowDirectory.appendingPathComponent("kimi")
+            writeFixture("#!/bin/sh\n/bin/sleep 1.2\nprintf '2.3.3\\n'\n", to: slowBinary)
+            try! FileManager.default.setAttributes(
+                [.posixPermissions: 0o700], ofItemAtPath: slowBinary.path)
+            let slowLocator = HostExecutableLocator(searchDirectories: [slowDirectory])
+            expect(
+                HostActivationScope.additionalHost(
+                    .kimiCode, configurationRoot: root,
+                    executableLocator: slowLocator)?.contains("host=2.3.3") == true,
+                "Kimi 冷启动超过一秒仍须完成版本探测")
         }
     }
 
@@ -184,9 +198,13 @@ func runAdditionalHostIntegrationSuites() async {
                     expect(
                         String(decoding: installed, as: UTF8.self).contains("timeout = 2"),
                         "自有 timeout=2")
+                    let installedText = String(decoding: installed, as: UTF8.self)
                     expect(
-                        !String(decoding: installed, as: UTF8.self).contains("event = \"Stop\""),
-                        "不得安装未启用的主响应终态")
+                        installedText.contains("event = \"Stop\""),
+                        "安装主响应终态 Stop")
+                    expect(
+                        installedText.components(separatedBy: " hook kimi-code ").count - 1 == 5,
+                        "五条已启用 binding 对应五条 Claudio hook")
                 } else {
                     expect(try! Data(contentsOf: protected) == original, "不得改写现有 JSONC")
                     expect(

@@ -6,28 +6,30 @@ import Foundation
 
 @MainActor
 func runAdditionalHostPresentationSuites() {
-    suite("Grok Build：命令行末行、2/5 公共覆盖与六条独立能力事实") {
+    suite("Grok Build：命令行末行、4/5 公共覆盖与六条独立能力事实") {
         let content = integrationDestinationTestContent()
         let facts = content.facts(for: .grokBuild)!
         expect(content.agents.last?.host == .grokBuild, "新增命令行放在末尾")
         expect(integrationToolKind(for: .grokBuild) == .cli, "归属命令行工具")
         expect(
-            facts.mechanism == .nativeHooks && facts.row.coverageText == "2/5", "三条 binding 只覆盖两类事件"
+            facts.mechanism == .nativeHooks && facts.row.coverageText == "4/5", "五条 binding 覆盖四类事件"
         )
         expect(
-            facts.capabilityReceipts.count == 6 && facts.bindingReceipts.count == 3,
+            facts.capabilityReceipts.count == 6 && facts.bindingReceipts.count == 5,
             "支持、实现和当前回执独立呈现")
         let awaiting = integrationDestinationContent(
             state: integrationDestinationTestState(statuses: [.grokBuild: .awaitingActivation]))
         expect(
             awaiting.facts(for: .grokBuild)?.row.detail == .grokBuildAwaitingSupportedEvent,
             "不把普通用户提交当作 Grok 激活证据")
-        for event in [Event.taskStart, .stop, .subagentStop] {
+        for event in [Event.taskStart, .stop] {
             let binding = facts.capabilityReceipts.first { $0.binding.event == event }
-            expect(
-                binding?.binding.implementation == .notImplemented
-                    && binding?.activation == HostActivationEvidence.none, "未实现事件不能激活")
+            expect(binding?.binding.implementation == .implemented, "开始／结束已实现")
         }
+        let subagent = facts.capabilityReceipts.first { $0.binding.event == .subagentStop }
+        expect(
+            subagent?.binding.implementation == .notImplemented
+                && subagent?.activation == HostActivationEvidence.none, "子任务结束仍未实现")
         for language in [ClaudioAppLanguage.english, .zhHans] {
             expect(
                 localizedHostSourceRowDetail(.grokBuildReliableEventsOnly, language: language)?
@@ -129,7 +131,7 @@ func runAdditionalHostPresentationSuites() {
                 facts.mechanism == (host == .opencode ? .pluginBridge : .nativeHooks),
                 "OpenCode 插件桥接不冒充原生 hooks")
             expect(
-                facts.row.coverageText == (host == .opencode ? "5/5" : "3/5"),
+                facts.row.coverageText == (host == .opencode ? "5/5" : "4/5"),
                 "多条 notification 绑定不重复计算公共事件覆盖")
             expect(facts.capabilityReceipts.count == 6, "保留每条独立 binding 的支持和回执")
             for event in Event.allCases {
@@ -138,15 +140,25 @@ func runAdditionalHostPresentationSuites() {
                 expect(localized?.accessibilityLabel.isEmpty == false, "每格具有对应的英文无障碍文案")
             }
         }
-        for event in [Event.stop, .stopFailure] {
-            let binding = content.facts(for: .kimiCode)?.capabilityReceipts.first {
-                $0.binding.event == event
-            }
-            expect(
-                binding?.binding.implementation == .notImplemented
-                    && binding?.activation == HostActivationEvidence.none,
-                "Kimi 终态缺少主子身份时保持尚未实现、无激活")
+        let kimiStop = content.facts(for: .kimiCode)?.capabilityReceipts.first {
+            $0.binding.event == .stop
         }
+        let kimiStopObserved: Bool = {
+            if case .observed = kimiStop?.activation { return true }
+            return false
+        }()
+        expect(
+            kimiStop?.binding.implementation == .implemented
+                && kimiStop?.binding.qualification == .transcriptMainTurnOnly
+                && kimiStopObserved,
+            "Kimi Stop 通过主 agent 落盘轨迹启用，ready fixture 保留 observed 回执")
+        let kimiStopFailure = content.facts(for: .kimiCode)?.capabilityReceipts.first {
+            $0.binding.event == .stopFailure
+        }
+        expect(
+            kimiStopFailure?.binding.implementation == .notImplemented
+                && kimiStopFailure?.activation == HostActivationEvidence.none,
+            "Kimi StopFailure 仍无主／子失败身份，尚未实现")
         expect(hostIntegrationMechanismDisplayName(.pluginBridge) == "Claudio 插件桥接", "机制文案独立存在")
         expect(
             content.facts(for: .opencode)?.capabilityReceipts.first {

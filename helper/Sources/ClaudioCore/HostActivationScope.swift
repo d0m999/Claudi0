@@ -326,13 +326,16 @@ public enum HostActivationScope {
             commandRunner
             ?? SystemCommandRunner(
                 environmentOverrides: ["PATH": executableLocator.executableSearchPath])
+        // Kimi 2.x performs startup/update checks before printing --version and can exceed
+        // one second on a cold start; a shorter deadline turns a healthy CLI into a false
+        // "repair connection" state.
         switch HookMeasurementContext.measure(
             .versionResolution,
             {
                 resolvedRunner.run(
                     executablePath: executablePath,
                     arguments: ["--version"],
-                    timeout: 1.0)
+                    timeout: 3.0)
             })
         {
         case .completed(let exitCode, let stdout) where exitCode == 0:

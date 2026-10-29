@@ -85,12 +85,17 @@ public struct AdditionalHostHookPayload: Sendable, Equatable {
         if let tool = object["tool_name"], identifier(tool) == nil { return nil }
         if let input = object["tool_input"], !(input is [String: Any]) { return nil }
         if let origin = object["origin_kind"], !(origin is String) { return nil }
+        if let active = object["stop_hook_active"], !(active is Bool) { return nil }
         switch nativeEvent {
         case "TurnStarted":
             guard object["origin_kind"] as? String == "user",
                 let turn = integer(object["turn_id"]), turn >= 0
             else { return nil }
             return .init(identity: .init(sessionID: sessionID, requestID: "TurnStarted:\(turn)"))
+        case "Stop":
+            // The base fields are validated above; helper-only transcript admission decides
+            // whether this Stop belongs to a new main turn before the CLI forwards it.
+            return .init(identity: nil)
         case "PermissionRequest":
             guard let call = identifier(object["tool_call_id"]),
                 identifier(object["tool_name"]) != nil

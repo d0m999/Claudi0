@@ -58,3 +58,13 @@ payload 目录命中工作区规则时使用工作区声音配置，不再一律
 
 2026-10-21：Grok Build 的独立原生 hooks、Claude compatibility 来源防护与三条候选绑定见
 [ADR 0035](0035-integrate-grok-build-native-attention-hooks.md)。它继续采用本决定的逐绑定发布证据门槛。
+
+2026-10-29：Kimi Code `Stop` 以主 agent 落盘 wire 作为身份证据实现。实测 `Stop` payload 没有
+主/子 agent 身份，而 `agents/main/wire.jsonl` 的 `agent.turn.ended` 只在主轮结束时出现；子
+agent `Stop` 不产生该记录。admission 因此放在 helper-only 的
+`ClaudioHookInput/KimiStopTranscriptAdmission.swift`，只读 wire 尾部，要求
+`protocol_version == "1.5"`、`outcome == "done"`，并用 per-session `turnId` marker 去重；
+未知版本、不可读文件或符号链接一律失败关闭。共享 runner 只接收预校验来源，核心 parser
+只校验 Stop 基础字段。`Stop` 仍是 acceptance 候选，普通 Release 不增加
+`verifiedBindings`；`StopFailure` 仍无主/子失败身份，继续未实现。证据见
+[验证记录](../validation/kimi-stop-transcript-2026-10-29.md)。

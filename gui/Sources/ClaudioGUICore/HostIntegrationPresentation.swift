@@ -550,10 +550,10 @@ func defaultQualificationText(_ qualification: HostCapabilityQualificationID) ->
     case .bridgeTerminalEvidenceOnly: "Claudio 桥接事件；仅确认会话身份与终态后触发"
     case .bridgeExecutionEvidenceOnly: "Claudio 桥接事件；仅确认主会话身份并实际执行后触发"
     case .userOriginOnly: "仅用户发起的 TurnStarted"
-    case .mainAgentIdentityUnavailable: "缺少主／子 agent 身份，首版暂未启用"
+    case .transcriptMainTurnOnly: "按主 agent 落盘轨迹判断；仅主轮结束提醒"
     case .subagentIdentityUnavailable: "仅成功结束；无法定位具体子任务"
-    case .promptOriginUnavailable: "无法可靠区分人工输入与自动唤醒，尚未实现"
-    case .completionGateOnly: "可被阻止的结束尝试，尚未实现"
+    case .promptOriginUnavailable: "已排除自动唤醒与合成提示"
+    case .completionGateOnly: "结束仍可能被其他 Stop hook 阻止；按首个结束尝试提醒"
     case .mainSessionAPIErrorOnly: "仅主会话因 API 错误导致的中断"
     }
 }

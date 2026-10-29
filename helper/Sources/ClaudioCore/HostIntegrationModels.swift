@@ -175,7 +175,7 @@ public enum HostCapabilityQualificationID: String, Codable, Sendable, Equatable,
     case bridgeTerminalEvidenceOnly = "bridge_terminal_evidence_only"
     case bridgeExecutionEvidenceOnly = "bridge_execution_evidence_only"
     case userOriginOnly = "user_origin_only"
-    case mainAgentIdentityUnavailable = "main_agent_identity_unavailable"
+    case transcriptMainTurnOnly = "transcript_main_turn_only"
     case subagentIdentityUnavailable = "subagent_identity_unavailable"
     case promptOriginUnavailable = "prompt_origin_unavailable"
     case completionGateOnly = "completion_gate_only"
@@ -330,12 +330,12 @@ public enum HostCapabilityCatalog {
                     nativeEvent: "TurnStarted", support: .partial, qualification: .userOriginOnly),
                 HostCapabilityBinding(
                     host: host, event: .stop,
-                    nativeEvent: "Stop", support: .partial, implementation: .notImplemented,
-                    qualification: .mainAgentIdentityUnavailable),
+                    nativeEvent: "Stop", support: .partial,
+                    qualification: .transcriptMainTurnOnly),
                 HostCapabilityBinding(
                     host: host, event: .stopFailure,
                     nativeEvent: "StopFailure", support: .partial, implementation: .notImplemented,
-                    qualification: .mainAgentIdentityUnavailable),
+                    qualification: .interfaceSupportedNotImplemented),
                 HostCapabilityBinding(
                     host: host, event: .notification,
                     nativeEvent: "PermissionRequest", support: .partial,
@@ -350,12 +350,10 @@ public enum HostCapabilityCatalog {
             return [
                 HostCapabilityBinding(
                     host: host, event: .taskStart, nativeEvent: "UserPromptSubmit",
-                    support: .partial, implementation: .notImplemented,
-                    qualification: .promptOriginUnavailable),
+                    support: .partial, qualification: .promptOriginUnavailable),
                 HostCapabilityBinding(
                     host: host, event: .stop, nativeEvent: "Stop",
-                    support: .partial, implementation: .notImplemented,
-                    qualification: .completionGateOnly),
+                    support: .partial, qualification: .completionGateOnly),
                 HostCapabilityBinding(
                     host: host, event: .stopFailure, nativeEvent: "StopFailure",
                     support: .partial, qualification: .mainSessionAPIErrorOnly),

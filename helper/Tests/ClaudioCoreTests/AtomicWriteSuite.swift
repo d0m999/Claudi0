@@ -554,6 +554,9 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
     // Bounded question consumption stores only digests/timestamps under its own reservation
     // lock, using private staging plus atomic rename before any sound or notice attempt.
     "helper/Sources/ClaudioCore/HostQuestionDeduplicationStore.swift": ["writePrivateAtomic("],
+    // Kimi Stop 的落盘判定：turn 标记用 `Data.write(options:.atomic)` 发布；`FileHandle`
+    // 仅用于从文件尾部读取主 agent wire，不写内容，也不触碰会话文件。
+    "helper/Sources/ClaudioHookInput/KimiStopTranscriptAdmission.swift": [".write(", "FileHandle("],
     // 有界只读：`open(O_RDONLY | O_NOFOLLOW | O_NONBLOCK)`。它是**读者**，不是写者 ——
     // `O_RDONLY` 刻意不在 ④ 的写意图 flag 里。
     "helper/Sources/ClaudioCore/SafeFileRead.swift": ["open("],
@@ -684,6 +687,8 @@ private let diskWriteSurfaceLedger: [String: Set<String>] = [
 private let contentReplacingWriteSites: [String: Int] = [
     "helper/Sources/claudio-hook-benchmark/main.swift": 6,
     "helper/Sources/claudio-hook-benchmark/ClaudeCacheContract.swift": 2,
+    // Kimi Stop 的 per-session turn 标记：0600 私有文件，Data.write(options:.atomic) 发布。
+    "helper/Sources/ClaudioHookInput/KimiStopTranscriptAdmission.swift": 1,
     "gui/Sources/ClaudioGUIComponents/IDENavigationSocket.swift": 1,
     "gui/Sources/ClaudioGUIComponents/ZedPTYNavigationBridge.swift": 1,
     "helper/Sources/ClaudioCore/EventNoticeTransport.swift": 1,

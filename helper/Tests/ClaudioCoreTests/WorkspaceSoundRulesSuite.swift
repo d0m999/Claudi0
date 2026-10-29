@@ -240,14 +240,14 @@ func runWorkspaceSoundRulesSuites() {
                     try! config.resolveSoundProfile(for: .codex, cwd: cwd).get().volume == 0.13,
                     "no trusted cwd uses complete defaults")
             }
-            for surface in [HostSurfaceID.workBuddy, .opencode, .kimiCode] {
+            for surface in [HostSurfaceID.workBuddy, .opencode, .kimiCode, .grokBuild] {
                 var opened = parent
                 opened.surfaces = [surface]
                 config.workspaceRules = [opened]
                 expect(
                     try! config.resolveSoundProfile(for: surface, cwd: base.path).get()
                         .selectedPack == "parent",
-                    "\(surface.rawValue) resolves its workspace after the 2026-10-18 opening")
+                    "\(surface.rawValue) resolves its workspace after the verified directory opening")
             }
             var axOnly = parent
             axOnly.surfaces = [.chatGPTDesktopAX]

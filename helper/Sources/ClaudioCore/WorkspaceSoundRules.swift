@@ -260,11 +260,23 @@ public enum WorkspaceSoundError: Error, Sendable, Equatable, CustomStringConvert
 /// per-directory correct; events the host cannot dispatch from user space are exempt. The AX beta
 /// identities have no hook pipeline and stay out.
 public enum WorkspaceSurfaceEligibility {
-    public static let candidates: [HostSurfaceID] = [
-        .codex, .claudeCode, .workBuddy, .opencode, .kimiCode,
-    ]
+    /// Grok's directory channel was verified in two repositories and a linked worktree on
+    /// 2026-10-29. Its runtime callbacks still require release admission, so the settings
+    /// picker only offers it while the accepted host entry is visible.
+    public static var candidates: [HostSurfaceID] {
+        var values: [HostSurfaceID] = [
+            .codex, .claudeCode, .workBuddy, .opencode, .kimiCode,
+        ]
+        if HostID.productVisibleCases.contains(.grokBuild) {
+            values.append(.grokBuild)
+        }
+        return values
+    }
+
+    /// Rules written during an acceptance build remain structurally valid in ordinary Release.
+    /// Audibility is still gated per binding by ``AdditionalHostReleasePolicy``.
     public static let verified: Set<HostSurfaceID> = [
-        .codex, .claudeCode, .workBuddy, .opencode, .kimiCode,
+        .codex, .claudeCode, .workBuddy, .opencode, .kimiCode, .grokBuild,
     ]
 }
 

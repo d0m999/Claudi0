@@ -19,7 +19,7 @@ func runAdditionalHostMigrationSuites() async {
                 "UserTurnStarted", "ResponseCompleted", "ResponseFailed", "PermissionRequested",
                 "QuestionAsked", "SubagentCompleted",
             ]
-            : ["TurnStarted", "PermissionRequest", "PreToolUse", "SubagentStop"]
+            : ["TurnStarted", "Stop", "PermissionRequest", "PreToolUse", "SubagentStop"]
         let expected =
             AdditionalHostReleasePolicy.isAcceptanceBuild
             ? candidates
@@ -142,7 +142,7 @@ func runAdditionalHostMigrationSuites() async {
                 let f = MigrationFixture(host: host)
                 defer { try? FileManager.default.removeItem(at: f.root) }
                 let events =
-                    invalidEvent ? [host == .opencode ? "InventedEvent" : "Stop"] : candidates
+                    invalidEvent ? [host == .opencode ? "InventedEvent" : "StopFailure"] : candidates
                 var original = f.configuration(events: events, id: UUID(), template: legacy)
                 if !invalidEvent {
                     original =

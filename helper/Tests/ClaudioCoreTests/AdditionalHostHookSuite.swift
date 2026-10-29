@@ -299,7 +299,7 @@ func runAdditionalHostHookSuites() {
                     overrides: ["parent_session_id": "session-1"])) == nil, "子会话不能把自己当父会话")
     }
 
-    suite("Kimi Code：精确提问、未启用终态与两个成功子任务") {
+    suite("Kimi Code：精确提问、CLI 落盘准入与两个成功子任务") {
         for name in ["askuserquestion", "AskUserQuestion ", "OtherAskUserQuestion"] {
             expect(
                 AdditionalHostHookPayload.parse(
@@ -308,12 +308,16 @@ func runAdditionalHostHookSuites() {
                         .kimiCode, "PreToolUse", overrides: ["tool_name": name])) == nil,
                 "必须精确匹配提问工具")
         }
-        for native in ["Stop", "StopFailure"] {
-            expect(
-                AdditionalHostHookPayload.parse(
-                    host: .kimiCode, nativeEvent: native,
-                    data: additionalHookData(.kimiCode, native)) == nil, "缺少主子身份不能启用 \(native)")
-        }
+        expect(
+            AdditionalHostHookPayload.parse(
+                host: .kimiCode, nativeEvent: "Stop",
+                data: additionalHookData(.kimiCode, "Stop")) != nil,
+            "核心 parser 校验 Stop 基础字段；主轮身份仍由 CLI 落盘准入决定")
+        expect(
+            AdditionalHostHookPayload.parse(
+                host: .kimiCode, nativeEvent: "StopFailure",
+                data: additionalHookData(.kimiCode, "StopFailure")) == nil,
+            "StopFailure 仍无主／子失败身份")
         withTempDirectory { root in
             let f = AdditionalHookFixture(root: root, host: .kimiCode)
             expect(f.handle("SubagentStop")?.playbackResult == .played, "第一个成功子任务")
@@ -447,7 +451,14 @@ private struct AdditionalHookFixture: Sendable {
                     sender: { [notices] in
                         notices.append($0); return .sent
                     }),
-                sourcePayload: data, scopeFingerprint: { scope },
+                sourcePayload: data,
+                additionalHostStartStopSource:
+                    host == .kimiCode && native == "Stop"
+                    ? HostEventSource(
+                        projectLabel: "fixture", sessionID: "session-fixture",
+                        mainSessionIsKnown: true)
+                    : nil,
+                scopeFingerprint: { scope },
                 questionScopeFingerprint: { scope },
                 questionDeduplicationStore: deduplication, now: { [now] in now }))
     }

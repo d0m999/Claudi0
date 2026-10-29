@@ -3,15 +3,15 @@ import Foundation
 
 @MainActor
 func runGrokBuildIntegrationSuites() async {
-    suite("Grok Build：独立身份、三条绑定、两类公共事件和发布门槛") {
+    suite("Grok Build：独立身份、五条绑定、四类公共事件和发布门槛") {
         expect(HostID(rawValue: "grok-build") == .grokBuild, "稳定 CLI HostID")
         expect(HostSurfaceID.grokBuild.rawValue == HostProductID.grokBuild.rawValue, "独立产品与来源")
         expect(HostID.grokBuild.descriptor.mechanism == .nativeHooks, "仅原生 hooks")
         let bindings = HostCapabilityCatalog.bindings(for: .grokBuild)
         expect(bindings.count == 6, "五类事件与独立提问绑定")
         let enabled = bindings.filter(\.isAudibleCapability)
-        expect(enabled.count == (AdditionalHostReleasePolicy.isAcceptanceBuild ? 3 : 0), "逐绑定准入")
-        expect(Set(enabled.map(\.event)).count == (enabled.isEmpty ? 0 : 2), "覆盖只按公共 Event 计数")
+        expect(enabled.count == (AdditionalHostReleasePolicy.isAcceptanceBuild ? 5 : 0), "逐绑定准入")
+        expect(Set(enabled.map(\.event)).count == (enabled.isEmpty ? 0 : 4), "覆盖只按公共 Event 计数")
         expect(
             AdditionalHostReleasePolicy.verifiedBindings.isDisjoint(with: Set(bindings.map(\.id))),
             "自动证据不得开放普通 Release")
@@ -19,10 +19,19 @@ func runGrokBuildIntegrationSuites() async {
             HostID.productVisibleCases.contains(.grokBuild)
                 == AdditionalHostReleasePolicy.isAcceptanceBuild,
             "没有合格绑定时隐藏入口")
-        expect(!WorkspaceSurfaceEligibility.verified.contains(.grokBuild), "目录通道未验收时仅默认组")
+        expect(WorkspaceSurfaceEligibility.verified.contains(.grokBuild), "目录通道已验收")
+        expect(
+            WorkspaceSurfaceEligibility.candidates.contains(.grokBuild)
+                == AdditionalHostReleasePolicy.visibleHosts.contains(.grokBuild),
+            "设置页只展示当前可见来源")
+        for (native, event) in [("UserPromptSubmit", Event.taskStart), ("Stop", .stop)] {
+            expect(
+                HostCapabilityCatalog.semanticEvent(host: .grokBuild, nativeEvent: native)
+                    == (AdditionalHostReleasePolicy.isAcceptanceBuild ? event : nil),
+                "开始／结束受发布准入约束：\(native)")
+        }
         for native in [
-            "UserPromptSubmit", "Stop", "SubagentStop", "StopCancelled", "PermissionDenied",
-            "PostToolUseFailure",
+            "SubagentStop", "StopCancelled", "PermissionDenied", "PostToolUseFailure",
         ] {
             expect(
                 HostCapabilityCatalog.semanticEvent(host: .grokBuild, nativeEvent: native) == nil,
@@ -82,7 +91,7 @@ func runGrokBuildIntegrationSuites() async {
                 host: .grokBuild, installationID: id, scopeFingerprint: f.scope.value)
             let other = f.configurationRoot.appendingPathComponent("hooks/third-party.json")
             f.write(Data("{\"hooks\":{}}\n".utf8), to: other)
-            let backup = f.file.appendingPathExtension("claudio.bak")
+            let backup = f.backupFile
             f.write(Data("retained backup".utf8), to: backup)
             let intents = HostIntegrationIntentStore(
                 configFile: f.runtime.appendingPathComponent("config.json"),
@@ -310,7 +319,7 @@ func runGrokBuildIntegrationSuites() async {
         let first = try! await f.adapter.connect(runtime: .ready).get()
         let original = try! Data(contentsOf: f.file)
         expect(
-            original == f.acceptanceConfiguration(id: first.installationID!), "三条候选绑定和 timeout=2")
+            original == f.acceptanceConfiguration(id: first.installationID!), "五条候选绑定和 timeout=2")
         expect(first.configuration == .configured, "接入已准备")
         if case .awaitingReceipt = first.activation {} else { expect(false, "配置不制造激活") }
         let again = try! await f.adapter.connect(runtime: .ready).get()
@@ -320,8 +329,11 @@ func runGrokBuildIntegrationSuites() async {
         f.scope.value = "grok-build-upgraded-v2"
         let repaired = try! await f.adapter.connect(runtime: .ready).get()
         expect(repaired.installationID != first.installationID, "scope 变化轮换安装代次")
-        let backup = f.file.appendingPathExtension("claudio.bak")
+        let backup = f.backupFile
         expect(try! Data(contentsOf: backup) == original, "一次备份保留准确旧配置")
+        expect(
+            !FileManager.default.fileExists(atPath: f.legacyBackupFile.path),
+            "备份不得留在 Grok 会扫描的 hooks 目录")
         f.scope.value = "grok-build-upgraded-v3"
         _ = try! await f.adapter.connect(runtime: .ready).get()
         expect(try! Data(contentsOf: backup) == original, "再次修复不覆盖备份")

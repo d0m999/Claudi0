@@ -5,19 +5,35 @@ func grokBuildPayload(
     _ native: String, session: String = "grok-session", request: String = "request-1",
     overrides: [String: Any] = [:], removing: [String] = []
 ) -> Data {
+    let promptID =
+        native == "UserPromptSubmit" && UUID(uuidString: request) == nil
+        ? "11111111-1111-4111-8111-111111111111" : request
     var object: [String: Any] = [
         "hookEventName": native == "StopFailure"
             ? "stop_failure"
-            : native == "PreToolUse" ? "pre_tool_use" : "notification",
+            : native == "PreToolUse"
+                ? "pre_tool_use"
+                : native == "UserPromptSubmit" ? "user_prompt_submit" : native == "Stop" ? "stop"
+                    : "notification",
         "hook_event_name": native, "sessionId": session, "session_id": session,
         "cwd": "/fixture/grok-project", "workspaceRoot": "/fixture/grok-project",
-        "timestamp": "2026-10-21T00:00:00Z", "permissionMode": "default", "promptId": request,
+        "timestamp": "2026-10-21T00:00:00Z", "permissionMode": "default", "promptId": promptID,
     ]
     switch native {
     case "StopFailure": object["error"] = "server_error"; object["errorDetails"] = "PRIVATE_BODY"
     case "PreToolUse":
         object["toolName"] = "ask_user_question"; object["toolUseId"] = request
         object["toolInput"] = ["question": "PRIVATE_BODY"]; object["toolInputTruncated"] = false
+    case "UserPromptSubmit":
+        object["prompt"] = "fixture prompt"
+    case "Stop":
+        object["reason"] = "end_turn"
+        object["stopHookActive"] = false
+        object["stop_hook_active"] = false
+        object["lastAssistantMessage"] = "OK"
+        object["last_assistant_message"] = "OK"
+        object["backgroundTasks"] = []
+        object["sessionCrons"] = []
     default: object["notificationType"] = "permission_prompt"; object["message"] = "PRIVATE_BODY"
     }
     object.merge(overrides, uniquingKeysWith: { _, value in value })
@@ -31,7 +47,10 @@ func grokBuildRunnerEnvironment(_ native: String, session: String = "grok-sessio
     [
         "GROK_HOOK_EVENT": native == "StopFailure"
             ? "stop_failure"
-            : native == "PreToolUse" ? "pre_tool_use" : "notification",
+            : native == "PreToolUse"
+                ? "pre_tool_use"
+                : native == "UserPromptSubmit" ? "user_prompt_submit" : native == "Stop" ? "stop"
+                    : "notification",
         "GROK_HOOK_NAME": "claudio", "GROK_SESSION_ID": session,
         "GROK_WORKSPACE_ROOT": "/fixture/grok-project",
     ]
@@ -53,6 +72,8 @@ struct GrokBuildIntegrationFixture: Sendable {
     let receipts: HostHookReceiptStore
     let scope = GrokBuildTestScope()
     var file: URL { configurationRoot.appendingPathComponent("hooks/claudio.json") }
+    var backupFile: URL { configurationRoot.appendingPathComponent("claudio-hooks.backup.json") }
+    var legacyBackupFile: URL { file.appendingPathExtension("claudio.bak") }
     var helper: String { runtime.appendingPathComponent("bin/claudio").path }
     var adapter: GrokBuildIntegrationAdapter { .init(environment: environment()) }
 
@@ -91,7 +112,7 @@ struct GrokBuildIntegrationFixture: Sendable {
     func acceptanceConfiguration(id: UUID) -> Data {
         let events: [(String, String?)] = [
             ("StopFailure", nil), ("Notification", "^permission_prompt$"),
-            ("PreToolUse", "^(ask_user_question)$"),
+            ("PreToolUse", "^(ask_user_question)$"), ("Stop", nil), ("UserPromptSubmit", nil),
         ]
         var hooks: [String: Any] = [:]
         for (event, matcher) in events {

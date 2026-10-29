@@ -41,6 +41,8 @@ public struct HostHookEnvironment: Sendable {
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
     public let sourceEnvironment: [String: String]
+    /// Prevalidated Grok start/stop source from the CLI boundary; nil for every other event.
+    public let additionalHostStartStopSource: HostEventSource?
     public let scopeFingerprint: @Sendable () -> String?
     public let codexApprovalRouting: @Sendable (Data?) -> CodexApprovalRouting
     public let questionScopeFingerprint: @Sendable () -> String?
@@ -59,6 +61,7 @@ public struct HostHookEnvironment: Sendable {
         eventNoticeChannel: HostEventNoticeChannel? = nil,
         sourcePayload: Data? = nil,
         sourceEnvironment: [String: String] = ProcessInfo.processInfo.environment,
+        additionalHostStartStopSource: HostEventSource? = nil,
         codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in
             .unavailable
         },
@@ -85,6 +88,7 @@ public struct HostHookEnvironment: Sendable {
         self.eventNoticeChannel = eventNoticeChannel
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
         self.sourceEnvironment = sourceEnvironment
+        self.additionalHostStartStopSource = additionalHostStartStopSource
         self.codexApprovalRouting = codexApprovalRouting
         self.scopeFingerprint = scopeFingerprint
         self.questionScopeFingerprint = questionScopeFingerprint
@@ -107,6 +111,7 @@ public func systemHostHookEnvironment(
     sourcePayload: Data? = nil,
     authorizationToken: HostEventAuthorizationToken? = nil,
     versionResolver: HostVersionResolver? = nil,
+    additionalHostStartStopSource: HostEventSource? = nil,
     codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in .unavailable
     }
 ) -> HostHookEnvironment {
@@ -128,6 +133,7 @@ public func systemHostHookEnvironment(
         activityStore: .production,
         eventNoticeChannel: eventNoticeChannel,
         sourcePayload: sourcePayload,
+        additionalHostStartStopSource: additionalHostStartStopSource,
         codexApprovalRouting: codexApprovalRouting,
         scopeFingerprint: { questionScope.value },
         questionScopeFingerprint: { questionScope.value },
@@ -235,11 +241,15 @@ public func handleHostHook(
     let additionalPayload = AdditionalHostHookPayload.parse(
         host: host, nativeEvent: nativeEvent,
         data: environment.sourcePayload)
+    let isGrokStartStop =
+        host == .grokBuild && (nativeEvent == "UserPromptSubmit" || nativeEvent == "Stop")
     let grokPayload =
-        host == .grokBuild
+        host == .grokBuild && !isGrokStartStop
         ? GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: environment.sourcePayload)
         : nil
-    if host == .grokBuild {
+    if isGrokStartStop {
+        guard environment.additionalHostStartStopSource != nil else { return nil }
+    } else if host == .grokBuild {
         guard let grokPayload,
             grokPayload.matchesRunner(
                 nativeEvent: nativeEvent, environment: environment.sourceEnvironment)
@@ -318,9 +328,9 @@ public func handleHostHook(
     let isTaskStart = event == .taskStart
     let observedPlayEnvironment = PlayEnvironment(
         surfaceID: host.surfaceID,
-        // Question intent and Grok's unverified directory channel keep the Default Group.
-        // Other admitted surfaces may resolve a workspace under ADR 0005.
-        workingDirectory: isQuestion || host == .grokBuild
+        // Question intent always keeps the Default Group. Every other admitted surface,
+        // including Grok after its directory-channel verification, resolves ADR 0005 rules.
+        workingDirectory: isQuestion
             ? nil : WorkspaceHookDirectory.cwd(from: environment.sourcePayload),
         playbackAuthorized: {
             base.playbackAuthorized()
@@ -429,8 +439,12 @@ public func handleHostHook(
         installationIsCurrent(),
         let binding = HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent)
     {
-        let input = HostEventSourceParser.parseInput(
-            host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
+        let input =
+            environment.additionalHostStartStopSource.map {
+                HostEventInput(source: .available($0), reason: nil)
+            }
+            ?? HostEventSourceParser.parseInput(
+                host: host, nativeEvent: nativeEvent, data: environment.sourcePayload)
         let ancestors = HostProcessAncestry.capture()
         let notice = HostEventNotice(
             id: eventID,
