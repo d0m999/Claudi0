@@ -63,6 +63,77 @@
     --shadow-pop: 0 1px 2px rgba(0,0,0,.5), 0 18px 48px rgba(0,0,0,.55);
     --shadow-win: 0 30px 80px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4);
   }
+  /* ========== 品牌色板皮肤 ==========
+     原始色值只有三个：酸柠 / 深墨 / 暖白（取自 assets/branding 色板）。
+     其余全部由 color-mix 在这三色之间派生，不引入第四色。
+     酸柠对暖白仅 1.11:1，所以本皮肤以深墨为底，酸柠只做前景与填充，不做浅底上的笔划。
+     唯一例外：warning/error/success 语义色沿用 dark 档 —— 品牌三色无法表达「错误」这一语义，
+     把错误画成酸柠会让用户读成强调。 */
+  [data-theme="brand"] {
+    color-scheme: dark;
+    /* 近黑中性底（原 #172B25 偏绿）：底色与酸柠同属绿相时，小字号图标会被读成橄榄；
+       换成中性近黑后酸柠对比从 12.03:1 提到 15.09:1，品牌酸柠色本身不变。 */
+    --lime: #D8F447; --ink: #101311; --warm: #F5F3E9;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 4.5 3.5 3 3.5-3' fill='none' stroke='%23D8F447' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --backdrop1: var(--ink);
+    /* 桌面不再掺酸柠：之前的 6% 绿晕在整幅画面上把深墨推成橄榄色，
+       面板再怎么调也浮不出来。桌面就回到纯深墨。 */
+    --backdrop2: color-mix(in srgb, var(--warm) 4%, var(--ink));
+    --page-text: var(--warm);
+    /* 面板与桌面同基底（都是深墨），层次全交给发丝线、内层抬亮与阴影。
+       之前把面板抬到暖白 7%，等于让面板比桌面亮一档，整块读成"灰塑料壳"。 */
+    --panel-a: var(--ink);
+    --panel-b: color-mix(in srgb, var(--warm) 3%, var(--ink));
+    /* 内层容器必须是"抬亮"的一侧（比面板亮），否则卡片看起来是凹进去的。 */
+    --surface: color-mix(in srgb, var(--warm) 8%, var(--ink));
+    --text: var(--warm);
+    --text-2: color-mix(in srgb, var(--warm) 62%, var(--ink));
+    /* 次级灰字提到 ≈4.9:1（原 40% 只有 3.6:1，深底上发虚）。 */
+    --muted: color-mix(in srgb, var(--warm) 50%, var(--ink));
+    --hairline: color-mix(in srgb, var(--warm) 10%, transparent);
+    --hairline-strong: color-mix(in srgb, var(--warm) 12%, transparent);
+    --clay: var(--lime);
+    --clay-soft: color-mix(in srgb, var(--lime) 14%, transparent);
+    --focus: var(--lime);
+    --brand-word: var(--lime);
+    /* 五事件图标统一为纯酸柠单色（12.03:1），靠字形区分，不靠色相。
+       曾试过酸柠→暖白渐变：实际取值落在酸柠/橄榄/灰绿/灰白之间，五个图标读起来是脏的。
+       也曾试过全部压到暖白：整块面板失去唯一的彩色节奏，变成一片灰。
+       正解是回到品牌色里对比度最稳的那一支——酸柠，只做前景笔划，不做底。 */
+    --ev-blue: var(--lime);
+    --ev-green: var(--lime);
+    --ev-amber: var(--lime);
+    --ev-clay: var(--lime);
+    --ev-indigo: var(--lime);
+    --window: color-mix(in srgb, var(--warm) 3%, var(--ink));
+    --window-side: color-mix(in srgb, var(--warm) 5%, transparent);
+    --hover: color-mix(in srgb, var(--warm) 7%, transparent);
+    --warning: #EAB45E; --error: #FF817B; --success: #63C17D;
+    --feedback-warning: #FF9F0A; --feedback-error: #FF453A; --feedback-success: #34C759;
+    --shadow-pop: 0 1px 2px rgba(0,0,0,.5), 0 18px 48px rgba(0,0,0,.55);
+    --shadow-win: 0 30px 80px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4);
+  }
+  /* 品牌档的边界改由发丝环承担（box-shadow 而非 border）：
+     深墨底上 1px 16% 暖白的实边会把面板描成一圈亮线，读起来像外壳；
+     环不占版面、不改内边距，只留一条 10% 的转折线，边缘交给阴影去交代。 */
+  [data-theme="brand"] .popover,
+  [data-theme="brand"] .banner {
+    border-color: transparent;
+    box-shadow: 0 22px 52px rgba(0,0,0,.55), 0 0 0 1px var(--hairline);
+  }
+  /* 品牌档下事件图标不背方块：酸柠笔划本身已经是这一屏唯一的高饱和，
+     再套一层 15% 的方形底就多了一个容器层级，行距会被读成"卡片列表"。
+     占位仍是 26px，排版不动，只把底色浓度压到 0。 */
+  [data-theme="brand"] .glyph {
+    --glyph-tint: 0%;
+  }
+  [data-theme="brand"] .event-icon {
+    background: transparent;
+    border-radius: 8px;
+  }
+  /* 品牌皮肤只覆盖菜单栏面板。设置窗口固定走原生深色档，宿主背景保持透明，
+     窗口四周直接透出品牌桌面，不会出现一圈中性灰。 */
+  [data-theme="brand"] #window { background: transparent; }
 
   /* ========== 舞台：模拟桌面 ========== */
   .stage {
@@ -962,8 +1033,8 @@
   <select class="field" id="bannerEvent">
     <option value="permission">等你授权</option><option value="needsInput">等你输入</option>
     <option value="interrupted">执行中断</option><option value="review">需要你查看</option>
-    <option value="stop">本轮已结束</option><option value="subagent">子任务已结束</option>
-    <option value="question">即将向你提问</option><option value="taskStart">开始执行</option>
+    <option value="stop">响应结束</option><option value="subagent">子任务结束</option>
+    <option value="question">即将向你提问</option><option value="taskStart">用户发起</option>
     <option value="noSource">在面板查看</option>
   </select>
   <div class="chips" style="margin-top:8px">
@@ -1400,7 +1471,7 @@ dialog p { overflow-wrap:anywhere; }
 <div class="review-tools" aria-label="原型预览工具，不属于应用">
   <span class="review-title" id="review-title">claudi0 · macOS 设置提案</span>
   <span class="spacer"></span>
-  <label><span id="review-appearance">外观</span><select id="preview-theme"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label>
+  <label><span id="review-appearance">外观</span><select id="preview-theme"><option value="light">浅色</option><option value="dark">深色</option><option value="brand">品牌</option><option value="system">跟随系统</option></select></label>
   <label><span id="review-size">窗口</span><select id="preview-size"><option value="default">默认 · 1240 × 820</option><option value="minimum">最小 · 960 × 640</option></select></label>
   <label><span id="review-scene">场景</span><select id="preview-scene"><option value="normal">正常</option><option value="zero">零音量</option><option value="missing">缺少提示音</option><option value="stale">工作区已失效</option><option value="partial">AI · 2/3 候选</option><option value="failure">AI · 生成失败</option><option value="writeFailure">映射写入失败</option><option value="empty">空声音包库</option></select></label>
   <button id="reset-demo">重置演示</button>
@@ -1496,7 +1567,7 @@ dialog p { overflow-wrap:anywhere; }
     </div>
   </div>
 
-  <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-cover sf-cover-small"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow"><span class="sf-medium" data-name></span><span class="sf-secondary" data-meta></span></span><i data-lucide="chevron-right" aria-hidden="true"></i></button><button type="button" class="sf-button sf-favorite cursor-interaction" data-act="favorite"><span data-star aria-hidden="true"></span><span data-favorite-title></span></button></div></template>
+  <template data-tpl="pack-row"><div class="sf-pack-row"><button type="button" class="sf-pack-detail cursor-interaction"><span class="sf-pack-glyph" aria-hidden="true"><i data-lucide="audio-lines" aria-hidden="true"></i></span><span class="sf-grow sf-pack-text"><span class="sf-pack-name" data-name></span><span class="sf-secondary sf-pack-meta" data-meta></span></span></button><button type="button" class="sf-favorite cursor-interaction" data-act="favorite"><span data-star aria-hidden="true"></span><span class="visually-hidden" data-favorite-title></span></button><span class="sf-pack-chevron" aria-hidden="true"><i data-lucide="chevron-right"></i></span></div></template>
   <template data-tpl="event-row"><div class="sf-event"><span class="sf-drop-badge" data-drop-badge aria-hidden="true"></span><div class="sf-event-main"><span class="sf-event-glyph"><i data-lucide="music-2" aria-hidden="true"></i></span><div class="sf-grow"><span class="sf-medium" data-event-name></span><span class="sf-secondary" data-source-name></span></div><div class="sf-actions"><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-button cursor-interaction" data-source-button>设置…</button><button type="button" class="sf-link sf-clear cursor-interaction" data-clear>清除</button></div></div><div class="sf-source-menu" data-source-menu hidden><button type="button" class="cursor-interaction" data-source="ai"><i data-lucide="sparkles" aria-hidden="true"></i>AI 生成…</button><button type="button" class="cursor-interaction" data-source="history"><i data-lucide="clock-3" aria-hidden="true"></i>从生成记录选择…</button><button type="button" class="cursor-interaction" data-source="pack"><i data-lucide="folder-open" aria-hidden="true"></i>从本包选择…</button><button type="button" class="cursor-interaction" data-source="import"><i data-lucide="file-audio" aria-hidden="true"></i>导入本地文件…</button><button type="button" class="cursor-interaction" data-source="system"><i data-lucide="volume-2" aria-hidden="true"></i>选择系统提示音…</button></div></div></template>
   <template data-tpl="choice-row"><div class="sf-audio-row"><label class="sf-audio-select cursor-interaction"><input type="radio" name="sf-audio-selection"><span class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></span></label><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><div class="sf-actions" data-extra></div></div></template>
   <template data-tpl="managed-audio"><div class="sf-audio-row"><div class="sf-grow"><span data-name></span><span class="sf-secondary" data-meta></span></div><button type="button" class="sf-icon sf-play cursor-interaction" data-preview aria-label="试听">▶</button><button type="button" class="sf-icon cursor-interaction" data-rename aria-label="重命名音频"><i data-lucide="pencil" aria-hidden="true"></i></button><button type="button" class="sf-icon sf-danger cursor-interaction" data-trash aria-label="移到废纸篓"><i data-lucide="trash-2" aria-hidden="true"></i></button></div></template>
@@ -1508,7 +1579,7 @@ dialog p { overflow-wrap:anywhere; }
   <template data-tpl="import-pack"><div class="sf-box"><div class="sf-setting-row"><span class="sf-medium" data-import-name>森林轻响.claudiopack</span><i data-lucide="package" aria-hidden="true"></i></div><div class="sf-setting-row"><span data-import-summary>5 个事件 · 5 个文件</span></div></div></template>
 </div>
 <style>
-  #claudio-sounds-overview { --sf-window:light-dark(#fafafa,#242426); --sf-sidebar:light-dark(#ededee,#303033); --sf-surface:light-dark(#fff,#323235); --sf-text:light-dark(#252528,#f1f1f3); --sf-muted:light-dark(#717178,#b5b5bd); --sf-line:light-dark(#e0e0e4,#49494e); --sf-blue:light-dark(#0074eb,#287fe0); --sf-on-blue:light-dark(#fff,#fff); --sf-select:light-dark(#edf5ff,#263e56); --sf-button:light-dark(#fff,#48484e); --sf-red:light-dark(#c32924,#ff908c); --sf-feedback-error:light-dark(#e0453a,#ff453a); --sf-soft:light-dark(#f4f4f6,#3a3a3f); --sf-shadow:light-dark(#00000016,#00000055); --sf-veil:light-dark(#29293425,#05050a78); --sf-orange:light-dark(#a56004,#ffcb80); font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; color:var(--sf-text); width:100%; }
+  #claudio-sounds-overview { --sf-window:light-dark(#fafafa,#242426); --sf-sidebar:light-dark(#ededee,#303033); --sf-surface:light-dark(#fff,#323235); --sf-text:light-dark(#252528,#f1f1f3); --sf-muted:light-dark(#717178,#b5b5bd); --sf-line:light-dark(#e0e0e4,#49494e); --sf-blue:light-dark(#0074eb,#287fe0); --sf-on-blue:light-dark(#fff,#fff); --sf-select:light-dark(#edf5ff,#263e56); --sf-button:light-dark(#fff,#48484e); --sf-red:light-dark(#c32924,#ff908c); --sf-feedback-error:light-dark(#e0453a,#ff453a); --sf-soft:light-dark(#f4f4f6,#3a3a3f); --sf-shadow:light-dark(#00000016,#00000055); --sf-veil:light-dark(#29293425,#05050a78); --sf-orange:light-dark(#a56004,#ffcb80); --sf-favorite:light-dark(#0074eb,#4b9cf5); --sf-group:light-dark(#f2f2f4,#2c2c2e); --sf-row-hover:light-dark(#0000000d,#ffffff14); font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; color:var(--sf-text); width:100%; -webkit-font-smoothing:antialiased; }
   #claudio-sounds-overview * { box-sizing:border-box; }
   #claudio-sounds-overview [hidden] { display:none!important; }
   #claudio-sounds-overview .sf-window { display:grid; grid-template-columns:190px minmax(0,1fr); background:var(--sf-window); border:1px solid var(--sf-line); border-radius:12px; box-shadow:0 6px 22px var(--sf-shadow); min-height:720px; }
@@ -1528,13 +1599,15 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-sidebar-note { color:var(--sf-muted); font-size:11px; padding:24px 8px 0; margin-top:auto; }
   #claudio-sounds-overview .sf-stage { display:grid; min-width:0; position:relative; }
   #claudio-sounds-overview .sf-screen,#claudio-sounds-overview .sf-overlay { grid-area:1/1; min-width:0; }
-  #claudio-sounds-overview .sf-toolbar { display:flex; align-items:center; gap:10px; padding:18px 24px; min-height:67px; padding-right:95px; }
-  #claudio-sounds-overview h1 { margin:0; font-size:20px; font-weight:500; }
+  #claudio-sounds-overview .sf-toolbar { display:flex; align-items:center; gap:10px; padding:13px 24px; min-height:56px; padding-right:95px; }
+  #claudio-sounds-overview h1 { margin:0; font-size:17px; font-weight:600; }
   #claudio-sounds-overview h2 { margin:0; font-size:15px; font-weight:500; }
   #claudio-sounds-overview p { margin:10px 0; }
-  #claudio-sounds-overview .sf-body { padding:19px 28px 24px; }
-  #claudio-sounds-overview .sf-section-heading { display:flex; align-items:center; gap:12px; justify-content:space-between; margin-bottom:13px; flex-wrap:wrap; }
+  #claudio-sounds-overview .sf-body { padding:27px 32px 46px; }
+  #claudio-sounds-overview .sf-body>[data-route] { width:100%; max-width:780px; margin-inline:auto; }
+  #claudio-sounds-overview .sf-section-heading { display:flex; align-items:center; gap:12px; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; }
   #claudio-sounds-overview .sf-actions { display:flex; align-items:center; gap:9px; flex-shrink:0; flex-wrap:wrap; }
+  #claudio-sounds-overview .sf-section-heading>.sf-actions .sf-button { min-height:28px; padding:3px 10px; }
   #claudio-sounds-overview button { font:inherit; }
   #claudio-sounds-overview button:disabled { opacity:.45; cursor:default; }
   #claudio-sounds-overview .sf-button,#claudio-sounds-overview .sf-icon { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:4px 11px; min-height:29px; border:1px solid var(--sf-line); border-radius:6px; color:var(--sf-text); background:var(--sf-button); box-shadow:0 1px 2px var(--sf-shadow); white-space:nowrap; }
@@ -1549,28 +1622,51 @@ dialog p { overflow-wrap:anywhere; }
   #claudio-sounds-overview .sf-grow>span { display:block; }
   #claudio-sounds-overview .sf-medium { font-weight:500; }
   #claudio-sounds-overview .sf-box { border:1px solid var(--sf-line); border-radius:9px; background:var(--sf-surface); }
+  #claudio-sounds-overview [data-pack-list] { background:var(--sf-group); border:0; border-radius:10px; overflow:hidden; }
+  #claudio-sounds-overview [data-pack-list]>.sf-empty-library { background:transparent; border:0; border-radius:0; }
   #claudio-sounds-overview .sf-cover { width:48px; height:48px; border-radius:10px; background:var(--sf-soft); color:var(--sf-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   #claudio-sounds-overview .sf-cover svg { width:26px; height:26px; }
   #claudio-sounds-overview .sf-cover-small { width:38px; height:38px; border-radius:8px; }
   #claudio-sounds-overview .sf-cover-small svg { width:21px; height:21px; }
-  #claudio-sounds-overview .sf-pack-row { padding:16px; display:flex; align-items:center; gap:13px; border:0; border-bottom:1px solid var(--sf-line); background:transparent; width:100%; text-align:left; color:var(--sf-text); }
-  #claudio-sounds-overview .sf-pack-row:last-child { border-bottom:0; }
-  #claudio-sounds-overview .sf-pack-detail { display:flex; align-items:center; gap:13px; flex:1; min-width:0; padding:0; border:0; background:transparent; color:var(--sf-text); text-align:left; }
-  #claudio-sounds-overview .sf-pack-detail .sf-medium { overflow-wrap:anywhere; }
-  #claudio-sounds-overview .sf-pack-detail>svg { width:15px; color:var(--sf-muted); flex-shrink:0; }
-  #claudio-sounds-overview .sf-favorite { flex-shrink:0; white-space:nowrap; }
-  #claudio-sounds-overview .sf-favorites-hint { margin:0 0 13px; }
-  #claudio-sounds-overview .sf-pack-row:hover { background:var(--sf-soft); }
+  #claudio-sounds-overview .sf-pack-row { position:relative; display:flex; align-items:center; gap:6px; min-height:46px; padding:6px 12px 6px 16px; background:transparent; color:var(--sf-text); transition:background-color .1s ease; }
+  #claudio-sounds-overview .sf-pack-row:not(:last-child)::after { content:""; position:absolute; left:16px; right:16px; bottom:0; height:1px; background:var(--sf-line); }
+  #claudio-sounds-overview .sf-pack-row:hover, #claudio-sounds-overview .sf-pack-row:active { background:var(--sf-row-hover); }
+  #claudio-sounds-overview .sf-pack-detail { display:flex; align-items:center; gap:10px; flex:1; min-width:0; padding:0; border:0; background:transparent; color:var(--sf-text); text-align:left; }
+  #claudio-sounds-overview .sf-pack-glyph { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex:none; color:#fff; background:linear-gradient(180deg,#8b8cf7,#5f5ce0); box-shadow:inset 0 0 0 .5px #0000001f,inset 0 1px 0 #ffffff40; }
+  #claudio-sounds-overview .sf-pack-glyph svg { width:14px; height:14px; stroke-width:2; }
+  #claudio-sounds-overview .sf-pack-glyph[data-kind="user"] { background:linear-gradient(180deg,#ffb340,#f28b00); }
+  #claudio-sounds-overview .sf-pack-glyph[data-kind="draft"] { background:linear-gradient(180deg,#b9b9c1,#9898a1); }
+  #claudio-sounds-overview .sf-pack-text { display:block; line-height:1.2; }
+  #claudio-sounds-overview .sf-pack-text>span { display:block; }
+  #claudio-sounds-overview .sf-pack-name { font-size:13px; font-weight:400; line-height:1.25; overflow-wrap:anywhere; }
+  #claudio-sounds-overview .sf-pack-meta { margin-top:1px; font-size:11px; line-height:1.3; }
+  #claudio-sounds-overview .sf-favorite { flex:none; width:28px; height:28px; min-height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:0; border-radius:6px; background:transparent; box-shadow:none; color:var(--sf-muted); opacity:0; transition:opacity .1s ease,background-color .1s ease,color .1s ease; }
+  #claudio-sounds-overview .sf-pack-row:hover .sf-favorite, #claudio-sounds-overview .sf-pack-row:focus-within .sf-favorite, #claudio-sounds-overview .sf-favorite[data-starred="true"] { opacity:1; }
+  #claudio-sounds-overview .sf-favorite:hover { background:color-mix(in srgb,var(--sf-text) 8%,transparent); color:var(--sf-text); }
+  #claudio-sounds-overview .sf-favorite[data-starred="true"], #claudio-sounds-overview .sf-favorite[data-starred="true"]:hover { color:var(--sf-favorite); }
+  #claudio-sounds-overview [data-star] { width:15px; height:15px; display:block; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4 14.98 8.44 21.65 9.41 16.82 14.12 17.96 20.76 12 17.63 6.04 20.76 7.18 14.12 2.35 9.41 9.02 8.44Z' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4 14.98 8.44 21.65 9.41 16.82 14.12 17.96 20.76 12 17.63 6.04 20.76 7.18 14.12 2.35 9.41 9.02 8.44Z' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+  #claudio-sounds-overview .sf-favorite[data-starred="true"] [data-star] { -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4 14.98 8.44 21.65 9.41 16.82 14.12 17.96 20.76 12 17.63 6.04 20.76 7.18 14.12 2.35 9.41 9.02 8.44Z' fill='black' stroke='black' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4 14.98 8.44 21.65 9.41 16.82 14.12 17.96 20.76 12 17.63 6.04 20.76 7.18 14.12 2.35 9.41 9.02 8.44Z' fill='black' stroke='black' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  #claudio-sounds-overview .sf-pack-chevron { display:flex; flex:none; color:var(--sf-muted); pointer-events:none; }
+  #claudio-sounds-overview .sf-pack-chevron svg { width:11px; height:11px; stroke-width:2.4; }
+  #claudio-sounds-overview .sf-favorites-hint { margin:0 0 12px; line-height:1.45; }
+  @supports selector(:has(*)) {
+    #claudio-sounds-overview .sf-pack-row:has(.sf-pack-detail:focus-visible) { outline:3px solid var(--focus); outline-offset:-3px; border-radius:6px; }
+    #claudio-sounds-overview .sf-pack-detail:focus-visible { outline:none; }
+  }
+  #claudio-sounds-overview .sf-favorite:focus-visible { outline:3px solid var(--focus); outline-offset:-3px; border-radius:6px; }
   #claudio-sounds-overview .sf-tag { background:var(--sf-soft); color:var(--sf-muted); border-radius:4px; font-size:11px; padding:2px 6px; white-space:nowrap; }
   #claudio-sounds-overview .sf-service-details { padding:14px; margin-top:24px; }
+  #claudio-sounds-overview [data-route="library"]>.sf-service-details { background:var(--sf-group); border:0; border-radius:10px; }
   #claudio-sounds-overview .sf-service-details summary { cursor:pointer; display:flex; justify-content:space-between; gap:12px; }
   #claudio-sounds-overview .sf-service-details .sf-service { padding:0; margin-top:12px; }
   #claudio-sounds-overview .sf-service { display:flex; align-items:center; gap:12px; padding:16px; margin-top:24px; }
   #claudio-sounds-overview .sf-service>svg { width:20px; color:var(--sf-blue); }
-  #claudio-sounds-overview .sf-history-entry { display:flex; align-items:center; gap:12px; padding:16px; margin-top:18px; width:100%; text-align:left; color:var(--sf-text); }
+  #claudio-sounds-overview .sf-history-entry { display:flex; align-items:center; gap:10px; padding:11px 13px; margin-top:14px; width:100%; text-align:left; color:var(--sf-text); }
   #claudio-sounds-overview .sf-history-entry svg { width:17px; }
-  #claudio-sounds-overview .sf-section-heading>.sf-history-entry { width:auto; margin:0; padding:7px 11px; gap:6px; background:var(--sf-button); }
+  #claudio-sounds-overview .sf-section-heading>.sf-history-entry { width:auto; min-height:28px; margin:0; padding:3px 8px; gap:6px; border:0; border-radius:6px; background:transparent; color:var(--sf-muted); font-size:13px; transition:background-color .1s ease,color .1s ease; }
+  #claudio-sounds-overview .sf-section-heading>.sf-history-entry:hover { background:var(--sf-row-hover); color:var(--sf-text); }
   #claudio-sounds-overview .sf-section-heading>.sf-history-entry>svg { display:none; }
+  #claudio-sounds-overview .sf-section-heading>.sf-history-entry .sf-history-glyph svg { width:14px; height:14px; }
   #claudio-sounds-overview .sf-history-glyph { color:var(--sf-muted); display:flex; }
   #claudio-sounds-overview .sf-notice { color:var(--sf-blue); font-size:12px; }
   #claudio-sounds-overview .sf-pack-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
@@ -1710,7 +1806,7 @@ var L = {
     },
     notImplemented: "此宿主尚未实现该事件",
     limited: "接口仅覆盖授权请求与空闲提示",
-    evNames: { taskStart: "任务开始", stop: "本轮已结束", stopFailure: "执行中断", notification: "等你处理", subagentStop: "子任务结束" },
+    evNames: { taskStart: "用户发起", stop: "响应结束", stopFailure: "执行中断", notification: "等待介入", subagentStop: "子任务结束" },
     natives: { taskStart: "UserPromptSubmit", stop: "Stop", stopFailure: "StopFailure", notification: "Notification", subagentStop: "SubagentStop" },
     settings: "设置",
     /* ---- AI 提示音生成（逐条对应 catalog ai-cue.* 与 settings.sounds.ai-cue.* 现值） ---- */
@@ -1845,8 +1941,8 @@ var L = {
     events: "Events", eventsHint: "Selected group · 5 events",
     volume: "Volume", quit: "Close",
     activity: "Today", activitySummary: "12 today · 84 last 7 days",
-    today: "Today", week: "Last 7 days", started: "Prompt sent", ended: "Turn finished",
-    waiting: "Waiting for you", subagent: "Subagent finished", interrupted: "Run interrupted",
+    today: "Today", week: "Last 7 days", started: "User initiated", ended: "Response ended",
+    waiting: "Waiting for input", subagent: "Subtask ended", interrupted: "Execution interrupted",
     mins: function (n) { return n + "m ago"; },
     age: function (m) {
       if (m < 1) return "<1m";
@@ -1856,7 +1952,7 @@ var L = {
     },
     notImplemented: "This host has not implemented this event",
     limited: "Interface covers approval requests and idle prompts only",
-    evNames: { taskStart: "Run started", stop: "Turn finished", stopFailure: "Run interrupted", notification: "Waiting for you", subagentStop: "Subagent finished" },
+    evNames: { taskStart: "User initiated", stop: "Response ended", stopFailure: "Execution interrupted", notification: "Waiting for input", subagentStop: "Subtask ended" },
     natives: { taskStart: "UserPromptSubmit", stop: "Stop", stopFailure: "StopFailure", notification: "Notification", subagentStop: "SubagentStop" },
     settings: "Settings",
     /* ---- AI cue generation (one string per current catalog value) ---- */
@@ -2353,20 +2449,21 @@ function confirmPrototypeAction() {
   toast(messages[c.kind]); render();
 }
 function glyph(c, g) {
-  return '<span class="glyph" style="color:var(--ev-' + c + ');background:color-mix(in srgb, var(--ev-' + c + ') 15%, transparent)">' + G[g] + '</span>';
+  /* 图标底色浓度走变量：默认 15%，品牌档把它压到 0%（酸柠笔划不再套方块）。 */
+  return '<span class="glyph" style="color:var(--ev-' + c + ');background:color-mix(in srgb, var(--ev-' + c + ') var(--glyph-tint, 15%), transparent)">' + G[g] + '</span>';
 }
 
 /* 统一入口的事件场景：沿用五事件 token 与同一份提醒事实。 */
 var NOTICE_SCENARIOS = {
   permission: { event: "notification", glyph: "bell", zh: "等你授权", en: "waiting for approval", actionZh: "去授权", actionEn: "Review request" },
   needsInput: { event: "notification", glyph: "input", zh: "等你输入", en: "waiting for input", actionZh: "去输入", actionEn: "Provide input" },
-  interrupted: { event: "stopFailure", glyph: "pause", zh: "执行中断", en: "run interrupted", actionZh: "去查看", actionEn: "Inspect" },
+  interrupted: { event: "stopFailure", glyph: "pause", zh: "执行中断", en: "Execution interrupted", actionZh: "去查看", actionEn: "Inspect" },
   review: { event: "notification", glyph: "bell", zh: "需要你查看", en: "needs your attention", actionZh: "去查看", actionEn: "Inspect" },
-  stop: { event: "stop", glyph: "check", zh: "本轮已结束", en: "turn finished" },
-  subagent: { event: "subagentStop", glyph: "checko", zh: "子任务已结束", en: "subagent finished" },
+  stop: { event: "stop", glyph: "check", zh: "响应结束", en: "Response ended" },
+  subagent: { event: "subagentStop", glyph: "checko", zh: "子任务结束", en: "Subtask ended" },
   question: { event: "notification", glyph: "input", zh: "即将向你提问", en: "about to ask you" },
-  taskStart: { event: "taskStart", glyph: "plane", zh: "开始执行", en: "run started" },
-  noSource: { event: "notification", glyph: "bell", zh: "等你处理", en: "waiting for you", actionZh: "在面板查看", actionEn: "View in panel" }
+  taskStart: { event: "taskStart", glyph: "plane", zh: "用户发起", en: "User initiated" },
+  noSource: { event: "notification", glyph: "bell", zh: "等待介入", en: "Waiting for input", actionZh: "在面板查看", actionEn: "View in panel" }
 };
 function demoReminder(kind, id, mins) {
   var e = NOTICE_SCENARIOS[kind];
@@ -2795,11 +2892,11 @@ function coverageForGroup(g) {
 var PACKS = [
   { id: "minimal-chime", lic: "CC0", builtin: true, license: "CC0", author: "claudi0",
     cov: ["taskStart", "stop", "stopFailure", "notification", "subagentStop"],
-    files: { taskStart: "task_start.aiff", stop: "stop.aiff", stopFailure: "stop_failure.aiff", notification: "notification.aiff", subagentStop: "subagent_stop.aiff" },
+    files: { taskStart: "task_start.mp3", stop: "stop.mp3", stopFailure: "stop_failure.mp3", notification: "notification.mp3", subagentStop: "subagent_stop.mp3" },
     names: {}, orphans: [] },
   { id: "soft-mallet", lic: "CC0", builtin: true, license: "CC0", author: "claudi0",
     cov: ["taskStart", "stop", "subagentStop"],
-    files: { taskStart: "mallet_start.aiff", stop: "mallet_stop.aiff", stopFailure: null, notification: null, subagentStop: "mallet_sub.aiff" },
+    files: { taskStart: "task_start.wav", stop: "stop.wav", stopFailure: null, notification: null, subagentStop: "subagent_stop.wav" },
     names: {}, orphans: [] },
   { id: "my-pack", lic: "user", builtin: false, license: "CC0", author: "claudi0",
     cov: ["taskStart", "stop", "notification", "subagentStop"],
@@ -3326,7 +3423,7 @@ function paneActivity() {
   var h = '<div style="max-width:820px">' +
     '<div class="card"><h3>' + (zh ? "所有来源" : "All sources") + '</h3>';
   h += '<div class="kv"><span class="k">' + (zh ? "今日消息往来" : "Message exchanges today") + '<span class="s">' +
-      (zh ? "任务开始与本轮结束的事件总数" : "Total task starts and turn completions") + '</span></span>' +
+      (zh ? "用户发起与响应结束的事件总数" : "Total user-initiated and response-ended events") + '</span></span>' +
     '<span style="font:600 12px var(--mono);color:var(--text-2)">' + (U.today.taskStart + U.today.stop) + '</span></div>' +
     '<div class="kv"><span class="k">' + (zh ? "近七日消息往来" : "Last 7 days") + '</span>' +
       '<span style="font:600 12px var(--mono);color:var(--text-2)">' + (U.week.taskStart + U.week.stop) + '</span></div>' +
@@ -4071,7 +4168,7 @@ function render() {
     return {id:r.id,revision:r.version || (r.updated?2:1),event:EVENTS.findIndex(function(e){return e.id===r.event;}),source:r.host,
       time:r.clock,age:[r.mins+" 分钟前",r.mins+" minutes ago"],session:r.session,capability:"viewSource"};
   }));
-  if (MacSettings) MacSettings.syncPresentation({visible:S.window, pane:S.pane, scope:S.ws, pack:S.soundPack, lang:S.lang, theme:S.theme});
+  if (MacSettings) MacSettings.syncPresentation({visible:S.window, pane:S.pane, scope:S.ws, pack:S.soundPack, lang:S.lang, theme:settingsWindowTheme(S.theme)});
   else if (S.window) {
     patchRegion(document.getElementById("wSide"), sideHTML());
     patchRegion(document.getElementById("wMain"), '<div id="pageContent" data-key="pane-' + S.pane + '">' + mainHTML() + '</div>');
@@ -4597,7 +4694,8 @@ function bind() {
     b.onclick = function () {
       S.theme = b.getAttribute("data-appearance");
       document.body.setAttribute("data-theme", S.theme);
-      document.getElementById("themeBtn").textContent = S.theme === "light" ? "亮色" : "暗色";
+      syncShadowTheme(S.theme);
+      document.getElementById("themeBtn").textContent = themeLabel(S.theme);
       render();
     };
   });
@@ -4813,11 +4911,22 @@ document.getElementById("referencesBtn").onclick = function () { S.library.refer
 document.getElementById("demoFocusBtn").onclick = function () { S.system.focusActive = !S.system.focusActive; updateQuietState(); render(); };
 document.getElementById("demoCalendarBtn").onclick = function () { S.system.calendarBusy = !S.system.calendarBusy; updateQuietState(); render(); };
 document.getElementById("themeBtn").onclick = function () {
-  S.theme = S.theme === "light" ? "dark" : "light";
+  S.theme = S.theme === "light" ? "dark" : (S.theme === "dark" ? "brand" : "light");
   document.body.setAttribute("data-theme", S.theme);
-  this.textContent = S.theme === "light" ? "亮色" : "暗色";
+  syncShadowTheme(S.theme);
+  this.textContent = themeLabel(S.theme);
   render();
 };
+function themeLabel(t) { return t === "light" ? "亮色" : (t === "dark" ? "暗色" : "品牌"); }
+/* 品牌皮肤只作用于菜单栏面板，设置窗口保持 macOS 原生外观：
+   品牌档在进入设置窗口前映射到原生深色档。 */
+function settingsWindowTheme(t) { return t === "brand" ? "dark" : t; }
+/* 设置窗口住在 #window 的 ShadowRoot 里，:host([data-theme]) 只认宿主自身的属性，
+   不继承 body；显式同步一次。 */
+function syncShadowTheme(t) {
+  var host = document.getElementById("window");
+  if (host) host.setAttribute("data-theme", settingsWindowTheme(t));
+}
 document.getElementById("motionBtn").onclick = function () {
   var r = document.body.classList.toggle("motion-reduced");
   this.textContent = r ? "动效减弱" : "动效完整";
@@ -5014,9 +5123,9 @@ const profileName=p=>`${p.name} · ${T(...p.region)}`;
 const packName=p=>Array.isArray(p?.name)?T(...p.name):(p?.name||T('不可用','Unavailable'));
 const scopeName=g=>g?.id==='default'?T('默认组','Default group'):(g?.name||T('工作区不可用','Workspace unavailable'));
 function factoryPacks(){return [
- ['minimal',['极简铃音','Minimal chimes']],['soft',['柔槌信号','Soft mallets']],['night',['夜间控制台','Night console']],
- ['pizzicato',['拨弦旋律','Pizzicato']],['bowl',['共鸣钵音','Resonant bowls']],['station','Station Chimes']
-].map(([id,name])=>({id,name,builtin:true,healthy:true,license:'CC0',author:'Factory attribution',sounds:events.map((e,i)=>`${id}-${i+1}.wav`),sources:events.map(()=>'file'),audio:events.map((e,i)=>`${id}-${i+1}.wav`)}));}
+ ['minimal',['极简铃音','Minimal chimes'],'mp3'],['soft',['柔槌信号','Soft mallets'],'wav'],['night',['夜间控制台','Night console'],'mp3'],
+ ['pizzicato',['拨弦旋律','Pizzicato'],'mp3'],['bowl',['共鸣钵音','Resonant bowls'],'mp3'],['station','Station Chimes','wav']
+].map(([id,name,ext])=>({id,name,builtin:true,healthy:true,license:'CC0',author:'Factory attribution',sounds:events.map(e=>`${e.id}.${ext}`),sources:events.map(()=>'file'),audio:events.map(e=>`${e.id}.${ext}`)}));}
 function freshState(){return {
  page:'events',detail:null,scope:'default',pack:'minimal',returnContext:null,scene:'normal',language:'zh',systemLanguage:'zh',notice:null,panelWriteFailure:null,
  scopes:[{id:'default',pack:'minimal',volume:65,enabled:events.map(()=>true),path:null,surfaces:['claude-code','codex','workbuddy']},
@@ -5105,7 +5214,7 @@ function localizeShell(){
  $('demo-host-confirm').textContent=T('模拟已在 '+host().name+' 确认','Simulate confirmation in '+host().name);
  $('review-title').textContent=T('claudi0 · 设置提案','claudi0 · Settings proposal');$('review-appearance').textContent=T('外观','Appearance');$('review-size').textContent=T('窗口','Window');$('review-scene').textContent=T('演示场景','Demo scenario');
  $('reset-demo').textContent=T('重置演示','Reset demo');$('research-link').textContent=T('Apple 设计研究','Apple design research');$('map-link').textContent=T('原生实现映射','Native implementation map');
- $('preview-theme').options[0].text=T('浅色','Light');$('preview-theme').options[1].text=T('深色','Dark');$('preview-theme').options[2].text=T('跟随系统','System');
+ $('preview-theme').options[0].text=T('浅色','Light');$('preview-theme').options[1].text=T('深色','Dark');$('preview-theme').options[2].text=T('品牌','Brand');$('preview-theme').options[3].text=T('跟随系统','System');
  $('preview-size').options[0].text=T('默认 · 1240 × 820','Default · 1240 × 820');$('preview-size').options[1].text=T('最小 · 960 × 640','Minimum · 960 × 640');
  for(const o of $('preview-scene').options){const v=scenes.find(s=>s.id===o.value);if(v)o.text=T(v.zh,v.en);}
 }
@@ -5345,15 +5454,16 @@ function createApprovedSoundsView(root,bridge) {
       box.append(title,actions);list.append(box);
       return;
     }
-    state.packs.forEach(pack=>{const row=tpl('pack-row'),b=q('.sf-pack-detail',row);b.dataset.act='pack';b.dataset.id=pack.id;
+    state.packs.forEach(pack=>{const row=tpl('pack-row'),b=q('.sf-pack-detail',row);q('.sf-pack-glyph',row).dataset.kind=pack.kind;b.dataset.act='pack';b.dataset.id=pack.id;
       b.setAttribute('aria-label',pack.name);
       q('[data-name]',row).textContent=pack.name;
       q('[data-meta]',row).textContent=pack.kind==='draft'?T('草稿','Draft'):pack.kind==='builtin'?T('内置声音包','Built-in Sound Pack'):T('用户声音包','User Sound Pack');
       const favorite=q('[data-act="favorite"]',row),control=bridge.favoriteControl(pack.id);
       favorite.hidden=pack.kind==='draft'||!control.enabled;favorite.dataset.id=pack.id;
+      favorite.dataset.starred=String(control.starred);
       const label=control.starred?T('已收藏','Favorited'):T('收藏','Favorite');
       const help=control.starred?T('取消收藏，从面板中移除','Remove from favorites and the panel'):T('收藏，在面板中显示','Favorite to show in the panel');
-      q('[data-star]',row).textContent=control.starred?'★':'☆';q('[data-favorite-title]',row).textContent=label;
+      q('[data-favorite-title]',row).textContent=label;
       favorite.title=help;favorite.setAttribute('aria-label',pack.name+T('，',', ')+(control.starred?T('已收藏','favorited'):T('未收藏','not favorited')));
       favorite.setAttribute('aria-description',help);list.append(row);
     });
@@ -5675,7 +5785,7 @@ function createApprovedSoundsView(root,bridge) {
     },
     profileChanged(){const d=ui.dialogs.find(d=>d.type==='ai');if(d){d.watching=state.task?.id;dispatch({type:'invalidate',context:d.context});}stopPreview();persist();},
     sync(detail,packID){
-      state=bridge.read();root.style.colorScheme=container.dataset.theme==='dark'?'dark':'light';
+      state=bridge.read();root.style.colorScheme=container.dataset.theme==='light'?'light':'dark';
       ui.packID=packID||state.packs[0]?.id;ui.route=detail==='history'?'history':detail==='pack'||detail?.startsWith('edit:')?'detail':'library';
       if(!state.packs.some(p=>p.id===ui.packID)&&ui.route==='detail')ui.route='library';if(!detail?.startsWith('edit:'))lastRequestedEvent=null;
       render();if(detail?.startsWith('edit:')&&lastRequestedEvent!==packID+':'+detail){lastRequestedEvent=packID+':'+detail;requestAnimationFrame(()=>{const row=root.querySelector('[data-event="'+detail.slice(5)+'"]');if(!row)return;const target=selectedPack().kind==='builtin'?q('[data-act="copy-pack"]'):q('[data-act="sources"]',row);target?.scrollIntoView({block:'center'});target?.focus({preventScroll:true});});}
@@ -6550,6 +6660,7 @@ if (typeof window !== "undefined") window.addEventListener("resize", function ()
 (function () {
   var qs = new URLSearchParams(location.search);
   if (qs.get("th") === "dark") document.getElementById("themeBtn").click();
+  if (qs.get("th") === "brand") { document.getElementById("themeBtn").click(); document.getElementById("themeBtn").click(); }
   if (qs.get("motion") === "reduced") document.getElementById("motionBtn").click();
   if (qs.get("lang") === "en") document.getElementById("langBtn").click();
   if (qs.get("banner") === "atn") document.getElementById("btnBannerAtn").click();

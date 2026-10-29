@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>claudi0 · 品牌色板菜单栏面板探索</title>
+<style>
+  /* Only the three brand tokens exist here. Every other value is a blend of them. */
+  :root{
+    --acid-lime:#D8F447;
+    --deep-ink:#172B25;
+    --warm-white:#F5F3E9;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--deep-ink);
+    min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+    padding:48px 40px 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page-head{max-width:920px;margin:0 auto 32px}
+  .page-head h1{color:var(--warm-white);font-size:20px;font-weight:600;letter-spacing:.2px}
+  .page-head p{color:color-mix(in srgb,var(--warm-white) 55%,var(--deep-ink));font-size:13px;margin-top:8px;line-height:1.7}
+
+  .stage{
+    max-width:920px;margin:0 auto;
+    display:flex;gap:56px;align-items:flex-start;flex-wrap:wrap;
+  }
+  .variant{width:312px}
+  .variant-label{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .variant-label .name{color:var(--warm-white);font-size:13px;font-weight:600}
+  .variant-label .note{color:color-mix(in srgb,var(--warm-white) 45%,var(--deep-ink));font-size:11px}
+
+  /* ---------- panel shell ---------- */
+  .panel{
+    width:312px;border-radius:14px;overflow:hidden;
+    box-shadow:0 18px 44px rgba(0,0,0,.45), 0 0 0 1px var(--hairline);
+    font-size:13px;
+  }
+
+  /* dark: lime can carry ink/text on top of it, so it draws strokes AND fills */
+  .panel.dark{
+    --bg:var(--deep-ink);
+    --surface:color-mix(in srgb,var(--warm-white) 7%,var(--deep-ink));
+    --surface-2:color-mix(in srgb,var(--warm-white) 11%,var(--deep-ink));
+    --hairline:color-mix(in srgb,var(--warm-white) 10%,var(--deep-ink));
+    --text:var(--warm-white);
+    --text-2:color-mix(in srgb,var(--warm-white) 62%,var(--deep-ink));
+    --text-3:color-mix(in srgb,var(--warm-white) 40%,var(--deep-ink));
+    --strokes:var(--warm-white);
+    --strokes-dim:color-mix(in srgb,var(--warm-white) 45%,var(--deep-ink));
+    --accent:var(--acid-lime);
+    --accent-on:var(--deep-ink);
+    --mark:var(--acid-lime);
+  }
+
+  /* light: lime on warm-white is 1.11:1 — unusable for strokes. It only survives as a
+     solid block with deep-ink text sitting on it. */
+  .panel.light{
+    --bg:var(--warm-white);
+    --surface:color-mix(in srgb,var(--deep-ink) 5%,var(--warm-white));
+    --surface-2:color-mix(in srgb,var(--deep-ink) 9%,var(--warm-white));
+    --hairline:color-mix(in srgb,var(--deep-ink) 12%,var(--warm-white));
+    --text:var(--deep-ink);
+    --text-2:color-mix(in srgb,var(--deep-ink) 66%,var(--warm-white));
+    --text-3:color-mix(in srgb,var(--deep-ink) 44%,var(--warm-white));
+    --strokes:var(--deep-ink);
+    --strokes-dim:color-mix(in srgb,var(--deep-ink) 40%,var(--warm-white));
+    --accent:var(--acid-lime);
+    --accent-on:var(--deep-ink);
+    --mark:var(--deep-ink);
+  }
+
+  .panel{background:var(--bg);color:var(--text)}
+
+  /* header */
+  .head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 14px 10px;
+  }
+  .brand{display:flex;align-items:center;gap:7px}
+  .brand svg{display:block}
+  .gear{width:22px;height:22px;border-radius:6px;display:grid;place-items:center}
+  .gear:hover{background:var(--surface-2)}
+
+  /* scope capsule */
+  .scope-row{padding:0 14px 12px}
+  .scope{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--surface);border:1px solid var(--hairline);
+    border-radius:8px;padding:7px 10px;
+  }
+  .scope .lhs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500}
+  .scope .meta{color:var(--text-3);font-size:11px}
+
+  /* event rows */
+  .events{padding:0 8px}
+  .row{
+    display:flex;align-items:center;gap:9px;
+    padding:8px 6px;border-radius:7px;
+  }
+  .row + .row{box-shadow:inset 0 1px 0 var(--hairline)}
+  .row:hover{background:var(--surface)}
+  .row.active{background:var(--surface-2)}
+  .glyph{width:16px;height:16px;flex:0 0 16px;opacity:.95}
+  .glyph.dim{opacity:.3}
+  .row .names{flex:1;min-width:0}
+  .row .ev{font-size:12.5px;font-weight:500;line-height:1.25}
+  .row .file{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:10px;color:var(--text-3);margin-top:2px;
+  }
+  .actions{display:flex;align-items:center;gap:2px}
+  .icon-btn{width:24px;height:24px;border-radius:6px;display:grid;place-items:center}
+  .icon-btn:hover{background:var(--surface-2)}
+  .badge{
+    font-size:10px;font-weight:600;letter-spacing:.3px;
+    background:var(--accent);color:var(--accent-on);
+    padding:2px 5px;border-radius:4px;
+  }
+
+  /* volume */
+  .divider{height:1px;background:var(--hairline);margin:10px 14px}
+  .vol{padding:2px 14px 12px}
+  .vol-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .vol-head .label{font-size:12px;color:var(--text-2)}
+  .vol-head .value{font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+  .track{height:4px;border-radius:2px;background:var(--surface-2);position:relative;overflow:hidden}
+  .track .fill{position:absolute;inset:0 22% 0 0;background:var(--accent);border-radius:2px}
+  .track .knob{
+    position:absolute;top:50%;left:78%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;
+    background:var(--accent);border-radius:50%;
+    box-shadow:0 0 0 2.5px var(--bg);
+  }
+
+  /* footer */
+  .foot{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px 12px;box-shadow:inset 0 1px 0 var(--hairline);
+  }
+  .foot .quit{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-3)}
+  .foot .version{font-size:10px;color:var(--text-3);font-family:ui-monospace,Menlo,monospace}
+
+  /* palette ledger */
+  .ledger{
+    max-width:920px;margin:40px auto 0;padding-top:20px;
+    border-top:1px solid color-mix(in srgb,var(--warm-white) 12%,var(--deep-ink));
+    display:flex;gap:14px;flex-wrap:wrap;
+  }
+  .chip{
+    display:flex;align-items:center;gap:9px;
+    border:1px solid color-mix(in srgb,var(--warm-white) 12%,var(--deep-ink));
+    border-radius:8px;padding:8px 12px;
+  }
+  .swatch{width:20px;height:20px;border-radius:5px}
+  .chip .hex{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--warm-white)}
+  .chip .role{font-size:10.5px;color:color-mix(in srgb,var(--warm-white) 50%,var(--deep-ink))}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>claudi0 菜单栏面板 · 仅用品牌三色</h1>
+  <p>
+    色板只有酸柠 / 深墨 / 暖白三个值，其余全部是它们之间的混合。<br>
+    宽度取生产的 312pt（<code>standardPanelWidth</code>）。亮色版里酸柠对暖白只有 1.11:1，
+    因此只能做实心块，不能画线描；暗色版 12.03:1，两者皆可用。
+  </p>
+</div>
+
+<div class="stage">
+
+  <!-- ============ DARK ============ -->
+  <div class="variant">
+    <div class="variant-label">
+      <span class="name">A · 深墨底</span>
+      <span class="note">酸柠 12.03:1 · 可做线描</span>
+    </div>
+    <div class="panel dark">
+      <div class="head">
+        <div class="brand">
+          <!-- T2 mark, verbatim from the brand kit -->
+          <svg width="22" height="22" viewBox="11.2 11.2 41.6 41.6">
+            <g transform="rotate(-45 32 32)">
+              <path d="M21 19H29V31H35V45H21C13.8203 45 8 39.1797 8 32C8 24.8203 13.8203 19 21 19Z"
+                    fill="var(--mark)"/>
+              <path d="M33 19H43C50.1797 19 56 24.8203 56 32C56 39.1797 50.1797 45 43 45H39V27H33Z"
+                    fill="var(--mark)"/>
+            </g>
+          </svg>
+          <!-- C1 wordmark, verbatim, strokes carried by warm white on ink -->
+          <svg width="62" height="13" viewBox="0 0 311 66">
+            <g fill="none" stroke="var(--strokes)" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M39 23 C34 20 28 18 22 18 C9 18 0 28 0 41 C0 54 9 64 22 64 C29 64 34 61 39 57" transform="translate(0,0)"/>
+              <path d="M8 6 V53 C8 61 11 64 17 64" transform="translate(43,0)"/>
+              <path d="M46 41 C46 54 36 64 23 64 C10 64 0 54 0 41 C0 28 10 18 23 18 C36 18 46 28 46 41 M46 18 V64" transform="translate(75,0)"/>
+              <path d="M0 18 V42 C0 56 8 64 21 64 C34 64 42 56 42 42 V18" transform="translate(135,0)"/>
+              <path d="M44 6 V41 C44 54 35 64 22 64 C9 64 0 54 0 41 C0 28 9 18 22 18 C27 18 32 20 36 22" transform="translate(192,0)"/>
+              <path d="M4 18 V64" transform="translate(247,0)"/>
+              <path d="M22 8 C8 8 0 20 0 36 V38 C0 54 8 65 22 65 C36 65 44 54 44 38 V35 C44 19 36 8 22 8 Z" transform="translate(267,0)"/>
+              <circle cx="251" cy="5" r="3.2" fill="var(--strokes)" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <div class="gear">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--strokes-dim)" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="scope-row">
+        <div class="scope">
+          <div class="lhs">
+            <span>默认组</span>
+            <span class="meta">5 个声音</span>
+          </div>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 4.5 L6 8 L9.5 4.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="events">
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M3 11.5 A5.2 5.2 0 0 1 13.2 6.6"/>
+            <path d="M5.2 13.6 A2.6 2.6 0 0 1 10.6 10.9"/>
+            <circle cx="3.4" cy="11.9" r="1.3" fill="var(--accent)" stroke="none"/>
+          </svg>
+          <div class="names"><div class="ev">用户发起</div><div class="file">task_start.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg>
+            </div>
+            <div class="icon-btn">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round">
+                <path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M3 4.5 A5.2 5.2 0 0 1 13.2 9.4"/>
+            <path d="M5.2 2.4 A2.6 2.6 0 0 1 10.6 5.1"/>
+            <circle cx="3.4" cy="4.1" r="1.3" fill="var(--accent)" stroke="none"/>
+          </svg>
+          <div class="names"><div class="ev">响应结束</div><div class="file">stop.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M4 4l8 8M12 4l-8 8"/>
+          </svg>
+          <div class="names"><div class="ev">执行中断</div><div class="file">stop_failure.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row active">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="8" cy="8" r="5.6"/><path d="M8 4.6V8l2.4 1.6"/>
+          </svg>
+          <div class="names"><div class="ev">等待介入</div><div class="file">notification.mp3</div></div>
+          <div class="actions">
+            <span class="badge">刚响过</span>
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph dim" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round">
+            <rect x="2.6" y="2.6" width="4.6" height="4.6" rx="1.2"/>
+            <rect x="8.8" y="8.8" width="4.6" height="4.6" rx="1.2"/>
+            <path d="M7.2 5h1.6a1.6 1.6 0 0 1 1.6 1.6V8"/>
+          </svg>
+          <div class="names"><div class="ev">子任务结束</div><div class="file">subagent_stop.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="vol">
+        <div class="vol-head">
+          <span class="label">主音量</span>
+          <span class="value">78%</span>
+        </div>
+        <div class="track"><div class="fill"></div><div class="knob"></div></div>
+      </div>
+
+      <div class="foot">
+        <div class="quit">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M6.5 3H3.6A1.6 1.6 0 0 0 2 4.6v6.8A1.6 1.6 0 0 0 3.6 13h2.9"/>
+            <path d="M10.5 5.5L13.5 8l-3 2.5"/><path d="M6 8h7"/>
+          </svg>
+          退出 claudi0
+        </div>
+        <span class="version">0.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LIGHT ============ -->
+  <div class="variant">
+    <div class="variant-label">
+      <span class="name">B · 暖白底</span>
+      <span class="note">酸柠 1.11:1 · 只能做块</span>
+    </div>
+    <div class="panel light">
+      <div class="head">
+        <div class="brand">
+          <svg width="22" height="22" viewBox="11.2 11.2 41.6 41.6">
+            <g transform="rotate(-45 32 32)">
+              <path d="M21 19H29V31H35V45H21C13.8203 45 8 39.1797 8 32C8 24.8203 13.8203 19 21 19Z" fill="var(--mark)"/>
+              <path d="M33 19H43C50.1797 19 56 24.8203 56 32C56 39.1797 50.1797 45 43 45H39V27H33Z" fill="var(--mark)"/>
+            </g>
+          </svg>
+          <svg width="62" height="13" viewBox="0 0 311 66">
+            <g fill="none" stroke="var(--strokes)" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M39 23 C34 20 28 18 22 18 C9 18 0 28 0 41 C0 54 9 64 22 64 C29 64 34 61 39 57" transform="translate(0,0)"/>
+              <path d="M8 6 V53 C8 61 11 64 17 64" transform="translate(43,0)"/>
+              <path d="M46 41 C46 54 36 64 23 64 C10 64 0 54 0 41 C0 28 10 18 23 18 C36 18 46 28 46 41 M46 18 V64" transform="translate(75,0)"/>
+              <path d="M0 18 V42 C0 56 8 64 21 64 C34 64 42 56 42 42 V18" transform="translate(135,0)"/>
+              <path d="M44 6 V41 C44 54 35 64 22 64 C9 64 0 54 0 41 C0 28 9 18 22 18 C27 18 32 20 36 22" transform="translate(192,0)"/>
+              <path d="M4 18 V64" transform="translate(247,0)"/>
+              <path d="M22 8 C8 8 0 20 0 36 V38 C0 54 8 65 22 65 C36 65 44 54 44 38 V35 C44 19 36 8 22 8 Z" transform="translate(267,0)"/>
+              <circle cx="251" cy="5" r="3.2" fill="var(--strokes)" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <div class="gear">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--strokes-dim)" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="scope-row">
+        <div class="scope">
+          <div class="lhs">
+            <span>默认组</span>
+            <span class="meta">5 个声音</span>
+          </div>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 4.5 L6 8 L9.5 4.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="events">
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--strokes)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M3 11.5 A5.2 5.2 0 0 1 13.2 6.6"/><path d="M5.2 13.6 A2.6 2.6 0 0 1 10.6 10.9"/>
+            <circle cx="3.4" cy="11.9" r="1.3" fill="var(--strokes)" stroke="none"/>
+          </svg>
+          <div class="names"><div class="ev">用户发起</div><div class="file">task_start.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--strokes)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M3 4.5 A5.2 5.2 0 0 1 13.2 9.4"/><path d="M5.2 2.4 A2.6 2.6 0 0 1 10.6 5.1"/>
+            <circle cx="3.4" cy="4.1" r="1.3" fill="var(--strokes)" stroke="none"/>
+          </svg>
+          <div class="names"><div class="ev">响应结束</div><div class="file">stop.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--strokes)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M4 4l8 8M12 4l-8 8"/>
+          </svg>
+          <div class="names"><div class="ev">执行中断</div><div class="file">stop_failure.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row active">
+          <svg class="glyph" viewBox="0 0 16 16" fill="none" stroke="var(--strokes)" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="8" cy="8" r="5.6"/><path d="M8 4.6V8l2.4 1.6"/>
+          </svg>
+          <div class="names"><div class="ev">等待介入</div><div class="file">notification.mp3</div></div>
+          <div class="actions">
+            <span class="badge">刚响过</span>
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <svg class="glyph dim" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round">
+            <rect x="2.6" y="2.6" width="4.6" height="4.6" rx="1.2"/>
+            <rect x="8.8" y="8.8" width="4.6" height="4.6" rx="1.2"/>
+            <path d="M7.2 5h1.6a1.6 1.6 0 0 1 1.6 1.6V8"/>
+          </svg>
+          <div class="names"><div class="ev">子任务结束</div><div class="file">subagent_stop.mp3</div></div>
+          <div class="actions">
+            <div class="icon-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--strokes-dim)"><path d="M3 2l7 4-7 4z"/></svg></div>
+            <div class="icon-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h3l3-3v10l-3-3H2z"/><path d="M10.5 6.5l3 3M13.5 6.5l-3 3"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="vol">
+        <div class="vol-head">
+          <span class="label">主音量</span>
+          <span class="value">78%</span>
+        </div>
+        <div class="track"><div class="fill"></div><div class="knob"></div></div>
+      </div>
+
+      <div class="foot">
+        <div class="quit">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--strokes-dim)" stroke-width="1.6" stroke-linecap="round">
+            <path d="M6.5 3H3.6A1.6 1.6 0 0 0 2 4.6v6.8A1.6 1.6 0 0 0 3.6 13h2.9"/>
+            <path d="M10.5 5.5L13.5 8l-3 2.5"/><path d="M6 8h7"/>
+          </svg>
+          退出 claudi0
+        </div>
+        <span class="version">0.0.0</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="ledger">
+  <div class="chip"><span class="swatch" style="background:#D8F447"></span><span class="hex">#D8F447</span><span class="role">酸柠 · 强调 / 暗底线描 / 亮底实心块</span></div>
+  <div class="chip"><span class="swatch" style="background:#172B25"></span><span class="hex">#172B25</span><span class="role">深墨 · 底色 / 亮底正文</span></div>
+  <div class="chip"><span class="swatch" style="background:#F5F3E9"></span><span class="hex">#F5F3E9</span><span class="role">暖白 · 底色 / 暗底正文</span></div>
+</div>
+
+</body>
+</html>
