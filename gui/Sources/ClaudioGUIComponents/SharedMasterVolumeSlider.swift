@@ -112,9 +112,9 @@ package struct SharedMasterVolumeSlider: View {
     private func commit(_ pendingValue: Double?) {
         guard let pendingValue else { return }
         if let landed = onCommit(pendingValue) {
-            session.commitSucceeded(landed)
+            _session.wrappedValue.commitSucceeded(landed)
         } else {
-            session.commitFailed()
+            _session.wrappedValue.commitFailed()
         }
     }
 }
