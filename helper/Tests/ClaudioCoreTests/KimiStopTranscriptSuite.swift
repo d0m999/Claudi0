@@ -394,6 +394,36 @@ func runKimiStopTranscriptSuites() {
         }
     }
 
+    suite("Kimi Stop：活动边界复验安装，失败不消费主轮") {
+        withTempDirectory { root in
+            let f = KimiStopTranscriptFixture(root: root)
+            let authorization = f.authorize()
+            let admission = f.prepare()!
+            let replaced = f.handle(
+                admission, authorization: authorization,
+                token: authorization.capture(surface: .kimiCode),
+                beforePublication: { effect in
+                    if effect == .activity {
+                        _ = f.receipts.activate(
+                            host: .kimiCode, installationID: UUID(), scopeFingerprint: f.scope)
+                    }
+                })
+            expect(replaced == nil, "活动边界替换安装时整条回调拒收")
+            expect(!FileManager.default.fileExists(atPath: f.markerPath.path), "安装窄复验失败不消费主轮")
+            expect(!FileManager.default.fileExists(atPath: f.summary.path), "安装窄复验失败不写活动")
+            expect(
+                !FileManager.default.fileExists(atPath: f.activityStore.pendingDirectory.path),
+                "安装窄复验失败不暂存活动")
+            _ = f.receipts.activate(
+                host: .kimiCode, installationID: f.installationID, scopeFingerprint: f.scope)
+            let retried = f.handle(
+                admission, authorization: authorization,
+                token: authorization.capture(surface: .kimiCode))
+            expect(retried?.activityRecordOutcome == .committed, "安装恢复后同轮重试提交活动")
+            expect(FileManager.default.fileExists(atPath: f.markerPath.path), "重试成功后写 marker")
+        }
+    }
+
     suite("Kimi Stop：活动与主轮消费共用发布许可，回执和通知在许可外") {
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)

@@ -327,7 +327,9 @@ public func handleHostHook(
     let recordActivity: @Sendable () -> LocalActivityRecordOutcome = {
         guard let activityStore = environment.activityStore else { return .failed }
         let record = { () -> LocalActivityRecordOutcome in
-            HookMeasurementContext.measure(.activity) {
+            // The dedup permit already holds the lease, so perform(.activity) cannot revalidate.
+            if isKimiStop, !installationMarkerIsCurrent() { return .failed }
+            return HookMeasurementContext.measure(.activity) {
                 activityStore.record(
                     host: host,
                     event: event,
