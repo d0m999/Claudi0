@@ -254,13 +254,14 @@ git diff --check
 | 来源启用相对禁用的 helper 增量 | Release 100 对真实 pipe/socket，配对增量 p95 **0.44ms**，门槛 ≤30ms；启用 p95 2.91ms、禁用 p95 2.84ms。配对差值分位数不等于两个分位数之差 |
 | stub hook 返回 | Release 100 次 p95 2.72ms；不代表真实播放器和真实宿主 |
 | 半包 stdin 不关闭 | 配置 20ms；故障墙钟 21.02ms，含 poll 取整和 OS 调度 |
-| 生产 ingress → model | 最后专项 synthetic 1000 条/10.000 秒，p95 **4.069ms**，门槛 ≤100ms |
+| 生产 ingress → model | 最后专项 synthetic 1000 条/10.000 秒，p95 **4.069ms**，本地门槛 ≤100ms；CI `gui` lane 显式预算 ≤250ms |
 | 首次徽标 | 最后专项实测 **101.180ms**；100ms 截止另由手动时钟断言，不被持续到达重置 |
 | 常驻状态与 timer | 50/50/1 版本、256/256 元数据、128 ingress、至多 3 个模型 timer；隐私清空后计数归零；取消/释放 token 的实际捕获对象释放回归通过 |
 | receiver FD | 100 次创建、发送、停止，FD 0..<1024 探测为 **3 → 3 → 3**；持续发送期间停止不迟到交付 |
 
 实际调度延迟另行测量，不把 OS 调度等同于主动延长截止。
 原有门槛不变：Release 来源链增量 p95 ≤30ms，accepted envelope 到模型 p95 ≤100ms，原生首次展示目标 ≤250ms。
+CI 的 `gui` lane 通过 `CLAUDIO_EVENT_ATTENTION_P95_MS=250` 显式给出共享 runner 的 accepted-envelope 预算；harness 只读取这个命名变量，不嗅探 CI，缺省仍为 100ms，空值／非数字／非有限值／越界值失败关闭而不是静默回落。1000 条/10 秒负载与 240 秒 watchdog 不变。
 20ms 是 stdin 的配置读取预算；poll 毫秒取整和 OS 调度可能产生墙钟超出，单独记录而不改预算。
 
 ## 独立 Release 产物

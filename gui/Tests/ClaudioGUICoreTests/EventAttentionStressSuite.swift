@@ -27,6 +27,18 @@ func runEventAttentionStressSuites() async {
     }
 
     await suite("Attention ingress：一千事件十秒，批次让出 MainActor、徽标有进展且无资源累积") {
+        let budgetMilliseconds: Double
+        switch EventAttentionLatencyBudget.resolve(
+            environment: ProcessInfo.processInfo.environment)
+        {
+        case .localDefault:
+            budgetMilliseconds = EventAttentionLatencyBudget.localDefaultMilliseconds
+        case .explicit(let milliseconds):
+            budgetMilliseconds = milliseconds
+        case .invalid(let reason):
+            expect(false, "CLAUDIO_EVENT_ATTENTION_P95_MS 无效：\(reason)")
+            return
+        }
         let model = EventNoticeModel(receiverEpoch: UUID())
         var maximumBatch = 0
         var reductions = 0
@@ -83,15 +95,17 @@ func runEventAttentionStressSuites() async {
             ingress.pendingCount == 0 && model.snapshot.totalCount == 50 && model.badgeCount == 50,
             "压力结束保留50项且徽标无饥饿")
         expect(withinBounds && maximumBatch <= 32 && reductions <= 1000, "全部来源/元数据/任务批次有界")
-        expect(p95 <= 0.1, "accepted envelope → model p95 不超过100ms，实测 \(p95 * 1000)ms")
+        expect(
+            p95 <= budgetMilliseconds / 1000,
+            "accepted envelope → model p95 不超过\(budgetMilliseconds)ms，实测 \(p95 * 1000)ms")
         expect(
             firstBadgeDelay != nil && firstBadgeDelay! < 10,
             "徽标必须在突发结束前进展；100ms 截止由手动时钟回归验证，实际调度单独记录")
         print(
             String(
                 format:
-                    "  synthetic stress: events=1000 duration=%.3fs p95=%.3fms first-badge=%.3fms batches=%d",
-                ProcessInfo.processInfo.systemUptime - started, p95 * 1000,
+                    "  synthetic stress: events=1000 duration=%.3fs p95=%.3fms budget=%.0fms first-badge=%.3fms batches=%d",
+                ProcessInfo.processInfo.systemUptime - started, p95 * 1000, budgetMilliseconds,
                 (firstBadgeDelay ?? -1) * 1000, reductions))
         ingress.clear()
         model.clearForPrivacy()

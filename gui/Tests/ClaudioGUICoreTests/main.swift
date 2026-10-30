@@ -1171,6 +1171,7 @@ func runBackgroundGUIHarnessSuites() async {
     runTmuxNavigationSuites()
     await runIDENavigationSocketSuites()
     await runNavigationReviewRegressionSuites()
+    runEventAttentionLatencyBudgetSuites()
     await runEventAttentionStressSuites()
     runManualAudioPreviewSessionSuites()
     runPanelSoundScopeInteractionSuites()

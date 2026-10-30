@@ -116,6 +116,7 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       NSUnbufferedIO: YES
       CLAUDIO_TEST_SUITE_TIMINGS: "1"
+      CLAUDIO_EVENT_ATTENTION_P95_MS: "250"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
