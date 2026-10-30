@@ -442,7 +442,7 @@ private struct AdditionalHookFixture: Sendable {
     {
         let consumption: AdditionalHostTurnConsumption?
         if host == .kimiCode && native == "Stop" {
-            consumption = { _ in .consumed(.committed) }
+            consumption = { recordActivity in .consumed(recordActivity()) }
         } else {
             consumption = nil
         }

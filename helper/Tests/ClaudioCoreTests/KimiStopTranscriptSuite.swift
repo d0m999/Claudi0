@@ -78,31 +78,13 @@ func runKimiStopTranscriptSuites() {
 
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)
-            let lines = String(decoding: try! Data(contentsOf: f.wire), as: UTF8.self)
-                .split(separator: "\n")
-            var metadata =
-                try! JSONSerialization.jsonObject(
-                    with: Data(lines[0].utf8)) as! [String: Any]
-            metadata["padding"] = String(repeating: "a", count: 5000)
-            var rewritten = try! JSONSerialization.data(
-                withJSONObject: metadata, options: [.sortedKeys])
-            rewritten.append(Data(("\n" + lines.dropFirst().joined(separator: "\n")).utf8))
-            try! rewritten.write(to: f.wire)
+            f.rewriteMetadata(padding: 5000)
             expect(f.source() != nil, "超过 4096 字节的 metadata 行仍读取到首个 LF")
         }
 
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)
-            let lines = String(decoding: try! Data(contentsOf: f.wire), as: UTF8.self)
-                .split(separator: "\n")
-            var metadata =
-                try! JSONSerialization.jsonObject(
-                    with: Data(lines[0].utf8)) as! [String: Any]
-            metadata["padding"] = String(repeating: "a", count: 140_000)
-            var rewritten = try! JSONSerialization.data(
-                withJSONObject: metadata, options: [.sortedKeys])
-            rewritten.append(Data(("\n" + lines.dropFirst().joined(separator: "\n")).utf8))
-            try! rewritten.write(to: f.wire)
+            f.rewriteMetadata(padding: 140_000)
             expect(f.source() == nil, "超出读取上限的 metadata 行失败关闭")
             expect(!FileManager.default.fileExists(atPath: f.markerPath.path), "超限 metadata 不消费")
         }
@@ -540,6 +522,19 @@ private struct KimiStopTranscriptFixture {
     }
 
     func payload() -> Data { payloadData }
+
+    func rewriteMetadata(padding: Int) {
+        let lines = String(decoding: try! Data(contentsOf: wire), as: UTF8.self)
+            .split(separator: "\n")
+        var metadata =
+            try! JSONSerialization.jsonObject(
+                with: Data(lines[0].utf8)) as! [String: Any]
+        metadata["padding"] = String(repeating: "a", count: padding)
+        var rewritten = try! JSONSerialization.data(
+            withJSONObject: metadata, options: [.sortedKeys])
+        rewritten.append(Data(("\n" + lines.dropFirst().joined(separator: "\n")).utf8))
+        try! rewritten.write(to: wire)
+    }
 
     func appendMainStart(turnID: Int) {
         append([

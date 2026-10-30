@@ -9,7 +9,7 @@ import Foundation
 /// This helper-only reader keeps the host-specific schema out of the GUI's size-sensitive binary.
 public enum KimiStopTranscriptAdmission {
     public static let wireProtocolVersion = "1.5"
-    private static let maximumWireTailBytes: UInt64 = 131_072
+    private static let maximumWireReadBytes: UInt64 = 131_072
 
     public struct PreparedAdmission: Sendable {
         public let source: HostEventSource
@@ -35,7 +35,7 @@ public enum KimiStopTranscriptAdmission {
         public func consume(
             recordingActivity recordActivity: @Sendable () -> LocalActivityRecordOutcome
         ) -> AdditionalHostTurnConsumptionOutcome {
-            shouldNotify(
+            consumeTurn(
                 sessionID: sessionID, sessionCreatedAt: sessionCreatedAt,
                 turnID: turnID, stateRoot: stateRoot, recordActivity: recordActivity)
         }
@@ -120,7 +120,7 @@ public enum KimiStopTranscriptAdmission {
             metadata["protocol_version"] as? String == wireProtocolVersion,
             let createdAt = integer(metadata["created_at"]), createdAt > 0
         else { return nil }
-        let offset = size > maximumWireTailBytes ? size - maximumWireTailBytes : 0
+        let offset = size > maximumWireReadBytes ? size - maximumWireReadBytes : 0
         try? handle.seek(toOffset: offset)
         guard let tail = try? handle.readToEnd() else { return nil }
         var text = String(decoding: tail, as: UTF8.self)
@@ -148,7 +148,7 @@ public enum KimiStopTranscriptAdmission {
 
     /// Reads the first wire line up to its LF without assuming a fixed metadata size.
     private static func firstLine(of handle: FileHandle, size: UInt64) -> Data? {
-        let limit = min(size, maximumWireTailBytes)
+        let limit = min(size, maximumWireReadBytes)
         var line = Data()
         while line.count < Int(limit) {
             let remaining = Int(limit) - line.count
@@ -163,7 +163,7 @@ public enum KimiStopTranscriptAdmission {
         return nil
     }
 
-    private static func shouldNotify(
+    private static func consumeTurn(
         sessionID: String, sessionCreatedAt: Int64, turnID: Int64, stateRoot: URL,
         recordActivity: @Sendable () -> LocalActivityRecordOutcome
     ) -> AdditionalHostTurnConsumptionOutcome {
