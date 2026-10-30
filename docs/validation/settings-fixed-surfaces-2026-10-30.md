@@ -53,6 +53,14 @@
 - 对比度数值由独立 WCAG 脚本复算，与 `DESIGN.md` 表逐位一致；`NSColor(Color)` 探针确认四个固定表面在各 appearance 下解析为精确 sRGB 且 alpha = 1。
 - **未运行**：GUI 后台／前台 harness、Debug/Release 构建与 bundle。本机只有 CommandLineTools，没有 Xcode 的 SwiftUI 宏插件（`SwiftUIMacros`），无法编译 SwiftUI target；`ContrastSuite` 与挂载像素套件只能由 macOS 26 CI 证明。
 
+## CI 回执（2026-10-30，run 41041029200 / `952f643`）
+
+- `gui` lane **通过**：后台批、对比度映射断言、焦点原生选择器与两个画廊在 macOS 26 上全绿；这证明固定表面修复解决了原来的 4 条对比度红灯。
+- `helper` lane 通过。
+- `gui-foreground`：挂载百分比标签在 1x 显示器上没有全遮盖像素，2 条断言失败；已改为沿 ink→底色混合路径计数的部分遮盖模式（`6d1c688`）。
+- `gui-bundle`：签名前 GUI `7,005,552 B` 超过旧 `7,000,000 B` 预算；按用户决定重基线为 `7,100,000 B`，详见 `docs/performance/release-size-budget.md` 2026-10-30 节。
+- 最终全绿回执（含签名后体积）待下一次 CI 运行。
+
 ## 未验证
 
 - macOS 26 挂载像素套件与真实 job 图：只能由 CI 证明。

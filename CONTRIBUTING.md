@@ -30,7 +30,8 @@ and release lanes use macOS 26 / Xcode 26.6 with its macOS 26.5 SDK and the offi
 requires the trusted Swift Open Source installer signature, checks the exact compiler
 version, and verifies existing tool hashes and POSIX modes remain unchanged. It only
 installs on disposable GitHub Actions runners. This aligns the compiler used for the
-unchanged 7,000,000-byte GUI budget; Swift 6.2/6.3 generate larger binaries from the same
+7,100,000-byte GUI budget (rebaselined on 2026-10-30; see
+`docs/performance/release-size-budget.md`); Swift 6.2/6.3 generate larger binaries from the same
 source. Release builds explicitly select SwiftPM's native build system to retain their
 recorded binary paths. The macOS deployment target remains 12.
 Each native GUI lane configures its disposable runner's virtual display to 1920×1080 before
