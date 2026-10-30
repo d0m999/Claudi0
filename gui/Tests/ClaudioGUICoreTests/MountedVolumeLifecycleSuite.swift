@@ -27,8 +27,9 @@ func runMountedVolumeLifecycleSuites() async {
             defer { window.close() }
             feedbackSettle(host)
             expect(
-                feedbackPixelCount(in: host, color: .secondaryLabelColor) > 3,
-                "Mounted percentage uses the system secondary label color")
+                feedbackPixelCount(
+                    in: host, color: .secondaryLabelColor, partialCoverage: true) > 3,
+                "Mounted percentage renders the system secondary label ink at 1x")
         }
     }
     await suite("Mounted volume：生产 Panel 的输入、磁盘重基、隐藏冲刷与失败回滚") {
