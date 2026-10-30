@@ -440,7 +440,13 @@ private struct AdditionalHookFixture: Sendable {
     )
         -> HostHookHandlingOutcome?
     {
-        handleHostHook(
+        let consumption: (@Sendable () -> Bool)?
+        if host == .kimiCode && native == "Stop" {
+            consumption = { true }
+        } else {
+            consumption = nil
+        }
+        return handleHostHook(
             host: host, nativeEvent: native, installationID: installationID ?? self.installationID,
             environment: HostHookEnvironment(
                 host: host, playEnvironment: play, receiptStore: receipts,
@@ -458,6 +464,7 @@ private struct AdditionalHookFixture: Sendable {
                         projectLabel: "fixture", sessionID: "session-fixture",
                         mainSessionIsKnown: true)
                     : nil,
+                additionalHostStartStopConsumption: consumption,
                 scopeFingerprint: { scope },
                 questionScopeFingerprint: { scope },
                 questionDeduplicationStore: deduplication, now: { [now] in now }))

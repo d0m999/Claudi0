@@ -41,8 +41,10 @@ public struct HostHookEnvironment: Sendable {
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
     public let sourceEnvironment: [String: String]
-    /// Prevalidated Grok start/stop source from the CLI boundary; nil for every other event.
+    /// Prevalidated Grok start/stop or Kimi Stop source from the CLI boundary.
     public let additionalHostStartStopSource: HostEventSource?
+    /// Helper-only Kimi turn marker consumption, invoked under the deduplication permit.
+    public let additionalHostStartStopConsumption: (@Sendable () -> Bool)?
     public let scopeFingerprint: @Sendable () -> String?
     public let codexApprovalRouting: @Sendable (Data?) -> CodexApprovalRouting
     public let questionScopeFingerprint: @Sendable () -> String?
@@ -62,6 +64,7 @@ public struct HostHookEnvironment: Sendable {
         sourcePayload: Data? = nil,
         sourceEnvironment: [String: String] = ProcessInfo.processInfo.environment,
         additionalHostStartStopSource: HostEventSource? = nil,
+        additionalHostStartStopConsumption: (@Sendable () -> Bool)? = nil,
         codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in
             .unavailable
         },
@@ -89,6 +92,7 @@ public struct HostHookEnvironment: Sendable {
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
         self.sourceEnvironment = sourceEnvironment
         self.additionalHostStartStopSource = additionalHostStartStopSource
+        self.additionalHostStartStopConsumption = additionalHostStartStopConsumption
         self.codexApprovalRouting = codexApprovalRouting
         self.scopeFingerprint = scopeFingerprint
         self.questionScopeFingerprint = questionScopeFingerprint
@@ -112,6 +116,7 @@ public func systemHostHookEnvironment(
     authorizationToken: HostEventAuthorizationToken? = nil,
     versionResolver: HostVersionResolver? = nil,
     additionalHostStartStopSource: HostEventSource? = nil,
+    additionalHostStartStopConsumption: (@Sendable () -> Bool)? = nil,
     codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in .unavailable
     }
 ) -> HostHookEnvironment {
@@ -134,6 +139,7 @@ public func systemHostHookEnvironment(
         eventNoticeChannel: eventNoticeChannel,
         sourcePayload: sourcePayload,
         additionalHostStartStopSource: additionalHostStartStopSource,
+        additionalHostStartStopConsumption: additionalHostStartStopConsumption,
         codexApprovalRouting: codexApprovalRouting,
         scopeFingerprint: { questionScope.value },
         questionScopeFingerprint: { questionScope.value },
@@ -247,6 +253,12 @@ public func handleHostHook(
         host == .grokBuild && !isGrokStartStop
         ? GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: environment.sourcePayload)
         : nil
+    let isKimiStop = host == .kimiCode && nativeEvent == "Stop"
+    if isKimiStop {
+        guard environment.additionalHostStartStopSource != nil,
+            environment.additionalHostStartStopConsumption != nil
+        else { return nil }
+    }
     if isGrokStartStop {
         guard environment.additionalHostStartStopSource != nil else { return nil }
     } else if host == .grokBuild {
@@ -298,11 +310,11 @@ public func handleHostHook(
             host: host, nativeEvent: nativeEvent, event: event,
             playbackResult: .notReady, activityRecordOutcome: .failed, receiptWritten: false)
     }
-    HookMeasurementContext.record(.handling, .accepted)
-    let activityRecordOutcome: LocalActivityRecordOutcome
-    if let activityStore = environment.activityStore {
-        let record = {
-            HookMeasurementContext.measure(.activity) {
+    let recordActivity = { () -> LocalActivityRecordOutcome in
+        guard let activityStore = environment.activityStore else { return .failed }
+        let record = { () -> LocalActivityRecordOutcome in
+            if isKimiStop, !installationMarkerIsCurrent() { return .failed }
+            return HookMeasurementContext.measure(.activity) {
                 activityStore.record(
                     host: host,
                     event: event,
@@ -311,11 +323,29 @@ public func handleHostHook(
                     occurredAt: occurredAt)
             }
         }
-        activityRecordOutcome =
+        return
             HostPublicationContext.current?.perform(effect: .activity, rejected: .failed, record)
             ?? record()
+    }
+    let activityRecordOutcome: LocalActivityRecordOutcome
+    if isKimiStop, let consumption = environment.additionalHostStartStopConsumption {
+        let consumeAndRecord = { () -> LocalActivityRecordOutcome? in
+            guard installationMarkerIsCurrent(), consumption() else { return nil }
+            HookMeasurementContext.record(.handling, .accepted)
+            return recordActivity()
+        }
+        let recorded: LocalActivityRecordOutcome?
+        if let boundary = HostPublicationContext.current {
+            recorded = boundary.perform(
+                effect: .deduplication, rejected: nil, consumeAndRecord)
+        } else {
+            recorded = consumeAndRecord()
+        }
+        guard let recorded else { return nil }
+        activityRecordOutcome = recorded
     } else {
-        activityRecordOutcome = .failed
+        HookMeasurementContext.record(.handling, .accepted)
+        activityRecordOutcome = recordActivity()
     }
 
     switch activityRecordOutcome {

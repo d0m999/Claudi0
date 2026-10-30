@@ -96,9 +96,9 @@ public enum GrokStartStopAdmission {
             return nil
         }
 
-        let label = URL(fileURLWithPath: cwd).lastPathComponent
+        let project = HostEventSourceParser.projectIdentity(from: cwd)
         let candidate = HostEventSource(
-            projectLabel: label.isEmpty ? nil : label, sessionID: session,
+            projectLabel: project?.label, projectKey: project?.key, sessionID: session,
             mainSessionIsKnown: true)
         let source =
             candidate.isSemanticallyValid

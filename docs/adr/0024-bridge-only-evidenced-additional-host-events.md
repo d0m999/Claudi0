@@ -62,9 +62,11 @@ payload 目录命中工作区规则时使用工作区声音配置，不再一律
 2026-10-29：Kimi Code `Stop` 以主 agent 落盘 wire 作为身份证据实现。实测 `Stop` payload 没有
 主/子 agent 身份，而 `agents/main/wire.jsonl` 的 `agent.turn.ended` 只在主轮结束时出现；子
 agent `Stop` 不产生该记录。admission 因此放在 helper-only 的
-`ClaudioHookInput/KimiStopTranscriptAdmission.swift`，只读 wire 尾部，要求
-`protocol_version == "1.5"`、`outcome == "done"`，并用 per-session `turnId` marker 去重；
-未知版本、不可读文件或符号链接一律失败关闭。共享 runner 只接收预校验来源，核心 parser
-只校验 Stop 基础字段。`Stop` 仍是 acceptance 候选，普通 Release 不增加
+`ClaudioHookInput/KimiStopTranscriptAdmission.swift`，先按首个 LF 截取完整 metadata 字节，再只读
+wire 尾部，要求 `protocol_version == "1.5"`、最新主轮 `outcome == "done"`；任何后续
+`agent.turn.started` 都使旧 ended 候选失效。CLI 只准备来源和主轮消费 token，不写 marker；共享
+runner 确认当前 installation 后，在 `.deduplication` 发布许可内再次核对安装和授权，再消费
+per-session `turnId` marker。错误安装或失效许可不阻塞合法重试。未知版本、不可读文件或符号链接
+一律失败关闭。核心 parser 只校验 Stop 基础字段。`Stop` 仍是 acceptance 候选，普通 Release 不增加
 `verifiedBindings`；`StopFailure` 仍无主/子失败身份，继续未实现。证据见
 [验证记录](../validation/kimi-stop-transcript-2026-10-29.md)。

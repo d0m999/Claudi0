@@ -307,6 +307,23 @@
         }
       }
     },
+    "qualification.transcript-main-turn-only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses the main agent’s persisted transcript; alerts only when the main turn ends"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按主 agent 落盘轨迹判断；仅主轮结束提醒"
+          }
+        }
+      }
+    },
     "qualification.user-origin-only": {
       "extractionState": "manual",
       "localizations": {

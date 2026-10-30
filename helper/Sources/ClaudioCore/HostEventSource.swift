@@ -204,7 +204,7 @@ public enum HostEventSourceParser {
                 HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent) != nil,
                 let payload = GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: data)
             else { return unavailable(.invalidFieldType) }
-            let info = project(from: payload.workingDirectory)
+            let info = projectIdentity(from: payload.workingDirectory)
             let source = HostEventSource(
                 projectLabel: info?.label, projectKey: info?.key, sessionID: payload.sessionID,
                 mainSessionIsKnown: payload.isSubagent ? nil : true)
@@ -297,7 +297,7 @@ public enum HostEventSourceParser {
         let cwdResult = stringField(named: "cwd", in: dictionary)
         let sessionResult = stringField(named: "session_id", in: dictionary)
         let parent = parentSessionField(host: host, nativeEvent: nativeEvent, in: dictionary)
-        let projectInfo = cwdResult.value.flatMap { Self.project(from: $0) }
+        let projectInfo = cwdResult.value.flatMap { Self.projectIdentity(from: $0) }
         // A malformed parent marker must not turn its parent session ID into a main target.
         let safeSession =
             parent.invalid
@@ -329,7 +329,8 @@ public enum HostEventSourceParser {
         return .available(source)
     }
 
-    private static func project(from cwd: String) -> (label: String, key: String)? {
+    /// Projects display identity only; this does not establish directory trust or navigation authorization.
+    public static func projectIdentity(from cwd: String) -> (label: String, key: String)? {
         guard cwd.hasPrefix("/"), let rawLabel = cwd.split(separator: "/").last else {
             return nil
         }

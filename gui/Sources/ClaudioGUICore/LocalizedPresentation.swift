@@ -195,6 +195,7 @@ func localizedQualification(
         "Claudio 桥接事件；仅确认会话身份与终态后触发": .qualificationBridgeTerminalEvidence,
         "Claudio 桥接事件；仅确认主会话身份并实际执行后触发": .qualificationBridgeExecutionEvidence,
         "仅用户发起的 TurnStarted": .qualificationUserOriginOnly,
+        "按主 agent 落盘轨迹判断；仅主轮结束提醒": .qualificationTranscriptMainTurnOnly,
         "缺少主／子 agent 身份，首版暂未启用": .qualificationMainAgentUnavailable,
         "仅成功结束；无法定位具体子任务": .qualificationSubagentUnavailable,
         "已排除自动唤醒与合成提示": .qualificationPromptOriginUnavailable,

@@ -5,18 +5,46 @@ import Foundation
 
 /// Kimi's Stop payload has no main/subagent identity. Its main agent wire log does: the latest
 /// `agent.turn.ended` belongs to the main agent, while a subagent Stop never creates one there.
+/// A later `agent.turn.started` invalidates that completed-turn candidate.
 /// This helper-only reader keeps the host-specific schema out of the GUI's size-sensitive binary.
 public enum KimiStopTranscriptAdmission {
     public static let wireProtocolVersion = "1.5"
     private static let maximumWireTailBytes: UInt64 = 131_072
 
-    public static func source(
+    public struct PreparedAdmission: Sendable {
+        public let source: HostEventSource
+        private let sessionID: String
+        private let sessionCreatedAt: Int64
+        private let turnID: Int64
+        private let stateRoot: URL
+
+        fileprivate init(
+            source: HostEventSource, sessionID: String, sessionCreatedAt: Int64,
+            turnID: Int64, stateRoot: URL
+        ) {
+            self.source = source
+            self.sessionID = sessionID
+            self.sessionCreatedAt = sessionCreatedAt
+            self.turnID = turnID
+            self.stateRoot = stateRoot
+        }
+
+        /// Call only at the runner's installation-checked deduplication publication boundary.
+        public func consume() -> Bool {
+            shouldNotify(
+                sessionID: sessionID, sessionCreatedAt: sessionCreatedAt,
+                turnID: turnID, stateRoot: stateRoot)
+        }
+    }
+
+    /// Reads and validates host evidence without creating directories, locks or turn markers.
+    public static func prepare(
         nativeEvent: String, data: Data?,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
         stateRoot: URL = ClaudioPaths.integrationsDirectory.appendingPathComponent(
             "kimi-stop-transcript", isDirectory: true)
-    ) -> HostEventSource? {
+    ) -> PreparedAdmission? {
         guard nativeEvent == "Stop", let data, !data.isEmpty,
             data.count <= HookInputReader.defaultMaximumBytes,
             HostEventSourceParser.duplicateTopLevelKeys(data).isEmpty,
@@ -40,16 +68,16 @@ public enum KimiStopTranscriptAdmission {
                 host: .kimiCode, environment: environment, homeDirectory: homeDirectory),
             let turn = latestMainTurnEnd(
                 sessionID: session, kimiHome: root),
-            turn.outcome == "done",
-            shouldNotify(
-                sessionID: session, sessionCreatedAt: turn.sessionCreatedAt,
-                turnID: turn.turnID, stateRoot: stateRoot)
+            turn.outcome == "done"
         else { return nil }
-        let label = cwd.map { URL(fileURLWithPath: $0).lastPathComponent }
+        let project = cwd.flatMap { HostEventSourceParser.projectIdentity(from: $0) }
         let candidate = HostEventSource(
-            projectLabel: label?.isEmpty == false ? label : nil,
+            projectLabel: project?.label, projectKey: project?.key,
             sessionID: session, mainSessionIsKnown: true)
-        return candidate.isSemanticallyValid ? candidate : nil
+        guard candidate.isSemanticallyValid else { return nil }
+        return PreparedAdmission(
+            source: candidate, sessionID: session, sessionCreatedAt: turn.sessionCreatedAt,
+            turnID: turn.turnID, stateRoot: stateRoot)
     }
 
     private struct MainTurnEnd {
@@ -85,9 +113,8 @@ public enum KimiStopTranscriptAdmission {
         guard let size = try? handle.seekToEnd(), size > 0 else { return nil }
         try? handle.seek(toOffset: 0)
         guard let header = try? handle.read(upToCount: 4096),
-            let headerText = String(data: header, encoding: .utf8),
-            let metadataLine = headerText.split(separator: "\n").first,
-            let metadata = object(Data(metadataLine.utf8)),
+            let newline = header.firstIndex(of: 0x0A),
+            let metadata = object(header.prefix(upTo: newline)),
             metadata["type"] as? String == "metadata",
             metadata["protocol_version"] as? String == wireProtocolVersion,
             let createdAt = integer(metadata["created_at"]), createdAt > 0
@@ -101,9 +128,14 @@ public enum KimiStopTranscriptAdmission {
         }
         var latest: (turnID: Int64, outcome: String)?
         for line in text.split(separator: "\n") {
-            guard let record = object(Data(line.utf8)),
-                record["type"] as? String == "agent.turn.ended",
-                let turnID = integer(record["turnId"]), turnID >= 0,
+            guard let record = object(Data(line.utf8)) else { continue }
+            if record["type"] as? String == "agent.turn.started" {
+                latest = nil
+                continue
+            }
+            guard record["type"] as? String == "agent.turn.ended" else { continue }
+            latest = nil
+            guard let turnID = integer(record["turnId"]), turnID >= 0,
                 let outcome = record["outcome"] as? String
             else { continue }
             latest = (turnID, outcome)

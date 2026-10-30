@@ -117,6 +117,35 @@ func runGrokBuildHookSuites() {
         )
     }
 
+    suite("Grok Build：开始结束来源复用 parser 的项目显示身份") {
+        for native in ["UserPromptSubmit", "Stop"] {
+            for cwd in [
+                "/fixture/grok-project", "/fixture/中文项目", "/first/shared", "/second/shared", "/",
+                "/fixture/  safe   name ", "/fixture/" + String(repeating: "中", count: 150),
+            ] {
+                let source = GrokStartStopAdmission.source(
+                    nativeEvent: native, data: grokBuildPayload(native, overrides: ["cwd": cwd]),
+                    environment: grokBuildRunnerEnvironment(native))
+                let expected = HostEventSourceParser.parseInput(
+                    host: .grokBuild, nativeEvent: "StopFailure",
+                    data: grokBuildPayload("StopFailure", overrides: ["cwd": cwd])
+                ).source.source
+                expect(source != nil, "合法 cwd 保留开始结束准入")
+                expect(source?.projectLabel == expected?.projectLabel, "Grok 标签遵守统一安全截断与规范化")
+                expect(source?.projectKey == expected?.projectKey, "Grok 项目 key 与 parser 同完整路径摘要一致")
+            }
+            let first = GrokStartStopAdmission.source(
+                nativeEvent: native,
+                data: grokBuildPayload(native, overrides: ["cwd": "/first/shared"]),
+                environment: grokBuildRunnerEnvironment(native))
+            let second = GrokStartStopAdmission.source(
+                nativeEvent: native,
+                data: grokBuildPayload(native, overrides: ["cwd": "/second/shared"]),
+                environment: grokBuildRunnerEnvironment(native))
+            expect(first?.projectKey != second?.projectKey, "同 basename 不混淆不同项目")
+        }
+    }
+
     suite("Grok Build：Claude compatibility 与旧 play 来源防护") {
         expect(
             !GrokBuildHookOrigin.suppressesClaudeCallback(

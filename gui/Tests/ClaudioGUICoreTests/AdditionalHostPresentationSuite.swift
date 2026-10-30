@@ -167,6 +167,40 @@ func runAdditionalHostPresentationSuites() {
             "开始事件需要实际执行证据，不得声称等待终态")
     }
 
+    suite("Kimi Stop：主轮轨迹限定语在能力格、指示器与逐绑定说明中双语一致") {
+        let content = integrationDestinationTestContent()
+        guard let cell = content.matrix.cell(host: .kimiCode, event: .stop),
+            let indicator = eventHostIndicatorPresentations(event: .stop, matrix: content.matrix)
+                .first(where: { $0.host == .kimiCode }),
+            let binding = content.facts(for: .kimiCode)?.capabilityReceipts.first(where: {
+                $0.binding.event == .stop
+            })
+        else {
+            expect(false, "Kimi Stop 的三处公开呈现都必须存在")
+            return
+        }
+        let key = ClaudioL10nKey(rawValue: "qualification.transcript-main-turn-only")
+        expect(ClaudioL10nKey.allKnown.contains(key), "主轮轨迹限定语必须注册 allKnown")
+        for (language, expected) in [
+            (ClaudioAppLanguage.zhHans, "按主 agent 落盘轨迹判断；仅主轮结束提醒"),
+            (
+                ClaudioAppLanguage.english,
+                "Uses the main agent’s persisted transcript; alerts only when the main turn ends"
+            ),
+        ] {
+            expect(ClaudioL10n(language: language).text(key) == expected, "限定语双语目录文案准确")
+            let localizedCell = localizedCapabilityCell(cell, language: language)
+            expect(localizedCell.qualificationText == expected, "能力格保留主轮限定语")
+            expect(localizedCell.accessibilityLabel.contains(expected), "能力格无障碍文本使用同一限定语")
+            let localizedIndicator = localizedEventHostIndicator(indicator, language: language)
+            expect(localizedIndicator.qualificationText == expected, "事件指示器保留主轮限定语")
+            expect(
+                localizedIndicator.accessibilityLabel.contains(expected),
+                "事件指示器无障碍文本使用同一限定语")
+            expect(binding.capabilityText(language: language).contains(expected), "逐绑定说明保留主轮限定语")
+        }
+    }
+
     suite("新增来源呈现：配置完成不制造回执，双语说明可靠事件边界") {
         let state = integrationDestinationTestState(statuses: [
             .opencode: .awaitingActivation,

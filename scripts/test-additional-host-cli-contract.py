@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real helper subprocesses, isolated configuration, stub host versions and silent audio."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -158,10 +159,35 @@ with tempfile.TemporaryDirectory(prefix="claudio-additional-cli-") as temporary:
         hook(debug, host, events[0], installation, payload(host, events[0]), env)
         check(bytes_on_disk(root) == inactive, "GUI lifetime absent: callbacks have zero state writes")
         register_fixture_lifetime(root)
+        if host == "kimi-code":
+            turn_markers = root / "integrations/kimi-stop-transcript"
+            hook(debug, host, "Stop", str(uuid.uuid4()), payload(host, "Stop"), env)
+            check(not list(turn_markers.glob("*.json")),
+                  "wrong Kimi installation does not consume the completed main turn")
         for native in events:
             hook(debug, host, native, installation, payload(host, native), env)
             receipt = root / "integrations/receipts" / host / (native + ".json")
             check(receipt.is_file(), f"{host}/{native}: current receipt")
+        if host == "kimi-code":
+            summary = root / "integrations/activity/summary.json"
+            before_stop = sum(bucket["counts"].get("kimi-code:stop", 0)
+                              for bucket in json.loads(summary.read_text())["buckets"])
+            with wire.open("a") as output:
+                output.write('{"type":"agent.turn.started","turnId":1,"queueItemId":"fixture-item","time":1900000000002}\n'
+                             '{"type":"agent.turn.ended","turnId":1,"outcome":"done","time":1900000000003}\n')
+            arguments = ["hook", host, "Stop", "--installation-id", installation]
+            data = json.dumps(payload(host, "Stop")).encode()
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                results = list(executor.map(lambda _: invoke(debug, arguments, env, data), range(8)))
+            check(all(result.returncode == 0 and not result.stdout and not result.stderr
+                      for result in results), "concurrent Kimi callbacks exit quietly")
+            after_stop = sum(bucket["counts"].get("kimi-code:stop", 0)
+                             for bucket in json.loads(summary.read_text())["buckets"])
+            check(after_stop == before_stop + 1, "concurrent Kimi main turn publishes activity exactly once")
+            markers = list(turn_markers.glob("*.json"))
+            check(len(markers) == 1 and json.loads(markers[0].read_text())["turn_id"] == 1
+                  and markers[0].stat().st_mode & 0o777 == 0o600,
+                  "concurrent Kimi main turn has one private 0600 marker")
         observed_status = invoke(debug, ["integrations", "status"], env)
         check(observed_status.returncode == 0 and "已收到事件；支持" in observed_status.stdout.decode()
               and "/5 已就绪" not in observed_status.stdout.decode(),

@@ -257,6 +257,8 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
     public static let qualificationBridgeExecutionEvidence: Self =
         "qualification.bridge-execution-evidence"
     public static let qualificationUserOriginOnly: Self = "qualification.user-origin-only"
+    public static let qualificationTranscriptMainTurnOnly: Self =
+        "qualification.transcript-main-turn-only"
     public static let qualificationMainAgentUnavailable: Self =
         "qualification.main-agent-unavailable"
     public static let qualificationSubagentUnavailable: Self = "qualification.subagent-unavailable"
@@ -2007,6 +2009,7 @@ public struct ClaudioL10nKey: RawRepresentable, Hashable, Sendable, ExpressibleB
         .qualificationBridgeTerminalEvidence,
         .qualificationBridgeExecutionEvidence,
         .qualificationUserOriginOnly,
+        .qualificationTranscriptMainTurnOnly,
         .qualificationMainAgentUnavailable,
         .qualificationSubagentUnavailable,
         .integrationsMechanismPluginBridge,
