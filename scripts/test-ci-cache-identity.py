@@ -13,7 +13,7 @@ assignments = [
     for line in workflow.read_text().splitlines()
     if line.strip().startswith('FINGERPRINT="')
 ]
-if len(assignments) != 2:
+if len(assignments) != 4:
     raise SystemExit("Expected one cache fingerprint for each Swift CI lane")
 
 with tempfile.TemporaryDirectory(prefix="claudio-ci-cache-identity-") as directory:
@@ -40,7 +40,8 @@ with tempfile.TemporaryDirectory(prefix="claudio-ci-cache-identity-") as directo
             text=True,
         )
 
-    for lane, assignment in zip(["helper", "gui"], assignments):
+    lanes = ["helper", "gui", "gui-foreground", "gui-bundle"]
+    for lane, assignment in zip(lanes, assignments):
         old_workspace = root / "Claudio" / "Claudio"
         renamed_workspace = root / "Claudi0" / "Claudi0"
         original = fingerprint(assignment, old_workspace)
@@ -58,4 +59,4 @@ with tempfile.TemporaryDirectory(prefix="claudio-ci-cache-identity-") as directo
             if not passed:
                 raise SystemExit(f"FAIL {lane}: {description}")
 
-print("PASS: both Swift CI lanes preserve stable cache identities and invalidate path/toolchain changes")
+print(f"PASS: all {len(assignments)} Swift CI lanes preserve stable cache identities and invalidate path/toolchain changes")

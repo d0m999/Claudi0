@@ -107,10 +107,10 @@ jobs:
           python3 scripts/test-additional-host-cli-contract.py
 
   gui:
-    name: GUI and bundle
+    name: GUI background and native checks
     runs-on: macos-26
-    # Cold SDK 26 builds include native harnesses, standard Release and LTO bundle variants.
-    timeout-minutes: 60
+    # Background batch plus the focused native selectors and both credential galleries.
+    timeout-minutes: 45
     env:
       # Match the measured stable compiler and SDK used by all bundle-producing lanes.
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
@@ -138,7 +138,6 @@ jobs:
           echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
 
       - name: Restore SwiftPM build cache
-        id: swiftpm-cache
         uses: actions/cache/restore@v5
         with:
           path: |
@@ -194,8 +193,98 @@ jobs:
       - name: Run background GUI checks
         run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests --background
 
+      - name: Verify admitted AI Cue credential gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE claudio-gui-tests --foreground --ai-cue-gallery
+
+      - name: Verify public preview credential gallery
+        run: swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --foreground --ai-cue-gallery
+
+  gui-foreground:
+    name: GUI foreground checks
+    runs-on: macos-26
+    # Full foreground batch on a dedicated runner; native suites must run serially.
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      NSUnbufferedIO: YES
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
+
+      - name: Toolchain
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          SWIFT_VERSION="$(swift --version)"
+          printf '%s\n' "$SWIFT_VERSION"
+          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
+            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
+            exit 1
+          fi
+          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
+          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+
+      - name: Restore SwiftPM build cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            gui/.build
+            helper/.build
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
+
+      - name: Prepare native layout display
+        run: swift scripts/prepare-ci-display.swift
+
+      - name: Build GUI harness
+        run: swift build --package-path gui --product claudio-gui-tests
+
       - name: Run foreground GUI checks
         run: python3 scripts/run-ci-gui-harness.py --timeout 2400 -- swift run --skip-build --package-path gui claudio-gui-tests --foreground
+
+  gui-bundle:
+    name: GUI bundle and size
+    runs-on: macos-26
+    # Debug/Release products, the local release-layout app, and the only cache writer.
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      NSUnbufferedIO: YES
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select pinned Swift toolchain
+        run: python3 scripts/setup-ci-swift.py
+
+      - name: Toolchain
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          SWIFT_VERSION="$(swift --version)"
+          printf '%s\n' "$SWIFT_VERSION"
+          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
+            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
+            exit 1
+          fi
+          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
+          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+
+      - name: Restore SwiftPM build cache
+        id: swiftpm-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            gui/.build
+            helper/.build
+          key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
+
+      - name: Build GUI harness for the shared cache
+        run: swift build --package-path gui --product claudio-gui-tests
 
       - name: Build ClaudioGUI (Debug)
         run: swift build -c debug --package-path gui --product ClaudioGUI
@@ -218,22 +307,20 @@ jobs:
             helper/.build
           key: gui-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.fingerprint }}-${{ hashFiles('helper/Package.resolved', 'helper/Package.swift', 'gui/Package.swift', 'gui/Package.resolved') }}-v3
 
-      - name: Verify admitted AI Cue credential gallery
-        run: swift run --package-path gui -Xswiftc -DCLAUDIO_BAILIAN_ACCEPTANCE claudio-gui-tests --foreground --ai-cue-gallery
-
-      - name: Verify public preview credential gallery
-        run: swift run --package-path gui -Xswiftc -DCLAUDIO_PUBLIC_PREVIEW claudio-gui-tests --foreground --ai-cue-gallery
-
   verify:
     name: Test and build
     if: ${{ !cancelled() }}
-    needs: [helper, gui]
+    needs: [helper, gui, gui-foreground, gui-bundle]
     runs-on: ubuntu-latest
     steps:
-      - name: Require both lanes
+      - name: Require every lane
         env:
           HELPER_RESULT: ${{ needs.helper.result }}
           GUI_RESULT: ${{ needs.gui.result }}
+          GUI_FOREGROUND_RESULT: ${{ needs['gui-foreground'].result }}
+          GUI_BUNDLE_RESULT: ${{ needs['gui-bundle'].result }}
         run: |
           test "$HELPER_RESULT" = success
           test "$GUI_RESULT" = success
+          test "$GUI_FOREGROUND_RESULT" = success
+          test "$GUI_BUNDLE_RESULT" = success

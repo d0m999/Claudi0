@@ -766,6 +766,15 @@ func runReleaseLayoutSuites() {
         expect(
             restoreKey != nil && restoreKey == saveKey,
             "GUI 缓存恢复和保存必须使用同一非空 key")
+        let guiKeys = lines.filter { $0.hasPrefix("          key: gui-") }
+        expect(
+            guiKeys.count == 4 && Set(guiKeys).count == 1,
+            "三条 GUI lane 的恢复与唯一保存必须共用同一 key：\(guiKeys)")
+        expect(
+            lines.filter { $0.contains("uses: actions/cache/restore@v5") }.count == 3
+                && lines.filter { $0.contains("uses: actions/cache/save@v5") }.count == 1
+                && lines.filter { $0 == "      - name: Save SwiftPM build cache" }.count == 1,
+            "GUI 缓存必须由三个 lane 恢复、仅 bundle lane 保存")
     }
 
     suite("体积优化合同跨行与参数调序仍会拒绝错误目标") {
@@ -1691,7 +1700,7 @@ func runReleaseLayoutSuites() {
             helperJob.upperBound < guiJob.lowerBound,
             guiJob.upperBound < verifyJob.lowerBound
         else {
-            expect(false, "CI 必须保留独立的 Helper、GUI 与汇总 job")
+            expect(false, "CI 必须保留独立的 Helper、三条 GUI lane 与汇总 job")
             return
         }
         let helper = ci[helperJob.upperBound..<guiJob.lowerBound]
@@ -1706,7 +1715,8 @@ func runReleaseLayoutSuites() {
                 && gui.contains(selectBundleToolchain)
                 && gui.contains(bundleSwiftVersionPattern)
                 && gui.contains("::error::Swift 6.4.1 is required")
-                && ci[verifyJob.lowerBound...].contains("needs: [helper, gui]")
+                && ci[verifyJob.lowerBound...].contains(
+                    "needs: [helper, gui, gui-foreground, gui-bundle]")
                 && release.contains(
                     "name: Build, sign, notarize, and verify\n    runs-on: macos-26")
                 && release.contains(guiDeveloperDirectory)

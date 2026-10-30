@@ -19,7 +19,11 @@ Thank you for helping improve Claudio. Small, focused changes with evidence are 
 - Python 3 and Node.js for the embedded OpenCode plugin and additional-host CLI contracts.
 - `ffmpeg` and `ffprobe` for curated sound-pack measurements.
 
-CI keeps the Helper compatibility lane on macOS 15 / Xcode 16.4. GUI/bundle, preview,
+CI keeps the Helper compatibility lane on macOS 15 / Xcode 16.4. GUI coverage is split across
+three macOS 26 lanes: `gui` (background batch, focused native selectors and both credential
+galleries), `gui-foreground` (full foreground batch) and `gui-bundle` (Debug/Release products,
+local release-layout app and size budget). All three restore the same SwiftPM cache; only
+`gui-bundle` saves it. GUI/bundle, preview,
 and release lanes use macOS 26 / Xcode 26.6 with its macOS 26.5 SDK and the official
 [Swift 6.4.1 release toolchain](https://www.swift.org/install/macos/).
 `scripts/setup-ci-swift.py` pins the installer SHA-256,
@@ -29,7 +33,7 @@ installs on disposable GitHub Actions runners. This aligns the compiler used for
 unchanged 7,000,000-byte GUI budget; Swift 6.2/6.3 generate larger binaries from the same
 source. Release builds explicitly select SwiftPM's native build system to retain their
 recorded binary paths. The macOS deployment target remains 12.
-The GUI lane configures its disposable runner's virtual display to 1920×1080 before
+Each native GUI lane configures its disposable runner's virtual display to 1920×1080 before
 native layout checks, preserving the 1240×820 settings-window test premise.
 
 Clone the repository and run commands from its root. The helper and GUI are separate Swift packages; always pass the explicit package path and product shown below.
@@ -77,7 +81,8 @@ explicit `--foreground`, for example `claudio-gui-tests --foreground --settings-
 Focus suites with special prerequisites remain opt-in; this split preserves the former full
 harness coverage without promoting those separate gates to default coverage. Do not count a
 background pass or a dry-run as native layout, keyboard/focus, VoiceOver or Computer Use acceptance.
-CI runs both batches; the full local pre-RC entry is `bash scripts/local-pre-rc.sh --foreground`.
+CI runs both batches in the `gui` and `gui-foreground` lanes; the full local pre-RC entry is
+`bash scripts/local-pre-rc.sh --foreground`.
 
 The selector state regression compares the exact six-package curated roster with the versioned
 `packs/LICENSES.md`, including duplicate/missing/extra entries, rather than requiring ignored local
