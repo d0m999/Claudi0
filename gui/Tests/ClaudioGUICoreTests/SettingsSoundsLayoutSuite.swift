@@ -857,7 +857,7 @@ final class SettingsSoundsNativeLayoutProbe {
 
     private func groupSurfaceView(in view: NSView) -> NSView? {
         if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
-        return view.subviews.lazy.compactMap { groupSurfaceView(in: $0) }.first
+        return view.subviews.lazy.compactMap { self.groupSurfaceView(in: $0) }.first
     }
 
     private func surfaceRGB(_ color: NSColor) -> [Int]? {
