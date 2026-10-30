@@ -440,9 +440,9 @@ private struct AdditionalHookFixture: Sendable {
     )
         -> HostHookHandlingOutcome?
     {
-        let consumption: (@Sendable () -> Bool)?
+        let consumption: AdditionalHostTurnConsumption?
         if host == .kimiCode && native == "Stop" {
-            consumption = { true }
+            consumption = { _ in .consumed(.committed) }
         } else {
             consumption = nil
         }
@@ -458,13 +458,13 @@ private struct AdditionalHookFixture: Sendable {
                         notices.append($0); return .sent
                     }),
                 sourcePayload: data,
-                additionalHostStartStopSource:
+                additionalHostPreparedSource:
                     host == .kimiCode && native == "Stop"
                     ? HostEventSource(
                         projectLabel: "fixture", sessionID: "session-fixture",
                         mainSessionIsKnown: true)
                     : nil,
-                additionalHostStartStopConsumption: consumption,
+                additionalHostTurnConsumption: consumption,
                 scopeFingerprint: { scope },
                 questionScopeFingerprint: { scope },
                 questionDeduplicationStore: deduplication, now: { [now] in now }))

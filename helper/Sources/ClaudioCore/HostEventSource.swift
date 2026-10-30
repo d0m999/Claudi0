@@ -343,6 +343,14 @@ public enum HostEventSourceParser {
         return (label, key)
     }
 
+    /// Shared main-session source for start/stop admissions; the directory only supplies display identity.
+    public static func mainSessionSource(from cwd: String?, sessionID: String) -> HostEventSource {
+        let project = cwd.flatMap { projectIdentity(from: $0) }
+        return HostEventSource(
+            projectLabel: project?.label, projectKey: project?.key, sessionID: sessionID,
+            mainSessionIsKnown: true)
+    }
+
     private enum StringFieldResult: Equatable {
         case absent
         case valid(String)

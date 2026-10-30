@@ -24,6 +24,16 @@ public struct HostEventNoticeChannel: Sendable {
     }
 }
 
+public enum AdditionalHostTurnConsumptionOutcome: Sendable, Equatable {
+    case consumed(LocalActivityRecordOutcome)
+    case rejected
+}
+
+/// Helper-only turn consumption for additional hosts. The runner supplies the activity recorder
+/// so a turn marker is published only after the activity fact is committed or durably deferred.
+public typealias AdditionalHostTurnConsumption =
+    @Sendable (@Sendable () -> LocalActivityRecordOutcome) -> AdditionalHostTurnConsumptionOutcome
+
 /// 新版 `claudio hook` 一次调用的注入式环境。`playEnvironment` 必须使用该宿主自己的
 /// lock/state；构造器显式携带 host，以免测试或未来调用方误把两宿主又接回 legacy 全局去抖。
 public struct HostHookEnvironment: Sendable {
@@ -41,10 +51,10 @@ public struct HostHookEnvironment: Sendable {
     public let eventNoticeChannel: HostEventNoticeChannel?
     public let sourcePayload: Data?
     public let sourceEnvironment: [String: String]
-    /// Prevalidated Grok start/stop or Kimi Stop source from the CLI boundary.
-    public let additionalHostStartStopSource: HostEventSource?
-    /// Helper-only Kimi turn marker consumption, invoked under the deduplication permit.
-    public let additionalHostStartStopConsumption: (@Sendable () -> Bool)?
+    /// Prevalidated CLI-boundary source for Grok start/stop or Kimi Stop.
+    public let additionalHostPreparedSource: HostEventSource?
+    /// Helper-only Kimi turn marker consumption; runs under the deduplication permit.
+    public let additionalHostTurnConsumption: AdditionalHostTurnConsumption?
     public let scopeFingerprint: @Sendable () -> String?
     public let codexApprovalRouting: @Sendable (Data?) -> CodexApprovalRouting
     public let questionScopeFingerprint: @Sendable () -> String?
@@ -63,8 +73,8 @@ public struct HostHookEnvironment: Sendable {
         eventNoticeChannel: HostEventNoticeChannel? = nil,
         sourcePayload: Data? = nil,
         sourceEnvironment: [String: String] = ProcessInfo.processInfo.environment,
-        additionalHostStartStopSource: HostEventSource? = nil,
-        additionalHostStartStopConsumption: (@Sendable () -> Bool)? = nil,
+        additionalHostPreparedSource: HostEventSource? = nil,
+        additionalHostTurnConsumption: AdditionalHostTurnConsumption? = nil,
         codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in
             .unavailable
         },
@@ -91,8 +101,8 @@ public struct HostHookEnvironment: Sendable {
         self.eventNoticeChannel = eventNoticeChannel
         self.sourcePayload = sourcePayload ?? eventNoticeChannel?.sourcePayload
         self.sourceEnvironment = sourceEnvironment
-        self.additionalHostStartStopSource = additionalHostStartStopSource
-        self.additionalHostStartStopConsumption = additionalHostStartStopConsumption
+        self.additionalHostPreparedSource = additionalHostPreparedSource
+        self.additionalHostTurnConsumption = additionalHostTurnConsumption
         self.codexApprovalRouting = codexApprovalRouting
         self.scopeFingerprint = scopeFingerprint
         self.questionScopeFingerprint = questionScopeFingerprint
@@ -115,8 +125,8 @@ public func systemHostHookEnvironment(
     sourcePayload: Data? = nil,
     authorizationToken: HostEventAuthorizationToken? = nil,
     versionResolver: HostVersionResolver? = nil,
-    additionalHostStartStopSource: HostEventSource? = nil,
-    additionalHostStartStopConsumption: (@Sendable () -> Bool)? = nil,
+    additionalHostPreparedSource: HostEventSource? = nil,
+    additionalHostTurnConsumption: AdditionalHostTurnConsumption? = nil,
     codexApprovalRouting: @escaping @Sendable (Data?) -> CodexApprovalRouting = { _ in .unavailable
     }
 ) -> HostHookEnvironment {
@@ -138,8 +148,8 @@ public func systemHostHookEnvironment(
         activityStore: .production,
         eventNoticeChannel: eventNoticeChannel,
         sourcePayload: sourcePayload,
-        additionalHostStartStopSource: additionalHostStartStopSource,
-        additionalHostStartStopConsumption: additionalHostStartStopConsumption,
+        additionalHostPreparedSource: additionalHostPreparedSource,
+        additionalHostTurnConsumption: additionalHostTurnConsumption,
         codexApprovalRouting: codexApprovalRouting,
         scopeFingerprint: { questionScope.value },
         questionScopeFingerprint: { questionScope.value },
@@ -254,13 +264,17 @@ public func handleHostHook(
         ? GrokBuildHookPayload.parse(nativeEvent: nativeEvent, data: environment.sourcePayload)
         : nil
     let isKimiStop = host == .kimiCode && nativeEvent == "Stop"
+    let kimiStopConsumption: AdditionalHostTurnConsumption?
     if isKimiStop {
-        guard environment.additionalHostStartStopSource != nil,
-            environment.additionalHostStartStopConsumption != nil
+        guard environment.additionalHostPreparedSource != nil,
+            let consumption = environment.additionalHostTurnConsumption
         else { return nil }
+        kimiStopConsumption = consumption
+    } else {
+        kimiStopConsumption = nil
     }
     if isGrokStartStop {
-        guard environment.additionalHostStartStopSource != nil else { return nil }
+        guard environment.additionalHostPreparedSource != nil else { return nil }
     } else if host == .grokBuild {
         guard let grokPayload,
             grokPayload.matchesRunner(
@@ -310,11 +324,10 @@ public func handleHostHook(
             host: host, nativeEvent: nativeEvent, event: event,
             playbackResult: .notReady, activityRecordOutcome: .failed, receiptWritten: false)
     }
-    let recordActivity = { () -> LocalActivityRecordOutcome in
+    let recordActivity: @Sendable () -> LocalActivityRecordOutcome = {
         guard let activityStore = environment.activityStore else { return .failed }
         let record = { () -> LocalActivityRecordOutcome in
-            if isKimiStop, !installationMarkerIsCurrent() { return .failed }
-            return HookMeasurementContext.measure(.activity) {
+            HookMeasurementContext.measure(.activity) {
                 activityStore.record(
                     host: host,
                     event: event,
@@ -328,20 +341,18 @@ public func handleHostHook(
             ?? record()
     }
     let activityRecordOutcome: LocalActivityRecordOutcome
-    if isKimiStop, let consumption = environment.additionalHostStartStopConsumption {
-        let consumeAndRecord = { () -> LocalActivityRecordOutcome? in
-            guard installationMarkerIsCurrent(), consumption() else { return nil }
-            HookMeasurementContext.record(.handling, .accepted)
-            return recordActivity()
+    if let consumption = kimiStopConsumption {
+        let consumeAndRecord = { () -> AdditionalHostTurnConsumptionOutcome in
+            guard installationMarkerIsCurrent() else { return .rejected }
+            let outcome = consumption(recordActivity)
+            if case .consumed = outcome {
+                HookMeasurementContext.record(.handling, .accepted)
+            }
+            return outcome
         }
-        let recorded: LocalActivityRecordOutcome?
-        if let boundary = HostPublicationContext.current {
-            recorded = boundary.perform(
-                effect: .deduplication, rejected: nil, consumeAndRecord)
-        } else {
-            recorded = consumeAndRecord()
-        }
-        guard let recorded else { return nil }
+        let consumed: AdditionalHostTurnConsumptionOutcome = withDeduplicationPermit(
+            rejected: .rejected, consumeAndRecord)
+        guard case .consumed(let recorded) = consumed else { return nil }
         activityRecordOutcome = recorded
     } else {
         HookMeasurementContext.record(.handling, .accepted)
@@ -406,9 +417,9 @@ public func handleHostHook(
                 host: host, installationID: installationID, payload: questionPayload,
                 now: occurredAt, isCurrent: installationMarkerIsCurrent)
         }
-        switch HostPublicationContext.current?.perform(
-            effect: .deduplication, rejected: .unavailable, consume) ?? consume()
-        {
+        let consumed: HostQuestionConsumption = withDeduplicationPermit(
+            rejected: .unavailable, consume)
+        switch consumed {
         case .consumed:
             let outcome = playConsumedHostEvent(event, environment: observedPlayEnvironment)
             playbackResult = redactedPlaybackResult(outcome: outcome, spawnSucceeded: capture.value)
@@ -470,7 +481,7 @@ public func handleHostHook(
         let binding = HostCapabilityCatalog.binding(host: host, nativeEvent: nativeEvent)
     {
         let input =
-            environment.additionalHostStartStopSource.map {
+            environment.additionalHostPreparedSource.map {
                 HostEventInput(source: .available($0), reason: nil)
             }
             ?? HostEventSourceParser.parseInput(
@@ -522,6 +533,11 @@ public func handleHostHook(
         playbackResult: playbackResult,
         activityRecordOutcome: activityRecordOutcome,
         receiptWritten: written)
+}
+
+private func withDeduplicationPermit<T>(rejected: T, _ body: () -> T) -> T {
+    HostPublicationContext.current?.perform(
+        effect: .deduplication, rejected: rejected, body) ?? body()
 }
 
 private func redactedReceiptStoreError(_ error: HostHookReceiptStoreError) -> String {

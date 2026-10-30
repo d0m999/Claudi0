@@ -65,8 +65,9 @@ agent `Stop` 不产生该记录。admission 因此放在 helper-only 的
 `ClaudioHookInput/KimiStopTranscriptAdmission.swift`，先按首个 LF 截取完整 metadata 字节，再只读
 wire 尾部，要求 `protocol_version == "1.5"`、最新主轮 `outcome == "done"`；任何后续
 `agent.turn.started` 都使旧 ended 候选失效。CLI 只准备来源和主轮消费 token，不写 marker；共享
-runner 确认当前 installation 后，在 `.deduplication` 发布许可内再次核对安装和授权，再消费
-per-session `turnId` marker。错误安装或失效许可不阻塞合法重试。未知版本、不可读文件或符号链接
-一律失败关闭。核心 parser 只校验 Stop 基础字段。`Stop` 仍是 acceptance 候选，普通 Release 不增加
-`verifiedBindings`；`StopFailure` 仍无主/子失败身份，继续未实现。证据见
+runner 确认当前 installation 后，在 `.deduplication` 发布许可内再次核对安装和授权，再在
+per-session marker 锁内先发布活动事实、后消费 `turnId` marker；只有活动已提交或可靠暂存才写入
+marker，活动失败保留旧 marker。错误安装、失效许可或活动失败不阻塞合法重试。未知版本、不可读
+文件或符号链接一律失败关闭。核心 parser 只校验 Stop 基础字段。`Stop` 仍是 acceptance 候选，
+普通 Release 不增加 `verifiedBindings`；`StopFailure` 仍无主/子失败身份，继续未实现。证据见
 [验证记录](../validation/kimi-stop-transcript-2026-10-29.md)。

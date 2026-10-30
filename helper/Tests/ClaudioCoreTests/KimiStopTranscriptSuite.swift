@@ -77,6 +77,37 @@ func runKimiStopTranscriptSuites() {
         }
 
         withTempDirectory { root in
+            let f = KimiStopTranscriptFixture(root: root)
+            let lines = String(decoding: try! Data(contentsOf: f.wire), as: UTF8.self)
+                .split(separator: "\n")
+            var metadata =
+                try! JSONSerialization.jsonObject(
+                    with: Data(lines[0].utf8)) as! [String: Any]
+            metadata["padding"] = String(repeating: "a", count: 5000)
+            var rewritten = try! JSONSerialization.data(
+                withJSONObject: metadata, options: [.sortedKeys])
+            rewritten.append(Data(("\n" + lines.dropFirst().joined(separator: "\n")).utf8))
+            try! rewritten.write(to: f.wire)
+            expect(f.source() != nil, "超过 4096 字节的 metadata 行仍读取到首个 LF")
+        }
+
+        withTempDirectory { root in
+            let f = KimiStopTranscriptFixture(root: root)
+            let lines = String(decoding: try! Data(contentsOf: f.wire), as: UTF8.self)
+                .split(separator: "\n")
+            var metadata =
+                try! JSONSerialization.jsonObject(
+                    with: Data(lines[0].utf8)) as! [String: Any]
+            metadata["padding"] = String(repeating: "a", count: 140_000)
+            var rewritten = try! JSONSerialization.data(
+                withJSONObject: metadata, options: [.sortedKeys])
+            rewritten.append(Data(("\n" + lines.dropFirst().joined(separator: "\n")).utf8))
+            try! rewritten.write(to: f.wire)
+            expect(f.source() == nil, "超出读取上限的 metadata 行失败关闭")
+            expect(!FileManager.default.fileExists(atPath: f.markerPath.path), "超限 metadata 不消费")
+        }
+
+        withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root, protocolVersion: "1.4")
             expect(f.source() == nil, "未知 wire 版本失败关闭")
             expect(!FileManager.default.fileExists(atPath: f.markerPath.path), "版本拒绝不写标记")
@@ -241,7 +272,7 @@ func runKimiStopTranscriptSuites() {
         }
     }
 
-    suite("Kimi Stop：消费主轮后发布锁竞争仍保留一次活动") {
+    suite("Kimi Stop：消费许可内活动提交后重复主轮仍恰好一次") {
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)
             let intents = HostIntegrationIntentStore(
@@ -253,8 +284,9 @@ func runKimiStopTranscriptSuites() {
             _ = runs.register()
             let authorization = HostEventAuthorization(intents: intents, runs: runs)
             let token = authorization.capture(surface: .kimiCode)!
-            // A competing callback opens its own nonblocking FileLock at the exact gap
-            // between turn consumption and activity publication, without changing intent.
+            // A competing callback probes the authorization lock while activity publishes.
+            // The runner holds that lock for the deduplication permit; the retries below
+            // must still produce exactly one activity fact.
             let competitor = HostPublicationContext.unconditional(
                 lockFile: intents.authorizationLockFile)
             let first = f.handle(
@@ -341,12 +373,12 @@ func runKimiStopTranscriptSuites() {
             let outcome = f.handle(
                 f.prepare(), authorization: authorization,
                 token: authorization.capture(surface: .kimiCode),
-                consumptionOverride: {
+                consumptionOverride: { _ in
                     let output = try! FileHandle(forWritingTo: attempts)
                     defer { try! output.close() }
                     _ = try! output.seekToEnd()
                     try! output.write(contentsOf: Data([1]))
-                    return false
+                    return .rejected
                 })
             expect(outcome == nil, "消费失败返回拒收，不伪造活动失败 outcome")
             expect((try! Data(contentsOf: attempts)).count == 1, "消费失败不走无许可 fallback 或重跑消费")
@@ -358,26 +390,29 @@ func runKimiStopTranscriptSuites() {
         }
     }
 
-    suite("Kimi Stop：活动 hook 后复验安装，离开活动边界即释放许可") {
+    suite("Kimi Stop：活动事实失败不消费主轮，合法重试仍可发布") {
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)
             let authorization = f.authorize()
-            let outcome = f.handle(
-                f.prepare(), authorization: authorization,
-                token: authorization.capture(surface: .kimiCode),
-                beforePublication: { effect in
-                    if effect == .activity {
-                        _ = f.receipts.activate(
-                            host: .kimiCode, installationID: UUID(), scopeFingerprint: f.scope)
-                    }
-                })
-            expect(outcome?.activityRecordOutcome == .failed, "activity hook 替换安装后仍保留失败语义")
-            expect(FileManager.default.fileExists(atPath: f.markerPath.path), "已消费 marker 不回滚")
-            expect(!FileManager.default.fileExists(atPath: f.summary.path), "安装窄复验失败不写活动")
+            let admission = f.prepare()!
+            expect(
+                f.handle(
+                    admission, includeActivityStore: false, authorization: authorization,
+                    token: authorization.capture(surface: .kimiCode)) == nil,
+                "活动事实失败时整条回调拒收")
+            expect(!FileManager.default.fileExists(atPath: f.markerPath.path), "活动失败不消费主轮 marker")
             expect(
                 !FileManager.default.fileExists(atPath: f.activityStore.pendingDirectory.path),
-                "安装窄复验失败不暂存活动")
+                "活动失败不暂存 delta")
+            let retried = f.handle(
+                admission, authorization: authorization,
+                token: authorization.capture(surface: .kimiCode))
+            expect(retried?.activityRecordOutcome == .committed, "活动恢复后同一主轮可重试")
+            expect(FileManager.default.fileExists(atPath: f.markerPath.path), "重试成功后才写 marker")
         }
+    }
+
+    suite("Kimi Stop：活动与主轮消费共用发布许可，回执和通知在许可外") {
         withTempDirectory { root in
             let f = KimiStopTranscriptFixture(root: root)
             let authorization = f.authorize()
@@ -416,16 +451,27 @@ func runKimiStopTranscriptSuites() {
             let lock = FileLock(
                 path: marker.deletingPathExtension().appendingPathExtension("lock").path)
             expect(lock.attemptLock() == .acquired, "占用本会话锁")
-            expect(!admission.consume(), "锁忙不消费主轮")
+            expect(
+                !admission.consume(recordingActivity: { .committed }).isConsumed,
+                "锁忙不消费主轮")
             expect((try! Data(contentsOf: marker)) == first, "锁忙保持原 marker")
             lock.unlock()
-            expect(admission.consume(), "解锁后仍可合法重试")
+            expect(
+                admission.consume(recordingActivity: { .committed }).isConsumed,
+                "解锁后仍可合法重试")
             let broken = Data("{broken".utf8)
             try! broken.write(to: marker)
             f.appendMainEnd(turnID: 2)
             expect(f.source() == nil, "损坏 marker 失败关闭")
             expect((try! Data(contentsOf: marker)) == broken, "损坏 marker 不被覆盖")
         }
+    }
+}
+
+extension AdditionalHostTurnConsumptionOutcome {
+    fileprivate var isConsumed: Bool {
+        if case .consumed = self { return true }
+        return false
     }
 }
 
@@ -519,7 +565,10 @@ private struct KimiStopTranscriptFixture {
     }
 
     func source() -> HostEventSource? {
-        guard let admission = prepare(), admission.consume() else { return nil }
+        guard
+            let admission = prepare(),
+            admission.consume(recordingActivity: { .committed }).isConsumed
+        else { return nil }
         return admission.source
     }
 
@@ -550,17 +599,20 @@ private struct KimiStopTranscriptFixture {
     func handle(
         _ admission: KimiStopTranscriptAdmission.PreparedAdmission?,
         installationID: UUID? = nil, includeConsumption: Bool = true,
+        includeActivityStore: Bool = true,
         authorization: HostEventAuthorization? = nil, token: HostEventAuthorizationToken? = nil,
         beforePublication: @escaping @Sendable (HostPublicationEffect) -> Void = { _ in },
-        consumptionOverride: (@Sendable () -> Bool)? = nil,
+        consumptionOverride: AdditionalHostTurnConsumption? = nil,
         resolveScope: (@Sendable () -> String?)? = nil,
         noticeChannel: HostEventNoticeChannel? = nil
     ) -> HostHookHandlingOutcome? {
-        let consumption: (@Sendable () -> Bool)?
+        let consumption: AdditionalHostTurnConsumption?
         if let consumptionOverride {
             consumption = consumptionOverride
         } else if includeConsumption, let admission {
-            consumption = { admission.consume() }
+            consumption = { recordActivity in
+                admission.consume(recordingActivity: recordActivity)
+            }
         } else {
             consumption = nil
         }
@@ -584,11 +636,11 @@ private struct KimiStopTranscriptFixture {
                     logFile: root.appendingPathComponent("log"),
                     logLockFile: root.appendingPathComponent("log.lock")),
                 receiptStore: receipts,
-                activityStore: activityStore,
+                activityStore: includeActivityStore ? activityStore : nil,
                 eventNoticeChannel: noticeChannel,
                 sourcePayload: payloadData,
-                additionalHostStartStopSource: admission?.source,
-                additionalHostStartStopConsumption: consumption,
+                additionalHostPreparedSource: admission?.source,
+                additionalHostTurnConsumption: consumption,
                 scopeFingerprint: scopeFingerprint))
     }
 

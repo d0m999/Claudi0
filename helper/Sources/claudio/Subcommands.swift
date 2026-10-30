@@ -70,20 +70,22 @@ extension Claudio {
                 ? KimiStopTranscriptAdmission.prepare(
                     nativeEvent: nativeEvent, data: hookInput?.data)
                 : nil
-            let additionalHostStartStopSource: HostEventSource?
+            let additionalHostPreparedSource: HostEventSource?
             if isGrokStartStop {
-                additionalHostStartStopSource = GrokStartStopAdmission.source(
+                additionalHostPreparedSource = GrokStartStopAdmission.source(
                     nativeEvent: nativeEvent, data: hookInput?.data,
                     environment: ProcessInfo.processInfo.environment)
             } else if isKimiStop {
-                additionalHostStartStopSource = kimiAdmission?.source
+                additionalHostPreparedSource = kimiAdmission?.source
             } else {
-                additionalHostStartStopSource = nil
+                additionalHostPreparedSource = nil
             }
-            if (isGrokStartStop || isKimiStop), additionalHostStartStopSource == nil { return }
-            let kimiConsumption: (@Sendable () -> Bool)?
+            if (isGrokStartStop || isKimiStop), additionalHostPreparedSource == nil { return }
+            let kimiConsumption: AdditionalHostTurnConsumption?
             if let kimiAdmission {
-                kimiConsumption = { kimiAdmission.consume() }
+                kimiConsumption = { recordActivity in
+                    kimiAdmission.consume(recordingActivity: recordActivity)
+                }
             } else {
                 kimiConsumption = nil
             }
@@ -91,8 +93,8 @@ extension Claudio {
                 for: parsedHost,
                 eventNoticeChannel: channel,
                 sourcePayload: hookInput?.data, authorizationToken: token,
-                additionalHostStartStopSource: additionalHostStartStopSource,
-                additionalHostStartStopConsumption: kimiConsumption,
+                additionalHostPreparedSource: additionalHostPreparedSource,
+                additionalHostTurnConsumption: kimiConsumption,
                 codexApprovalRouting: { CodexApprovalRoutingResolver.resolve($0) })
             _ = handleHostHook(
                 host: parsedHost,

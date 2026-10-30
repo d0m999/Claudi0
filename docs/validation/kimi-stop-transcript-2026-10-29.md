@@ -4,6 +4,7 @@
 `StopFailure` 继续未实现；人工听音、运行中 TUI 热加载和普通 Release 准入未完成。
 
 实现基线：Claudio `b944d80438dd018b57d53962f4c4e1cf8d301f6c` 之上的未提交工作区。
+2026-10-30 修复：marker 只在活动事实提交或可靠暂存后写入；metadata 按首个 LF 完整读取。
 宿主：Kimi Code `2.3.3`；会话 wire `protocol_version = "1.5"`。
 
 ## 为什么不能用 Stop payload
@@ -42,12 +43,16 @@ Kimi schema 链接进 GUI 体积敏感的可执行文件：
 
 1. CLI 先校验 `Stop` 基础 payload（`client_type`、session、cwd、`stop_hook_active` 类型）。
 2. 在 `KIMI_CODE_HOME`（默认 `~/.kimi-code`）的 `sessions/*/<session_id>/agents/main/wire.jsonl`
-   中只读尾部，要求 metadata `protocol_version == "1.5"`。
+   中先按首个 LF 完整读取 metadata（受 128 KiB 上限约束），再只读尾部；要求 metadata
+   `protocol_version == "1.5"`。
 3. 取最后一条 `agent.turn.ended`，只有 `outcome == "done"` 才继续。
 4. 用 `~/.claudio/integrations/kimi-stop-transcript/` 下的 per-session 0600 marker
    （FileLock + `Data.write(options:.atomic)`）去重；同一 `turnId` 的子/重复 Stop 不提醒。
-5. 只把预校验的 `HostEventSource` 交给共享 runner；回执、活动、工作区、静音和提示仍走既有
-   路径。核心 parser 只接受 Stop 基础字段，主轮身份由 admission 负责。
+   CLI 只准备 `HostEventSource` 和消费闭包，不写 marker；共享 runner 在 `.deduplication`
+   许可内复验安装和授权后，由 marker 锁内的消费闭包先发布活动事实，只有活动已提交或可靠
+   暂存才写 marker。活动失败保留旧 marker，合法重试仍可发布。
+5. 回执、活动、工作区、静音和提示仍走既有 runner 路径。核心 parser 只接受 Stop 基础字段，
+   主轮身份由 admission 负责。
 6. wire 不可读、版本未知、目录/文件是符号链接或 marker 损坏时一律失败关闭。
 
 配置由 4 条 hook 升级为 5 条（`TurnStarted`、`Stop`、`PermissionRequest`、`PreToolUse`、
@@ -65,6 +70,10 @@ Kimi schema 链接进 GUI 体积敏感的可执行文件：
 | 新增宿主 CLI 合同（Debug + Release） | **363 checks passed** |
 | 签名 app 体积 | **6,994,880 B**（预算 7,000,000 B） |
 | helper 体积 | **2,825,328 B**（预算 3,250,000 B） |
+
+2026-10-30 修复后复跑：helper **6403 checks，0 failures**；新增宿主 CLI 合同 **369 checks
+passed**（Debug + Release）。当前机器只有 CommandLineTools，缺少 `SwiftUIMacros` 宏插件，
+GUI background harness 与签名体积未能重跑，仍沿用上表 2026-10-29 记录并标记未验证。
 
 本次实现顺带守住了 16 KB 页边界：wire 读取与 marker 在 helper-only target；共享 parser
 只增加 Stop 基础校验，最终签名 GUI 未超预算。

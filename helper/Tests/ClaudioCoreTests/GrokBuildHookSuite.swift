@@ -470,7 +470,7 @@ private struct GrokBuildHookFixture {
                     }),
                 sourcePayload: payload,
                 sourceEnvironment: sourceEnvironment,
-                additionalHostStartStopSource: grokSource,
+                additionalHostPreparedSource: grokSource,
                 scopeFingerprint: { [scope] in scope },
                 questionScopeFingerprint: { [scope] in scope },
                 questionDeduplicationStore: dedup, now: { [now] in now }))

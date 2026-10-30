@@ -30,10 +30,14 @@ public enum KimiStopTranscriptAdmission {
         }
 
         /// Call only at the runner's installation-checked deduplication publication boundary.
-        public func consume() -> Bool {
+        /// Activity is recorded while the marker lock is held; the marker is published only
+        /// when that activity is committed or durably deferred.
+        public func consume(
+            recordingActivity recordActivity: @Sendable () -> LocalActivityRecordOutcome
+        ) -> AdditionalHostTurnConsumptionOutcome {
             shouldNotify(
                 sessionID: sessionID, sessionCreatedAt: sessionCreatedAt,
-                turnID: turnID, stateRoot: stateRoot)
+                turnID: turnID, stateRoot: stateRoot, recordActivity: recordActivity)
         }
     }
 
@@ -70,10 +74,8 @@ public enum KimiStopTranscriptAdmission {
                 sessionID: session, kimiHome: root),
             turn.outcome == "done"
         else { return nil }
-        let project = cwd.flatMap { HostEventSourceParser.projectIdentity(from: $0) }
-        let candidate = HostEventSource(
-            projectLabel: project?.label, projectKey: project?.key,
-            sessionID: session, mainSessionIsKnown: true)
+        let candidate = HostEventSourceParser.mainSessionSource(
+            from: cwd, sessionID: session)
         guard candidate.isSemanticallyValid else { return nil }
         return PreparedAdmission(
             source: candidate, sessionID: session, sessionCreatedAt: turn.sessionCreatedAt,
@@ -112,9 +114,8 @@ public enum KimiStopTranscriptAdmission {
         defer { try? handle.close() }
         guard let size = try? handle.seekToEnd(), size > 0 else { return nil }
         try? handle.seek(toOffset: 0)
-        guard let header = try? handle.read(upToCount: 4096),
-            let newline = header.firstIndex(of: 0x0A),
-            let metadata = object(header.prefix(upTo: newline)),
+        guard let header = firstLine(of: handle, size: size),
+            let metadata = object(header),
             metadata["type"] as? String == "metadata",
             metadata["protocol_version"] as? String == wireProtocolVersion,
             let createdAt = integer(metadata["created_at"]), createdAt > 0
@@ -145,22 +146,45 @@ public enum KimiStopTranscriptAdmission {
             sessionCreatedAt: createdAt, turnID: latest.turnID, outcome: latest.outcome)
     }
 
+    /// Reads the first wire line up to its LF without assuming a fixed metadata size.
+    private static func firstLine(of handle: FileHandle, size: UInt64) -> Data? {
+        let limit = min(size, maximumWireTailBytes)
+        var line = Data()
+        while line.count < Int(limit) {
+            let remaining = Int(limit) - line.count
+            guard let chunk = try? handle.read(upToCount: min(4096, remaining)),
+                !chunk.isEmpty
+            else { return nil }
+            line.append(chunk)
+            if let newline = line.firstIndex(of: 0x0A) {
+                return Data(line[..<newline])
+            }
+        }
+        return nil
+    }
+
     private static func shouldNotify(
-        sessionID: String, sessionCreatedAt: Int64, turnID: Int64, stateRoot: URL
-    ) -> Bool {
-        guard (try? ensurePrivateDirectoryExists(at: stateRoot)) != nil else { return false }
+        sessionID: String, sessionCreatedAt: Int64, turnID: Int64, stateRoot: URL,
+        recordActivity: @Sendable () -> LocalActivityRecordOutcome
+    ) -> AdditionalHostTurnConsumptionOutcome {
+        guard (try? ensurePrivateDirectoryExists(at: stateRoot)) != nil else { return .rejected }
         let key = SHA256.hash(data: Data(sessionID.utf8))
             .map { String(format: "%02x", $0) }.joined()
         let marker = stateRoot.appendingPathComponent("\(key).json")
         let lock = FileLock(path: stateRoot.appendingPathComponent("\(key).lock").path)
-        guard case .acquired = lock.attemptLock() else { return false }
+        guard case .acquired = lock.attemptLock() else { return .rejected }
         defer { lock.unlock() }
         if let data = try? Data(contentsOf: marker) {
             guard let previous = object(data),
                 integer(previous["session_created_at"]) == sessionCreatedAt,
                 let previousTurn = integer(previous["turn_id"]),
                 previousTurn < turnID
-            else { return false }
+            else { return .rejected }
+        }
+        let outcome = recordActivity()
+        switch outcome {
+        case .committed, .deferred: break
+        case .staleInstallation, .failed: return .rejected
         }
         let document: [String: Any] = [
             "session_created_at": sessionCreatedAt,
@@ -170,15 +194,15 @@ public enum KimiStopTranscriptAdmission {
         guard
             let encoded = try? JSONSerialization.data(
                 withJSONObject: document, options: [.sortedKeys])
-        else { return false }
+        else { return .rejected }
         do {
             try encoded.write(to: marker, options: .atomic)
             try? FileManager.default.setAttributes(
                 [.posixPermissions: 0o600], ofItemAtPath: marker.path)
         } catch {
-            return false
+            return .rejected
         }
-        return true
+        return .consumed(outcome)
     }
 
     private static func isDirectoryWithoutSymlink(_ url: URL) -> Bool {

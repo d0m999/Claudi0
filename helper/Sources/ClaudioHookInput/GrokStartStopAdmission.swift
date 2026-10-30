@@ -96,10 +96,8 @@ public enum GrokStartStopAdmission {
             return nil
         }
 
-        let project = HostEventSourceParser.projectIdentity(from: cwd)
-        let candidate = HostEventSource(
-            projectLabel: project?.label, projectKey: project?.key, sessionID: session,
-            mainSessionIsKnown: true)
+        let candidate = HostEventSourceParser.mainSessionSource(
+            from: cwd, sessionID: session)
         let source =
             candidate.isSemanticallyValid
             ? candidate
