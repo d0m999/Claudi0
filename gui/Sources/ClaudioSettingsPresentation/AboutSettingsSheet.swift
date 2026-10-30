@@ -9,6 +9,7 @@ struct AboutSettingsSheet: View {
     @ObservedObject var session: SettingsPresentationSession
     let stamp: SettingsNavigationStamp
     @FocusState private var focusedTarget: SettingsWindowFocusTarget?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let preferences = session.dependencies.preferences
@@ -30,6 +31,7 @@ struct AboutSettingsSheet: View {
             }
         }
         .padding(24).frame(width: 620, height: 520)
+        .background(SettingsAppearance.background(colorScheme))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.about.sheet")
         .task {

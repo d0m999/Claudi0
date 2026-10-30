@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// AppKit paints the system semantic color in the window's drawing appearance.
+/// AppKit paints a fixed settings surface selected by the view's drawing appearance.
 /// The enclosing group owns its radius; this view owns no focus or state.
 package struct SettingsNativeSurface: NSViewRepresentable {
     package enum Kind { case window, group }
@@ -19,23 +19,22 @@ package struct SettingsNativeSurface: NSViewRepresentable {
     }
 
     package func updateNSView(_ nsView: NSView, context: Context) {
-        (nsView as? SettingsSemanticSurfaceView)?.color =
-            kind == .window ? .windowBackgroundColor : .underPageBackgroundColor
+        (nsView as? SettingsSemanticSurfaceView)?.kind = kind
         nsView.needsDisplay = true
     }
 }
 
 @MainActor
 private final class SettingsSemanticSurfaceView: NSView {
-    var color = NSColor.windowBackgroundColor
+    var kind = SettingsNativeSurface.Kind.window
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
     override func draw(_ dirtyRect: NSRect) {
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            // Preserve the system color's alpha as well as its appearance. AppKit may
-            // supply a translucent under-page color, so this view must not claim opacity.
-            (color.usingColorSpace(.sRGB) ?? color).setFill()
-            NSBezierPath(rect: dirtyRect).fill()
-        }
+        let surface =
+            kind == .window
+            ? SettingsAppearance.windowSurface(effectiveAppearance)
+            : SettingsAppearance.groupSurface(effectiveAppearance)
+        surface.setFill()
+        NSBezierPath(rect: dirtyRect).fill()
     }
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()

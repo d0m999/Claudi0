@@ -129,7 +129,7 @@ func runContrastSuites() {
                 + " \(documentedHoverOnSurface)")
     }
 
-    suite("settings: feedback icons clear the 3:1 non-text floor on real settings surfaces") {
+    suite("settings: feedback icons clear the 3:1 non-text floor on fixed settings surfaces") {
         for scheme in [ColorScheme.light, .dark] {
             let inks = [
                 ("success", SettingsAppearance.success(scheme)),
@@ -138,7 +138,7 @@ func runContrastSuites() {
             ]
             let surfaces = [
                 ("window", SettingsAppearance.background(scheme)),
-                ("group", SettingsAppearance.cardSurface(scheme)),
+                ("group", SettingsAppearance.groupSurface(scheme)),
             ]
             for (inkName, ink) in inks {
                 for (surfaceName, surface) in surfaces {
@@ -158,6 +158,39 @@ func runContrastSuites() {
                             + " \(ratio)")
                 }
             }
+        }
+    }
+
+    suite("settings: fixed surfaces resolve to their documented tokens and stay opaque") {
+        let cases: [(ColorScheme, NSAppearance.Name, String, String)] = [
+            (
+                .light, .aqua, ClaudioColorHex.settingsWindowLight,
+                ClaudioColorHex.settingsGroupLight
+            ),
+            (
+                .dark, .darkAqua, ClaudioColorHex.settingsWindowDark,
+                ClaudioColorHex.settingsGroupDark
+            ),
+        ]
+        for (scheme, appearanceName, windowHex, groupHex) in cases {
+            guard let appearance = NSAppearance(named: appearanceName) else {
+                expect(false, "\(scheme) settings appearance must resolve")
+                continue
+            }
+            expect(
+                resolvedHex(SettingsAppearance.background(scheme), scheme: scheme) == windowHex,
+                "\(scheme) window surface must resolve to #\(windowHex)")
+            expect(
+                resolvedHex(SettingsAppearance.groupSurface(scheme), scheme: scheme) == groupHex,
+                "\(scheme) group surface must resolve to #\(groupHex)")
+            expect(
+                nsColorHex(SettingsAppearance.windowSurface(appearance)) == windowHex
+                    && nsColorHex(SettingsAppearance.groupSurface(appearance)) == groupHex,
+                "\(scheme) AppKit surfaces must match the same fixed tokens")
+            expect(
+                SettingsAppearance.windowSurface(appearance).alphaComponent == 1
+                    && SettingsAppearance.groupSurface(appearance).alphaComponent == 1,
+                "\(scheme) settings surfaces must be opaque so the rendered pixel is the token")
         }
     }
 
@@ -633,12 +666,16 @@ private func resolvedHex(_ color: Color, scheme: ColorScheme) -> String? {
     let name: NSAppearance.Name = scheme == .dark ? .darkAqua : .aqua
     var hex: String?
     NSAppearance(named: name)?.performAsCurrentDrawingAppearance {
-        guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return }
-        hex = String(
-            format: "%02X%02X%02X",
-            Int(round(sRGB.redComponent * 255)),
-            Int(round(sRGB.greenComponent * 255)),
-            Int(round(sRGB.blueComponent * 255)))
+        hex = nsColorHex(NSColor(color))
     }
     return hex
+}
+
+private func nsColorHex(_ color: NSColor) -> String? {
+    guard let sRGB = color.usingColorSpace(.sRGB) else { return nil }
+    return String(
+        format: "%02X%02X%02X",
+        Int(round(sRGB.redComponent * 255)),
+        Int(round(sRGB.greenComponent * 255)),
+        Int(round(sRGB.blueComponent * 255)))
 }

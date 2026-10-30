@@ -115,7 +115,7 @@ func runAICueTaskSurfaceSuites() {
                 let probe = TaskSurfaceProbe()
                 let hosting = NSHostingView(
                     rootView: TaskSurfaceFixture(probe: probe)
-                        .background(Color(nsColor: .windowBackgroundColor)))
+                        .background(SettingsAppearance.background(dark ? .dark : .light)))
                 let window = NSWindow(
                     contentRect: NSRect(x: 0, y: 0, width: 572, height: 500),
                     styleMask: [.titled], backing: .buffered, defer: false)
@@ -131,8 +131,11 @@ func runAICueTaskSurfaceSuites() {
                     probe.phase = phase
                     feedbackSettle(hosting)
                     expect(
-                        feedbackPixelCount(in: hosting, color: .underPageBackgroundColor) > 500,
-                        "Expanded \(phase) paints the composited native group surface")
+                        feedbackPixelCount(
+                            in: hosting,
+                            color: SettingsAppearance.groupSurface(hosting.effectiveAppearance))
+                            > 500,
+                        "Expanded \(phase) paints the fixed settings group surface")
                 }
                 probe.phase = "ready"
                 feedbackSettle(hosting)

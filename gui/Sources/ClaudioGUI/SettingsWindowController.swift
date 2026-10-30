@@ -259,35 +259,18 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             colors["card"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 5))
             colors["border"] = rgb(CGPoint(x: selector.midX, y: selector.minY + 0.25))
         }
-        func groupSurface(in view: NSView) -> NSView? {
-            if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
-            return view.subviews.lazy.compactMap { groupSurface(in: $0) }.first
-        }
-        func semanticRGB(_ color: NSColor) -> [Int] {
-            var result: [Int] = []
-            let appearance =
-                color == .underPageBackgroundColor
-                ? (groupSurface(in: content)?.effectiveAppearance ?? content.effectiveAppearance)
-                : content.effectiveAppearance
-            appearance.performAsCurrentDrawingAppearance {
-                guard let foreground = color.usingColorSpace(.sRGB),
-                    let behind = NSColor.windowBackgroundColor.usingColorSpace(.sRGB)
-                else { return }
-                let alpha = foreground.alphaComponent
-                result = zip(
-                    [foreground.redComponent, foreground.greenComponent, foreground.blueComponent],
-                    [behind.redComponent, behind.greenComponent, behind.blueComponent]
-                ).map {
-                    Int(($0 * alpha + $1 * (1 - alpha)) * 255 + 0.5)
-                }
+        func surfaceRGB(_ color: NSColor) -> [Int] {
+            guard let resolved = color.usingColorSpace(.sRGB) else { return [] }
+            return [resolved.redComponent, resolved.greenComponent, resolved.blueComponent].map {
+                Int(($0 * 255).rounded())
             }
-            return result
         }
         return [
             "frames": recordedFrames, "colors": colors, "sampleColorSpace": "sRGB",
             "semanticColors": [
-                "window": semanticRGB(.windowBackgroundColor),
-                "group": semanticRGB(.underPageBackgroundColor),
+                "window": surfaceRGB(
+                    SettingsAppearance.windowSurface(content.effectiveAppearance)),
+                "group": surfaceRGB(SettingsAppearance.groupSurface(content.effectiveAppearance)),
             ],
         ]
     }

@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioGUICore
 import SwiftUI
 
 /// Settings-only palette and rhythm. Panel tokens retain their existing meaning.
@@ -27,11 +28,23 @@ package enum SettingsAppearance {
         }
     }
 
+    // Settings surfaces are fixed design tokens, not system semantic colors: macOS 26 resolves
+    // `underPageBackgroundColor` to a translucent mid-gray that leaves the feedback icons far
+    // below the 3:1 non-text floor. Text, separators, accent, sidebar and toolbar stay native.
     package static func background(_ scheme: ColorScheme) -> Color {
-        Color(nsColor: .windowBackgroundColor)
+        ClaudioTheme.settingsWindow(scheme)
     }
-    package static func cardSurface(_ scheme: ColorScheme) -> Color {
-        Color(nsColor: .underPageBackgroundColor)
+    package static func groupSurface(_ scheme: ColorScheme) -> Color {
+        ClaudioTheme.settingsGroup(scheme)
+    }
+    package static func scheme(for appearance: NSAppearance) -> ColorScheme {
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
+    }
+    package static func windowSurface(_ appearance: NSAppearance) -> NSColor {
+        NSColor(background(scheme(for: appearance)))
+    }
+    package static func groupSurface(_ appearance: NSAppearance) -> NSColor {
+        NSColor(groupSurface(scheme(for: appearance)))
     }
     package static func sidebar(_ scheme: ColorScheme) -> Color { .clear }
     package static func sidebarSelection(_ contrast: ColorSchemeContrast) -> Color { .accentColor }

@@ -16,7 +16,7 @@ func runMountedVolumeLifecycleSuites() async {
                 accessibilityIdentifier: "settings.feedback.volume", usesSettingsAppearance: true,
                 onCommit: { $0 }
             )
-            .padding(16).background(Color(nsColor: .windowBackgroundColor))
+            .padding(16).background(SettingsAppearance.background(dark ? .dark : .light))
             let host = NSHostingView(rootView: slider)
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 350, height: 70),

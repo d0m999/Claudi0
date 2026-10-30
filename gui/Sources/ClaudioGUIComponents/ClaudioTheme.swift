@@ -180,6 +180,20 @@ public enum ClaudioTheme {
             : Color(claudioHex: ClaudioColorHex.errorLight)
     }
 
+    /// 设置窗口内容底：固定设计 token（主原型 `--page`），不跟随系统语义色。
+    public static func settingsWindow(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(claudioHex: ClaudioColorHex.settingsWindowDark)
+            : Color(claudioHex: ClaudioColorHex.settingsWindowLight)
+    }
+
+    /// 设置功能组底：固定设计 token（主原型 `--group`），不跟随系统语义色。
+    public static func settingsGroup(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(claudioHex: ClaudioColorHex.settingsGroupDark)
+            : Color(claudioHex: ClaudioColorHex.settingsGroupLight)
+    }
+
     public static func hairline(_ scheme: ColorScheme) -> Color {
         let base =
             scheme == .dark

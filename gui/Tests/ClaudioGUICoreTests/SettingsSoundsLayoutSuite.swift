@@ -50,7 +50,7 @@ func runSettingsSoundsLayoutSuites() async {
                             expect(
                                 colorsMatch(
                                     probe.rgb(at: CGPoint(x: content.minX + 8, y: y)),
-                                    probe.semanticRGB(.windowBackgroundColor)),
+                                    probe.windowSurfaceRGB()),
                                 "\(name) 页首、滚动区、页尾必须保持设置底色")
                         }
                         let rows = SettingsDestination.sidebarCases.compactMap {
@@ -109,8 +109,8 @@ func runSettingsSoundsLayoutSuites() async {
                                     colorsMatch(
                                         probe.rgb(
                                             at: CGPoint(x: selector.midX, y: selector.minY + 5)),
-                                        probe.semanticRGB(.underPageBackgroundColor)),
-                                    "\(name) 功能组使用系统语义色：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.semanticRGB(.underPageBackgroundColor) as Any)"
+                                        probe.groupSurfaceRGB()),
+                                    "\(name) 功能组使用固定设置表面：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.groupSurfaceRGB() as Any)"
                                 )
                             } else {
                                 expect(false, "\(name) 必须挂载声音配置功能组")
@@ -296,8 +296,8 @@ func runSettingsSoundsLayoutSuites() async {
             expect(
                 colorsMatch(
                     probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)),
-                    probe.semanticRGB(.underPageBackgroundColor)),
-                "增强对比度系统功能组：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.semanticRGB(.underPageBackgroundColor) as Any)"
+                    probe.groupSurfaceRGB()),
+                "增强对比度系统功能组：actual=\(probe.rgb(at: CGPoint(x: selector.midX, y: selector.minY + 5)) as Any), expected=\(probe.groupSurfaceRGB() as Any)"
             )
         }
     }
@@ -845,36 +845,26 @@ final class SettingsSoundsNativeLayoutProbe {
             separator: "\n")
     }
 
-    func semanticRGB(_ color: NSColor) -> [Int]? {
-        var result: [Int]?
-        func groupSurface(in view: NSView) -> NSView? {
-            if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
-            return view.subviews.lazy.compactMap { groupSurface(in: $0) }.first
-        }
+    func windowSurfaceRGB() -> [Int]? {
+        surfaceRGB(SettingsAppearance.windowSurface(window.effectiveAppearance))
+    }
+
+    func groupSurfaceRGB() -> [Int]? {
         let appearance =
-            color == .underPageBackgroundColor
-            ? (groupSurface(in: hostingView)?.effectiveAppearance ?? window.effectiveAppearance)
-            : window.effectiveAppearance
-        appearance.performAsCurrentDrawingAppearance {
-            if let rgb = color.usingColorSpace(.sRGB),
-                let background = NSColor.windowBackgroundColor.usingColorSpace(.sRGB)
-            {
-                // Compare the rendered system color, including its system-provided alpha,
-                // over the page surface. Comparing only the RGB ignores native compositing.
-                let alpha: CGFloat = rgb.alphaComponent
-                let foreground: [CGFloat] = [
-                    rgb.redComponent, rgb.greenComponent, rgb.blueComponent,
-                ]
-                let behind: [CGFloat] = [
-                    background.redComponent, background.greenComponent, background.blueComponent,
-                ]
-                result = zip(foreground, behind).map { channel, backgroundChannel -> Int in
-                    let blended: CGFloat = channel * alpha + backgroundChannel * (1 - alpha)
-                    return Int((blended * 255).rounded())
-                }
-            }
+            groupSurfaceView(in: hostingView)?.effectiveAppearance ?? window.effectiveAppearance
+        return surfaceRGB(SettingsAppearance.groupSurface(appearance))
+    }
+
+    private func groupSurfaceView(in view: NSView) -> NSView? {
+        if view.accessibilityIdentifier() == "settings.semantic-surface.group" { return view }
+        return view.subviews.lazy.compactMap { groupSurfaceView(in: $0) }.first
+    }
+
+    private func surfaceRGB(_ color: NSColor) -> [Int]? {
+        guard let rgb = color.usingColorSpace(.sRGB) else { return nil }
+        return [rgb.redComponent, rgb.greenComponent, rgb.blueComponent].map {
+            Int(($0 * 255).rounded())
         }
-        return result
     }
 
     func rgb(at point: CGPoint) -> [Int]? {

@@ -1,4 +1,5 @@
 import AppKit
+import ClaudioGUIComponents
 import Foundation
 
 @MainActor
@@ -10,26 +11,24 @@ func feedbackSettle(_ view: NSView) {
 }
 
 /// Count fully covered pixels after resolving the semantic color in the actual drawing appearance.
-/// Alpha is composited over the window and (when requested) the translucent system group.
+/// Alpha is composited over the fixed settings surface the fixture actually paints.
 @MainActor
 func feedbackPixelCount(in view: NSView, color: NSColor, group: Bool = false) -> Int {
     guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return 0 }
     view.cacheDisplay(in: view.bounds, to: rep)
     guard let bitmap = rep.converting(to: .sRGB, renderingIntent: .default) else { return 0 }
+    let surface =
+        group
+        ? SettingsAppearance.groupSurface(view.effectiveAppearance)
+        : SettingsAppearance.windowSurface(view.effectiveAppearance)
+    guard let background = surface.usingColorSpace(.sRGB) else { return 0 }
     var expected: [CGFloat] = []
     view.effectiveAppearance.performAsCurrentDrawingAppearance {
-        guard let ink = color.usingColorSpace(.sRGB),
-            let page = NSColor.windowBackgroundColor.usingColorSpace(.sRGB),
-            let surface = (group ? NSColor.underPageBackgroundColor : NSColor.windowBackgroundColor)
-                .usingColorSpace(.sRGB)
-        else { return }
-        let bg = zip(
-            [surface.redComponent, surface.greenComponent, surface.blueComponent],
-            [page.redComponent, page.greenComponent, page.blueComponent]
+        guard let ink = color.usingColorSpace(.sRGB) else { return }
+        expected = zip(
+            [ink.redComponent, ink.greenComponent, ink.blueComponent],
+            [background.redComponent, background.greenComponent, background.blueComponent]
         ).map {
-            $0 * surface.alphaComponent + $1 * (1 - surface.alphaComponent)
-        }
-        expected = zip([ink.redComponent, ink.greenComponent, ink.blueComponent], bg).map {
             $0 * ink.alphaComponent + $1 * (1 - ink.alphaComponent)
         }
     }

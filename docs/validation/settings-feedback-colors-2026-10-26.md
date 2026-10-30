@@ -118,6 +118,8 @@ bash scripts/verify-settings-experience.sh 66af148 --foreground
 
 ## 评审修正（2026-10-26 后续）
 
+> **2026-10-30 前向注记**：本节所称「对窗口与功能组底均 ≥3:1」只在 macOS 27 的系统色解析下成立。macOS 26 CI 上 `underPageBackgroundColor` 为 `#969696`，亮色三图标对组底仅 1.11–1.40:1。表面部分（设置窗口底与功能组）自 [settings-fixed-surfaces-2026-10-30.md](settings-fixed-surfaces-2026-10-30.md) 起改用固定设计 token；图标色与 12 条断言保持不变。本节其余记录保留为历史。
+
 评审发现本批初版把设置语义色直接换成亮色系统色，与 `DESIGN.md`「Color」节已实测的「UI 语义色」及 T17f「图标 ≥3:1」先例冲突；同时原型的全局警示 token 还承载删除按钮与宿主状态正文。修正如下：
 
 - 设置成功／警告／错误改回文档已实测的暗／亮值（亮色 `#2FA24E`／`#B87000`／`#E0453A`，暗色 `#34C759`／`#FF9F0A`／`#FF453A`）。实测亮色系统绿／橙对白底仅 **2.22:1／2.31:1**，增强对比度 appearance 也不改变这两个值；修正后 success／warning／error 对窗口与功能组底均 ≥3:1。信息提示仍用系统强调色。

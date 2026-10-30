@@ -58,6 +58,19 @@ public enum ClaudioColorHex {
     public static let surface2Dark = "262320"
     public static let surface2Light = "FFFDF7"
 
+    // MARK: 设置固定表面（DESIGN.md「设置固定表面」）
+
+    /// 设置窗口内容底与功能组底。来源是主原型的 `--page` / `--group`
+    /// （`designs/panel-and-settings/Panel and Settings Prototype.html`），不是系统语义色：
+    /// macOS 26 的 `underPageBackgroundColor` 解析为 `.898` alpha 的 `#969696`，亮色反馈图标
+    /// 对合成后的组底只有 1.24–1.56:1；固定 token 让对比度跨 macOS 版本一致且可测。
+    ///
+    /// 与糖果盘 `surface*` / panel token 刻意分开：同值也不写别名，两类表面独立变化。
+    public static let settingsWindowDark = "202022"
+    public static let settingsWindowLight = "FFFFFF"
+    public static let settingsGroupDark = "2D2D30"
+    public static let settingsGroupLight = "F5F5F7"
+
     /// `hairline-strong` 描边的**基色**。DESIGN.md 把它写成 `rgba(245,235,221,.16)` /
     /// `rgba(20,20,19,.16)`——透明度留在 `ClaudioColor.hairlineStrong(_:)`（那是 `Color` 层的事），
     /// 通道值放这里，这样 gui/ 里没有第二处颜色字面量。注意 `F5EBDD` **不是** `text` 的 `F4EBDD`

@@ -130,7 +130,7 @@ func runSettingsFeedbackNativeSuites() async {
                 let row = FailureRow(message: message).textSelection(.enabled)
                     .environment(\.usesSettingsAppearance, true)
                     .padding(16).frame(width: 350, alignment: .leading)
-                    .background(Color(nsColor: .windowBackgroundColor))
+                    .background(SettingsAppearance.background(dark ? .dark : .light))
                 let host = NSHostingView(rootView: row)
                 let window = NSWindow(
                     contentRect: NSRect(x: 0, y: 0, width: 350, height: 220),

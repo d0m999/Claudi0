@@ -1210,6 +1210,7 @@ private struct AddWorkspaceSoundRuleView: View {
     @ObservedObject var languageStore: ClaudioPreferences
     let onCreated: (UUID) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var directory: WorkspaceDirectory?
     @State private var selectedPack = ""
     @State private var volume = ClaudioConfig.defaultMasterVolume
@@ -1302,6 +1303,7 @@ private struct AddWorkspaceSoundRuleView: View {
                 .keyboardShortcut(.defaultAction)
             }
         }.font(SettingsAppearance.font(.body)).padding(24).frame(width: 520)
+            .background(SettingsAppearance.background(colorScheme))
             .onDisappear {
                 resolutionID = nil
                 resolutionTask?.cancel()

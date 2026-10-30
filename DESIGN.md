@@ -20,9 +20,29 @@
 
 五页设置、下钻内容与附属表单统一采用本文「UI 语义色」表已实测的语义色：成功、警告、错误分别取该表的暗／亮值（暗色沿用该表现有值，亮色使用为图标 ≥3:1 而加深的值）；信息提示沿用设置既有的系统强调色，与 Color 节固定 `info` 值承担的任务／事件用途不同。颜色只用于反馈的装饰图标，反馈正文使用 `secondaryLabelColor`；保留状态分类、完整消息、文本选择、恢复动作、AX 身份与既有播报通道。告警底色沿用原透明度。
 
-共享 `FailureRow` 由设置根内容最外层的 package 内部环境标记选择设置外观，附属表单继承该标记；该标记同时让设置内的失败行以静态文本身份暴露完整句子。公共初始化接口与设置外的面板默认外观保持兼容。AI 展开卡片使用原生系统功能组底色，普通描边使用系统分隔色，增强对比度时与设置功能组一致使用次级文字色 60%／1.5 pt 描边；原形变、圆角、尺寸、焦点和 Reduce Motion 合同保留。设置音量百分比使用系统次级文字色，现有字号、宽度及提交／回滚生命周期保留。
+共享 `FailureRow` 由设置根内容最外层的 package 内部环境标记选择设置外观，附属表单继承该标记；该标记同时让设置内的失败行以静态文本身份暴露完整句子。公共初始化接口与设置外的面板默认外观保持兼容。AI 展开卡片使用「设置固定表面」节的 group token，普通描边使用系统分隔色，增强对比度时与设置功能组一致使用次级文字色 60%／1.5 pt 描边；原形变、圆角、尺寸、焦点和 Reduce Motion 合同保留。设置音量百分比使用系统次级文字色，现有字号、宽度及提交／回滚生命周期保留。
 
-本节不改变品牌、五事件、事件动画预览或菜单栏面板颜色，也不调整导航入口、字体类别、布局参数或 Slider 实现；声音页全部独立错误文案并入共享失败行后沿用其既有 11 pt 文案。主原型的设置区域仅表达相同的彩色装饰与中性正文，并保留删除动作、宿主状态等非反馈文本的既有 token 与既有对比度，不随反馈色变化；浏览器示意颜色不代替当前 `effectiveAppearance` 下的系统色或原生人工验收。
+本节不改变品牌、五事件、事件动画预览或菜单栏面板颜色，也不调整导航入口、字体类别、布局参数或 Slider 实现；声音页全部独立错误文案并入共享失败行后沿用其既有 11 pt 文案。主原型的设置区域仅表达相同的彩色装饰与中性正文，并保留删除动作、宿主状态等非反馈文本的既有 token 与既有对比度，不随反馈色变化；设置内容底与功能组自 2026-10-30 起使用下节固定 token，浏览器示意颜色仍不代替原生人工验收。
+
+## 设置固定表面（现行 · 2026-10-30）
+
+设置窗口内容底（含附属表单）与功能组使用固定设计 token，不跟随 `NSColor.windowBackgroundColor` / `underPageBackgroundColor`。原因：macOS 26 的 `underPageBackgroundColor` 解析为 `.898` alpha 的 `#969696`，亮色反馈图标对合成组底仅 1.24–1.56:1；固定 token 让对比度跨 macOS 版本一致且可测，并与主原型 `--page` / `--group` 对齐。侧栏 source-list、统一工具栏、文字、分隔线与强调色仍由系统语义色绘制。
+
+| token | 亮色 | 暗色 | 用途 |
+| --- | --- | --- | --- |
+| `settings-window` | `#FFFFFF` | `#202022` | 设置窗口内容底、附属表单 |
+| `settings-group` | `#F5F5F7` | `#2D2D30` | 功能组、AI 展开卡片、动画样式卡 |
+
+反馈图标保持「UI 语义色」表值；对固定表面的实测对比度（`ContrastSuite` 钉 ≥3:1）：
+
+| 表面 | success | warning | error |
+| --- | ---: | ---: | ---: |
+| 亮 window | 3.28 | 3.92 | 4.13 |
+| 亮 group | 3.01 | 3.60 | 3.80 |
+| 暗 window | 7.33 | 7.91 | 4.77 |
+| 暗 group | 6.18 | 6.68 | 4.03 |
+
+亮色 success 对 group 仅 3.01:1；任何 group 亮色改动都必须重测全部三色并更新本节与验证记录。
 
 ## 五页设置修订（现行 · 2026-10-23）
 
@@ -301,7 +321,7 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 
 - 唯一 retained 非激活窗口保持 `.accessory`、原层级与 handback；默认／最小尺寸 1240×820／960×640、侧栏 252／210 pt、1100 pt 断点不变。使用 `NSSplitViewController` 原生 sidebar item，source-list 单选列表与真实 `.unified` `NSToolbar`。隐藏可见窗口标题但保留本地化窗口身份；系统 safe area 避让工具栏，不固定补偿高度。
 - 工具栏共用原生瞬时前后分段控件，页名为 AX heading，无静态标题 Tab 停靠点。侧栏鼠标和方向键导航保留列表第一响应者；程序回写选择不触发导航。八页三组顺序与 20 pt 图标、轻量字标保留，选择和材质由系统绘制。
-- 内容、功能组、文字、分隔线和强调色采用系统语义色；不强制 sidebar 为 active。事件语义色、角色与动画资产继续遵循已有合同。最大阅读宽度 780 pt、左右边距 32／26 pt、section／group 间距 20／12 pt、普通／多行最低行高 38／51 pt。
+- 内容底与功能组使用「设置固定表面」token；文字、分隔线和强调色采用系统语义色；不强制 sidebar 为 active。事件语义色、角色与动画资产继续遵循已有合同。最大阅读宽度 780 pt、左右边距 32／26 pt、section／group 间距 20／12 pt、普通／多行最低行高 38／51 pt。
 - section 标题和说明在功能组外；组内保留字段、值、操作和必要子层级，同组行使用分隔线。原生 `NSPopUpButton` 无边框收起态按内容宽度布局、最多 280 pt；菜单和 AX 值保存完整名称。标签左控件右，单行开关 mini；播放是独立原生按钮，详情入口统一无底箭头。
 - 五事件预览采用原生单选分段控件，持续显示选中值；只预览、不写偏好或播放声音。四项角色画廊有单选组语义，左右选择、Space／Return 操作，选择、焦点和悬停分别表达。
 - `SettingsPresentationSession` 唯一拥有 `SettingsLocation`、最多 64 个位置的 `SettingsNavigationHistory` 和带版本的焦点／滚动恢复请求。侧栏、详情、新深链接追加；重复位置只重验并更新焦点，保留 Forward；Back／Forward 移动游标，新的位置截断前进分支。刷新、hydration 和匹配当前操作的成功转换只更新当前条目。
@@ -312,10 +332,10 @@ AppKit 原生前后分段控件；正文不再放置“返回通知”文字按�
 
 ### 主原型成为画面 SoT（现行 · 2026-10-06）
 
-[`Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板、横幅和统一设置的唯一视觉参考。它的八页设置以当前 SwiftUI 页面、`SettingsAppearance`、`SettingsPageLayout`、AppKit source-list 侧栏和 unified toolbar 为对齐对象；生产实现继续使用系统语义色、系统菜单和原生窗口外壳。
+[`Panel and Settings Prototype.html`](<designs/panel-and-settings/Panel and Settings Prototype.html>) 是面板、横幅和统一设置的唯一视觉参考。它的八页设置以当前 SwiftUI 页面、`SettingsAppearance`、`SettingsPageLayout`、AppKit source-list 侧栏和 unified toolbar 为对齐对象；生产实现继续使用系统菜单和原生窗口外壳，内容底与功能组使用「设置固定表面」token，其余系统语义色照旧。
 
 - 设置窗口默认／最小尺寸为 1240×820／960×640 pt；宽度不超过 1100 pt 时侧栏为 210 pt，否则为 252 pt。侧栏行高 32 pt、组间距 16 pt、图标 20 pt，字标高 38 pt（T2 官方横向组合，2026-10-11 品牌修订；字标盒左缘随原生 source-list 实际 cell 位置计算，使 T2 墨迹左缘对齐功能区图标列）。
-- 内容最大宽度 780 pt，水平边距 32／26 pt；section／信息组间距 20／12 pt；普通／多行控件行高至少 38／51 pt，横向内边距 14 pt。内容、功能组、侧栏与选中材质跟随 macOS 系统语义色和原生 source-list 状态。
+- 内容最大宽度 780 pt，水平边距 32／26 pt；section／信息组间距 20／12 pt；普通／多行控件行高至少 38／51 pt，横向内边距 14 pt。内容底与功能组使用固定设置表面 token；侧栏与选中材质跟随 macOS 系统语义色和原生 source-list 状态。
 - 主原型表达窗口、层级、留白、字标、图标、颜色、动效与导航 affordance。它的 HTML 状态和点击结果仅用于演示；页面可用状态、实际操作、权限、焦点、无障碍、持久化及 host 回调仍以 Swift/AppKit 实现和 ADR 为准。原生接受度须单独验证。
 - `Native Settings Alignment Prototype.html` 和旧独立 `claudi0 macOS Settings Prototype.html` 已于 2026-10-07 随原型合并删除（唯一原型 SoT 为 `designs/panel-and-settings/Panel and Settings Prototype.html`）；其迁移来源与历史样式由本节文字及验证记录留存。
 

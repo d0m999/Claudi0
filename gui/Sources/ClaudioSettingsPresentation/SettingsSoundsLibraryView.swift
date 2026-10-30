@@ -800,7 +800,7 @@ struct SettingsSoundsLibraryView: View {
             )
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("settings.sounds.sheet.\(mode.rawValue)")
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(SettingsAppearance.background(colorScheme))
         }
     }
 

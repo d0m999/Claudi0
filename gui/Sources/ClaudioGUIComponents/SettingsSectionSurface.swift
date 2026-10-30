@@ -7,7 +7,7 @@ package struct SettingsSectionSurface: ViewModifier {
 
     private let padding: CGFloat
 
-    // Retain the existing host override label; the system semantic color owns its alpha.
+    // Retain the existing host override label; the fixed design token owns the surface.
     package init(padding: CGFloat = 16, reduceTransparencyOverride _: Bool? = nil) {
         self.padding = padding
     }
