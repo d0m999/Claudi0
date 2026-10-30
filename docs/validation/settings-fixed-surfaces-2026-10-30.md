@@ -58,8 +58,8 @@
 - `gui` lane **通过**：后台批、对比度映射断言、焦点原生选择器与两个画廊在 macOS 26 上全绿；这证明固定表面修复解决了原来的 4 条对比度红灯。
 - `helper` lane 通过。
 - `gui-foreground`：挂载百分比标签在 1x 显示器上没有全遮盖像素，2 条断言失败；已改为沿 ink→底色混合路径计数的部分遮盖模式（`6d1c688`）。
-- `gui-bundle`：签名前 GUI `7,005,552 B` 超过旧 `7,000,000 B` 预算；按用户决定重基线为 `7,100,000 B`，详见 `docs/performance/release-size-budget.md` 2026-10-30 节。
-- 最终全绿回执（含签名后体积）待下一次 CI 运行。
+- `gui-bundle`：签名后 GUI `7,005,552 B` 超过旧 `7,000,000 B` 预算；按用户决定重基线为 `7,100,000 B`，详见 `docs/performance/release-size-budget.md` 2026-10-30 节。
+- 最终全绿回执：[CI run 41047114738](https://github.com/d0m999/Claudio/actions/runs/41047114738)（`fcae496`）。后台 **15,431**、前台 **13,740**、helper **6,409** checks 全部通过；`gui-bundle` 未签名 `6,973,664 B`、签名后 `7,005,552 B` / `7,100,000 B`，helper `2,881,376 B` / `3,250,000 B`。
 
 ## 未验证
 
