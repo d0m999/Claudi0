@@ -1,5 +1,17 @@
 # Release 体积预算
 
+## 现行门禁
+
+发布流程在 codesign 前执行 `scripts/check-release-size.sh`。当前分发为 arm64-only，不按架构数放大上限。
+
+- `claudi0-app`：每架构最多 `7,100,000 B`；
+- `claudi0` helper：每架构最多 `3,250,000 B`；
+- macOS 12 内嵌 `claudi0-login-item`：每架构最多 `500,000 B`；
+- app 内其余正规文件合计预留 `3,100,000 B`；
+- Sparkle 独立上限 `3,500,000 B`。
+
+GUI 的 `7,100,000 B` 来自 2026-10-30 的 CI 回执重基线。helper、LoginItem、资源与 Sparkle 上限，以及架构一致性、逐切片检查和 GUI 零产品导出合同，不随该次重基线改变。下文日期小节保留当时的门禁与实测；那些小节里的旧 GUI 上限不是现行门禁。
+
 ## 2026-10-11：arm64 发布配方前置候选
 
 依据 ADR 0032，当前分发的 GUI/helper/LoginItem 必须精确为 arm64；历史 universal 数据保留。
@@ -19,9 +31,9 @@ Developer ID、公证、macOS 12 实机、真实宿主或性能验收通过。
 
 下文“按架构线性放大”及双架构命令描述为历史记录，当前 arm64-only 门禁不再放大上限。
 
-发布流程在 codesign 前执行 `scripts/check-release-size.sh`。门禁按 Mach-O 架构数线性放大：
+发布流程在 codesign 前执行 `scripts/check-release-size.sh`。下列是 2026-10-11 的每架构上限；GUI 现行上限见文首「现行门禁」。当时文档按 Mach-O 架构数线性放大：
 
-- `claudi0-app`：每架构最多 `7,000,000 B`；
+- `claudi0-app`：当时每架构最多 `7,000,000 B`；
 - `claudi0` helper：每架构最多 `3,250,000 B`；
 - macOS 12 内嵌 `claudi0-login-item`：每架构最多 `500,000 B`；
 - app 内其余正规文件合计预留 `3,100,000 B`；
@@ -405,8 +417,8 @@ GUI 的 7,000,000 B 预算保持不变。声音详情仲裁只保留实际使用
 `5,552 B`。同一流程的签名负载为 `31,888 B`；2026-10-25 的绿色回执（`66af148`）签名前／后为
 `6,956,696 B` / `6,988,560 B`，负载 `31,864 B`，与本次一致。
 
-自 `66af148` 以来 GUI 源码净增 244 行（Grok/Kimi 绑定、主音量拖拽会话、设置导航与语义色、
-以及本次固定设置表面）；helper 也由 `2,858,392 B` 增至 `2,879,960 B`，仍在 helper 预算内。
+自 `66af148..952f643`，`gui/Sources` 为 25 个文件、+309/−120，净增 189 行；helper 也由
+`2,858,392 B` 增至 `2,879,960 B`，仍在 helper 预算内。
 增长对应已评审功能与本次可访问性修复；本轮没有把可执行代码转入资源预算，也没有移动或删除
 反射／运行时检查。
 
@@ -422,5 +434,6 @@ LoginItem `500,000 B`、非可执行资源 `3,100,000 B` 与 Sparkle `3,500,000 
 helper 6,409 checks 全部通过。
 
 配套修改：`scripts/check-release-size.sh`、`docs/ENV.md`、`CONTRIBUTING.md` 与
-`ReleaseLayoutSuite` 的默认值／文档断言同步。签名后实测值只能由下一次 CI 回执确认；
-本记录只证明签名前门禁与预计值，不构成 Developer ID、公证或正式 release 验收。
+`ReleaseLayoutSuite` 的默认值／文档断言同步。上面的签名后 `7,005,552 B` / `7,100,000 B`
+已由该次绿色回执确认，不再留待下一次 CI。该回执只证明这次 ad-hoc CI 装包通过默认体积门禁，
+不构成 Developer ID、公证或正式 release 验收。

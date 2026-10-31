@@ -27,17 +27,10 @@ jobs:
 
       - name: Toolchain
         id: toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SWIFT_VERSION="$(swift --version)"
-          printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Apple\ Swift\ version\ 6\. ]]; then
-            echo "::error::Swift 6 is required; selected toolchain reported: $SWIFT_VERSION"
-            exit 1
-          fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
-          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/swift-toolchain-fingerprint
+        with:
+          version-pattern: 'Apple\ Swift\ version\ 6\.'
+          version-error: Swift 6 is required; selected toolchain reported
 
       - name: Verify CI Git and cache contracts
         run: |
@@ -126,17 +119,10 @@ jobs:
 
       - name: Toolchain
         id: toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SWIFT_VERSION="$(swift --version)"
-          printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
-            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
-            exit 1
-          fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
-          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/swift-toolchain-fingerprint
+        with:
+          version-pattern: 'Swift\ version\ 6\.4\.1([[:space:]]|$)'
+          version-error: Swift 6.4.1 is required; selected toolchain reported
 
       - name: Restore SwiftPM build cache
         uses: actions/cache/restore@v5
@@ -217,17 +203,10 @@ jobs:
 
       - name: Toolchain
         id: toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SWIFT_VERSION="$(swift --version)"
-          printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
-            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
-            exit 1
-          fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
-          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/swift-toolchain-fingerprint
+        with:
+          version-pattern: 'Swift\ version\ 6\.4\.1([[:space:]]|$)'
+          version-error: Swift 6.4.1 is required; selected toolchain reported
 
       - name: Restore SwiftPM build cache
         uses: actions/cache/restore@v5
@@ -263,17 +242,10 @@ jobs:
 
       - name: Toolchain
         id: toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SWIFT_VERSION="$(swift --version)"
-          printf '%s\n' "$SWIFT_VERSION"
-          if [[ ! "$SWIFT_VERSION" =~ Swift\ version\ 6\.4\.1([[:space:]]|$) ]]; then
-            echo "::error::Swift 6.4.1 is required; selected toolchain reported: $SWIFT_VERSION"
-            exit 1
-          fi
-          FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
-          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/swift-toolchain-fingerprint
+        with:
+          version-pattern: 'Swift\ version\ 6\.4\.1([[:space:]]|$)'
+          version-error: Swift 6.4.1 is required; selected toolchain reported
 
       - name: Restore SwiftPM build cache
         id: swiftpm-cache

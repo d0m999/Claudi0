@@ -260,8 +260,9 @@ git diff --check
 | receiver FD | 100 次创建、发送、停止，FD 0..<1024 探测为 **3 → 3 → 3**；持续发送期间停止不迟到交付 |
 
 实际调度延迟另行测量，不把 OS 调度等同于主动延长截止。
-原有门槛不变：Release 来源链增量 p95 ≤30ms，accepted envelope 到模型 p95 ≤100ms，原生首次展示目标 ≤250ms。
-CI 的 `gui` lane 通过 `CLAUDIO_EVENT_ATTENTION_P95_MS=250` 显式给出共享 runner 的 accepted-envelope 预算；harness 只读取这个命名变量，不嗅探 CI，缺省仍为 100ms，空值／非数字／非有限值／越界值失败关闭而不是静默回落。1000 条/10 秒负载与 240 秒 watchdog 不变。
+产品与本地缺省门槛不变：Release 来源链增量 p95 ≤30ms，本地 accepted envelope 到模型 p95 ≤100ms，原生首次展示目标 ≤250ms。
+共享 runner 的 synthetic ingress p95 量的是调度延迟，可以在没有产品回归时超过本地 100ms。`67db2a1` 因此只把 CI `gui` lane 的断言预算记为 250ms；产品 accepted envelope 仍是 100ms，本地缺省也不抬高。这是 CI 断言覆盖的记录，不是把产品门槛改成 250ms。
+CI 的 `gui` lane 通过 `CLAUDIO_EVENT_ATTENTION_P95_MS=250` 显式给出该预算；harness 只读取这个命名变量，不嗅探 CI，缺省仍为 100ms，空值／非数字／非有限值／越界值失败关闭而不是静默回落。变量见 `docs/ENV.md`。1000 条/10 秒负载与 240 秒 watchdog 不变。
 20ms 是 stdin 的配置读取预算；poll 毫秒取整和 OS 调度可能产生墙钟超出，单独记录而不改预算。
 
 ## 独立 Release 产物

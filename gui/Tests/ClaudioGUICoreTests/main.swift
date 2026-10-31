@@ -1179,6 +1179,7 @@ func runBackgroundGUIHarnessSuites() async {
     await runPanelPresentationSuites()
     runEventSettingsWindowSelectionSuites()
     runContrastSuites()
+    runFeedbackPixelBlendSuites()
     runContrastHexParsingSuites()
     runPanelTypeSizeSuites()
     runProductUIModelsSuites()

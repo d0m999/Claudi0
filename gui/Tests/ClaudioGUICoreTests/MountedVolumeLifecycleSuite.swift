@@ -26,9 +26,15 @@ func runMountedVolumeLifecycleSuites() async {
             window.contentView = host
             defer { window.close() }
             feedbackSettle(host)
+            let padding: CGFloat = 16
+            let percentageWidth: CGFloat = 42
+            let percentageColumn = NSRect(
+                x: host.bounds.maxX - padding - percentageWidth, y: host.bounds.minY,
+                width: percentageWidth, height: host.bounds.height)
             expect(
                 feedbackPixelCount(
-                    in: host, color: .secondaryLabelColor, partialCoverage: true) > 3,
+                    in: host, color: .secondaryLabelColor, partialCoverage: true,
+                    sampleRect: percentageColumn) > 3,
                 "Mounted percentage renders the system secondary label ink at 1x")
         }
     }

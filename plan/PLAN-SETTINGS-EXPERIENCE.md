@@ -28,7 +28,7 @@
 > 2026-10-06 现行画面 SoT 与原生外壳合同：
 > [`Panel and Settings Prototype.html`](<../designs/panel-and-settings/Panel and Settings Prototype.html>)、
 > [DESIGN.md 的「系统原生外壳与窗口期历史」](../DESIGN.md)、[ADR 0008](../docs/adr/0008-use-one-retained-unified-settings-window.md)。
-> 主原型的设置 UI 已按 `NSToolbar`、source list、窗口期 64 条位置历史及系统语义色对齐；正文 section/group 间距 20/12 pt、普通/多行最低 38/51 pt。
+> 主原型的设置 UI 已按 `NSToolbar`、source list 与窗口期 64 条位置历史对齐；正文 section/group 间距 20/12 pt、普通/多行最低 38/51 pt。内容底与功能组自 2026-10-30 起使用 [DESIGN.md「设置固定表面」](../DESIGN.md) 的固定 token，不再按系统语义色对齐；侧栏、统一工具栏、文字、分隔线与强调色仍用系统语义色。
 > `Native Settings Alignment Prototype.html` 已于 2026-10-07 随原型合并删除。领域能力与既有写入 owner 继续有效。原生人工验收单独记录，不因实现或辅助 SDK 检查通过而完成。
 >
 > 上一轮视觉与交互基线（历史）：

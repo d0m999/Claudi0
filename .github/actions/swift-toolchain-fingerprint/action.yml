@@ -1,0 +1,31 @@
+name: Swift toolchain fingerprint
+description: Check the selected Swift version and emit the shared SwiftPM cache fingerprint.
+inputs:
+  version-pattern:
+    description: Extended regex that swift --version must match.
+    required: true
+  version-error:
+    description: Error text used when the version pattern does not match.
+    required: true
+outputs:
+  fingerprint:
+    description: SHA-256 of swift, xcodebuild, and the workspace path.
+    value: ${{ steps.fingerprint.outputs.fingerprint }}
+runs:
+  using: composite
+  steps:
+    - id: fingerprint
+      shell: bash
+      env:
+        VERSION_PATTERN: ${{ inputs.version-pattern }}
+        VERSION_ERROR: ${{ inputs.version-error }}
+      run: |
+        set -euo pipefail
+        SWIFT_VERSION="$(swift --version)"
+        printf '%s\n' "$SWIFT_VERSION"
+        if [[ ! "$SWIFT_VERSION" =~ $VERSION_PATTERN ]]; then
+          echo "::error::${VERSION_ERROR}: $SWIFT_VERSION"
+          exit 1
+        fi
+        FINGERPRINT="$( { swift --version; xcodebuild -version; printf '%s\n' "$GITHUB_WORKSPACE"; } | shasum -a 256 | awk '{ print $1 }' )"
+        echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"

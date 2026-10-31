@@ -1333,6 +1333,23 @@ func runReleaseLayoutSuites() {
                 && budget.contains("`2,563,896 B`")
                 && budget.contains("`14,055,562 B`"),
             "脚本默认值、ENV reference 与实测基线必须一起重定，不能只抬高门禁数字")
+        let currentGate: String = {
+            guard let start = budget.range(of: "## 现行门禁\n")?.upperBound else { return "" }
+            let rest = budget[start...]
+            guard let end = rest.range(of: "\n## ")?.lowerBound else { return String(rest) }
+            return String(rest[..<end])
+        }()
+        expect(
+            currentGate.contains("- `claudi0-app`：每架构最多 `7,100,000 B`")
+                && !currentGate.contains("7,000,000"),
+            "现行门禁的 GUI 上限必须是 7,100,000 B，旧的 7,000,000 B 不能留在该节")
+        expect(
+            budget.contains("当时每架构最多 `7,000,000 B`")
+                && budget.contains("净增 189 行")
+                && budget.contains("`66af148..952f643`")
+                && budget.contains("41047114738")
+                && !budget.contains("签名后实测值只能由下一次 CI 回执确认"),
+            "体积记录必须把旧上限留在历史小节，并与绿色签名回执和精确行数一致")
     }
 
     suite("App 图标 icns 由品牌包素材派生且在仓库中") {

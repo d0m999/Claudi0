@@ -81,5 +81,25 @@ func runEventAttentionLatencyBudgetSuites() {
             ci[guiStart..<guiEnd].contains(
                 "CLAUDIO_EVENT_ATTENTION_P95_MS: \"250\""),
             "CI gui lane must set the explicit 250ms p95 budget")
+        let root = guiTestRepositoryRoot()
+        guard
+            let environment = try? String(
+                contentsOf: root.appendingPathComponent("docs/ENV.md"), encoding: .utf8),
+            let acceptance = try? String(
+                contentsOf: root.appendingPathComponent("docs/event-attention-acceptance.md"),
+                encoding: .utf8)
+        else {
+            expect(false, "读不到 p95 预算的环境或验收文档")
+            return
+        }
+        expect(
+            environment.contains("`CLAUDIO_EVENT_ATTENTION_P95_MS`"),
+            "ENV reference must list the p95 budget override")
+        expect(
+            acceptance.contains("CI `gui` lane 的断言预算记为 250ms")
+                && acceptance.contains("产品 accepted envelope 仍是 100ms")
+                && !acceptance.contains(
+                    "原有门槛不变：Release 来源链增量 p95 ≤30ms，accepted envelope 到模型 p95 ≤100ms"),
+            "验收文档必须把本地 100ms 与 CI 250ms 分开，不能再写门槛未变")
     }
 }

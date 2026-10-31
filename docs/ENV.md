@@ -33,6 +33,7 @@
 | `CLAUDIO_BENCHMARK_INCREMENTAL_SAMPLES` | No | integer; default `30` | benchmark incremental sample count |
 | `CLAUDIO_BENCHMARK_COLD_LIMIT_MS` | No | number; default `500.0` | cold benchmark limit |
 | `CLAUDIO_BENCHMARK_CACHED_LIMIT_MS` | No | number; default `100.0` | cached benchmark limit |
+| `CLAUDIO_EVENT_ATTENTION_P95_MS` | No | finite milliseconds in `(0, 60000]`; absent keeps `100`; CI `gui` lane sets `250` | synthetic ingress → model 的 accepted-envelope p95。空值、非数字、非有限值或越界失败关闭；harness 不嗅探 CI |
 
 `CLAUDIO_TEST_ROOT`、`CLAUDIO_TEST_HOME` 和 native probe 变量只用于隔离测试。Release helper
 必须不包含并且不响应这些 Debug-only test roots；不要把真实用户路径作为测试输入。

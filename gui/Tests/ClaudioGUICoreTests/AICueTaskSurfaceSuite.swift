@@ -111,7 +111,7 @@ func runAICueTaskSurfaceSuites() {
     }
     for dark in [false, true] {
         for increased in [false, true] {
-            suite("AI task surface: system group across phases \(dark)/\(increased)") {
+            suite("AI task surface: fixed group surface across phases \(dark)/\(increased)") {
                 let probe = TaskSurfaceProbe()
                 let hosting = NSHostingView(
                     rootView: TaskSurfaceFixture(probe: probe)

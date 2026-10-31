@@ -10,7 +10,7 @@ package struct SettingsNativeSurface: NSViewRepresentable {
     package init(_ kind: Kind) { self.kind = kind }
 
     package func makeNSView(context: Context) -> NSView {
-        let view = SettingsSemanticSurfaceView()
+        let view = SettingsFixedSurfaceView()
         view.setAccessibilityElement(false)
         view.setAccessibilityIdentifier(
             kind == .group ? "settings.semantic-surface.group" : "settings.semantic-surface.window")
@@ -19,13 +19,13 @@ package struct SettingsNativeSurface: NSViewRepresentable {
     }
 
     package func updateNSView(_ nsView: NSView, context: Context) {
-        (nsView as? SettingsSemanticSurfaceView)?.kind = kind
+        (nsView as? SettingsFixedSurfaceView)?.kind = kind
         nsView.needsDisplay = true
     }
 }
 
 @MainActor
-private final class SettingsSemanticSurfaceView: NSView {
+private final class SettingsFixedSurfaceView: NSView {
     var kind = SettingsNativeSurface.Kind.window
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
     override func draw(_ dirtyRect: NSRect) {
