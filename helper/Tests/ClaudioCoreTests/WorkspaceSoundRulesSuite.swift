@@ -295,7 +295,7 @@ func runWorkspaceSoundRulesSuites() {
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
                 surfaces: [.codex],
-                profile: WorkspaceSoundProfile(selectedPack: "selected", volume: 0.83))
+                profile: .newGroup(selectedPack: "selected", volume: 0.83))
             func mutate(_ mutation: WorkspaceSoundMutation) -> Result<Void, WorkspaceSoundError> {
                 mutateWorkspaceSound(
                     mutation, configFile: file, lockFile: lock, userPacksDirectory: packs,
@@ -468,14 +468,12 @@ func runWorkspaceSoundRulesSuites() {
                 loadClaudioConfig(from: file)?.workspaceRules.first?.profile?.selectedPack == "next"
                     && loadClaudioConfig(from: file)?.selectedPack == "default",
                 "accepted workspace pack write leaves Default Group unchanged")
-            // 切包只写 selectedPack：开关（含两条 false）必须逐键原样保留。
+            // 切包只写 selectedPack：开关必须逐键原样保留（本用例的 fixture 是既有规则；
+            // 新建组默认由 NewGroupEventDefaultsSuite 单独钉住）。
             let repackedEvents = loadClaudioConfig(from: file)?.workspaceRules.first?.profile?
                 .events
             expect(
-                repackedEvents == [
-                    "task_start": false, "stop": true, "stop_failure": true,
-                    "notification": true, "subagent_stop": false,
-                ],
+                repackedEvents == original.profile?.events,
                 "switching a workspace pack never rewrites its event switches, got"
                     + " \(String(describing: repackedEvents))")
         }
@@ -502,11 +500,7 @@ func runWorkspaceSoundRulesSuites() {
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
                 surfaces: [.codex],
-                // 本用例验证工作区路由与独立音量，不验证新建组默认；五事件需全开。
-                profile: WorkspaceSoundProfile(
-                    selectedPack: "workspace", volume: 0.87,
-                    events: Dictionary(
-                        uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })))
+                profile: WorkspaceSoundProfile(selectedPack: "workspace", volume: 0.87))
             config.workspaceRules = [rule]
             try! JSONEncoder().encode(config).write(to: file)
             let recorder = WorkspacePlaybackRecorder()

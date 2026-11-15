@@ -760,6 +760,21 @@ func runSetupSuites() {
                 "a fresh config.json should default-select the copied pack")
             expect(hooksOutcome.didInstall, "a fresh settings.json should get hooks installed")
 
+            // 首启链路 performFirstRunSetup → selectPack → .createFresh：写出的 config.json
+            // 必须带新建组默认开关（完整五键、三开两关）。这条钉住的是「setup 也走同一
+            // 创建 seam」，而不只是直接调 selectPack 的单元测试。
+            // 只钉住「链路走到同一创建 seam」：常量的具体取值由
+            // `NewGroupEventDefaultsSuite` 的独立期望字面量负责，这里不再抄第二份。
+            let firstRunConfig = loadClaudioConfig(from: environment.configFile)
+            expect(
+                firstRunConfig?.eventsEnabled == Event.newGroupDefaultSwitches,
+                "first-run setup must persist the new-group switches, got"
+                    + " \(String(describing: firstRunConfig?.eventsEnabled))")
+            expect(
+                firstRunConfig?.isEnabled(.taskStart) == false
+                    && firstRunConfig?.isEnabled(.subagentStop) == false,
+                "first-run setup must leave task_start / subagent_stop off")
+
             expect(
                 FileManager.default.fileExists(atPath: environment.claudioBinaryDestination.path),
                 "binary must actually exist at the fixed destination afterward")

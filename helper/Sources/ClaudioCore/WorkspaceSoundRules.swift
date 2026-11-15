@@ -126,19 +126,29 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
     /// Retired selections, retained for compatibility only. Effective profiles ignore them.
     public var systemSounds: [String: String]
     public var hasLegacySystemSounds = false
-    /// - Parameter events: `nil` 表示「这个组刚被创建」，取 ``Event/newGroupDefaultSwitches``
-    ///   （`stop`/`stop_failure`/`notification` 开，`task_start`/`subagent_stop` 关）。
-    ///   编辑既有规则必须传入完整五键表：``isValid`` 要求五键齐全，缺键会让规则失效并停播。
+    /// - Parameter events: 不传时补一份**完整五键全开**的有效表。这是构造器沿用已久的默认值，
+    ///   服务 fixture 与不持有开关的调用方；它**不是**新建组默认。新建组一律走
+    ///   ``newGroup(selectedPack:volume:)``，让 ``Event/newGroupDefaultSwitches`` 保持唯一事实源。
     public init(
         selectedPack: String, volume: Double, events: [String: Bool]? = nil,
         systemSounds: [String: String] = [:]
     ) {
         self.selectedPack = selectedPack
         self.volume = volume
-        self.events = events ?? Event.newGroupDefaultSwitches
+        self.events =
+            events ?? Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
         self.systemSounds = systemSounds
         self.hasLegacySystemSounds = !systemSounds.isEmpty
     }
+
+    /// 新建组（新建工作区规则）的 profile：完整五键，开关取自
+    /// ``Event/newGroupDefaultSwitches``。``isValid`` 要求五键齐全，稀疏表会让新建规则当场
+    /// 失效并停播。编辑既有规则必须沿用已保存的开关，不要调用这个工厂。
+    public static func newGroup(selectedPack: String, volume: Double) -> WorkspaceSoundProfile {
+        WorkspaceSoundProfile(
+            selectedPack: selectedPack, volume: volume, events: Event.newGroupDefaultSwitches)
+    }
+
     public var isValid: Bool {
         isSafePackID(selectedPack) && volume.isFinite && (0...1).contains(volume)
             && Event.allCases.allSatisfy { events[$0.cliName] != nil }

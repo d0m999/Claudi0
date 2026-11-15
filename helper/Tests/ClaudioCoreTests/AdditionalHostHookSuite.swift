@@ -140,11 +140,7 @@ func runAdditionalHostHookSuites() {
                             kind: .directory,
                             path: workspaceDir.resolvingSymlinksInPath().path),
                         surfaces: [host.surfaceID],
-                        // 本用例验证工作区路由与独立音量，不验证新建组默认；五事件需全开。
-                        profile: WorkspaceSoundProfile(
-                            selectedPack: "workspace", volume: 0.83,
-                            events: Dictionary(
-                                uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })))
+                        profile: WorkspaceSoundProfile(selectedPack: "workspace", volume: 0.83))
                 ]
                 try! JSONEncoder().encode(config).write(to: f.play.configFile)
                 let native = host == .opencode ? "ResponseCompleted" : "SubagentStop"

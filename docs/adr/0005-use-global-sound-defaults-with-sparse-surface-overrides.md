@@ -5,7 +5,7 @@ status: accepted
 # 使用完整的默认组与工作区声音配置
 
 2026-09-24 用户批准的新合同替代本 ADR 原来的 Global + sparse Surface 模型。
-默认组和每个工作区各自拥有声音包、音量、五个事件开关；顶层 `master_volume` 仅是默认组音量的兼容存储名，不再乘以工作区音量。工作区不继承单项默认值。创建时必须选包，音量直接采用创建表单滑杆当前值（2026-10-16 起不再要求额外确认，见下文修订），五事件初始全开（2026-11-15 起改为三开两关，见文末修订）。
+默认组和每个工作区各自拥有声音包、音量、五个事件开关；顶层 `master_volume` 仅是默认组音量的兼容存储名，不再乘以工作区音量。工作区不继承单项默认值。创建时必须选包，音量直接采用创建表单滑杆当前值（2026-10-16 起不再要求额外确认，见下文修订）；五事件初始全开是 2026-11-15 之前的历史默认，现行默认按文末 2026-11-15 修订（三开两关）。
 
 2026-09-28 再修订：每个组只选择包、音量和五事件开关。包统一拥有文件／系统音映射；旧组级系统音字段保留并停用。系统音不可用仅停止对应事件，其他可用系统音继续播放。详见 ADR 0021，取代 ADR 0020 的组级覆盖模型。
 
@@ -36,6 +36,6 @@ WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据（此门�
 
 question 事件维持不传目录、恒用默认组。`chatgpt-desktop-ax`/`claude-desktop-ax` 无 hook 管道，仍不进入来源名单。本修订取代上文「第一版的目录适用来源限 Codex CLI 与 Claude Code」「WorkBuddy 开放须先取得五类真实 Desktop 回调的目录证据」与「独立通知阶段不降低上述五类目录证据门槛」三处约束；新规则创建时默认勾选全部已开放来源。宿主能力、当前接入代次与回执激活门槛不变：事件未接入或无当前回执时本就不播放，工作区资格只决定播放时按目录选择哪组声音配置。
 
-2026-11-15 新建组默认开关修订：新建组（首次装机写出的 `config.json`；新建工作区规则）只默认开启 `stop`、`stop_failure`、`notification`；`task_start` 与 `subagent_stop` 默认关闭，由用户在「默认组／工作区」或菜单栏面板自行打开。新默认只在组刚被创建时套用：`selectPack` 只写 `selected_pack`，工作区 `.pack` 只写 `profile.selectedPack`，切换或启用声音包不重置既有开关。存量不迁移：`events` 缺键仍读作启用，已有文件不被回填成显式值。默认开关的单一事实源是 `Event.newGroupDefaultSwitches`，完整五键落盘；工作区 profile 仍要求五键齐全，`isValid` 的 fail-closed 门槛不变。声音包本身不持有事件开关。
+2026-11-15 新建组默认开关修订：新建组（首次装机写出的 `config.json`；新建工作区规则）只默认开启 `stop`、`stop_failure`、`notification`；`task_start` 与 `subagent_stop` 默认关闭，由用户在「默认组／工作区」或菜单栏面板自行打开。新默认只在**两个显式创建 seam** 套用：`config.json` 的 `.createFresh` 分支与新建工作区规则的 `WorkspaceSoundProfile.newGroup` 工厂。通用构造器不参与，仍给完整五键全开；这样既有规则、GUI 回归夹具与测试 fixture 不会因这次修订被连带改写。`selectPack` 只写 `selected_pack`，工作区 `.pack` 只写 `profile.selectedPack`，切换或启用声音包不重置既有开关。存量不迁移：`events` 缺键仍读作启用，已有文件不被回填成显式值。默认开关的单一事实源是 `Event.newGroupDefaultSwitches`，完整五键落盘；工作区 profile 仍要求五键齐全，`isValid` 的 fail-closed 门槛不变。声音包本身不持有事件开关。
 
 参考：[Git rev-parse](https://git-scm.com/docs/git-rev-parse)、[Git worktree](https://git-scm.com/docs/git-worktree)、[Codex Hooks](https://developers.openai.com/de-DE/docs/hooks)、[Claude Code Hooks](https://code.claude.com/docs/en/hooks)。公开文档不代替发布前逐事件真实验证。

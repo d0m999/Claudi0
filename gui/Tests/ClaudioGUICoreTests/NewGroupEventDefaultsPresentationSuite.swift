@@ -9,15 +9,6 @@ import Foundation
 // `WorkspaceSettingsSummary.enabledEventCount` 是这条投影的唯一出口，别在视图里另算一份。
 
 @MainActor
-private func makeDefaultSwitchEnvironment(_ userPacksDirectory: URL) -> AudioImportEnvironment {
-    AudioImportEnvironment(
-        userPacksDirectory: userPacksDirectory,
-        bundledPacksDirectory: nil,
-        durationProbe: StubDurationProbe(fixedDuration: 1.0),
-        packsLockFile: injectedPacksLock(besideUserPacks: userPacksDirectory))
-}
-
-@MainActor
 private func makeDefaultSwitchPack(at url: URL, id: String) {
     try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     writeFixture(
@@ -51,6 +42,26 @@ func runNewGroupEventDefaultsPresentationSuites() {
         }
     }
 
+    suite("new group defaults: the workspace create form calls the explicit creation seam") {
+        // `AddWorkspaceSoundRuleView` 是 private SwiftUI 视图，harness 无法 import 它来断言接线；
+        // 这条跨文件契约只能用剥注释后的源码文本钉住。正向断言（不含负向）：代码被删掉会变红。
+        let url = guiTestRepositoryRoot().appendingPathComponent(
+            "gui/Sources/ClaudioSettingsPresentation/EventSettingsWindowView.swift")
+        guard let source = try? String(contentsOf: url, encoding: .utf8) else {
+            expect(false, "读不到 EventSettingsWindowView.swift")
+            return
+        }
+        let scanned = strippingComments(source)
+        expect(
+            scanned.unmodeledConstructs.isEmpty,
+            "源码扫描器必须能完整建模创建表单，got \(scanned.unmodeledConstructs)")
+        expect(
+            scanned.code.contains(
+                "profile: .newGroup(selectedPack: selectedPack, volume: volume)"),
+            "新建工作区表单必须走 WorkspaceSoundProfile.newGroup 创建 seam，"
+                + "不得依赖通用构造器的默认参数")
+    }
+
     suite("new group defaults: the panel can still turn the two muted events back on") {
         withTempDirectory { root in
             let configFile = root.appendingPathComponent("config.json")
@@ -67,7 +78,11 @@ func runNewGroupEventDefaultsPresentationSuites() {
             let controller = PanelConfigController(
                 configFile: configFile,
                 lockFile: root.appendingPathComponent("config.lock"),
-                environment: makeDefaultSwitchEnvironment(packs))
+                environment: AudioImportEnvironment(
+                    userPacksDirectory: packs,
+                    bundledPacksDirectory: nil,
+                    durationProbe: StubDurationProbe(fixedDuration: 1.0),
+                    packsLockFile: injectedPacksLock(besideUserPacks: packs)))
             expect(
                 controller.eventRows.first(where: { $0.event == .taskStart })?.enabled == false,
                 "前提：task_start 那行初始必须是关的")

@@ -1292,11 +1292,10 @@ private struct AddWorkspaceSoundRuleView: View {
                 Spacer()
                 Button(l10n.text(.workspaceCreate)) {
                     guard let directory else { return }
-                    // 不传 `events`：新建组取 `Event.newGroupDefaultSwitches`（三开两关）。
                     let rule = WorkspaceSoundRule(
                         directory: directory,
                         surfaces: surfaces.sorted { $0.rawValue < $1.rawValue },
-                        profile: WorkspaceSoundProfile(selectedPack: selectedPack, volume: volume))
+                        profile: .newGroup(selectedPack: selectedPack, volume: volume))
                     if model.changeWorkspace(.add(rule)) { onCreated(rule.id) }
                 }.disabled(
                     directory == nil || selectedPack.isEmpty || resolving

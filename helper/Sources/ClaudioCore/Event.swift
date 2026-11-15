@@ -57,9 +57,10 @@ public enum Event: String, CaseIterable, Codable, Sendable, Hashable {
 
     /// 新建组（首次装机写出的 `config.json`；新建工作区规则）的默认开关。
     ///
-    /// 唯一事实源：``ClaudioConfig`` 的新鲜创建分支（`updateConfigJSON` 的 `.createFresh`）与
-    /// ``WorkspaceSoundProfile/init(selectedPack:volume:events:systemSounds:)`` 的 `events: nil`
-    /// 默认参数都从这里取值，两处都不得再写第二份字面量。
+    /// 唯一事实源：默认组的新鲜创建分支（`updateConfigJSON` 的 `.createFresh`）与
+    /// ``WorkspaceSoundProfile/newGroup(selectedPack:volume:)`` 两个**创建 seam** 都从这里取值，
+    /// 别处不得再写第二份字面量。通用构造器 ``WorkspaceSoundProfile/init(selectedPack:volume:events:systemSounds:)``
+    /// 不参与新建组默认，它只保证一份完整有效的五键表。
     ///
     /// 用穷尽 `switch` 而不是 `Set<Event>` 成员判定：将来新增第六个事件时这里必须编译失败，
     /// 迫使默认值被显式决定，而不是被「不在集合里即 false」悄悄吞掉。

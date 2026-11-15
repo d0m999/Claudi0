@@ -38,6 +38,26 @@ func runNewGroupEventDefaultsSuites() {
             "默认打开的事件必须恰好是 stop/stop_failure/notification")
     }
 
+    suite("new group defaults: only the explicit creation seam applies them") {
+        // 通用构造器被 fixture、回归控制器与大量既有规则复用：它必须继续给完整五键全开，
+        // 不得顺手把「新建组默认」灌进去。新建组只由 `newGroup` 工厂表达。
+        let generic = WorkspaceSoundProfile(selectedPack: "pika", volume: 0.6)
+        expect(
+            generic.events
+                == Dictionary(
+                    uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
+                && generic.isValid,
+            "通用构造器的 events: nil 必须仍是完整五键全开，got \(generic.events)")
+
+        let created = WorkspaceSoundProfile.newGroup(selectedPack: "pika", volume: 0.6)
+        expect(
+            created.events == expectedNewGroupSwitches && created.isValid,
+            "newGroup 工厂必须落完整五键三开两关且 isValid，got \(created.events)")
+        expect(
+            created.events != generic.events,
+            "创建 seam 与通用构造器必须可区分；两者相同等于没有创建 seam")
+    }
+
     suite("new group defaults: a fresh config.json persists them and reads back") {
         withTempDirectory { root in
             let configFile = root.appendingPathComponent("config.json")
@@ -84,7 +104,7 @@ func runNewGroupEventDefaultsSuites() {
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
                 surfaces: [.codex],
-                profile: WorkspaceSoundProfile(selectedPack: "pika", volume: 0.6))
+                profile: .newGroup(selectedPack: "pika", volume: 0.6))
             let added = mutateWorkspaceSound(
                 .add(rule), configFile: configFile, lockFile: lockFile,
                 userPacksDirectory: packs)
@@ -144,7 +164,7 @@ func runNewGroupEventDefaultsSuites() {
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
                 surfaces: [.codex],
-                profile: WorkspaceSoundProfile(selectedPack: "pika", volume: 0.4))
+                profile: .newGroup(selectedPack: "pika", volume: 0.4))
             expect(
                 (try? mutateWorkspaceSound(
                     .add(rule), configFile: configFile, lockFile: lockFile,
@@ -195,6 +215,29 @@ func runNewGroupEventDefaultsSuites() {
             expect(
                 loadClaudioConfig(from: emptyFile)?.isEnabled(.taskStart) == true,
                 "存量缺键仍读作启用")
+
+            // ①b 整个 `events` 键都不存在的存量文件：读侧五事件全开，切包也不得凭空补出这个键。
+            let noEventsFile = root.appendingPathComponent("no-events/config.json")
+            try! FileManager.default.createDirectory(
+                at: noEventsFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+            writeFixture(#"{"selected_pack":"pika"}"#, to: noEventsFile)
+            expect(
+                Event.allCases.allSatisfy {
+                    loadClaudioConfig(from: noEventsFile)?.isEnabled($0) == true
+                },
+                "整个 events 键缺失时五个事件都必须读作启用")
+            expect(
+                selectPack(
+                    "other", configFile: noEventsFile, userPacksDirectory: packs,
+                    lockFile: lockFile) == .success(.selected(packID: "other")),
+                "fixture: switch pack on a legacy file with no events key")
+            let noEventsRaw =
+                try! JSONSerialization.jsonObject(with: Data(contentsOf: noEventsFile))
+                as! [String: Any]
+            expect(
+                noEventsRaw["events"] == nil,
+                "切包不得给存量文件补出 events 键，got"
+                    + " \(String(describing: noEventsRaw["events"]))")
 
             // ② 稀疏表只保留用户自己动过的那一位。
             let sparseFile = root.appendingPathComponent("sparse/config.json")
