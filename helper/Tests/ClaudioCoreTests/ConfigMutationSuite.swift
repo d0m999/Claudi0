@@ -338,6 +338,28 @@ func runConfigMutationSuites() {
             expect(
                 json?["selected_pack"] as? String == "pika",
                 "全新 config.json 的 selected_pack 必须是这次选中的包")
+
+            // 新建组默认开关：完整五键、三开两关。稀疏表（只写两条 false）会让每条新建工作区
+            // 当场 `isValid == false` 并停播，所以这里连键集合一起钉死。
+            let events = json?["events"] as? [String: Bool]
+            expect(
+                events?.keys.sorted() == Event.allCases.map(\.cliName).sorted(),
+                "全新 config.json 的 events 必须是完整五键，got \(String(describing: events))")
+            expect(
+                events == [
+                    "task_start": false, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": false,
+                ],
+                "全新 config.json 默认三开两关（stop/stop_failure/notification 开），got"
+                    + " \(String(describing: events))")
+            let freshText = readRawText(configFile)
+            expect(
+                rawLiteral(of: "task_start", in: freshText) == "false"
+                    && rawLiteral(of: "stop", in: freshText) == "true",
+                "默认开关必须逐字写成 true/false，绝不能被规范化成 1/0，got \(freshText)")
+            expect(
+                probeConfigRewritable(configFile: configFile) == .rewritable,
+                "带默认开关的新装文件必须仍能被自己的写路径读懂")
         }
     }
 

@@ -3,7 +3,8 @@ import Foundation
 /// The five stable semantic sound events.
 ///
 /// This enum is the **single source of truth** for the event-name mapping shared by
-/// `install` / `play` / `uninstall` (ENGINEERING.md 决议 · 指令). Claude Code's
+/// `install` / `play` / `uninstall` (ENGINEERING.md 决议 · 指令) and for the switches a
+/// newly created group starts with (``isOnInNewGroupByDefault``). Claude Code's
 /// `settings.json` uses camelCase (`Stop`, `SubagentStop`), while the CLI `<event>`
 /// token and the `manifest.json` event key use snake_case (`stop`, `subagent_stop`).
 ///
@@ -52,6 +53,29 @@ public enum Event: String, CaseIterable, Codable, Sendable, Hashable {
         guard let match = Event.allCases.first(where: { $0.cliName == cliName })
         else { return nil }
         self = match
+    }
+
+    /// 新建组（首次装机写出的 `config.json`；新建工作区规则）的默认开关。
+    ///
+    /// 唯一事实源：``ClaudioConfig`` 的新鲜创建分支（`updateConfigJSON` 的 `.createFresh`）与
+    /// ``WorkspaceSoundProfile/init(selectedPack:volume:events:systemSounds:)`` 的 `events: nil`
+    /// 默认参数都从这里取值，两处都不得再写第二份字面量。
+    ///
+    /// 用穷尽 `switch` 而不是 `Set<Event>` 成员判定：将来新增第六个事件时这里必须编译失败，
+    /// 迫使默认值被显式决定，而不是被「不在集合里即 false」悄悄吞掉。
+    public var isOnInNewGroupByDefault: Bool {
+        switch self {
+        case .stop, .stopFailure, .notification: true
+        case .taskStart, .subagentStop: false
+        }
+    }
+
+    /// 新建组落盘时的完整五键开关表。
+    ///
+    /// 必须是**完整五键**：``WorkspaceSoundProfile/isValid`` 要求五键齐全，稀疏表会让每条
+    /// 新建工作区当场失效并停播。读侧「缺键 = 开」只服务存量文件，不参与新建。
+    public static var newGroupDefaultSwitches: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.map { ($0.cliName, $0.isOnInNewGroupByDefault) })
     }
 
     /// Claude Code legacy `claudi0 play` 安装器继续只管理原有四个 lifecycle 事件。

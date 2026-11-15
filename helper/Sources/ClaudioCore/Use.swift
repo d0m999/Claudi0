@@ -56,7 +56,8 @@ public enum UseError: Error, Sendable, Equatable, CustomStringConvertible {
 
 /// Switches the active pack. If `configFile` already exists, only `selected_pack` is
 /// updated — `master_volume` / `events` / `starred_packs` are read back and preserved untouched. If it
-/// doesn't exist yet, a fresh ``ClaudioConfig`` is created with defaults for everything
+/// doesn't exist yet, a fresh ``ClaudioConfig`` is created with the new-group event
+/// switches (``Event/newGroupDefaultSwitches``) and defaults for everything
 /// else (T17: this is also the path ``performFirstRunSetup(environment:)`` uses to
 /// establish a first-run default pack selection).
 ///

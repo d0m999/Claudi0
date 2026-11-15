@@ -18,4 +18,8 @@ All notable changes to Claudio are documented in this file. The format follows [
 - Optional Homebrew tap updates controlled by `HOMEBREW_TAP_ENABLED`.
 - OpenCode 2 plugin contract: the bridge plugin dual-exports the 1.x `server` hooks and the 2.x `setup` entry point with an event-stream subscription, and the helper reads OpenCode 2's branded version line (`opencode v2.0.27`) again.
 
+### Changed
+
+- New sound groups (first-run `config.json` and newly added workspaces) now start with `stop`, `stop_failure`, and `notification` enabled; `task_start` and `subagent_stop` stay off until the user turns them on. Switching packs never rewrites existing switches, and existing configuration files are not migrated.
+
 [0.1.0]: https://github.com/d0m999/Claudio/releases/tag/v0.1.0

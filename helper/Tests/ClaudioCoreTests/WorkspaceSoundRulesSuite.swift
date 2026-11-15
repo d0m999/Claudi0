@@ -304,6 +304,23 @@ func runWorkspaceSoundRulesSuites() {
             expect(
                 (try? mutate(.add(rule)).get()) != nil,
                 "explicit selected pack and volume create full rule")
+            // 新建工作区必须从新建组默认开关起步：完整五键、三开两关。
+            let addedRaw =
+                try! JSONSerialization.jsonObject(with: Data(contentsOf: file)) as! [String: Any]
+            let addedEvents =
+                (((addedRaw["workspace_rules"] as? [String: Any])?[rule.id.uuidString]
+                as? [String: Any])?["profile"] as? [String: Any])?["events"]
+                as? [String: Bool]
+            expect(
+                addedEvents == [
+                    "task_start": false, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": false,
+                ],
+                "a newly added workspace starts from the new-group switches, got"
+                    + " \(String(describing: addedEvents))")
+            expect(
+                loadClaudioConfig(from: file)?.workspaceRules.first?.profile?.isValid == true,
+                "the new-group switches keep the rule valid (five keys, never sparse)")
             expect(mutate(.add(rule)).isWorkspaceFailure(.duplicateDirectory), "duplicate rejected")
             expect(
                 mutate(
@@ -451,6 +468,16 @@ func runWorkspaceSoundRulesSuites() {
                 loadClaudioConfig(from: file)?.workspaceRules.first?.profile?.selectedPack == "next"
                     && loadClaudioConfig(from: file)?.selectedPack == "default",
                 "accepted workspace pack write leaves Default Group unchanged")
+            // 切包只写 selectedPack：开关（含两条 false）必须逐键原样保留。
+            let repackedEvents = loadClaudioConfig(from: file)?.workspaceRules.first?.profile?
+                .events
+            expect(
+                repackedEvents == [
+                    "task_start": false, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": false,
+                ],
+                "switching a workspace pack never rewrites its event switches, got"
+                    + " \(String(describing: repackedEvents))")
         }
     }
     suite(
@@ -475,7 +502,11 @@ func runWorkspaceSoundRulesSuites() {
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
                 surfaces: [.codex],
-                profile: WorkspaceSoundProfile(selectedPack: "workspace", volume: 0.87))
+                // 本用例验证工作区路由与独立音量，不验证新建组默认；五事件需全开。
+                profile: WorkspaceSoundProfile(
+                    selectedPack: "workspace", volume: 0.87,
+                    events: Dictionary(
+                        uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })))
             config.workspaceRules = [rule]
             try! JSONEncoder().encode(config).write(to: file)
             let recorder = WorkspacePlaybackRecorder()

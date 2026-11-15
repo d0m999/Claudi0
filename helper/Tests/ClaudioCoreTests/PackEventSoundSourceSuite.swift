@@ -56,6 +56,9 @@ func runPackEventSoundSourceSuites() {
                 surfaces: [.codex],
                 profile: WorkspaceSoundProfile(
                     selectedPack: "mixed", volume: 0.6,
+                    // 本用例验证声音来源解析，不验证新建组默认；五事件需全开。
+                    events: Dictionary(
+                        uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) }),
                     systemSounds: ["stop": "Missing"]))
             config.workspaceRules = [rule]
             try! JSONEncoder().encode(config).write(to: configFile)

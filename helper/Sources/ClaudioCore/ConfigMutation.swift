@@ -443,10 +443,13 @@ func updateConfigJSON(
         }
         // 全新安装：这份文件的每一个键都是我们自己刚写下的，没有任何未知键需要保留。
         // 键集合与旧的 `JSONEncoder().encode(ClaudioConfig(...))` 完全一致（三个 v1 键）。
+        // `events` 的值是新建组的默认开关：`stop`/`stop_failure`/`notification` 开，
+        // `task_start`/`subagent_stop` 关。只有这一条分支写默认值；`.failClosed` 与既有文件的
+        // 读-改-写路径一律不碰 `events`，用户调过的开关不会在切包时被重置。
         json = [
             "selected_pack": selectedPack,
             "master_volume": ClaudioConfig.defaultMasterVolume,
-            "events": [String: Any](),
+            "events": Event.newGroupDefaultSwitches,
         ]
     }
 

@@ -126,14 +126,16 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
     /// Retired selections, retained for compatibility only. Effective profiles ignore them.
     public var systemSounds: [String: String]
     public var hasLegacySystemSounds = false
+    /// - Parameter events: `nil` 表示「这个组刚被创建」，取 ``Event/newGroupDefaultSwitches``
+    ///   （`stop`/`stop_failure`/`notification` 开，`task_start`/`subagent_stop` 关）。
+    ///   编辑既有规则必须传入完整五键表：``isValid`` 要求五键齐全，缺键会让规则失效并停播。
     public init(
         selectedPack: String, volume: Double, events: [String: Bool]? = nil,
         systemSounds: [String: String] = [:]
     ) {
         self.selectedPack = selectedPack
         self.volume = volume
-        self.events =
-            events ?? Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
+        self.events = events ?? Event.newGroupDefaultSwitches
         self.systemSounds = systemSounds
         self.hasLegacySystemSounds = !systemSounds.isEmpty
     }

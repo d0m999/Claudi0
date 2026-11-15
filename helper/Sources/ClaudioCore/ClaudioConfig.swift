@@ -19,6 +19,9 @@ public struct ClaudioConfig: Codable, Equatable, Sendable {
     public var masterVolume: Double
     /// Per-event mute state, keyed by ``Event/cliName``. An event absent from this map
     /// defaults to **enabled** — the control is opt-out ("静音钮"), not opt-in.
+    ///
+    /// 「缺键 = 开」只描述**存量文件**的读语义，不参与创建：新建组写的是完整五键表
+    /// （``Event/newGroupDefaultSwitches``，其中 `task_start`/`subagent_stop` 显式 `false`）。
     public var eventsEnabled: [String: Bool]
     /// Retired group-level selections. Playback ignores these; surgical writes preserve raw JSON.
     public var systemSounds: [String: String]

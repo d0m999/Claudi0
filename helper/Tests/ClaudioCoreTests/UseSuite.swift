@@ -68,7 +68,12 @@ func runUseSuites() {
             expect(
                 config?.masterVolume == ClaudioConfig.defaultMasterVolume,
                 "a fresh config.json gets the documented default master_volume")
-            expect(config?.eventsEnabled.isEmpty == true, "a fresh config.json has no per-event overrides")
+            expect(
+                config?.eventsEnabled == [
+                    "task_start": false, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": false,
+                ],
+                "a fresh config.json pins the new-group switches: three on, two off")
         }
     }
 

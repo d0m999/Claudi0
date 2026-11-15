@@ -165,7 +165,11 @@ final class Fixture {
             configuration.workspaceRules = [
                 WorkspaceSoundRule(
                     directory: directory, surfaces: [host.surfaceID],
-                    profile: WorkspaceSoundProfile(selectedPack: "test", volume: 0))
+                    profile: WorkspaceSoundProfile(
+                        selectedPack: "test", volume: 0,
+                        // 基准验证工作区路由不验证新建组默认；五事件需全开。
+                        events: Dictionary(
+                            uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })))
             ]
             if scenario == "git-damaged" {
                 try FileManager.default.removeItem(at: cwd.appendingPathComponent(".git"))
