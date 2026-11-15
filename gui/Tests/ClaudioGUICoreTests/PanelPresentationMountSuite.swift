@@ -65,8 +65,7 @@ func runPanelPresentationMountSuites() {
             let config = ClaudioConfig(
                 selectedPack: "fixture-pack",
                 masterVolume: 0.8,
-                eventsEnabled: Dictionary(
-                    uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) }))
+                eventsEnabled: Event.allEnabledSwitches)
             let panelModel = PanelConfigController(
                 previewConfigState: .operational(config),
                 eventRows: Event.allCases.map {

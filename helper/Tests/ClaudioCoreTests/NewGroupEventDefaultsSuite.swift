@@ -24,6 +24,13 @@ private let expectedNewGroupSwitches: [String: Bool] = [
     "notification": true, "subagent_stop": false,
 ]
 
+/// 通用构造器（fixture / 既有规则 / 编辑路径）的**期望字面量**：完整五键全开。
+/// 同样刻意不引用 `Event.allEnabledSwitches`，理由同上。
+private let expectedAllEnabledSwitches: [String: Bool] = [
+    "task_start": true, "stop": true, "stop_failure": true,
+    "notification": true, "subagent_stop": true,
+]
+
 @MainActor
 func runNewGroupEventDefaultsSuites() {
     suite("new group defaults: the switch table is five keys, three on, two off") {
@@ -43,10 +50,7 @@ func runNewGroupEventDefaultsSuites() {
         // 不得顺手把「新建组默认」灌进去。新建组只由 `newGroup` 工厂表达。
         let generic = WorkspaceSoundProfile(selectedPack: "pika", volume: 0.6)
         expect(
-            generic.events
-                == Dictionary(
-                    uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
-                && generic.isValid,
+            generic.events == expectedAllEnabledSwitches && generic.isValid,
             "通用构造器的 events: nil 必须仍是完整五键全开，got \(generic.events)")
 
         let created = WorkspaceSoundProfile.newGroup(selectedPack: "pika", volume: 0.6)
@@ -159,7 +163,9 @@ func runNewGroupEventDefaultsSuites() {
                 "默认组切包后开关逐键不变，got"
                     + " \(String(describing: loadClaudioConfig(from: configFile)?.eventsEnabled))")
 
-            // 工作区：切包同样只写 selectedPack。
+            // 工作区：切包同样只写 selectedPack。先让这张表和新建组默认**不同**（多开一位）：
+            // fixture 若原样停在新建组默认上，「切包把开关重置成新建组默认」算出的结果与
+            // 原值逐键相同，下面那条断言恒真、永远逮不住这次修订要防的那类回归。
             let rule = WorkspaceSoundRule(
                 directory: WorkspaceDirectory(
                     kind: .directory, path: root.resolvingSymlinksInPath().path),
@@ -173,6 +179,12 @@ func runNewGroupEventDefaultsSuites() {
                 "fixture: workspace rule")
             expect(
                 (try? mutateWorkspaceSound(
+                    .event(WorkspaceSoundWriteTarget(rule: rule), .taskStart, true),
+                    configFile: configFile, lockFile: lockFile, userPacksDirectory: packs
+                ).get()) != nil,
+                "fixture: user turns task_start on for the workspace")
+            expect(
+                (try? mutateWorkspaceSound(
                     .pack(WorkspaceSoundWriteTarget(rule: rule), "other"),
                     configFile: configFile, lockFile: lockFile, userPacksDirectory: packs
                 ).get()) != nil,
@@ -180,8 +192,11 @@ func runNewGroupEventDefaultsSuites() {
             let repacked = loadClaudioConfig(from: configFile)?
                 .workspaceRules.first?.profile
             expect(
-                repacked?.events == expectedNewGroupSwitches,
-                "工作区切包后开关逐键不变，got"
+                repacked?.events == [
+                    "task_start": true, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": false,
+                ],
+                "工作区切包后开关逐键不变（含用户打开的那一位），got"
                     + " \(String(describing: repacked?.events))")
         }
     }

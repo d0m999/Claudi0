@@ -28,8 +28,7 @@ func runSoundScopeSelectionSuites() {
         var config = ClaudioConfig(
             selectedPack: "pack-a",
             masterVolume: 0.8,
-            eventsEnabled: Dictionary(
-                uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) }))
+            eventsEnabled: Event.allEnabledSwitches)
         config.workspaceRules = rules
         return config
     }

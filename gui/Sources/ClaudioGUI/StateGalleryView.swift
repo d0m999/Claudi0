@@ -587,8 +587,7 @@ private struct ProductionPanelStateFrame: View {
         let baseConfig = ClaudioConfig(
             selectedPack: "gallery-pack",
             masterVolume: 0.8,
-            eventsEnabled: Dictionary(
-                uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) }))
+            eventsEnabled: Event.allEnabledSwitches)
         let presentRows = Event.allCases.map {
             EventRow(
                 event: $0,

@@ -55,6 +55,15 @@ public enum Event: String, CaseIterable, Codable, Sendable, Hashable {
         self = match
     }
 
+    /// 通用（非新建组）默认：完整五键全开。
+    ///
+    /// 服务 ``WorkspaceSoundProfile/init(selectedPack:volume:events:systemSounds:)`` 的 `events: nil`、
+    /// GUI 预览夹具与测试夹具。**不是**新建组默认——新建组只认 ``newGroupDefaultSwitches``。
+    /// 两张表并存是刻意的：通用构造器被既有规则与大量 fixture 复用。
+    public static var allEnabledSwitches: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.map { ($0.cliName, true) })
+    }
+
     /// 新建组（首次装机写出的 `config.json`；新建工作区规则）的默认开关。
     ///
     /// 唯一事实源：默认组的新鲜创建分支（`updateConfigJSON` 的 `.createFresh`）与

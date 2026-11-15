@@ -126,17 +126,17 @@ public struct WorkspaceSoundProfile: Codable, Sendable, Equatable {
     /// Retired selections, retained for compatibility only. Effective profiles ignore them.
     public var systemSounds: [String: String]
     public var hasLegacySystemSounds = false
-    /// - Parameter events: 不传时补一份**完整五键全开**的有效表。这是构造器沿用已久的默认值，
-    ///   服务 fixture 与不持有开关的调用方；它**不是**新建组默认。新建组一律走
-    ///   ``newGroup(selectedPack:volume:)``，让 ``Event/newGroupDefaultSwitches`` 保持唯一事实源。
+    /// - Parameter events: 不传时补一份**完整五键全开**的有效表（``Event/allEnabledSwitches``）。
+    ///   这是构造器沿用已久的默认值，服务 fixture 与不持有开关的调用方；它**不是**新建组默认。
+    ///   新建组一律走 ``newGroup(selectedPack:volume:)``，让 ``Event/newGroupDefaultSwitches``
+    ///   保持唯一事实源。
     public init(
         selectedPack: String, volume: Double, events: [String: Bool]? = nil,
         systemSounds: [String: String] = [:]
     ) {
         self.selectedPack = selectedPack
         self.volume = volume
-        self.events =
-            events ?? Dictionary(uniqueKeysWithValues: Event.allCases.map { ($0.cliName, true) })
+        self.events = events ?? Event.allEnabledSwitches
         self.systemSounds = systemSounds
         self.hasLegacySystemSounds = !systemSounds.isEmpty
     }

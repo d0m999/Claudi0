@@ -304,7 +304,9 @@ func runWorkspaceSoundRulesSuites() {
             expect(
                 (try? mutate(.add(rule)).get()) != nil,
                 "explicit selected pack and volume create full rule")
-            // 新建工作区必须从新建组默认开关起步：完整五键、三开两关。
+            // `.add` 必须把调用方（创建表单）交来的 profile **逐键落盘**，不重算开关。
+            // 这里钉的是「落盘不改写」；默认值本身（三开两关）由 `NewGroupEventDefaultsSuite`
+            // 用独立字面量钉住，别把两件事压进一条断言。
             let addedRaw =
                 try! JSONSerialization.jsonObject(with: Data(contentsOf: file)) as! [String: Any]
             let addedEvents =
@@ -316,7 +318,7 @@ func runWorkspaceSoundRulesSuites() {
                     "task_start": false, "stop": true, "stop_failure": true,
                     "notification": true, "subagent_stop": false,
                 ],
-                "a newly added workspace starts from the new-group switches, got"
+                "adding a rule persists the create-form's five-key table verbatim, got"
                     + " \(String(describing: addedEvents))")
             expect(
                 loadClaudioConfig(from: file)?.workspaceRules.first?.profile?.isValid == true,
@@ -468,12 +470,17 @@ func runWorkspaceSoundRulesSuites() {
                 loadClaudioConfig(from: file)?.workspaceRules.first?.profile?.selectedPack == "next"
                     && loadClaudioConfig(from: file)?.selectedPack == "default",
                 "accepted workspace pack write leaves Default Group unchanged")
-            // 切包只写 selectedPack：开关必须逐键原样保留（本用例的 fixture 是既有规则；
-            // 新建组默认由 NewGroupEventDefaultsSuite 单独钉住）。
+            // 切包只写 selectedPack：开关必须逐键原样保留。fixture 是通用构造器造的既有规则
+            // （五键全开），与新建组默认（三开两关）不同——这样「切包把开关重置成新建组默认」
+            // 会被当场逮住。比较整张字面量，不写 `== original.profile?.events`：后者随 fixture
+            // 一起变，等于自证。
             let repackedEvents = loadClaudioConfig(from: file)?.workspaceRules.first?.profile?
                 .events
             expect(
-                repackedEvents == original.profile?.events,
+                repackedEvents == [
+                    "task_start": true, "stop": true, "stop_failure": true,
+                    "notification": true, "subagent_stop": true,
+                ],
                 "switching a workspace pack never rewrites its event switches, got"
                     + " \(String(describing: repackedEvents))")
         }
