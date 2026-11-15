@@ -1648,15 +1648,18 @@ func runReleaseLayoutSuites() {
         let root = guiTestRepositoryRoot()
         let releaseURL = root.appendingPathComponent(".github/workflows/release.yml")
         let ciURL = root.appendingPathComponent(".github/workflows/ci.yml")
+        let toolchainActionURL = root.appendingPathComponent(
+            ".github/actions/swift-toolchain-fingerprint/action.yml")
         let packageURL = root.appendingPathComponent("helper/Package.swift")
         let cliURL = root.appendingPathComponent("helper/Sources/claudio/Claudio.swift")
         guard
             let release = try? String(contentsOf: releaseURL, encoding: .utf8),
             let ci = try? String(contentsOf: ciURL, encoding: .utf8),
+            let toolchainAction = try? String(contentsOf: toolchainActionURL, encoding: .utf8),
             let package = try? String(contentsOf: packageURL, encoding: .utf8),
             let cli = try? String(contentsOf: cliURL, encoding: .utf8)
         else {
-            expect(false, "读不到版本源、CLI 或 CI/release workflow")
+            expect(false, "读不到版本源、CLI、CI/release workflow 或工具链 action")
             return
         }
 
@@ -1727,12 +1730,15 @@ func runReleaseLayoutSuites() {
             helper.contains("runs-on: macos-15")
                 && helper.contains(xcodeDeveloperDirectory)
                 && helper.contains(swift6VersionPattern)
-                && helper.contains("::error::Swift 6 is required")
+                && helper.contains("version-error: Swift 6 is required; selected toolchain reported")
                 && gui.contains("runs-on: macos-26")
                 && gui.contains(guiDeveloperDirectory)
                 && gui.contains(selectBundleToolchain)
                 && gui.contains(bundleSwiftVersionPattern)
-                && gui.contains("::error::Swift 6.4.1 is required")
+                && gui.contains(
+                    "version-error: Swift 6.4.1 is required; selected toolchain reported")
+                && toolchainAction.contains(#"echo "::error::${VERSION_ERROR}: $SWIFT_VERSION""#)
+                && toolchainAction.contains("exit 1")
                 && ci[verifyJob.lowerBound...].contains(
                     "needs: [helper, gui, gui-foreground, gui-bundle]")
                 && release.contains(
@@ -1742,7 +1748,7 @@ func runReleaseLayoutSuites() {
                 && release.contains(bundleSwiftVersionPattern)
                 && release.contains("::error::Swift 6.4.1 is required"),
             "Helper 保留 Swift 6 兼容性基线；GUI 与 release 必须共用固定的 Swift 6.4.1、"
-                + "Xcode 26.6 / SDK 26.5，并在构建前失败关闭工具链漂移")
+                + "Xcode 26.6 / SDK 26.5，并在构建前由共享 action 失败关闭工具链漂移")
         let preview = try? String(
             contentsOf: root.appendingPathComponent(".github/workflows/preview.yml"),
             encoding: .utf8)
